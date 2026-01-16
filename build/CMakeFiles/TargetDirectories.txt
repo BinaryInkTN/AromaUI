@@ -1,0 +1,8 @@
+/home/yassine/AromaUI/build/CMakeFiles/edit_cache.dir
+/home/yassine/AromaUI/build/CMakeFiles/rebuild_cache.dir
+/home/yassine/AromaUI/build/src/CMakeFiles/aroma.dir
+/home/yassine/AromaUI/build/src/CMakeFiles/edit_cache.dir
+/home/yassine/AromaUI/build/src/CMakeFiles/rebuild_cache.dir
+/home/yassine/AromaUI/build/tests/CMakeFiles/aroma_tests.dir
+/home/yassine/AromaUI/build/tests/CMakeFiles/edit_cache.dir
+/home/yassine/AromaUI/build/tests/CMakeFiles/rebuild_cache.dir

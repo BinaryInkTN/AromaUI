@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/aroma_tests.dir/test_main.c.o CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o CMakeFiles/aroma_tests.dir/test_aroma_node.c.o -o aroma_tests  ../src/libaroma.a 
