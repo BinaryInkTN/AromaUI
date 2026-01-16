@@ -25,7 +25,6 @@ void  __node_system_init(void) {
 }
 
 void __node_system_destroy(void) {
-    aroma_memory_system_destroy();
     __reset_node_id_counter();
     LOG_INFO("Node system destroyed.");
 }

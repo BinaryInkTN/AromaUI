@@ -8,9 +8,11 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/yassine/AromaUI/src/aroma_app.c" "src/CMakeFiles/aroma.dir/aroma_app.c.o" "gcc" "src/CMakeFiles/aroma.dir/aroma_app.c.o.d"
   "/home/yassine/AromaUI/src/aroma_logger.c" "src/CMakeFiles/aroma.dir/aroma_logger.c.o" "gcc" "src/CMakeFiles/aroma.dir/aroma_logger.c.o.d"
   "/home/yassine/AromaUI/src/aroma_node.c" "src/CMakeFiles/aroma.dir/aroma_node.c.o" "gcc" "src/CMakeFiles/aroma.dir/aroma_node.c.o.d"
   "/home/yassine/AromaUI/src/aroma_slab_alloc.c" "src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.o" "gcc" "src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.o.d"
+  "/home/yassine/AromaUI/src/backends/aroma_glps_opengl.c" "src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o" "gcc" "src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

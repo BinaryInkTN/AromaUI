@@ -1,0 +1,3 @@
+[submodule "vendors/glps"]
+	path = vendors/glps
+	url = https://github.com/BinaryInkTN/GLPS

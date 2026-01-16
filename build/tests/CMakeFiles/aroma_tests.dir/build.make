@@ -125,6 +125,7 @@ tests/aroma_tests: tests/CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o
 tests/aroma_tests: tests/CMakeFiles/aroma_tests.dir/test_aroma_node.c.o
 tests/aroma_tests: tests/CMakeFiles/aroma_tests.dir/build.make
 tests/aroma_tests: src/libaroma.a
+tests/aroma_tests: lib/libGLPS.so.1.0
 tests/aroma_tests: tests/CMakeFiles/aroma_tests.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking C executable aroma_tests"
 	cd /home/yassine/AromaUI/build/tests && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/aroma_tests.dir/link.txt --verbose=$(VERBOSE)

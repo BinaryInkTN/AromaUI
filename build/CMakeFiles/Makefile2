@@ -64,16 +64,19 @@ CMAKE_BINARY_DIR = /home/yassine/AromaUI/build
 
 # The main recursive "all" target.
 all: src/all
+all: vendors/glps/all
 all: tests/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
 preinstall: src/preinstall
+preinstall: vendors/glps/preinstall
 preinstall: tests/preinstall
 .PHONY : preinstall
 
 # The main recursive "clean" target.
 clean: src/clean
+clean: vendors/glps/clean
 clean: tests/clean
 .PHONY : clean
 
@@ -82,6 +85,7 @@ clean: tests/clean
 
 # Recursive "all" directory target.
 src/all: src/CMakeFiles/aroma.dir/all
+src/all: src/CMakeFiles/aroma_app.dir/all
 .PHONY : src/all
 
 # Recursive "preinstall" directory target.
@@ -90,6 +94,7 @@ src/preinstall:
 
 # Recursive "clean" directory target.
 src/clean: src/CMakeFiles/aroma.dir/clean
+src/clean: src/CMakeFiles/aroma_app.dir/clean
 .PHONY : src/clean
 
 #=============================================================================
@@ -108,18 +113,33 @@ tests/clean: tests/CMakeFiles/aroma_tests.dir/clean
 .PHONY : tests/clean
 
 #=============================================================================
+# Directory level rules for directory vendors/glps
+
+# Recursive "all" directory target.
+vendors/glps/all: vendors/glps/CMakeFiles/GLPS.dir/all
+.PHONY : vendors/glps/all
+
+# Recursive "preinstall" directory target.
+vendors/glps/preinstall:
+.PHONY : vendors/glps/preinstall
+
+# Recursive "clean" directory target.
+vendors/glps/clean: vendors/glps/CMakeFiles/GLPS.dir/clean
+.PHONY : vendors/glps/clean
+
+#=============================================================================
 # Target rules for target src/CMakeFiles/aroma.dir
 
 # All Build rule for target.
-src/CMakeFiles/aroma.dir/all:
+src/CMakeFiles/aroma.dir/all: vendors/glps/CMakeFiles/GLPS.dir/all
 	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/depend
 	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=1,2,3,4 "Built target aroma"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=9,10,11,12,13,14 "Built target aroma"
 .PHONY : src/CMakeFiles/aroma.dir/all
 
 # Build rule for subdir invocation for target.
 src/CMakeFiles/aroma.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/aroma.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 0
 .PHONY : src/CMakeFiles/aroma.dir/rule
@@ -134,18 +154,72 @@ src/CMakeFiles/aroma.dir/clean:
 .PHONY : src/CMakeFiles/aroma.dir/clean
 
 #=============================================================================
+# Target rules for target src/CMakeFiles/aroma_app.dir
+
+# All Build rule for target.
+src/CMakeFiles/aroma_app.dir/all: src/CMakeFiles/aroma.dir/all
+src/CMakeFiles/aroma_app.dir/all: vendors/glps/CMakeFiles/GLPS.dir/all
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/depend
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=15,16 "Built target aroma_app"
+.PHONY : src/CMakeFiles/aroma_app.dir/all
+
+# Build rule for subdir invocation for target.
+src/CMakeFiles/aroma_app.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 16
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/aroma_app.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 0
+.PHONY : src/CMakeFiles/aroma_app.dir/rule
+
+# Convenience name for target.
+aroma_app: src/CMakeFiles/aroma_app.dir/rule
+.PHONY : aroma_app
+
+# clean rule for target.
+src/CMakeFiles/aroma_app.dir/clean:
+	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/clean
+.PHONY : src/CMakeFiles/aroma_app.dir/clean
+
+#=============================================================================
+# Target rules for target vendors/glps/CMakeFiles/GLPS.dir
+
+# All Build rule for target.
+vendors/glps/CMakeFiles/GLPS.dir/all:
+	$(MAKE) $(MAKESILENT) -f vendors/glps/CMakeFiles/GLPS.dir/build.make vendors/glps/CMakeFiles/GLPS.dir/depend
+	$(MAKE) $(MAKESILENT) -f vendors/glps/CMakeFiles/GLPS.dir/build.make vendors/glps/CMakeFiles/GLPS.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8 "Built target GLPS"
+.PHONY : vendors/glps/CMakeFiles/GLPS.dir/all
+
+# Build rule for subdir invocation for target.
+vendors/glps/CMakeFiles/GLPS.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 8
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vendors/glps/CMakeFiles/GLPS.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 0
+.PHONY : vendors/glps/CMakeFiles/GLPS.dir/rule
+
+# Convenience name for target.
+GLPS: vendors/glps/CMakeFiles/GLPS.dir/rule
+.PHONY : GLPS
+
+# clean rule for target.
+vendors/glps/CMakeFiles/GLPS.dir/clean:
+	$(MAKE) $(MAKESILENT) -f vendors/glps/CMakeFiles/GLPS.dir/build.make vendors/glps/CMakeFiles/GLPS.dir/clean
+.PHONY : vendors/glps/CMakeFiles/GLPS.dir/clean
+
+#=============================================================================
 # Target rules for target tests/CMakeFiles/aroma_tests.dir
 
 # All Build rule for target.
 tests/CMakeFiles/aroma_tests.dir/all: src/CMakeFiles/aroma.dir/all
+tests/CMakeFiles/aroma_tests.dir/all: vendors/glps/CMakeFiles/GLPS.dir/all
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/aroma_tests.dir/build.make tests/CMakeFiles/aroma_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/aroma_tests.dir/build.make tests/CMakeFiles/aroma_tests.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=5,6,7,8 "Built target aroma_tests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=17,18,19,20 "Built target aroma_tests"
 .PHONY : tests/CMakeFiles/aroma_tests.dir/all
 
 # Build rule for subdir invocation for target.
 tests/CMakeFiles/aroma_tests.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 8
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 18
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/CMakeFiles/aroma_tests.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles 0
 .PHONY : tests/CMakeFiles/aroma_tests.dir/rule

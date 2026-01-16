@@ -85,6 +85,51 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 .PHONY : rebuild_cache/fast
 
+# Special rule for the target list_install_components
+list_install_components:
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Available install components are: \"Unspecified\""
+.PHONY : list_install_components
+
+# Special rule for the target list_install_components
+list_install_components/fast: list_install_components
+.PHONY : list_install_components/fast
+
+# Special rule for the target install
+install: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install
+
+# Special rule for the target install
+install/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install/fast
+
+# Special rule for the target install/local
+install/local: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local
+
+# Special rule for the target install/local
+install/local/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local/fast
+
+# Special rule for the target install/strip
+install/strip: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing the project stripped..."
+	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip
+
+# Special rule for the target install/strip
+install/strip/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Installing the project stripped..."
+	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip/fast
+
 # The main all target
 all: cmake_check_build_system
 	cd /home/yassine/AromaUI/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/yassine/AromaUI/build/CMakeFiles /home/yassine/AromaUI/build/src//CMakeFiles/progress.marks
@@ -129,6 +174,47 @@ aroma: src/CMakeFiles/aroma.dir/rule
 aroma/fast:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/build
 .PHONY : aroma/fast
+
+# Convenience name for target.
+src/CMakeFiles/aroma_app.dir/rule:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/aroma_app.dir/rule
+.PHONY : src/CMakeFiles/aroma_app.dir/rule
+
+# Convenience name for target.
+aroma_app: src/CMakeFiles/aroma_app.dir/rule
+.PHONY : aroma_app
+
+# fast build rule for target.
+aroma_app/fast:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/build
+.PHONY : aroma_app/fast
+
+aroma_app.o: aroma_app.c.o
+.PHONY : aroma_app.o
+
+# target to build an object file
+aroma_app.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_app.c.o
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/aroma_app.c.o
+.PHONY : aroma_app.c.o
+
+aroma_app.i: aroma_app.c.i
+.PHONY : aroma_app.i
+
+# target to preprocess a source file
+aroma_app.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_app.c.i
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/aroma_app.c.i
+.PHONY : aroma_app.c.i
+
+aroma_app.s: aroma_app.c.s
+.PHONY : aroma_app.s
+
+# target to generate assembly for a file
+aroma_app.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_app.c.s
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/aroma_app.c.s
+.PHONY : aroma_app.c.s
 
 aroma_logger.o: aroma_logger.c.o
 .PHONY : aroma_logger.o
@@ -202,6 +288,30 @@ aroma_slab_alloc.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.s
 .PHONY : aroma_slab_alloc.c.s
 
+backends/aroma_glps_opengl.o: backends/aroma_glps_opengl.c.o
+.PHONY : backends/aroma_glps_opengl.o
+
+# target to build an object file
+backends/aroma_glps_opengl.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o
+.PHONY : backends/aroma_glps_opengl.c.o
+
+backends/aroma_glps_opengl.i: backends/aroma_glps_opengl.c.i
+.PHONY : backends/aroma_glps_opengl.i
+
+# target to preprocess a source file
+backends/aroma_glps_opengl.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.i
+.PHONY : backends/aroma_glps_opengl.c.i
+
+backends/aroma_glps_opengl.s: backends/aroma_glps_opengl.c.s
+.PHONY : backends/aroma_glps_opengl.s
+
+# target to generate assembly for a file
+backends/aroma_glps_opengl.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.s
+.PHONY : backends/aroma_glps_opengl.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -209,8 +319,16 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... install"
+	@echo "... install/local"
+	@echo "... install/strip"
+	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... aroma"
+	@echo "... aroma_app"
+	@echo "... aroma_app.o"
+	@echo "... aroma_app.i"
+	@echo "... aroma_app.s"
 	@echo "... aroma_logger.o"
 	@echo "... aroma_logger.i"
 	@echo "... aroma_logger.s"
@@ -220,6 +338,9 @@ help:
 	@echo "... aroma_slab_alloc.o"
 	@echo "... aroma_slab_alloc.i"
 	@echo "... aroma_slab_alloc.s"
+	@echo "... backends/aroma_glps_opengl.o"
+	@echo "... backends/aroma_glps_opengl.i"
+	@echo "... backends/aroma_glps_opengl.s"
 .PHONY : help
 
 
