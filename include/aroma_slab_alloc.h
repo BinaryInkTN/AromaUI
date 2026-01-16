@@ -5,12 +5,11 @@
 #include "aroma_node.h"
 
 #define AROMA_GENERIC_PAGE_SIZE 2048
-#define AROMA_MAX_PAGES 4
-#define AROMA_NODE_POOL_INDEX 0xFF  
-
-// Widget size buckets: 32B, 64B, 128B, 256B, 512B
+#define AROMA_MAX_PAGES 32
+#define AROMA_NODE_POOL_INDEX 0xFF
 #define AROMA_WIDGET_BUCKET_COUNT 5
 #define AROMA_WIDGET_BUCKET_SIZES {32, 64, 128, 256, 512}
+
 
 typedef struct AromaFreeSlot {
     struct AromaFreeSlot* next;
@@ -19,6 +18,7 @@ typedef struct AromaFreeSlot {
 typedef struct AromaSlabAllocatorPage {
     uint8_t data[AROMA_GENERIC_PAGE_SIZE];
     struct AromaSlabAllocatorPage* next_page;
+    uint8_t is_stack_page;
 } AromaSlabAllocatorPage;
 
 typedef struct AromaSlabAllocator {
@@ -31,11 +31,11 @@ typedef struct AromaSlabAllocator {
 } AromaSlabAllocator;
 
 typedef struct AromaMemorySystem {
-    AromaSlabAllocator node_pool;           // Scene graph node pool
-    AromaSlabAllocator widget_pools[AROMA_WIDGET_BUCKET_COUNT]; // Widget buckets
+    AromaSlabAllocator node_pool;
+    AromaSlabAllocator widget_pools[AROMA_WIDGET_BUCKET_COUNT];
+    AromaSlabAllocatorPage preallocated_pages[AROMA_MAX_PAGES];
+    uint8_t page_used[AROMA_MAX_PAGES];
 } AromaMemorySystem;
-
-extern AromaMemorySystem global_memory_system;
 
 void __slab_pool_init(AromaSlabAllocator* pool, size_t object_size);
 void __slab_pool_destroy(AromaSlabAllocator* pool);
@@ -48,5 +48,7 @@ void aroma_widget_free(void* widget);
 void aroma_memory_system_init(void);
 void aroma_memory_system_destroy(void);
 void aroma_memory_system_stats(void);
+
+extern AromaMemorySystem global_memory_system;
 
 #endif
