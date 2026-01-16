@@ -36,4 +36,8 @@ AromaNode* __find_node_by_id(AromaNode* root, uint64_t node_id);
 uint64_t __generate_node_id(void);
 void __reset_node_id_counter(void);
 uint64_t __get_current_node_id_counter(void);
+
+/* Debug utilities for scene graph visualization */
+void __print_node_tree(AromaNode* root_node);
+void __print_node_info(AromaNode* node);
 #endif

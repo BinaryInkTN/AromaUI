@@ -168,3 +168,63 @@ AromaNode* __find_node_by_id(AromaNode* root, uint64_t node_id) {
 
     return NULL;
 }
+
+static const char* __node_type_to_string(AromaNodeType type) {
+    switch (type) {
+        case NODE_TYPE_ROOT:
+            return "ROOT";
+        case NODE_TYPE_CONTAINER:
+            return "CONTAINER";
+        case NODE_TYPE_WIDGET:
+            return "WIDGET";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+void __print_node_info(AromaNode* node) {
+    if (!node) {
+        printf("[NULL NODE]\n");
+        return;
+    }
+    printf("Node ID: %llu | Type: %s | Children: %llu | Widget: %p\n",
+           node->node_id,
+           __node_type_to_string(node->node_type),
+           node->child_count,
+           node->node_widget_ptr);
+}
+
+static void __print_node_tree_recursive(AromaNode* node, int depth) {
+    if (!node) return;
+
+    // Print indentation
+    for (int i = 0; i < depth; i++) {
+        printf("  ");
+    }
+
+    // Print node info
+    printf("├─ [ID: %llu | Type: %s | Children: %llu]\n",
+           node->node_id,
+           __node_type_to_string(node->node_type),
+           node->child_count);
+
+    // Recursively print children
+    for (uint64_t i = 0; i < node->child_count; i++) {
+        if (node->child_nodes[i]) {
+            __print_node_tree_recursive(node->child_nodes[i], depth + 1);
+        }
+    }
+}
+
+void __print_node_tree(AromaNode* root_node) {
+    if (!root_node) {
+        printf("[ERROR] Scene graph root is NULL\n");
+        return;
+    }
+
+    printf("\n========== AROMA SCENE GRAPH TREE ==========\n");
+    printf("Root Node ID: %llu\n", root_node->node_id);
+    printf("\nHierarchy:\n");
+    __print_node_tree_recursive(root_node, 0);
+    printf("==========================================\n\n");
+}

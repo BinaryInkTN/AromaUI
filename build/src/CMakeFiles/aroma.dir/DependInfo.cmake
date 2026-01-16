@@ -13,6 +13,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/yassine/AromaUI/src/aroma_node.c" "src/CMakeFiles/aroma.dir/aroma_node.c.o" "gcc" "src/CMakeFiles/aroma.dir/aroma_node.c.o.d"
   "/home/yassine/AromaUI/src/aroma_slab_alloc.c" "src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.o" "gcc" "src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.o.d"
   "/home/yassine/AromaUI/src/backends/aroma_glps_opengl.c" "src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o" "gcc" "src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o.d"
+  "/home/yassine/AromaUI/src/widgets/aroma_window.c" "src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o" "gcc" "src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

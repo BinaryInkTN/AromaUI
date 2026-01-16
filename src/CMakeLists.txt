@@ -3,7 +3,8 @@ add_library(aroma
     aroma_logger.c
     aroma_node.c
     aroma_slab_alloc.c
-    backends/aroma_glps_opengl.c
+    backends/platforms/aroma_platform_glps.c
+    widgets/aroma_window.c
 )
 
 target_include_directories(aroma

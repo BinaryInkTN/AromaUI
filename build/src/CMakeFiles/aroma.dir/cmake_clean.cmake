@@ -9,6 +9,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/aroma.dir/aroma_slab_alloc.c.o.d"
   "CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o"
   "CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o.d"
+  "CMakeFiles/aroma.dir/widgets/aroma_window.c.o"
+  "CMakeFiles/aroma.dir/widgets/aroma_window.c.o.d"
   "libaroma.a"
   "libaroma.pdb"
 )

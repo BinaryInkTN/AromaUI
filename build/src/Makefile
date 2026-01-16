@@ -312,6 +312,30 @@ backends/aroma_glps_opengl.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.s
 .PHONY : backends/aroma_glps_opengl.c.s
 
+widgets/aroma_window.o: widgets/aroma_window.c.o
+.PHONY : widgets/aroma_window.o
+
+# target to build an object file
+widgets/aroma_window.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o
+.PHONY : widgets/aroma_window.c.o
+
+widgets/aroma_window.i: widgets/aroma_window.c.i
+.PHONY : widgets/aroma_window.i
+
+# target to preprocess a source file
+widgets/aroma_window.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_window.c.i
+.PHONY : widgets/aroma_window.c.i
+
+widgets/aroma_window.s: widgets/aroma_window.c.s
+.PHONY : widgets/aroma_window.s
+
+# target to generate assembly for a file
+widgets/aroma_window.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_window.c.s
+.PHONY : widgets/aroma_window.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -341,6 +365,9 @@ help:
 	@echo "... backends/aroma_glps_opengl.o"
 	@echo "... backends/aroma_glps_opengl.i"
 	@echo "... backends/aroma_glps_opengl.s"
+	@echo "... widgets/aroma_window.o"
+	@echo "... widgets/aroma_window.i"
+	@echo "... widgets/aroma_window.s"
 .PHONY : help
 
 
