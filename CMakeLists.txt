@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_subdirectory(src)
 find_package(GLPS REQUIRED)
+
 add_subdirectory(vendors/glps)
 target_link_libraries(aroma PRIVATE GLPS)
 

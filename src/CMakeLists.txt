@@ -4,6 +4,10 @@ add_library(aroma
     aroma_node.c
     aroma_slab_alloc.c
     backends/platforms/aroma_platform_glps.c
+    backends/graphics/aroma_graphics_gles3.c
+    backends/graphics/utils/helpers_gles3.c
+    backends/aroma_abi.c
+
     widgets/aroma_window.c
 )
 
@@ -11,6 +15,10 @@ target_include_directories(aroma
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/backends
+)
+
+target_link_libraries(aroma
+    PUBLIC GLESv2
 )
 
 set_target_properties(aroma PROPERTIES
