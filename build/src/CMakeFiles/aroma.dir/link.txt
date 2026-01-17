@@ -1,2 +1,2 @@
-/usr/bin/ar qc libaroma.a CMakeFiles/aroma.dir/aroma_app.c.o CMakeFiles/aroma.dir/aroma_logger.c.o CMakeFiles/aroma.dir/aroma_node.c.o CMakeFiles/aroma.dir/aroma_slab_alloc.c.o CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o CMakeFiles/aroma.dir/widgets/aroma_window.c.o
+/usr/bin/ar qc libaroma.a CMakeFiles/aroma.dir/aroma_app.c.o CMakeFiles/aroma.dir/aroma_logger.c.o CMakeFiles/aroma.dir/aroma_node.c.o CMakeFiles/aroma.dir/aroma_slab_alloc.c.o CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o CMakeFiles/aroma.dir/backends/aroma_abi.c.o CMakeFiles/aroma.dir/widgets/aroma_window.c.o
 /usr/bin/ranlib libaroma.a

@@ -1,7 +1,8 @@
 #include "widgets/aroma_window.h"
 #include "aroma_node.h"
 #include "aroma_slab_alloc.h"
-#include "backends/aroma_backend_interface.h"
+#include "backends/aroma_abi.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,8 +20,9 @@ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int h
         __slab_pool_free(&global_memory_system.node_pool, node);
         return NULL;
     }
-
-    node->window_id = aroma_platform_glps.create_window(title, x, y, width, height);
+    
+    AromaPlatformInterface* platform_interface = aroma_backend_abi.get_platform_interface();
+    node->window_id = platform_interface->create_window(title, x, y, width, height);
 
     return scene_node;
 }

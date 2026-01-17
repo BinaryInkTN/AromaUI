@@ -7,7 +7,9 @@ src/CMakeFiles/aroma.dir/aroma_app.c.o
  /home/yassine/AromaUI/include/aroma_node.h
  /home/yassine/AromaUI/include/aroma_slab_alloc.h
  /home/yassine/AromaUI/include/widgets/aroma_window.h
- /home/yassine/AromaUI/src/backends/aroma_backend_interface.h
+ /home/yassine/AromaUI/src/backends/aroma_abi.h
+ /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h
+ /home/yassine/AromaUI/src/backends/platforms/aroma_platform_interface.h
  /usr/include/alloca.h
  /usr/include/endian.h
  /usr/include/features-time64.h
@@ -272,10 +274,133 @@ src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.o
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
 
-src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o
- /home/yassine/AromaUI/src/backends/aroma_glps_opengl.c
+src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o
+ /home/yassine/AromaUI/src/backends/aroma_abi.c
+ /home/yassine/AromaUI/src/backends/aroma_abi.h
+ /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h
+ /home/yassine/AromaUI/src/backends/platforms/aroma_platform_interface.h
+ /usr/include/features-time64.h
+ /usr/include/features.h
+ /usr/include/stdc-predef.h
+ /usr/include/stdint.h
+ /usr/include/x86_64-linux-gnu/bits/libc-header-start.h
+ /usr/include/x86_64-linux-gnu/bits/long-double.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-intn.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-least.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h
+ /usr/include/x86_64-linux-gnu/bits/time64.h
+ /usr/include/x86_64-linux-gnu/bits/timesize.h
+ /usr/include/x86_64-linux-gnu/bits/types.h
+ /usr/include/x86_64-linux-gnu/bits/typesizes.h
+ /usr/include/x86_64-linux-gnu/bits/wchar.h
+ /usr/include/x86_64-linux-gnu/bits/wordsize.h
+ /usr/include/x86_64-linux-gnu/gnu/stubs-64.h
+ /usr/include/x86_64-linux-gnu/gnu/stubs.h
+ /usr/include/x86_64-linux-gnu/sys/cdefs.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdatomic.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
+
+src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o
+ /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_gles3.c
  /home/yassine/AromaUI/include/aroma_logger.h
- /home/yassine/AromaUI/src/backends/aroma_backend_interface.h
+ /home/yassine/AromaUI/src/backends/aroma_abi.h
+ /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h
+ /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.h
+ /home/yassine/AromaUI/src/backends/graphics/utils/linmath.h
+ /home/yassine/AromaUI/src/backends/platforms/aroma_platform_interface.h
+ /usr/include/GLES3/gl3.h
+ /usr/include/GLES3/gl3platform.h
+ /usr/include/KHR/khrplatform.h
+ /usr/include/features-time64.h
+ /usr/include/features.h
+ /usr/include/math.h
+ /usr/include/stdc-predef.h
+ /usr/include/stdint.h
+ /usr/include/string.h
+ /usr/include/strings.h
+ /usr/include/x86_64-linux-gnu/bits/floatn-common.h
+ /usr/include/x86_64-linux-gnu/bits/floatn.h
+ /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h
+ /usr/include/x86_64-linux-gnu/bits/fp-fast.h
+ /usr/include/x86_64-linux-gnu/bits/fp-logb.h
+ /usr/include/x86_64-linux-gnu/bits/libc-header-start.h
+ /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h
+ /usr/include/x86_64-linux-gnu/bits/long-double.h
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h
+ /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h
+ /usr/include/x86_64-linux-gnu/bits/mathcalls.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-intn.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-least.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h
+ /usr/include/x86_64-linux-gnu/bits/time64.h
+ /usr/include/x86_64-linux-gnu/bits/timesize.h
+ /usr/include/x86_64-linux-gnu/bits/types.h
+ /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h
+ /usr/include/x86_64-linux-gnu/bits/types/locale_t.h
+ /usr/include/x86_64-linux-gnu/bits/typesizes.h
+ /usr/include/x86_64-linux-gnu/bits/wchar.h
+ /usr/include/x86_64-linux-gnu/bits/wordsize.h
+ /usr/include/x86_64-linux-gnu/gnu/stubs-64.h
+ /usr/include/x86_64-linux-gnu/gnu/stubs.h
+ /usr/include/x86_64-linux-gnu/sys/cdefs.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
+
+src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o
+ /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.c
+ /home/yassine/AromaUI/include/aroma_logger.h
+ /home/yassine/AromaUI/src/backends/aroma_abi.h
+ /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.h
+ /home/yassine/AromaUI/src/backends/graphics/utils/linmath.h
+ /home/yassine/AromaUI/src/backends/platforms/aroma_platform_interface.h
+ /usr/include/GLES3/gl3.h
+ /usr/include/GLES3/gl3platform.h
+ /usr/include/KHR/khrplatform.h
+ /usr/include/features-time64.h
+ /usr/include/features.h
+ /usr/include/math.h
+ /usr/include/stdc-predef.h
+ /usr/include/stdint.h
+ /usr/include/string.h
+ /usr/include/strings.h
+ /usr/include/x86_64-linux-gnu/bits/floatn-common.h
+ /usr/include/x86_64-linux-gnu/bits/floatn.h
+ /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h
+ /usr/include/x86_64-linux-gnu/bits/fp-fast.h
+ /usr/include/x86_64-linux-gnu/bits/fp-logb.h
+ /usr/include/x86_64-linux-gnu/bits/libc-header-start.h
+ /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h
+ /usr/include/x86_64-linux-gnu/bits/long-double.h
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h
+ /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h
+ /usr/include/x86_64-linux-gnu/bits/mathcalls.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-intn.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-least.h
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h
+ /usr/include/x86_64-linux-gnu/bits/time64.h
+ /usr/include/x86_64-linux-gnu/bits/timesize.h
+ /usr/include/x86_64-linux-gnu/bits/types.h
+ /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h
+ /usr/include/x86_64-linux-gnu/bits/types/locale_t.h
+ /usr/include/x86_64-linux-gnu/bits/typesizes.h
+ /usr/include/x86_64-linux-gnu/bits/wchar.h
+ /usr/include/x86_64-linux-gnu/bits/wordsize.h
+ /usr/include/x86_64-linux-gnu/gnu/stubs-64.h
+ /usr/include/x86_64-linux-gnu/gnu/stubs.h
+ /usr/include/x86_64-linux-gnu/sys/cdefs.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
+
+src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o
+ /home/yassine/AromaUI/src/backends/platforms/aroma_platform_glps.c
+ /home/yassine/AromaUI/include/aroma_logger.h
+ /home/yassine/AromaUI/src/backends/aroma_abi.h
+ /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h
+ /home/yassine/AromaUI/src/backends/platforms/aroma_platform_interface.h
  /usr/include/alloca.h
  /usr/include/asm-generic/errno-base.h
  /usr/include/asm-generic/errno.h
@@ -381,7 +506,8 @@ src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o
  /home/yassine/AromaUI/include/aroma_node.h
  /home/yassine/AromaUI/include/aroma_slab_alloc.h
  /home/yassine/AromaUI/include/widgets/aroma_window.h
- /home/yassine/AromaUI/src/backends/aroma_backend_interface.h
+ /home/yassine/AromaUI/src/backends/aroma_abi.h
+ /home/yassine/AromaUI/src/backends/platforms/aroma_platform_interface.h
  /usr/include/alloca.h
  /usr/include/endian.h
  /usr/include/features-time64.h

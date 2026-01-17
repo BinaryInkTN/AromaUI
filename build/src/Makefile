@@ -288,29 +288,101 @@ aroma_slab_alloc.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.s
 .PHONY : aroma_slab_alloc.c.s
 
-backends/aroma_glps_opengl.o: backends/aroma_glps_opengl.c.o
-.PHONY : backends/aroma_glps_opengl.o
+backends/aroma_abi.o: backends/aroma_abi.c.o
+.PHONY : backends/aroma_abi.o
 
 # target to build an object file
-backends/aroma_glps_opengl.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o
-.PHONY : backends/aroma_glps_opengl.c.o
+backends/aroma_abi.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o
+.PHONY : backends/aroma_abi.c.o
 
-backends/aroma_glps_opengl.i: backends/aroma_glps_opengl.c.i
-.PHONY : backends/aroma_glps_opengl.i
+backends/aroma_abi.i: backends/aroma_abi.c.i
+.PHONY : backends/aroma_abi.i
 
 # target to preprocess a source file
-backends/aroma_glps_opengl.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.i
-.PHONY : backends/aroma_glps_opengl.c.i
+backends/aroma_abi.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_abi.c.i
+.PHONY : backends/aroma_abi.c.i
 
-backends/aroma_glps_opengl.s: backends/aroma_glps_opengl.c.s
-.PHONY : backends/aroma_glps_opengl.s
+backends/aroma_abi.s: backends/aroma_abi.c.s
+.PHONY : backends/aroma_abi.s
 
 # target to generate assembly for a file
-backends/aroma_glps_opengl.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.s
-.PHONY : backends/aroma_glps_opengl.c.s
+backends/aroma_abi.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/aroma_abi.c.s
+.PHONY : backends/aroma_abi.c.s
+
+backends/graphics/aroma_graphics_gles3.o: backends/graphics/aroma_graphics_gles3.c.o
+.PHONY : backends/graphics/aroma_graphics_gles3.o
+
+# target to build an object file
+backends/graphics/aroma_graphics_gles3.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o
+.PHONY : backends/graphics/aroma_graphics_gles3.c.o
+
+backends/graphics/aroma_graphics_gles3.i: backends/graphics/aroma_graphics_gles3.c.i
+.PHONY : backends/graphics/aroma_graphics_gles3.i
+
+# target to preprocess a source file
+backends/graphics/aroma_graphics_gles3.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.i
+.PHONY : backends/graphics/aroma_graphics_gles3.c.i
+
+backends/graphics/aroma_graphics_gles3.s: backends/graphics/aroma_graphics_gles3.c.s
+.PHONY : backends/graphics/aroma_graphics_gles3.s
+
+# target to generate assembly for a file
+backends/graphics/aroma_graphics_gles3.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.s
+.PHONY : backends/graphics/aroma_graphics_gles3.c.s
+
+backends/graphics/utils/helpers_gles3.o: backends/graphics/utils/helpers_gles3.c.o
+.PHONY : backends/graphics/utils/helpers_gles3.o
+
+# target to build an object file
+backends/graphics/utils/helpers_gles3.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o
+.PHONY : backends/graphics/utils/helpers_gles3.c.o
+
+backends/graphics/utils/helpers_gles3.i: backends/graphics/utils/helpers_gles3.c.i
+.PHONY : backends/graphics/utils/helpers_gles3.i
+
+# target to preprocess a source file
+backends/graphics/utils/helpers_gles3.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.i
+.PHONY : backends/graphics/utils/helpers_gles3.c.i
+
+backends/graphics/utils/helpers_gles3.s: backends/graphics/utils/helpers_gles3.c.s
+.PHONY : backends/graphics/utils/helpers_gles3.s
+
+# target to generate assembly for a file
+backends/graphics/utils/helpers_gles3.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.s
+.PHONY : backends/graphics/utils/helpers_gles3.c.s
+
+backends/platforms/aroma_platform_glps.o: backends/platforms/aroma_platform_glps.c.o
+.PHONY : backends/platforms/aroma_platform_glps.o
+
+# target to build an object file
+backends/platforms/aroma_platform_glps.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o
+.PHONY : backends/platforms/aroma_platform_glps.c.o
+
+backends/platforms/aroma_platform_glps.i: backends/platforms/aroma_platform_glps.c.i
+.PHONY : backends/platforms/aroma_platform_glps.i
+
+# target to preprocess a source file
+backends/platforms/aroma_platform_glps.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.i
+.PHONY : backends/platforms/aroma_platform_glps.c.i
+
+backends/platforms/aroma_platform_glps.s: backends/platforms/aroma_platform_glps.c.s
+.PHONY : backends/platforms/aroma_platform_glps.s
+
+# target to generate assembly for a file
+backends/platforms/aroma_platform_glps.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s
+.PHONY : backends/platforms/aroma_platform_glps.c.s
 
 widgets/aroma_window.o: widgets/aroma_window.c.o
 .PHONY : widgets/aroma_window.o
@@ -362,9 +434,18 @@ help:
 	@echo "... aroma_slab_alloc.o"
 	@echo "... aroma_slab_alloc.i"
 	@echo "... aroma_slab_alloc.s"
-	@echo "... backends/aroma_glps_opengl.o"
-	@echo "... backends/aroma_glps_opengl.i"
-	@echo "... backends/aroma_glps_opengl.s"
+	@echo "... backends/aroma_abi.o"
+	@echo "... backends/aroma_abi.i"
+	@echo "... backends/aroma_abi.s"
+	@echo "... backends/graphics/aroma_graphics_gles3.o"
+	@echo "... backends/graphics/aroma_graphics_gles3.i"
+	@echo "... backends/graphics/aroma_graphics_gles3.s"
+	@echo "... backends/graphics/utils/helpers_gles3.o"
+	@echo "... backends/graphics/utils/helpers_gles3.i"
+	@echo "... backends/graphics/utils/helpers_gles3.s"
+	@echo "... backends/platforms/aroma_platform_glps.o"
+	@echo "... backends/platforms/aroma_platform_glps.i"
+	@echo "... backends/platforms/aroma_platform_glps.s"
 	@echo "... widgets/aroma_window.o"
 	@echo "... widgets/aroma_window.i"
 	@echo "... widgets/aroma_window.s"

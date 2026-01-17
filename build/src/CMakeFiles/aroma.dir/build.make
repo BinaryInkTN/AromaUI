@@ -125,24 +125,66 @@ src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/aroma_slab_alloc.c.s"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/aroma_slab_alloc.c -o CMakeFiles/aroma.dir/aroma_slab_alloc.c.s
 
-src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o: src/CMakeFiles/aroma.dir/flags.make
-src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o: /home/yassine/AromaUI/src/backends/aroma_glps_opengl.c
-src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o"
-	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o -MF CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o.d -o CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o -c /home/yassine/AromaUI/src/backends/aroma_glps_opengl.c
+src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o: src/CMakeFiles/aroma.dir/flags.make
+src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o: /home/yassine/AromaUI/src/backends/platforms/aroma_platform_glps.c
+src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o -MF CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o.d -o CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o -c /home/yassine/AromaUI/src/backends/platforms/aroma_platform_glps.c
 
-src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.i"
-	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/yassine/AromaUI/src/backends/aroma_glps_opengl.c > CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.i
+src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.i"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/yassine/AromaUI/src/backends/platforms/aroma_platform_glps.c > CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.i
 
-src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.s"
-	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/backends/aroma_glps_opengl.c -o CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.s
+src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/backends/platforms/aroma_platform_glps.c -o CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s
+
+src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o: src/CMakeFiles/aroma.dir/flags.make
+src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o: /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_gles3.c
+src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o -MF CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o.d -o CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o -c /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_gles3.c
+
+src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.i"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_gles3.c > CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.i
+
+src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.s"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_gles3.c -o CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.s
+
+src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: src/CMakeFiles/aroma.dir/flags.make
+src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.c
+src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o -MF CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o.d -o CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o -c /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.c
+
+src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.i"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.c > CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.i
+
+src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.s"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.c -o CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.s
+
+src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: src/CMakeFiles/aroma.dir/flags.make
+src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: /home/yassine/AromaUI/src/backends/aroma_abi.c
+src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o -MF CMakeFiles/aroma.dir/backends/aroma_abi.c.o.d -o CMakeFiles/aroma.dir/backends/aroma_abi.c.o -c /home/yassine/AromaUI/src/backends/aroma_abi.c
+
+src/CMakeFiles/aroma.dir/backends/aroma_abi.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/aroma.dir/backends/aroma_abi.c.i"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/yassine/AromaUI/src/backends/aroma_abi.c > CMakeFiles/aroma.dir/backends/aroma_abi.c.i
+
+src/CMakeFiles/aroma.dir/backends/aroma_abi.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/backends/aroma_abi.c.s"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/backends/aroma_abi.c -o CMakeFiles/aroma.dir/backends/aroma_abi.c.s
 
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: /home/yassine/AromaUI/src/widgets/aroma_window.c
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_window.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_window.c.o -c /home/yassine/AromaUI/src/widgets/aroma_window.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.i: cmake_force
@@ -159,7 +201,10 @@ aroma_OBJECTS = \
 "CMakeFiles/aroma.dir/aroma_logger.c.o" \
 "CMakeFiles/aroma.dir/aroma_node.c.o" \
 "CMakeFiles/aroma.dir/aroma_slab_alloc.c.o" \
-"CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o" \
+"CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o" \
+"CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o" \
+"CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o" \
+"CMakeFiles/aroma.dir/backends/aroma_abi.c.o" \
 "CMakeFiles/aroma.dir/widgets/aroma_window.c.o"
 
 # External object files for target aroma
@@ -169,11 +214,14 @@ src/libaroma.a: src/CMakeFiles/aroma.dir/aroma_app.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/aroma_logger.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/aroma_node.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.o
-src/libaroma.a: src/CMakeFiles/aroma.dir/backends/aroma_glps_opengl.c.o
+src/libaroma.a: src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o
+src/libaroma.a: src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o
+src/libaroma.a: src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o
+src/libaroma.a: src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/build.make
 src/libaroma.a: src/CMakeFiles/aroma.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking C static library libaroma.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking C static library libaroma.a"
 	cd /home/yassine/AromaUI/build/src && $(CMAKE_COMMAND) -P CMakeFiles/aroma.dir/cmake_clean_target.cmake
 	cd /home/yassine/AromaUI/build/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/aroma.dir/link.txt --verbose=$(VERBOSE)
 

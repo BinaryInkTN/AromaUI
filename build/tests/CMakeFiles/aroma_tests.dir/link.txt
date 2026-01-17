@@ -1,1 +1,1 @@
-/usr/bin/cc CMakeFiles/aroma_tests.dir/test_main.c.o CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o CMakeFiles/aroma_tests.dir/test_aroma_node.c.o -o aroma_tests  -Wl,-rpath,/home/yassine/AromaUI/build/lib ../src/libaroma.a ../lib/libGLPS.so.1.0 
+/usr/bin/cc CMakeFiles/aroma_tests.dir/test_main.c.o CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o CMakeFiles/aroma_tests.dir/test_aroma_node.c.o -o aroma_tests  -Wl,-rpath,/home/yassine/AromaUI/build/lib ../src/libaroma.a -lGLESv2 ../lib/libGLPS.so.1.0 
