@@ -1,7 +1,12 @@
 #include "aroma_graphics_interface.h"
 #include "utils/helpers_gles3.h"
+#include "utils/aroma_gles3_text.h"
 #include "aroma_abi.h"
 #include "aroma_logger.h"
+#include "aroma_font.h"
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <math.h>
 
 typedef struct
 {
@@ -27,13 +32,8 @@ typedef struct
     bool is_running;
     size_t num_windows;
 
-
-    // TODO: Add FreeType support
-    // FT_Face face;
-    // Character characters[128];
-    // char font_path[256];
-
-
+    GLES3TextRenderer text_renderers[256];
+    
     Glyph glyph_cache[128];
 
 } AromaGLES3Context;
@@ -108,6 +108,11 @@ int setup_separate_window_resources(size_t window_id)
     glAttachShader(ctx.text_programs[window_id], ctx.text_fragment_shader);
     glLinkProgram(ctx.text_programs[window_id]);
     check_shader_link(ctx.text_programs[window_id]);
+
+    if (!gles3_text_renderer_init(&ctx.text_renderers[window_id])) {
+        LOG_ERROR("Failed to initialize text renderer for window %zu\n", window_id);
+        return 0;
+    }
 
     GLuint text_vao;
     glGenVertexArrays(1, &text_vao);
@@ -214,6 +219,13 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
 
 static void shutdown(void) 
 {  
+    for (int i = 0; i < 256; i++) {
+        gles3_text_renderer_cleanup(&ctx.text_renderers[i]);
+        if (ctx.text_programs[i]) {
+            glDeleteProgram(ctx.text_programs[i]);
+        }
+    }
+    
     glDeleteProgram(ctx.shape_program);
     glDeleteShader(ctx.text_vertex_shader);
     glDeleteShader(ctx.text_fragment_shader);
@@ -234,6 +246,68 @@ static void clear(size_t window_id, uint32_t color)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
+static void render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color)
+{
+    if (!font || !text || window_id >= 256) {
+        return;
+    }
+
+    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
+    
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current) {
+        platform->make_context_current(window_id);
+    }
+    
+    gles3_text_render_text(renderer, ctx.text_programs[window_id], text, 
+                          (float)x, (float)y, 1.0f, color, window_id);
+}
+
+static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height, 
+                                  uint32_t color, int border_width, bool isRounded, float cornerRadius)
+{
+    if (border_width <= 0) return;
+    
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current) {
+        platform->make_context_current(window_id);
+    }
+
+    // Draw border as filled rectangles: top, bottom, left, right
+    fill_rectangle(window_id, x, y, width, border_width, color, false, 0.0f);  // top
+    fill_rectangle(window_id, x, y + height - border_width, width, border_width, color, false, 0.0f);  // bottom
+    fill_rectangle(window_id, x, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  // left
+    fill_rectangle(window_id, x + width - border_width, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  // right
+}
+
+static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle, 
+                     uint32_t color, int thickness)
+{
+    // Stub implementation
+}
+
+void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font)
+{
+    if (!font || window_id >= 256) {
+        return;
+    }
+    
+    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
+    
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current) {
+        platform->make_context_current(window_id);
+    }
+
+    FT_Face face = (FT_Face)aroma_font_get_face(font);
+    
+    if (face) {
+        gles3_text_renderer_load_font(renderer, face);
+        LOG_INFO("Loaded font glyphs for window %zu\n", window_id);
+    }
+}
+
+
 
 AromaGraphicsInterface aroma_graphics_gles3 = {
     .setup_shared_window_resources = setup_shared_window_resources,
@@ -241,5 +315,8 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .clear = clear,
     .draw_rectangle = draw_rectangle,
     .fill_rectangle = fill_rectangle,
+    .draw_hollow_rectangle = draw_hollow_rectangle,
+    .draw_arc = draw_arc,
+    .render_text = render_text,
     .shutdown = shutdown
 };
