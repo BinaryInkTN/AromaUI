@@ -2,7 +2,7 @@
 #define AROMA_NODE_H
 #include <stdint.h>
 
-#define AROMA_MAX_CHILD_NODES 4
+#define AROMA_MAX_CHILD_NODES 16
 #define AROMA_NODE_ID_INVALID 0
 
 typedef struct AromaNode AromaNode;

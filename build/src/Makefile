@@ -216,6 +216,78 @@ aroma_app.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/aroma_app.c.s
 .PHONY : aroma_app.c.s
 
+aroma_event.o: aroma_event.c.o
+.PHONY : aroma_event.o
+
+# target to build an object file
+aroma_event.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_event.c.o
+.PHONY : aroma_event.c.o
+
+aroma_event.i: aroma_event.c.i
+.PHONY : aroma_event.i
+
+# target to preprocess a source file
+aroma_event.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_event.c.i
+.PHONY : aroma_event.c.i
+
+aroma_event.s: aroma_event.c.s
+.PHONY : aroma_event.s
+
+# target to generate assembly for a file
+aroma_event.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_event.c.s
+.PHONY : aroma_event.c.s
+
+aroma_font.o: aroma_font.c.o
+.PHONY : aroma_font.o
+
+# target to build an object file
+aroma_font.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_font.c.o
+.PHONY : aroma_font.c.o
+
+aroma_font.i: aroma_font.c.i
+.PHONY : aroma_font.i
+
+# target to preprocess a source file
+aroma_font.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_font.c.i
+.PHONY : aroma_font.c.i
+
+aroma_font.s: aroma_font.c.s
+.PHONY : aroma_font.s
+
+# target to generate assembly for a file
+aroma_font.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_font.c.s
+.PHONY : aroma_font.c.s
+
+aroma_graphics_wrapper.o: aroma_graphics_wrapper.c.o
+.PHONY : aroma_graphics_wrapper.o
+
+# target to build an object file
+aroma_graphics_wrapper.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_graphics_wrapper.c.o
+.PHONY : aroma_graphics_wrapper.c.o
+
+aroma_graphics_wrapper.i: aroma_graphics_wrapper.c.i
+.PHONY : aroma_graphics_wrapper.i
+
+# target to preprocess a source file
+aroma_graphics_wrapper.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_graphics_wrapper.c.i
+.PHONY : aroma_graphics_wrapper.c.i
+
+aroma_graphics_wrapper.s: aroma_graphics_wrapper.c.s
+.PHONY : aroma_graphics_wrapper.s
+
+# target to generate assembly for a file
+aroma_graphics_wrapper.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_graphics_wrapper.c.s
+.PHONY : aroma_graphics_wrapper.c.s
+
 aroma_logger.o: aroma_logger.c.o
 .PHONY : aroma_logger.o
 
@@ -336,6 +408,30 @@ backends/graphics/aroma_graphics_gles3.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.s
 .PHONY : backends/graphics/aroma_graphics_gles3.c.s
 
+backends/graphics/utils/aroma_gles3_text.o: backends/graphics/utils/aroma_gles3_text.c.o
+.PHONY : backends/graphics/utils/aroma_gles3_text.o
+
+# target to build an object file
+backends/graphics/utils/aroma_gles3_text.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o
+.PHONY : backends/graphics/utils/aroma_gles3_text.c.o
+
+backends/graphics/utils/aroma_gles3_text.i: backends/graphics/utils/aroma_gles3_text.c.i
+.PHONY : backends/graphics/utils/aroma_gles3_text.i
+
+# target to preprocess a source file
+backends/graphics/utils/aroma_gles3_text.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.i
+.PHONY : backends/graphics/utils/aroma_gles3_text.c.i
+
+backends/graphics/utils/aroma_gles3_text.s: backends/graphics/utils/aroma_gles3_text.c.s
+.PHONY : backends/graphics/utils/aroma_gles3_text.s
+
+# target to generate assembly for a file
+backends/graphics/utils/aroma_gles3_text.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.s
+.PHONY : backends/graphics/utils/aroma_gles3_text.c.s
+
 backends/graphics/utils/helpers_gles3.o: backends/graphics/utils/helpers_gles3.c.o
 .PHONY : backends/graphics/utils/helpers_gles3.o
 
@@ -384,6 +480,102 @@ backends/platforms/aroma_platform_glps.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s
 .PHONY : backends/platforms/aroma_platform_glps.c.s
 
+widgets/aroma_button.o: widgets/aroma_button.c.o
+.PHONY : widgets/aroma_button.o
+
+# target to build an object file
+widgets/aroma_button.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o
+.PHONY : widgets/aroma_button.c.o
+
+widgets/aroma_button.i: widgets/aroma_button.c.i
+.PHONY : widgets/aroma_button.i
+
+# target to preprocess a source file
+widgets/aroma_button.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_button.c.i
+.PHONY : widgets/aroma_button.c.i
+
+widgets/aroma_button.s: widgets/aroma_button.c.s
+.PHONY : widgets/aroma_button.s
+
+# target to generate assembly for a file
+widgets/aroma_button.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_button.c.s
+.PHONY : widgets/aroma_button.c.s
+
+widgets/aroma_slider.o: widgets/aroma_slider.c.o
+.PHONY : widgets/aroma_slider.o
+
+# target to build an object file
+widgets/aroma_slider.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o
+.PHONY : widgets/aroma_slider.c.o
+
+widgets/aroma_slider.i: widgets/aroma_slider.c.i
+.PHONY : widgets/aroma_slider.i
+
+# target to preprocess a source file
+widgets/aroma_slider.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.i
+.PHONY : widgets/aroma_slider.c.i
+
+widgets/aroma_slider.s: widgets/aroma_slider.c.s
+.PHONY : widgets/aroma_slider.s
+
+# target to generate assembly for a file
+widgets/aroma_slider.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.s
+.PHONY : widgets/aroma_slider.c.s
+
+widgets/aroma_switch.o: widgets/aroma_switch.c.o
+.PHONY : widgets/aroma_switch.o
+
+# target to build an object file
+widgets/aroma_switch.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o
+.PHONY : widgets/aroma_switch.c.o
+
+widgets/aroma_switch.i: widgets/aroma_switch.c.i
+.PHONY : widgets/aroma_switch.i
+
+# target to preprocess a source file
+widgets/aroma_switch.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.i
+.PHONY : widgets/aroma_switch.c.i
+
+widgets/aroma_switch.s: widgets/aroma_switch.c.s
+.PHONY : widgets/aroma_switch.s
+
+# target to generate assembly for a file
+widgets/aroma_switch.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.s
+.PHONY : widgets/aroma_switch.c.s
+
+widgets/aroma_textbox.o: widgets/aroma_textbox.c.o
+.PHONY : widgets/aroma_textbox.o
+
+# target to build an object file
+widgets/aroma_textbox.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o
+.PHONY : widgets/aroma_textbox.c.o
+
+widgets/aroma_textbox.i: widgets/aroma_textbox.c.i
+.PHONY : widgets/aroma_textbox.i
+
+# target to preprocess a source file
+widgets/aroma_textbox.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.i
+.PHONY : widgets/aroma_textbox.c.i
+
+widgets/aroma_textbox.s: widgets/aroma_textbox.c.s
+.PHONY : widgets/aroma_textbox.s
+
+# target to generate assembly for a file
+widgets/aroma_textbox.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.s
+.PHONY : widgets/aroma_textbox.c.s
+
 widgets/aroma_window.o: widgets/aroma_window.c.o
 .PHONY : widgets/aroma_window.o
 
@@ -425,6 +617,15 @@ help:
 	@echo "... aroma_app.o"
 	@echo "... aroma_app.i"
 	@echo "... aroma_app.s"
+	@echo "... aroma_event.o"
+	@echo "... aroma_event.i"
+	@echo "... aroma_event.s"
+	@echo "... aroma_font.o"
+	@echo "... aroma_font.i"
+	@echo "... aroma_font.s"
+	@echo "... aroma_graphics_wrapper.o"
+	@echo "... aroma_graphics_wrapper.i"
+	@echo "... aroma_graphics_wrapper.s"
 	@echo "... aroma_logger.o"
 	@echo "... aroma_logger.i"
 	@echo "... aroma_logger.s"
@@ -440,12 +641,27 @@ help:
 	@echo "... backends/graphics/aroma_graphics_gles3.o"
 	@echo "... backends/graphics/aroma_graphics_gles3.i"
 	@echo "... backends/graphics/aroma_graphics_gles3.s"
+	@echo "... backends/graphics/utils/aroma_gles3_text.o"
+	@echo "... backends/graphics/utils/aroma_gles3_text.i"
+	@echo "... backends/graphics/utils/aroma_gles3_text.s"
 	@echo "... backends/graphics/utils/helpers_gles3.o"
 	@echo "... backends/graphics/utils/helpers_gles3.i"
 	@echo "... backends/graphics/utils/helpers_gles3.s"
 	@echo "... backends/platforms/aroma_platform_glps.o"
 	@echo "... backends/platforms/aroma_platform_glps.i"
 	@echo "... backends/platforms/aroma_platform_glps.s"
+	@echo "... widgets/aroma_button.o"
+	@echo "... widgets/aroma_button.i"
+	@echo "... widgets/aroma_button.s"
+	@echo "... widgets/aroma_slider.o"
+	@echo "... widgets/aroma_slider.i"
+	@echo "... widgets/aroma_slider.s"
+	@echo "... widgets/aroma_switch.o"
+	@echo "... widgets/aroma_switch.i"
+	@echo "... widgets/aroma_switch.s"
+	@echo "... widgets/aroma_textbox.o"
+	@echo "... widgets/aroma_textbox.i"
+	@echo "... widgets/aroma_textbox.s"
 	@echo "... widgets/aroma_window.o"
 	@echo "... widgets/aroma_window.i"
 	@echo "... widgets/aroma_window.s"

@@ -4,9 +4,11 @@ project(aroma LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_subdirectory(src)
-find_package(GLPS REQUIRED)
+find_package(freetype REQUIRED)
 
+add_subdirectory(src)
+
+find_package(GLPS REQUIRED)
 add_subdirectory(vendors/glps)
 target_link_libraries(aroma PRIVATE GLPS)
 

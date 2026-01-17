@@ -11,4 +11,12 @@ target_include_directories(aroma_tests
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+if(ENABLE_ASAN AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(aroma_tests PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
+    target_link_options(aroma_tests PRIVATE -fsanitize=address)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "AppleClang")
+        target_compile_options(aroma_tests PRIVATE -fsanitize-address-use-after-scope)
+    endif()
+endif()
+
 add_test(NAME aroma_tests COMMAND aroma_tests)
