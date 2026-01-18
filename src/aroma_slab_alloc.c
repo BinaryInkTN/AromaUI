@@ -3,13 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const size_t WIDGET_BUCKET_SIZES[AROMA_WIDGET_BUCKET_COUNT] = {32, 64, 128, 256, 512};
+static const size_t WIDGET_BUCKET_SIZES[AROMA_WIDGET_BUCKET_COUNT] = {32, 64, 128, 256, 512, 1024, 2048};
 AromaMemorySystem global_memory_system = {0};
 
 void __slab_pool_init(AromaSlabAllocator* pool, size_t object_size) {
     if (!pool) return;
     memset(pool, 0, sizeof(AromaSlabAllocator));
     pool->object_size = object_size;
+    
 }
 
 void __slab_pool_destroy(AromaSlabAllocator* pool) {

@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-// Common widget definitions and utilities for AromaUI.
 typedef struct AromaRect {
     int x;
     int y;

@@ -28,6 +28,7 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face);
 void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program, 
                             const char* text, float x, float y, float scale, 
                             uint32_t color, size_t window_id);
+float gles3_text_measure_text(const GLES3TextRenderer* renderer, const char* text, float scale);
 void gles3_text_renderer_cleanup(GLES3TextRenderer* renderer);
 
 #endif

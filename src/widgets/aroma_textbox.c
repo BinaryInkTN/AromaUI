@@ -3,11 +3,110 @@
 #include "aroma_event.h"
 #include "aroma_logger.h"
 #include "aroma_slab_alloc.h"
+#include "aroma_font.h"
+#include "aroma_ui.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#define AROMA_TEXTBOX_PADDING_X 8
+
+static uint64_t __textbox_now_ms(void)
+{
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
+        return 0;
+    }
+    return (uint64_t)ts.tv_sec * 1000ull + (uint64_t)(ts.tv_nsec / 1000000ull);
+}
+
+static bool __textbox_contains_point(const AromaTextbox* textbox, int x, int y)
+{
+    if (!textbox) {
+        return false;
+    }
+    return x >= textbox->rect.x && x <= textbox->rect.x + textbox->rect.width &&
+           y >= textbox->rect.y && y <= textbox->rect.y + textbox->rect.height;
+}
+
+static void __textbox_request_redraw(void* user_data)
+{
+    if (!user_data) {
+        return;
+    }
+    void (*on_redraw)(void*) = (void (*)(void*))user_data;
+    on_redraw(NULL);
+}
+
+static void __textbox_update_hover(AromaTextbox* textbox, AromaNode* node, bool hovered, void* user_data)
+{
+    if (!textbox || textbox->is_hovered == hovered) {
+        return;
+    }
+
+    textbox->is_hovered = hovered;
+    aroma_node_invalidate(node);
+    __textbox_request_redraw(user_data);
+}
+
+static float __textbox_measure_prefix(const AromaTextbox* textbox, AromaGraphicsInterface* gfx, size_t window_id, size_t length)
+{
+    if (!textbox || length == 0) {
+        return 0.0f;
+    }
+
+    if (!gfx || !gfx->measure_text || !textbox->font || window_id == SIZE_MAX) {
+        return (float)(length * 8);
+    }
+
+    if (length > textbox->text_length) {
+        length = textbox->text_length;
+    }
+
+    char buffer[AROMA_TEXTBOX_MAX_LENGTH];
+    memcpy(buffer, textbox->text, length);
+    buffer[length] = '\0';
+    return gfx->measure_text(window_id, textbox->font, buffer);
+}
+
+static size_t __textbox_cursor_from_click(const AromaTextbox* textbox, AromaGraphicsInterface* gfx,
+                                          size_t window_id, int mouse_x)
+{
+    if (!textbox) {
+        return 0;
+    }
+
+    int relative_x = mouse_x - (textbox->rect.x + AROMA_TEXTBOX_PADDING_X);
+    if (relative_x <= 0) {
+        return 0;
+    }
+
+    if (!gfx || !gfx->measure_text || !textbox->font || window_id == SIZE_MAX || textbox->text_length == 0) {
+        size_t approx = (size_t)(relative_x / 8);
+        if (approx > textbox->text_length) {
+            approx = textbox->text_length;
+        }
+        return approx;
+    }
+
+    float accumulated = 0.0f;
+    for (size_t i = 0; i < textbox->text_length; ++i) {
+        char glyph[2] = { textbox->text[i], '\0' };
+        float advance = gfx->measure_text(window_id, textbox->font, glyph);
+        float midpoint = accumulated + (advance * 0.5f);
+        if (relative_x < midpoint) {
+            return i;
+        }
+        accumulated += advance;
+        if (relative_x < accumulated) {
+            return i + 1;
+        }
+    }
+
+    return textbox->text_length;
+}
 
 AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int height)
 {
@@ -30,23 +129,25 @@ AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int 
     data->text_length = 0;
     data->cursor_pos = 0;
     data->is_focused = false;
+    data->is_hovered = false;
     data->show_cursor = true;
     data->cursor_blink_time = 0;
-    data->bg_color = 0xFFFFFF;          
-
-    data->text_color = 0x000000;        
-
-    data->border_color = 0xCCCCCC;      
-
-    data->cursor_color = 0x000000;      
-
-    data->placeholder_color = 0x999999; 
+    data->bg_color = 0xFFFFFF;
+    data->hover_bg_color = 0xF7F9FA;
+    data->focused_bg_color = 0xFFFFFF;
+    data->text_color = 0x000000;
+    data->border_color = 0xCCCCCC;
+    data->hover_border_color = 0x999999;
+    data->focused_border_color = 0x0078D7;
+    data->cursor_color = 0x000000;
+    data->placeholder_color = 0x999999;
 
     data->placeholder[0] = '\0';
     data->on_text_changed = NULL;
     data->on_focus_changed = NULL;
     data->user_data = NULL;
     data->font = NULL;
+    data->last_window_id = SIZE_MAX;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, data);
     if (!node) {
@@ -70,6 +171,8 @@ void aroma_textbox_set_placeholder(AromaNode* node, const char* placeholder)
     strncpy(data->placeholder, placeholder, AROMA_TEXTBOX_MAX_LENGTH - 1);
     data->placeholder[AROMA_TEXTBOX_MAX_LENGTH - 1] = '\0';
 
+    aroma_node_invalidate(node);
+
     LOG_INFO("Textbox placeholder set: %s\n", placeholder);
 }
 
@@ -84,10 +187,14 @@ void aroma_textbox_set_text(AromaNode* node, const char* text)
     data->text[AROMA_TEXTBOX_MAX_LENGTH - 1] = '\0';
     data->text_length = strlen(data->text);
     data->cursor_pos = data->text_length;
+    data->show_cursor = true;
+    data->cursor_blink_time = __textbox_now_ms();
 
     if (data->on_text_changed) {
         data->on_text_changed(node, data->text, data->user_data);
     }
+
+    aroma_node_invalidate(node);
 
     LOG_INFO("Textbox text set: %s\n", text);
 }
@@ -112,7 +219,15 @@ void aroma_textbox_set_focused(AromaNode* node, bool focused)
     if (data->is_focused != focused) {
         data->is_focused = focused;
         data->show_cursor = true;
-        data->cursor_blink_time = 0;
+        data->cursor_blink_time = __textbox_now_ms();
+
+        if (focused) {
+            aroma_ui_set_focused_node(node);
+        } else {
+            aroma_ui_clear_focused_node(node);
+        }
+
+        aroma_node_invalidate(node);
 
         if (data->on_focus_changed) {
             data->on_focus_changed(node, focused, data->user_data);
@@ -140,14 +255,22 @@ void aroma_textbox_on_click(AromaNode* node, int mouse_x, int mouse_y)
 
     AromaTextbox* data = (AromaTextbox*)node->node_widget_ptr;
 
-    if (mouse_x >= data->rect.x && mouse_x <= data->rect.x + data->rect.width &&
-        mouse_y >= data->rect.y && mouse_y <= data->rect.y + data->rect.height) {
-
+    bool inside = __textbox_contains_point(data, mouse_x, mouse_y);
+    if (inside) {
         aroma_textbox_set_focused(node, true);
 
-        data->cursor_pos = data->text_length;
-    } else {
+        AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+        size_t window_id = data->last_window_id;
+        size_t desired_cursor = __textbox_cursor_from_click(data, gfx, window_id, mouse_x);
+        if (desired_cursor > data->text_length) {
+            desired_cursor = data->text_length;
+        }
 
+        data->cursor_pos = desired_cursor;
+        data->show_cursor = true;
+        data->cursor_blink_time = __textbox_now_ms();
+        aroma_node_invalidate(node);
+    } else {
         aroma_textbox_set_focused(node, false);
     }
 }
@@ -173,10 +296,14 @@ void aroma_textbox_on_char(AromaNode* node, char character)
         data->text_length++;
         data->cursor_pos++;
         data->text[data->text_length] = '\0';
+        data->show_cursor = true;
+        data->cursor_blink_time = __textbox_now_ms();
 
         if (data->on_text_changed) {
             data->on_text_changed(node, data->text, data->user_data);
         }
+
+        aroma_node_invalidate(node);
     }
 }
 
@@ -199,10 +326,14 @@ void aroma_textbox_on_backspace(AromaNode* node)
                 data->text_length - data->cursor_pos);
         data->text_length--;
         data->text[data->text_length] = '\0';
+        data->show_cursor = true;
+        data->cursor_blink_time = __textbox_now_ms();
 
         if (data->on_text_changed) {
             data->on_text_changed(node, data->text, data->user_data);
         }
+
+        aroma_node_invalidate(node);
     }
 }
 
@@ -236,7 +367,7 @@ void aroma_textbox_set_on_focus_changed(AromaNode* node,
     LOG_INFO("Textbox on_focus_changed callback registered\n");
 }
 
-void aroma_textbox_set_font(AromaNode* node, void* font)
+void aroma_textbox_set_font(AromaNode* node, AromaFont* font)
 {
     if (!node || !node->node_widget_ptr) {
         return;
@@ -244,6 +375,7 @@ void aroma_textbox_set_font(AromaNode* node, void* font)
 
     AromaTextbox* data = (AromaTextbox*)node->node_widget_ptr;
     data->font = font;
+    aroma_node_invalidate(node);
 }
 
 void aroma_textbox_draw(AromaNode* node, size_t window_id)
@@ -258,45 +390,76 @@ void aroma_textbox_draw(AromaNode* node, size_t window_id)
         return;
     }
 
+    uint32_t fill_color = data->bg_color;
+    if (data->is_focused) {
+        fill_color = data->focused_bg_color;
+    } else if (data->is_hovered) {
+        fill_color = data->hover_bg_color;
+    }
+
+    uint32_t border_color = data->border_color;
+    if (data->is_focused) {
+        border_color = data->focused_border_color;
+    } else if (data->is_hovered) {
+        border_color = data->hover_border_color;
+    }
+
     gfx->fill_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height,
-                       data->bg_color, false, 0.0f);
+                        fill_color, false, 0.0f);
 
     gfx->draw_hollow_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height,
-                              data->border_color, 2, false, 0.0f);
+                               border_color, 2, false, 0.0f);
+
+    const int text_x = data->rect.x + AROMA_TEXTBOX_PADDING_X;
+    int line_height = data->font ? aroma_font_get_line_height(data->font) : (data->rect.height - 4);
+    if (line_height <= 0) {
+        line_height = data->rect.height - 4;
+    }
+    int ascender = data->font ? aroma_font_get_ascender(data->font) : (line_height - 2);
+    int baseline = data->rect.y + (data->rect.height - line_height) / 2 + ascender;
 
     if (gfx->render_text && data->font) {
         if (data->text_length > 0) {
-
-            gfx->render_text(window_id, data->font, data->text, 
-                           data->rect.x + 5, data->rect.y + 25, data->text_color);
+            gfx->render_text(window_id, data->font, data->text, text_x, baseline, data->text_color);
         } else if (data->placeholder[0] != '\0') {
-
-            gfx->render_text(window_id, data->font, data->placeholder, 
-                           data->rect.x + 5, data->rect.y + 25, data->placeholder_color);
+            gfx->render_text(window_id, data->font, data->placeholder, text_x, baseline, data->placeholder_color);
         }
     }
 
     if (data->is_focused) {
-
-        uint64_t current_time = (uint64_t)time(NULL) * 1000;  
-
+        uint64_t now = __textbox_now_ms();
         if (data->cursor_blink_time == 0) {
-            data->cursor_blink_time = current_time;
+            data->cursor_blink_time = now;
         }
 
-        uint64_t elapsed = current_time - data->cursor_blink_time;
-        data->show_cursor = (elapsed / AROMA_TEXTBOX_CURSOR_BLINK_RATE) % 2 == 0;
+        if (now != 0 && data->cursor_blink_time != 0 && now - data->cursor_blink_time >= AROMA_TEXTBOX_CURSOR_BLINK_RATE) {
+            data->cursor_blink_time = now;
+            data->show_cursor = !data->show_cursor;
+            aroma_node_invalidate(node);
+        }
 
         if (data->show_cursor) {
+            float prefix_width = __textbox_measure_prefix(data, gfx, window_id, data->cursor_pos);
+            int cursor_x = text_x + (int)(prefix_width + 0.5f);
+            int cursor_height = line_height;
+            if (cursor_height <= 0) {
+                cursor_height = data->rect.height - 4;
+            }
+            if (cursor_height < 2) {
+                cursor_height = 2;
+            }
+            int cursor_y = data->rect.y + (data->rect.height - cursor_height) / 2;
 
-            int cursor_x = data->rect.x + 5 + (data->cursor_pos * 8);  
+            if (cursor_x > data->rect.x + data->rect.width - 2) {
+                cursor_x = data->rect.x + data->rect.width - 2;
+            }
 
-            int cursor_y = data->rect.y + 5;
-            int cursor_height = data->rect.height - 10;
             gfx->fill_rectangle(window_id, cursor_x, cursor_y, 2, cursor_height,
-                               data->cursor_color, false, 0.0f);
+                                data->cursor_color, false, 0.0f);
         }
     }
+
+    data->last_window_id = window_id;
 }
 
 void aroma_textbox_destroy(AromaNode* node)
@@ -309,21 +472,41 @@ void aroma_textbox_destroy(AromaNode* node)
         aroma_widget_free(node->node_widget_ptr);
         node->node_widget_ptr = NULL;
     }
+
+    aroma_ui_clear_focused_node(node);
 }
 
 static bool __textbox_default_mouse_handler(AromaEvent* event, void* user_data)
 {
     if (!event || !event->target_node) return false;
 
+    AromaTextbox* textbox = (AromaTextbox*)event->target_node->node_widget_ptr;
+    if (!textbox) return false;
+
     switch (event->event_type) {
+        case EVENT_TYPE_MOUSE_ENTER:
+            __textbox_update_hover(textbox, event->target_node, true, user_data);
+            return true;
+        case EVENT_TYPE_MOUSE_EXIT:
+            __textbox_update_hover(textbox, event->target_node, false, user_data);
+            return false;
+        case EVENT_TYPE_MOUSE_MOVE:
+            {
+                bool inside = __textbox_contains_point(textbox, event->data.mouse.x, event->data.mouse.y);
+                __textbox_update_hover(textbox, event->target_node, inside, user_data);
+                return inside;
+            }
         case EVENT_TYPE_MOUSE_CLICK:
             aroma_textbox_on_click(event->target_node, 
                 event->data.mouse.x, event->data.mouse.y);
-            if (user_data) {
-                void (*on_redraw)(void*) = (void (*)(void*))user_data;
-                on_redraw(NULL);
-            }
+            __textbox_request_redraw(user_data);
             return true;
+        case EVENT_TYPE_MOUSE_RELEASE:
+            {
+                bool inside = __textbox_contains_point(textbox, event->data.mouse.x, event->data.mouse.y);
+                __textbox_update_hover(textbox, event->target_node, inside, user_data);
+                return inside;
+            }
         default:
             break;
     }
@@ -344,10 +527,47 @@ static bool __textbox_default_keyboard_handler(AromaEvent* event, void* user_dat
 
                 if (key_code == 8 || key_code == 127) {
                     aroma_textbox_on_backspace(event->target_node);
-                    if (user_data) {
-                        void (*on_redraw)(void*) = (void (*)(void*))user_data;
-                        on_redraw(NULL);
+                    __textbox_request_redraw(user_data);
+                    return true;
+                }
+
+                if (key_code == 0xFF51) {
+                    if (textbox->cursor_pos > 0) {
+                        textbox->cursor_pos--;
+                        textbox->show_cursor = true;
+                        textbox->cursor_blink_time = __textbox_now_ms();
+                        aroma_node_invalidate(event->target_node);
+                        __textbox_request_redraw(user_data);
                     }
+                    return true;
+                }
+
+                if (key_code == 0xFF53) {
+                    if (textbox->cursor_pos < textbox->text_length) {
+                        textbox->cursor_pos++;
+                        textbox->show_cursor = true;
+                        textbox->cursor_blink_time = __textbox_now_ms();
+                        aroma_node_invalidate(event->target_node);
+                        __textbox_request_redraw(user_data);
+                    }
+                    return true;
+                }
+
+                if (key_code == 0xFF50) {
+                    textbox->cursor_pos = 0;
+                    textbox->show_cursor = true;
+                    textbox->cursor_blink_time = __textbox_now_ms();
+                    aroma_node_invalidate(event->target_node);
+                    __textbox_request_redraw(user_data);
+                    return true;
+                }
+
+                if (key_code == 0xFF57) {
+                    textbox->cursor_pos = textbox->text_length;
+                    textbox->show_cursor = true;
+                    textbox->cursor_blink_time = __textbox_now_ms();
+                    aroma_node_invalidate(event->target_node);
+                    __textbox_request_redraw(user_data);
                     return true;
                 }
 
@@ -358,10 +578,7 @@ static bool __textbox_default_keyboard_handler(AromaEvent* event, void* user_dat
                 if (key_code >= 32 && key_code <= 126) {
                     char character = (char)(key_code & 0xFF);
                     aroma_textbox_on_char(event->target_node, character);
-                    if (user_data) {
-                        void (*on_redraw)(void*) = (void (*)(void*))user_data;
-                        on_redraw(NULL);
-                    }
+                    __textbox_request_redraw(user_data);
                     return true;
                 }
             }
@@ -384,6 +601,10 @@ bool aroma_textbox_setup_events(AromaNode* textbox_node,
     }
 
     aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_MOUSE_CLICK, __textbox_default_mouse_handler, (void*)on_redraw_callback, 100);
+    aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_MOUSE_RELEASE, __textbox_default_mouse_handler, (void*)on_redraw_callback, 100);
+    aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_MOUSE_MOVE, __textbox_default_mouse_handler, (void*)on_redraw_callback, 95);
+    aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_MOUSE_ENTER, __textbox_default_mouse_handler, (void*)on_redraw_callback, 95);
+    aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_MOUSE_EXIT, __textbox_default_mouse_handler, (void*)on_redraw_callback, 95);
 
     aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_KEY_PRESS, __textbox_default_keyboard_handler, (void*)on_redraw_callback, 100);
 

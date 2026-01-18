@@ -18,7 +18,6 @@ typedef struct AromaBackendABI {
 
 extern AromaBackendABI aroma_backend_abi;
 
-// GLES3 specific functions
 void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font);
 
 #endif
