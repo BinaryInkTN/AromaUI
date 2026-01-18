@@ -27,19 +27,18 @@ typedef struct
     mat4x4 projection;
     GLuint text_fragment_shader;
     GLuint text_vertex_shader;
-  
+
     unsigned int selected_color;
     bool is_running;
     size_t num_windows;
 
     GLES3TextRenderer text_renderers[256];
-    
+
     Glyph glyph_cache[128];
 
 } AromaGLES3Context;
 
 static AromaGLES3Context ctx = {0};
-
 
 int setup_shared_window_resources(void) 
 {  
@@ -78,7 +77,7 @@ int setup_shared_window_resources(void)
     GLuint shape_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(shape_fragment_shader, 1, &rectangle_fragment_shader, NULL);
     glCompileShader(shape_fragment_shader);
-    
+
     if(!check_shader_compile(shape_fragment_shader))
     {
         LOG_CRITICAL("Failed to compile shape fragment shader");
@@ -89,7 +88,7 @@ int setup_shared_window_resources(void)
     glAttachShader(ctx.shape_program, shape_vertex_shader);
     glAttachShader(ctx.shape_program, shape_fragment_shader);
     glLinkProgram(ctx.shape_program);
-    
+
     if(!check_shader_link(ctx.shape_program))
     {
         LOG_CRITICAL("Failed to link shape shader program");
@@ -143,25 +142,35 @@ int setup_separate_window_resources(size_t window_id)
     return 1;
 }
 
-
 void draw_rectangle(size_t window_id, int x, int y, int width, int height)
 {
-    // Stub implementation
+
 }
 
 void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint32_t color, bool isRounded, float cornerRadius) 
 {  
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (platform && platform->make_context_current) {
-        platform->make_context_current(window_id);
+    if (!platform || !platform->make_context_current || !platform->get_window_size) {
+        LOG_ERROR("Platform interface missing required functions for rectangle draw");
+        return;
     }
 
-    float ndc_x, ndc_y;
-    float ndc_width, ndc_height;
-    vec3 color_rgb;
+    platform->make_context_current(window_id);
 
-    convert_coords_to_ndc(window_id, &ndc_x, &ndc_y, x, y);
-    convert_dimension_to_ndc(window_id, &ndc_width, &ndc_height, width, height);
+    int window_width = 0;
+    int window_height = 0;
+    platform->get_window_size(window_id, &window_width, &window_height);
+    if (window_width <= 0 || window_height <= 0) {
+        LOG_WARNING("Skipping rectangle draw due to invalid window size (%d x %d)", window_width, window_height);
+        return;
+    }
+
+    glViewport(0, 0, window_width, window_height);
+
+    mat4x4 projection;
+    mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
+
+    vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
 
     Vertex vertices[6];
@@ -177,24 +186,30 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
     vertices[i].texCoord[1] = texCoords[i][1];
     }
 
-    vertices[0].pos[0] = ndc_x;
-    vertices[0].pos[1] = ndc_y;
-    vertices[1].pos[0] = ndc_x + ndc_width;
-    vertices[1].pos[1] = ndc_y;
-    vertices[2].pos[0] = ndc_x;
-    vertices[2].pos[1] = ndc_y + ndc_height;
+    float x0 = (float)x;
+    float y0 = (float)y;
+    float x1 = x0 + (float)width;
+    float y1 = y0 + (float)height;
 
-    vertices[3].pos[0] = ndc_x + ndc_width;
-    vertices[3].pos[1] = ndc_y;
-    vertices[4].pos[0] = ndc_x + ndc_width;
-    vertices[4].pos[1] = ndc_y + ndc_height;
-    vertices[5].pos[0] = ndc_x;
-    vertices[5].pos[1] = ndc_y + ndc_height;
+    vertices[0].pos[0] = x0;
+    vertices[0].pos[1] = y0;
+    vertices[1].pos[0] = x1;
+    vertices[1].pos[1] = y0;
+    vertices[2].pos[0] = x0;
+    vertices[2].pos[1] = y1;
+
+    vertices[3].pos[0] = x1;
+    vertices[3].pos[1] = y0;
+    vertices[4].pos[0] = x1;
+    vertices[4].pos[1] = y1;
+    vertices[5].pos[0] = x0;
+    vertices[5].pos[1] = y1;
 
     glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     glUseProgram(ctx.shape_program);
+    glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"), 1, GL_FALSE, (const GLfloat*)projection);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 0);
     glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), width, height);
     glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), cornerRadius);
@@ -225,7 +240,7 @@ static void shutdown(void)
             glDeleteProgram(ctx.text_programs[i]);
         }
     }
-    
+
     glDeleteProgram(ctx.shape_program);
     glDeleteShader(ctx.text_vertex_shader);
     glDeleteShader(ctx.text_fragment_shader);
@@ -236,8 +251,18 @@ static void shutdown(void)
 static void clear(size_t window_id, uint32_t color)
 {
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (platform && platform->make_context_current) {
-        platform->make_context_current(window_id);
+    if (!platform || !platform->make_context_current || !platform->get_window_size) {
+        LOG_ERROR("Platform interface missing required functions for clear");
+        return;
+    }
+
+    platform->make_context_current(window_id);
+
+    int window_width = 0;
+    int window_height = 0;
+    platform->get_window_size(window_id, &window_width, &window_height);
+    if (window_width > 0 && window_height > 0) {
+        glViewport(0, 0, window_width, window_height);
     }
 
     vec3 color_rgb;
@@ -253,37 +278,54 @@ static void render_text(size_t window_id, AromaFont* font, const char* text, int
     }
 
     GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
-    
+
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current) {
         platform->make_context_current(window_id);
     }
-    
+
     gles3_text_render_text(renderer, ctx.text_programs[window_id], text, 
                           (float)x, (float)y, 1.0f, color, window_id);
+}
+
+static float measure_text(size_t window_id, AromaFont* font, const char* text)
+{
+    if (!font || !text || window_id >= 256) {
+        return 0.0f;
+    }
+
+    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
+    if (renderer->glyph_count == 0) {
+        return 0.0f;
+    }
+
+    return gles3_text_measure_text(renderer, text, 1.0f);
 }
 
 static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height, 
                                   uint32_t color, int border_width, bool isRounded, float cornerRadius)
 {
     if (border_width <= 0) return;
-    
+
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current) {
         platform->make_context_current(window_id);
     }
 
-    // Draw border as filled rectangles: top, bottom, left, right
-    fill_rectangle(window_id, x, y, width, border_width, color, false, 0.0f);  // top
-    fill_rectangle(window_id, x, y + height - border_width, width, border_width, color, false, 0.0f);  // bottom
-    fill_rectangle(window_id, x, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  // left
-    fill_rectangle(window_id, x + width - border_width, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  // right
+    fill_rectangle(window_id, x, y, width, border_width, color, false, 0.0f);  
+
+    fill_rectangle(window_id, x, y + height - border_width, width, border_width, color, false, 0.0f);  
+
+    fill_rectangle(window_id, x, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  
+
+    fill_rectangle(window_id, x + width - border_width, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  
+
 }
 
 static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle, 
                      uint32_t color, int thickness)
 {
-    // Stub implementation
+
 }
 
 void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font)
@@ -291,23 +333,21 @@ void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font)
     if (!font || window_id >= 256) {
         return;
     }
-    
+
     GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
-    
+
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current) {
         platform->make_context_current(window_id);
     }
 
     FT_Face face = (FT_Face)aroma_font_get_face(font);
-    
+
     if (face) {
         gles3_text_renderer_load_font(renderer, face);
         LOG_INFO("Loaded font glyphs for window %zu\n", window_id);
     }
 }
-
-
 
 AromaGraphicsInterface aroma_graphics_gles3 = {
     .setup_shared_window_resources = setup_shared_window_resources,
@@ -318,5 +358,6 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .draw_hollow_rectangle = draw_hollow_rectangle,
     .draw_arc = draw_arc,
     .render_text = render_text,
+    .measure_text = measure_text,
     .shutdown = shutdown
 };

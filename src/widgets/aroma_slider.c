@@ -8,6 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void __slider_request_redraw(void* user_data)
+{
+    if (!user_data) {
+        return;
+    }
+    void (*on_redraw)(void*) = (void (*)(void*))user_data;
+    on_redraw(NULL);
+}
+
 AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int height, 
                                int min_value, int max_value, int initial_value)
 {
@@ -33,6 +42,7 @@ AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int h
     data->track_color = 0xCCCCCC;
     data->thumb_color = 0x0078D4;
     data->thumb_hover_color = 0x005A9C;
+    data->is_hovered = false;
     data->is_dragging = false;
     data->on_change = NULL;
     data->user_data = NULL;
@@ -66,6 +76,7 @@ void aroma_slider_set_value(AromaNode* node, int value)
         if (data->on_change) {
             data->on_change(node, data->user_data);
         }
+        aroma_node_invalidate(node);
     }
 }
 
@@ -103,8 +114,20 @@ void aroma_slider_on_click(AromaNode* node, int mouse_x, int mouse_y)
     if (mouse_x >= data->rect.x && mouse_x <= data->rect.x + data->rect.width &&
         mouse_y >= data->rect.y && mouse_y <= data->rect.y + data->rect.height) {
 
+        bool was_dragging = data->is_dragging;
         data->is_dragging = true;
 
+        bool state_changed = false;
+        if (!was_dragging) {
+            state_changed = true;
+        }
+        if (!data->is_hovered) {
+            data->is_hovered = true;
+            state_changed = true;
+        }
+        if (state_changed) {
+            aroma_node_invalidate(node);
+        }
         int click_offset = mouse_x - data->rect.x;
         int range = data->max_value - data->min_value;
         int new_value = data->min_value + (click_offset * range) / data->rect.width;
@@ -121,8 +144,19 @@ void aroma_slider_on_mouse_move(AromaNode* node, int mouse_x, int mouse_y, bool 
 
     AromaSlider* data = (AromaSlider*)node->node_widget_ptr;
 
-    if (!is_pressed) {
+    bool in_bounds = (mouse_x >= data->rect.x && mouse_x <= data->rect.x + data->rect.width &&
+                      mouse_y >= data->rect.y && mouse_y <= data->rect.y + data->rect.height);
+
+    bool pressed = is_pressed || data->is_dragging;
+
+    if (!pressed) {
+        bool previous_hover = data->is_hovered;
+        bool was_dragging = data->is_dragging;
+        data->is_hovered = in_bounds;
         data->is_dragging = false;
+        if (previous_hover != data->is_hovered || was_dragging) {
+            aroma_node_invalidate(node);
+        }
         return;
     }
 
@@ -147,7 +181,10 @@ void aroma_slider_on_mouse_release(AromaNode* node)
     }
 
     AromaSlider* data = (AromaSlider*)node->node_widget_ptr;
-    data->is_dragging = false;
+    if (data->is_dragging) {
+        data->is_dragging = false;
+        aroma_node_invalidate(node);
+    }
 }
 
 void aroma_slider_draw(AromaNode* node, size_t window_id)
@@ -171,8 +208,10 @@ void aroma_slider_draw(AromaNode* node, size_t window_id)
     int thumb_x = data->rect.x + (data->current_value - data->min_value) * data->rect.width / range;
     int thumb_size = 16;
 
+    uint32_t thumb_color = (data->is_dragging || data->is_hovered) ? data->thumb_hover_color : data->thumb_color;
+
     gfx->fill_rectangle(window_id, thumb_x - thumb_size/2, data->rect.y, thumb_size, data->rect.height,
-                       data->thumb_color, true, 2.0f);
+                       thumb_color, true, 2.0f);
 
     gfx->draw_hollow_rectangle(window_id, thumb_x - thumb_size/2, data->rect.y, thumb_size, data->rect.height,
                               0x333333, 1, true, 2.0f);
@@ -200,24 +239,30 @@ static bool __slider_default_mouse_handler(AromaEvent* event, void* user_data)
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_CLICK:
             aroma_slider_on_click(event->target_node, event->data.mouse.x, event->data.mouse.y);
-            if (user_data) {
-                void (*on_redraw)(void*) = (void (*)(void*))user_data;
-                on_redraw(NULL);
-            }
+            __slider_request_redraw(user_data);
             return true;
         case EVENT_TYPE_MOUSE_MOVE:
-            aroma_slider_on_mouse_move(event->target_node, event->data.mouse.x, event->data.mouse.y, true);
-            if (user_data) {
-                void (*on_redraw)(void*) = (void (*)(void*))user_data;
-                on_redraw(NULL);
-            }
+            aroma_slider_on_mouse_move(event->target_node, event->data.mouse.x, event->data.mouse.y, false);
+            __slider_request_redraw(user_data);
             return true;
         case EVENT_TYPE_MOUSE_RELEASE:
             aroma_slider_on_mouse_release(event->target_node);
-            if (user_data) {
-                void (*on_redraw)(void*) = (void (*)(void*))user_data;
-                on_redraw(NULL);
+            __slider_request_redraw(user_data);
+            return true;
+        case EVENT_TYPE_MOUSE_ENTER:
+            if (!slider->is_hovered) {
+                slider->is_hovered = true;
+                aroma_node_invalidate(event->target_node);
             }
+            __slider_request_redraw(user_data);
+            return true;
+        case EVENT_TYPE_MOUSE_EXIT:
+            if (slider->is_hovered || slider->is_dragging) {
+                slider->is_hovered = false;
+                slider->is_dragging = false;
+                aroma_node_invalidate(event->target_node);
+            }
+            __slider_request_redraw(user_data);
             return true;
         default:
             break;
@@ -229,9 +274,11 @@ bool aroma_slider_setup_events(AromaNode* slider_node, void (*on_redraw_callback
 {
     if (!slider_node) return false;
 
-    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_CLICK, __slider_default_mouse_handler, (void*)on_redraw_callback, 100);
-    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_MOVE, __slider_default_mouse_handler, (void*)on_redraw_callback, 100);
-    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_RELEASE, __slider_default_mouse_handler, (void*)on_redraw_callback, 100);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_CLICK, __slider_default_mouse_handler, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_RELEASE, __slider_default_mouse_handler, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_MOVE, __slider_default_mouse_handler, (void*)on_redraw_callback, 80);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_ENTER, __slider_default_mouse_handler, (void*)on_redraw_callback, 80);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_EXIT, __slider_default_mouse_handler, (void*)on_redraw_callback, 80);
 
     return true;
 }

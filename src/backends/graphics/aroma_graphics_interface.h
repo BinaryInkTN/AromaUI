@@ -14,7 +14,6 @@ typedef enum AromaGraphicsBackendType {
     GRAPHICS_BACKEND_STM_SPI
 } AromaGraphicsBackendType;
 
-
 typedef struct AromaGraphicsInterface {
     int (*setup_shared_window_resources)(void);
     int (*setup_separate_window_resources)(size_t window_id);
@@ -24,10 +23,10 @@ typedef struct AromaGraphicsInterface {
     void (*draw_hollow_rectangle)(size_t window_id, int x, int y, int width, int height, uint32_t color, int border_width, bool isRounded, float cornerRadius);
     void (*draw_arc)(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle, uint32_t color, int thickness);
     void (*render_text)(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color);
+    float (*measure_text)(size_t window_id, AromaFont* font, const char* text);
     void (*shutdown)(void);
 } AromaGraphicsInterface;
 
-// Graphics backend implementations
 extern AromaGraphicsInterface aroma_graphics_gles3;
 
 #endif

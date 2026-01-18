@@ -31,10 +31,11 @@ static const char *rectangle_vertex_shader =
     "layout(location = 0) in vec2 pos;\n"
     "layout(location = 1) in vec3 col;\n"
     "layout(location = 2) in vec2 texCoord;\n"
+    "uniform mat4 projection;\n"
     "out vec3 color;\n"
     "out vec2 TexCoord;\n"
     "void main() {\n"
-    "    gl_Position = vec4(pos, 0.0, 1.0);\n"
+    "    gl_Position = projection * vec4(pos, 0.0, 1.0);\n"
     "    color = col;\n"
     "    TexCoord = texCoord;\n"
     "}\n";

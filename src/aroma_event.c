@@ -1,493 +1,270 @@
 #include "aroma_event.h"
 #include "aroma_node.h"
+#include "aroma_common.h"
 #include "aroma_slab_alloc.h"
 #include "aroma_logger.h"
-#include "widgets/aroma_button.h"
+#include "widgets/aroma_dropdown.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 
 #define AROMA_MAX_LISTENERS_PER_NODE 16
-
 #define AROMA_MAX_EVENT_QUEUE 256
 
 typedef struct {
-    uint64_t node_id;                      
-
+    uint64_t node_id;
     AromaEventListener listeners[AROMA_MAX_LISTENERS_PER_NODE];
     uint32_t listener_count;
 } AromaNodeEventListeners;
 
 static struct {
     bool initialized;
-    AromaNodeEventListeners* listener_map;  
+    AromaNodeEventListeners* listener_map;
+    uint32_t map_capacity; 
 
-    uint32_t map_capacity;
+    uint32_t map_count;
     AromaEvent* event_queue[AROMA_MAX_EVENT_QUEUE];
     uint32_t queue_head;
     uint32_t queue_tail;
-    AromaNode* root_node;                    
-
+    AromaNode* root_node;
 } g_event_system = {0};
 
 static AromaEvent g_event_pool[AROMA_MAX_EVENT_QUEUE];
-static bool g_event_pool_used[AROMA_MAX_EVENT_QUEUE];
+static uint32_t g_event_free_list[AROMA_MAX_EVENT_QUEUE];
+static uint32_t g_event_free_head = 0;
+static uint32_t g_event_free_count = 0;
 
 static int last_mouse_x = -1;
 static int last_mouse_y = -1;
-static bool last_was_over_widget = false;
+static uint64_t last_hovered_node_id = 0;
 
-static AromaEvent* aroma_event_alloc(void)
-{
-    for (uint32_t i = 0; i < AROMA_MAX_EVENT_QUEUE; i++) {
-        if (!g_event_pool_used[i]) {
-            g_event_pool_used[i] = true;
-            memset(&g_event_pool[i], 0, sizeof(AromaEvent));
-            return &g_event_pool[i];
-        }
-    }
-    LOG_ERROR("Event pool exhausted");
-    return NULL;
+static inline uint32_t hash_node_id(uint64_t node_id, uint32_t capacity) {
+    uint32_t hash = (uint32_t)(node_id ^ (node_id >> 32));
+    return hash & (capacity - 1); 
 }
 
-static void aroma_event_free(AromaEvent* event)
-{
-    if (!event) return;
-    uintptr_t idx = (uintptr_t)(event - g_event_pool);
-    if (idx < AROMA_MAX_EVENT_QUEUE) {
-        g_event_pool_used[idx] = false;
-    }
-}
-
-static const char* event_type_names[] = {
-    "MOUSE_MOVE",
-    "MOUSE_CLICK",
-    "MOUSE_RELEASE",
-    "MOUSE_ENTER",
-    "MOUSE_EXIT",
-    "MOUSE_HOVER",
-    "MOUSE_DOUBLE_CLICK",
-    "KEY_PRESS",
-    "KEY_RELEASE",
-    "FOCUS_GAINED",
-    "FOCUS_LOST",
-    "CUSTOM"
-};
-
-static AromaNodeEventListeners* aroma_event_get_listeners(uint64_t node_id)
-{
-    if (!g_event_system.initialized) {
-        return NULL;
-    }
+static void expand_listener_map(void) {
+    uint32_t new_capacity = (g_event_system.map_capacity < 16) ? 16 : g_event_system.map_capacity * 2;
+    AromaNodeEventListeners* new_map = (AromaNodeEventListeners*)calloc(new_capacity, sizeof(AromaNodeEventListeners));
+    if (!new_map) return;
 
     for (uint32_t i = 0; i < g_event_system.map_capacity; i++) {
-        AromaNodeEventListeners* entry = &g_event_system.listener_map[i];
-
-        if (entry->node_id == node_id) {
-            return entry;
-        }
-
-        if (entry->node_id == 0) {
-            memset(entry, 0, sizeof(AromaNodeEventListeners));
-            entry->node_id = node_id;
-            return entry;
-        }
+        if (g_event_system.listener_map[i].node_id == 0) continue;
+        uint32_t idx = hash_node_id(g_event_system.listener_map[i].node_id, new_capacity);
+        while (new_map[idx].node_id != 0) idx = (idx + 1) & (new_capacity - 1);
+        new_map[idx] = g_event_system.listener_map[i];
     }
-
-    return NULL; 
-
+    free(g_event_system.listener_map);
+    g_event_system.listener_map = new_map;
+    g_event_system.map_capacity = new_capacity;
 }
 
-static AromaNodeEventListeners* aroma_event_find_listeners(uint64_t node_id)
-{
-    if (!g_event_system.initialized) {
-        return NULL;
+static AromaNodeEventListeners* aroma_event_get_listeners(uint64_t node_id) {
+    if (!g_event_system.initialized) return NULL;
+    if (g_event_system.map_count * 2 >= g_event_system.map_capacity) expand_listener_map();
+    uint32_t idx = hash_node_id(node_id, g_event_system.map_capacity);
+    while (g_event_system.listener_map[idx].node_id != 0) {
+        if (g_event_system.listener_map[idx].node_id == node_id) return &g_event_system.listener_map[idx];
+        idx = (idx + 1) & (g_event_system.map_capacity - 1);
     }
+    g_event_system.listener_map[idx].node_id = node_id;
+    g_event_system.map_count++;
+    return &g_event_system.listener_map[idx];
+}
 
-    for (uint32_t i = 0; i < g_event_system.map_capacity; i++) {
-        AromaNodeEventListeners* entry = &g_event_system.listener_map[i];
-        if (entry->node_id == node_id && entry->listener_count > 0) {
-            return entry;
-        }
+static AromaNodeEventListeners* aroma_event_find_listeners(uint64_t node_id) {
+    if (!g_event_system.initialized || g_event_system.map_count == 0) return NULL;
+    uint32_t idx = hash_node_id(node_id, g_event_system.map_capacity);
+    while (g_event_system.listener_map[idx].node_id != 0) {
+        if (g_event_system.listener_map[idx].node_id == node_id) return &g_event_system.listener_map[idx];
+        idx = (idx + 1) & (g_event_system.map_capacity - 1);
     }
     return NULL;
 }
 
-static bool aroma_event_propagate_up(AromaEvent* event)
-{
-    if (!event || !event->target_node) {
-        return false;
+static AromaEvent* aroma_event_alloc(void) {
+    if (g_event_free_count == 0) return NULL;
+    uint32_t idx = g_event_free_list[g_event_free_head];
+    g_event_free_head = (g_event_free_head + 1) % AROMA_MAX_EVENT_QUEUE;
+    g_event_free_count--;
+    memset(&g_event_pool[idx], 0, sizeof(AromaEvent));
+    return &g_event_pool[idx];
+}
+
+bool aroma_event_system_init(void) {
+    if (g_event_system.initialized) return true;
+    g_event_system.map_capacity = 32;
+    g_event_system.listener_map = (AromaNodeEventListeners*)calloc(g_event_system.map_capacity, sizeof(AromaNodeEventListeners));
+    for (uint32_t i = 0; i < AROMA_MAX_EVENT_QUEUE; i++) g_event_free_list[i] = i;
+    g_event_free_count = AROMA_MAX_EVENT_QUEUE;
+    g_event_system.initialized = (g_event_system.listener_map != NULL);
+    return g_event_system.initialized;
+}
+
+void aroma_event_system_shutdown(void) {
+    if (!g_event_system.initialized) return;
+    aroma_event_process_queue();
+    if (g_event_system.listener_map) free(g_event_system.listener_map);
+    memset(&g_event_system, 0, sizeof(g_event_system));
+}
+
+AromaNode* aroma_event_hit_test(AromaNode* node, int x, int y) {
+    if (!node) return NULL;
+
+    if (!node->parent_node) {
+        AromaNode* overlay_target = NULL;
+        if (aroma_dropdown_overlay_hit_test(x, y, &overlay_target)) {
+            return overlay_target;
+        }
     }
 
+    AromaNode* best = NULL;
+    int32_t best_z = INT32_MIN;
+
+    for (uint64_t i = 0; i < node->child_count; i++) {
+        AromaNode* hit = aroma_event_hit_test(node->child_nodes[i], x, y);
+        if (hit && hit->z_index >= best_z) {
+            best = hit;
+            best_z = hit->z_index;
+        }
+    }
+
+    if (node->node_type == NODE_TYPE_WIDGET && node->node_widget_ptr) {
+        AromaRect* r = (AromaRect*)node->node_widget_ptr;
+        if (x >= r->x && x < (r->x + r->width) && y >= r->y && y < (r->y + r->height)) {
+            if (node->z_index >= best_z) {
+                best = node;
+                best_z = node->z_index;
+            }
+        }
+    }
+
+    return best;
+}
+
+void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
+    if (!g_event_system.root_node) return;
+    AromaNode* target = aroma_event_hit_test(g_event_system.root_node, x, y);
+    uint64_t current_id = target ? target->node_id : 0;
+
+    if (current_id != last_hovered_node_id) {
+        if (last_hovered_node_id != 0) {
+            AromaNode* old = __find_node_by_id(g_event_system.root_node, last_hovered_node_id);
+            if (old) {
+                AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_EXIT, old->node_id, x, y, 0);
+                if (ev) { aroma_event_dispatch(ev); aroma_event_destroy(ev); }
+            }
+        }
+        if (target) {
+            AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_ENTER, target->node_id, x, y, 0);
+            if (ev) { aroma_event_dispatch(ev); aroma_event_destroy(ev); }
+        }
+        last_hovered_node_id = current_id;
+    }
+    last_mouse_x = x; last_mouse_y = y;
+}
+
+bool aroma_event_dispatch(AromaEvent* event) {
+    if (!event || !event->target_node) return false;
     AromaNode* current = event->target_node;
-    bool handled = false;
-    uint32_t depth = 0;
-    const uint32_t MAX_PROPAGATION_DEPTH = 1000; 
-
-    while (current && !event->consumed && depth < MAX_PROPAGATION_DEPTH) {
-
-        AromaNodeEventListeners* listeners = aroma_event_find_listeners(current->node_id);
-
-        if (listeners && listeners->listener_count > 0) {
-            for (uint32_t j = 0; j < listeners->listener_count; j++) {
-                AromaEventListener* listener = &listeners->listeners[j];
-                if (listener->event_type == event->event_type && listener->handler) {
-                    if (listener->handler(event, listener->user_data)) {
-                        handled = true;
-                        if (!event->consumed) {
-                            aroma_event_consume(event);
-                        }
-                    }
+    while (current && !event->consumed) {
+        AromaNodeEventListeners* ls = aroma_event_find_listeners(current->node_id);
+        if (ls) {
+            for (uint32_t i = 0; i < ls->listener_count; i++) {
+                if (ls->listeners[i].event_type == event->event_type) {
+                    if (ls->listeners[i].handler(event, ls->listeners[i].user_data)) return true;
                 }
-                if (event->consumed) break;
             }
         }
-
         current = current->parent_node;
-        depth++;
     }
-
-    if (depth >= MAX_PROPAGATION_DEPTH) {
-        LOG_WARNING("Event propagation exceeded max depth - possible circular reference");
-    }
-
-    return handled;
-}
-
-bool aroma_event_system_init(void)
-{
-    if (g_event_system.initialized) {
-        LOG_WARNING("Event system already initialized");
-        return true;
-    }
-
-    g_event_system.map_capacity = 256;
-    g_event_system.listener_map = (AromaNodeEventListeners*)calloc(
-        g_event_system.map_capacity, 
-        sizeof(AromaNodeEventListeners)
-    );
-
-    if (!g_event_system.listener_map) {
-        LOG_ERROR("Failed to allocate event listener map");
-        return false;
-    }
-
-    g_event_system.queue_head = 0;
-    g_event_system.queue_tail = 0;
-    g_event_system.root_node = NULL;
-    g_event_system.initialized = true;
-
-    LOG_INFO("Event system initialized (capacity: %u)", g_event_system.map_capacity);
-    return true;
-}
-
-void aroma_event_system_shutdown(void)
-{
-    if (!g_event_system.initialized) {
-        return;
-    }
-
-    while (g_event_system.queue_head != g_event_system.queue_tail) {
-        AromaEvent* event = g_event_system.event_queue[g_event_system.queue_head];
-        if (event) {
-            aroma_event_destroy(event);
-        }
-        g_event_system.queue_head = (g_event_system.queue_head + 1) % AROMA_MAX_EVENT_QUEUE;
-    }
-
-    if (g_event_system.listener_map) {
-        free(g_event_system.listener_map);
-        g_event_system.listener_map = NULL;
-    }
-
-    memset(g_event_pool_used, 0, sizeof(g_event_pool_used));
-
-    g_event_system.initialized = false;
-    LOG_INFO("Event system shutdown");
-}
-
-void aroma_event_set_root(AromaNode* root)
-{
-    g_event_system.root_node = root;
-}
-
-AromaNode* aroma_event_get_root(void)
-{
-    return g_event_system.root_node;
-}
-
-AromaEvent* aroma_event_create(AromaEventType event_type, uint64_t target_node_id)
-{
-    if (event_type >= EVENT_TYPE_COUNT) {
-        LOG_ERROR("Invalid event type: %d", event_type);
-        return NULL;
-    }
-
-    AromaEvent* event = aroma_event_alloc();
-    if (!event) {
-        return NULL;
-    }
-    event->event_type = event_type;
-    event->target_node_id = target_node_id;
-    event->target_node = g_event_system.root_node
-        ? __find_node_by_id(g_event_system.root_node, target_node_id)
-        : NULL;
-    clock_gettime(CLOCK_MONOTONIC, &event->timestamp);
-    event->consumed = false;
-
-    return event;
-}
-
-bool aroma_event_dispatch(AromaEvent* event)
-{
-    if (!event) {
-        return false;
-    }
-
-    if (!g_event_system.initialized) {
-        LOG_ERROR("Event system not initialized");
-        return false;
-    }
-
-    LOG_INFO("Dispatching event: %s to node %llu", 
-             aroma_event_type_name(event->event_type), event->target_node_id);
-
-    bool handled = aroma_event_propagate_up(event);
-
-    if (handled) {
-        LOG_INFO("Event consumed");
-    }
-
-    return handled;
-}
-
-bool aroma_event_queue(AromaEvent* event)
-{
-    if (!event || !g_event_system.initialized) {
-        return false;
-    }
-
-    uint32_t next_tail = (g_event_system.queue_tail + 1) % AROMA_MAX_EVENT_QUEUE;
-
-    if (next_tail == g_event_system.queue_head) {
-        LOG_ERROR("Event queue is full");
-        aroma_event_destroy(event); 
-
-        return false;
-    }
-
-    g_event_system.event_queue[g_event_system.queue_tail] = event;
-    g_event_system.queue_tail = next_tail;
-
-    LOG_INFO("Event queued: %s", aroma_event_type_name(event->event_type));
-    return true;
-}
-
-void aroma_event_process_queue(void)
-{
-    if (!g_event_system.initialized) {
-        return;
-    }
-
-    uint32_t iterations = 0;
-    const uint32_t MAX_ITERATIONS = AROMA_MAX_EVENT_QUEUE * 2; 
-
-    while (g_event_system.queue_head != g_event_system.queue_tail && iterations < MAX_ITERATIONS) {
-        AromaEvent* event = g_event_system.event_queue[g_event_system.queue_head];
-        g_event_system.queue_head = (g_event_system.queue_head + 1) % AROMA_MAX_EVENT_QUEUE;
-
-        if (event) {
-            aroma_event_dispatch(event);
-            aroma_event_destroy(event);
-        }
-        iterations++;
-    }
-
-    if (iterations >= MAX_ITERATIONS) {
-        LOG_WARNING("Event queue processing exceeded iteration limit - possible event loop");
-    }
-}
-
-bool aroma_event_subscribe(uint64_t node_id, AromaEventType event_type,
-                          AromaEventHandler handler, void* user_data, uint32_t priority)
-{
-    if (!g_event_system.initialized || !handler) {
-        LOG_ERROR("Event system not initialized or invalid handler");
-        return false;
-    }
-
-    if (event_type >= EVENT_TYPE_COUNT) {
-        LOG_ERROR("Invalid event type: %d", event_type);
-        return false;
-    }
-
-    AromaNodeEventListeners* listeners = aroma_event_get_listeners(node_id);
-    if (!listeners) {
-        LOG_ERROR("Failed to get/create listener list");
-        return false;
-    }
-
-    if (listeners->listener_count >= AROMA_MAX_LISTENERS_PER_NODE) {
-        LOG_WARNING("Node %llu reached maximum listeners", node_id);
-        return false;
-    }
-
-    uint32_t insert_pos = listeners->listener_count;
-    for (uint32_t i = 0; i < listeners->listener_count; i++) {
-        if (priority > listeners->listeners[i].priority) {
-            insert_pos = i;
-            break;
-        }
-    }
-
-    for (uint32_t i = listeners->listener_count; i > insert_pos; i--) {
-        listeners->listeners[i] = listeners->listeners[i - 1];
-    }
-
-    listeners->listeners[insert_pos].event_type = event_type;
-    listeners->listeners[insert_pos].handler = handler;
-    listeners->listeners[insert_pos].user_data = user_data;
-    listeners->listeners[insert_pos].priority = priority;
-    listeners->listener_count++;
-
-    LOG_INFO("Event listener registered: node=%llu, type=%s, priority=%u",
-             node_id, aroma_event_type_name(event_type), priority);
-
-    return true;
-}
-
-bool aroma_event_unsubscribe(uint64_t node_id, AromaEventType event_type,
-                            AromaEventHandler handler)
-{
-    if (!g_event_system.initialized) {
-        return false;
-    }
-
-    for (uint32_t i = 0; i < g_event_system.map_capacity; i++) {
-        AromaNodeEventListeners* listeners = &g_event_system.listener_map[i];
-        if (listeners->node_id != node_id) {
-            continue;
-        }
-
-        for (uint32_t j = 0; j < listeners->listener_count; j++) {
-            AromaEventListener* listener = &listeners->listeners[j];
-            if (listener->event_type == event_type && listener->handler == handler) {
-
-                for (uint32_t k = j; k < listeners->listener_count - 1; k++) {
-                    listeners->listeners[k] = listeners->listeners[k + 1];
-                }
-                listeners->listener_count--;
-
-                LOG_INFO("Event listener unregistered: node=%llu, type=%s", 
-                         (unsigned long long)node_id, aroma_event_type_name(event_type));
-                return true;
-            }
-        }
-    }
-
     return false;
 }
 
-AromaEvent* aroma_event_create_mouse(AromaEventType event_type, uint64_t target_node_id,
-                                    int x, int y, uint8_t button)
-{
-    AromaEvent* event = aroma_event_create(event_type, target_node_id);
-    if (!event) {
-        return NULL;
-    }
-
-    event->data.mouse.x = x;
-    event->data.mouse.y = y;
-    event->data.mouse.button = button;
-
-    return event;
+bool aroma_event_queue(AromaEvent* event) {
+    if (!event) return false;
+    uint32_t next_tail = (g_event_system.queue_tail + 1) % AROMA_MAX_EVENT_QUEUE;
+    if (next_tail == g_event_system.queue_head) { aroma_event_destroy(event); return false; }
+    g_event_system.event_queue[g_event_system.queue_tail] = event;
+    g_event_system.queue_tail = next_tail;
+    return true;
 }
 
-AromaEvent* aroma_event_create_key(AromaEventType event_type, uint64_t target_node_id,
-                                   uint32_t key_code, uint16_t modifiers)
-{
-    AromaEvent* event = aroma_event_create(event_type, target_node_id);
-    if (!event) {
-        return NULL;
-    }
-
-    event->data.key.key_code = key_code;
-    event->data.key.modifiers = modifiers;
-
-    return event;
-}
-
-AromaEvent* aroma_event_create_custom(uint64_t target_node_id, uint32_t custom_type,
-                                      void* data, void (*free_func)(void*))
-{
-    AromaEvent* event = aroma_event_create(EVENT_TYPE_CUSTOM, target_node_id);
-    if (!event) {
-        return NULL;
-    }
-
-    event->data.custom.custom_type = custom_type;
-    event->data.custom.data = data;
-    event->data.custom.free_data = free_func;
-
-    return event;
-}
-
-void aroma_event_destroy(AromaEvent* event)
-{
-    if (!event) {
-        return;
-    }
-
-    if (event->event_type == EVENT_TYPE_CUSTOM && event->data.custom.free_data) {
-        event->data.custom.free_data(event->data.custom.data);
-    }
-
-    aroma_event_free(event);
-}
-
-void aroma_event_consume(AromaEvent* event)
-{
-    if (event) {
-        event->consumed = true;
-        LOG_INFO("Event consumed");
+void aroma_event_process_queue(void) {
+    while (g_event_system.queue_head != g_event_system.queue_tail) {
+        AromaEvent* ev = g_event_system.event_queue[g_event_system.queue_head];
+        g_event_system.queue_head = (g_event_system.queue_head + 1) % AROMA_MAX_EVENT_QUEUE;
+        if (ev) { aroma_event_dispatch(ev); aroma_event_destroy(ev); }
     }
 }
 
-AromaNode* aroma_event_hit_test(AromaNode* root, int x, int y)
-{
-    if (!root) {
-        return NULL;
+bool aroma_event_subscribe(uint64_t node_id, AromaEventType type, AromaEventHandler h, void* data, uint32_t priority) {
+    AromaNodeEventListeners* ls = aroma_event_get_listeners(node_id);
+    if (!ls || ls->listener_count >= AROMA_MAX_LISTENERS_PER_NODE) return false;
+    uint32_t pos = ls->listener_count;
+    for (uint32_t i = 0; i < ls->listener_count; i++) {
+        if (priority > ls->listeners[i].priority) { pos = i; break; }
     }
+    for (uint32_t i = ls->listener_count; i > pos; i--) ls->listeners[i] = ls->listeners[i - 1];
+    ls->listeners[pos] = (AromaEventListener){type, h, data, priority};
+    ls->listener_count++;
+    return true;
+}
 
-    for (uint64_t i = root->child_count; i > 0; i--) {
-        AromaNode* child = root->child_nodes[i - 1];
-        if (!child) continue;
-
-        if (child->node_type == NODE_TYPE_WIDGET && child->node_widget_ptr) {
-            AromaButton* btn = (AromaButton*)child->node_widget_ptr;
-            bool in_bounds = (x >= btn->rect.x && x <= (btn->rect.x + btn->rect.width) &&
-                              y >= btn->rect.y && y <= (btn->rect.y + btn->rect.height));
-            if (in_bounds) {
-                return child;
-            }
-
-            continue;
-        }
-
-        AromaNode* hit = aroma_event_hit_test(child, x, y);
-        if (hit) {
-            return hit;
+bool aroma_event_unsubscribe(uint64_t node_id, AromaEventType type, AromaEventHandler h) {
+    AromaNodeEventListeners* ls = aroma_event_find_listeners(node_id);
+    if (!ls) return false;
+    for (uint32_t i = 0; i < ls->listener_count; i++) {
+        if (ls->listeners[i].event_type == type && ls->listeners[i].handler == h) {
+            for (uint32_t k = i; k < ls->listener_count - 1; k++) ls->listeners[k] = ls->listeners[k + 1];
+            ls->listener_count--;
+            return true;
         }
     }
-
-    return root;
+    return false;
 }
 
-const char* aroma_event_type_name(AromaEventType event_type)
-{
-    if (event_type < EVENT_TYPE_COUNT) {
-        return event_type_names[event_type];
-    }
-    return "UNKNOWN";
+AromaEvent* aroma_event_create_mouse(AromaEventType type, uint64_t id, int x, int y, uint8_t btn) {
+    AromaEvent* ev = aroma_event_alloc();
+    if (!ev) return NULL;
+    ev->event_type = type;
+    ev->target_node_id = id;
+    ev->target_node = __find_node_by_id(g_event_system.root_node, id);
+    ev->data.mouse.x = x; ev->data.mouse.y = y; ev->data.mouse.button = btn;
+    clock_gettime(CLOCK_MONOTONIC, &ev->timestamp);
+    return ev;
 }
 
+AromaEvent* aroma_event_create_key(AromaEventType type, uint64_t id, uint32_t code, uint16_t mods) {
+    AromaEvent* ev = aroma_event_alloc();
+    if (!ev) return NULL;
+    ev->event_type = type;
+    ev->target_node_id = id;
+    ev->target_node = __find_node_by_id(g_event_system.root_node, id);
+    ev->data.key.key_code = code; ev->data.key.modifiers = mods;
+    return ev;
+}
+
+AromaEvent* aroma_event_create_custom(uint64_t id, uint32_t type, void* data, void (*free_func)(void*)) {
+    AromaEvent* ev = aroma_event_alloc();
+    if (!ev) return NULL;
+    ev->event_type = EVENT_TYPE_CUSTOM;
+    ev->target_node_id = id;
+    ev->target_node = __find_node_by_id(g_event_system.root_node, id);
+    ev->data.custom.custom_type = type; ev->data.custom.data = data; ev->data.custom.free_data = free_func;
+    return ev;
+}
+
+void aroma_event_destroy(AromaEvent* event) {
+    if (!event) return;
+    if (event->event_type == EVENT_TYPE_CUSTOM && event->data.custom.free_data) event->data.custom.free_data(event->data.custom.data);
+    uintptr_t idx = (uintptr_t)(event - g_event_pool);
+    uint32_t tail = (g_event_free_head + g_event_free_count) % AROMA_MAX_EVENT_QUEUE;
+    g_event_free_list[tail] = (uint32_t)idx;
+    g_event_free_count++;
+}
+
+void aroma_event_set_root(AromaNode* root) { g_event_system.root_node = root; }
+AromaNode* aroma_event_get_root(void) { return g_event_system.root_node; }
+void aroma_event_consume(AromaEvent* ev) { if (ev) ev->consumed = true; }

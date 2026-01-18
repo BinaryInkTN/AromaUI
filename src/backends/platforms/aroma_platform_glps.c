@@ -1,22 +1,20 @@
 #include "aroma_platform_interface.h"
 #include <GLPS/glps_window_manager.h>
+#include <stdbool.h>
+#include <ctype.h>
 #include "aroma_logger.h"
 #include "aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "aroma_event.h"
 #include "aroma_node.h"
+#include "aroma_ui.h"
 
 static glps_WindowManager *wm = NULL;
 static size_t primary_window_id = 0;
 static double last_mouse_x = 0.0;
 static double last_mouse_y = 0.0;
-static uint64_t last_hovered_node_id = 0;
-
-#define MOUSE_MOVE_MIN_DISTANCE 80  
-
-static double last_queued_mouse_x = 0.0;
-static double last_queued_mouse_y = 0.0;
-static uint32_t pending_mouse_move_event = 0;  
+static bool mouse_button_down = false;
+static bool capslock_active = false;
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
@@ -27,7 +25,6 @@ static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_
 
     AromaNode* target = aroma_event_hit_test(root, (int)mouse_x, (int)mouse_y);
     uint64_t target_id = target ? target->node_id : root->node_id;
-    bool target_is_button = target && target->node_type == NODE_TYPE_WIDGET;
 
     AromaEvent* event = aroma_event_create_mouse(type, target_id, (int)mouse_x, (int)mouse_y, button);
     if (!event) {
@@ -37,35 +34,22 @@ static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_
     event->data.mouse.delta_x = (int)(mouse_x - last_mouse_x);
     event->data.mouse.delta_y = (int)(mouse_y - last_mouse_y);
 
-    bool queued = aroma_event_queue(event);
-
-    if (type == EVENT_TYPE_MOUSE_MOVE && queued) {
-        if (last_hovered_node_id != 0 && last_hovered_node_id != target_id && !target_is_button) {
-
-            AromaEvent* exit_event = aroma_event_create_mouse(EVENT_TYPE_MOUSE_MOVE, last_hovered_node_id,
-                (int)mouse_x, (int)mouse_y, button);
-            if (exit_event) {
-                exit_event->data.mouse.delta_x = event->data.mouse.delta_x;
-                exit_event->data.mouse.delta_y = event->data.mouse.delta_y;
-                aroma_event_queue(exit_event);
-            }
-            last_hovered_node_id = 0;
-        } else if (target_is_button) {
-            last_hovered_node_id = target_id;
-        }
-    }
-
-    return queued;
+    return aroma_event_queue(event);
 }
 
-static bool queue_key_event(AromaEventType type, uint32_t key_value)
+static bool queue_key_event(AromaEventType type, uint32_t key_value, uint16_t modifiers)
 {
     AromaNode* root = aroma_event_get_root();
     if (!root) {
         return false;
     }
 
-    AromaEvent* event = aroma_event_create_key(type, root->node_id, key_value, 0);
+    AromaNode* target = aroma_ui_get_focused_node();
+    if (!target) {
+        target = root;
+    }
+
+    AromaEvent* event = aroma_event_create_key(type, target->node_id, key_value, modifiers);
     if (!event) {
         return false;
     }
@@ -77,15 +61,12 @@ static void glps_mouse_move_callback(size_t window_id, double mouse_x, double mo
 {
     (void)window_id;
     (void)data;
+    bool moved = (mouse_x != last_mouse_x) || (mouse_y != last_mouse_y);
 
-    double dx = mouse_x - last_queued_mouse_x;
-    double dy = mouse_y - last_queued_mouse_y;
-    double distance = (dx * dx) + (dy * dy);  
+    aroma_event_handle_pointer_move((int)mouse_x, (int)mouse_y, mouse_button_down);
 
-    if (distance >= (MOUSE_MOVE_MIN_DISTANCE * MOUSE_MOVE_MIN_DISTANCE)) {
-
-        last_queued_mouse_x = mouse_x;
-        last_queued_mouse_y = mouse_y;
+    if (moved) {
+        queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, mouse_x, mouse_y, 0);
     }
 
     last_mouse_x = mouse_x;
@@ -97,8 +78,13 @@ static void glps_mouse_click_callback(size_t window_id, bool state, void *data)
     (void)window_id;
     (void)data;
 
+    mouse_button_down = state;
     AromaEventType type = state ? EVENT_TYPE_MOUSE_CLICK : EVENT_TYPE_MOUSE_RELEASE;
     queue_mouse_event(type, last_mouse_x, last_mouse_y, 0);
+
+    if (!state) {
+        aroma_event_handle_pointer_move((int)last_mouse_x, (int)last_mouse_y, false);
+    }
 }
 
 static void glps_keyboard_callback(size_t window_id, bool state, const char *value,
@@ -109,17 +95,35 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
 
     (void)data;
 
+    if (state && keycode == 0xFFE5) { 
+        capslock_active = !capslock_active;
+    }
+
     uint32_t key_value = 0;
+    bool has_char = false;
     if (value && value[0] != '\0') {
 
         key_value = (unsigned char)value[0];
+        has_char = true;
     } else {
 
         key_value = (uint32_t)keycode;
     }
 
+    uint16_t modifiers = 0;
+    if (capslock_active) {
+        modifiers |= AROMA_KEY_MOD_CAPSLOCK;
+    }
+
+    if (has_char && (modifiers & AROMA_KEY_MOD_CAPSLOCK)) {
+        if (key_value >= 'a' && key_value <= 'z') {
+            key_value = (uint32_t)toupper((int)key_value);
+        }
+    } else {
+    }
+
     AromaEventType type = state ? EVENT_TYPE_KEY_PRESS : EVENT_TYPE_KEY_RELEASE;
-    queue_key_event(type, key_value);
+    queue_key_event(type, key_value, modifiers);
 }
 
 int initialize()
