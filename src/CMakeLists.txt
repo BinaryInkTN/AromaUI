@@ -1,14 +1,16 @@
 option(ENABLE_ASAN "Enable AddressSanitizer for debugging" OFF)
 
 add_library(aroma
-    aroma_ui_impl.c
-    aroma_logger.c
-    aroma_node.c
-    aroma_slab_alloc.c
-    aroma_event.c
-    aroma_font.c
-    aroma_graphics_wrapper.c
-    aroma_style.c
+    core/aroma_ui_impl.c
+    core/aroma_logger.c
+    core/aroma_node.c
+    core/aroma_slab_alloc.c
+    core/aroma_event.c
+    core/aroma_font.c
+    core/aroma_graphics_wrapper.c
+    core/aroma_style.c
+    core/aroma_time.c
+    core/aroma_timer.c
     backends/platforms/aroma_platform_glps.c
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
@@ -21,6 +23,23 @@ add_library(aroma
     widgets/aroma_switch.c
     widgets/aroma_textbox.c
     widgets/aroma_dropdown.c
+    widgets/aroma_checkbox.c
+    widgets/aroma_radiobutton.c
+    widgets/aroma_progressbar.c
+    widgets/aroma_label.c
+    widgets/aroma_divider.c
+    widgets/aroma_iconbutton.c
+    widgets/aroma_dialog.c
+    widgets/aroma_listview.c
+    widgets/aroma_menu.c
+    widgets/aroma_tooltip.c
+    widgets/aroma_card.c
+    widgets/aroma_chip.c
+    widgets/aroma_fab.c
+    widgets/aroma_snackbar.c
+    widgets/aroma_tabs.c
+    widgets/aroma_sidebar.c
+    widgets/aroma_debug_overlay.c
 )
 
 target_include_directories(aroma
@@ -56,11 +75,3 @@ if(ENABLE_ASAN)
     endif()
 endif()
 
-add_executable(aroma_app aroma_app.c)
-target_link_libraries(aroma_app PRIVATE aroma)
-target_include_directories(aroma_app PRIVATE ${FREETYPE_INCLUDE_DIRS})
-
-if(ENABLE_ASAN AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-
-    target_link_options(aroma_app PRIVATE -fsanitize=address)
-endif()

@@ -1,5 +1,5 @@
 #include "helpers_gles3.h"
-#include "aroma_logger.h"
+#include "core/aroma_logger.h"
 #include "aroma_abi.h"
 
 bool check_shader_compile(GLuint shader)

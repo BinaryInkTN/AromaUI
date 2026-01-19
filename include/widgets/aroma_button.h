@@ -4,11 +4,14 @@
 #include "aroma_common.h"
 #include "aroma_node.h"
 #include "aroma_font.h"
+#include "aroma_logger.h"
+#include "aroma_style.h"
 #include <stdbool.h>
+#include <string.h>
+
+typedef struct AromaWindow AromaWindow;
 
 #define AROMA_BUTTON_LABEL_MAX 64
-
-struct AromaStyle;
 
 typedef enum AromaButtonState {
     BUTTON_STATE_IDLE,
@@ -51,5 +54,82 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id);
 void aroma_button_destroy(AromaNode* button_node);
 
 bool aroma_button_setup_events(AromaNode* button_node, void (*on_redraw_callback)(void*), void* user_data);
+
+void aroma_ui_request_redraw(void* user_data);
+
+static inline AromaButton* aroma_ui_create_button(AromaWindow* parent, const char* label,
+                                     int x, int y, int width, int height) {
+    if (!parent || !label) {
+        LOG_ERROR("Invalid button parameters");
+        return NULL;
+    }
+
+    AromaNode* parent_node = (AromaNode*)parent;
+    AromaNode* button = aroma_button_create(parent_node, label, x, y, width, height);
+
+    if (!button) {
+        LOG_ERROR("Failed to create button");
+        return NULL;
+    }
+
+    aroma_button_setup_events(button, aroma_ui_request_redraw, NULL);
+    aroma_node_invalidate(button);
+    LOG_INFO("Button created: label='%s'", label);
+    return (AromaButton*)button;
+}
+
+static inline void aroma_ui_on_button_click(AromaButton* button,
+                               bool (*handler)(AromaButton*, void*),
+                               void* user_data) {
+    if (!button) return;
+
+    AromaNode* button_node = (AromaNode*)button;
+    aroma_button_set_on_click(button_node, (bool (*)(AromaNode*, void*))handler, user_data);
+    LOG_INFO("Button click handler registered");
+}
+
+static inline void aroma_ui_button_set_label(AromaButton* button, const char* label) {
+    if (!button || !label) return;
+
+    AromaNode* button_node = (AromaNode*)button;
+    struct AromaButton* button_data = (struct AromaButton*)button_node->node_widget_ptr;
+    if (button_data) {
+        strncpy(button_data->label, label, AROMA_BUTTON_LABEL_MAX - 1);
+        button_data->label[AROMA_BUTTON_LABEL_MAX - 1] = '\0';
+        aroma_node_invalidate(button_node);
+    }
+}
+
+static inline void aroma_ui_button_set_enabled(AromaButton* button, bool enabled) {
+    if (!button) return;
+
+    AromaNode* button_node = (AromaNode*)button;
+    struct AromaButton* button_data = (struct AromaButton*)button_node->node_widget_ptr;
+    if (button_data) {
+        if (!enabled) {
+            button_data->idle_color = aroma_color_rgb(200, 200, 200);
+        }
+        aroma_node_invalidate(button_node);
+    }
+}
+
+static inline void aroma_ui_button_set_style(AromaButton* button, const AromaStyle* style) {
+    if (!button || !style) return;
+
+    AromaNode* button_node = (AromaNode*)button;
+    struct AromaButton* button_data = (struct AromaButton*)button_node->node_widget_ptr;
+    if (button_data) {
+        button_data->idle_color = style->idle_color;
+        button_data->hover_color = style->hover_color;
+        button_data->pressed_color = style->active_color;
+        button_data->text_color = style->text_color;
+        aroma_node_invalidate(button_node);
+    }
+}
+
+static inline void aroma_ui_destroy_button(AromaButton* button) {
+    if (!button) return;
+    aroma_button_destroy((AromaNode*)button);
+}
 
 #endif

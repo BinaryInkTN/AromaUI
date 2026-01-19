@@ -1,6 +1,6 @@
 #include "aroma_gles3_text.h"
 #include "helpers_gles3.h"
-#include "aroma_logger.h"
+#include "core/aroma_logger.h"
 #include "aroma_abi.h"
 #include <string.h>
 #include <stdlib.h>
@@ -190,17 +190,7 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    if (glyphs_rendered > 0) {
-        static uint64_t last_log_ns = 0;
-        struct timespec ts;
-        if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-            uint64_t now_ns = (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
-            if (now_ns - last_log_ns > 1000000000ull) { 
-                LOG_INFO("Rendered %d glyphs for text: %s", glyphs_rendered, text);
-                last_log_ns = now_ns;
-            }
-        }
-    }
+    (void)glyphs_rendered;
 }
 
 float gles3_text_measure_text(const GLES3TextRenderer* renderer, const char* text, float scale) {

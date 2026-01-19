@@ -1,6 +1,6 @@
 #include "widgets/aroma_window.h"
-#include "aroma_node.h"
-#include "aroma_slab_alloc.h"
+#include "core/aroma_node.h"
+#include "core/aroma_slab_alloc.h"
 #include "backends/aroma_abi.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include <stdlib.h>

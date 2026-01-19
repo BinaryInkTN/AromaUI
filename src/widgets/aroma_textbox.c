@@ -1,10 +1,11 @@
 #include "widgets/aroma_textbox.h"
-#include "aroma_common.h"
-#include "aroma_event.h"
-#include "aroma_logger.h"
-#include "aroma_slab_alloc.h"
-#include "aroma_font.h"
+#include "core/aroma_common.h"
+#include "core/aroma_event.h"
+#include "core/aroma_logger.h"
+#include "core/aroma_slab_alloc.h"
+#include "core/aroma_font.h"
 #include "aroma_ui.h"
+#include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
@@ -133,12 +134,13 @@ AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int 
     data->show_cursor = true;
     data->cursor_blink_time = 0;
     data->bg_color = 0xFFFFFF;
-    data->hover_bg_color = 0xF7F9FA;
-    data->focused_bg_color = 0xFFFFFF;
-    data->text_color = 0x000000;
-    data->border_color = 0xCCCCCC;
-    data->hover_border_color = 0x999999;
-    data->focused_border_color = 0x0078D7;
+    AromaTheme theme = aroma_theme_get_global();
+    data->hover_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f);
+    data->focused_bg_color = theme.colors.surface;
+    data->text_color = theme.colors.text_primary;
+    data->border_color = theme.colors.border;
+    data->hover_border_color = aroma_color_adjust(theme.colors.border, 0.06f);
+    data->focused_border_color = theme.colors.primary;
     data->cursor_color = 0x000000;
     data->placeholder_color = 0x999999;
 
@@ -383,6 +385,7 @@ void aroma_textbox_draw(AromaNode* node, size_t window_id)
     if (!node || !node->node_widget_ptr) {
         return;
     }
+    if (aroma_node_is_hidden(node)) return;
 
     AromaTextbox* data = (AromaTextbox*)node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
@@ -405,10 +408,10 @@ void aroma_textbox_draw(AromaNode* node, size_t window_id)
     }
 
     gfx->fill_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height,
-                        fill_color, false, 0.0f);
+                        fill_color, true, 4.0f);  // MD3 extra-small corner
 
     gfx->draw_hollow_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height,
-                               border_color, 2, false, 0.0f);
+                               border_color, data->is_focused ? 2 : 1, true, 4.0f);
 
     const int text_x = data->rect.x + AROMA_TEXTBOX_PADDING_X;
     int line_height = data->font ? aroma_font_get_line_height(data->font) : (data->rect.height - 4);
@@ -418,12 +421,40 @@ void aroma_textbox_draw(AromaNode* node, size_t window_id)
     int ascender = data->font ? aroma_font_get_ascender(data->font) : (line_height - 2);
     int baseline = data->rect.y + (data->rect.height - line_height) / 2 + ascender;
 
-    if (gfx->render_text && data->font) {
-        if (data->text_length > 0) {
-            gfx->render_text(window_id, data->font, data->text, text_x, baseline, data->text_color);
-        } else if (data->placeholder[0] != '\0') {
-            gfx->render_text(window_id, data->font, data->placeholder, text_x, baseline, data->placeholder_color);
+    if (data->font && gfx->render_text) {
+        const char* text = data->text;
+        uint32_t text_color = data->text_color;
+        if (!text || text[0] == '\0') {
+            text = data->placeholder;
+            text_color = data->placeholder_color;
         }
+
+        char display_text[AROMA_TEXTBOX_MAX_LENGTH];
+        strncpy(display_text, text ? text : "", sizeof(display_text) - 1);
+        display_text[sizeof(display_text) - 1] = '\0';
+
+        int available_width = data->rect.width - (AROMA_TEXTBOX_PADDING_X * 2);
+        if (available_width < 0) available_width = 0;
+
+        if (gfx->measure_text && available_width > 0) {
+            float full_width = gfx->measure_text(window_id, data->font, display_text);
+            if (full_width > (float)available_width) {
+                const char* ellipsis = "…";
+                float ellipsis_width = gfx->measure_text(window_id, data->font, ellipsis);
+                size_t len = strlen(display_text);
+                while (len > 0) {
+                    display_text[len - 1] = '\0';
+                    float w = gfx->measure_text(window_id, data->font, display_text);
+                    if (w + ellipsis_width <= (float)available_width) {
+                        strncat(display_text, ellipsis, sizeof(display_text) - strlen(display_text) - 1);
+                        break;
+                    }
+                    len--;
+                }
+            }
+        }
+
+        gfx->render_text(window_id, data->font, display_text, text_x, data->rect.y + line_height, text_color);
     }
 
     if (data->is_focused) {

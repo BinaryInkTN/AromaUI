@@ -1,12 +1,12 @@
-#include "aroma_common.h"
-#include "aroma_node.h"
-#include "aroma_event.h"
+#include "core/aroma_common.h"
+#include "core/aroma_node.h"
+#include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "widgets/aroma_button.h"
-#include "aroma_style.h"
-#include "aroma_slab_alloc.h"
-#include "aroma_logger.h"
+#include "core/aroma_style.h"
+#include "core/aroma_slab_alloc.h"
+#include "core/aroma_logger.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -75,13 +75,11 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->label[AROMA_BUTTON_LABEL_MAX - 1] = '\0';
 
     button->state = BUTTON_STATE_IDLE;
-    button->idle_color = 0x0078D4;      
-
-    button->hover_color = 0x107C10;     
-
-    button->pressed_color = 0x004B50;   
-
-    button->text_color = 0xFFFFFF;      
+    AromaTheme theme = aroma_theme_get_global();
+    button->idle_color = theme.colors.primary;
+    button->hover_color = theme.colors.primary_light;
+    button->pressed_color = theme.colors.primary_dark;
+    button->text_color = theme.colors.surface;
     button->font = NULL;
 
     button->on_click = NULL;
@@ -108,6 +106,7 @@ void aroma_button_set_on_click(AromaNode* button_node, bool (*on_click)(AromaNod
         LOG_ERROR("Button widget pointer is NULL");
         return;
     }
+    if (aroma_node_is_hidden(button_node)) return;
 
     button->on_click = on_click;
     button->user_data = user_data;
@@ -273,7 +272,38 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         return;
     }
 
-    uint32_t button_color = aroma_button_get_color(button);
+    // Material Design 3 Filled Button style
+    uint32_t button_color;
+    uint32_t text_color;
+    
+    switch (button->state) {
+        case BUTTON_STATE_PRESSED:
+            button_color = 0x4F378B;  // MD3 Primary pressed (darker)
+            text_color = 0xFFFFFF;     // White text
+            break;
+        case BUTTON_STATE_HOVER:
+            button_color = 0x7965B3;  // MD3 Primary hover (lighter)
+            text_color = 0xFFFFFF;     // White text
+            break;
+        default:  // IDLE or RELEASED
+            button_color = 0x6750A4;  // MD3 Primary
+            text_color = 0xFFFFFF;     // White text
+            break;
+    }
+
+    // MD3 Elevation 1 - subtle shadow for depth
+    gfx->fill_rectangle(
+        window_id,
+        button->rect.x + 1,
+        button->rect.y + 2,
+        button->rect.width,
+        button->rect.height,
+        0xE0E0E0,  // Shadow
+        true,
+        20.0f  // MD3 full corner (20dp)
+    );
+
+    // Draw filled button
     gfx->fill_rectangle(
         window_id,
         button->rect.x,
@@ -281,24 +311,12 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         button->rect.width,
         button->rect.height,
         button_color,
-        true,  
-
-        4.0f   
-
+        true,
+        20.0f  // MD3 full corner
     );
 
-    uint32_t border_color = 0x000000;
-    gfx->draw_hollow_rectangle(
-        window_id,
-        button->rect.x,
-        button->rect.y,
-        button->rect.width,
-        button->rect.height,
-        border_color,
-        1.0f,      
-        true,   
-        4.0f    
-    );
+    // Update button text color
+    button->text_color = text_color;
 
     if (gfx->render_text && button->font && button->label[0] != '\0')
     {
@@ -323,7 +341,6 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         gfx->render_text(window_id, button->font, button->label, text_x, baseline, button->text_color);
     }
 
-    LOG_INFO("Button drawn: %s at (%d, %d)", button->label, button->rect.x, button->rect.y);
 }
 
 void aroma_button_destroy(AromaNode* button_node)

@@ -1,8 +1,9 @@
 #include "widgets/aroma_slider.h"
-#include "aroma_common.h"
-#include "aroma_event.h"
-#include "aroma_logger.h"
-#include "aroma_slab_alloc.h"
+#include "core/aroma_common.h"
+#include "core/aroma_event.h"
+#include "core/aroma_logger.h"
+#include "core/aroma_slab_alloc.h"
+#include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
@@ -37,11 +38,12 @@ AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int h
     data->rect.height = height;
     data->min_value = min_value;
     data->max_value = max_value;
-    data->current_value = (initial_value < min_value) ? min_value : 
+    data->current_value = (initial_value < min_value) ? min_value :
                           (initial_value > max_value) ? max_value : initial_value;
-    data->track_color = 0xCCCCCC;
-    data->thumb_color = 0x0078D4;
-    data->thumb_hover_color = 0x005A9C;
+    AromaTheme theme = aroma_theme_get_global();
+    data->track_color = aroma_color_blend(theme.colors.surface, theme.colors.border, 0.5f);
+    data->thumb_color = theme.colors.primary;
+    data->thumb_hover_color = aroma_color_adjust(theme.colors.primary, -0.08f);
     data->is_hovered = false;
     data->is_dragging = false;
     data->on_change = NULL;
@@ -192,6 +194,7 @@ void aroma_slider_draw(AromaNode* node, size_t window_id)
     if (!node || !node->node_widget_ptr) {
         return;
     }
+    if (aroma_node_is_hidden(node)) return;
 
     AromaSlider* data = (AromaSlider*)node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
