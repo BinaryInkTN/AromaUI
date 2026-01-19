@@ -2,8 +2,8 @@
 #include "utils/helpers_gles3.h"
 #include "utils/aroma_gles3_text.h"
 #include "aroma_abi.h"
-#include "aroma_logger.h"
-#include "aroma_font.h"
+#include "core/aroma_logger.h"
+#include "core/aroma_font.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <math.h>
@@ -166,6 +166,8 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
     }
 
     glViewport(0, 0, window_width, window_height);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     mat4x4 projection;
     mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
@@ -263,6 +265,8 @@ static void clear(size_t window_id, uint32_t color)
     platform->get_window_size(window_id, &window_width, &window_height);
     if (window_width > 0 && window_height > 0) {
         glViewport(0, 0, window_width, window_height);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
     vec3 color_rgb;
@@ -308,18 +312,81 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     if (border_width <= 0) return;
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (platform && platform->make_context_current) {
-        platform->make_context_current(window_id);
+    if (!platform || !platform->make_context_current || !platform->get_window_size) {
+        return;
     }
 
-    fill_rectangle(window_id, x, y, width, border_width, color, false, 0.0f);  
+    platform->make_context_current(window_id);
 
-    fill_rectangle(window_id, x, y + height - border_width, width, border_width, color, false, 0.0f);  
+    int window_width = 0;
+    int window_height = 0;
+    platform->get_window_size(window_id, &window_width, &window_height);
+    if (window_width <= 0 || window_height <= 0) {
+        return;
+    }
 
-    fill_rectangle(window_id, x, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  
+    glViewport(0, 0, window_width, window_height);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    fill_rectangle(window_id, x + width - border_width, y + border_width, border_width, height - 2*border_width, color, false, 0.0f);  
+    mat4x4 projection;
+    mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
 
+    vec3 color_rgb;
+    convert_hex_to_rgb(&color_rgb, color);
+
+    Vertex vertices[6];
+    vec2 texCoords[6] = {
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, 
+        {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+    };
+
+    for (int i = 0; i < 6; i++) {
+        vertices[i].col[0] = color_rgb[0];
+        vertices[i].col[1] = color_rgb[1];
+        vertices[i].col[2] = color_rgb[2];
+        vertices[i].texCoord[0] = texCoords[i][0];
+        vertices[i].texCoord[1] = texCoords[i][1];
+    }
+
+    float x0 = (float)x;
+    float y0 = (float)y;
+    float x1 = x0 + (float)width;
+    float y1 = y0 + (float)height;
+
+    vertices[0].pos[0] = x0; vertices[0].pos[1] = y0;
+    vertices[1].pos[0] = x1; vertices[1].pos[1] = y0;
+    vertices[2].pos[0] = x0; vertices[2].pos[1] = y1;
+    vertices[3].pos[0] = x1; vertices[3].pos[1] = y0;
+    vertices[4].pos[0] = x1; vertices[4].pos[1] = y1;
+    vertices[5].pos[0] = x0; vertices[5].pos[1] = y1;
+
+    glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+
+    glUseProgram(ctx.shape_program);
+    glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"), 1, GL_FALSE, (const GLfloat*)projection);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 0);
+    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), (float)width, (float)height);
+    glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), cornerRadius);
+    glUniform1f(glGetUniformLocation(ctx.shape_program, "borderWidth"), (float)border_width);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), isRounded ? 1 : 0);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 1);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
+
+    glBindVertexArray(ctx.shape_vaos[window_id]);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, col));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle, 

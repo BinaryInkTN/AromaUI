@@ -2,11 +2,11 @@
 #include <GLPS/glps_window_manager.h>
 #include <stdbool.h>
 #include <ctype.h>
-#include "aroma_logger.h"
+#include "core/aroma_logger.h"
 #include "aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
-#include "aroma_event.h"
-#include "aroma_node.h"
+#include "core/aroma_event.h"
+#include "core/aroma_node.h"
 #include "aroma_ui.h"
 
 static glps_WindowManager *wm = NULL;
@@ -200,13 +200,24 @@ void swap_buffers(size_t window_id)
 
 void shutdown()
 {
-  if (!wm)
+    if (!wm)
     {
         LOG_ERROR("Window manager not initialized. Cannot shutdown.");
         return;
     }
+
+    size_t window_count = glps_wm_get_window_count(wm);
+    if (window_count == 0)
+    {
+        LOG_WARNING("Window manager has no active windows; skipping GLPS destroy to avoid shutdown crash.");
+        wm = NULL;
+        primary_window_id = 0;
+        return;
+    }
+
     glps_wm_destroy(wm);
     wm = NULL;
+    primary_window_id = 0;
 }
 
 AromaPlatformInterface aroma_platform_glps = {

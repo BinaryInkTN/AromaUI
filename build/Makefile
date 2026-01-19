@@ -175,19 +175,6 @@ aroma/fast:
 .PHONY : aroma/fast
 
 #=============================================================================
-# Target rules for targets named aroma_app
-
-# Build rule for target.
-aroma_app: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 aroma_app
-.PHONY : aroma_app
-
-# fast build rule for target.
-aroma_app/fast:
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/build
-.PHONY : aroma_app/fast
-
-#=============================================================================
 # Target rules for targets named GLPS
 
 # Build rule for target.
@@ -227,7 +214,6 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... GLPS"
 	@echo "... aroma"
-	@echo "... aroma_app"
 	@echo "... aroma_tests"
 .PHONY : help
 

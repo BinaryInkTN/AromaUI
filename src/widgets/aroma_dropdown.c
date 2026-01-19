@@ -1,8 +1,9 @@
 #include "widgets/aroma_dropdown.h"
-#include "aroma_node.h"
-#include "aroma_logger.h"
-#include "aroma_slab_alloc.h"
-#include "aroma_event.h"
+#include "core/aroma_node.h"
+#include "core/aroma_logger.h"
+#include "core/aroma_slab_alloc.h"
+#include "core/aroma_event.h"
+#include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
@@ -106,10 +107,11 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
     dd->bridge.handler = NULL;
     dd->bridge.user_data = NULL;
     dd->font = NULL;
-    dd->text_color = 0x333333;
-    dd->list_bg_color = 0xFFFFFF;
-    dd->hover_bg_color = 0xEFF6FF;
-    dd->selected_bg_color = 0xD0E7FF;
+    AromaTheme theme = aroma_theme_get_global();
+    dd->text_color = theme.colors.text_primary;
+    dd->list_bg_color = theme.colors.surface;
+    dd->hover_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.18f);
+    dd->selected_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.35f);
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, dd);
     if (!node) {
@@ -258,6 +260,7 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
     if (!dropdown_node || !dropdown_node->node_widget_ptr) {
         return;
     }
+    if (aroma_node_is_hidden(dropdown_node)) return;
 
     AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
@@ -267,7 +270,7 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
     uint32_t border_color = 0x222222;
 
     gfx->fill_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, base_bg_color, true, 3.0f);
-    gfx->draw_hollow_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, border_color, 1.0f, true, 3.0f);
+    gfx->draw_hollow_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, border_color, 1, true, 6.0f);
 
     if (dd->font && dd->selected_index >= 0 && dd->selected_index < dd->option_count && dd->options[dd->selected_index]) {
         int text_x = dd->rect.x + 10;

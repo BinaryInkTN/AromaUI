@@ -175,236 +175,6 @@ aroma/fast:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/build
 .PHONY : aroma/fast
 
-# Convenience name for target.
-src/CMakeFiles/aroma_app.dir/rule:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/aroma_app.dir/rule
-.PHONY : src/CMakeFiles/aroma_app.dir/rule
-
-# Convenience name for target.
-aroma_app: src/CMakeFiles/aroma_app.dir/rule
-.PHONY : aroma_app
-
-# fast build rule for target.
-aroma_app/fast:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/build
-.PHONY : aroma_app/fast
-
-aroma_app.o: aroma_app.c.o
-.PHONY : aroma_app.o
-
-# target to build an object file
-aroma_app.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/aroma_app.c.o
-.PHONY : aroma_app.c.o
-
-aroma_app.i: aroma_app.c.i
-.PHONY : aroma_app.i
-
-# target to preprocess a source file
-aroma_app.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/aroma_app.c.i
-.PHONY : aroma_app.c.i
-
-aroma_app.s: aroma_app.c.s
-.PHONY : aroma_app.s
-
-# target to generate assembly for a file
-aroma_app.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma_app.dir/build.make src/CMakeFiles/aroma_app.dir/aroma_app.c.s
-.PHONY : aroma_app.c.s
-
-aroma_event.o: aroma_event.c.o
-.PHONY : aroma_event.o
-
-# target to build an object file
-aroma_event.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_event.c.o
-.PHONY : aroma_event.c.o
-
-aroma_event.i: aroma_event.c.i
-.PHONY : aroma_event.i
-
-# target to preprocess a source file
-aroma_event.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_event.c.i
-.PHONY : aroma_event.c.i
-
-aroma_event.s: aroma_event.c.s
-.PHONY : aroma_event.s
-
-# target to generate assembly for a file
-aroma_event.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_event.c.s
-.PHONY : aroma_event.c.s
-
-aroma_font.o: aroma_font.c.o
-.PHONY : aroma_font.o
-
-# target to build an object file
-aroma_font.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_font.c.o
-.PHONY : aroma_font.c.o
-
-aroma_font.i: aroma_font.c.i
-.PHONY : aroma_font.i
-
-# target to preprocess a source file
-aroma_font.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_font.c.i
-.PHONY : aroma_font.c.i
-
-aroma_font.s: aroma_font.c.s
-.PHONY : aroma_font.s
-
-# target to generate assembly for a file
-aroma_font.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_font.c.s
-.PHONY : aroma_font.c.s
-
-aroma_graphics_wrapper.o: aroma_graphics_wrapper.c.o
-.PHONY : aroma_graphics_wrapper.o
-
-# target to build an object file
-aroma_graphics_wrapper.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_graphics_wrapper.c.o
-.PHONY : aroma_graphics_wrapper.c.o
-
-aroma_graphics_wrapper.i: aroma_graphics_wrapper.c.i
-.PHONY : aroma_graphics_wrapper.i
-
-# target to preprocess a source file
-aroma_graphics_wrapper.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_graphics_wrapper.c.i
-.PHONY : aroma_graphics_wrapper.c.i
-
-aroma_graphics_wrapper.s: aroma_graphics_wrapper.c.s
-.PHONY : aroma_graphics_wrapper.s
-
-# target to generate assembly for a file
-aroma_graphics_wrapper.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_graphics_wrapper.c.s
-.PHONY : aroma_graphics_wrapper.c.s
-
-aroma_logger.o: aroma_logger.c.o
-.PHONY : aroma_logger.o
-
-# target to build an object file
-aroma_logger.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_logger.c.o
-.PHONY : aroma_logger.c.o
-
-aroma_logger.i: aroma_logger.c.i
-.PHONY : aroma_logger.i
-
-# target to preprocess a source file
-aroma_logger.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_logger.c.i
-.PHONY : aroma_logger.c.i
-
-aroma_logger.s: aroma_logger.c.s
-.PHONY : aroma_logger.s
-
-# target to generate assembly for a file
-aroma_logger.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_logger.c.s
-.PHONY : aroma_logger.c.s
-
-aroma_node.o: aroma_node.c.o
-.PHONY : aroma_node.o
-
-# target to build an object file
-aroma_node.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_node.c.o
-.PHONY : aroma_node.c.o
-
-aroma_node.i: aroma_node.c.i
-.PHONY : aroma_node.i
-
-# target to preprocess a source file
-aroma_node.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_node.c.i
-.PHONY : aroma_node.c.i
-
-aroma_node.s: aroma_node.c.s
-.PHONY : aroma_node.s
-
-# target to generate assembly for a file
-aroma_node.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_node.c.s
-.PHONY : aroma_node.c.s
-
-aroma_slab_alloc.o: aroma_slab_alloc.c.o
-.PHONY : aroma_slab_alloc.o
-
-# target to build an object file
-aroma_slab_alloc.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.o
-.PHONY : aroma_slab_alloc.c.o
-
-aroma_slab_alloc.i: aroma_slab_alloc.c.i
-.PHONY : aroma_slab_alloc.i
-
-# target to preprocess a source file
-aroma_slab_alloc.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.i
-.PHONY : aroma_slab_alloc.c.i
-
-aroma_slab_alloc.s: aroma_slab_alloc.c.s
-.PHONY : aroma_slab_alloc.s
-
-# target to generate assembly for a file
-aroma_slab_alloc.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_slab_alloc.c.s
-.PHONY : aroma_slab_alloc.c.s
-
-aroma_style.o: aroma_style.c.o
-.PHONY : aroma_style.o
-
-# target to build an object file
-aroma_style.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_style.c.o
-.PHONY : aroma_style.c.o
-
-aroma_style.i: aroma_style.c.i
-.PHONY : aroma_style.i
-
-# target to preprocess a source file
-aroma_style.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_style.c.i
-.PHONY : aroma_style.c.i
-
-aroma_style.s: aroma_style.c.s
-.PHONY : aroma_style.s
-
-# target to generate assembly for a file
-aroma_style.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_style.c.s
-.PHONY : aroma_style.c.s
-
-aroma_ui_impl.o: aroma_ui_impl.c.o
-.PHONY : aroma_ui_impl.o
-
-# target to build an object file
-aroma_ui_impl.c.o:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_ui_impl.c.o
-.PHONY : aroma_ui_impl.c.o
-
-aroma_ui_impl.i: aroma_ui_impl.c.i
-.PHONY : aroma_ui_impl.i
-
-# target to preprocess a source file
-aroma_ui_impl.c.i:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_ui_impl.c.i
-.PHONY : aroma_ui_impl.c.i
-
-aroma_ui_impl.s: aroma_ui_impl.c.s
-.PHONY : aroma_ui_impl.s
-
-# target to generate assembly for a file
-aroma_ui_impl.c.s:
-	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/aroma_ui_impl.c.s
-.PHONY : aroma_ui_impl.c.s
-
 backends/aroma_abi.o: backends/aroma_abi.c.o
 .PHONY : backends/aroma_abi.o
 
@@ -525,6 +295,246 @@ backends/platforms/aroma_platform_glps.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s
 .PHONY : backends/platforms/aroma_platform_glps.c.s
 
+core/aroma_event.o: core/aroma_event.c.o
+.PHONY : core/aroma_event.o
+
+# target to build an object file
+core/aroma_event.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_event.c.o
+.PHONY : core/aroma_event.c.o
+
+core/aroma_event.i: core/aroma_event.c.i
+.PHONY : core/aroma_event.i
+
+# target to preprocess a source file
+core/aroma_event.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_event.c.i
+.PHONY : core/aroma_event.c.i
+
+core/aroma_event.s: core/aroma_event.c.s
+.PHONY : core/aroma_event.s
+
+# target to generate assembly for a file
+core/aroma_event.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_event.c.s
+.PHONY : core/aroma_event.c.s
+
+core/aroma_font.o: core/aroma_font.c.o
+.PHONY : core/aroma_font.o
+
+# target to build an object file
+core/aroma_font.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_font.c.o
+.PHONY : core/aroma_font.c.o
+
+core/aroma_font.i: core/aroma_font.c.i
+.PHONY : core/aroma_font.i
+
+# target to preprocess a source file
+core/aroma_font.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_font.c.i
+.PHONY : core/aroma_font.c.i
+
+core/aroma_font.s: core/aroma_font.c.s
+.PHONY : core/aroma_font.s
+
+# target to generate assembly for a file
+core/aroma_font.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_font.c.s
+.PHONY : core/aroma_font.c.s
+
+core/aroma_graphics_wrapper.o: core/aroma_graphics_wrapper.c.o
+.PHONY : core/aroma_graphics_wrapper.o
+
+# target to build an object file
+core/aroma_graphics_wrapper.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_graphics_wrapper.c.o
+.PHONY : core/aroma_graphics_wrapper.c.o
+
+core/aroma_graphics_wrapper.i: core/aroma_graphics_wrapper.c.i
+.PHONY : core/aroma_graphics_wrapper.i
+
+# target to preprocess a source file
+core/aroma_graphics_wrapper.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_graphics_wrapper.c.i
+.PHONY : core/aroma_graphics_wrapper.c.i
+
+core/aroma_graphics_wrapper.s: core/aroma_graphics_wrapper.c.s
+.PHONY : core/aroma_graphics_wrapper.s
+
+# target to generate assembly for a file
+core/aroma_graphics_wrapper.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_graphics_wrapper.c.s
+.PHONY : core/aroma_graphics_wrapper.c.s
+
+core/aroma_logger.o: core/aroma_logger.c.o
+.PHONY : core/aroma_logger.o
+
+# target to build an object file
+core/aroma_logger.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_logger.c.o
+.PHONY : core/aroma_logger.c.o
+
+core/aroma_logger.i: core/aroma_logger.c.i
+.PHONY : core/aroma_logger.i
+
+# target to preprocess a source file
+core/aroma_logger.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_logger.c.i
+.PHONY : core/aroma_logger.c.i
+
+core/aroma_logger.s: core/aroma_logger.c.s
+.PHONY : core/aroma_logger.s
+
+# target to generate assembly for a file
+core/aroma_logger.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_logger.c.s
+.PHONY : core/aroma_logger.c.s
+
+core/aroma_node.o: core/aroma_node.c.o
+.PHONY : core/aroma_node.o
+
+# target to build an object file
+core/aroma_node.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_node.c.o
+.PHONY : core/aroma_node.c.o
+
+core/aroma_node.i: core/aroma_node.c.i
+.PHONY : core/aroma_node.i
+
+# target to preprocess a source file
+core/aroma_node.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_node.c.i
+.PHONY : core/aroma_node.c.i
+
+core/aroma_node.s: core/aroma_node.c.s
+.PHONY : core/aroma_node.s
+
+# target to generate assembly for a file
+core/aroma_node.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_node.c.s
+.PHONY : core/aroma_node.c.s
+
+core/aroma_slab_alloc.o: core/aroma_slab_alloc.c.o
+.PHONY : core/aroma_slab_alloc.o
+
+# target to build an object file
+core/aroma_slab_alloc.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_slab_alloc.c.o
+.PHONY : core/aroma_slab_alloc.c.o
+
+core/aroma_slab_alloc.i: core/aroma_slab_alloc.c.i
+.PHONY : core/aroma_slab_alloc.i
+
+# target to preprocess a source file
+core/aroma_slab_alloc.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_slab_alloc.c.i
+.PHONY : core/aroma_slab_alloc.c.i
+
+core/aroma_slab_alloc.s: core/aroma_slab_alloc.c.s
+.PHONY : core/aroma_slab_alloc.s
+
+# target to generate assembly for a file
+core/aroma_slab_alloc.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_slab_alloc.c.s
+.PHONY : core/aroma_slab_alloc.c.s
+
+core/aroma_style.o: core/aroma_style.c.o
+.PHONY : core/aroma_style.o
+
+# target to build an object file
+core/aroma_style.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_style.c.o
+.PHONY : core/aroma_style.c.o
+
+core/aroma_style.i: core/aroma_style.c.i
+.PHONY : core/aroma_style.i
+
+# target to preprocess a source file
+core/aroma_style.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_style.c.i
+.PHONY : core/aroma_style.c.i
+
+core/aroma_style.s: core/aroma_style.c.s
+.PHONY : core/aroma_style.s
+
+# target to generate assembly for a file
+core/aroma_style.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_style.c.s
+.PHONY : core/aroma_style.c.s
+
+core/aroma_time.o: core/aroma_time.c.o
+.PHONY : core/aroma_time.o
+
+# target to build an object file
+core/aroma_time.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_time.c.o
+.PHONY : core/aroma_time.c.o
+
+core/aroma_time.i: core/aroma_time.c.i
+.PHONY : core/aroma_time.i
+
+# target to preprocess a source file
+core/aroma_time.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_time.c.i
+.PHONY : core/aroma_time.c.i
+
+core/aroma_time.s: core/aroma_time.c.s
+.PHONY : core/aroma_time.s
+
+# target to generate assembly for a file
+core/aroma_time.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_time.c.s
+.PHONY : core/aroma_time.c.s
+
+core/aroma_timer.o: core/aroma_timer.c.o
+.PHONY : core/aroma_timer.o
+
+# target to build an object file
+core/aroma_timer.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_timer.c.o
+.PHONY : core/aroma_timer.c.o
+
+core/aroma_timer.i: core/aroma_timer.c.i
+.PHONY : core/aroma_timer.i
+
+# target to preprocess a source file
+core/aroma_timer.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_timer.c.i
+.PHONY : core/aroma_timer.c.i
+
+core/aroma_timer.s: core/aroma_timer.c.s
+.PHONY : core/aroma_timer.s
+
+# target to generate assembly for a file
+core/aroma_timer.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_timer.c.s
+.PHONY : core/aroma_timer.c.s
+
+core/aroma_ui_impl.o: core/aroma_ui_impl.c.o
+.PHONY : core/aroma_ui_impl.o
+
+# target to build an object file
+core/aroma_ui_impl.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_ui_impl.c.o
+.PHONY : core/aroma_ui_impl.c.o
+
+core/aroma_ui_impl.i: core/aroma_ui_impl.c.i
+.PHONY : core/aroma_ui_impl.i
+
+# target to preprocess a source file
+core/aroma_ui_impl.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_ui_impl.c.i
+.PHONY : core/aroma_ui_impl.c.i
+
+core/aroma_ui_impl.s: core/aroma_ui_impl.c.s
+.PHONY : core/aroma_ui_impl.s
+
+# target to generate assembly for a file
+core/aroma_ui_impl.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_ui_impl.c.s
+.PHONY : core/aroma_ui_impl.c.s
+
 widgets/aroma_button.o: widgets/aroma_button.c.o
 .PHONY : widgets/aroma_button.o
 
@@ -548,6 +558,150 @@ widgets/aroma_button.s: widgets/aroma_button.c.s
 widgets/aroma_button.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_button.c.s
 .PHONY : widgets/aroma_button.c.s
+
+widgets/aroma_card.o: widgets/aroma_card.c.o
+.PHONY : widgets/aroma_card.o
+
+# target to build an object file
+widgets/aroma_card.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o
+.PHONY : widgets/aroma_card.c.o
+
+widgets/aroma_card.i: widgets/aroma_card.c.i
+.PHONY : widgets/aroma_card.i
+
+# target to preprocess a source file
+widgets/aroma_card.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_card.c.i
+.PHONY : widgets/aroma_card.c.i
+
+widgets/aroma_card.s: widgets/aroma_card.c.s
+.PHONY : widgets/aroma_card.s
+
+# target to generate assembly for a file
+widgets/aroma_card.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_card.c.s
+.PHONY : widgets/aroma_card.c.s
+
+widgets/aroma_checkbox.o: widgets/aroma_checkbox.c.o
+.PHONY : widgets/aroma_checkbox.o
+
+# target to build an object file
+widgets/aroma_checkbox.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o
+.PHONY : widgets/aroma_checkbox.c.o
+
+widgets/aroma_checkbox.i: widgets/aroma_checkbox.c.i
+.PHONY : widgets/aroma_checkbox.i
+
+# target to preprocess a source file
+widgets/aroma_checkbox.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.i
+.PHONY : widgets/aroma_checkbox.c.i
+
+widgets/aroma_checkbox.s: widgets/aroma_checkbox.c.s
+.PHONY : widgets/aroma_checkbox.s
+
+# target to generate assembly for a file
+widgets/aroma_checkbox.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.s
+.PHONY : widgets/aroma_checkbox.c.s
+
+widgets/aroma_chip.o: widgets/aroma_chip.c.o
+.PHONY : widgets/aroma_chip.o
+
+# target to build an object file
+widgets/aroma_chip.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o
+.PHONY : widgets/aroma_chip.c.o
+
+widgets/aroma_chip.i: widgets/aroma_chip.c.i
+.PHONY : widgets/aroma_chip.i
+
+# target to preprocess a source file
+widgets/aroma_chip.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.i
+.PHONY : widgets/aroma_chip.c.i
+
+widgets/aroma_chip.s: widgets/aroma_chip.c.s
+.PHONY : widgets/aroma_chip.s
+
+# target to generate assembly for a file
+widgets/aroma_chip.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.s
+.PHONY : widgets/aroma_chip.c.s
+
+widgets/aroma_debug_overlay.o: widgets/aroma_debug_overlay.c.o
+.PHONY : widgets/aroma_debug_overlay.o
+
+# target to build an object file
+widgets/aroma_debug_overlay.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o
+.PHONY : widgets/aroma_debug_overlay.c.o
+
+widgets/aroma_debug_overlay.i: widgets/aroma_debug_overlay.c.i
+.PHONY : widgets/aroma_debug_overlay.i
+
+# target to preprocess a source file
+widgets/aroma_debug_overlay.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.i
+.PHONY : widgets/aroma_debug_overlay.c.i
+
+widgets/aroma_debug_overlay.s: widgets/aroma_debug_overlay.c.s
+.PHONY : widgets/aroma_debug_overlay.s
+
+# target to generate assembly for a file
+widgets/aroma_debug_overlay.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.s
+.PHONY : widgets/aroma_debug_overlay.c.s
+
+widgets/aroma_dialog.o: widgets/aroma_dialog.c.o
+.PHONY : widgets/aroma_dialog.o
+
+# target to build an object file
+widgets/aroma_dialog.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o
+.PHONY : widgets/aroma_dialog.c.o
+
+widgets/aroma_dialog.i: widgets/aroma_dialog.c.i
+.PHONY : widgets/aroma_dialog.i
+
+# target to preprocess a source file
+widgets/aroma_dialog.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.i
+.PHONY : widgets/aroma_dialog.c.i
+
+widgets/aroma_dialog.s: widgets/aroma_dialog.c.s
+.PHONY : widgets/aroma_dialog.s
+
+# target to generate assembly for a file
+widgets/aroma_dialog.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.s
+.PHONY : widgets/aroma_dialog.c.s
+
+widgets/aroma_divider.o: widgets/aroma_divider.c.o
+.PHONY : widgets/aroma_divider.o
+
+# target to build an object file
+widgets/aroma_divider.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o
+.PHONY : widgets/aroma_divider.c.o
+
+widgets/aroma_divider.i: widgets/aroma_divider.c.i
+.PHONY : widgets/aroma_divider.i
+
+# target to preprocess a source file
+widgets/aroma_divider.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.i
+.PHONY : widgets/aroma_divider.c.i
+
+widgets/aroma_divider.s: widgets/aroma_divider.c.s
+.PHONY : widgets/aroma_divider.s
+
+# target to generate assembly for a file
+widgets/aroma_divider.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.s
+.PHONY : widgets/aroma_divider.c.s
 
 widgets/aroma_dropdown.o: widgets/aroma_dropdown.c.o
 .PHONY : widgets/aroma_dropdown.o
@@ -573,6 +727,198 @@ widgets/aroma_dropdown.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.s
 .PHONY : widgets/aroma_dropdown.c.s
 
+widgets/aroma_fab.o: widgets/aroma_fab.c.o
+.PHONY : widgets/aroma_fab.o
+
+# target to build an object file
+widgets/aroma_fab.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o
+.PHONY : widgets/aroma_fab.c.o
+
+widgets/aroma_fab.i: widgets/aroma_fab.c.i
+.PHONY : widgets/aroma_fab.i
+
+# target to preprocess a source file
+widgets/aroma_fab.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.i
+.PHONY : widgets/aroma_fab.c.i
+
+widgets/aroma_fab.s: widgets/aroma_fab.c.s
+.PHONY : widgets/aroma_fab.s
+
+# target to generate assembly for a file
+widgets/aroma_fab.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.s
+.PHONY : widgets/aroma_fab.c.s
+
+widgets/aroma_iconbutton.o: widgets/aroma_iconbutton.c.o
+.PHONY : widgets/aroma_iconbutton.o
+
+# target to build an object file
+widgets/aroma_iconbutton.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o
+.PHONY : widgets/aroma_iconbutton.c.o
+
+widgets/aroma_iconbutton.i: widgets/aroma_iconbutton.c.i
+.PHONY : widgets/aroma_iconbutton.i
+
+# target to preprocess a source file
+widgets/aroma_iconbutton.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.i
+.PHONY : widgets/aroma_iconbutton.c.i
+
+widgets/aroma_iconbutton.s: widgets/aroma_iconbutton.c.s
+.PHONY : widgets/aroma_iconbutton.s
+
+# target to generate assembly for a file
+widgets/aroma_iconbutton.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.s
+.PHONY : widgets/aroma_iconbutton.c.s
+
+widgets/aroma_label.o: widgets/aroma_label.c.o
+.PHONY : widgets/aroma_label.o
+
+# target to build an object file
+widgets/aroma_label.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_label.c.o
+.PHONY : widgets/aroma_label.c.o
+
+widgets/aroma_label.i: widgets/aroma_label.c.i
+.PHONY : widgets/aroma_label.i
+
+# target to preprocess a source file
+widgets/aroma_label.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_label.c.i
+.PHONY : widgets/aroma_label.c.i
+
+widgets/aroma_label.s: widgets/aroma_label.c.s
+.PHONY : widgets/aroma_label.s
+
+# target to generate assembly for a file
+widgets/aroma_label.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_label.c.s
+.PHONY : widgets/aroma_label.c.s
+
+widgets/aroma_listview.o: widgets/aroma_listview.c.o
+.PHONY : widgets/aroma_listview.o
+
+# target to build an object file
+widgets/aroma_listview.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o
+.PHONY : widgets/aroma_listview.c.o
+
+widgets/aroma_listview.i: widgets/aroma_listview.c.i
+.PHONY : widgets/aroma_listview.i
+
+# target to preprocess a source file
+widgets/aroma_listview.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.i
+.PHONY : widgets/aroma_listview.c.i
+
+widgets/aroma_listview.s: widgets/aroma_listview.c.s
+.PHONY : widgets/aroma_listview.s
+
+# target to generate assembly for a file
+widgets/aroma_listview.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.s
+.PHONY : widgets/aroma_listview.c.s
+
+widgets/aroma_menu.o: widgets/aroma_menu.c.o
+.PHONY : widgets/aroma_menu.o
+
+# target to build an object file
+widgets/aroma_menu.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o
+.PHONY : widgets/aroma_menu.c.o
+
+widgets/aroma_menu.i: widgets/aroma_menu.c.i
+.PHONY : widgets/aroma_menu.i
+
+# target to preprocess a source file
+widgets/aroma_menu.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.i
+.PHONY : widgets/aroma_menu.c.i
+
+widgets/aroma_menu.s: widgets/aroma_menu.c.s
+.PHONY : widgets/aroma_menu.s
+
+# target to generate assembly for a file
+widgets/aroma_menu.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.s
+.PHONY : widgets/aroma_menu.c.s
+
+widgets/aroma_progressbar.o: widgets/aroma_progressbar.c.o
+.PHONY : widgets/aroma_progressbar.o
+
+# target to build an object file
+widgets/aroma_progressbar.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o
+.PHONY : widgets/aroma_progressbar.c.o
+
+widgets/aroma_progressbar.i: widgets/aroma_progressbar.c.i
+.PHONY : widgets/aroma_progressbar.i
+
+# target to preprocess a source file
+widgets/aroma_progressbar.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.i
+.PHONY : widgets/aroma_progressbar.c.i
+
+widgets/aroma_progressbar.s: widgets/aroma_progressbar.c.s
+.PHONY : widgets/aroma_progressbar.s
+
+# target to generate assembly for a file
+widgets/aroma_progressbar.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.s
+.PHONY : widgets/aroma_progressbar.c.s
+
+widgets/aroma_radiobutton.o: widgets/aroma_radiobutton.c.o
+.PHONY : widgets/aroma_radiobutton.o
+
+# target to build an object file
+widgets/aroma_radiobutton.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o
+.PHONY : widgets/aroma_radiobutton.c.o
+
+widgets/aroma_radiobutton.i: widgets/aroma_radiobutton.c.i
+.PHONY : widgets/aroma_radiobutton.i
+
+# target to preprocess a source file
+widgets/aroma_radiobutton.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.i
+.PHONY : widgets/aroma_radiobutton.c.i
+
+widgets/aroma_radiobutton.s: widgets/aroma_radiobutton.c.s
+.PHONY : widgets/aroma_radiobutton.s
+
+# target to generate assembly for a file
+widgets/aroma_radiobutton.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.s
+.PHONY : widgets/aroma_radiobutton.c.s
+
+widgets/aroma_sidebar.o: widgets/aroma_sidebar.c.o
+.PHONY : widgets/aroma_sidebar.o
+
+# target to build an object file
+widgets/aroma_sidebar.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o
+.PHONY : widgets/aroma_sidebar.c.o
+
+widgets/aroma_sidebar.i: widgets/aroma_sidebar.c.i
+.PHONY : widgets/aroma_sidebar.i
+
+# target to preprocess a source file
+widgets/aroma_sidebar.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.i
+.PHONY : widgets/aroma_sidebar.c.i
+
+widgets/aroma_sidebar.s: widgets/aroma_sidebar.c.s
+.PHONY : widgets/aroma_sidebar.s
+
+# target to generate assembly for a file
+widgets/aroma_sidebar.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.s
+.PHONY : widgets/aroma_sidebar.c.s
+
 widgets/aroma_slider.o: widgets/aroma_slider.c.o
 .PHONY : widgets/aroma_slider.o
 
@@ -596,6 +942,30 @@ widgets/aroma_slider.s: widgets/aroma_slider.c.s
 widgets/aroma_slider.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.s
 .PHONY : widgets/aroma_slider.c.s
+
+widgets/aroma_snackbar.o: widgets/aroma_snackbar.c.o
+.PHONY : widgets/aroma_snackbar.o
+
+# target to build an object file
+widgets/aroma_snackbar.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o
+.PHONY : widgets/aroma_snackbar.c.o
+
+widgets/aroma_snackbar.i: widgets/aroma_snackbar.c.i
+.PHONY : widgets/aroma_snackbar.i
+
+# target to preprocess a source file
+widgets/aroma_snackbar.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.i
+.PHONY : widgets/aroma_snackbar.c.i
+
+widgets/aroma_snackbar.s: widgets/aroma_snackbar.c.s
+.PHONY : widgets/aroma_snackbar.s
+
+# target to generate assembly for a file
+widgets/aroma_snackbar.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.s
+.PHONY : widgets/aroma_snackbar.c.s
 
 widgets/aroma_switch.o: widgets/aroma_switch.c.o
 .PHONY : widgets/aroma_switch.o
@@ -621,6 +991,30 @@ widgets/aroma_switch.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.s
 .PHONY : widgets/aroma_switch.c.s
 
+widgets/aroma_tabs.o: widgets/aroma_tabs.c.o
+.PHONY : widgets/aroma_tabs.o
+
+# target to build an object file
+widgets/aroma_tabs.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o
+.PHONY : widgets/aroma_tabs.c.o
+
+widgets/aroma_tabs.i: widgets/aroma_tabs.c.i
+.PHONY : widgets/aroma_tabs.i
+
+# target to preprocess a source file
+widgets/aroma_tabs.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.i
+.PHONY : widgets/aroma_tabs.c.i
+
+widgets/aroma_tabs.s: widgets/aroma_tabs.c.s
+.PHONY : widgets/aroma_tabs.s
+
+# target to generate assembly for a file
+widgets/aroma_tabs.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.s
+.PHONY : widgets/aroma_tabs.c.s
+
 widgets/aroma_textbox.o: widgets/aroma_textbox.c.o
 .PHONY : widgets/aroma_textbox.o
 
@@ -644,6 +1038,30 @@ widgets/aroma_textbox.s: widgets/aroma_textbox.c.s
 widgets/aroma_textbox.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.s
 .PHONY : widgets/aroma_textbox.c.s
+
+widgets/aroma_tooltip.o: widgets/aroma_tooltip.c.o
+.PHONY : widgets/aroma_tooltip.o
+
+# target to build an object file
+widgets/aroma_tooltip.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o
+.PHONY : widgets/aroma_tooltip.c.o
+
+widgets/aroma_tooltip.i: widgets/aroma_tooltip.c.i
+.PHONY : widgets/aroma_tooltip.i
+
+# target to preprocess a source file
+widgets/aroma_tooltip.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.i
+.PHONY : widgets/aroma_tooltip.c.i
+
+widgets/aroma_tooltip.s: widgets/aroma_tooltip.c.s
+.PHONY : widgets/aroma_tooltip.s
+
+# target to generate assembly for a file
+widgets/aroma_tooltip.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.s
+.PHONY : widgets/aroma_tooltip.c.s
 
 widgets/aroma_window.o: widgets/aroma_window.c.o
 .PHONY : widgets/aroma_window.o
@@ -682,34 +1100,6 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... aroma"
-	@echo "... aroma_app"
-	@echo "... aroma_app.o"
-	@echo "... aroma_app.i"
-	@echo "... aroma_app.s"
-	@echo "... aroma_event.o"
-	@echo "... aroma_event.i"
-	@echo "... aroma_event.s"
-	@echo "... aroma_font.o"
-	@echo "... aroma_font.i"
-	@echo "... aroma_font.s"
-	@echo "... aroma_graphics_wrapper.o"
-	@echo "... aroma_graphics_wrapper.i"
-	@echo "... aroma_graphics_wrapper.s"
-	@echo "... aroma_logger.o"
-	@echo "... aroma_logger.i"
-	@echo "... aroma_logger.s"
-	@echo "... aroma_node.o"
-	@echo "... aroma_node.i"
-	@echo "... aroma_node.s"
-	@echo "... aroma_slab_alloc.o"
-	@echo "... aroma_slab_alloc.i"
-	@echo "... aroma_slab_alloc.s"
-	@echo "... aroma_style.o"
-	@echo "... aroma_style.i"
-	@echo "... aroma_style.s"
-	@echo "... aroma_ui_impl.o"
-	@echo "... aroma_ui_impl.i"
-	@echo "... aroma_ui_impl.s"
 	@echo "... backends/aroma_abi.o"
 	@echo "... backends/aroma_abi.i"
 	@echo "... backends/aroma_abi.s"
@@ -725,21 +1115,102 @@ help:
 	@echo "... backends/platforms/aroma_platform_glps.o"
 	@echo "... backends/platforms/aroma_platform_glps.i"
 	@echo "... backends/platforms/aroma_platform_glps.s"
+	@echo "... core/aroma_event.o"
+	@echo "... core/aroma_event.i"
+	@echo "... core/aroma_event.s"
+	@echo "... core/aroma_font.o"
+	@echo "... core/aroma_font.i"
+	@echo "... core/aroma_font.s"
+	@echo "... core/aroma_graphics_wrapper.o"
+	@echo "... core/aroma_graphics_wrapper.i"
+	@echo "... core/aroma_graphics_wrapper.s"
+	@echo "... core/aroma_logger.o"
+	@echo "... core/aroma_logger.i"
+	@echo "... core/aroma_logger.s"
+	@echo "... core/aroma_node.o"
+	@echo "... core/aroma_node.i"
+	@echo "... core/aroma_node.s"
+	@echo "... core/aroma_slab_alloc.o"
+	@echo "... core/aroma_slab_alloc.i"
+	@echo "... core/aroma_slab_alloc.s"
+	@echo "... core/aroma_style.o"
+	@echo "... core/aroma_style.i"
+	@echo "... core/aroma_style.s"
+	@echo "... core/aroma_time.o"
+	@echo "... core/aroma_time.i"
+	@echo "... core/aroma_time.s"
+	@echo "... core/aroma_timer.o"
+	@echo "... core/aroma_timer.i"
+	@echo "... core/aroma_timer.s"
+	@echo "... core/aroma_ui_impl.o"
+	@echo "... core/aroma_ui_impl.i"
+	@echo "... core/aroma_ui_impl.s"
 	@echo "... widgets/aroma_button.o"
 	@echo "... widgets/aroma_button.i"
 	@echo "... widgets/aroma_button.s"
+	@echo "... widgets/aroma_card.o"
+	@echo "... widgets/aroma_card.i"
+	@echo "... widgets/aroma_card.s"
+	@echo "... widgets/aroma_checkbox.o"
+	@echo "... widgets/aroma_checkbox.i"
+	@echo "... widgets/aroma_checkbox.s"
+	@echo "... widgets/aroma_chip.o"
+	@echo "... widgets/aroma_chip.i"
+	@echo "... widgets/aroma_chip.s"
+	@echo "... widgets/aroma_debug_overlay.o"
+	@echo "... widgets/aroma_debug_overlay.i"
+	@echo "... widgets/aroma_debug_overlay.s"
+	@echo "... widgets/aroma_dialog.o"
+	@echo "... widgets/aroma_dialog.i"
+	@echo "... widgets/aroma_dialog.s"
+	@echo "... widgets/aroma_divider.o"
+	@echo "... widgets/aroma_divider.i"
+	@echo "... widgets/aroma_divider.s"
 	@echo "... widgets/aroma_dropdown.o"
 	@echo "... widgets/aroma_dropdown.i"
 	@echo "... widgets/aroma_dropdown.s"
+	@echo "... widgets/aroma_fab.o"
+	@echo "... widgets/aroma_fab.i"
+	@echo "... widgets/aroma_fab.s"
+	@echo "... widgets/aroma_iconbutton.o"
+	@echo "... widgets/aroma_iconbutton.i"
+	@echo "... widgets/aroma_iconbutton.s"
+	@echo "... widgets/aroma_label.o"
+	@echo "... widgets/aroma_label.i"
+	@echo "... widgets/aroma_label.s"
+	@echo "... widgets/aroma_listview.o"
+	@echo "... widgets/aroma_listview.i"
+	@echo "... widgets/aroma_listview.s"
+	@echo "... widgets/aroma_menu.o"
+	@echo "... widgets/aroma_menu.i"
+	@echo "... widgets/aroma_menu.s"
+	@echo "... widgets/aroma_progressbar.o"
+	@echo "... widgets/aroma_progressbar.i"
+	@echo "... widgets/aroma_progressbar.s"
+	@echo "... widgets/aroma_radiobutton.o"
+	@echo "... widgets/aroma_radiobutton.i"
+	@echo "... widgets/aroma_radiobutton.s"
+	@echo "... widgets/aroma_sidebar.o"
+	@echo "... widgets/aroma_sidebar.i"
+	@echo "... widgets/aroma_sidebar.s"
 	@echo "... widgets/aroma_slider.o"
 	@echo "... widgets/aroma_slider.i"
 	@echo "... widgets/aroma_slider.s"
+	@echo "... widgets/aroma_snackbar.o"
+	@echo "... widgets/aroma_snackbar.i"
+	@echo "... widgets/aroma_snackbar.s"
 	@echo "... widgets/aroma_switch.o"
 	@echo "... widgets/aroma_switch.i"
 	@echo "... widgets/aroma_switch.s"
+	@echo "... widgets/aroma_tabs.o"
+	@echo "... widgets/aroma_tabs.i"
+	@echo "... widgets/aroma_tabs.s"
 	@echo "... widgets/aroma_textbox.o"
 	@echo "... widgets/aroma_textbox.i"
 	@echo "... widgets/aroma_textbox.s"
+	@echo "... widgets/aroma_tooltip.o"
+	@echo "... widgets/aroma_tooltip.i"
+	@echo "... widgets/aroma_tooltip.s"
 	@echo "... widgets/aroma_window.o"
 	@echo "... widgets/aroma_window.i"
 	@echo "... widgets/aroma_window.s"

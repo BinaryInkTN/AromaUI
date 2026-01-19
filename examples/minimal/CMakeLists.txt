@@ -13,7 +13,7 @@ include_directories(
 
 link_directories(
     ${AROMA_ROOT}/build/src
-    ${AROMA_ROOT}/build/vendors/glps
+    ${AROMA_ROOT}/build/lib
 )
 
 add_executable(minimal main.c)

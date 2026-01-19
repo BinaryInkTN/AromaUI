@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
         font = aroma_ui_load_font("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", 16);
     }
 
-    AromaWindow* window = aroma_ui_create_window("Hello Button - Windows 7 Aero", 640, 480);
+    AromaWindow* window = aroma_ui_create_window("Material Design 3 - Hello Button", 640, 480);
     if (!window) {
         fprintf(stderr, "Failed to create window\n");
         aroma_ui_shutdown();

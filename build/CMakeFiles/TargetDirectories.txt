@@ -5,7 +5,6 @@
 /home/yassine/AromaUI/build/CMakeFiles/install/local.dir
 /home/yassine/AromaUI/build/CMakeFiles/install/strip.dir
 /home/yassine/AromaUI/build/src/CMakeFiles/aroma.dir
-/home/yassine/AromaUI/build/src/CMakeFiles/aroma_app.dir
 /home/yassine/AromaUI/build/src/CMakeFiles/edit_cache.dir
 /home/yassine/AromaUI/build/src/CMakeFiles/rebuild_cache.dir
 /home/yassine/AromaUI/build/src/CMakeFiles/list_install_components.dir

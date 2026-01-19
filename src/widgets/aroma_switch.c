@@ -1,8 +1,9 @@
 #include "widgets/aroma_switch.h"
-#include "aroma_common.h"
-#include "aroma_event.h"
-#include "aroma_logger.h"
-#include "aroma_slab_alloc.h"
+#include "core/aroma_common.h"
+#include "core/aroma_event.h"
+#include "core/aroma_logger.h"
+#include "core/aroma_slab_alloc.h"
+#include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
@@ -26,9 +27,9 @@ AromaNode* aroma_switch_create(AromaNode* parent, int x, int y, int width, int h
     data->rect.width = width;
     data->rect.height = height;
     data->state = initial_state;
-    data->color_on = 0x00AA00;   
-
-    data->color_off = 0xAAAAAA;  
+    AromaTheme theme = aroma_theme_get_global();
+    data->color_on = theme.colors.primary;
+    data->color_off = theme.colors.border;
     data->is_hovered = false;
 
     data->on_change = NULL;
@@ -90,6 +91,7 @@ void aroma_switch_draw(AromaNode* node, size_t window_id)
     if (!node || !node->node_widget_ptr) {
         return;
     }
+    if (aroma_node_is_hidden(node)) return;
 
     AromaSwitch* data = (AromaSwitch*)node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
@@ -99,19 +101,22 @@ void aroma_switch_draw(AromaNode* node, size_t window_id)
 
     uint32_t bg_color = data->state ? data->color_on : data->color_off;
     if (data->is_hovered) {
-        bg_color = data->state ? 0x22BB22 : 0xBBBBBB;
+        bg_color = data->state ? aroma_color_adjust(data->color_on, 0.08f)
+                                : aroma_color_adjust(data->color_off, 0.08f);
     }
-    gfx->fill_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height, bg_color, true, 4.0f);
+    float track_radius = data->rect.height / 2.0f;
+    gfx->fill_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height, bg_color, true, track_radius);
 
     uint32_t border_color = 0x333333;
     gfx->draw_hollow_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height, 
-                               border_color, 2, true, 4.0f);
+                               border_color, 2, true, track_radius);
 
     int toggle_x = data->state ? (data->rect.x + data->rect.width - data->rect.height + 2) : (data->rect.x + 2);
     int toggle_y = data->rect.y + 2;
     int toggle_size = data->rect.height - 4;
     uint32_t toggle_color = 0xFFFFFF;
-    gfx->fill_rectangle(window_id, toggle_x, toggle_y, toggle_size, toggle_size, toggle_color, true, 2.0f);
+    float toggle_radius = toggle_size / 2.0f;
+    gfx->fill_rectangle(window_id, toggle_x, toggle_y, toggle_size, toggle_size, toggle_color, true, toggle_radius);
 }
 
 void aroma_switch_destroy(AromaNode* node)
@@ -133,7 +138,7 @@ static bool __switch_default_mouse_handler(AromaEvent* event, void* user_data)
     AromaSwitch* sw = (AromaSwitch*)event->target_node->node_widget_ptr;
     if (!sw) return false;
 
-    if (event->event_type == EVENT_TYPE_MOUSE_MOVE) {
+    if (event->event_type == EVENT_TYPE_MOUSE_MOVE || event->event_type == EVENT_TYPE_MOUSE_ENTER) {
         bool hover = (event->data.mouse.x >= sw->rect.x && event->data.mouse.x <= sw->rect.x + sw->rect.width &&
                       event->data.mouse.y >= sw->rect.y && event->data.mouse.y <= sw->rect.y + sw->rect.height);
         if (sw->is_hovered != hover) {
@@ -144,6 +149,17 @@ static bool __switch_default_mouse_handler(AromaEvent* event, void* user_data)
             }
         }
         return hover;
+    }
+
+    if (event->event_type == EVENT_TYPE_MOUSE_EXIT) {
+        if (sw->is_hovered) {
+            sw->is_hovered = false;
+            if (user_data) {
+                void (*on_redraw)(void*) = (void (*)(void*))user_data;
+                on_redraw(NULL);
+            }
+        }
+        return false;
     }
 
     switch (event->event_type) {
@@ -176,6 +192,8 @@ bool aroma_switch_setup_events(AromaNode* switch_node, void (*on_redraw_callback
 
     aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_MOUSE_CLICK, __switch_default_mouse_handler, (void*)on_redraw_callback, 100);
     aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_MOUSE_MOVE, __switch_default_mouse_handler, (void*)on_redraw_callback, 80);
+    aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_MOUSE_ENTER, __switch_default_mouse_handler, (void*)on_redraw_callback, 80);
+    aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_MOUSE_EXIT, __switch_default_mouse_handler, (void*)on_redraw_callback, 80);
 
     return true;
 }

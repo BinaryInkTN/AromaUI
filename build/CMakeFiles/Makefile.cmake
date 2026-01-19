@@ -124,7 +124,6 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "src/CMakeFiles/aroma.dir/DependInfo.cmake"
-  "src/CMakeFiles/aroma_app.dir/DependInfo.cmake"
   "vendors/glps/CMakeFiles/GLPS.dir/DependInfo.cmake"
   "tests/CMakeFiles/aroma_tests.dir/DependInfo.cmake"
   )

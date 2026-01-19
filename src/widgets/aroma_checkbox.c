@@ -1,0 +1,331 @@
+#include "widgets/aroma_checkbox.h"
+#include "core/aroma_common.h"
+#include "core/aroma_event.h"
+#include "core/aroma_logger.h"
+#include "core/aroma_slab_alloc.h"
+#include "core/aroma_style.h"
+#include "backends/aroma_abi.h"
+#include "backends/graphics/aroma_graphics_interface.h"
+#include <stdlib.h>
+#include <string.h>
+
+#define AROMA_CHECKBOX_LABEL_MAX 64
+
+typedef struct AromaCheckbox {
+    AromaRect rect;
+    bool checked;
+    bool is_hovered;
+    bool is_pressed;
+    uint32_t box_color;
+    uint32_t border_color;
+    uint32_t check_color;
+    uint32_t hover_color;
+    uint32_t text_color;
+    AromaFont* font;
+    char label[AROMA_CHECKBOX_LABEL_MAX];
+    void (*on_change)(bool, void*);
+    void* user_data;
+} AromaCheckbox;
+
+static inline uint32_t __checkbox_lighten(uint32_t color, float amount)
+{
+    return aroma_color_blend(color, 0xFFFFFFu, amount);
+}
+
+static inline uint32_t __checkbox_darken(uint32_t color, float amount)
+{
+    return aroma_color_blend(color, 0x000000u, amount);
+}
+
+static void __checkbox_request_redraw(void* user_data)
+{
+    if (!user_data) {
+        return;
+    }
+    void (*on_redraw)(void*) = (void (*)(void*))user_data;
+    on_redraw(NULL);
+}
+
+// Forward declarations to avoid implicit declaration warnings
+void aroma_checkbox_set_state(AromaNode* node, bool state);
+bool aroma_checkbox_get_state(AromaNode* node);
+
+AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
+                                 int x, int y, int width, int height)
+{
+    if (!parent || width <= 0 || height <= 0) {
+        LOG_ERROR("Invalid checkbox parameters");
+        return NULL;
+    }
+
+    AromaCheckbox* data = (AromaCheckbox*)aroma_widget_alloc(sizeof(AromaCheckbox));
+    if (!data) {
+        LOG_ERROR("Failed to allocate checkbox");
+        return NULL;
+    }
+
+    data->rect.x = x;
+    data->rect.y = y;
+    data->rect.width = width;
+    data->rect.height = height;
+    data->checked = false;
+    data->is_hovered = false;
+    data->is_pressed = false;
+    AromaTheme theme = aroma_theme_get_global();
+    data->box_color = theme.colors.surface;
+    data->border_color = theme.colors.border;
+    data->check_color = theme.colors.primary;
+    data->hover_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.12f);
+    data->text_color = theme.colors.text_primary;
+    data->font = NULL;
+    data->on_change = NULL;
+    data->user_data = NULL;
+
+    if (label) {
+        strncpy(data->label, label, AROMA_CHECKBOX_LABEL_MAX - 1);
+        data->label[AROMA_CHECKBOX_LABEL_MAX - 1] = '\0';
+    } else {
+        data->label[0] = '\0';
+    }
+
+    AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, data);
+    if (!node) {
+        aroma_widget_free(data);
+        LOG_ERROR("Failed to create checkbox node");
+        return NULL;
+    }
+
+    LOG_INFO("Checkbox created: label='%s'", data->label);
+    return node;
+}
+
+void aroma_checkbox_set_checked(AromaNode* checkbox_node, bool checked)
+{
+    aroma_checkbox_set_state(checkbox_node, checked);
+}
+
+bool aroma_checkbox_is_checked(AromaNode* checkbox_node)
+{
+    return aroma_checkbox_get_state(checkbox_node);
+}
+
+void aroma_checkbox_set_callback(AromaNode* checkbox_node,
+                                 void (*callback)(bool checked, void* user_data),
+                                 void* user_data)
+{
+    if (!checkbox_node || !checkbox_node->node_widget_ptr) return;
+    AromaCheckbox* data = (AromaCheckbox*)checkbox_node->node_widget_ptr;
+    data->on_change = callback;
+    data->user_data = user_data;
+}
+
+void aroma_checkbox_set_state(AromaNode* node, bool state)
+{
+    if (!node || !node->node_widget_ptr) return;
+
+    if (aroma_node_is_hidden(node)) return;
+
+    AromaCheckbox* data = (AromaCheckbox*)node->node_widget_ptr;
+    if (data->checked != state) {
+        data->checked = state;
+        aroma_node_invalidate(node);
+        if (data->on_change) {
+            data->on_change(data->checked, data->user_data);
+        }
+    }
+}
+
+bool aroma_checkbox_get_state(AromaNode* node)
+{
+    if (!node || !node->node_widget_ptr) return false;
+    AromaCheckbox* data = (AromaCheckbox*)node->node_widget_ptr;
+    return data->checked;
+}
+
+void aroma_checkbox_set_on_change(AromaNode* node,
+                                  void (*callback)(bool, void*),
+                                  void* user_data)
+{
+    if (!node || !node->node_widget_ptr) return;
+    AromaCheckbox* data = (AromaCheckbox*)node->node_widget_ptr;
+    data->on_change = callback;
+    data->user_data = user_data;
+}
+
+void aroma_checkbox_set_font(AromaNode* node, AromaFont* font)
+{
+    if (!node || !node->node_widget_ptr) return;
+    AromaCheckbox* data = (AromaCheckbox*)node->node_widget_ptr;
+    data->font = font;
+    aroma_node_invalidate(node);
+}
+
+static void __checkbox_draw_checkmark(AromaGraphicsInterface* gfx, size_t window_id,
+                                      int x, int y, int size, uint32_t color)
+{
+    int thickness = size / 6;
+    if (thickness < 2) thickness = 2;
+
+    int start_x = x + size / 4;
+    int start_y = y + size / 2;
+    int mid_x = x + size / 2;
+    int mid_y = y + size - size / 4;
+    int end_x = x + size - size / 6;
+    int end_y = y + size / 4;
+
+    int length1 = mid_x - start_x;
+    for (int i = 0; i < thickness; ++i) {
+        gfx->fill_rectangle(window_id,
+                            start_x,
+                            start_y + i,
+                            length1,
+                            thickness,
+                            color,
+                            false,
+                            0.0f);
+    }
+
+    int length2 = end_x - mid_x;
+    for (int i = 0; i < thickness; ++i) {
+        gfx->fill_rectangle(window_id,
+                            mid_x,
+                            mid_y - i,
+                            length2,
+                            thickness,
+                            color,
+                            false,
+                            0.0f);
+    }
+}
+
+void aroma_checkbox_draw(AromaNode* node, size_t window_id)
+{
+    if (!node || !node->node_widget_ptr) return;
+
+    AromaCheckbox* data = (AromaCheckbox*)node->node_widget_ptr;
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    if (aroma_node_is_hidden(node)) return;
+    if (!gfx) return;
+
+    const int padding = 8;
+    int box_size = data->rect.height - padding;
+    if (box_size < 16) box_size = 16;
+    if (box_size > data->rect.height) box_size = data->rect.height;
+
+    int box_x = data->rect.x;
+    int box_y = data->rect.y + (data->rect.height - box_size) / 2;
+
+    uint32_t base_color = data->box_color;
+    if (data->is_hovered) {
+        base_color = __checkbox_lighten(base_color, 0.06f);
+    }
+    uint32_t border_color = data->border_color;
+    if (data->is_pressed) {
+        base_color = __checkbox_darken(base_color, 0.06f);
+    }
+
+    gfx->fill_rectangle(window_id, box_x, box_y, box_size, box_size,
+                        base_color, true, 4.0f);
+
+    gfx->draw_hollow_rectangle(window_id, box_x, box_y, box_size, box_size,
+                               border_color, 1.0f, true, 4.0f);
+
+    if (data->checked) {
+        uint32_t fill = data->check_color;
+        gfx->fill_rectangle(window_id, box_x + 3, box_y + 3, box_size - 6, box_size - 6,
+                            __checkbox_lighten(fill, 0.12f), true, 3.0f);
+        __checkbox_draw_checkmark(gfx, window_id, box_x + 4, box_y + 4, box_size - 8, fill);
+    }
+
+    if (data->font && data->label[0] != '\0' && gfx->render_text) {
+        int text_x = box_x + box_size + padding;
+        int line_height = aroma_font_get_line_height(data->font);
+        int ascender = aroma_font_get_ascender(data->font);
+        int baseline = data->rect.y + (data->rect.height - line_height) / 2 + ascender;
+        gfx->render_text(window_id, data->font, data->label, text_x, baseline, data->text_color);
+    }
+}
+
+static bool __checkbox_handle_event(AromaEvent* event, void* user_data)
+{
+    if (!event || !event->target_node) return false;
+    AromaCheckbox* data = (AromaCheckbox*)event->target_node->node_widget_ptr;
+    if (!data) return false;
+
+    AromaRect* r = &data->rect;
+    bool in_bounds = (event->data.mouse.x >= r->x && event->data.mouse.x <= r->x + r->width &&
+                      event->data.mouse.y >= r->y && event->data.mouse.y <= r->y + r->height);
+
+    switch (event->event_type) {
+        case EVENT_TYPE_MOUSE_ENTER:
+            data->is_hovered = true;
+            aroma_node_invalidate(event->target_node);
+            __checkbox_request_redraw(user_data);
+            return true;
+        case EVENT_TYPE_MOUSE_EXIT:
+            data->is_hovered = false;
+            data->is_pressed = false;
+            aroma_node_invalidate(event->target_node);
+            __checkbox_request_redraw(user_data);
+            return false;
+        case EVENT_TYPE_MOUSE_MOVE:
+            if (data->is_hovered != in_bounds) {
+                data->is_hovered = in_bounds;
+                aroma_node_invalidate(event->target_node);
+            }
+            __checkbox_request_redraw(user_data);
+            return in_bounds;
+        case EVENT_TYPE_MOUSE_CLICK:
+            if (in_bounds) {
+                data->is_pressed = true;
+                aroma_node_invalidate(event->target_node);
+                __checkbox_request_redraw(user_data);
+                return true;
+            }
+            break;
+        case EVENT_TYPE_MOUSE_RELEASE:
+            if (data->is_pressed) {
+                data->is_pressed = false;
+                if (in_bounds) {
+                    aroma_checkbox_set_state(event->target_node, !data->checked);
+                }
+                aroma_node_invalidate(event->target_node);
+                __checkbox_request_redraw(user_data);
+                return in_bounds;
+            }
+            break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+bool aroma_checkbox_setup_events(AromaNode* node,
+                                 void (*on_redraw_callback)(void*),
+                                 void* user_data)
+{
+    if (!node) return false;
+
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __checkbox_handle_event, (void*)on_redraw_callback, 60);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __checkbox_handle_event, (void*)on_redraw_callback, 60);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, __checkbox_handle_event, (void*)on_redraw_callback, 60);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __checkbox_handle_event, (void*)on_redraw_callback, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __checkbox_handle_event, (void*)on_redraw_callback, 70);
+
+    return true;
+}
+
+void aroma_checkbox_destroy(AromaNode* node)
+{
+    if (!node) {
+        return;
+    }
+
+    if (node->node_widget_ptr) {
+        aroma_widget_free(node->node_widget_ptr);
+        node->node_widget_ptr = NULL;
+    }
+
+    __destroy_node(node);
+}
