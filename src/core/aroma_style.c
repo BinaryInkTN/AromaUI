@@ -53,76 +53,159 @@ AromaTheme aroma_theme_create_default(void) {
     AromaTheme theme;
     memset(&theme, 0, sizeof(AromaTheme));
 
-    // Material Design 3 (Material You) Light Theme
-    theme.colors.primary = 0x6750A4;        // MD3 Primary (Purple)
-    theme.colors.primary_dark = 0x21005D;   // MD3 Primary dark
-    theme.colors.primary_light = 0xEADDFF;  // MD3 Primary container
-    theme.colors.secondary = 0x625B71;      // MD3 Secondary
-    theme.colors.background = 0xFFFBFE;     // MD3 Surface (slightly warm white)
-    theme.colors.surface = 0xFFFBFE;        // MD3 Surface
-    theme.colors.text_primary = 0x1C1B1F;   // MD3 On Surface
-    theme.colors.text_secondary = 0x49454F; // MD3 On Surface Variant
-    theme.colors.border = 0x79747E;         // MD3 Outline
-    theme.colors.error = 0xB3261E;          // MD3 Error
+    theme.colors.primary = 0x6750A4;
+    theme.colors.primary_dark = 0x21005D;
+    theme.colors.primary_light = 0xEADDFF;
+    theme.colors.secondary = 0x625B71;
+    theme.colors.background = 0xFFFBFE;
+    theme.colors.surface = 0xFFFBFE;
+    theme.colors.text_primary = 0x1C1B1F;
+    theme.colors.text_secondary = 0x49454F;
+    theme.colors.border = 0x79747E;
+    theme.colors.error = 0xB3261E;
 
-    theme.spacing.padding = 16;             // MD3 standard spacing
-    theme.spacing.margin = 8;               // MD3 compact spacing
-    theme.spacing.border_radius = 12;       // MD3 medium corner (12dp)
-    theme.spacing.border_width = 1;         
-    theme.spacing.shadow_offset = 2;        
+    theme.spacing.padding = 16;
+    theme.spacing.margin = 8;
+    theme.spacing.border_radius = 12;
+    theme.spacing.border_width = 1;
+    theme.spacing.shadow_offset = 2;
 
-    theme.typography.font_size = 12;        
-    theme.typography.line_height = 16;      
+    theme.typography.font_size = 12;
+    theme.typography.line_height = 16;
     theme.typography.letter_spacing = 0;
-    theme.typography.font_color = 0x000000;
+    theme.typography.font_color = theme.colors.text_primary;
     theme.typography.font_name = "system";
 
-    theme.transition_duration_ms = 150;     
-    theme.enable_shadows = true;            
+    theme.transition_duration_ms = 150;
+    theme.enable_shadows = true;
 
     return theme;
 }
 
 AromaTheme aroma_theme_create_dark(void) {
-    AromaTheme theme = aroma_theme_create_default();
+    AromaTheme theme;
 
-    theme.colors.primary = 0x3399FF;        
-    theme.colors.background = 0x2D2D30;     
-    theme.colors.surface = 0x2C2C2E;        
-    theme.colors.text_primary = 0xFFFFFF;   
-    theme.colors.text_secondary = 0xA1A1A6; 
-    theme.colors.border = 0x3C3C3F;         
+    theme.colors.primary = 0xD0BCFF;
+    theme.colors.primary_dark = 0x381E72;
+    theme.colors.primary_light = 0x4F378B;
+    theme.colors.secondary = 0xCCC2DC;
+    theme.colors.background = 0x141218;
+    theme.colors.surface = 0x1D1B20;
+    theme.colors.text_primary = 0xE6E1E5;
+    theme.colors.text_secondary = 0xCAC4D0;
+    theme.colors.border = 0x938F99;
+    theme.colors.error = 0xF2B8B5;
+
+    theme.spacing.padding = 16;
+    theme.spacing.margin = 8;
+    theme.spacing.border_radius = 12;
+    theme.spacing.border_width = 1;
+    theme.spacing.shadow_offset = 2;
+
+    theme.typography.font_size = 12;
+    theme.typography.line_height = 16;
+    theme.typography.letter_spacing = 0;
+    theme.typography.font_color = theme.colors.text_primary;
+    theme.typography.font_name = "system";
+
+    theme.transition_duration_ms = 150;
+    theme.enable_shadows = false;
 
     return theme;
 }
 
 AromaTheme aroma_theme_create_high_contrast(void) {
     AromaTheme theme;
-    memset(&theme, 0, sizeof(AromaTheme));
 
-    theme.colors.primary = 0x0000FF;        
-    theme.colors.primary_dark = 0x000080;   
-    theme.colors.primary_light = 0x6666FF;  
-    theme.colors.secondary = 0xFF0000;      
-    theme.colors.background = 0xFFFFFF;     
-    theme.colors.surface = 0xF0F0F0;        
-    theme.colors.text_primary = 0x000000;   
-    theme.colors.text_secondary = 0x404040; 
-    theme.colors.border = 0x000000;         
-    theme.colors.error = 0xFF0000;          
+    theme.colors.primary = 0x0000FF;
+    theme.colors.primary_dark = 0x000080;
+    theme.colors.primary_light = 0x6666FF;
+    theme.colors.secondary = 0xFF0000;
+    theme.colors.background = 0xFFFFFF;
+    theme.colors.surface = 0xF0F0F0;
+    theme.colors.text_primary = 0x000000;
+    theme.colors.text_secondary = 0x404040;
+    theme.colors.border = 0x000000;
+    theme.colors.error = 0xFF0000;
 
     theme.spacing.padding = 16;
     theme.spacing.margin = 12;
     theme.spacing.border_radius = 4;
-    theme.spacing.border_width = 2;         
+    theme.spacing.border_width = 2;
     theme.spacing.shadow_offset = 3;
 
     theme.typography.font_size = 16;
     theme.typography.line_height = 24;
-    theme.typography.font_color = 0x000000;
+    theme.typography.letter_spacing = 0;
+    theme.typography.font_color = theme.colors.text_primary;
+    theme.typography.font_name = "system";
 
     theme.transition_duration_ms = 100;
-    theme.enable_shadows = false;            
+    theme.enable_shadows = false;
+
+    return theme;
+}
+
+AromaTheme aroma_theme_create_high_contrast_dark(void) {
+    AromaTheme theme;
+
+    theme.colors.primary = 0xFFFF00;
+    theme.colors.primary_dark = 0xCCCC00;
+    theme.colors.primary_light = 0xFFFF80;
+    theme.colors.secondary = 0x00FFFF;
+    theme.colors.background = 0x000000;
+    theme.colors.surface = 0x1A1A1A;
+    theme.colors.text_primary = 0xFFFFFF;
+    theme.colors.text_secondary = 0xCCCCCC;
+    theme.colors.border = 0xFFFFFF;
+    theme.colors.error = 0xFF0000;
+
+    theme.spacing.padding = 16;
+    theme.spacing.margin = 12;
+    theme.spacing.border_radius = 4;
+    theme.spacing.border_width = 3;
+    theme.spacing.shadow_offset = 0;
+
+    theme.typography.font_size = 18;
+    theme.typography.line_height = 24;
+    theme.typography.letter_spacing = 1;
+    theme.typography.font_color = theme.colors.text_primary;
+    theme.typography.font_name = "system";
+
+    theme.transition_duration_ms = 100;
+    theme.enable_shadows = false;
+
+    return theme;
+}
+
+AromaTheme aroma_theme_create_material_black(void) {
+    AromaTheme theme;
+
+    theme.colors.primary = 0xBB86FC;
+    theme.colors.primary_dark = 0x3700B3;
+    theme.colors.primary_light = 0x6200EE;
+    theme.colors.secondary = 0x03DAC6;
+    theme.colors.background = 0x000000;
+    theme.colors.surface = 0x121212;
+    theme.colors.text_primary = 0xFFFFFF;
+    theme.colors.text_secondary = 0xB3B3B3;
+    theme.colors.border = 0x2A2A2A;
+    theme.colors.error = 0xCF6679;
+
+    theme.spacing.padding = 16;
+    theme.spacing.margin = 8;
+    theme.spacing.border_radius = 12;
+    theme.spacing.border_width = 1;
+    theme.spacing.shadow_offset = 2;
+
+    theme.typography.font_size = 12;
+    theme.typography.line_height = 16;
+    theme.typography.letter_spacing = 0;
+    theme.typography.font_color = theme.colors.text_primary;
+    theme.typography.font_name = "system";
+
+    theme.transition_duration_ms = 150;
+    theme.enable_shadows = false;
 
     return theme;
 }
@@ -175,6 +258,51 @@ AromaTheme aroma_theme_create_material_preset(AromaMaterialThemePreset preset) {
     return theme;
 }
 
+AromaTheme aroma_theme_create_material_preset_dark(AromaMaterialThemePreset preset) {
+    AromaTheme theme = aroma_theme_create_dark();
+
+    switch (preset) {
+        case AROMA_THEME_MATERIAL_BLUE:
+            theme.colors.primary = 0x8AB4F8;
+            theme.colors.primary_dark = 0x669DF6;
+            theme.colors.primary_light = 0x4285F4;
+            theme.colors.secondary = 0x9AA0A6;
+            break;
+        case AROMA_THEME_MATERIAL_TEAL:
+            theme.colors.primary = 0x4DB6AC;
+            theme.colors.primary_dark = 0x26A69A;
+            theme.colors.primary_light = 0x80CBC4;
+            theme.colors.secondary = 0x90A4AE;
+            break;
+        case AROMA_THEME_MATERIAL_GREEN:
+            theme.colors.primary = 0x81C995;
+            theme.colors.primary_dark = 0x66BB6A;
+            theme.colors.primary_light = 0xA5D6A7;
+            theme.colors.secondary = 0xB0BEC5;
+            break;
+        case AROMA_THEME_MATERIAL_ORANGE:
+            theme.colors.primary = 0xFFB74D;
+            theme.colors.primary_dark = 0xFF9800;
+            theme.colors.primary_light = 0xFFCC80;
+            theme.colors.secondary = 0xBCAAA4;
+            break;
+        case AROMA_THEME_MATERIAL_PINK:
+            theme.colors.primary = 0xF48FB1;
+            theme.colors.primary_dark = 0xEC407A;
+            theme.colors.primary_light = 0xF8BBD0;
+            theme.colors.secondary = 0xCE93D8;
+            break;
+        case AROMA_THEME_MATERIAL_PURPLE:
+            theme.colors.primary = 0xD0BCFF;
+            theme.colors.primary_dark = 0xBA68C8;
+            theme.colors.primary_light = 0xE1BEE7;
+            theme.colors.secondary = 0xC5CAE9;
+            break;
+    }
+
+    return theme;
+}
+
 AromaTheme aroma_theme_create_material_blue(void) {
     return aroma_theme_create_material_preset(AROMA_THEME_MATERIAL_BLUE);
 }
@@ -193,6 +321,26 @@ AromaTheme aroma_theme_create_material_orange(void) {
 
 AromaTheme aroma_theme_create_material_pink(void) {
     return aroma_theme_create_material_preset(AROMA_THEME_MATERIAL_PINK);
+}
+
+AromaTheme aroma_theme_create_material_blue_dark(void) {
+    return aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
+}
+
+AromaTheme aroma_theme_create_material_teal_dark(void) {
+    return aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_TEAL);
+}
+
+AromaTheme aroma_theme_create_material_green_dark(void) {
+    return aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_GREEN);
+}
+
+AromaTheme aroma_theme_create_material_orange_dark(void) {
+    return aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_ORANGE);
+}
+
+AromaTheme aroma_theme_create_material_pink_dark(void) {
+    return aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_PINK);
 }
 
 void aroma_theme_set_global(const AromaTheme* theme) {
@@ -220,9 +368,9 @@ AromaStyle aroma_style_create_from_theme(const AromaTheme* theme) {
     }
 
     style.idle_color = theme->colors.surface;
-    style.hover_color = theme->colors.primary_light;
-    style.active_color = theme->colors.primary_dark;
-    style.disabled_color = theme->colors.text_secondary;
+    style.hover_color = aroma_color_adjust(theme->colors.surface, 0.1f);
+    style.active_color = aroma_color_adjust(theme->colors.surface, -0.1f);
+    style.disabled_color = aroma_color_blend(theme->colors.surface, theme->colors.text_secondary, 0.38f);
     style.border_color = theme->colors.border;
     style.text_color = theme->colors.text_primary;
     style.background_color = theme->colors.background;
@@ -235,7 +383,7 @@ AromaStyle aroma_style_create_from_theme(const AromaTheme* theme) {
     style.shadow_offset_x = theme->spacing.shadow_offset;
     style.shadow_offset_y = theme->spacing.shadow_offset;
     style.shadow_blur = theme->enable_shadows ? 4 : 0;
-    style.shadow_color = 0x000000;  
+    style.shadow_color = 0x000000;
 
     style.is_disabled = false;
     style.has_custom_colors = false;
@@ -266,13 +414,40 @@ void aroma_style_apply_theme_colors(AromaStyle* style, const AromaTheme* theme, 
     style->has_custom_colors = true;
 }
 
+AromaStyle aroma_style_create_primary(void) {
+    AromaTheme theme = aroma_theme_get_global();
+    AromaStyle style = aroma_style_create_from_theme(&theme);
+    aroma_style_apply_theme_colors(&style, &theme, true);
+    return style;
+}
+
+AromaStyle aroma_style_create_secondary(void) {
+    AromaTheme theme = aroma_theme_get_global();
+    AromaStyle style = aroma_style_create_from_theme(&theme);
+    aroma_style_apply_theme_colors(&style, &theme, false);
+    return style;
+}
+
+AromaStyle aroma_style_create_error(void) {
+    AromaTheme theme = aroma_theme_get_global();
+    AromaStyle style = aroma_style_create_from_theme(&theme);
+    
+    style.idle_color = theme.colors.error;
+    style.hover_color = aroma_color_adjust(theme.colors.error, 0.2f);
+    style.active_color = aroma_color_adjust(theme.colors.error, -0.2f);
+    style.text_color = theme.colors.text_primary;
+    style.has_custom_colors = true;
+    
+    return style;
+}
+
 AromaShadow aroma_shadow_create_soft(void) {
     AromaShadow shadow;
     shadow.blur_radius = 5;
     shadow.offset_x = 0;
-    shadow.offset_y = 2;         
-    shadow.color = 0x000000;     
-    shadow.opacity = 0.20f;      
+    shadow.offset_y = 2;
+    shadow.color = 0x000000;
+    shadow.opacity = 0.20f;
     return shadow;
 }
 
@@ -282,7 +457,7 @@ AromaShadow aroma_shadow_create_subtle(void) {
     shadow.offset_x = 0;
     shadow.offset_y = 1;
     shadow.color = 0x000000;
-    shadow.opacity = 0.12f;      
+    shadow.opacity = 0.12f;
     return shadow;
 }
 
@@ -290,9 +465,19 @@ AromaShadow aroma_shadow_create_deep(void) {
     AromaShadow shadow;
     shadow.blur_radius = 10;
     shadow.offset_x = 0;
-    shadow.offset_y = 4;         
+    shadow.offset_y = 4;
     shadow.color = 0x000000;
-    shadow.opacity = 0.35f;      
+    shadow.opacity = 0.35f;
+    return shadow;
+}
+
+AromaShadow aroma_shadow_create_dark_mode(void) {
+    AromaShadow shadow;
+    shadow.blur_radius = 8;
+    shadow.offset_x = 0;
+    shadow.offset_y = 4;
+    shadow.color = 0x000000;
+    shadow.opacity = 0.40f;
     return shadow;
 }
 
@@ -315,7 +500,6 @@ AromaShadow aroma_shadow_get_theme_default(void) {
     if (g_global_theme.enable_shadows) {
         return aroma_shadow_create_soft();
     } else {
-
         AromaShadow none;
         memset(&none, 0, sizeof(AromaShadow));
         return none;

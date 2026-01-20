@@ -133,7 +133,6 @@ AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int 
     data->is_hovered = false;
     data->show_cursor = true;
     data->cursor_blink_time = 0;
-    data->bg_color = 0xFFFFFF;
     AromaTheme theme = aroma_theme_get_global();
     data->hover_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f);
     data->focused_bg_color = theme.colors.surface;
@@ -143,6 +142,7 @@ AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int 
     data->focused_border_color = theme.colors.primary;
     data->cursor_color = 0x000000;
     data->placeholder_color = 0x999999;
+    data->bg_color = theme.colors.surface;
 
     data->placeholder[0] = '\0';
     data->on_text_changed = NULL;
