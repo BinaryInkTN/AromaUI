@@ -1,4 +1,5 @@
-#include "aroma.h"
+#include <aroma.h>
+
 #include <unistd.h>
 #include <stdio.h>
 
@@ -20,7 +21,7 @@ static AromaSwitch* wifi_switch = NULL;
 static AromaLabel* bluetooth_label = NULL;
 static AromaSwitch* bluetooth_switch = NULL;
 static AromaLabel* brightness_label = NULL;
-static AromaSlider* brightness_slider = NULL;
+static AromaSlider* brightness_slider = NULL;   
 static AromaDebugOverlay* debug_overlay = NULL;
 static AromaLabel* section_display_label = NULL;
 static AromaLabel* section_sound_label = NULL;
@@ -122,8 +123,13 @@ int main(void)
     AromaTheme preset = aroma_theme_create_material_teal();
     aroma_ui_set_theme(&preset);
 
-    font = aroma_ui_load_font("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 12);
-    if (!font) font = aroma_ui_load_font("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", 12);
+    font = aroma_font_create_from_memory(aroma_ubuntu_ttf, 
+                                        aroma_ubuntu_ttf_len, 16);
+    if (!font) {
+        LOG_ERROR("Failed to load embedded font");
+        aroma_ui_shutdown();
+        return 1;
+    }
 
     AromaWindow* window = aroma_ui_create_window("Settings", 900, 600);
     if (!window) return 1;
@@ -351,7 +357,7 @@ int main(void)
         aroma_tabs_set_content((AromaNode*)tabs, 2, security_nodes, 1);
     }
 
-    debug_overlay = (AromaDebugOverlay*)aroma_debug_overlay_create(content_root_node, 700, 520);
+    debug_overlay = (AromaDebugOverlay*)aroma_debug_overlay_create(content_root_node, 700, 300);
     if (debug_overlay) {
         aroma_debug_overlay_set_font((AromaNode*)debug_overlay, font);
     }

@@ -1,3 +1,4 @@
+
 #include "core/aroma_font.h"
 #include "core/aroma_logger.h"
 #include <ft2build.h>
@@ -80,6 +81,35 @@ AromaFont* aroma_font_create(const char* font_path, int size_px) {
     return font;
 }
 
+AromaFont* aroma_font_create_from_memory(const unsigned char* data, unsigned int data_len, int size_px) {
+    if (!init_freetype()) {
+        return NULL;
+    }
+    if (!data || data_len == 0 || size_px <= 0) {
+        LOG_ERROR("Invalid font memory parameters\n");
+        return NULL;
+    }
+    AromaFont* font = malloc(sizeof(AromaFont));
+    if (!font) {
+        LOG_ERROR("Failed to allocate font structure\n");
+        return NULL;
+    }
+    FT_Error error = FT_New_Memory_Face(ft_library, data, data_len, 0, &font->face);
+    if (error) {
+        LOG_ERROR("Failed to load font from memory (error: %d)\n", error);
+        free(font);
+        return NULL;
+    }
+    FT_Set_Pixel_Sizes(font->face, 0, size_px);
+    font->size_px = size_px;
+    font->line_height = font->face->size->metrics.height >> 6;
+    font->ascender = font->face->size->metrics.ascender >> 6;
+    font->descender = font->face->size->metrics.descender >> 6;
+    font->glyph_count = 0;
+    LOG_INFO("Font loaded from memory at %dpx (line_height=%d, ascender=%d, descender=%d)\n",
+             size_px, font->line_height, font->ascender, font->descender);
+    return font;
+}
 void aroma_font_destroy(AromaFont* font) {
     if (!font) {
         return;
