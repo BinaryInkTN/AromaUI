@@ -121,6 +121,8 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_dropdown_draw);
+
     LOG_INFO("Dropdown created at (%d, %d) size %dx%d", x, y, width, height);
     return node;
 }

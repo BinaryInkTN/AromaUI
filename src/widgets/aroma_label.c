@@ -48,6 +48,8 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_label_draw);
+
     return node;
 }
 

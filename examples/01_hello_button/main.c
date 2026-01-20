@@ -39,30 +39,21 @@ void window_update_callback(size_t window_id, void* data) {
 
     if (!aroma_ui_consume_redraw()) return;
 
-    aroma_graphics_clear(window_id, 0xF0F0F0);
+    aroma_ui_begin_frame(window_id);
+    aroma_ui_render_dirty_window(window_id, 0xF0F0F0);
 
-    size_t dirty_count = 0;
-    AromaNode** dirty_nodes = aroma_dirty_list_get(&dirty_count);
+    if (font) {
+        aroma_graphics_render_text(window_id, font, "Click Me!", 265, 220, 0xFFFFFF);
+        aroma_graphics_render_text(window_id, font, "Reset Counter", 250, 290, 0xFFFFFF);
+        aroma_graphics_render_text(window_id, font, "Exit", 553, 32, 0xFFFFFF);
 
-    if (dirty_count > 0) {
-        if (btn_primary) aroma_button_draw((AromaNode*)btn_primary, window_id);
-        if (btn_secondary) aroma_button_draw((AromaNode*)btn_secondary, window_id);
-        if (btn_small) aroma_button_draw((AromaNode*)btn_small, window_id);
-
-        if (font) {
-            aroma_graphics_render_text(window_id, font, "Click Me!", 265, 220, 0xFFFFFF);
-            aroma_graphics_render_text(window_id, font, "Reset Counter", 250, 290, 0xFFFFFF);
-            aroma_graphics_render_text(window_id, font, "Exit", 553, 32, 0xFFFFFF);
-
-            char buf[64];
-            snprintf(buf, sizeof(buf), "Clicks: %d", click_count);
-            aroma_graphics_render_text(window_id, font, buf, 100, 120, 0x333333);
-            aroma_graphics_render_text(window_id, font, "Windows 7 Aero", 150, 430, 0x0078D7);
-        }
-
-        aroma_dirty_list_clear();
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Clicks: %d", click_count);
+        aroma_graphics_render_text(window_id, font, buf, 100, 120, 0x333333);
+        aroma_graphics_render_text(window_id, font, "Windows 7 Aero", 150, 430, 0x0078D7);
     }
 
+    aroma_ui_end_frame(window_id);
     aroma_graphics_swap_buffers(window_id);
 }
 

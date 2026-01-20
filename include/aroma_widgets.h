@@ -2,6 +2,7 @@
 #define AROMA_WIDGETS_H
 
 #include "widgets/aroma_window.h"
+#include "widgets/aroma_container.h"
 #include "widgets/aroma_button.h"
 #include "widgets/aroma_slider.h"
 #include "widgets/aroma_switch.h"

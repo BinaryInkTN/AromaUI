@@ -42,6 +42,8 @@ AromaNode* aroma_switch_create(AromaNode* parent, int x, int y, int width, int h
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_switch_draw);
+
     LOG_INFO("Switch created: x=%d, y=%d, w=%d, h=%d, state=%s\n", 
              x, y, width, height, initial_state ? "ON" : "OFF");
 

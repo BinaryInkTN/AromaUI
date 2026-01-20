@@ -89,6 +89,8 @@ void aroma_event_process_queue(void);
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down);
 
+void aroma_event_resync_hover(void);
+
 bool aroma_event_subscribe(uint64_t node_id, AromaEventType event_type, 
                           AromaEventHandler handler, void* user_data, uint32_t priority);
 

@@ -9,6 +9,7 @@
 #include "aroma_slab_alloc.h"
 #include "aroma_style.h"
 #include "aroma_widgets.h"
+#include "aroma_drawlist.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -16,6 +17,7 @@
 
 typedef struct AromaNode AromaNode;
 typedef struct AromaWindow AromaWindow;
+typedef struct AromaContainer AromaContainer;
 typedef struct AromaButton AromaButton;
 typedef struct AromaDropdown AromaDropdown;
 typedef struct AromaSlider AromaSlider;
@@ -49,6 +51,7 @@ typedef struct {
 } AromaWindowHandle;
 
 #define AROMA_MAX_WINDOWS 16
+#define AROMA_CLEAR_NONE UINT32_MAX
 
 extern bool g_ui_initialized;
 extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
@@ -76,6 +79,10 @@ void aroma_ui_set_immediate_mode(bool enabled);
 bool aroma_ui_is_immediate_mode(void);
 void aroma_ui_request_redraw(void* user_data);
 bool aroma_ui_consume_redraw(void);
+
+AromaDrawList* aroma_ui_begin_frame(size_t window_id);
+void aroma_ui_end_frame(size_t window_id);
+void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color);
 
 extern bool aroma_ui_init_impl(void);
 

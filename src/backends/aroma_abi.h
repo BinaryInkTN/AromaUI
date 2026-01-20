@@ -12,9 +12,12 @@ typedef struct AromaFont AromaFont;
 typedef struct AromaBackendABI {
     void (*set_graphics_backend_type)(AromaGraphicsBackendType type);
     void (*set_platform_backend_type)(AromaPlatformBackendType type);
+    AromaGraphicsBackendType (*get_graphics_backend_type)(void);
     AromaGraphicsInterface* (*get_graphics_interface)(void);
     AromaPlatformInterface* (*get_platform_interface)(void);
 } AromaBackendABI;
+
+AromaGraphicsBackendType aroma_get_graphics_backend_type(void);
 
 extern AromaBackendABI aroma_backend_abi;
 

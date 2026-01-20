@@ -107,6 +107,8 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_iconbutton_draw);
+
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __iconbutton_handle_event, NULL, 70);

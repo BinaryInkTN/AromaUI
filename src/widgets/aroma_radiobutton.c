@@ -168,6 +168,8 @@ AromaNode* aroma_radio_button_create(AromaNode* parent, AromaRadioGroup* group,
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_radiobutton_draw);
+
     if (group) {
         __radio_group_add(group, data);
         if (group->selected_index == -1 && selected) {

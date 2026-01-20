@@ -117,6 +117,8 @@ AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, 
         aroma_widget_free(fab);
         return NULL;
     }
+
+    aroma_node_set_draw_cb(node, aroma_fab_draw);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __fab_handle_event, aroma_ui_request_redraw, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __fab_handle_event, aroma_ui_request_redraw, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __fab_handle_event, aroma_ui_request_redraw, 70);

@@ -166,6 +166,28 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     last_mouse_x = x; last_mouse_y = y;
 }
 
+void aroma_event_resync_hover(void) {
+    if (!g_event_system.root_node) return;
+
+    AromaNode* target = aroma_event_hit_test(g_event_system.root_node, last_mouse_x, last_mouse_y);
+    uint64_t current_id = target ? target->node_id : 0;
+
+    if (current_id != last_hovered_node_id) {
+        if (last_hovered_node_id != 0) {
+            AromaNode* old = __find_node_by_id(g_event_system.root_node, last_hovered_node_id);
+            if (old) {
+                AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_EXIT, old->node_id, last_mouse_x, last_mouse_y, 0);
+                if (ev) { aroma_event_dispatch(ev); aroma_event_destroy(ev); }
+            }
+        }
+        if (target) {
+            AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_ENTER, target->node_id, last_mouse_x, last_mouse_y, 0);
+            if (ev) { aroma_event_dispatch(ev); aroma_event_destroy(ev); }
+        }
+        last_hovered_node_id = current_id;
+    }
+}
+
 bool aroma_event_dispatch(AromaEvent* event) {
     if (!event || !event->target_node) return false;
     AromaNode* current = event->target_node;
@@ -198,6 +220,8 @@ void aroma_event_process_queue(void) {
         g_event_system.queue_head = (g_event_system.queue_head + 1) % AROMA_MAX_EVENT_QUEUE;
         if (ev) { aroma_event_dispatch(ev); aroma_event_destroy(ev); }
     }
+
+    aroma_event_resync_hover();
 }
 
 bool aroma_event_subscribe(uint64_t node_id, AromaEventType type, AromaEventHandler h, void* data, uint32_t priority) {

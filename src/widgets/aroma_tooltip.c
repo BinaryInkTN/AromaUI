@@ -37,6 +37,8 @@ AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int 
         aroma_widget_free(tip);
         return NULL;
     }
+
+    aroma_node_set_draw_cb(node, aroma_tooltip_draw);
     return node;
 }
 

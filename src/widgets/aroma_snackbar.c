@@ -6,8 +6,10 @@
 #include "aroma_ui.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include "glps_timer.h"
 #include <string.h>
+#include <limits.h>
 
 #define AROMA_SNACKBAR_TEXT_MAX 128
 
@@ -17,6 +19,7 @@ typedef struct AromaSnackbar {
     char action_label[32];
     void (*action_callback)(void* user_data);
     void* user_data;
+    int action_hit_width;
     int duration_ms;
     bool visible;
     bool pending_show;
@@ -47,7 +50,7 @@ static bool __snackbar_handle_event(AromaEvent* event, void* user_data)
     if (!in_bounds) return false;
 
     if (bar->action_label[0] && bar->action_callback) {
-        int action_width = 72;
+        int action_width = (bar->action_hit_width > 0) ? bar->action_hit_width : 72;
         if (event->data.mouse.x >= r->x + r->width - action_width) {
             bar->action_callback(bar->user_data);
             if (bar->timer) {
@@ -98,6 +101,10 @@ AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int dur
         aroma_widget_free(bar);
         return NULL;
     }
+
+    aroma_node_set_z_index(node, INT_MAX);
+
+    aroma_node_set_draw_cb(node, aroma_snackbar_draw);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __snackbar_handle_event, aroma_ui_request_redraw, 80);
     return node;
 }
@@ -150,7 +157,23 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id)
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     AromaTheme theme = aroma_theme_get_global();
+
+    if (platform && platform->get_window_size) {
+        int win_w = 0;
+        int win_h = 0;
+        platform->get_window_size(window_id, &win_w, &win_h);
+        if (win_w > 0 && win_h > 0) {
+            int margin = 24;
+            int max_width = win_w - (margin * 2);
+            if (max_width > 0 && bar->rect.width > max_width) {
+                bar->rect.width = max_width;
+            }
+            bar->rect.x = (win_w - bar->rect.width) / 2;
+            bar->rect.y = win_h - bar->rect.height - margin;
+        }
+    }
 
     uint32_t bg = aroma_color_adjust(theme.colors.text_primary, -0.7f);
     gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, bar->rect.width, bar->rect.height,
@@ -159,7 +182,19 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id)
     if (bar->font && gfx->render_text) {
         gfx->render_text(window_id, bar->font, bar->message, bar->rect.x + 12, bar->rect.y + 28, theme.colors.surface);
         if (bar->action_label[0]) {
-            gfx->render_text(window_id, bar->font, bar->action_label, bar->rect.x + bar->rect.width - 72, bar->rect.y + 28, theme.colors.primary_light);
+            int padding = 12;
+            int action_width = 72;
+            if (gfx->measure_text) {
+                float measured = gfx->measure_text(window_id, bar->font, bar->action_label);
+                action_width = (int)measured + (padding * 2);
+                if (action_width < 48) action_width = 48;
+            }
+            bar->action_hit_width = action_width;
+            gfx->render_text(window_id, bar->font, bar->action_label,
+                             bar->rect.x + bar->rect.width - action_width + padding,
+                             bar->rect.y + 28, theme.colors.primary_light);
+        } else {
+            bar->action_hit_width = 0;
         }
     }
 }

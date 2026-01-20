@@ -160,6 +160,8 @@ AromaNode* aroma_sidebar_create(AromaNode* parent, int x, int y, int width, int 
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_sidebar_draw);
+
     if (!sidebar->font) {
         AromaNode* root_node = parent;
         while (root_node && root_node->parent_node) {

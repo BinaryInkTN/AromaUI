@@ -126,6 +126,8 @@ AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char*
         aroma_widget_free(dlg);
         return NULL;
     }
+
+    aroma_node_set_draw_cb(node, aroma_dialog_draw);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __dialog_handle_event, aroma_ui_request_redraw, 100);
     return node;
 }

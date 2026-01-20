@@ -133,6 +133,68 @@ AromaTheme aroma_theme_create_custom(void) {
     return theme;
 }
 
+AromaTheme aroma_theme_create_material_preset(AromaMaterialThemePreset preset) {
+    AromaTheme theme = aroma_theme_create_default();
+
+    switch (preset) {
+        case AROMA_THEME_MATERIAL_BLUE:
+            theme.colors.primary = 0x1A73E8;
+            theme.colors.primary_dark = 0x174EA6;
+            theme.colors.primary_light = 0xD2E3FC;
+            theme.colors.secondary = 0x5F6368;
+            break;
+        case AROMA_THEME_MATERIAL_TEAL:
+            theme.colors.primary = 0x00796B;
+            theme.colors.primary_dark = 0x004D40;
+            theme.colors.primary_light = 0xB2DFDB;
+            theme.colors.secondary = 0x455A64;
+            break;
+        case AROMA_THEME_MATERIAL_GREEN:
+            theme.colors.primary = 0x2E7D32;
+            theme.colors.primary_dark = 0x1B5E20;
+            theme.colors.primary_light = 0xC8E6C9;
+            theme.colors.secondary = 0x546E7A;
+            break;
+        case AROMA_THEME_MATERIAL_ORANGE:
+            theme.colors.primary = 0xFB8C00;
+            theme.colors.primary_dark = 0xEF6C00;
+            theme.colors.primary_light = 0xFFE0B2;
+            theme.colors.secondary = 0x6D4C41;
+            break;
+        case AROMA_THEME_MATERIAL_PINK:
+            theme.colors.primary = 0xD81B60;
+            theme.colors.primary_dark = 0xAD1457;
+            theme.colors.primary_light = 0xF8BBD0;
+            theme.colors.secondary = 0x6A1B9A;
+            break;
+        case AROMA_THEME_MATERIAL_PURPLE:
+        default:
+            break;
+    }
+
+    return theme;
+}
+
+AromaTheme aroma_theme_create_material_blue(void) {
+    return aroma_theme_create_material_preset(AROMA_THEME_MATERIAL_BLUE);
+}
+
+AromaTheme aroma_theme_create_material_teal(void) {
+    return aroma_theme_create_material_preset(AROMA_THEME_MATERIAL_TEAL);
+}
+
+AromaTheme aroma_theme_create_material_green(void) {
+    return aroma_theme_create_material_preset(AROMA_THEME_MATERIAL_GREEN);
+}
+
+AromaTheme aroma_theme_create_material_orange(void) {
+    return aroma_theme_create_material_preset(AROMA_THEME_MATERIAL_ORANGE);
+}
+
+AromaTheme aroma_theme_create_material_pink(void) {
+    return aroma_theme_create_material_preset(AROMA_THEME_MATERIAL_PINK);
+}
+
 void aroma_theme_set_global(const AromaTheme* theme) {
     if (theme) {
         memcpy(&g_global_theme, theme, sizeof(AromaTheme));

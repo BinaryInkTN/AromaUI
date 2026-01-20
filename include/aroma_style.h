@@ -42,6 +42,15 @@ typedef struct AromaTheme {
     bool enable_shadows;         
 } AromaTheme;
 
+typedef enum AromaMaterialThemePreset {
+    AROMA_THEME_MATERIAL_PURPLE,
+    AROMA_THEME_MATERIAL_BLUE,
+    AROMA_THEME_MATERIAL_TEAL,
+    AROMA_THEME_MATERIAL_GREEN,
+    AROMA_THEME_MATERIAL_ORANGE,
+    AROMA_THEME_MATERIAL_PINK
+} AromaMaterialThemePreset;
+
 typedef struct AromaStyle {
 
     uint32_t idle_color;
@@ -73,6 +82,14 @@ AromaTheme aroma_theme_create_dark(void);
 AromaTheme aroma_theme_create_high_contrast(void);
 
 AromaTheme aroma_theme_create_custom(void);
+
+AromaTheme aroma_theme_create_material_preset(AromaMaterialThemePreset preset);
+
+AromaTheme aroma_theme_create_material_blue(void);
+AromaTheme aroma_theme_create_material_teal(void);
+AromaTheme aroma_theme_create_material_green(void);
+AromaTheme aroma_theme_create_material_orange(void);
+AromaTheme aroma_theme_create_material_pink(void);
 
 AromaStyle aroma_style_create_from_theme(const AromaTheme* theme);
 

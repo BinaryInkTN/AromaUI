@@ -76,33 +76,23 @@ void window_update_callback(size_t window_id, void* data) {
 
     if (!aroma_ui_consume_redraw()) return;
 
-    aroma_graphics_clear(window_id, 0xF0F0F0);
+    aroma_ui_begin_frame(window_id);
+    aroma_ui_render_dirty_window(window_id, 0xF0F0F0);
 
-    size_t dirty_count = 0;
-    aroma_dirty_list_get(&dirty_count);
+    if (font) {
+        aroma_graphics_render_text(window_id, font, "Name:", 50, 20, 0x333333);
+        aroma_graphics_render_text(window_id, font, "Age:", 50, 100, 0x333333);
+        aroma_graphics_render_text(window_id, font, "Volume:", 50, 180, 0x333333);
+        aroma_graphics_render_text(window_id, font, "Notify:", 50, 260, 0x333333);
 
-    if (dirty_count > 0) {
-        if (txt_name) aroma_textbox_draw((AromaNode*)txt_name, window_id);
-        if (dd_age) aroma_dropdown_draw((AromaNode*)dd_age, window_id);
-        if (slider_volume) aroma_slider_draw((AromaNode*)slider_volume, window_id);
-        if (sw_notifications) aroma_switch_draw((AromaNode*)sw_notifications, window_id);
-        if (btn_submit) aroma_button_draw((AromaNode*)btn_submit, window_id);
-
-        if (font) {
-            aroma_graphics_render_text(window_id, font, "Name:", 50, 20, 0x333333);
-            aroma_graphics_render_text(window_id, font, "Age:", 50, 100, 0x333333);
-            aroma_graphics_render_text(window_id, font, "Volume:", 50, 180, 0x333333);
-            aroma_graphics_render_text(window_id, font, "Notify:", 50, 260, 0x333333);
-
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%d%%", form.volume);
-            aroma_graphics_render_text(window_id, font, buf, 470, 180, 0x0078D7);
-        }
-
-        aroma_ui_render_dropdown_overlays(window_id);
-        aroma_dirty_list_clear();
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%d%%", form.volume);
+        aroma_graphics_render_text(window_id, font, buf, 470, 180, 0x0078D7);
     }
 
+    aroma_ui_render_dropdown_overlays(window_id);
+
+    aroma_ui_end_frame(window_id);
     aroma_graphics_swap_buffers(window_id);
 }
 

@@ -1,6 +1,8 @@
 #include "core/aroma_node.h"
 #include "core/aroma_logger.h"
+#include "core/aroma_event.h"
 #include "core/aroma_slab_alloc.h"
+#include <inttypes.h>
 #include <stdatomic.h>
 #include <string.h>
 #include <stdio.h>
@@ -198,8 +200,8 @@ void __print_node_info(AromaNode* node) {
         printf("[NULL NODE]\n");
         return;
     }
-        printf("Node ID: %llu | Type: %s | z:%d | Children: %llu | Widget: %p\n",
-           node->node_id,
+          printf("Node ID: %" PRIu64 " | Type: %s | z:%d | Children: %" PRIu64 " | Widget: %p\n",
+              node->node_id,
            __node_type_to_string(node->node_type),
             node->z_index,
            node->child_count,
@@ -213,8 +215,8 @@ static void __print_node_tree_recursive(AromaNode* node, int depth) {
         printf("  ");
     }
 
-    printf("├─ [ID: %llu | Type: %s | Children: %llu]\n",
-           node->node_id,
+        printf("├─ [ID: %" PRIu64 " | Type: %s | Children: %" PRIu64 "]\n",
+            node->node_id,
            __node_type_to_string(node->node_type),
            node->child_count);
 
@@ -232,7 +234,7 @@ void __print_node_tree(AromaNode* root_node) {
     }
 
     printf("\n========== AROMA SCENE GRAPH TREE ==========\n");
-    printf("Root Node ID: %llu\n", root_node->node_id);
+    printf("Root Node ID: %" PRIu64 "\n", root_node->node_id);
     printf("\nHierarchy:\n");
     __print_node_tree_recursive(root_node, 0);
     printf("==========================================\n\n");
@@ -281,6 +283,15 @@ void aroma_node_mark_clean(AromaNode* node) {
     }
 }
 
+void aroma_node_set_draw_cb(AromaNode* node, AromaNodeDrawFn draw_cb) {
+    if (!node) return;
+    node->draw_cb = draw_cb;
+}
+
+AromaNodeDrawFn aroma_node_get_draw_cb(AromaNode* node) {
+    return node ? node->draw_cb : NULL;
+}
+
 void aroma_node_set_hidden(AromaNode* node, bool hidden) {
     if (!node) return;
     if (node->is_hidden != hidden) {
@@ -288,6 +299,7 @@ void aroma_node_set_hidden(AromaNode* node, bool hidden) {
         if (node->parent_node) {
             aroma_node_invalidate(node->parent_node);
         }
+        aroma_event_resync_hover();
     }
 }
 
