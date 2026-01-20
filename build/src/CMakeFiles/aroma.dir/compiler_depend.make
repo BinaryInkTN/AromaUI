@@ -519,6 +519,7 @@ src/CMakeFiles/aroma.dir/core/aroma_event.c.o: /home/yassine/AromaUI/src/core/ar
   /home/yassine/AromaUI/src/core/aroma_node.h \
   /home/yassine/AromaUI/src/core/aroma_slab_alloc.h \
   /usr/include/alloca.h \
+  /usr/include/assert.h \
   /usr/include/endian.h \
   /usr/include/features-time64.h \
   /usr/include/features.h \
@@ -589,7 +590,6 @@ src/CMakeFiles/aroma.dir/core/aroma_event.c.o: /home/yassine/AromaUI/src/core/ar
 src/CMakeFiles/aroma.dir/core/aroma_font.c.o: /home/yassine/AromaUI/src/core/aroma_font.c \
   /home/yassine/AromaUI/include/aroma_font.h \
   /home/yassine/AromaUI/include/aroma_logger.h \
-  /home/yassine/AromaUI/include/aroma_ubuntu_font.h \
   /home/yassine/AromaUI/src/core/aroma_font.h \
   /home/yassine/AromaUI/src/core/aroma_logger.h \
   /usr/include/alloca.h \
@@ -3316,8 +3316,6 @@ src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: /home/yassine/AromaUI/src/wid
 /usr/include/inttypes.h:
 
 /home/yassine/AromaUI/src/core/aroma_graphics_wrapper.c:
-
-/home/yassine/AromaUI/include/aroma_ubuntu_font.h:
 
 /usr/include/x86_64-linux-gnu/bits/posix_opt.h:
 

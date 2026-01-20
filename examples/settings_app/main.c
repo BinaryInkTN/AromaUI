@@ -120,7 +120,7 @@ int main(void)
 {
     if (!aroma_ui_init()) return 1;
 
-    AromaTheme preset = aroma_theme_create_material_teal();
+    AromaTheme preset = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
     aroma_ui_set_theme(&preset);
 
     font = aroma_font_create_from_memory(aroma_ubuntu_ttf, 
