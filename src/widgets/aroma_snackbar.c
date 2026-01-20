@@ -153,6 +153,7 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id)
     if (bar->timer && bar->duration_ms > 0) {
         glps_timer_check_and_call(bar->timer);
         if (!bar->visible) return;
+        aroma_ui_request_redraw(NULL);
     }
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
