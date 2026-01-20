@@ -3,9 +3,8 @@ project(aroma LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-
-find_package(freetype REQUIRED)
-
+find_package(ZLIB REQUIRED)
+find_package(Freetype REQUIRED)
 add_subdirectory(src)
 
 find_package(GLPS REQUIRED)
