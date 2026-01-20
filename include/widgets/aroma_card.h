@@ -5,7 +5,7 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 
-// Material Design 3 Card with elevation
+
 typedef enum {
     CARD_TYPE_ELEVATED,  // Elevated card with shadow
     CARD_TYPE_FILLED,    // Filled card with tint

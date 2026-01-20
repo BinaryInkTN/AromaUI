@@ -63,6 +63,8 @@ AromaNode* aroma_listview_create(AromaNode* parent, int x, int y, int width, int
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_listview_draw);
+
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __listview_handle_event, NULL, 80);
     return node;
 }

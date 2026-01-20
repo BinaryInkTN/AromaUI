@@ -17,20 +17,15 @@ static bool on_click(AromaButton* btn, void* user_data) {
 static void window_update_callback(size_t window_id, void* data) {
     (void)data;
     if (!aroma_ui_consume_redraw()) return;
-    aroma_graphics_clear(window_id, 0xFFFBFE);
-
-    size_t dirty_count = 0;
-    aroma_dirty_list_get(&dirty_count);
-    if (dirty_count > 0) {
-        if (button) aroma_button_draw((AromaNode*)button, window_id);
-        if (font) {
-            char buf[32];
-            snprintf(buf, sizeof(buf), "Clicks: %d", clicks);
-            aroma_graphics_render_text(window_id, font, buf, 40, 160, 0x6750A4);
-        }
-        aroma_dirty_list_clear();
+    aroma_ui_begin_frame(window_id);
+    aroma_ui_render_dirty_window(window_id, 0xFFFBFE);
+    if (font) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "Clicks: %d", clicks);
+        aroma_graphics_render_text(window_id, font, buf, 40, 160, 0x6750A4);
     }
 
+    aroma_ui_end_frame(window_id);
     aroma_graphics_swap_buffers(window_id);
 }
 

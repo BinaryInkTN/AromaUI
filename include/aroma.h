@@ -15,6 +15,7 @@
 #include "aroma_style.h"
 #include "aroma_time.h"
 #include "aroma_timer.h"
+#include "aroma_drawlist.h"
 #include "aroma_ui.h"
 #include "aroma_widgets.h"
 

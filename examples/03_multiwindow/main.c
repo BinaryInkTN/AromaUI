@@ -62,27 +62,8 @@ static bool on_window2_slider_change(AromaSlider* slider, int value, void* user_
 static void window_update_callback(size_t window_id, void* data) {
     (void)data;
     if (!aroma_ui_consume_redraw()) return;
-    aroma_graphics_clear(window_id, 0xF0F0F0);
-
-    size_t dirty_count = 0;
-    aroma_dirty_list_get(&dirty_count);
-    if (dirty_count > 0) {
-
-        if (window_id == 0) {
-            if (g_btn1) aroma_button_draw((AromaNode*)g_btn1, window_id);
-            if (g_txt1) aroma_textbox_draw((AromaNode*)g_txt1, window_id);
-            if (g_slider1) aroma_slider_draw((AromaNode*)g_slider1, window_id);
-        } else if (window_id == 1) {
-            if (g_btn2) aroma_button_draw((AromaNode*)g_btn2, window_id);
-            if (g_switch2) aroma_switch_draw((AromaNode*)g_switch2, window_id);
-            if (g_slider2) aroma_slider_draw((AromaNode*)g_slider2, window_id);
-        }
-
-            aroma_ui_render_dropdown_overlays(window_id);
-
-        aroma_dirty_list_clear();
-    }
-
+    aroma_ui_render_dirty_window(window_id, 0xF0F0F0);
+    aroma_ui_render_dropdown_overlays(window_id);
     aroma_graphics_swap_buffers(window_id);
 }
 

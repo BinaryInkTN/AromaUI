@@ -29,6 +29,7 @@ typedef struct AromaButton
     uint32_t hover_color;
     uint32_t pressed_color;
     uint32_t text_color;
+    bool use_theme_colors;
     AromaFont* font;
     bool (*on_click)(AromaNode* button_node, void* user_data);
     bool (*on_hover)(AromaNode* button_node, void* user_data);

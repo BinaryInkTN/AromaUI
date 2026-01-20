@@ -39,12 +39,23 @@ static void __tabs_request_redraw(void* user_data)
 static int __tabs_index_from_x(AromaTabs* tabs, int x)
 {
     if (!tabs || tabs->count <= 0) return -1;
-    int tab_width = tabs->rect.width / tabs->count;
-    if (tab_width <= 0) return -1;
-    int index = (x - tabs->rect.x) / tab_width;
-    if (index < 0) return -1;
-    if (index >= tabs->count) index = tabs->count - 1;
-    return index;
+    if (x < tabs->rect.x || x >= (tabs->rect.x + tabs->rect.width)) return -1;
+
+    int base_width = tabs->rect.width / tabs->count;
+    if (base_width <= 0) return -1;
+
+    int start_x = tabs->rect.x;
+    for (int i = 0; i < tabs->count; i++) {
+        int w = (i == tabs->count - 1)
+            ? (tabs->rect.x + tabs->rect.width - start_x)
+            : base_width;
+        if (x < start_x + w) {
+            return i;
+        }
+        start_x += w;
+    }
+
+    return tabs->count - 1;
 }
 
 static void __tabs_set_hidden_recursive(AromaNode* node, bool hidden)
@@ -160,6 +171,8 @@ AromaNode* aroma_tabs_create(AromaNode* parent, int x, int y, int width, int hei
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_tabs_draw);
+
     if (!tabs->font) {
         AromaNode* root_node = parent;
         while (root_node && root_node->parent_node) {
@@ -272,9 +285,9 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
     tabs->text_color = theme.colors.text_primary;
     tabs->text_selected_color = theme.colors.surface;
 
-    float radius = tabs->rect.height / 2.0f;
+    float radius = 0.0f;
     gfx->fill_rectangle(window_id, tabs->rect.x, tabs->rect.y, tabs->rect.width,
-                        tabs->rect.height, tabs->bg_color, true, radius);
+                        tabs->rect.height, tabs->bg_color, false, radius);
 
     if (tabs->count <= 0) return;
 
@@ -292,9 +305,9 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
             fill = aroma_color_blend(fill, tabs->selected_color, 0.12f);
         }
 
-        gfx->fill_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height, fill, true, radius);
+        gfx->fill_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height, fill, false, radius);
         gfx->draw_hollow_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height,
-                                   aroma_color_adjust(tabs->bg_color, -0.2f), 1, true, radius);
+                       aroma_color_adjust(tabs->bg_color, -0.2f), 1, false, radius);
 
         if (tabs->font && gfx->render_text) {
             uint32_t text_color = selected ? tabs->text_selected_color : tabs->text_color;

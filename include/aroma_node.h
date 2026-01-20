@@ -10,6 +10,8 @@
 
 typedef struct AromaNode AromaNode;
 
+typedef void (*AromaNodeDrawFn)(AromaNode* node, size_t window_id);
+
 typedef enum AromaNodeType {
     NODE_TYPE_ROOT,
     NODE_TYPE_CONTAINER,
@@ -24,11 +26,14 @@ typedef struct AromaNode
     AromaNode* parent_node;            
     AromaNode* child_nodes[AROMA_MAX_CHILD_NODES]; 
     void *node_widget_ptr;             
+    AromaNodeDrawFn draw_cb;            
     uint64_t child_count;              
     bool is_dirty;                     
     bool is_hidden;                    
     bool propagate_dirty;              
 } AromaNode;
+
+#define AROMA_NODE_AS(node, Type) ((Type*)((node) ? (node)->node_widget_ptr : NULL))
 
 void __node_system_init(void);
 void __node_system_destroy(void);
@@ -53,6 +58,8 @@ void aroma_node_invalidate(AromaNode* node);
 void aroma_node_invalidate_tree(AromaNode* root);
 bool aroma_node_is_dirty(AromaNode* node);
 void aroma_node_mark_clean(AromaNode* node);
+void aroma_node_set_draw_cb(AromaNode* node, AromaNodeDrawFn draw_cb);
+AromaNodeDrawFn aroma_node_get_draw_cb(AromaNode* node);
 void aroma_node_set_hidden(AromaNode* node, bool hidden);
 bool aroma_node_is_hidden(AromaNode* node);
 

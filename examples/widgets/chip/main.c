@@ -8,16 +8,7 @@ static AromaNode* chip2 = NULL;
 static void window_update_callback(size_t window_id, void* data) {
     (void)data;
     if (!aroma_ui_consume_redraw()) return;
-    aroma_graphics_clear(window_id, 0xFFFBFE);
-
-    size_t dirty_count = 0;
-    aroma_dirty_list_get(&dirty_count);
-    if (dirty_count > 0) {
-        if (chip1) aroma_chip_draw(chip1, window_id);
-        if (chip2) aroma_chip_draw(chip2, window_id);
-        aroma_dirty_list_clear();
-    }
-
+    aroma_ui_render_dirty_window(window_id, 0xFFFBFE);
     aroma_graphics_swap_buffers(window_id);
 }
 

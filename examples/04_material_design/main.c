@@ -33,38 +33,27 @@ static bool on_btn3_click(AromaButton* b, void* d) {
 
 void window_update(size_t wid, void* d) {
     if (!aroma_ui_consume_redraw()) return;
-    aroma_graphics_clear(wid, MD3_SURFACE);
-    
-    size_t dirty_count = 0;
-    aroma_dirty_list_get(&dirty_count);
-    
-    if (dirty_count > 0) {
-        if (btn1) aroma_button_draw((AromaNode*)btn1, wid);
-        if (btn2) aroma_button_draw((AromaNode*)btn2, wid);
-        if (btn3) aroma_button_draw((AromaNode*)btn3, wid);
-        if (toggle) aroma_switch_draw((AromaNode*)toggle, wid);
-        if (slider) aroma_slider_draw((AromaNode*)slider, wid);
-        if (textbox) aroma_textbox_draw((AromaNode*)textbox, wid);
-        if (dropdown) aroma_dropdown_draw((AromaNode*)dropdown, wid);
-        
-        if (font) {
-            aroma_graphics_render_text(wid, font, "Material Design 3 Showcase", 30, 35, MD3_PRIMARY);
-            aroma_graphics_render_text(wid, font, "Buttons (Filled)", 30, 75, MD3_ON_SURFACE);
-            aroma_graphics_render_text(wid, font, "Add", 75, 113, 0xFFFFFF);
-            aroma_graphics_render_text(wid, font, "Reset", 215, 113, 0xFFFFFF);
-            aroma_graphics_render_text(wid, font, "Exit", 373, 113, 0xFFFFFF);
-            
-            aroma_graphics_render_text(wid, font, "Switch & Slider", 30, 175, MD3_ON_SURFACE);
-            aroma_graphics_render_text(wid, font, "Text Input", 30, 275, MD3_ON_SURFACE);
-            aroma_graphics_render_text(wid, font, "Dropdown Menu", 470, 275, MD3_ON_SURFACE);
-            
-            char buf[64];
-            snprintf(buf, sizeof(buf), "Counter: %d", count);
-            aroma_graphics_render_text(wid, font, buf, 30, 400, MD3_PRIMARY);
-            aroma_graphics_render_text(wid, font, "Smooth antialiased edges • Material You colors", 30, 450, 0x79747E);
-        }
-        aroma_dirty_list_clear();
+    aroma_ui_begin_frame(wid);
+    aroma_ui_render_dirty_window(wid, MD3_SURFACE);
+
+    if (font) {
+        aroma_graphics_render_text(wid, font, "Material Design 3 Showcase", 30, 35, MD3_PRIMARY);
+        aroma_graphics_render_text(wid, font, "Buttons (Filled)", 30, 75, MD3_ON_SURFACE);
+        aroma_graphics_render_text(wid, font, "Add", 75, 113, 0xFFFFFF);
+        aroma_graphics_render_text(wid, font, "Reset", 215, 113, 0xFFFFFF);
+        aroma_graphics_render_text(wid, font, "Exit", 373, 113, 0xFFFFFF);
+
+        aroma_graphics_render_text(wid, font, "Switch & Slider", 30, 175, MD3_ON_SURFACE);
+        aroma_graphics_render_text(wid, font, "Text Input", 30, 275, MD3_ON_SURFACE);
+        aroma_graphics_render_text(wid, font, "Dropdown Menu", 470, 275, MD3_ON_SURFACE);
+
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Counter: %d", count);
+        aroma_graphics_render_text(wid, font, buf, 30, 400, MD3_PRIMARY);
+        aroma_graphics_render_text(wid, font, "Smooth antialiased edges • Material You colors", 30, 450, 0x79747E);
     }
+
+    aroma_ui_end_frame(wid);
     aroma_graphics_swap_buffers(wid);
 }
 

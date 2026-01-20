@@ -209,10 +209,24 @@ src/CMakeFiles/aroma.dir/core/aroma_timer.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/core/aroma_timer.c.s"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/core/aroma_timer.c -o CMakeFiles/aroma.dir/core/aroma_timer.c.s
 
+src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o: src/CMakeFiles/aroma.dir/flags.make
+src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o: /home/yassine/AromaUI/src/core/aroma_drawlist.c
+src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o -MF CMakeFiles/aroma.dir/core/aroma_drawlist.c.o.d -o CMakeFiles/aroma.dir/core/aroma_drawlist.c.o -c /home/yassine/AromaUI/src/core/aroma_drawlist.c
+
+src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/aroma.dir/core/aroma_drawlist.c.i"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/yassine/AromaUI/src/core/aroma_drawlist.c > CMakeFiles/aroma.dir/core/aroma_drawlist.c.i
+
+src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/core/aroma_drawlist.c.s"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/core/aroma_drawlist.c -o CMakeFiles/aroma.dir/core/aroma_drawlist.c.s
+
 src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o: /home/yassine/AromaUI/src/backends/platforms/aroma_platform_glps.c
 src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o -MF CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o.d -o CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o -c /home/yassine/AromaUI/src/backends/platforms/aroma_platform_glps.c
 
 src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.i: cmake_force
@@ -226,7 +240,7 @@ src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s: cmake_force
 src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o: /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_gles3.c
 src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o -MF CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o.d -o CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o -c /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_gles3.c
 
 src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.i: cmake_force
@@ -240,7 +254,7 @@ src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.s: cmake_force
 src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.c
 src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o -MF CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o.d -o CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o -c /home/yassine/AromaUI/src/backends/graphics/utils/helpers_gles3.c
 
 src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.i: cmake_force
@@ -254,7 +268,7 @@ src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.s: cmake_force
 src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o: /home/yassine/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c
 src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o -MF CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o.d -o CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o -c /home/yassine/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c
 
 src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.i: cmake_force
@@ -268,7 +282,7 @@ src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.s: cmake_for
 src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: /home/yassine/AromaUI/src/backends/aroma_abi.c
 src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o -MF CMakeFiles/aroma.dir/backends/aroma_abi.c.o.d -o CMakeFiles/aroma.dir/backends/aroma_abi.c.o -c /home/yassine/AromaUI/src/backends/aroma_abi.c
 
 src/CMakeFiles/aroma.dir/backends/aroma_abi.c.i: cmake_force
@@ -282,7 +296,7 @@ src/CMakeFiles/aroma.dir/backends/aroma_abi.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: /home/yassine/AromaUI/src/widgets/aroma_window.c
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_window.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_window.c.o -c /home/yassine/AromaUI/src/widgets/aroma_window.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_window.c.i: cmake_force
@@ -293,10 +307,24 @@ src/CMakeFiles/aroma.dir/widgets/aroma_window.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/widgets/aroma_window.c.s"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/widgets/aroma_window.c -o CMakeFiles/aroma.dir/widgets/aroma_window.c.s
 
+src/CMakeFiles/aroma.dir/widgets/aroma_container.c.o: src/CMakeFiles/aroma.dir/flags.make
+src/CMakeFiles/aroma.dir/widgets/aroma_container.c.o: /home/yassine/AromaUI/src/widgets/aroma_container.c
+src/CMakeFiles/aroma.dir/widgets/aroma_container.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_container.c.o"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_container.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_container.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_container.c.o -c /home/yassine/AromaUI/src/widgets/aroma_container.c
+
+src/CMakeFiles/aroma.dir/widgets/aroma_container.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/aroma.dir/widgets/aroma_container.c.i"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/yassine/AromaUI/src/widgets/aroma_container.c > CMakeFiles/aroma.dir/widgets/aroma_container.c.i
+
+src/CMakeFiles/aroma.dir/widgets/aroma_container.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/aroma.dir/widgets/aroma_container.c.s"
+	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/yassine/AromaUI/src/widgets/aroma_container.c -o CMakeFiles/aroma.dir/widgets/aroma_container.c.s
+
 src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o: /home/yassine/AromaUI/src/widgets/aroma_button.c
 src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_button.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_button.c.o -c /home/yassine/AromaUI/src/widgets/aroma_button.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_button.c.i: cmake_force
@@ -310,7 +338,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_button.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o: /home/yassine/AromaUI/src/widgets/aroma_slider.c
 src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_slider.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_slider.c.o -c /home/yassine/AromaUI/src/widgets/aroma_slider.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.i: cmake_force
@@ -324,7 +352,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o: /home/yassine/AromaUI/src/widgets/aroma_switch.c
 src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_switch.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_switch.c.o -c /home/yassine/AromaUI/src/widgets/aroma_switch.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.i: cmake_force
@@ -338,7 +366,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o: /home/yassine/AromaUI/src/widgets/aroma_textbox.c
 src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o -c /home/yassine/AromaUI/src/widgets/aroma_textbox.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.i: cmake_force
@@ -352,7 +380,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o: /home/yassine/AromaUI/src/widgets/aroma_dropdown.c
 src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o -c /home/yassine/AromaUI/src/widgets/aroma_dropdown.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.i: cmake_force
@@ -366,7 +394,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o: /home/yassine/AromaUI/src/widgets/aroma_checkbox.c
 src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o -c /home/yassine/AromaUI/src/widgets/aroma_checkbox.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.i: cmake_force
@@ -380,7 +408,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o: /home/yassine/AromaUI/src/widgets/aroma_radiobutton.c
 src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o -c /home/yassine/AromaUI/src/widgets/aroma_radiobutton.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.i: cmake_force
@@ -394,7 +422,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o: /home/yassine/AromaUI/src/widgets/aroma_progressbar.c
 src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o -c /home/yassine/AromaUI/src/widgets/aroma_progressbar.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.i: cmake_force
@@ -408,7 +436,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_label.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_label.c.o: /home/yassine/AromaUI/src/widgets/aroma_label.c
 src/CMakeFiles/aroma.dir/widgets/aroma_label.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_label.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_label.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_label.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_label.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_label.c.o -c /home/yassine/AromaUI/src/widgets/aroma_label.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_label.c.i: cmake_force
@@ -422,7 +450,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_label.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o: /home/yassine/AromaUI/src/widgets/aroma_divider.c
 src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_divider.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_divider.c.o -c /home/yassine/AromaUI/src/widgets/aroma_divider.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.i: cmake_force
@@ -436,7 +464,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o: /home/yassine/AromaUI/src/widgets/aroma_iconbutton.c
 src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o -c /home/yassine/AromaUI/src/widgets/aroma_iconbutton.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.i: cmake_force
@@ -450,7 +478,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o: /home/yassine/AromaUI/src/widgets/aroma_dialog.c
 src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o -c /home/yassine/AromaUI/src/widgets/aroma_dialog.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.i: cmake_force
@@ -464,7 +492,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o: /home/yassine/AromaUI/src/widgets/aroma_listview.c
 src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_listview.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_listview.c.o -c /home/yassine/AromaUI/src/widgets/aroma_listview.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.i: cmake_force
@@ -478,7 +506,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_listview.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o: /home/yassine/AromaUI/src/widgets/aroma_menu.c
 src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_menu.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_menu.c.o -c /home/yassine/AromaUI/src/widgets/aroma_menu.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.i: cmake_force
@@ -492,7 +520,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_menu.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o: /home/yassine/AromaUI/src/widgets/aroma_tooltip.c
 src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o -c /home/yassine/AromaUI/src/widgets/aroma_tooltip.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.i: cmake_force
@@ -506,7 +534,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o: /home/yassine/AromaUI/src/widgets/aroma_card.c
 src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_card.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_card.c.o -c /home/yassine/AromaUI/src/widgets/aroma_card.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_card.c.i: cmake_force
@@ -520,7 +548,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_card.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o: /home/yassine/AromaUI/src/widgets/aroma_chip.c
 src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_chip.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_chip.c.o -c /home/yassine/AromaUI/src/widgets/aroma_chip.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.i: cmake_force
@@ -534,7 +562,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o: /home/yassine/AromaUI/src/widgets/aroma_fab.c
 src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_fab.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_fab.c.o -c /home/yassine/AromaUI/src/widgets/aroma_fab.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.i: cmake_force
@@ -548,7 +576,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_fab.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: /home/yassine/AromaUI/src/widgets/aroma_snackbar.c
 src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o -c /home/yassine/AromaUI/src/widgets/aroma_snackbar.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.i: cmake_force
@@ -562,7 +590,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o: /home/yassine/AromaUI/src/widgets/aroma_tabs.c
 src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o -c /home/yassine/AromaUI/src/widgets/aroma_tabs.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.i: cmake_force
@@ -576,7 +604,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o: /home/yassine/AromaUI/src/widgets/aroma_sidebar.c
 src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o -c /home/yassine/AromaUI/src/widgets/aroma_sidebar.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.i: cmake_force
@@ -590,7 +618,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.s: cmake_force
 src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o: src/CMakeFiles/aroma.dir/flags.make
 src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o: /home/yassine/AromaUI/src/widgets/aroma_debug_overlay.c
 src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o: src/CMakeFiles/aroma.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building C object src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o"
 	cd /home/yassine/AromaUI/build/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o -MF CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o.d -o CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o -c /home/yassine/AromaUI/src/widgets/aroma_debug_overlay.c
 
 src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.i: cmake_force
@@ -613,12 +641,14 @@ aroma_OBJECTS = \
 "CMakeFiles/aroma.dir/core/aroma_style.c.o" \
 "CMakeFiles/aroma.dir/core/aroma_time.c.o" \
 "CMakeFiles/aroma.dir/core/aroma_timer.c.o" \
+"CMakeFiles/aroma.dir/core/aroma_drawlist.c.o" \
 "CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o" \
 "CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o" \
 "CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o" \
 "CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o" \
 "CMakeFiles/aroma.dir/backends/aroma_abi.c.o" \
 "CMakeFiles/aroma.dir/widgets/aroma_window.c.o" \
+"CMakeFiles/aroma.dir/widgets/aroma_container.c.o" \
 "CMakeFiles/aroma.dir/widgets/aroma_button.c.o" \
 "CMakeFiles/aroma.dir/widgets/aroma_slider.c.o" \
 "CMakeFiles/aroma.dir/widgets/aroma_switch.c.o" \
@@ -655,12 +685,14 @@ src/libaroma.a: src/CMakeFiles/aroma.dir/core/aroma_graphics_wrapper.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/core/aroma_style.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/core/aroma_time.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/core/aroma_timer.c.o
+src/libaroma.a: src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/backends/aroma_abi.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_window.c.o
+src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_container.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o
@@ -685,7 +717,7 @@ src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o
 src/libaroma.a: src/CMakeFiles/aroma.dir/build.make
 src/libaroma.a: src/CMakeFiles/aroma.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Linking C static library libaroma.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/yassine/AromaUI/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Linking C static library libaroma.a"
 	cd /home/yassine/AromaUI/build/src && $(CMAKE_COMMAND) -P CMakeFiles/aroma.dir/cmake_clean_target.cmake
 	cd /home/yassine/AromaUI/build/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/aroma.dir/link.txt --verbose=$(VERBOSE)
 

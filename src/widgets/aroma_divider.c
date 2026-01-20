@@ -33,6 +33,9 @@ AromaNode* aroma_divider_create(AromaNode* parent, int x, int y, int length, Aro
         aroma_widget_free(divider);
         return NULL;
     }
+    
+    aroma_node_set_draw_cb(node, aroma_divider_draw);
+
     return node;
 }
 

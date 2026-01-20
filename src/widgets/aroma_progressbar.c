@@ -35,6 +35,8 @@ AromaNode* aroma_progressbar_create(AromaNode* parent, int x, int y, int width, 
         aroma_widget_free(bar);
         return NULL;
     }
+
+    aroma_node_set_draw_cb(node, aroma_progressbar_draw);
     return node;
 }
 

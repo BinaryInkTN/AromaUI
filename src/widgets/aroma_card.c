@@ -103,6 +103,8 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_card_draw);
+
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __card_handle_event, aroma_ui_request_redraw, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __card_handle_event, aroma_ui_request_redraw, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __card_handle_event, aroma_ui_request_redraw, 70);

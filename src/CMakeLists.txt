@@ -11,6 +11,7 @@ add_library(aroma
     core/aroma_style.c
     core/aroma_time.c
     core/aroma_timer.c
+    core/aroma_drawlist.c
     backends/platforms/aroma_platform_glps.c
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
@@ -18,6 +19,7 @@ add_library(aroma
     backends/aroma_abi.c
 
     widgets/aroma_window.c
+    widgets/aroma_container.c
     widgets/aroma_button.c
     widgets/aroma_slider.c
     widgets/aroma_switch.c

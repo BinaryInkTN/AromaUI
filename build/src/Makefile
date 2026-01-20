@@ -295,6 +295,30 @@ backends/platforms/aroma_platform_glps.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_glps.c.s
 .PHONY : backends/platforms/aroma_platform_glps.c.s
 
+core/aroma_drawlist.o: core/aroma_drawlist.c.o
+.PHONY : core/aroma_drawlist.o
+
+# target to build an object file
+core/aroma_drawlist.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o
+.PHONY : core/aroma_drawlist.c.o
+
+core/aroma_drawlist.i: core/aroma_drawlist.c.i
+.PHONY : core/aroma_drawlist.i
+
+# target to preprocess a source file
+core/aroma_drawlist.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.i
+.PHONY : core/aroma_drawlist.c.i
+
+core/aroma_drawlist.s: core/aroma_drawlist.c.s
+.PHONY : core/aroma_drawlist.s
+
+# target to generate assembly for a file
+core/aroma_drawlist.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/core/aroma_drawlist.c.s
+.PHONY : core/aroma_drawlist.c.s
+
 core/aroma_event.o: core/aroma_event.c.o
 .PHONY : core/aroma_event.o
 
@@ -630,6 +654,30 @@ widgets/aroma_chip.s: widgets/aroma_chip.c.s
 widgets/aroma_chip.c.s:
 	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_chip.c.s
 .PHONY : widgets/aroma_chip.c.s
+
+widgets/aroma_container.o: widgets/aroma_container.c.o
+.PHONY : widgets/aroma_container.o
+
+# target to build an object file
+widgets/aroma_container.c.o:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_container.c.o
+.PHONY : widgets/aroma_container.c.o
+
+widgets/aroma_container.i: widgets/aroma_container.c.i
+.PHONY : widgets/aroma_container.i
+
+# target to preprocess a source file
+widgets/aroma_container.c.i:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_container.c.i
+.PHONY : widgets/aroma_container.c.i
+
+widgets/aroma_container.s: widgets/aroma_container.c.s
+.PHONY : widgets/aroma_container.s
+
+# target to generate assembly for a file
+widgets/aroma_container.c.s:
+	cd /home/yassine/AromaUI/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/aroma.dir/build.make src/CMakeFiles/aroma.dir/widgets/aroma_container.c.s
+.PHONY : widgets/aroma_container.c.s
 
 widgets/aroma_debug_overlay.o: widgets/aroma_debug_overlay.c.o
 .PHONY : widgets/aroma_debug_overlay.o
@@ -1115,6 +1163,9 @@ help:
 	@echo "... backends/platforms/aroma_platform_glps.o"
 	@echo "... backends/platforms/aroma_platform_glps.i"
 	@echo "... backends/platforms/aroma_platform_glps.s"
+	@echo "... core/aroma_drawlist.o"
+	@echo "... core/aroma_drawlist.i"
+	@echo "... core/aroma_drawlist.s"
 	@echo "... core/aroma_event.o"
 	@echo "... core/aroma_event.i"
 	@echo "... core/aroma_event.s"
@@ -1157,6 +1208,9 @@ help:
 	@echo "... widgets/aroma_chip.o"
 	@echo "... widgets/aroma_chip.i"
 	@echo "... widgets/aroma_chip.s"
+	@echo "... widgets/aroma_container.o"
+	@echo "... widgets/aroma_container.i"
+	@echo "... widgets/aroma_container.s"
 	@echo "... widgets/aroma_debug_overlay.o"
 	@echo "... widgets/aroma_debug_overlay.i"
 	@echo "... widgets/aroma_debug_overlay.s"

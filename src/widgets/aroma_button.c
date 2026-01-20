@@ -67,6 +67,8 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
         return NULL;
     }
 
+    aroma_node_set_draw_cb(button_node, aroma_button_draw);
+
     button->rect.x = x;
     button->rect.y = y;
     button->rect.width = width;
@@ -80,6 +82,7 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->hover_color = theme.colors.primary_light;
     button->pressed_color = theme.colors.primary_dark;
     button->text_color = theme.colors.surface;
+    button->use_theme_colors = true;
     button->font = NULL;
 
     button->on_click = NULL;
@@ -153,6 +156,7 @@ void aroma_button_set_colors(AromaNode* button_node, uint32_t idle_color, uint32
     button->hover_color = hover_color;
     button->pressed_color = pressed_color;
     button->text_color = text_color;
+    button->use_theme_colors = false;
     LOG_INFO("Button colors updated");
     aroma_node_invalidate(button_node);
 }
@@ -191,6 +195,7 @@ void aroma_button_apply_style(AromaNode* button_node, const struct AromaStyle* s
     button->hover_color = style->hover_color;
     button->pressed_color = style->active_color;
     button->text_color = style->text_color;
+    button->use_theme_colors = false;
     aroma_node_invalidate(button_node);
 }
 
@@ -272,24 +277,31 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         return;
     }
 
-    // Material Design 3 Filled Button style
+    AromaTheme theme = aroma_theme_get_global();
+    if (button->use_theme_colors) {
+        button->idle_color = theme.colors.primary;
+        button->hover_color = theme.colors.primary_light;
+        button->pressed_color = theme.colors.primary_dark;
+        button->text_color = theme.colors.surface;
+    }
+
     uint32_t button_color;
-    uint32_t text_color;
-    
+    uint32_t text_color = button->text_color;
+
     switch (button->state) {
         case BUTTON_STATE_PRESSED:
-            button_color = 0x4F378B;  // MD3 Primary pressed (darker)
-            text_color = 0xFFFFFF;     // White text
+            button_color = button->pressed_color;
             break;
         case BUTTON_STATE_HOVER:
-            button_color = 0x7965B3;  // MD3 Primary hover (lighter)
-            text_color = 0xFFFFFF;     // White text
+            button_color = button->hover_color;
             break;
-        default:  // IDLE or RELEASED
-            button_color = 0x6750A4;  // MD3 Primary
-            text_color = 0xFFFFFF;     // White text
+        default:
+            button_color = button->idle_color;
             break;
     }
+
+    float radius = (theme.spacing.border_radius > 0) ? (float)theme.spacing.border_radius : 12.0f;
+    uint32_t shadow_color = aroma_color_adjust(theme.colors.surface, -0.1f);
 
     // MD3 Elevation 1 - subtle shadow for depth
     gfx->fill_rectangle(
@@ -298,9 +310,9 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         button->rect.y + 2,
         button->rect.width,
         button->rect.height,
-        0xE0E0E0,  // Shadow
+        shadow_color,
         true,
-        20.0f  // MD3 full corner (20dp)
+        radius
     );
 
     // Draw filled button
@@ -312,10 +324,9 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         button->rect.height,
         button_color,
         true,
-        20.0f  // MD3 full corner
+        radius
     );
 
-    // Update button text color
     button->text_color = text_color;
 
     if (gfx->render_text && button->font && button->label[0] != '\0')

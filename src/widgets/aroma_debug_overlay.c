@@ -56,6 +56,8 @@ AromaNode* aroma_debug_overlay_create(AromaNode* parent, int x, int y)
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_debug_overlay_draw);
+
     return node;
 }
 

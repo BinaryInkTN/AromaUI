@@ -56,6 +56,8 @@ AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int h
         return NULL;
     }
 
+    aroma_node_set_draw_cb(node, aroma_slider_draw);
+
     LOG_INFO("Slider created: x=%d, y=%d, w=%d, h=%d, range=%d-%d, value=%d\n", 
              x, y, width, height, min_value, max_value, data->current_value);
 
