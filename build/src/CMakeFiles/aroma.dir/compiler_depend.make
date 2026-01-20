@@ -1197,39 +1197,13 @@ src/CMakeFiles/aroma.dir/core/aroma_ui_impl.c.o: /home/yassine/AromaUI/src/core/
 
 src/CMakeFiles/aroma.dir/widgets/aroma_button.c.o: /home/yassine/AromaUI/src/widgets/aroma_button.c \
   /home/yassine/AromaUI/include/aroma_common.h \
-  /home/yassine/AromaUI/include/aroma_drawlist.h \
   /home/yassine/AromaUI/include/aroma_event.h \
   /home/yassine/AromaUI/include/aroma_font.h \
   /home/yassine/AromaUI/include/aroma_logger.h \
   /home/yassine/AromaUI/include/aroma_node.h \
   /home/yassine/AromaUI/include/aroma_slab_alloc.h \
   /home/yassine/AromaUI/include/aroma_style.h \
-  /home/yassine/AromaUI/include/aroma_ui.h \
-  /home/yassine/AromaUI/include/aroma_widgets.h \
   /home/yassine/AromaUI/include/widgets/aroma_button.h \
-  /home/yassine/AromaUI/include/widgets/aroma_card.h \
-  /home/yassine/AromaUI/include/widgets/aroma_checkbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_chip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_container.h \
-  /home/yassine/AromaUI/include/widgets/aroma_debug_overlay.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dialog.h \
-  /home/yassine/AromaUI/include/widgets/aroma_divider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dropdown.h \
-  /home/yassine/AromaUI/include/widgets/aroma_fab.h \
-  /home/yassine/AromaUI/include/widgets/aroma_iconbutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_label.h \
-  /home/yassine/AromaUI/include/widgets/aroma_listview.h \
-  /home/yassine/AromaUI/include/widgets/aroma_menu.h \
-  /home/yassine/AromaUI/include/widgets/aroma_progressbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_radiobutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_sidebar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_slider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_snackbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_switch.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tabs.h \
-  /home/yassine/AromaUI/include/widgets/aroma_textbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tooltip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_window.h \
   /home/yassine/AromaUI/src/backends/aroma_abi.h \
   /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h \
   /home/yassine/AromaUI/src/core/aroma_common.h \
@@ -1409,39 +1383,13 @@ src/CMakeFiles/aroma.dir/widgets/aroma_card.c.o: /home/yassine/AromaUI/src/widge
 
 src/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o: /home/yassine/AromaUI/src/widgets/aroma_checkbox.c \
   /home/yassine/AromaUI/include/aroma_common.h \
-  /home/yassine/AromaUI/include/aroma_drawlist.h \
   /home/yassine/AromaUI/include/aroma_event.h \
   /home/yassine/AromaUI/include/aroma_font.h \
   /home/yassine/AromaUI/include/aroma_logger.h \
   /home/yassine/AromaUI/include/aroma_node.h \
   /home/yassine/AromaUI/include/aroma_slab_alloc.h \
   /home/yassine/AromaUI/include/aroma_style.h \
-  /home/yassine/AromaUI/include/aroma_ui.h \
-  /home/yassine/AromaUI/include/aroma_widgets.h \
-  /home/yassine/AromaUI/include/widgets/aroma_button.h \
-  /home/yassine/AromaUI/include/widgets/aroma_card.h \
   /home/yassine/AromaUI/include/widgets/aroma_checkbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_chip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_container.h \
-  /home/yassine/AromaUI/include/widgets/aroma_debug_overlay.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dialog.h \
-  /home/yassine/AromaUI/include/widgets/aroma_divider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dropdown.h \
-  /home/yassine/AromaUI/include/widgets/aroma_fab.h \
-  /home/yassine/AromaUI/include/widgets/aroma_iconbutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_label.h \
-  /home/yassine/AromaUI/include/widgets/aroma_listview.h \
-  /home/yassine/AromaUI/include/widgets/aroma_menu.h \
-  /home/yassine/AromaUI/include/widgets/aroma_progressbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_radiobutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_sidebar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_slider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_snackbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_switch.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tabs.h \
-  /home/yassine/AromaUI/include/widgets/aroma_textbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tooltip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_window.h \
   /home/yassine/AromaUI/src/backends/aroma_abi.h \
   /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h \
   /home/yassine/AromaUI/src/core/aroma_common.h \
@@ -1922,39 +1870,13 @@ src/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o: /home/yassine/AromaUI/src/wi
 
 src/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o: /home/yassine/AromaUI/src/widgets/aroma_dropdown.c \
   /home/yassine/AromaUI/include/aroma_common.h \
-  /home/yassine/AromaUI/include/aroma_drawlist.h \
   /home/yassine/AromaUI/include/aroma_event.h \
   /home/yassine/AromaUI/include/aroma_font.h \
   /home/yassine/AromaUI/include/aroma_logger.h \
   /home/yassine/AromaUI/include/aroma_node.h \
   /home/yassine/AromaUI/include/aroma_slab_alloc.h \
   /home/yassine/AromaUI/include/aroma_style.h \
-  /home/yassine/AromaUI/include/aroma_ui.h \
-  /home/yassine/AromaUI/include/aroma_widgets.h \
-  /home/yassine/AromaUI/include/widgets/aroma_button.h \
-  /home/yassine/AromaUI/include/widgets/aroma_card.h \
-  /home/yassine/AromaUI/include/widgets/aroma_checkbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_chip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_container.h \
-  /home/yassine/AromaUI/include/widgets/aroma_debug_overlay.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dialog.h \
-  /home/yassine/AromaUI/include/widgets/aroma_divider.h \
   /home/yassine/AromaUI/include/widgets/aroma_dropdown.h \
-  /home/yassine/AromaUI/include/widgets/aroma_fab.h \
-  /home/yassine/AromaUI/include/widgets/aroma_iconbutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_label.h \
-  /home/yassine/AromaUI/include/widgets/aroma_listview.h \
-  /home/yassine/AromaUI/include/widgets/aroma_menu.h \
-  /home/yassine/AromaUI/include/widgets/aroma_progressbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_radiobutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_sidebar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_slider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_snackbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_switch.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tabs.h \
-  /home/yassine/AromaUI/include/widgets/aroma_textbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tooltip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_window.h \
   /home/yassine/AromaUI/src/backends/aroma_abi.h \
   /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h \
   /home/yassine/AromaUI/src/core/aroma_event.h \
@@ -2554,39 +2476,13 @@ src/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o: /home/yassine/AromaUI/sr
 
 src/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o: /home/yassine/AromaUI/src/widgets/aroma_radiobutton.c \
   /home/yassine/AromaUI/include/aroma_common.h \
-  /home/yassine/AromaUI/include/aroma_drawlist.h \
   /home/yassine/AromaUI/include/aroma_event.h \
   /home/yassine/AromaUI/include/aroma_font.h \
   /home/yassine/AromaUI/include/aroma_logger.h \
   /home/yassine/AromaUI/include/aroma_node.h \
   /home/yassine/AromaUI/include/aroma_slab_alloc.h \
   /home/yassine/AromaUI/include/aroma_style.h \
-  /home/yassine/AromaUI/include/aroma_ui.h \
-  /home/yassine/AromaUI/include/aroma_widgets.h \
-  /home/yassine/AromaUI/include/widgets/aroma_button.h \
-  /home/yassine/AromaUI/include/widgets/aroma_card.h \
-  /home/yassine/AromaUI/include/widgets/aroma_checkbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_chip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_container.h \
-  /home/yassine/AromaUI/include/widgets/aroma_debug_overlay.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dialog.h \
-  /home/yassine/AromaUI/include/widgets/aroma_divider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dropdown.h \
-  /home/yassine/AromaUI/include/widgets/aroma_fab.h \
-  /home/yassine/AromaUI/include/widgets/aroma_iconbutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_label.h \
-  /home/yassine/AromaUI/include/widgets/aroma_listview.h \
-  /home/yassine/AromaUI/include/widgets/aroma_menu.h \
-  /home/yassine/AromaUI/include/widgets/aroma_progressbar.h \
   /home/yassine/AromaUI/include/widgets/aroma_radiobutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_sidebar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_slider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_snackbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_switch.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tabs.h \
-  /home/yassine/AromaUI/include/widgets/aroma_textbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tooltip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_window.h \
   /home/yassine/AromaUI/src/backends/aroma_abi.h \
   /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h \
   /home/yassine/AromaUI/src/core/aroma_common.h \
@@ -2757,39 +2653,12 @@ src/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o: /home/yassine/AromaUI/src/wi
 
 src/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o: /home/yassine/AromaUI/src/widgets/aroma_slider.c \
   /home/yassine/AromaUI/include/aroma_common.h \
-  /home/yassine/AromaUI/include/aroma_drawlist.h \
   /home/yassine/AromaUI/include/aroma_event.h \
-  /home/yassine/AromaUI/include/aroma_font.h \
   /home/yassine/AromaUI/include/aroma_logger.h \
   /home/yassine/AromaUI/include/aroma_node.h \
   /home/yassine/AromaUI/include/aroma_slab_alloc.h \
   /home/yassine/AromaUI/include/aroma_style.h \
-  /home/yassine/AromaUI/include/aroma_ui.h \
-  /home/yassine/AromaUI/include/aroma_widgets.h \
-  /home/yassine/AromaUI/include/widgets/aroma_button.h \
-  /home/yassine/AromaUI/include/widgets/aroma_card.h \
-  /home/yassine/AromaUI/include/widgets/aroma_checkbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_chip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_container.h \
-  /home/yassine/AromaUI/include/widgets/aroma_debug_overlay.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dialog.h \
-  /home/yassine/AromaUI/include/widgets/aroma_divider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dropdown.h \
-  /home/yassine/AromaUI/include/widgets/aroma_fab.h \
-  /home/yassine/AromaUI/include/widgets/aroma_iconbutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_label.h \
-  /home/yassine/AromaUI/include/widgets/aroma_listview.h \
-  /home/yassine/AromaUI/include/widgets/aroma_menu.h \
-  /home/yassine/AromaUI/include/widgets/aroma_progressbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_radiobutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_sidebar.h \
   /home/yassine/AromaUI/include/widgets/aroma_slider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_snackbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_switch.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tabs.h \
-  /home/yassine/AromaUI/include/widgets/aroma_textbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tooltip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_window.h \
   /home/yassine/AromaUI/src/backends/aroma_abi.h \
   /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h \
   /home/yassine/AromaUI/src/core/aroma_common.h \
@@ -2893,6 +2762,7 @@ src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: /home/yassine/AromaUI/src/w
   /home/yassine/AromaUI/include/widgets/aroma_window.h \
   /home/yassine/AromaUI/src/backends/aroma_abi.h \
   /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h \
+  /home/yassine/AromaUI/src/backends/platforms/aroma_platform_interface.h \
   /home/yassine/AromaUI/src/core/aroma_event.h \
   /home/yassine/AromaUI/src/core/aroma_logger.h \
   /home/yassine/AromaUI/src/core/aroma_slab_alloc.h \
@@ -2902,6 +2772,8 @@ src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: /home/yassine/AromaUI/src/w
   /usr/include/endian.h \
   /usr/include/features-time64.h \
   /usr/include/features.h \
+  /usr/include/limits.h \
+  /usr/include/linux/limits.h \
   /usr/include/stdc-predef.h \
   /usr/include/stdint.h \
   /usr/include/stdlib.h \
@@ -2915,7 +2787,12 @@ src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: /home/yassine/AromaUI/src/w
   /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
   /usr/include/x86_64-linux-gnu/bits/floatn.h \
   /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
+  /usr/include/x86_64-linux-gnu/bits/local_lim.h \
   /usr/include/x86_64-linux-gnu/bits/long-double.h \
+  /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
+  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h \
+  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h \
   /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h \
   /usr/include/x86_64-linux-gnu/bits/select.h \
@@ -2953,45 +2830,20 @@ src/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: /home/yassine/AromaUI/src/w
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \
   /usr/include/x86_64-linux-gnu/sys/select.h \
   /usr/include/x86_64-linux-gnu/sys/types.h \
+  /usr/lib/gcc/x86_64-linux-gnu/13/include/limits.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
-  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
+  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h \
+  /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h
 
 src/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o: /home/yassine/AromaUI/src/widgets/aroma_switch.c \
   /home/yassine/AromaUI/include/aroma_common.h \
-  /home/yassine/AromaUI/include/aroma_drawlist.h \
   /home/yassine/AromaUI/include/aroma_event.h \
-  /home/yassine/AromaUI/include/aroma_font.h \
   /home/yassine/AromaUI/include/aroma_logger.h \
   /home/yassine/AromaUI/include/aroma_node.h \
   /home/yassine/AromaUI/include/aroma_slab_alloc.h \
   /home/yassine/AromaUI/include/aroma_style.h \
-  /home/yassine/AromaUI/include/aroma_ui.h \
-  /home/yassine/AromaUI/include/aroma_widgets.h \
-  /home/yassine/AromaUI/include/widgets/aroma_button.h \
-  /home/yassine/AromaUI/include/widgets/aroma_card.h \
-  /home/yassine/AromaUI/include/widgets/aroma_checkbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_chip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_container.h \
-  /home/yassine/AromaUI/include/widgets/aroma_debug_overlay.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dialog.h \
-  /home/yassine/AromaUI/include/widgets/aroma_divider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_dropdown.h \
-  /home/yassine/AromaUI/include/widgets/aroma_fab.h \
-  /home/yassine/AromaUI/include/widgets/aroma_iconbutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_label.h \
-  /home/yassine/AromaUI/include/widgets/aroma_listview.h \
-  /home/yassine/AromaUI/include/widgets/aroma_menu.h \
-  /home/yassine/AromaUI/include/widgets/aroma_progressbar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_radiobutton.h \
-  /home/yassine/AromaUI/include/widgets/aroma_sidebar.h \
-  /home/yassine/AromaUI/include/widgets/aroma_slider.h \
-  /home/yassine/AromaUI/include/widgets/aroma_snackbar.h \
   /home/yassine/AromaUI/include/widgets/aroma_switch.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tabs.h \
-  /home/yassine/AromaUI/include/widgets/aroma_textbox.h \
-  /home/yassine/AromaUI/include/widgets/aroma_tooltip.h \
-  /home/yassine/AromaUI/include/widgets/aroma_window.h \
   /home/yassine/AromaUI/src/backends/aroma_abi.h \
   /home/yassine/AromaUI/src/backends/graphics/aroma_graphics_interface.h \
   /home/yassine/AromaUI/src/core/aroma_common.h \

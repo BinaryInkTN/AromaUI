@@ -151,7 +151,7 @@ AromaNode* aroma_tabs_create(AromaNode* parent, int x, int y, int width, int hei
     tabs->bg_color = theme.colors.surface;
     tabs->selected_color = theme.colors.primary;
     tabs->text_color = theme.colors.text_primary;
-    tabs->text_selected_color = theme.colors.surface;
+    tabs->text_selected_color = theme.colors.text_primary;
 
     for (int i = 0; i < tabs->count; i++) {
         if (labels[i]) {
@@ -283,7 +283,7 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
     tabs->bg_color = theme.colors.surface;
     tabs->selected_color = theme.colors.primary;
     tabs->text_color = theme.colors.text_primary;
-    tabs->text_selected_color = theme.colors.surface;
+    tabs->text_selected_color = theme.colors.text_primary;
 
     float radius = 0.0f;
     gfx->fill_rectangle(window_id, tabs->rect.x, tabs->rect.y, tabs->rect.width,
@@ -293,6 +293,8 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
 
     int tab_width = tabs->rect.width / tabs->count;
     int ascender = tabs->font ? aroma_font_get_ascender(tabs->font) : 10;
+    int indicator_height = 3;
+    int indicator_y = tabs->rect.y + tabs->rect.height - indicator_height;
 
     for (int i = 0; i < tabs->count; i++) {
         int x = tabs->rect.x + i * tab_width;
@@ -300,14 +302,15 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
         bool selected = (i == tabs->selected_index);
         bool hovered = (i == tabs->hovered_index);
 
-        uint32_t fill = selected ? tabs->selected_color : tabs->bg_color;
         if (hovered && !selected) {
-            fill = aroma_color_blend(fill, tabs->selected_color, 0.12f);
+            uint32_t overlay = aroma_color_blend(tabs->bg_color, tabs->selected_color, 0.12f);
+            gfx->fill_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height, overlay, false, radius);
         }
 
-        gfx->fill_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height, fill, false, radius);
-        gfx->draw_hollow_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height,
-                       aroma_color_adjust(tabs->bg_color, -0.2f), 1, false, radius);
+        if (selected) {
+            gfx->fill_rectangle(window_id, x + 8, indicator_y, w - 16, indicator_height,
+                                tabs->selected_color, false, radius);
+        }
 
         if (tabs->font && gfx->render_text) {
             uint32_t text_color = selected ? tabs->text_selected_color : tabs->text_color;
