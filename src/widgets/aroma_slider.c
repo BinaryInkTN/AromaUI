@@ -207,19 +207,19 @@ void aroma_slider_draw(AromaNode* node, size_t window_id)
     int track_height = 4;
     int track_y = data->rect.y + (data->rect.height - track_height) / 2;
     gfx->fill_rectangle(window_id, data->rect.x, track_y, data->rect.width, track_height, 
-                       data->track_color, false, 0.0f);
+                       data->track_color, true, 4.0f);
 
     int range = data->max_value - data->min_value;
     int thumb_x = data->rect.x + (data->current_value - data->min_value) * data->rect.width / range;
-    int thumb_size = 16;
+    int thumb_size = 8;
 
     uint32_t thumb_color = (data->is_dragging || data->is_hovered) ? data->thumb_hover_color : data->thumb_color;
 
     gfx->fill_rectangle(window_id, thumb_x - thumb_size/2, data->rect.y, thumb_size, data->rect.height,
-                       thumb_color, true, 2.0f);
+                       thumb_color, true, 4.0f);
 
     gfx->draw_hollow_rectangle(window_id, thumb_x - thumb_size/2, data->rect.y, thumb_size, data->rect.height,
-                              0x333333, 1, true, 2.0f);
+                              0x333333, 1, true, 4.0f);
 }
 
 void aroma_slider_destroy(AromaNode* node)
