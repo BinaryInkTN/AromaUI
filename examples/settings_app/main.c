@@ -362,6 +362,7 @@ int main(void)
     while (aroma_ui_is_running()) {
         aroma_ui_process_events();
         aroma_ui_render(window);
+        usleep(16000);
     }
 
     aroma_ui_destroy_window(window);
