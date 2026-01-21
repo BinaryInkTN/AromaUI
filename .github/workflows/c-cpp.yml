@@ -19,9 +19,6 @@ jobs:
       - name: Clean build directory
         run: rm -rf build
 
-      - name: Configure
-        run: cmake -S . -B build
-
       - name: Build tests
         run: cmake --build build --target aroma_tests
 
