@@ -478,6 +478,8 @@ unsigned int load_image(const char* image_path)
         return 0;
     }
     
+    LOG_INFO("Attempting to load image: %s", image_path);
+    
     FILE *file = fopen(image_path, "rb");
     if (!file) {
         LOG_ERROR("Image file not found or inaccessible: %s", image_path);
@@ -485,10 +487,25 @@ unsigned int load_image(const char* image_path)
     }
     fclose(file);
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
 
+    unsigned int texture = 0;
+    glGenTextures(1, &texture);
+    
+    if (texture == 0) {
+        GLenum error = glGetError();
+        LOG_ERROR("glGenTextures failed! Could not generate texture ID. OpenGL error: 0x%X", error);
+        return 0;
+    }
+    
+    LOG_INFO("Generated OpenGL texture ID: %u for %s", texture, image_path);
+
+    
+    glBindTexture(GL_TEXTURE_2D, texture);
+    if (glGetError() != GL_NO_ERROR) {
+        LOG_ERROR("Failed to bind texture %u", texture);
+        glDeleteTextures(1, &texture);
+        return 0;
+    }
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -499,8 +516,16 @@ unsigned int load_image(const char* image_path)
     int success = 0;
 
     const char *ext = strrchr(image_path, '.');
+    
+    GLenum glError = glGetError();
+    if (glError != GL_NO_ERROR) {
+        LOG_ERROR("OpenGL error after binding texture %u: 0x%X", texture, glError);
+        glDeleteTextures(1, &texture);
+        return 0;
+    }
+
     if (ext && (strcasecmp(ext, ".svg") == 0)) {
-        // SVG handling
+        LOG_INFO("Loading SVG file: %s", image_path);
         NSVGimage *image = NULL;
         NSVGrasterizer *rast = NULL;
         
@@ -523,10 +548,13 @@ unsigned int load_image(const char* image_path)
         img_height = (int)image->height;
         nrChannels = 4;
         
+        LOG_INFO("SVG dimensions: %dx%d", img_width, img_height);
+        
         size_t data_size = img_width * img_height * 4;
         data = (unsigned char*)malloc(data_size);
         if (!data) {
-            LOG_ERROR("Failed to allocate memory for SVG rasterization: %s", image_path);
+            LOG_ERROR("Failed to allocate memory for SVG rasterization: %s (needed %zu bytes)", 
+                     image_path, data_size);
             nsvgDeleteRasterizer(rast);
             nsvgDelete(image);
             glDeleteTextures(1, &texture);
@@ -539,17 +567,22 @@ unsigned int load_image(const char* image_path)
         
         nsvgDeleteRasterizer(rast);
         nsvgDelete(image);
-        LOG_INFO("Loaded SVG with NanoSVG: %s (%dx%d)", image_path, img_width, img_height);
+        LOG_INFO("Successfully rasterized SVG: %s", image_path);
     }
     else if (is_stb_supported_image_format(image_path)) {
+        LOG_INFO("Loading raster image: %s", image_path);
         stbi_set_flip_vertically_on_load(1);
         data = stbi_load(image_path, &img_width, &img_height, &nrChannels, 0);
         if (data) {
             success = 1;
-            LOG_INFO("Loaded image with stb: %s (%dx%d, %d channels)",
+            LOG_INFO("STB loaded image: %s (%dx%d, %d channels)",
                      image_path, img_width, img_height, nrChannels);
         } else {
             LOG_ERROR("STB failed to load image: %s", image_path);
+            const char* reason = stbi_failure_reason();
+            if (reason) {
+                LOG_ERROR("STB failure reason: %s", reason);
+            }
         }
     }
     else {
@@ -562,7 +595,6 @@ unsigned int load_image(const char* image_path)
         LOG_ERROR("Failed to load image data: %s", image_path);
         glDeleteTextures(1, &texture);
         
-        // Free data based on how it was loaded
         if (ext && strcasecmp(ext, ".svg") == 0) {
             free(data);
         } else {
@@ -583,6 +615,25 @@ unsigned int load_image(const char* image_path)
         return 0;
     }
 
+    if (!data) {
+        LOG_ERROR("Image data is NULL after loading: %s", image_path);
+        glDeleteTextures(1, &texture);
+        return 0;
+    }
+
+    size_t total_pixels = img_width * img_height;
+    size_t total_bytes = total_pixels * nrChannels;
+    unsigned int zero_count = 0;
+    unsigned int max_value = 0;
+    
+    for (size_t i = 0; i < total_bytes && i < 100; i++) {
+        if (data[i] == 0) zero_count++;
+        if (data[i] > max_value) max_value = data[i];
+    }
+    
+    LOG_INFO("Image data: %zu bytes, first 100 bytes - zeros: %u, max value: %u", 
+             total_bytes, zero_count, max_value);
+
     GLenum format;
     switch (nrChannels) {
         case 1: format = GL_RED; break;
@@ -600,9 +651,31 @@ unsigned int load_image(const char* image_path)
             return 0;
     }
 
+    LOG_INFO("Uploading texture data to GPU (format: 0x%X, %dx%d)", 
+             format, img_width, img_height);
+    
     glTexImage2D(GL_TEXTURE_2D, 0, format, img_width, img_height, 0, 
                  format, GL_UNSIGNED_BYTE, data);
+    
+    glError = glGetError();
+    if (glError != GL_NO_ERROR) {
+        LOG_ERROR("OpenGL error during glTexImage2D for texture %u: 0x%X", texture, glError);
+        glDeleteTextures(1, &texture);
+        
+        if (ext && strcasecmp(ext, ".svg") == 0) {
+            free(data);
+        } else {
+            stbi_image_free(data);
+        }
+        return 0;
+    }
+    
     glGenerateMipmap(GL_TEXTURE_2D);
+    
+    glError = glGetError();
+    if (glError != GL_NO_ERROR) {
+        LOG_WARNING("OpenGL warning during glGenerateMipmap for texture %u: 0x%X", texture, glError);
+    }
 
     if (ext && strcasecmp(ext, ".svg") == 0) {
         free(data);
@@ -610,7 +683,15 @@ unsigned int load_image(const char* image_path)
         stbi_image_free(data);
     }
 
-    LOG_INFO("Successfully loaded texture: %s (ID: %u)", image_path, texture);
+    if (!glIsTexture(texture)) {
+        LOG_ERROR("Texture validation failed! ID %u is not a valid texture after loading", texture);
+        glDeleteTextures(1, &texture);
+        return 0;
+    }
+
+    LOG_INFO("Texture %u successfully created: %s (%dx%d)", 
+             texture, image_path, img_width, img_height);
+
     return texture;
 }
 
@@ -664,28 +745,41 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
     return texture;
 }
 
-
 void draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
 {
-    if (!texture_id) {
-        LOG_ERROR("Invalid texture ID provided");
+    LOG_INFO("draw_image called: window=%zu, pos=(%d,%d), size=(%dx%d), texture=%u", 
+             window_id, x, y, width, height, texture_id);
+    
+    if (texture_id == 0) {
+        LOG_ERROR("Cannot draw texture ID 0 (OpenGL reserved)");
         return;
     }
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (!platform || !platform->make_context_current || !platform->get_window_size) {
-        LOG_ERROR("Platform interface missing required functions for image draw");
+        LOG_ERROR("Platform interface missing required functions");
         return;
     }
 
     platform->make_context_current(window_id);
+    
+    if (!glIsTexture(texture_id)) {
+        LOG_ERROR("Texture ID %u is not a valid OpenGL texture", texture_id);
+        
+        // Check OpenGL error state
+        GLenum error = glGetError();
+        if (error != GL_NO_ERROR) {
+            LOG_ERROR("OpenGL error before drawing: 0x%X", error);
+        }
+        return;
+    }
 
     int window_width = 0;
     int window_height = 0;
     platform->get_window_size(window_id, &window_width, &window_height);
     
     if (window_width <= 0 || window_height <= 0) {
-        LOG_WARNING("Invalid window size for image draw: %dx%d", window_width, window_height);
+        LOG_WARNING("Invalid window size: %dx%d", window_width, window_height);
         return;
     }
 
@@ -699,16 +793,14 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     Vertex vertices[6];
     
     vec2 texCoords[6] = {
-        {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f},
-        {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+        {0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f},
+        {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}
     };
-    
-    // Calculate positions
+
     float x0 = (float)x;
     float y0 = (float)y;
     float x1 = x0 + (float)width;
     float y1 = y0 + (float)height;
-    
     for (int i = 0; i < 6; i++) {
         vertices[i].col[0] = 1.0f;  
         vertices[i].col[1] = 1.0f;
@@ -716,14 +808,14 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
         vertices[i].texCoord[0] = texCoords[i][0];
         vertices[i].texCoord[1] = texCoords[i][1];
     }
+
+    vertices[0].pos[0] = x0; vertices[0].pos[1] = y0; 
+    vertices[1].pos[0] = x1; vertices[1].pos[1] = y0; 
+    vertices[2].pos[0] = x0; vertices[2].pos[1] = y1; 
     
-    vertices[0].pos[0] = x0; vertices[0].pos[1] = y0;  // Top-left
-    vertices[1].pos[0] = x1; vertices[1].pos[1] = y0;  // Top-right
-    vertices[2].pos[0] = x0; vertices[2].pos[1] = y1;  // Bottom-left
-    
-    vertices[3].pos[0] = x1; vertices[3].pos[1] = y0;  // Top-right
-    vertices[4].pos[0] = x1; vertices[4].pos[1] = y1;  // Bottom-right
-    vertices[5].pos[0] = x0; vertices[5].pos[1] = y1;  // Bottom-left
+    vertices[3].pos[0] = x1; vertices[3].pos[1] = y0;  
+    vertices[4].pos[0] = x1; vertices[4].pos[1] = y1;  
+    vertices[5].pos[0] = x0; vertices[5].pos[1] = y1;  
 
     glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
@@ -732,15 +824,17 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     
     glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"), 
                       1, GL_FALSE, (const GLfloat*)projection);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 1);  // Enable texture
-    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), (float)width, (float)height);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), 0);  // Not rounded
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 0);   // Not hollow
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);  // Rectangle
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 1);
+    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), 0.0f, 0.0f);
+    glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), 0.0f);
+    glUniform1f(glGetUniformLocation(ctx.shape_program, "borderWidth"), 0.0f);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), 0);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 0);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "tex"), 0); 
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "tex"), 0);
 
     glBindVertexArray(ctx.shape_vaos[window_id]);
     
@@ -758,12 +852,17 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     
     glDrawArrays(GL_TRIANGLES, 0, 6);
     
-    // Cleanup
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        LOG_ERROR("OpenGL error during image draw: 0x%X", error);
+    }
+    
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    
+    LOG_INFO("Image drawn successfully: texture %u", texture_id);
 }
-
 AromaGraphicsInterface aroma_graphics_gles3 = {
     .setup_shared_window_resources = setup_shared_window_resources,
     .setup_separate_window_resources = setup_separate_window_resources,

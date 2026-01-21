@@ -8,7 +8,14 @@ static AromaNode* image_widget = NULL;
 static AromaButton* action_button = NULL;
 
 
-
+static void on_button_click(AromaNode* node, void* user_data) {
+    (void)node;
+    (void)user_data;
+    if (title_label) {
+        aroma_label_set_text((AromaNode*)title_label, "You clicked the button!");
+        aroma_ui_request_redraw(NULL);
+    }
+}
 
 static void window_update_callback(size_t window_id, void* data) {
     if (!aroma_ui_consume_redraw()) return;
@@ -23,16 +30,16 @@ static void window_update_callback(size_t window_id, void* data) {
 int main(void) {
     if (!aroma_ui_init()) return 1;
     
-    AromaTheme preset = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_GREEN);
+    AromaTheme preset = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_PURPLE);
     aroma_ui_set_theme(&preset);
     
-    font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18);
+    font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);
     if (!font) {
         aroma_ui_shutdown();
         return 1;
     }
     
-    AromaWindow* window = aroma_ui_create_window("Hello Aroma!", 800, 400);
+    AromaWindow* window = aroma_ui_create_window("Hello Aroma!", 400, 400);
     if (!window) return 1;
     
     aroma_event_set_root((AromaNode*)window);
@@ -41,19 +48,21 @@ int main(void) {
     AromaContainer* main_container = (AromaContainer*)aroma_container_create((AromaNode*)window, 0, 0, 800, 400);
     AromaNode* container_node = main_container ? (AromaNode*)main_container : (AromaNode*)window;
     
-    title_label = (AromaLabel*)aroma_label_create(container_node, "Hello Aroma!", 300, 50, LABEL_STYLE_TITLE_LARGE);
+    title_label = (AromaLabel*)aroma_label_create(container_node, "Welcome to AromaUI!", 120, 250, LABEL_STYLE_LABEL_LARGE);
     if (title_label) {
         aroma_label_set_font((AromaNode*)title_label, font);
-        aroma_label_set_color((AromaNode*)title_label, 0x4CAF50);
     }
     
-    progress_bar = (AromaProgressBar*)aroma_progressbar_create(container_node, 200, 120, 400, 20, PROGRESS_TYPE_DETERMINATE);
-    if (progress_bar) {
-        aroma_progressbar_set_progress((AromaNode*)progress_bar, 0.5f);
+    AromaButton* get_started_button = (AromaButton*)aroma_ui_create_button((AromaWindow*)container_node, "Get Started", 150, 300, 100, 40);
+    if (get_started_button) {
+        aroma_button_set_font((AromaNode*)get_started_button, font);
     }
+ 
     
-    image_widget = aroma_image_create(container_node, "hero.png", 50, 50, 100, 100);
-    aroma_image_set_source(image_widget, "hero.png");
+    image_widget = aroma_image_create(container_node, "leaf.png", 130, 50, 128, 128);
+    aroma_node_set_z_index(image_widget, 0);
+    aroma_button_setup_events((AromaNode*)get_started_button, aroma_ui_request_redraw, NULL);
+    aroma_button_set_on_click((AromaNode*)get_started_button, on_button_click, NULL);
     aroma_platform_set_window_update_callback(window_update_callback, NULL);
     
     aroma_ui_request_redraw(NULL);

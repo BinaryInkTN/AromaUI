@@ -39,7 +39,6 @@ static const char *rectangle_vertex_shader =
     "    color = col;\n"
     "    TexCoord = texCoord;\n"
     "}\n";
-
 static const char *rectangle_fragment_shader =
 "#version 300 es\n"
 "precision highp float;\n"
@@ -85,6 +84,13 @@ static const char *rectangle_fragment_shader =
 "}\n"
 "\n"
 "void main() {\n"
+"    // For texture-only rendering (images), skip SDF calculations\n"
+"    if (useTexture && !isRounded && !isHollow && shapeType == 0) {\n"
+"        // Simple texture rendering - no shape clipping\n"
+"        fragment = texture(tex, TexCoord) * vec4(color, 1.0);\n"
+"        return;\n"
+"    }\n"
+"\n"
 "    vec4 baseColor = useTexture ? texture(tex, TexCoord) * vec4(color, 1.0) : vec4(color, 1.0);\n"
 "\n"
 "    if (shapeType == 0) {\n"

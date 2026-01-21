@@ -95,9 +95,9 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
         return;
     }
     
-    gfx->draw_image(window_id, image->texture_id, 
+    gfx->draw_image(window_id,
                     image->rect.x, image->rect.y, 
-                    image->rect.width, image->rect.height);
+                    image->rect.width, image->rect.height, image->texture_id );
     
     LOG_INFO("Drew image at (%d, %d) size %dx%d, texture ID: %u", 
               image->rect.x, image->rect.y, 
