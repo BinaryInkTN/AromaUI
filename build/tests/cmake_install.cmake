@@ -1,4 +1,4 @@
-# Install script for directory: /home/yassineaa/AromaUI/tests
+# Install script for directory: /home/yassine/AromaUI/tests
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
