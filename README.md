@@ -1,8 +1,11 @@
 # AromaUI
 
+
 <br/>
 
-<img src="examples/minimal/assets/leaf.png" />
+<div style="text-align:center;">
+  <img src="examples/minimal/assets/leaf.png" />
+</div>
 
 <br/>
 
