@@ -18,12 +18,23 @@ typedef struct AromaGraphicsInterface {
     int (*setup_shared_window_resources)(void);
     int (*setup_separate_window_resources)(size_t window_id);
     void (*clear)(size_t window_id, uint32_t color);
+  
+    // Primitive drawing functions
     void (*draw_rectangle)(size_t window_id, int x, int y, int width, int height);
     void (*fill_rectangle)(size_t window_id, int x, int y, int width, int height, uint32_t color, bool isRounded, float cornerRadius);
     void (*draw_hollow_rectangle)(size_t window_id, int x, int y, int width, int height, uint32_t color, int border_width, bool isRounded, float cornerRadius);
     void (*draw_arc)(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle, uint32_t color, int thickness);
+  
+    // Text rendering functions
     void (*render_text)(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color);
     float (*measure_text)(size_t window_id, AromaFont* font, const char* text);
+    
+    // Image rendering functions 
+    void (*unload_image)(unsigned int texture_id);
+    unsigned int (*load_image)(const char* image_path);
+    unsigned int (*load_image_from_memory)(unsigned char* data, long unsigned int binary_length);
+    void (*draw_image)(size_t window_id, int x, int y, int width, int height, unsigned int texture_id);
+
     void (*shutdown)(void);
 } AromaGraphicsInterface;
 

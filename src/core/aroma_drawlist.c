@@ -66,6 +66,13 @@ typedef struct AromaDrawCmd {
             int y;
             uint32_t color;
         } text;
+        struct {
+            int x;
+            int y;
+            int width;
+            int height;
+            unsigned int texture_id;
+        } image;
     } data;
 } AromaDrawCmd;
 
@@ -215,6 +222,21 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
     cmd->data.text.color = color;
 }
 
+
+void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int height, unsigned int texture_id)
+{
+    if (!list) return;
+    aroma_drawlist_reserve(list, 1);
+    AromaDrawCmd* cmd = &list->commands[list->count++];
+    cmd->type = AROMA_DRAW_CMD_IMAGE;
+    cmd->data.image.x = x;
+    cmd->data.image.y = y;
+    cmd->data.image.width = width;
+    cmd->data.image.height = height;
+    cmd->data.image.texture_id = texture_id;
+}
+
+
 void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
 {
     if (!list || list->count == 0) return;
@@ -283,6 +305,16 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                      cmd->data.text.color);
                 }
                 break;
+            case AROMA_DRAW_CMD_IMAGE:
+                if (gfx->draw_image) {
+                    gfx->draw_image(window_id,
+                                    cmd->data.image.x,
+                                    cmd->data.image.y,
+                                    cmd->data.image.width,   
+                                    cmd->data.image.height,
+                                    cmd->data.image.texture_id);
+                    }
+                    break;
         }
     }
 
