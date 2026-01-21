@@ -11,10 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configure (CMake)
+      - name: Clean build directory
+        run: rm -rf build
+
+      - name: Configure
         run: cmake -S . -B build
 
       - name: Build
