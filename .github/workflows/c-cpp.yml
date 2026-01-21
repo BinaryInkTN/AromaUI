@@ -14,9 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: configure
-      run: ./configure
+    - run: cmake -S . -B build
+    - name: cdbuild
+    - run: cd build
     - name: make
       run: make
     - name: runtests
-      run: ./build/tests/aroma_tests
+      run: ./tests/aroma_tests
 
