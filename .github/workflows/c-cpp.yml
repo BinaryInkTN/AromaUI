@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: CI
 
 on:
   push:
@@ -8,17 +8,17 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
-    - run: cmake -S . -B build
-    - name: cdbuild
-    - run: cd build
-    - name: make
-      run: make
-    - name: runtests
-      run: ./tests/aroma_tests
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      - name: Configure (CMake)
+        run: cmake -S . -B build
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run tests
+        run: ./build/tests/aroma_tests
