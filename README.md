@@ -1,5 +1,7 @@
 # AromaUI
 
+<br/>
+
 <img src="examples/minimal/assets/leaf.png" />
 
 <br/>
