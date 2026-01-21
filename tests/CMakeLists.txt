@@ -2,7 +2,9 @@ add_executable(aroma_tests
     test_main.c
     test_aroma_slab_alloc.c
     test_aroma_node.c
+    test_aroma_event_system.c
 )
+    
 
 target_link_libraries(aroma_tests aroma)
 

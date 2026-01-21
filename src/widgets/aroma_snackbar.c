@@ -181,7 +181,7 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id)
                         bg, true, 8.0f);
 
     if (bar->font && gfx->render_text) {
-        gfx->render_text(window_id, bar->font, bar->message, bar->rect.x + 12, bar->rect.y + 28, theme.colors.surface);
+        gfx->render_text(window_id, bar->font, bar->message, bar->rect.x + 12, bar->rect.y + 28, theme.colors.text_primary);
         if (bar->action_label[0]) {
             int padding = 12;
             int action_width = 72;
