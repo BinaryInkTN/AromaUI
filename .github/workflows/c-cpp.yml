@@ -30,7 +30,8 @@ jobs:
             libxi-dev \
             libegl1-mesa-dev \
             libgl1-mesa-dev \
-            libgles2-mesa-dev
+            libgles2-mesa-dev \
+            libasound2-dev
 
 
       - name: Clean build directory
