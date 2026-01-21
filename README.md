@@ -2,7 +2,7 @@
 
 AromaUI is a modern, lightweight C UI framework designed for embedded and desktop applications. It provides a set of customizable widgets and tools to build beautiful, responsive user interfaces in C.
 
-![AromaUI Hero](/images/hero.png)
+![AromaUI Hero](examples/minimal/assets/leaf.png)
 
 ## Features
 - Modular widget system
@@ -30,12 +30,14 @@ make
 ### Running Examples
 Navigate to any example folder and build:
 ```sh
-cd examples/01_hello_button
+cd examples/minimal
 mkdir build && cd build
 cmake ..
 make
-./hello_button
+./minimal
 ```
+![Minimal App Example](examples/minimal/assets/screenshot.png)
+
 
 ## Example: Settings App
 AromaUI comes with a sample settings application to demonstrate its capabilities.
