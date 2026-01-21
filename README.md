@@ -1,9 +1,8 @@
 # AromaUI
 
-
-<div style="text-align: center; margin: 20px;">
 <img src="examples/minimal/assets/leaf.png" />
-</div>
+
+<br/>
 
 AromaUI is a modern, lightweight C UI framework designed for embedded and desktop applications. It provides a set of customizable widgets and tools to build beautiful, responsive user interfaces in C.
 
