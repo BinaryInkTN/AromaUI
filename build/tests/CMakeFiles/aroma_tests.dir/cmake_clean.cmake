@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/aroma_tests.dir/test_aroma_event_system.c.o"
+  "CMakeFiles/aroma_tests.dir/test_aroma_event_system.c.o.d"
   "CMakeFiles/aroma_tests.dir/test_aroma_node.c.o"
   "CMakeFiles/aroma_tests.dir/test_aroma_node.c.o.d"
   "CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o"

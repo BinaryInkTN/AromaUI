@@ -8,9 +8,10 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/yassine/AromaUI/tests/test_aroma_node.c" "tests/CMakeFiles/aroma_tests.dir/test_aroma_node.c.o" "gcc" "tests/CMakeFiles/aroma_tests.dir/test_aroma_node.c.o.d"
-  "/home/yassine/AromaUI/tests/test_aroma_slab_alloc.c" "tests/CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o" "gcc" "tests/CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o.d"
-  "/home/yassine/AromaUI/tests/test_main.c" "tests/CMakeFiles/aroma_tests.dir/test_main.c.o" "gcc" "tests/CMakeFiles/aroma_tests.dir/test_main.c.o.d"
+  "/home/yassineaa/AromaUI/tests/test_aroma_event_system.c" "tests/CMakeFiles/aroma_tests.dir/test_aroma_event_system.c.o" "gcc" "tests/CMakeFiles/aroma_tests.dir/test_aroma_event_system.c.o.d"
+  "/home/yassineaa/AromaUI/tests/test_aroma_node.c" "tests/CMakeFiles/aroma_tests.dir/test_aroma_node.c.o" "gcc" "tests/CMakeFiles/aroma_tests.dir/test_aroma_node.c.o.d"
+  "/home/yassineaa/AromaUI/tests/test_aroma_slab_alloc.c" "tests/CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o" "gcc" "tests/CMakeFiles/aroma_tests.dir/test_aroma_slab_alloc.c.o.d"
+  "/home/yassineaa/AromaUI/tests/test_main.c" "tests/CMakeFiles/aroma_tests.dir/test_main.c.o" "gcc" "tests/CMakeFiles/aroma_tests.dir/test_main.c.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

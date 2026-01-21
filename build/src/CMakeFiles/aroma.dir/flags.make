@@ -4,7 +4,7 @@
 # compile C with /usr/bin/cc
 C_DEFINES = 
 
-C_INCLUDES = -I/home/yassine/AromaUI/src/../include -I/home/yassine/AromaUI/src -I/home/yassine/AromaUI/src/backends -I/usr/local/include/freetype2 -I/home/yassine/AromaUI/vendors/glps/include
+C_INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/usr/local/include/freetype2 -I/home/yassineaa/AromaUI/vendors/glps/include
 
 C_FLAGS = -std=gnu11
 

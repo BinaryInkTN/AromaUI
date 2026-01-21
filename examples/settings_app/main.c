@@ -124,7 +124,7 @@ int main(void)
     aroma_ui_set_theme(&preset);
 
     font = aroma_font_create_from_memory(aroma_ubuntu_ttf, 
-                                        aroma_ubuntu_ttf_len, 16);
+                                        aroma_ubuntu_ttf_len, 14);
     if (!font) {
         LOG_ERROR("Failed to load embedded font");
         aroma_ui_shutdown();
