@@ -116,13 +116,47 @@ static float drawlist_proxy_measure_text(size_t window_id, AromaFont* font, cons
     return 0.0f;
 }
 
-static void drawlist_proxy_draw_rectangle(size_t window_id, int x, int y, int width, int height)
+static unsigned int drawlist_proxy_load_image(const char* image_path)
 {
     AromaGraphicsInterface* real = get_real_graphics_interface();
-    if (real && real->draw_rectangle) {
-        real->draw_rectangle(window_id, x, y, width, height);
+    if(real && real->load_image)
+    {
+        return real->load_image(image_path);
     }
 }
+
+static void drawlist_proxy_unload_image(unsigned int texture_id)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if(real && real->unload_image)
+    {
+        real->unload_image(texture_id);
+    }
+}
+
+static unsigned int drawlist_proxy_load_image_from_memory(unsigned char* data, size_t binary_length)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if(real && real->load_image_from_memory)
+    {
+        return real->load_image_from_memory(data, binary_length);
+    }
+    return 0;
+}
+
+static void drawlist_proxy_draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_image(list, x, y, width, height, texture_id);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->draw_image) {
+        real->draw_image(window_id, x, y, width, height, texture_id);
+    }
+}
+
 
 static int drawlist_proxy_setup_shared_window_resources(void)
 {
@@ -154,13 +188,16 @@ static AromaGraphicsInterface drawlist_proxy = {
     .setup_shared_window_resources = drawlist_proxy_setup_shared_window_resources,
     .setup_separate_window_resources = drawlist_proxy_setup_separate_window_resources,
     .clear = drawlist_proxy_clear,
-    .draw_rectangle = drawlist_proxy_draw_rectangle,
     .fill_rectangle = drawlist_proxy_fill_rectangle,
     .draw_hollow_rectangle = drawlist_proxy_draw_hollow_rectangle,
     .draw_arc = drawlist_proxy_draw_arc,
+    .unload_image = drawlist_proxy_unload_image,
+    .load_image = drawlist_proxy_load_image,
+    .load_image_from_memory = drawlist_proxy_load_image_from_memory,
+    .draw_image = drawlist_proxy_draw_image,
     .render_text = drawlist_proxy_render_text,
     .measure_text = drawlist_proxy_measure_text,
-    .shutdown = drawlist_proxy_shutdown
+    .shutdown = drawlist_proxy_shutdown,
 };
 
 void set_graphics_backend_type(AromaGraphicsBackendType type) {

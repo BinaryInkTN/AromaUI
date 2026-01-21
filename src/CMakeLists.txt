@@ -42,6 +42,7 @@ add_library(aroma
     widgets/aroma_tabs.c
     widgets/aroma_sidebar.c
     widgets/aroma_debug_overlay.c
+    widgets/aroma_image.c
 )
 
 target_include_directories(aroma
