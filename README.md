@@ -1,8 +1,13 @@
 # AromaUI
 
-AromaUI is a modern, lightweight C UI framework designed for embedded and desktop applications. It provides a set of customizable widgets and tools to build beautiful, responsive user interfaces in C.
 
-![AromaUI Hero](examples/minimal/assets/leaf.png)
+<center>
+
+<img src="examples/minimal/assets/leaf.png" style="margin: 20px;"/>
+
+</center>
+
+AromaUI is a modern, lightweight C UI framework designed for embedded and desktop applications. It provides a set of customizable widgets and tools to build beautiful, responsive user interfaces in C.
 
 ## Features
 - Modular widget system
