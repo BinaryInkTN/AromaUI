@@ -17,7 +17,7 @@ AromaUI is a modern, lightweight C UI framework designed for embedded and deskto
 ### Prerequisites
 - C compiler (GCC/Clang)
 - CMake 3.10+
-- Linux (other platforms coming soon)
+- Linux, Windows (Embedded Coming Soon)
 
 ### Build Instructions
 ```sh
