@@ -11,21 +11,10 @@ static bool on_button_click(AromaNode* node, void *user_data) {
     (void)user_data;
     if (title_label) {
         aroma_label_set_text((AromaNode*)title_label, "You clicked the button!");
-        aroma_ui_request_redraw(NULL);
     }
     return true;
 }
 
-static void window_update_callback(size_t window_id, void* data) {
-    (void)data;
-    if (!aroma_ui_consume_redraw()) return;
-    
-    aroma_ui_begin_frame(window_id);
-    AromaTheme theme = aroma_theme_get_global();
-    aroma_ui_render_dirty_window(window_id, theme.colors.background);
-    aroma_ui_end_frame(window_id);
-    aroma_graphics_swap_buffers(window_id);
-}
 
 int main(void) {
     if (!aroma_ui_init()) return 1;
@@ -62,7 +51,6 @@ int main(void) {
     image_widget = aroma_image_create(container_node, "../assets/leaf.png", 130, 50, 128, 128);
     aroma_node_set_z_index(image_widget, 0);
     aroma_button_set_on_click((AromaNode*)get_started_button, on_button_click, NULL);
-    aroma_platform_set_window_update_callback(window_update_callback, NULL);
     
     aroma_ui_request_redraw(NULL);
     
@@ -70,6 +58,7 @@ int main(void) {
         aroma_ui_process_events();
         aroma_ui_render(window);
         usleep(16000);
+        // Can't do rendering here.
     }
     
     if (image_widget) aroma_image_destroy(image_widget);

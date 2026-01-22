@@ -176,6 +176,8 @@ static inline void aroma_ui_prepare_font_for_window(size_t window_id, AromaFont*
 
 extern AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int height);
 
+
+
 static inline AromaWindow* aroma_ui_create_window(const char* title, int width, int height) {
     if (!g_ui_initialized) {
         LOG_ERROR("Aroma UI not initialized");
@@ -186,6 +188,7 @@ static inline AromaWindow* aroma_ui_create_window(const char* title, int width, 
         LOG_ERROR("Invalid window parameters");
         return NULL;
     }
+
 
     return aroma_ui_create_window_impl(title, width, height);
 }

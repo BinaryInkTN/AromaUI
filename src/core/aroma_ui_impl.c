@@ -164,6 +164,19 @@ void aroma_ui_render_all_windows_impl(void) {
     }
 }
 
+static void __window_update_callback(size_t window_id, void* data) {
+     
+    (void)data;
+    if (!aroma_ui_consume_redraw()) return;
+    
+    aroma_ui_begin_frame(window_id);
+    AromaTheme theme = aroma_theme_get_global();
+    aroma_ui_render_dirty_window(window_id, theme.colors.background);
+    aroma_ui_end_frame(window_id);
+    aroma_graphics_swap_buffers(window_id);
+   
+}
+
 AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int height) {
     if (g_window_count >= AROMA_MAX_WINDOWS) {
         LOG_ERROR("Maximum number of windows (%d) reached", AROMA_MAX_WINDOWS);
@@ -186,6 +199,11 @@ AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int heigh
     if (!g_main_window) g_main_window = window;
     LOG_INFO("Window %d created: title='%s', size=%dx%d", idx, title, width, height);
     aroma_node_invalidate(window);
+
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->set_window_update_callback) {
+        platform->set_window_update_callback(__window_update_callback, NULL);
+    }
     return (AromaWindow*)window;
 }
 

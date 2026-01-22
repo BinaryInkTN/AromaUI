@@ -20,7 +20,7 @@
  */
 
 #include "aroma_platform_interface.h"
-#include <GLPS/glps_window_manager.h>
+#include "glps_window_manager.h"
 #include <stdbool.h>
 #include <ctype.h>
 #include "core/aroma_logger.h"
@@ -30,12 +30,24 @@
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 
-static glps_WindowManager *wm = NULL;
-static size_t primary_window_id = 0;
-static double last_mouse_x = 0.0;
-static double last_mouse_y = 0.0;
-static bool mouse_button_down = false;
-static bool capslock_active = false;
+typedef struct 
+{
+    glps_WindowManager *wm;
+    size_t primary_window_id;
+    double last_mouse_x;
+    double last_mouse_y;
+    bool mouse_button_down;
+    bool capslock_active;
+} AromaGLPSContext;
+
+static AromaGLPSContext platform_ctx = (AromaGLPSContext) {
+    .wm = NULL,
+    .primary_window_id = 0,
+    .last_mouse_x = 0.0,
+    .last_mouse_y = 0.0,
+    .mouse_button_down = false,
+    .capslock_active = false
+};
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
@@ -52,8 +64,8 @@ static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_
         return false;
     }
 
-    event->data.mouse.delta_x = (int)(mouse_x - last_mouse_x);
-    event->data.mouse.delta_y = (int)(mouse_y - last_mouse_y);
+    event->data.mouse.delta_x = (int)(mouse_x - platform_ctx.last_mouse_x);
+    event->data.mouse.delta_y = (int)(mouse_y - platform_ctx.last_mouse_y);
 
     return aroma_event_queue(event);
 }
@@ -82,16 +94,16 @@ static void glps_mouse_move_callback(size_t window_id, double mouse_x, double mo
 {
     (void)window_id;
     (void)data;
-    bool moved = (mouse_x != last_mouse_x) || (mouse_y != last_mouse_y);
+    bool moved = (mouse_x != platform_ctx.last_mouse_x) || (mouse_y != platform_ctx.last_mouse_y);
 
-    aroma_event_handle_pointer_move((int)mouse_x, (int)mouse_y, mouse_button_down);
+    aroma_event_handle_pointer_move((int)mouse_x, (int)mouse_y, platform_ctx.mouse_button_down);
 
     if (moved) {
         queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, mouse_x, mouse_y, 0);
     }
 
-    last_mouse_x = mouse_x;
-    last_mouse_y = mouse_y;
+    platform_ctx.last_mouse_x = mouse_x;
+    platform_ctx.last_mouse_y = mouse_y; 
 }
 
 static void glps_mouse_click_callback(size_t window_id, bool state, void *data)
@@ -99,12 +111,12 @@ static void glps_mouse_click_callback(size_t window_id, bool state, void *data)
     (void)window_id;
     (void)data;
 
-    mouse_button_down = state;
+    platform_ctx.mouse_button_down = state;
     AromaEventType type = state ? EVENT_TYPE_MOUSE_CLICK : EVENT_TYPE_MOUSE_RELEASE;
-    queue_mouse_event(type, last_mouse_x, last_mouse_y, 0);
+    queue_mouse_event(type, platform_ctx.last_mouse_x, platform_ctx.last_mouse_y, 0);
 
     if (!state) {
-        aroma_event_handle_pointer_move((int)last_mouse_x, (int)last_mouse_y, false);
+        aroma_event_handle_pointer_move((int)platform_ctx.last_mouse_x, (int)platform_ctx.last_mouse_y, false);
     }
 }
 
@@ -117,7 +129,7 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
     (void)data;
 
     if (state && keycode == 0xFFE5) { 
-        capslock_active = !capslock_active;
+        platform_ctx.capslock_active = !platform_ctx.capslock_active;
     }
 
     uint32_t key_value = 0;
@@ -132,7 +144,7 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
     }
 
     uint16_t modifiers = 0;
-    if (capslock_active) {
+    if (platform_ctx.capslock_active) {
         modifiers |= AROMA_KEY_MOD_CAPSLOCK;
     }
 
@@ -149,23 +161,23 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
 
 int initialize()
 {
-    wm = glps_wm_init();
-    if (!wm)
+    platform_ctx.wm = glps_wm_init();
+    if (!platform_ctx.wm)
     {
         LOG_CRITICAL("Failed to initialize GLPS' window manager");
         return 0;
     }
 
-    glps_wm_set_mouse_move_callback(wm, glps_mouse_move_callback, NULL);
-    glps_wm_set_mouse_click_callback(wm, glps_mouse_click_callback, NULL);
-    glps_wm_set_keyboard_callback(wm, glps_keyboard_callback, NULL);
+    glps_wm_set_mouse_move_callback(platform_ctx.wm, glps_mouse_move_callback, NULL);
+    glps_wm_set_mouse_click_callback(platform_ctx.wm, glps_mouse_click_callback, NULL);
+    glps_wm_set_keyboard_callback(platform_ctx.wm, glps_keyboard_callback, NULL);
 
     return 1;
 }
 
 size_t create_window(const char* title, int x, int y, int width, int height)
 {
-    size_t window_id = glps_wm_window_create(wm, title, x, y, width, height);
+    size_t window_id = glps_wm_window_create(platform_ctx.wm, title, x, y, width, height);
 
     if (window_id == 0)
     {
@@ -174,8 +186,8 @@ size_t create_window(const char* title, int x, int y, int width, int height)
 
     aroma_backend_abi.get_graphics_interface()->setup_separate_window_resources(window_id);
 
-    if (primary_window_id == 0) {
-        primary_window_id = window_id;
+    if (platform_ctx.primary_window_id == 0) {
+        platform_ctx.primary_window_id = window_id;
     }
 
     return window_id;
@@ -183,62 +195,62 @@ size_t create_window(const char* title, int x, int y, int width, int height)
 
 void make_context_current(size_t window_id)
 {
-    glps_wm_set_window_ctx_curr(wm, window_id);
+    glps_wm_set_window_ctx_curr(platform_ctx.wm, window_id);
 }
 
 void get_window_size(size_t window_id, int *window_width, int *window_height)
 {
-    glps_wm_window_get_dimensions(wm, window_id, window_width, window_height);
+    glps_wm_window_get_dimensions(platform_ctx.wm, window_id, window_width, window_height);
 }
 
 void set_window_update_callback(void (*callback)(size_t window_id, void *data), void* data)
 {
-    glps_wm_window_set_frame_update_callback(wm, callback, data);
+    glps_wm_window_set_frame_update_callback(platform_ctx.wm, callback, data);
 }
 
 void request_window_update(size_t window_id)
 {
-    glps_wm_window_update(wm, window_id);
+    glps_wm_window_update(platform_ctx.wm, window_id);
 }
 
 bool run_event_loop()
 {
-    if (!wm)
+    if (!platform_ctx.wm)
     {
         LOG_ERROR("Window manager not initialized. Cannot run event loop.");
         return false;
     }
-    if (primary_window_id != 0) {
-        glps_wm_window_update(wm, primary_window_id);
+    if (platform_ctx.primary_window_id != 0) {
+        glps_wm_window_update(platform_ctx.wm, platform_ctx.primary_window_id);
     }
-    return !glps_wm_should_close(wm);
+    return !glps_wm_should_close(platform_ctx.wm);
 }
 
 void swap_buffers(size_t window_id)
 {
-    glps_wm_swap_buffers(wm, window_id);
+    glps_wm_swap_buffers(platform_ctx.wm, window_id);
 }
 
 void shutdown()
 {
-    if (!wm)
+    if (!platform_ctx.wm)
     {
         LOG_ERROR("Window manager not initialized. Cannot shutdown.");
         return;
     }
 
-    size_t window_count = glps_wm_get_window_count(wm);
+    size_t window_count = glps_wm_get_window_count(platform_ctx.wm);
     if (window_count == 0)
     {
         LOG_WARNING("Window manager has no active windows; skipping GLPS destroy to avoid shutdown crash.");
-        wm = NULL;
-        primary_window_id = 0;
+        platform_ctx.wm = NULL;
+        platform_ctx.primary_window_id = 0;
         return;
     }
 
-    glps_wm_destroy(wm);
-    wm = NULL;
-    primary_window_id = 0;
+    glps_wm_destroy(platform_ctx.wm);
+    platform_ctx.wm = NULL;
+    platform_ctx.primary_window_id = 0;
 }
 
 AromaPlatformInterface aroma_platform_glps = {

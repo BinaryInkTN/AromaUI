@@ -55,13 +55,10 @@ typedef struct
     mat4x4 projection;
     GLuint text_fragment_shader;
     GLuint text_vertex_shader;
-
     unsigned int selected_color;
     bool is_running;
     size_t num_windows;
-
     GLES3TextRenderer text_renderers[256];
-
     Glyph glyph_cache[128];
 
 } AromaGLES3Context;
