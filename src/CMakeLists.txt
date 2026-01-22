@@ -49,6 +49,8 @@ target_include_directories(aroma
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/backends
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/include
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/internal
     PRIVATE ${FREETYPE_INCLUDE_DIRS}
 )
 

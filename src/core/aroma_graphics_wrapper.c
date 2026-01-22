@@ -84,10 +84,11 @@ void aroma_platform_request_window_update(size_t window_id)
 
 void aroma_platform_set_window_update_callback(void (*callback)(size_t window_id, void* data), void* user_data)
 {
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    /*    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->set_window_update_callback) {
         platform->set_window_update_callback(callback, user_data);
-    }
+    }*/
+
 }
 
 bool aroma_platform_run_event_loop(void)
