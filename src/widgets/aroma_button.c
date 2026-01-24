@@ -1,24 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include "core/aroma_common.h"
 #include "core/aroma_node.h"
 #include "core/aroma_event.h"
@@ -34,9 +13,7 @@
 
 static void __button_request_redraw(void* user_data)
 {
-    if (!user_data) {
-        return;
-    }
+    if (!user_data) return;
     void (*on_redraw)(void*) = (void (*)(void*))user_data;
     on_redraw(NULL);
 }
@@ -51,7 +28,6 @@ static bool aroma_button_point_in_bounds(AromaButton* button, int x, int y)
 static uint32_t aroma_button_get_color(AromaButton* button)
 {
     if (!button) return 0xCCCCCC;
-
     switch (button->state)
     {
         case BUTTON_STATE_HOVER:
@@ -63,6 +39,23 @@ static uint32_t aroma_button_get_color(AromaButton* button)
         default:
             return button->idle_color;
     }
+}
+
+static void aroma_button_update_text_position(AromaButton* button)
+{
+    if (!button || !button->font || button->label[0] == '\0') return;
+
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    if (!gfx || !gfx->measure_text) return;
+
+    float measured_width = gfx->measure_text(0, button->font, button->label, button->text_scale);
+    button->text_width = (int)(measured_width + 0.5f);
+
+    int line_height = aroma_font_get_line_height(button->font);
+    const int padding = 6;
+    button->text_x = button->rect.x + (button->rect.width - button->text_width) / 2;
+    if (button->text_x < button->rect.x + padding) button->text_x = button->rect.x + padding;
+    button->text_y = button->rect.y + (button->rect.height - line_height - padding) / 2;
 }
 
 AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int y, int width, int height)
@@ -106,12 +99,20 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->use_theme_colors = true;
     button->font = NULL;
 
+    button->corner_radius = 12.0f;
+    button->shadow_color = 0x22222222;
+    button->text_scale = 1.0f;
+
     button->on_click = NULL;
     button->on_hover = NULL;
     button->user_data = NULL;
 
-    LOG_INFO("Button created: label='%s', x=%d, y=%d, w=%d, h=%d", 
-             label, x, y, width, height);
+    button->text_width = 0;
+    button->text_x = 0;
+    button->text_y = 0;
+    button->line_height = 0;
+
+    LOG_INFO("Button created: label='%s', x=%d, y=%d, w=%d, h=%d", label, x, y, width, height);
 
     return button_node;
 }
@@ -157,7 +158,7 @@ void aroma_button_set_on_hover(AromaNode* button_node, bool (*on_hover)(AromaNod
     LOG_INFO("Button hover callback registered");
 }
 
-void aroma_button_set_colors(AromaNode* button_node, uint32_t idle_color, uint32_t hover_color, 
+void aroma_button_set_colors(AromaNode* button_node, uint32_t idle_color, uint32_t hover_color,
                              uint32_t pressed_color, uint32_t text_color)
 {
     if (!button_node)
@@ -184,33 +185,21 @@ void aroma_button_set_colors(AromaNode* button_node, uint32_t idle_color, uint32
 
 void aroma_button_set_font(AromaNode* button_node, AromaFont* font)
 {
-    if (!button_node)
-    {
-        return;
-    }
-
+    if (!button_node) return;
     AromaButton* button = (AromaButton*)button_node->node_widget_ptr;
-    if (!button)
-    {
-        return;
-    }
+    if (!button) return;
 
     button->font = font;
+    if (font) button->line_height = aroma_font_get_line_height(font);
+    aroma_button_update_text_position(button);
     aroma_node_invalidate(button_node);
 }
 
 void aroma_button_apply_style(AromaNode* button_node, const struct AromaStyle* style)
 {
-    if (!button_node || !style)
-    {
-        return;
-    }
-
+    if (!button_node || !style) return;
     AromaButton* button = (AromaButton*)button_node->node_widget_ptr;
-    if (!button)
-    {
-        return;
-    }
+    if (!button) return;
 
     button->idle_color = style->idle_color;
     button->hover_color = style->hover_color;
@@ -222,16 +211,9 @@ void aroma_button_apply_style(AromaNode* button_node, const struct AromaStyle* s
 
 bool aroma_button_handle_mouse_event(AromaNode* button_node, int mouse_x, int mouse_y, bool is_clicked)
 {
-    if (!button_node)
-    {
-        return false;
-    }
-
+    if (!button_node) return false;
     AromaButton* button = (AromaButton*)button_node->node_widget_ptr;
-    if (!button)
-    {
-        return false;
-    }
+    if (!button) return false;
 
     bool is_in_bounds = aroma_button_point_in_bounds(button, mouse_x, mouse_y);
     AromaButtonState prev_state = button->state;
@@ -245,7 +227,6 @@ bool aroma_button_handle_mouse_event(AromaNode* button_node, int mouse_x, int mo
         else if (button->state == BUTTON_STATE_PRESSED)
         {
             button->state = BUTTON_STATE_RELEASED;
-
             if (button->on_click)
             {
                 LOG_INFO("Button clicked: %s", button->label);
@@ -255,7 +236,6 @@ bool aroma_button_handle_mouse_event(AromaNode* button_node, int mouse_x, int mo
         else
         {
             button->state = BUTTON_STATE_HOVER;
-
             if (prev_state != BUTTON_STATE_HOVER && button->on_hover)
             {
                 LOG_INFO("Button hovered: %s", button->label);
@@ -268,12 +248,20 @@ bool aroma_button_handle_mouse_event(AromaNode* button_node, int mouse_x, int mo
         button->state = BUTTON_STATE_IDLE;
     }
 
-    if (button->state != prev_state)
-    {
-        aroma_node_invalidate(button_node);
-    }
-
+    if (button->state != prev_state) aroma_node_invalidate(button_node);
     return is_in_bounds;
+}
+
+void aroma_button_update_label(AromaNode* button_node, const char* label)
+{
+    if (!button_node || !label) return;
+    AromaButton* button = (AromaButton*)button_node->node_widget_ptr;
+    if (!button) return;
+
+    strncpy(button->label, label, AROMA_BUTTON_LABEL_MAX - 1);
+    button->label[AROMA_BUTTON_LABEL_MAX - 1] = '\0';
+    aroma_button_update_text_position(button);
+    aroma_node_invalidate(button_node);
 }
 
 void aroma_button_draw(AromaNode* button_node, size_t window_id)
@@ -298,17 +286,7 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         return;
     }
 
-    AromaTheme theme = aroma_theme_get_global();
-    if (button->use_theme_colors) {
-        button->idle_color = theme.colors.primary;
-        button->hover_color = theme.colors.primary_light;
-        button->pressed_color = theme.colors.primary_dark;
-        button->text_color = theme.colors.surface;
-    }
-
     uint32_t button_color;
-    uint32_t text_color = button->text_color;
-
     switch (button->state) {
         case BUTTON_STATE_PRESSED:
             button_color = button->pressed_color;
@@ -321,22 +299,17 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
             break;
     }
 
-    float radius = (theme.spacing.border_radius > 0) ? (float)theme.spacing.border_radius : 12.0f;
-    uint32_t shadow_color = aroma_color_adjust(theme.colors.surface, -0.1f);
-
-    // MD3 Elevation 1 - subtle shadow for depth
     gfx->fill_rectangle(
         window_id,
         button->rect.x + 1,
         button->rect.y + 2,
         button->rect.width,
         button->rect.height,
-        shadow_color,
+        button->shadow_color,
         true,
-        radius
+        button->corner_radius
     );
 
-    // Draw filled button
     gfx->fill_rectangle(
         window_id,
         button->rect.x,
@@ -345,49 +318,20 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         button->rect.height,
         button_color,
         true,
-        radius
+        button->corner_radius
     );
-
-    button->text_color = text_color;
 
     if (gfx->render_text && button->font && button->label[0] != '\0')
     {
-        float measured_width = 0.0f;
-        if (gfx->measure_text)
-        {
-            measured_width = gfx->measure_text(window_id, button->font, button->label);
-        }
-
-        int line_height = aroma_font_get_line_height(button->font);
-        int ascender = aroma_font_get_ascender(button->font);
-        int text_width = (int)(measured_width + 0.5f);
-        int text_x = button->rect.x + (button->rect.width - text_width) / 2;
-        const int padding = 6;
-        if (text_x < button->rect.x + padding)
-        {
-            text_x = button->rect.x + padding;
-        }
-        int top = button->rect.y + (button->rect.height - line_height) / 2;
-        int baseline = top + ascender;
-
-        gfx->render_text(window_id, button->font, button->label, text_x, baseline, button->text_color);
+        gfx->render_text(window_id, button->font, button->label, button->text_x, button->text_y, button->text_color, button->text_scale);
     }
-
 }
 
 void aroma_button_destroy(AromaNode* button_node)
 {
-    if (!button_node)
-    {
-        return;
-    }
-
+    if (!button_node) return;
     AromaButton* button = (AromaButton*)button_node->node_widget_ptr;
-    if (button)
-    {
-        aroma_widget_free(button);
-    }
-
+    if (button) aroma_widget_free(button);
     __destroy_node(button_node);
     LOG_INFO("Button destroyed");
 }
@@ -395,7 +339,6 @@ void aroma_button_destroy(AromaNode* button_node)
 static bool __button_default_mouse_handler(AromaEvent* event, void* user_data)
 {
     if (!event || !event->target_node) return false;
-
     AromaButton* btn = (AromaButton*)event->target_node->node_widget_ptr;
     if (!btn) return false;
 
@@ -427,23 +370,17 @@ static bool __button_default_mouse_handler(AromaEvent* event, void* user_data)
             break;
     }
 
-    if (btn->state != prev_state && user_data) {
-        __button_request_redraw(user_data);
-    }
-
+    if (btn->state != prev_state && user_data) __button_request_redraw(user_data);
     return in_bounds;
 }
 
 bool aroma_button_setup_events(AromaNode* button_node, void (*on_redraw_callback)(void*), void* user_data)
 {
     if (!button_node) return false;
-
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_CLICK, __button_default_mouse_handler, (void*)on_redraw_callback, 90);
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_RELEASE, __button_default_mouse_handler, (void*)on_redraw_callback, 90);
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_MOVE, __button_default_mouse_handler, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_ENTER, __button_default_mouse_handler, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_EXIT, __button_default_mouse_handler, (void*)on_redraw_callback, 80);
-
     return true;
 }
-

@@ -39,6 +39,10 @@ typedef struct AromaListView {
     AromaFont* font;
     void (*callback)(int index, void* user_data);
     void* user_data;
+    int item_height;
+    float corner_radius;
+    float selected_corner_radius;
+    float text_scale;
 } AromaListView;
 
 static bool __listview_handle_event(AromaEvent* event, void* user_data)
@@ -52,7 +56,7 @@ static bool __listview_handle_event(AromaEvent* event, void* user_data)
     int rel_y = event->data.mouse.y - list->rect.y;
     if (rel_y < 0 || rel_y >= list->rect.height) return false;
 
-    int item_height = 28;
+    int item_height = list->item_height;
     int index = rel_y / item_height;
     if (index >= 0 && index < (int)list->item_count) {
         list->selected_index = index;
@@ -77,6 +81,10 @@ AromaNode* aroma_listview_create(AromaNode* parent, int x, int y, int width, int
     list->rect.height = height;
     list->item_count = 0;
     list->selected_index = -1;
+    list->item_height = 28;
+    list->corner_radius = 8.0f;
+    list->selected_corner_radius = 6.0f;
+    list->text_scale = 1.0f;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, list);
     if (!node) {
@@ -137,7 +145,7 @@ void aroma_listview_draw(AromaNode* list_node, size_t window_id)
     AromaTheme theme = aroma_theme_get_global();
 
     gfx->fill_rectangle(window_id, list->rect.x, list->rect.y, list->rect.width, list->rect.height,
-                        theme.colors.surface, true, 8.0f);
+                        theme.colors.surface, true, list->corner_radius);
     if (aroma_node_is_hidden(list_node)) return;
 
     int item_height = 28;
@@ -147,11 +155,11 @@ void aroma_listview_draw(AromaNode* list_node, size_t window_id)
 
         if ((int)i == list->selected_index) {
             gfx->fill_rectangle(window_id, list->rect.x + 2, y, list->rect.width - 4, item_height,
-                                aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.2f), true, 6.0f);
+                                aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.2f), true, list->selected_corner_radius);
         }
 
         if (list->font && gfx->render_text) {
-            gfx->render_text(window_id, list->font, list->items[i].text, list->rect.x + 12, y + 18, theme.colors.text_primary);
+            gfx->render_text(window_id, list->font, list->items[i].text, list->rect.x + 12, y + 18, theme.colors.text_primary, list->text_scale);
         }
     }
 }

@@ -1,24 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include "widgets/aroma_fab.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -37,18 +16,20 @@ typedef struct AromaFAB {
     char text[64];
     uint32_t bg_color;
     uint32_t icon_color;
+    uint32_t shadow_color;
+    float corner_radius;
     bool is_hovered;
     bool is_pressed;
     void (*click_callback)(void* user_data);
     void* user_data;
     AromaFont* font;
+    int text_x;
+    int text_y;
 } AromaFAB;
 
 static void __fab_request_redraw(void* user_data)
 {
-    if (!user_data) {
-        return;
-    }
+    if (!user_data) return;
     void (*on_redraw)(void*) = (void (*)(void*))user_data;
     on_redraw(NULL);
 }
@@ -106,9 +87,18 @@ static int get_fab_size(AromaFABSize size) {
         case FAB_SIZE_SMALL: return 40;
         case FAB_SIZE_NORMAL: return 56;
         case FAB_SIZE_LARGE: return 96;
-        case FAB_SIZE_EXTENDED: return 56; // Height only
+        case FAB_SIZE_EXTENDED: return 56;
         default: return 56;
     }
+}
+
+static void __fab_update_layout(AromaFAB* fab)
+{
+    int fab_size = get_fab_size(fab->size);
+    fab->rect.height = fab_size;
+    fab->corner_radius = (float)fab->rect.height / 2.0f;
+    fab->text_x = fab->rect.x + fab->rect.width / 2 - 8;
+    fab->text_y = fab->rect.y + fab->rect.height / 2 + 8;
 }
 
 AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, const char* icon_text) {
@@ -127,11 +117,16 @@ AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, 
     AromaTheme theme = aroma_theme_get_global();
     fab->bg_color = theme.colors.primary;
     fab->icon_color = 0xFFFFFF;
+    fab->shadow_color = 0xC0C0C0;
     fab->is_hovered = false;
     fab->is_pressed = false;
     fab->click_callback = NULL;
     fab->user_data = NULL;
     fab->font = NULL;
+    fab->text_x = 0;
+    fab->text_y = 0;
+
+    __fab_update_layout(fab);
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, fab);
     if (!node) {
@@ -177,6 +172,7 @@ void aroma_fab_set_text(AromaNode* fab_node, const char* text) {
     strncpy(fab->text, text, sizeof(fab->text) - 1);
     fab->size = FAB_SIZE_EXTENDED;
     fab->rect.width = 120 + strlen(text) * 8;
+    __fab_update_layout(fab);
 }
 
 void aroma_fab_draw(AromaNode* fab_node, size_t window_id) {
@@ -190,33 +186,26 @@ void aroma_fab_draw(AromaNode* fab_node, size_t window_id) {
 
     uint32_t color = fab->bg_color;
     if (fab->is_pressed) {
-        color = 0x4F378B;  // Darker
+        color = 0x4F378B;
     } else if (fab->is_hovered) {
-        color = 0x7965B3;  // Lighter
+        color = 0x7965B3;
     }
 
-    // MD3 Elevation 3 shadow for FAB
     gfx->fill_rectangle(window_id, fab->rect.x + 2, fab->rect.y + 4,
                         fab->rect.width, fab->rect.height,
-                        0xC0C0C0, true, fab->rect.height / 2.0f);
+                        fab->shadow_color, true, fab->corner_radius);
 
-    // Draw FAB
     gfx->fill_rectangle(window_id, fab->rect.x, fab->rect.y,
                         fab->rect.width, fab->rect.height,
-                        color, true, fab->rect.height / 2.0f);
+                        color, true, fab->corner_radius);
 
-    // Draw icon/text
     if (gfx->render_text && fab->font && fab->icon_text[0]) {
-        int text_x = fab->rect.x + fab->rect.width / 2 - 8;
-        int text_y = fab->rect.y + fab->rect.height / 2 + 8;
-        gfx->render_text(window_id, fab->font, fab->icon_text, text_x, text_y, fab->icon_color);
+        gfx->render_text(window_id, fab->font, fab->icon_text, fab->text_x, fab->text_y, fab->icon_color, 1.0f);
     }
 }
 
 void aroma_fab_destroy(AromaNode* fab_node) {
     if (!fab_node) return;
     AromaFAB* fab = (AromaFAB*)fab_node->node_widget_ptr;
-    if (fab) {
-        aroma_widget_free(fab);
-    }
+    if (fab) aroma_widget_free(fab);
 }

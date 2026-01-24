@@ -1,24 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include "widgets/aroma_card.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -35,6 +14,8 @@ typedef struct AromaCard {
     AromaCardType type;
     uint32_t bg_color;
     uint32_t border_color;
+    float border_radius;
+    uint32_t shadow_color;
     bool is_hovered;
     bool is_pressed;
     void (*click_callback)(void* user_data);
@@ -43,9 +24,7 @@ typedef struct AromaCard {
 
 static void __card_request_redraw(void* user_data)
 {
-    if (!user_data) {
-        return;
-    }
+    if (!user_data) return;
     void (*on_redraw)(void*) = (void (*)(void*))user_data;
     on_redraw(NULL);
 }
@@ -113,6 +92,8 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
         ? aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f)
         : theme.colors.surface;
     card->border_color = theme.colors.border;
+    card->border_radius = 12.0f;
+    card->shadow_color = 0xE0E0E0;
     card->is_hovered = false;
     card->is_pressed = false;
     card->click_callback = NULL;
@@ -159,30 +140,25 @@ void aroma_card_draw(AromaNode* card_node, size_t window_id) {
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
 
-    // Draw elevation shadow for elevated cards
     if (card->type == CARD_TYPE_ELEVATED) {
         gfx->fill_rectangle(window_id, card->rect.x + 2, card->rect.y + 4,
                           card->rect.width, card->rect.height,
-                          0xE0E0E0, true, 12.0f);
+                          card->shadow_color, true, card->border_radius);
     }
 
-    // Draw card background
     gfx->fill_rectangle(window_id, card->rect.x, card->rect.y,
                         card->rect.width, card->rect.height,
-                        card->bg_color, true, 12.0f);  // MD3 medium corner
+                        card->bg_color, true, card->border_radius);
 
-    // Draw outline for outlined cards
     if (card->type == CARD_TYPE_OUTLINED) {
         gfx->draw_hollow_rectangle(window_id, card->rect.x, card->rect.y,
                                    card->rect.width, card->rect.height,
-                                   card->border_color, 1, true, 12.0f);
+                                   card->border_color, 1, true, card->border_radius);
     }
 }
 
 void aroma_card_destroy(AromaNode* card_node) {
     if (!card_node) return;
     AromaCard* card = (AromaCard*)card_node->node_widget_ptr;
-    if (card) {
-        aroma_widget_free(card);
-    }
+    if (card) aroma_widget_free(card);
 }

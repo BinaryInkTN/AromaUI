@@ -35,6 +35,7 @@ typedef struct AromaLabel {
     AromaLabelStyle style;
     uint32_t color;
     AromaFont* font;
+    float text_scale;
 } AromaLabel;
 
 static uint32_t __label_default_color(void)
@@ -62,6 +63,18 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
     label->color = __label_default_color();
     label->font = NULL;
     strncpy(label->text, text, AROMA_LABEL_TEXT_MAX - 1);
+    
+    static const float LABEL_SCALES[] = {
+        [LABEL_STYLE_LABEL_LARGE]     = 1.0f,
+        [LABEL_STYLE_LABEL_MEDIUM]    = 0.9f,
+        [LABEL_STYLE_LABEL_SMALL]     = 0.8f
+    };
+
+    if (style >= 0 && style < (int)(sizeof(LABEL_SCALES) / sizeof(float))) {
+        label->text_scale = LABEL_SCALES[style];
+    } else {
+        label->text_scale = 1.0f;
+    }
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, label);
     if (!node) {
@@ -114,7 +127,7 @@ void aroma_label_draw(AromaNode* label_node, size_t window_id)
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->render_text || !label->font) return;
 
-    gfx->render_text(window_id, label->font, label->text, label->rect.x, label->rect.y, label->color);
+    gfx->render_text(window_id, label->font, label->text, label->rect.x, label->rect.y, label->color, label->text_scale);
 }
 
 void aroma_label_destroy(AromaNode* label_node)

@@ -37,6 +37,12 @@ typedef struct AromaMenu {
     size_t item_count;
     bool visible;
     AromaFont* font;
+    int item_height;
+    float corner_radius;
+    uint32_t bg_color;
+    uint32_t border_color;
+    uint32_t text_color;
+    float text_scale;
 } AromaMenu;
 
 static bool __menu_handle_event(AromaEvent* event, void* user_data)
@@ -49,7 +55,7 @@ static bool __menu_handle_event(AromaEvent* event, void* user_data)
     if (event->event_type != EVENT_TYPE_MOUSE_CLICK) return false;
 
     int rel_y = event->data.mouse.y - menu->rect.y;
-    int item_height = 28;
+    int item_height = menu->item_height;
     int index = rel_y / item_height;
     if (index >= 0 && index < (int)menu->item_count) {
         AromaMenuItem* item = &menu->items[index];
@@ -76,6 +82,13 @@ AromaNode* aroma_menu_create(AromaNode* parent, int x, int y)
     menu->item_count = 0;
     menu->visible = false;
     menu->font = NULL;
+    menu->item_height = 28;
+    menu->corner_radius = 8.0f;
+    AromaTheme theme = aroma_theme_get_global();
+    menu->bg_color = theme.colors.surface;
+    menu->border_color = theme.colors.border;
+    menu->text_color = theme.colors.text_primary;
+    menu->text_scale = 1.0f;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, menu);
     if (!node) {
@@ -101,7 +114,7 @@ void aroma_menu_add_item(AromaNode* menu_node, const char* text, void (*callback
     item->enabled = true;
     item->callback = callback;
     item->user_data = user_data;
-    menu->rect.height = (int)menu->item_count * 28;
+    menu->rect.height = (int)menu->item_count * menu->item_height;
 }
 
 void aroma_menu_add_separator(AromaNode* menu_node)
@@ -112,7 +125,7 @@ void aroma_menu_add_separator(AromaNode* menu_node)
     AromaMenuItem* item = &menu->items[menu->item_count++];
     memset(item, 0, sizeof(AromaMenuItem));
     item->separator = true;
-    menu->rect.height = (int)menu->item_count * 28;
+    menu->rect.height = (int)menu->item_count * menu->item_height;
 }
 
 void aroma_menu_show(AromaNode* menu_node)
@@ -149,23 +162,20 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
-    AromaTheme theme = aroma_theme_get_global();
-
     gfx->fill_rectangle(window_id, menu->rect.x, menu->rect.y, menu->rect.width, menu->rect.height,
-                        theme.colors.surface, true, 8.0f);
+                        menu->bg_color, true, menu->corner_radius);
     gfx->draw_hollow_rectangle(window_id, menu->rect.x, menu->rect.y, menu->rect.width, menu->rect.height,
-                               theme.colors.border, 1, true, 8.0f);
+                               menu->border_color, 1, true, menu->corner_radius);
 
-    int item_height = 28;
     for (size_t i = 0; i < menu->item_count; ++i) {
-        int y = menu->rect.y + (int)i * item_height;
+        int y = menu->rect.y + (int)i * menu->item_height;
         if (menu->items[i].separator) {
-            gfx->fill_rectangle(window_id, menu->rect.x + 8, y + item_height / 2, menu->rect.width - 16, 1,
-                                theme.colors.border, false, 0.0f);
+            gfx->fill_rectangle(window_id, menu->rect.x + 8, y + menu->item_height / 2, menu->rect.width - 16, 1,
+                                menu->border_color, false, 0.0f);
             continue;
         }
         if (menu->font && gfx->render_text) {
-            gfx->render_text(window_id, menu->font, menu->items[i].text, menu->rect.x + 12, y + 18, theme.colors.text_primary);
+            gfx->render_text(window_id, menu->font, menu->items[i].text, menu->rect.x + 12, y + (menu->item_height/2), menu->text_color, menu->text_scale);
         }
     }
 }

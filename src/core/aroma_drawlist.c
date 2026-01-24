@@ -65,6 +65,7 @@ typedef struct AromaDrawCmd {
             int x;
             int y;
             uint32_t color;
+            float scale;
         } text;
         struct {
             int x;
@@ -209,7 +210,7 @@ void aroma_drawlist_cmd_arc(AromaDrawList* list, int cx, int cy, int radius,
 }
 
 void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* text,
-                             int x, int y, uint32_t color)
+                             int x, int y, uint32_t color, float scale)
 {
     if (!list || !text) return;
     aroma_drawlist_reserve(list, 1);
@@ -220,6 +221,8 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
     cmd->data.text.x = x;
     cmd->data.text.y = y;
     cmd->data.text.color = color;
+    cmd->data.text.scale = scale;
+    
 }
 
 
@@ -302,7 +305,7 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                      cmd->data.text.text ? cmd->data.text.text : "",
                                      cmd->data.text.x,
                                      cmd->data.text.y,
-                                     cmd->data.text.color);
+                                     cmd->data.text.color, cmd->data.text.scale);
                 }
                 break;
             case AROMA_DRAW_CMD_IMAGE:

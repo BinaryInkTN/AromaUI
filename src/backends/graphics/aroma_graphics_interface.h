@@ -26,8 +26,8 @@ typedef struct AromaGraphicsInterface {
     void (*draw_arc)(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle, uint32_t color, int thickness);
   
     // Text rendering functions
-    void (*render_text)(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color);
-    float (*measure_text)(size_t window_id, AromaFont* font, const char* text);
+    void (*render_text)(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color, float scale);
+    float (*measure_text)(size_t window_id, AromaFont* font, const char* text, float scale);
     
     // Image rendering functions 
     void (*unload_image)(unsigned int texture_id);

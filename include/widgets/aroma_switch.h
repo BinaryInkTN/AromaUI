@@ -12,13 +12,21 @@ typedef struct AromaWindow AromaWindow;
 typedef struct AromaSwitch
 {
     AromaRect rect;
-    bool state;  
+    bool state;
 
     uint32_t color_on;
     uint32_t color_off;
     bool is_hovered;
+    float track_radius;
+    int toggle_size;
+    float toggle_radius;
+    uint32_t border_color;
+    int toggle_x;
+
+
     bool (*on_change)(AromaNode* node, void* user_data);
     void* user_data;
+
 } AromaSwitch;
 
 AromaNode* aroma_switch_create(AromaNode* parent, int x, int y, int width, int height, bool initial_state);
@@ -78,4 +86,3 @@ static inline void aroma_ui_destroy_switch(AromaSwitch* sw) {
 }
 
 #endif
-

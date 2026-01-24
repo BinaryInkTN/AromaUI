@@ -296,7 +296,6 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
                         sidebar->rect.width, sidebar->rect.height,
                         sidebar->bg_color, true, 12.0f);
 
-    int ascender = sidebar->font ? aroma_font_get_ascender(sidebar->font) : 10;
 
     for (int i = 0; i < sidebar->count; i++) {
         int item_y = sidebar->rect.y + i * sidebar->item_height;
@@ -318,8 +317,9 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
 
         if (sidebar->font && gfx->render_text) {
             uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
-            int text_y = item_y + (sidebar->item_height - ascender) / 2 + ascender;
-            gfx->render_text(window_id, sidebar->font, sidebar->labels[i], sidebar->rect.x + 14, text_y, text_color);
+            int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
+            int text_y = item_y + (sidebar->item_height - line_height) / 2;
+            gfx->render_text(window_id, sidebar->font, sidebar->labels[i], sidebar->rect.x + 14, text_y, text_color, 1.0f);
         }
     }
 }

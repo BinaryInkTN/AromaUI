@@ -300,7 +300,7 @@ static void clear(size_t window_id, uint32_t color)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-static void render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color)
+static void render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color, float scale)
 {
     if (!font || !text || window_id >= 256) {
         return;
@@ -314,10 +314,10 @@ static void render_text(size_t window_id, AromaFont* font, const char* text, int
     }
 
     gles3_text_render_text(renderer, ctx.text_programs[window_id], text, 
-                          (float)x, (float)y, 1.0f, color, window_id);
+                          (float)x, (float)y, scale, color, window_id);
 }
 
-static float measure_text(size_t window_id, AromaFont* font, const char* text)
+static float measure_text(size_t window_id, AromaFont* font, const char* text, float scale)
 {
     if (!font || !text || window_id >= 256) {
         return 0.0f;
@@ -328,7 +328,7 @@ static float measure_text(size_t window_id, AromaFont* font, const char* text)
         return 0.0f;
     }
 
-    return gles3_text_measure_text(renderer, text, 1.0f);
+    return gles3_text_measure_text(renderer, text, scale);
 }
 
 static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height, 

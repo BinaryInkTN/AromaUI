@@ -1,24 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include "widgets/aroma_progressbar.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -32,7 +11,14 @@ typedef struct AromaProgressBar {
     float progress;
     uint32_t track_color;
     uint32_t indicator_color;
+    float corner_radius;
+    int fill_width;
 } AromaProgressBar;
+
+static void __progressbar_update_fill(AromaProgressBar* bar)
+{
+    bar->fill_width = (int)(bar->rect.width * bar->progress);
+}
 
 AromaNode* aroma_progressbar_create(AromaNode* parent, int x, int y, int width, int height, AromaProgressType type)
 {
@@ -50,6 +36,8 @@ AromaNode* aroma_progressbar_create(AromaNode* parent, int x, int y, int width, 
     bar->progress = 0.0f;
     bar->track_color = aroma_color_blend(theme.colors.surface, theme.colors.border, 0.45f);
     bar->indicator_color = theme.colors.primary;
+    bar->corner_radius = (float)bar->rect.height / 2.0f;
+    bar->fill_width = 0;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, bar);
     if (!node) {
@@ -68,6 +56,7 @@ void aroma_progressbar_set_progress(AromaNode* progress_node, float progress)
     if (progress < 0.0f) progress = 0.0f;
     if (progress > 1.0f) progress = 1.0f;
     bar->progress = progress;
+    __progressbar_update_fill(bar);
     aroma_node_invalidate(progress_node);
 }
 
@@ -95,21 +84,19 @@ void aroma_progressbar_draw(AromaNode* progress_node, size_t window_id)
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
 
-    int radius = bar->rect.height / 2;
     gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, bar->rect.width, bar->rect.height,
-                        bar->track_color, true, (float)radius);
+                        bar->track_color, true, bar->corner_radius);
 
     if (bar->type == PROGRESS_TYPE_DETERMINATE) {
-        int fill_width = (int)(bar->rect.width * bar->progress);
-        if (fill_width > 0) {
-            gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, fill_width, bar->rect.height,
-                                bar->indicator_color, true, (float)radius);
+        if (bar->fill_width > 0) {
+            gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, bar->fill_width, bar->rect.height,
+                                bar->indicator_color, true, bar->corner_radius);
         }
     } else {
         int span = bar->rect.width / 3;
         if (span < 12) span = 12;
         gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, span, bar->rect.height,
-                            bar->indicator_color, true, (float)radius);
+                            bar->indicator_color, true, bar->corner_radius);
     }
 }
 

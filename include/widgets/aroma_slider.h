@@ -22,9 +22,16 @@ typedef struct AromaSlider
     bool is_dragging;
     bool (*on_change)(AromaNode*, void*);
     void* user_data;
+    int track_height;
+    float track_corner_radius;
+    int thumb_size;
+    float thumb_corner_radius;
+    uint32_t thumb_border_color;
+    int thumb_x;
+
 } AromaSlider;
 
-AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int height, 
+AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int height,
                                int min_value, int max_value, int initial_value);
 
 void aroma_slider_set_value(AromaNode* node, int value);
@@ -142,4 +149,3 @@ static inline void aroma_ui_destroy_slider(AromaSlider* slider) {
 }
 
 #endif
-

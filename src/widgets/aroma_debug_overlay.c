@@ -42,6 +42,7 @@ struct AromaDebugOverlay {
     struct timespec last_time;
     int frame_count;
     float fps;
+    float corner_radius;
 };
 
 static float __time_diff_sec(struct timespec a, struct timespec b)
@@ -71,6 +72,7 @@ AromaNode* aroma_debug_overlay_create(AromaNode* parent, int x, int y)
     overlay->bg_color = aroma_color_blend(theme.colors.surface, theme.colors.text_primary, 0.06f);
     overlay->text_color = theme.colors.text_primary;
     overlay->border_color = theme.colors.border;
+    overlay->corner_radius = 10.0f;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, overlay);
     if (!node) {
@@ -122,10 +124,10 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
 
     gfx->fill_rectangle(window_id, overlay->rect.x, overlay->rect.y,
                         overlay->rect.width, overlay->rect.height,
-                        overlay->bg_color, true, 10.0f);
+                        overlay->bg_color, true, overlay->corner_radius);
     gfx->draw_hollow_rectangle(window_id, overlay->rect.x, overlay->rect.y,
                                overlay->rect.width, overlay->rect.height,
-                               overlay->border_color, 1, true, 10.0f);
+                               overlay->border_color, 1, true, overlay->corner_radius);
 
     if (overlay->font && gfx->render_text) {
         char line1[64], line2[64], line3[64], line4[64], line5[64], line6[64], line7[64], line8[64];
@@ -143,7 +145,7 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
         const char* plat_backend = "?";
         extern AromaBackendABI aroma_backend_abi;
         AromaPlatformInterface* plat = aroma_backend_abi.get_platform_interface();
- 
+
         plat_backend = "GLPS";
         snprintf(line3, sizeof(line3), "PLAT: %s", plat_backend);
 
@@ -173,24 +175,24 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
         extern AromaNode* g_focused_node;
         snprintf(line8, sizeof(line8), "focus: %llu", g_focused_node ? (unsigned long long)g_focused_node->node_id : 0ULL);
 
-        int ascender = aroma_font_get_ascender(overlay->font);
-        int y1 = overlay->rect.y + 10 + ascender;
-        int y2 = y1 + ascender + 6;
-        int y3 = y2 + ascender + 6;
-        int y4 = y3 + ascender + 6;
-        int y5 = y4 + ascender + 6;
-        int y6 = y5 + ascender + 6;
-        int y7 = y6 + ascender + 6;
-        int y8 = y7 + ascender + 6;
-        overlay->rect.height = (y8 - overlay->rect.y) + 10;
-        gfx->render_text(window_id, overlay->font, line1, overlay->rect.x + 10, y1, overlay->text_color);
-        gfx->render_text(window_id, overlay->font, line2, overlay->rect.x + 10, y2, overlay->text_color);
-        gfx->render_text(window_id, overlay->font, line3, overlay->rect.x + 10, y3, overlay->text_color);
-        gfx->render_text(window_id, overlay->font, line4, overlay->rect.x + 10, y4, overlay->text_color);
-        gfx->render_text(window_id, overlay->font, line5, overlay->rect.x + 10, y5, overlay->text_color);
-        gfx->render_text(window_id, overlay->font, line6, overlay->rect.x + 10, y6, overlay->text_color);
-        gfx->render_text(window_id, overlay->font, line7, overlay->rect.x + 10, y7, overlay->text_color);
-        gfx->render_text(window_id, overlay->font, line8, overlay->rect.x + 10, y8, overlay->text_color);
+        int line_height = aroma_font_get_line_height(overlay->font);
+        int y1 = overlay->rect.y + 10;
+        int y2 = y1 + line_height + 6;
+        int y3 = y2 + line_height + 6;
+        int y4 = y3 + line_height + 6;
+        int y5 = y4 + line_height + 6;
+        int y6 = y5 + line_height + 6;
+        int y7 = y6 + line_height + 6;
+        int y8 = y7 + line_height + 6;
+        overlay->rect.height = (y8 - overlay->rect.y) + line_height + 10;
+        gfx->render_text(window_id, overlay->font, line1, overlay->rect.x + 10, y1, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line2, overlay->rect.x + 10, y2, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line3, overlay->rect.x + 10, y3, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line4, overlay->rect.x + 10, y4, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line5, overlay->rect.x + 10, y5, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line6, overlay->rect.x + 10, y6, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line7, overlay->rect.x + 10, y7, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line8, overlay->rect.x + 10, y8, overlay->text_color, 1.0f);
     }
 }
 
