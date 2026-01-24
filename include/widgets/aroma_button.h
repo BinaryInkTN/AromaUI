@@ -19,21 +19,31 @@ typedef enum AromaButtonState {
     BUTTON_STATE_PRESSED,
     BUTTON_STATE_RELEASED
 } AromaButtonState;
-
-typedef struct AromaButton
-{
+typedef struct AromaButton {
     AromaRect rect;
     char label[AROMA_BUTTON_LABEL_MAX];
     AromaButtonState state;
+
     uint32_t idle_color;
     uint32_t hover_color;
     uint32_t pressed_color;
     uint32_t text_color;
     bool use_theme_colors;
-    AromaFont* font;
-    bool (*on_click)(AromaNode* button_node, void* user_data);
-    bool (*on_hover)(AromaNode* button_node, void* user_data);
+    float corner_radius;
+    uint32_t shadow_color;
+    float text_scale;
+    float text_width;
+    float text_x;
+    float text_y;
+    float line_height;
+
+    bool (*on_click)(AromaNode*, void*);
+    bool (*on_hover)(AromaNode*, void*);
     void* user_data;
+
+    AromaFont* font;
+    AromaRect text_bounds;
+    bool layout_dirty;
 } AromaButton;
 
 AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int y, int width, int height);

@@ -46,6 +46,9 @@ typedef struct AromaSnackbar {
     bool pending_show;
     AromaFont* font;
     glps_timer* timer;
+    float corner_radius;
+    float text_scale;
+    uint32_t bg_color;
 } AromaSnackbar;
 
 static void __snackbar_request_redraw(void* user_data)
@@ -116,6 +119,10 @@ AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int dur
     bar->pending_show = false;
     bar->timer = glps_timer_init();
     strncpy(bar->message, message, AROMA_SNACKBAR_TEXT_MAX - 1);
+    AromaTheme theme = aroma_theme_get_global();
+    bar->corner_radius = 8.0f;
+    bar->text_scale = 1.0f;
+    bar->bg_color = aroma_color_adjust(theme.colors.text_primary, -0.7f);
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, bar);
     if (!node) {
@@ -138,6 +145,11 @@ void aroma_snackbar_set_action(AromaNode* snackbar_node, const char* action_text
     strncpy(bar->action_label, action_text, sizeof(bar->action_label) - 1);
     bar->action_callback = callback;
     bar->user_data = user_data;
+    /* approximate action hit width to avoid measuring at draw time */
+    int padding = 12;
+    int approx = (int)strlen(action_text) * 8 + (padding * 2);
+    if (approx < 48) approx = 48;
+    bar->action_hit_width = approx;
 }
 
 void aroma_snackbar_set_font(AromaNode* snackbar_node, AromaFont* font)
@@ -197,24 +209,17 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id)
         }
     }
 
-    uint32_t bg = aroma_color_adjust(theme.colors.text_primary, -0.7f);
     gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, bar->rect.width, bar->rect.height,
-                        bg, true, 8.0f);
+                        bar->bg_color, true, bar->corner_radius);
 
     if (bar->font && gfx->render_text) {
-        gfx->render_text(window_id, bar->font, bar->message, bar->rect.x + 12, bar->rect.y + 28, theme.colors.text_primary);
+        gfx->render_text(window_id, bar->font, bar->message, bar->rect.x + 12, bar->rect.y + 28, theme.colors.text_primary, bar->text_scale);
         if (bar->action_label[0]) {
             int padding = 12;
-            int action_width = 72;
-            if (gfx->measure_text) {
-                float measured = gfx->measure_text(window_id, bar->font, bar->action_label);
-                action_width = (int)measured + (padding * 2);
-                if (action_width < 48) action_width = 48;
-            }
-            bar->action_hit_width = action_width;
+            int action_width = bar->action_hit_width > 0 ? bar->action_hit_width : 72;
             gfx->render_text(window_id, bar->font, bar->action_label,
                              bar->rect.x + bar->rect.width - action_width + padding,
-                             bar->rect.y + 28, theme.colors.primary_light);
+                             bar->rect.y + 28, theme.colors.primary_light, bar->text_scale);
         } else {
             bar->action_hit_width = 0;
         }

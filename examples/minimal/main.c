@@ -22,12 +22,12 @@ int main(void) {
     AromaTheme preset = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_PURPLE);
     aroma_ui_set_theme(&preset);
     
-    font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);
+    font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 14);
     if (!font) {
         aroma_ui_shutdown();
         return 1;
     }
-    
+
     AromaWindow* window = aroma_ui_create_window("Hello Aroma!", 400, 400);
     if (!window) return 1;
     
@@ -37,7 +37,7 @@ int main(void) {
     AromaContainer* main_container = (AromaContainer*)aroma_container_create((AromaNode*)window, 0, 0, 800, 400);
     AromaNode* container_node = main_container ? (AromaNode*)main_container : (AromaNode*)window;
     
-    title_label = (AromaLabel*)aroma_label_create(container_node, "Welcome to AromaUI!", 120, 250, LABEL_STYLE_LABEL_LARGE);
+    title_label = (AromaLabel*)aroma_label_create(container_node, "Welcome to AromaUI!", 0, 0, LABEL_STYLE_LABEL_SMALL);
     if (title_label) {
         aroma_label_set_font((AromaNode*)title_label, font);
     }

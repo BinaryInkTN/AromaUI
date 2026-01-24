@@ -98,8 +98,8 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glBindTexture(GL_TEXTURE_2D, 0);
 
             glyph.texture_id = texture;
@@ -176,8 +176,9 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
             continue;
         }
 
-        float x_pos = current_x + (float)g->bearing_x * scale;
-        float y_pos = y - (float)g->bearing_y * scale;
+        float x_pos = current_x + g->bearing_x * scale;
+        float y_pos = y + (renderer->font_height - g->bearing_y) * scale;
+
 
         float w = (float)g->width * scale;
         float h = (float)g->height * scale;

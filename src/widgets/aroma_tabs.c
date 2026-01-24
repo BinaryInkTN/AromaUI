@@ -46,6 +46,11 @@ struct AromaTabs {
     uint32_t text_color;
     uint32_t text_selected_color;
     AromaFont* font;
+    uint32_t hover_overlay_color;
+    int indicator_height;
+    int indicator_padding;
+    float corner_radius;
+    float text_scale;
     void (*on_change)(AromaNode*, int, void*);
     void* user_data;
 };
@@ -173,6 +178,11 @@ AromaNode* aroma_tabs_create(AromaNode* parent, int x, int y, int width, int hei
     tabs->selected_color = theme.colors.primary;
     tabs->text_color = theme.colors.text_primary;
     tabs->text_selected_color = theme.colors.text_primary;
+    tabs->hover_overlay_color = aroma_color_blend(tabs->bg_color, tabs->selected_color, 0.12f);
+    tabs->indicator_height = 3;
+    tabs->indicator_padding = 8;
+    tabs->corner_radius = 0.0f;
+    tabs->text_scale = 1.0f;
 
     for (int i = 0; i < tabs->count; i++) {
         if (labels[i]) {
@@ -300,21 +310,14 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
 
-    AromaTheme theme = aroma_theme_get_global();
-    tabs->bg_color = theme.colors.surface;
-    tabs->selected_color = theme.colors.primary;
-    tabs->text_color = theme.colors.text_primary;
-    tabs->text_selected_color = theme.colors.text_primary;
-
-    float radius = 0.0f;
     gfx->fill_rectangle(window_id, tabs->rect.x, tabs->rect.y, tabs->rect.width,
-                        tabs->rect.height, tabs->bg_color, false, radius);
+                        tabs->rect.height, tabs->bg_color, false, tabs->corner_radius);
 
     if (tabs->count <= 0) return;
 
     int tab_width = tabs->rect.width / tabs->count;
     int ascender = tabs->font ? aroma_font_get_ascender(tabs->font) : 10;
-    int indicator_height = 3;
+    int indicator_height = tabs->indicator_height;
     int indicator_y = tabs->rect.y + tabs->rect.height - indicator_height;
 
     for (int i = 0; i < tabs->count; i++) {
@@ -324,19 +327,19 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
         bool hovered = (i == tabs->hovered_index);
 
         if (hovered && !selected) {
-            uint32_t overlay = aroma_color_blend(tabs->bg_color, tabs->selected_color, 0.12f);
-            gfx->fill_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height, overlay, false, radius);
+            gfx->fill_rectangle(window_id, x, tabs->rect.y, w, tabs->rect.height, tabs->hover_overlay_color, false, tabs->corner_radius);
         }
 
         if (selected) {
-            gfx->fill_rectangle(window_id, x + 8, indicator_y, w - 16, indicator_height,
-                                tabs->selected_color, false, radius);
+            gfx->fill_rectangle(window_id, x + tabs->indicator_padding, indicator_y, w - (tabs->indicator_padding * 2), indicator_height,
+                                tabs->selected_color, false, tabs->corner_radius);
         }
 
         if (tabs->font && gfx->render_text) {
+            int line_height = aroma_font_get_line_height(tabs->font);
             uint32_t text_color = selected ? tabs->text_selected_color : tabs->text_color;
-            int text_y = tabs->rect.y + (tabs->rect.height - ascender) / 2 + ascender;
-            gfx->render_text(window_id, tabs->font, tabs->labels[i], x + 12, text_y, text_color);
+            int text_y = tabs->rect.y + (tabs->rect.height - line_height) / 2;
+            gfx->render_text(window_id, tabs->font, tabs->labels[i], x + 12, text_y, text_color, tabs->text_scale);
         }
     }
 }

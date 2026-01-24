@@ -101,20 +101,7 @@ static void on_snackbar_undo(void* user_data)
     }
 }
 
-static void window_update_callback(size_t window_id, void* data)
-{
-    (void)data;
-    if (!aroma_ui_consume_redraw()) return;
 
-    aroma_ui_begin_frame(window_id);
-
-    AromaTheme theme = aroma_theme_get_global();
-    aroma_ui_render_dirty_window(window_id, theme.colors.background);
-    if (network_dropdown) aroma_dropdown_render_overlays(window_id);
-
-    aroma_ui_end_frame(window_id);
-    aroma_graphics_swap_buffers(window_id);
-}
 
 int main(void)
 {
@@ -175,23 +162,23 @@ int main(void)
     AromaNode* tab_advanced_node = tab_advanced_container ? (AromaNode*)tab_advanced_container : section_network_node;
     AromaNode* tab_security_node = tab_security_container ? (AromaNode*)tab_security_container : section_network_node;
 
-    header_label = (AromaLabel*)aroma_label_create(content_root_node, "Network - General", 230, 76, LABEL_STYLE_TITLE_LARGE);
+    header_label = (AromaLabel*)aroma_label_create(content_root_node, "Network - General", 230, 76, LABEL_STYLE_LABEL_LARGE);
     if (header_label) {
         aroma_label_set_font((AromaNode*)header_label, font);
     }
 
-    wifi_label = (AromaLabel*)aroma_label_create(tab_general_node, "Wi-Fi", 230, 120, LABEL_STYLE_BODY_LARGE);
-    bluetooth_label = (AromaLabel*)aroma_label_create(tab_general_node, "Bluetooth", 230, 180, LABEL_STYLE_BODY_LARGE);
-    brightness_label = (AromaLabel*)aroma_label_create(tab_advanced_node, "Bandwidth", 230, 140, LABEL_STYLE_BODY_LARGE);
+    wifi_label = (AromaLabel*)aroma_label_create(tab_general_node, "Wi-Fi", 230, 120, LABEL_STYLE_LABEL_LARGE);
+    bluetooth_label = (AromaLabel*)aroma_label_create(tab_general_node, "Bluetooth", 230, 180, LABEL_STYLE_LABEL_LARGE);
+    brightness_label = (AromaLabel*)aroma_label_create(tab_advanced_node, "Bandwidth", 230, 140, LABEL_STYLE_LABEL_LARGE);
 
-    section_display_label = (AromaLabel*)aroma_label_create(section_display_node, "Display settings", 230, 120, LABEL_STYLE_BODY_LARGE);
-    section_sound_label = (AromaLabel*)aroma_label_create(section_sound_node, "Sound settings", 230, 120, LABEL_STYLE_BODY_LARGE);
-    section_power_label = (AromaLabel*)aroma_label_create(section_power_node, "Power settings", 230, 120, LABEL_STYLE_BODY_LARGE);
-    section_about_label = (AromaLabel*)aroma_label_create(section_about_node, "AromaUI Settings v1.0", 230, 120, LABEL_STYLE_BODY_LARGE);
+    section_display_label = (AromaLabel*)aroma_label_create(section_display_node, "Display settings", 230, 120, LABEL_STYLE_LABEL_LARGE);
+    section_sound_label = (AromaLabel*)aroma_label_create(section_sound_node, "Sound settings", 230, 120, LABEL_STYLE_LABEL_LARGE);
+    section_power_label = (AromaLabel*)aroma_label_create(section_power_node, "Power settings", 230, 120, LABEL_STYLE_LABEL_LARGE);
+    section_about_label = (AromaLabel*)aroma_label_create(section_about_node, "AromaUI Settings v1.0", 230, 120, LABEL_STYLE_LABEL_LARGE);
 
-    tab_general_label = (AromaLabel*)aroma_label_create(tab_general_node, "General options", 230, 240, LABEL_STYLE_BODY_SMALL);
-    tab_advanced_label = (AromaLabel*)aroma_label_create(tab_advanced_node, "Advanced options", 230, 240, LABEL_STYLE_BODY_SMALL);
-    tab_security_label = (AromaLabel*)aroma_label_create(tab_security_node, "Security options", 230, 240, LABEL_STYLE_BODY_SMALL);
+    tab_general_label = (AromaLabel*)aroma_label_create(tab_general_node, "General options", 230, 240, LABEL_STYLE_LABEL_SMALL);
+    tab_advanced_label = (AromaLabel*)aroma_label_create(tab_advanced_node, "Advanced options", 230, 240, LABEL_STYLE_LABEL_SMALL);
+    tab_security_label = (AromaLabel*)aroma_label_create(tab_security_node, "Security options", 230, 240, LABEL_STYLE_LABEL_SMALL);
 
     if (wifi_label) aroma_label_set_font((AromaNode*)wifi_label, font);
     if (bluetooth_label) aroma_label_set_font((AromaNode*)bluetooth_label, font);
@@ -362,12 +349,12 @@ int main(void)
         aroma_debug_overlay_set_font((AromaNode*)debug_overlay, font);
     }
 
-    aroma_platform_set_window_update_callback(window_update_callback, NULL);
     aroma_ui_request_redraw(NULL);
 
     while (aroma_ui_is_running()) {
         aroma_ui_process_events();
         aroma_ui_render(window);
+
         usleep(16000);
     }
 

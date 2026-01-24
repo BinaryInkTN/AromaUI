@@ -94,24 +94,24 @@ static void drawlist_proxy_draw_arc(size_t window_id, int cx, int cy, int radius
     }
 }
 
-static void drawlist_proxy_render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color)
+static void drawlist_proxy_render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color, float scale)
 {
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
-        aroma_drawlist_cmd_text(list, font, text, x, y, color);
+        aroma_drawlist_cmd_text(list, font, text, x, y, color, scale);
         return;
     }
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->render_text) {
-        real->render_text(window_id, font, text, x, y, color);
+        real->render_text(window_id, font, text, x, y, color, scale);
     }
 }
 
-static float drawlist_proxy_measure_text(size_t window_id, AromaFont* font, const char* text)
+static float drawlist_proxy_measure_text(size_t window_id, AromaFont* font, const char* text, float scale)
 {
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->measure_text) {
-        return real->measure_text(window_id, font, text);
+        return real->measure_text(window_id, font, text, scale);
     }
     return 0.0f;
 }

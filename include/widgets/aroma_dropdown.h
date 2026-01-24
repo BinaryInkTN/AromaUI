@@ -25,6 +25,8 @@ typedef struct AromaDropdown
     uint32_t list_bg_color;
     uint32_t hover_bg_color;
     uint32_t selected_bg_color;
+    uint32_t border_color;
+    float corner_radius;
     struct {
         struct AromaNode* node;
         void (*handler)(struct AromaDropdown*, const char*, int, void*);

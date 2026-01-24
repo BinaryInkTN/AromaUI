@@ -1,24 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include "widgets/aroma_iconbutton.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -42,6 +21,11 @@ typedef struct AromaIconButton {
     void (*callback)(void* user_data);
     void* user_data;
     AromaFont* font;
+    float corner_radius;
+    float text_scale;
+    uint32_t border_color;
+    int text_x;
+    int text_y;
 } AromaIconButton;
 
 static bool __iconbutton_handle_event(AromaEvent* event, void* user_data)
@@ -91,6 +75,15 @@ static bool __iconbutton_handle_event(AromaEvent* event, void* user_data)
     return false;
 }
 
+static void __iconbutton_update_layout(AromaIconButton* btn)
+{
+    btn->corner_radius = (float)btn->rect.height / 2.0f;
+    btn->text_x = btn->rect.x + btn->rect.width / 2 - 6;
+    int asc = btn->font ? aroma_font_get_ascender(btn->font) : 0;
+    int line = btn->font ? aroma_font_get_line_height(btn->font) : btn->rect.height;
+    btn->text_y = btn->rect.y + (btn->rect.height - line) / 2 + asc;
+}
+
 AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int x, int y, int size, AromaIconButtonVariant variant)
 {
     if (!parent || size <= 0) return NULL;
@@ -115,12 +108,18 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
     btn->callback = NULL;
     btn->user_data = NULL;
     btn->font = NULL;
+    btn->text_scale = 1.0f;
+    btn->border_color = theme.colors.border;
+    btn->text_x = 0;
+    btn->text_y = 0;
 
     if (icon_text) {
         strncpy(btn->icon_text, icon_text, AROMA_ICON_TEXT_MAX - 1);
     } else {
         btn->icon_text[0] = '\0';
     }
+
+    __iconbutton_update_layout(btn);
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, btn);
     if (!node) {
@@ -160,6 +159,7 @@ void aroma_iconbutton_set_font(AromaNode* button_node, AromaFont* font)
     if (!button_node || !button_node->node_widget_ptr) return;
     AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
     btn->font = font;
+    __iconbutton_update_layout(btn);
 }
 
 void aroma_iconbutton_draw(AromaNode* button_node, size_t window_id)
@@ -171,27 +171,23 @@ void aroma_iconbutton_draw(AromaNode* button_node, size_t window_id)
 
     uint32_t bg = btn->bg_color;
     if (btn->is_pressed) {
-    if (aroma_node_is_hidden(button_node)) return;
+        if (aroma_node_is_hidden(button_node)) return;
         bg = aroma_color_adjust(bg, -0.1f);
     } else if (btn->is_hovered) {
         bg = aroma_color_adjust(bg, 0.08f);
     }
 
     gfx->fill_rectangle(window_id, btn->rect.x, btn->rect.y, btn->rect.width, btn->rect.height,
-                        bg, true, btn->rect.height / 2.0f);
+                        bg, true, btn->corner_radius);
 
     if (btn->variant == ICON_BUTTON_OUTLINED) {
         AromaTheme theme = aroma_theme_get_global();
         gfx->draw_hollow_rectangle(window_id, btn->rect.x, btn->rect.y, btn->rect.width, btn->rect.height,
-                                   theme.colors.border, 1, true, btn->rect.height / 2.0f);
+                       btn->border_color, 1, true, btn->corner_radius);
     }
 
     if (btn->font && btn->icon_text[0] && gfx->render_text) {
-        int asc = aroma_font_get_ascender(btn->font);
-        int line = aroma_font_get_line_height(btn->font);
-        int baseline = btn->rect.y + (btn->rect.height - line) / 2 + asc;
-        int text_x = btn->rect.x + btn->rect.width / 2 - 6;
-        gfx->render_text(window_id, btn->font, btn->icon_text, text_x, baseline, btn->icon_color);
+        gfx->render_text(window_id, btn->font, btn->icon_text, btn->text_x, btn->text_y, btn->icon_color, btn->text_scale);
     }
 }
 

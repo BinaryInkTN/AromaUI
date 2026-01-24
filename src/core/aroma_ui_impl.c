@@ -172,6 +172,7 @@ static void __window_update_callback(size_t window_id, void* data) {
     aroma_ui_begin_frame(window_id);
     AromaTheme theme = aroma_theme_get_global();
     aroma_ui_render_dirty_window(window_id, theme.colors.background);
+    aroma_dropdown_render_overlays(window_id);
     aroma_ui_end_frame(window_id);
     aroma_graphics_swap_buffers(window_id);
    

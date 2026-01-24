@@ -1,24 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include "widgets/aroma_dropdown.h"
 #include "core/aroma_node.h"
 #include "core/aroma_logger.h"
@@ -34,9 +13,7 @@
 
 static void __dropdown_request_redraw(void* user_data)
 {
-    if (!user_data) {
-        return;
-    }
+    if (!user_data) return;
     void (*on_redraw)(void*) = (void (*)(void*))user_data;
     on_redraw(NULL);
 }
@@ -56,7 +33,6 @@ static size_t g_dropdown_overlay_count = 0;
 static void __dropdown_register_overlay(AromaNode* node, size_t window_id,
                                         int x, int y, int width, int height) {
     if (!node) return;
-
     for (size_t i = 0; i < g_dropdown_overlay_count; ++i) {
         if (g_dropdown_overlays[i].node == node) {
             g_dropdown_overlays[i].window_id = window_id;
@@ -67,12 +43,10 @@ static void __dropdown_register_overlay(AromaNode* node, size_t window_id,
             return;
         }
     }
-
     if (g_dropdown_overlay_count >= AROMA_MAX_DROPDOWN_OVERLAYS) {
         LOG_WARNING("Maximum dropdown overlays reached; additional overlays will be skipped");
         return;
     }
-
     g_dropdown_overlays[g_dropdown_overlay_count].node = node;
     g_dropdown_overlays[g_dropdown_overlay_count].window_id = window_id;
     g_dropdown_overlays[g_dropdown_overlay_count].x = x;
@@ -84,7 +58,6 @@ static void __dropdown_register_overlay(AromaNode* node, size_t window_id,
 
 static void __dropdown_unregister_overlay(AromaNode* node) {
     if (!node) return;
-
     for (size_t i = 0; i < g_dropdown_overlay_count; ++i) {
         if (g_dropdown_overlays[i].node == node) {
             g_dropdown_overlays[i] = g_dropdown_overlays[g_dropdown_overlay_count - 1];
@@ -133,6 +106,8 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
     dd->list_bg_color = theme.colors.surface;
     dd->hover_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.18f);
     dd->selected_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.35f);
+    dd->border_color = 0x222222;
+    dd->corner_radius = 6.0f;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, dd);
     if (!node) {
@@ -150,28 +125,20 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
 
 void aroma_dropdown_add_option(AromaNode* dropdown_node, const char* option) {
     if (!dropdown_node || !option) return;
-
     AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
     if (!dd || dd->option_count >= AROMA_DROPDOWN_MAX_OPTIONS) return;
-
     dd->options[dd->option_count] = (char*)malloc(AROMA_DROPDOWN_OPTION_MAX);
     if (!dd->options[dd->option_count]) return;
-
     strncpy(dd->options[dd->option_count], option, AROMA_DROPDOWN_OPTION_MAX - 1);
     dd->options[dd->option_count][AROMA_DROPDOWN_OPTION_MAX - 1] = '\0';
-
-    if (dd->option_count == 0) {
-        dd->selected_index = 0;
-    }
-
+    if (dd->option_count == 0) dd->selected_index = 0;
     dd->option_count++;
 }
 
-void aroma_dropdown_set_on_change(AromaNode* dropdown_node, 
-    void (*on_change)(int index, const char* option, void* user_data), 
+void aroma_dropdown_set_on_change(AromaNode* dropdown_node,
+    void (*on_change)(int index, const char* option, void* user_data),
     void* user_data) {
     if (!dropdown_node) return;
-
     AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
     if (dd) {
         dd->on_selection_changed = on_change;
@@ -207,18 +174,13 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
         } else {
             dd->hover_index = -1;
         }
-
         bool hover = in_main || in_list;
         bool state_changed = (hover != dd->is_hovered) || (previous_hover_index != dd->hover_index);
-        if (hover != dd->is_hovered) {
-            dd->is_hovered = hover;
-        }
-
+        if (hover != dd->is_hovered) dd->is_hovered = hover;
         if (state_changed && user_data) {
             aroma_node_invalidate(event->target_node);
             __dropdown_request_redraw(user_data);
         }
-
         return hover;
     }
 
@@ -280,25 +242,21 @@ void aroma_dropdown_setup_events(AromaNode* dropdown_node, void (*on_redraw_call
 }
 
 void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
-    if (!dropdown_node || !dropdown_node->node_widget_ptr) {
-        return;
-    }
+    if (!dropdown_node || !dropdown_node->node_widget_ptr) return;
     if (aroma_node_is_hidden(dropdown_node)) return;
-
     AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
 
     uint32_t base_bg_color = dd->is_hovered ? dd->hover_bg_color : dd->list_bg_color;
-    uint32_t border_color = 0x222222;
-
     gfx->fill_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, base_bg_color, true, 3.0f);
-    gfx->draw_hollow_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, border_color, 1, true, 6.0f);
+    gfx->draw_hollow_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, dd->border_color, 1, true, dd->corner_radius);
 
     if (dd->font && dd->selected_index >= 0 && dd->selected_index < dd->option_count && dd->options[dd->selected_index]) {
         int text_x = dd->rect.x + 10;
-        int baseline = dd->rect.y + (dd->rect.height / 2) + (aroma_font_get_ascender(dd->font) / 2);
-        gfx->render_text(window_id, dd->font, dd->options[dd->selected_index], text_x, baseline, dd->text_color);
+        int line_height = aroma_font_get_line_height(dd->font);
+        int baseline = dd->rect.y + (dd->rect.height - line_height) / 2;
+        gfx->render_text(window_id, dd->font, dd->options[dd->selected_index], text_x, baseline, dd->text_color, 1.0f);
     }
 
     if (dd->is_expanded && dd->option_count > 0) {
@@ -314,10 +272,8 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
 
 void aroma_dropdown_render_overlays(size_t window_id) {
     if (g_dropdown_overlay_count == 0) return;
-
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
-
     for (size_t i = 0; i < g_dropdown_overlay_count;) {
         DropdownOverlayEntry entry = g_dropdown_overlays[i];
         AromaNode* node = entry.node;
@@ -326,50 +282,39 @@ void aroma_dropdown_render_overlays(size_t window_id) {
             g_dropdown_overlay_count--;
             continue;
         }
-
         if (entry.window_id != window_id) {
             ++i;
             continue;
         }
-
         AromaDropdown* dd = (AromaDropdown*)node->node_widget_ptr;
         if (!dd || !dd->is_expanded || dd->option_count <= 0) {
             g_dropdown_overlays[i] = g_dropdown_overlays[g_dropdown_overlay_count - 1];
             g_dropdown_overlay_count--;
             continue;
         }
-
         int option_height = dd->rect.height;
         int list_x = entry.x;
         int list_y = entry.y;
         int list_width = entry.width;
         int list_height = entry.height;
-
         gfx->fill_rectangle(window_id, list_x, list_y, list_width, list_height, dd->list_bg_color, true, 0.0f);
         gfx->draw_hollow_rectangle(window_id, list_x, list_y, list_width, list_height, 0x222222, 1.0f, true, 0.0f);
-
         for (int opt = 0; opt < dd->option_count; ++opt) {
             int y = list_y + opt * option_height;
             uint32_t row_color = dd->list_bg_color;
-            if (opt == dd->selected_index) {
-                row_color = dd->selected_bg_color;
-            } else if (opt == dd->hover_index) {
-                row_color = dd->hover_bg_color;
-            }
-
+            if (opt == dd->selected_index) row_color = dd->selected_bg_color;
+            else if (opt == dd->hover_index) row_color = dd->hover_bg_color;
             if (row_color != dd->list_bg_color) {
                 gfx->fill_rectangle(window_id, list_x, y, list_width, option_height, row_color, true, 0.0f);
             }
-
             gfx->draw_hollow_rectangle(window_id, list_x, y, list_width, option_height, 0xDDDDDD, 1.0f, true, 0.0f);
-
             if (dd->font && dd->options[opt]) {
                 int text_x = list_x + 10;
-                int baseline = y + (option_height / 2) + (aroma_font_get_ascender(dd->font) / 2);
-                gfx->render_text(window_id, dd->font, dd->options[opt], text_x, baseline, dd->text_color);
+                int line_height = aroma_font_get_line_height(dd->font);
+                int baseline = y + (option_height - line_height) / 2;
+                gfx->render_text(window_id, dd->font, dd->options[opt], text_x, baseline, dd->text_color, 1.0f);
             }
         }
-
         ++i;
     }
 }
@@ -377,14 +322,10 @@ void aroma_dropdown_render_overlays(size_t window_id) {
 bool aroma_dropdown_overlay_hit_test(int x, int y, AromaNode** out_node) {
     for (size_t i = 0; i < g_dropdown_overlay_count; ++i) {
         DropdownOverlayEntry* entry = &g_dropdown_overlays[i];
-        if (!entry->node) {
-            continue;
-        }
+        if (!entry->node) continue;
         if (x >= entry->x && x < (entry->x + entry->width) &&
             y >= entry->y && y < (entry->y + entry->height)) {
-            if (out_node) {
-                *out_node = entry->node;
-            }
+            if (out_node) *out_node = entry->node;
             return true;
         }
     }
@@ -409,21 +350,16 @@ void aroma_dropdown_set_text_color(AromaNode* dropdown_node, uint32_t text_color
 
 void aroma_dropdown_destroy(AromaNode* dropdown_node) {
     if (!dropdown_node) return;
-
     AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
     if (dd) {
         __dropdown_unregister_overlay(dropdown_node);
         if (dd->options) {
             for (int i = 0; i < dd->option_count; i++) {
-                if (dd->options[i]) {
-                    free(dd->options[i]);
-                }
+                if (dd->options[i]) free(dd->options[i]);
             }
             free(dd->options);
         }
         aroma_widget_free(dd);
     }
-
     __destroy_node(dropdown_node);
 }
-

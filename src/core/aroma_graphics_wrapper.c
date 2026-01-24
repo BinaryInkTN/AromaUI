@@ -44,11 +44,11 @@ void aroma_graphics_fill_rectangle(size_t window_id, int x, int y, int width, in
 }
 
 void aroma_graphics_render_text(size_t window_id, AromaFont* font, const char* text,
-                                int x, int y, uint32_t color)
+                                int x, int y, uint32_t color, float scale)
 {
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx && gfx->render_text && font && text) {
-        gfx->render_text(window_id, font, text, x, y, color);
+        gfx->render_text(window_id, font, text, x, y, color, scale);
     }
 }
 

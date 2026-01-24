@@ -222,7 +222,7 @@ static inline AromaWindow* aroma_ui_get_window_at(int index) {
 void aroma_graphics_clear(size_t window_id, uint32_t color);
 
 void aroma_graphics_render_text(size_t window_id, AromaFont* font, const char* text,
-                                int x, int y, uint32_t color);
+                                int x, int y, uint32_t color, float scale);
 
 void aroma_graphics_swap_buffers(size_t window_id);
 
