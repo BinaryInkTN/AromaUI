@@ -1,6 +1,7 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+#ifndef ESP32
 #include <GLES3/gl3.h>
 #include "linmath.h"
 #include <stdbool.h>
@@ -20,7 +21,7 @@ typedef struct Vertex
 {
     vec2 pos;
     vec3 col;
-    vec2 texCoord; 
+    vec2 texCoord;
     float thickness;
 
 } Vertex;
@@ -144,5 +145,5 @@ void convert_coords_to_ndc(size_t window_id, float *ndc_x, float *ndc_y, int x, 
 void convert_dimension_to_ndc(size_t window_id, float *ndc_w, float *ndc_h, int width, int height);
 void convert_hex_to_rgb(vec3 *rgb, unsigned int color_hex);
 
-
+#endif
 #endif

@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Menu
 typedef struct AromaMenuItem {
     char text[64];
@@ -38,5 +40,7 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id);
 
 // Destroy
 void aroma_menu_destroy(AromaNode* menu_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_MENU_H

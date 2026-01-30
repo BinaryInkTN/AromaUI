@@ -1,32 +1,15 @@
 
-/*
- Copyright (c) 2025 Yassine Ahmed Ali
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-#include "core/aroma_logger.h"
+#include "aroma_logger.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <Arduino.h>
+
+#if !defined(_WIN32) && !defined(ESP32)
 #include <execinfo.h>
+#endif
 #include <unistd.h>
 
 static bool logging_enabled = true;
@@ -111,7 +94,7 @@ void log_message(DebugLevel level, const char *file, int line, const char *func,
         color = KNRM;
         break;
     }
-
+    #ifndef ESP32
     time_t raw_time;
     struct tm *time_info;
     char time_buffer[20];
@@ -124,12 +107,25 @@ void log_message(DebugLevel level, const char *file, int line, const char *func,
     va_start(args, fmt);
     vsnprintf(log_line, sizeof(log_line), fmt, args);
     va_end(args);
-
     printf("[%s] %s%s%s [%s:%d] %s: %s\n", time_buffer, color, level_str, KNRM, file, line, func, log_line);
 
-    char full_log[1024];
+    #endif
+
+    #ifdef ESP32
+    char log_line[512];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(log_line, sizeof(log_line), fmt, args);
+    va_end(args);
+    printf("[%s] %s%s%s [%s:%d] %s: %s\n", "NONE", color, level_str, KNRM, file, line, func, log_line);
+
+    #endif
+
+
+    /* char full_log[1024];
     snprintf(full_log, sizeof(full_log), "[%s] %s [%s:%d] %s: %s", time_buffer, level_str, file, line, func, log_line);
-    add_log_entry(full_log);
+    add_log_entry(full_log);*/
+
 }
 
 void set_logging_enabled(bool enabled)
@@ -161,6 +157,7 @@ void save_log_file(const char *path)
 
 void print_stack_trace(void)
 {
+    /*
     void *buffer[10];
     int size = backtrace(buffer, 10);
     char **symbols = backtrace_symbols(buffer, size);
@@ -171,6 +168,7 @@ void print_stack_trace(void)
         printf("%s\n", symbols[i]);
     }
     free(symbols);
+    */
 }
 
 void dump_memory(const char *label, const void *buffer, size_t size)

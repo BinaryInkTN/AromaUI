@@ -4,11 +4,13 @@
 #include "aroma_common.h"
 #include "aroma_node.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef enum {
-    LABEL_STYLE_LABEL_LARGE,      
-    LABEL_STYLE_LABEL_MEDIUM,    
-    LABEL_STYLE_LABEL_SMALL     
+    LABEL_STYLE_LABEL_LARGE,
+    LABEL_STYLE_LABEL_MEDIUM,
+    LABEL_STYLE_LABEL_SMALL
 } AromaLabelStyle;
 
 typedef struct AromaLabel AromaLabel;
@@ -33,5 +35,7 @@ void aroma_label_draw(AromaNode* label_node, size_t window_id);
 
 // Destroy
 void aroma_label_destroy(AromaNode* label_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_LABEL_H

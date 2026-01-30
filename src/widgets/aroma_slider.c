@@ -66,6 +66,11 @@ AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int h
     LOG_INFO("Slider created: x=%d, y=%d, w=%d, h=%d, range=%d-%d, value=%d\n",
              x, y, width, height, min_value, max_value, data->current_value);
 
+
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

@@ -95,6 +95,11 @@ AromaNode* aroma_listview_create(AromaNode* parent, int x, int y, int width, int
     aroma_node_set_draw_cb(node, aroma_listview_draw);
 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __listview_handle_event, NULL, 80);
+
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 
@@ -158,7 +163,13 @@ void aroma_listview_draw(AromaNode* list_node, size_t window_id)
                                 aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.2f), true, list->selected_corner_radius);
         }
 
-        if (list->font && gfx->render_text) {
+        #ifndef ESP32
+        if (list->font && gfx->render_text) 
+        #else 
+        if (gfx->render_text)
+        #endif
+        {
+        
             gfx->render_text(window_id, list->font, list->items[i].text, list->rect.x + 12, y + 18, theme.colors.text_primary, list->text_scale);
         }
     }

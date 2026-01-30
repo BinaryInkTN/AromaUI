@@ -7,7 +7,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaWindow AromaWindow;
 
 typedef struct AromaSlider
@@ -147,5 +149,7 @@ static inline void aroma_ui_destroy_slider(AromaSlider* slider) {
     }
     aroma_slider_destroy(slider_node);
 }
-
+#ifdef __cplusplus
+}
+#endif
 #endif

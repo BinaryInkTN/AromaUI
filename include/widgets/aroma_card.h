@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef enum {
     CARD_TYPE_ELEVATED,  // Elevated card with shadow
     CARD_TYPE_FILLED,    // Filled card with tint
@@ -28,5 +30,7 @@ void aroma_card_draw(AromaNode* card_node, size_t window_id);
 
 // Destroy card
 void aroma_card_destroy(AromaNode* card_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_CARD_H

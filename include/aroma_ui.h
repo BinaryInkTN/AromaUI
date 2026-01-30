@@ -15,6 +15,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef ESP32
+#include <Arduino.h>
+#endif
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaNode AromaNode;
 typedef struct AromaWindow AromaWindow;
 typedef struct AromaContainer AromaContainer;
@@ -56,7 +62,7 @@ typedef struct {
 extern bool g_ui_initialized;
 extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
 extern int g_window_count;
-extern AromaNode* g_main_window;  
+extern AromaNode* g_main_window;
 
 extern AromaNode* g_focused_node;
 extern void aroma_graphics_load_font_for_window(size_t window_id, AromaFont* font);
@@ -140,6 +146,10 @@ static inline void aroma_ui_render(AromaWindow* window) {
     if (dirty_count == 0 && !aroma_ui_is_immediate_mode()) return;
 
     aroma_ui_render_impl(window_data);
+
+    #ifdef ESP32
+     delay(16);
+     #endif
 }
 
 static inline void aroma_ui_render_all(void) {
@@ -227,6 +237,7 @@ void aroma_graphics_render_text(size_t window_id, AromaFont* font, const char* t
 void aroma_graphics_swap_buffers(size_t window_id);
 
 void aroma_platform_set_window_update_callback(void (*callback)(size_t, void*), void* user_data);
-
-#endif 
-
+#ifdef __cplusplus
+}
+#endif
+#endif

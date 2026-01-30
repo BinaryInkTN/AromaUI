@@ -133,6 +133,10 @@ AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label,
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __chip_handle_event, aroma_ui_request_redraw, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __chip_handle_event, aroma_ui_request_redraw, 70);
 
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

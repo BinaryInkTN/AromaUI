@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Floating Action Button (FAB)
 typedef enum {
     FAB_SIZE_SMALL,   // 40dp
@@ -36,5 +38,7 @@ void aroma_fab_draw(AromaNode* fab_node, size_t window_id);
 
 // Destroy FAB
 void aroma_fab_destroy(AromaNode* fab_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_FAB_H

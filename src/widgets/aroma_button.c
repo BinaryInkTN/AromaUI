@@ -43,19 +43,31 @@ static uint32_t aroma_button_get_color(AromaButton* button)
 
 static void aroma_button_update_text_position(AromaButton* button)
 {
-    if (!button || !button->font || button->label[0] == '\0') return;
+    if (!button || button->label[0] == '\0') return;
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->measure_text) return;
+int line_height;
+    #ifdef ESP32
+    if (!button->font)
+    {
 
-    float measured_width = gfx->measure_text(0, button->font, button->label, button->text_scale);
-    button->text_width = (int)(measured_width + 0.5f);
+        button->text_width = strlen(button->label) * 6 * (int)button->text_scale;
+     line_height = 8 * (int)button->text_scale;
+    }
+    else
+    #endif
+    {
+        if (!button->font) return;
+        float measured_width = gfx->measure_text(0, button->font, button->label, button->text_scale);
+        button->text_width = (int)(measured_width + 0.5f);
+        line_height = aroma_font_get_line_height(button->font) * (int)button->text_scale;
+    }
 
-    int line_height = aroma_font_get_line_height(button->font);
     const int padding = 6;
     button->text_x = button->rect.x + (button->rect.width - button->text_width) / 2;
     if (button->text_x < button->rect.x + padding) button->text_x = button->rect.x + padding;
-    button->text_y = button->rect.y + (button->rect.height - line_height - padding) / 2;
+    button->text_y = button->rect.y + (button->rect.height - line_height) / 2;
 }
 
 AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int y, int width, int height)
@@ -110,9 +122,14 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->text_width = 0;
     button->text_x = 0;
     button->text_y = 0;
-    button->line_height = 0;
+
+    aroma_button_update_text_position(button);
 
     LOG_INFO("Button created: label='%s', x=%d, y=%d, w=%d, h=%d", label, x, y, width, height);
+
+    #ifdef ESP32
+    aroma_node_invalidate(button_node); 
+    #endif
 
     return button_node;
 }
@@ -190,7 +207,17 @@ void aroma_button_set_font(AromaNode* button_node, AromaFont* font)
     if (!button) return;
 
     button->font = font;
-    if (font) button->line_height = aroma_font_get_line_height(font);
+    aroma_button_update_text_position(button);
+    aroma_node_invalidate(button_node);
+}
+
+void aroma_button_set_text_scale(AromaNode* button_node, float scale)
+{
+    if (!button_node || scale <= 0) return;
+    AromaButton* button = (AromaButton*)button_node->node_widget_ptr;
+    if (!button) return;
+
+    button->text_scale = scale;
     aroma_button_update_text_position(button);
     aroma_node_invalidate(button_node);
 }
@@ -299,16 +326,19 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
             break;
     }
 
-    gfx->fill_rectangle(
-        window_id,
-        button->rect.x + 1,
-        button->rect.y + 2,
-        button->rect.width,
-        button->rect.height,
-        button->shadow_color,
-        true,
-        button->corner_radius
-    );
+    if (button->shadow_color != 0)
+    {
+        gfx->fill_rectangle(
+            window_id,
+            button->rect.x + 1,
+            button->rect.y + 2,
+            button->rect.width,
+            button->rect.height,
+            button->shadow_color,
+            true,
+            button->corner_radius
+        );
+    }
 
     gfx->fill_rectangle(
         window_id,
@@ -321,9 +351,14 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         button->corner_radius
     );
 
-    if (gfx->render_text && button->font && button->label[0] != '\0')
+    if (button->label[0] != '\0')
     {
-        gfx->render_text(window_id, button->font, button->label, button->text_x, button->text_y, button->text_color, button->text_scale);
+        if (gfx->render_text)
+        {
+            gfx->render_text(window_id, button->font, button->label, 
+                           button->text_x, button->text_y, 
+                           button->text_color, button->text_scale);
+        }
     }
 }
 

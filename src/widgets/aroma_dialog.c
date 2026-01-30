@@ -211,6 +211,10 @@ AromaNode* aroma_dialog_create(
         100
     );
 
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

@@ -3,7 +3,9 @@
 
 #include "aroma_common.h"
 #include "aroma_node.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Divider
 typedef enum {
     DIVIDER_ORIENTATION_HORIZONTAL,
@@ -26,5 +28,7 @@ void aroma_divider_draw(AromaNode* divider_node, size_t window_id);
 
 // Destroy
 void aroma_divider_destroy(AromaNode* divider_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_DIVIDER_H

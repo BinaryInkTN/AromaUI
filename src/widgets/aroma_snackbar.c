@@ -28,7 +28,7 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
-#include "glps_timer.h"
+
 #include <string.h>
 #include <limits.h>
 
@@ -45,7 +45,6 @@ typedef struct AromaSnackbar {
     bool visible;
     bool pending_show;
     AromaFont* font;
-    glps_timer* timer;
     float corner_radius;
     float text_scale;
     uint32_t bg_color;
@@ -77,9 +76,9 @@ static bool __snackbar_handle_event(AromaEvent* event, void* user_data)
         int action_width = (bar->action_hit_width > 0) ? bar->action_hit_width : 72;
         if (event->data.mouse.x >= r->x + r->width - action_width) {
             bar->action_callback(bar->user_data);
-            if (bar->timer) {
-                glps_timer_stop(bar->timer);
-            }
+            //if (bar->timer) {
+                //glps_timer_stop(bar->timer);
+                // }
             bar->visible = false;
             __snackbar_request_redraw(user_data);
             return true;
@@ -96,9 +95,9 @@ static void __snackbar_auto_dismiss(void* arg)
     AromaSnackbar* bar = (AromaSnackbar*)snackbar_node->node_widget_ptr;
     if (!bar->visible) return;
     bar->visible = false;
-    if (bar->timer) {
-        glps_timer_stop(bar->timer);
-    }
+   // if (bar->timer) {
+    //    glps_timer_stop(bar->timer);
+    // }
     aroma_node_invalidate(snackbar_node);
     aroma_ui_request_redraw(NULL);
 }
@@ -117,7 +116,8 @@ AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int dur
     bar->duration_ms = duration_ms;
     bar->visible = false;
     bar->pending_show = false;
-    bar->timer = glps_timer_init();
+    //
+    // bar->timer = glps_timer_init();
     strncpy(bar->message, message, AROMA_SNACKBAR_TEXT_MAX - 1);
     AromaTheme theme = aroma_theme_get_global();
     bar->corner_radius = 8.0f;
@@ -134,6 +134,11 @@ AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int dur
 
     aroma_node_set_draw_cb(node, aroma_snackbar_draw);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __snackbar_handle_event, aroma_ui_request_redraw, 80);
+    
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+    
     return node;
 }
 
@@ -178,16 +183,16 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id)
 
     if (bar->pending_show) {
         bar->pending_show = false;
-        if (bar->timer && bar->duration_ms > 0) {
-            glps_timer_start(bar->timer, (uint64_t)bar->duration_ms, __snackbar_auto_dismiss, snackbar_node);
-        }
+       // if (bar->timer && bar->duration_ms > 0) {
+          // glps_timer_start(bar->timer, (uint64_t)bar->duration_ms, __snackbar_auto_dismiss, snackbar_node);
+      //  }
     }
 
-    if (bar->timer && bar->duration_ms > 0) {
-        glps_timer_check_and_call(bar->timer);
-        if (!bar->visible) return;
-        aroma_ui_request_redraw(NULL);
-    }
+    //if (bar->timer && bar->duration_ms > 0) {
+       // glps_timer_check_and_call(bar->timer);
+     //   if (!bar->visible) return;
+    //    aroma_ui_request_redraw(NULL);
+        //  }
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
@@ -231,10 +236,10 @@ void aroma_snackbar_destroy(AromaNode* snackbar_node)
     if (!snackbar_node) return;
     if (snackbar_node->node_widget_ptr) {
         AromaSnackbar* bar = (AromaSnackbar*)snackbar_node->node_widget_ptr;
-        if (bar->timer) {
-            glps_timer_destroy(bar->timer);
-            bar->timer = NULL;
-        }
+        //if (bar->timer) {
+           // glps_timer_destroy(bar->timer);
+        //    bar->timer = NULL;
+        // }
         aroma_widget_free(snackbar_node->node_widget_ptr);
         snackbar_node->node_widget_ptr = NULL;
     }

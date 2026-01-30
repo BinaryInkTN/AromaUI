@@ -4,7 +4,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaFont AromaFont;
 typedef struct AromaNode AromaNode;
 
@@ -45,5 +47,7 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
                              int x, int y, uint32_t color, float scale);
 void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int height, unsigned int texture_id);
 void aroma_drawlist_flush(AromaDrawList* list, size_t window_id);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

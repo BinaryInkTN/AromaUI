@@ -139,6 +139,11 @@ AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __fab_handle_event, aroma_ui_request_redraw, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __fab_handle_event, aroma_ui_request_redraw, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __fab_handle_event, aroma_ui_request_redraw, 70);
+    
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

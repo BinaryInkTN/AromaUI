@@ -6,7 +6,9 @@
 #include "aroma_node.h"
 #include <stdbool.h>
 #include <stddef.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define AROMA_TABS_MAX 8
 #define AROMA_TAB_LABEL_MAX 32
 
@@ -30,5 +32,7 @@ bool aroma_tabs_setup_events(AromaNode* tabs_node, void (*on_redraw_callback)(vo
 
 void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id);
 void aroma_tabs_destroy(AromaNode* tabs_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

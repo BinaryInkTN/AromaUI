@@ -39,11 +39,7 @@
 #define AROMA_MAX_EVENT_QUEUE 256
 #define AROMA_MIN_MAP_CAPACITY 16
 
-#ifdef AROMA_DEBUG_EVENTS
-    #define EVENT_LOG(level, ...) aroma_logger_write(level, "[Event] " __VA_ARGS__)
-#else
-    #define EVENT_LOG(level, ...) ((void)0)
-#endif
+
 
 typedef struct {
     uint64_t node_id;
@@ -240,7 +236,7 @@ static void aroma_event_release(AromaEvent* event) {
 
 bool aroma_event_system_init(void) {
     if (g_event_system.initialized) {
-        EVENT_LOG(LOG_LEVEL_WARN, "Event system already initialized");
+        LOG_INFO("Event system already initialized");
         return true;
     }
 
@@ -259,13 +255,13 @@ bool aroma_event_system_init(void) {
         g_event_system.map_capacity, sizeof(AromaNodeEventListeners));
 
     if (!g_event_system.listener_map) {
-        EVENT_LOG(LOG_LEVEL_ERROR, "Failed to allocate listener map");
+        LOG_INFO("Failed to allocate listener map");
         return false;
     }
 
 #ifdef AROMA_THREAD_SAFE
     if (pthread_mutex_init(&g_event_system.mutex, NULL) != 0) {
-        EVENT_LOG(LOG_LEVEL_ERROR, "Failed to initialize mutex");
+        LOG_INFO("Failed to initialize mutex");
         free(g_event_system.listener_map);
         g_event_system.listener_map = NULL;
         return false;
@@ -273,7 +269,7 @@ bool aroma_event_system_init(void) {
 #endif
 
     g_event_system.initialized = true;
-    EVENT_LOG(LOG_LEVEL_INFO, "Event system initialized");
+    LOG_INFO("Event system initialized");
 
     return true;
 }
@@ -281,7 +277,7 @@ bool aroma_event_system_init(void) {
 void aroma_event_system_shutdown(void) {
     if (!g_event_system.initialized) return;
 
-    EVENT_LOG(LOG_LEVEL_INFO, "Shutting down event system...");
+    LOG_INFO("Shutting down event system...");
     g_event_system.shutting_down = true;
 
     aroma_event_process_queue();
@@ -309,12 +305,12 @@ void aroma_event_system_shutdown(void) {
     memset(&g_mouse_state, 0, sizeof(g_mouse_state));
     memset(g_event_pool, 0, sizeof(g_event_pool));
 
-    EVENT_LOG(LOG_LEVEL_INFO, "Event system shutdown complete");
+    LOG_INFO("Event system shutdown complete");
 }
 
 void aroma_event_set_root(AromaNode* root) { 
     g_event_system.root_node = root; 
-    EVENT_LOG(LOG_LEVEL_DEBUG, "Root node set to %p", (void*)root);
+    LOG_INFO("Root node set to %p", (void*)root);
 }
 
 AromaNode* aroma_event_get_root(void) { 
@@ -392,7 +388,7 @@ bool aroma_event_queue(AromaEvent* event) {
 
     if (g_event_system.queue_count >= AROMA_MAX_EVENT_QUEUE) {
         EVENT_UNLOCK();
-        EVENT_LOG(LOG_LEVEL_WARN, "Event queue full, dropping event");
+        LOG_INFO("Event queue full, dropping event");
         aroma_event_destroy(event);
         return false;
     }
@@ -403,7 +399,7 @@ bool aroma_event_queue(AromaEvent* event) {
 
     EVENT_UNLOCK();
 
-    EVENT_LOG(LOG_LEVEL_TRACE, "Queued event %d (queue size: %u)", 
+    LOG_INFO("Queued event %d (queue size: %u)", 
               event->event_type, g_event_system.queue_count);
 
     return true;
@@ -569,7 +565,7 @@ bool aroma_event_subscribe(uint64_t node_id, AromaEventType type,
 
     AromaNodeEventListeners* ls = aroma_event_get_listeners(node_id);
     if (!ls) {
-        EVENT_LOG(LOG_LEVEL_ERROR, "Failed to get listeners for node %llu", 
+        LOG_INFO("Failed to get listeners for node %llu", 
                   (unsigned long long)node_id);
         return false;
     }
@@ -581,7 +577,7 @@ bool aroma_event_subscribe(uint64_t node_id, AromaEventType type,
             ls->listeners[i].handler == handler &&
             ls->listeners[i].user_data == user_data) {
             EVENT_UNLOCK();
-            EVENT_LOG(LOG_LEVEL_WARN, "Duplicate listener for node %llu, event %d", 
+            LOG_INFO("Duplicate listener for node %llu, event %d", 
                       (unsigned long long)node_id, type);
             return false;
         }
@@ -589,7 +585,7 @@ bool aroma_event_subscribe(uint64_t node_id, AromaEventType type,
 
     if (ls->listener_count >= AROMA_MAX_LISTENERS_PER_NODE) {
         EVENT_UNLOCK();
-        EVENT_LOG(LOG_LEVEL_ERROR, "Too many listeners for node %llu", 
+        LOG_INFO("Too many listeners for node %llu", 
                   (unsigned long long)node_id);
         return false;
     }
@@ -616,7 +612,7 @@ bool aroma_event_subscribe(uint64_t node_id, AromaEventType type,
 
     EVENT_UNLOCK();
 
-    EVENT_LOG(LOG_LEVEL_DEBUG, "Added listener for node %llu, event %d (priority: %u)", 
+    LOG_INFO("Added listener for node %llu, event %d (priority: %u)", 
               (unsigned long long)node_id, type, priority);
 
     return true;

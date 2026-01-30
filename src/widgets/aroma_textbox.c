@@ -138,7 +138,9 @@ AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int 
     aroma_node_set_draw_cb(node, aroma_textbox_draw);
 
     LOG_INFO("Textbox created: x=%d, y=%d, w=%d, h=%d\n", x, y, width, height);
-
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
     return node;
 }
 

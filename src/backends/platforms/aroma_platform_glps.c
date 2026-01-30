@@ -18,7 +18,7 @@
  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
+#ifndef ESP32
 #include "aroma_platform_interface.h"
 #include "glps_window_manager.h"
 #include <stdbool.h>
@@ -30,7 +30,7 @@
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 
-typedef struct 
+typedef struct
 {
     glps_WindowManager *wm;
     size_t primary_window_id;
@@ -103,7 +103,7 @@ static void glps_mouse_move_callback(size_t window_id, double mouse_x, double mo
     }
 
     platform_ctx.last_mouse_x = mouse_x;
-    platform_ctx.last_mouse_y = mouse_y; 
+    platform_ctx.last_mouse_y = mouse_y;
 }
 
 static void glps_mouse_click_callback(size_t window_id, bool state, void *data)
@@ -124,11 +124,11 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
                                    unsigned long keycode, void *data)
 {
     (void)window_id;
-    (void)keycode;  
+    (void)keycode;
 
     (void)data;
 
-    if (state && keycode == 0xFFE5) { 
+    if (state && keycode == 0xFFE5) {
         platform_ctx.capslock_active = !platform_ctx.capslock_active;
     }
 
@@ -265,3 +265,4 @@ AromaPlatformInterface aroma_platform_glps = {
     .shutdown = shutdown
 };
 
+#endif

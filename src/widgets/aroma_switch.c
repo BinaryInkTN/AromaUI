@@ -53,6 +53,10 @@ AromaNode* aroma_switch_create(AromaNode* parent, int x, int y, int width, int h
     LOG_INFO("Switch created: x=%d, y=%d, w=%d, h=%d, state=%s\n",
              x, y, width, height, initial_state ? "ON" : "OFF");
 
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

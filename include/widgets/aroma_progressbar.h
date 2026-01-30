@@ -3,7 +3,9 @@
 
 #include "aroma_common.h"
 #include "aroma_node.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Linear Progress Indicator
 typedef enum {
     PROGRESS_TYPE_DETERMINATE,   // Shows specific progress
@@ -29,5 +31,7 @@ void aroma_progressbar_draw(AromaNode* progress_node, size_t window_id);
 
 // Destroy
 void aroma_progressbar_destroy(AromaNode* progress_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_PROGRESS_BAR_H

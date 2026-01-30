@@ -111,6 +111,10 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __card_handle_event, aroma_ui_request_redraw, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __card_handle_event, aroma_ui_request_redraw, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __card_handle_event, aroma_ui_request_redraw, 70);
+    
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
 
     return node;
 }

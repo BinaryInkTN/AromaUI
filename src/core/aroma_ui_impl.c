@@ -34,6 +34,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#ifdef ESP32
+#include <Arduino.h>
+#endif
+
 bool g_ui_initialized = false;
 struct AromaNode* g_main_window = NULL;
 AromaWindowHandle g_windows[AROMA_MAX_WINDOWS] = {0};
@@ -142,6 +146,7 @@ bool aroma_ui_is_running_impl(void) {
 }
 
 void aroma_ui_render_impl(struct AromaWindow* window_data) {
+    LOG_CRITICAL("Rendering window ID %zu", window_data->window_id);
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->request_window_update)
         platform->request_window_update(window_data->window_id);
@@ -165,17 +170,24 @@ void aroma_ui_render_all_windows_impl(void) {
 }
 
 static void __window_update_callback(size_t window_id, void* data) {
-     
     (void)data;
-    if (!aroma_ui_consume_redraw()) return;
-    
+    if (!aroma_ui_consume_redraw()) {
+        #ifdef ESP32
+        delay(5);
+        #endif
+        return;
+    }
+
     aroma_ui_begin_frame(window_id);
     AromaTheme theme = aroma_theme_get_global();
     aroma_ui_render_dirty_window(window_id, theme.colors.background);
     aroma_dropdown_render_overlays(window_id);
     aroma_ui_end_frame(window_id);
     aroma_graphics_swap_buffers(window_id);
-   
+
+    #ifdef ESP32
+    delay(16);
+    #endif
 }
 
 AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int height) {
@@ -202,9 +214,11 @@ AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int heigh
     aroma_node_invalidate(window);
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+
     if (platform && platform->set_window_update_callback) {
         platform->set_window_update_callback(__window_update_callback, NULL);
     }
+
     return (AromaWindow*)window;
 }
 
@@ -253,9 +267,16 @@ void aroma_ui_end_frame(size_t window_id) {
 void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
     size_t dirty_count = 0;
     AromaNode** dirty_nodes = aroma_dirty_list_get(&dirty_count);
+    #ifdef ESP32
+        aroma_dirty_list_clear();
+    #endif
     if (dirty_count == 0 && !aroma_ui_is_immediate_mode()) return;
 
+    #ifndef ESP32
     bool frame_active = aroma_drawlist_is_active();
+    #else
+    bool frame_active = false;
+    #endif
     if (!frame_active) {
         AromaDrawList* list = aroma_ui_begin_frame(window_id);
         if (!list) return;
@@ -294,5 +315,8 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
 
     if (!frame_active)
         aroma_ui_end_frame(window_id);
+    
+    #ifndef ESP32
     aroma_dirty_list_clear();
+    #endif
 }

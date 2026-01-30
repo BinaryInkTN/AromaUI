@@ -120,6 +120,11 @@ AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
     aroma_node_set_draw_cb(node, aroma_checkbox_draw);
 
     LOG_INFO("Checkbox created: label='%s'", data->label);
+
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

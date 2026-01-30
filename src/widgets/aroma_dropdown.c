@@ -118,7 +118,9 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
     }
 
     aroma_node_set_draw_cb(node, aroma_dropdown_draw);
-
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
     LOG_INFO("Dropdown created at (%d, %d) size %dx%d", x, y, width, height);
     return node;
 }
