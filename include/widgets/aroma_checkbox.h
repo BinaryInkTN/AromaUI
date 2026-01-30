@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Checkbox
 typedef struct AromaCheckbox AromaCheckbox;
 
@@ -31,5 +33,7 @@ bool aroma_checkbox_setup_events(AromaNode* node,
 
 // Destroy
 void aroma_checkbox_destroy(AromaNode* checkbox_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_CHECKBOX_H

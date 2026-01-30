@@ -133,7 +133,11 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __iconbutton_handle_event, NULL, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __iconbutton_handle_event, NULL, 70);
-
+    
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+    
     return node;
 }
 

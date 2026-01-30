@@ -18,7 +18,7 @@
  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
+#ifndef ESP32
 #include "aroma_gles3_text.h"
 #include "helpers_gles3.h"
 #include "core/aroma_logger.h"
@@ -58,9 +58,9 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
     renderer->font_height = face->size->metrics.height >> 6;
 
     for (unsigned char c = 32; c < 127; c++) {
-        int glyph_index = c - 32;  
+        int glyph_index = c - 32;
 
-        if (glyph_index >= 95) break;  
+        if (glyph_index >= 95) break;
 
         FT_Error error = FT_Load_Char(face, c, FT_LOAD_RENDER);
         if (error) {
@@ -77,7 +77,7 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
         }
 
         GLES3Glyph glyph = {
-            .texture_id = 0,  
+            .texture_id = 0,
 
             .width = g->bitmap.width,
             .height = g->bitmap.rows,
@@ -108,13 +108,13 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
         renderer->glyphs[glyph_index] = glyph;
     }
 
-    renderer->glyph_count = 95;  
+    renderer->glyph_count = 95;
 
     LOG_INFO("Loaded glyphs: %d\n", renderer->glyph_count);
 }
 
-void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program, 
-                            const char* text, float x, float y, float scale, 
+void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
+                            const char* text, float x, float y, float scale,
                             uint32_t color, size_t window_id) {
     if (!renderer || !text || !program) {
         return;
@@ -140,7 +140,7 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
 
     glUseProgram(program);
     glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, (float*)projection);
-    glUniform3f(glGetUniformLocation(program, "textColor"), 
+    glUniform3f(glGetUniformLocation(program, "textColor"),
                 text_color[0], text_color[1], text_color[2]);
 
     glActiveTexture(GL_TEXTURE0);
@@ -185,17 +185,17 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
 
         float vertices[6][4] = {
 
-            { x_pos,     y_pos,       0.0f, 1.0f },  
+            { x_pos,     y_pos,       0.0f, 1.0f },
 
-            { x_pos,     y_pos + h,   0.0f, 0.0f },  
+            { x_pos,     y_pos + h,   0.0f, 0.0f },
 
-            { x_pos + w, y_pos + h,   1.0f, 0.0f },  
+            { x_pos + w, y_pos + h,   1.0f, 0.0f },
 
-            { x_pos,     y_pos,       0.0f, 1.0f },  
+            { x_pos,     y_pos,       0.0f, 1.0f },
 
-            { x_pos + w, y_pos + h,   1.0f, 0.0f },  
+            { x_pos + w, y_pos + h,   1.0f, 0.0f },
 
-            { x_pos + w, y_pos,       1.0f, 1.0f }   
+            { x_pos + w, y_pos,       1.0f, 1.0f }
 
         };
 
@@ -261,3 +261,4 @@ void gles3_text_renderer_cleanup(GLES3TextRenderer* renderer) {
     memset(renderer, 0, sizeof(GLES3TextRenderer));
 }
 
+#endif

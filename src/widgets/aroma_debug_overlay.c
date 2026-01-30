@@ -82,6 +82,10 @@ AromaNode* aroma_debug_overlay_create(AromaNode* parent, int x, int y)
 
     aroma_node_set_draw_cb(node, aroma_debug_overlay_draw);
 
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

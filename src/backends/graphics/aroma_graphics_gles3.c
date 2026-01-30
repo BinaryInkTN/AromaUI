@@ -18,7 +18,7 @@
  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
+#ifndef ESP32
 #include "aroma_graphics_interface.h"
 #include "utils/helpers_gles3.h"
 #include "utils/aroma_gles3_text.h"
@@ -28,8 +28,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <math.h>
-#define NANOSVG_ALL_COLOR_KEYWORDS	
-#define NANOSVG_IMPLEMENTATION		
+#define NANOSVG_ALL_COLOR_KEYWORDS
+#define NANOSVG_IMPLEMENTATION
 #include "utils/nanosvg.h"
 #define NANOSVGRAST_IMPLEMENTATION
 #include "utils/nanosvgrast.h"
@@ -65,8 +65,8 @@ typedef struct
 
 static AromaGLES3Context ctx = {0};
 
-int setup_shared_window_resources(void) 
-{  
+int setup_shared_window_resources(void)
+{
      glGenBuffers(1, &ctx.text_vbo);
 
     ctx.text_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -75,7 +75,7 @@ int setup_shared_window_resources(void)
     if(!check_shader_compile(ctx.text_vertex_shader))
     {
         LOG_CRITICAL("Failed to compile text vertex shader");
-        return 0;   
+        return 0;
     }
 
     ctx.text_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -84,7 +84,7 @@ int setup_shared_window_resources(void)
     if(!check_shader_compile(ctx.text_fragment_shader))
     {
         LOG_CRITICAL("Failed to compile text fragment shader");
-        return 0;   
+        return 0;
     }
 
     glGenBuffers(1, &ctx.shape_vbo);
@@ -96,7 +96,7 @@ int setup_shared_window_resources(void)
     if(!check_shader_compile(shape_vertex_shader))
     {
         LOG_CRITICAL("Failed to compile shape vertex shader");
-        return 0;   
+        return 0;
     }
 
     GLuint shape_fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -106,7 +106,7 @@ int setup_shared_window_resources(void)
     if(!check_shader_compile(shape_fragment_shader))
     {
         LOG_CRITICAL("Failed to compile shape fragment shader");
-        return 0;   
+        return 0;
     }
 
     ctx.shape_program = glCreateProgram();
@@ -117,7 +117,7 @@ int setup_shared_window_resources(void)
     if(!check_shader_link(ctx.shape_program))
     {
         LOG_CRITICAL("Failed to link shape shader program");
-        return 0;   
+        return 0;
     }
 
     glDeleteShader(shape_vertex_shader);
@@ -125,8 +125,8 @@ int setup_shared_window_resources(void)
     return 1;
 }
 
-int setup_separate_window_resources(size_t window_id) 
-{  
+int setup_separate_window_resources(size_t window_id)
+{
    ctx.text_programs[window_id] = glCreateProgram();
     glAttachShader(ctx.text_programs[window_id], ctx.text_vertex_shader);
     glAttachShader(ctx.text_programs[window_id], ctx.text_fragment_shader);
@@ -172,8 +172,8 @@ void draw_rectangle(size_t window_id, int x, int y, int width, int height)
 
 }
 
-void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint32_t color, bool isRounded, float cornerRadius) 
-{  
+void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint32_t color, bool isRounded, float cornerRadius)
+{
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (!platform || !platform->make_context_current || !platform->get_window_size) {
         LOG_ERROR("Platform interface missing required functions for rectangle draw");
@@ -259,8 +259,8 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
     glBindVertexArray(0);
 }
 
-static void shutdown(void) 
-{  
+static void shutdown(void)
+{
     for (int i = 0; i < 256; i++) {
         gles3_text_renderer_cleanup(&ctx.text_renderers[i]);
         if (ctx.text_programs[i]) {
@@ -313,7 +313,7 @@ static void render_text(size_t window_id, AromaFont* font, const char* text, int
         platform->make_context_current(window_id);
     }
 
-    gles3_text_render_text(renderer, ctx.text_programs[window_id], text, 
+    gles3_text_render_text(renderer, ctx.text_programs[window_id], text,
                           (float)x, (float)y, scale, color, window_id);
 }
 
@@ -331,7 +331,7 @@ static float measure_text(size_t window_id, AromaFont* font, const char* text, f
     return gles3_text_measure_text(renderer, text, scale);
 }
 
-static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height, 
+static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height,
                                   uint32_t color, int border_width, bool isRounded, float cornerRadius)
 {
     if (border_width <= 0) return;
@@ -362,7 +362,7 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
 
     Vertex vertices[6];
     vec2 texCoords[6] = {
-        {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, 
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f},
         {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
     };
 
@@ -414,7 +414,7 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     glBindVertexArray(0);
 }
 
-static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle, 
+static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle,
                      uint32_t color, int thickness)
 {
 
@@ -474,9 +474,9 @@ unsigned int load_image(const char* image_path)
         LOG_ERROR("Null image path provided");
         return 0;
     }
-    
+
     LOG_INFO("Attempting to load image: %s", image_path);
-    
+
     FILE *file = fopen(image_path, "rb");
     if (!file) {
         LOG_ERROR("Image file not found or inaccessible: %s", image_path);
@@ -487,16 +487,16 @@ unsigned int load_image(const char* image_path)
 
     unsigned int texture = 0;
     glGenTextures(1, &texture);
-    
+
     if (texture == 0) {
         GLenum error = glGetError();
         LOG_ERROR("glGenTextures failed! Could not generate texture ID. OpenGL error: 0x%X", error);
         return 0;
     }
-    
+
     LOG_INFO("Generated OpenGL texture ID: %u for %s", texture, image_path);
 
-    
+
     glBindTexture(GL_TEXTURE_2D, texture);
     if (glGetError() != GL_NO_ERROR) {
         LOG_ERROR("Failed to bind texture %u", texture);
@@ -513,7 +513,7 @@ unsigned int load_image(const char* image_path)
     int success = 0;
 
     const char *ext = strrchr(image_path, '.');
-    
+
     GLenum glError = glGetError();
     if (glError != GL_NO_ERROR) {
         LOG_ERROR("OpenGL error after binding texture %u: 0x%X", texture, glError);
@@ -525,14 +525,14 @@ unsigned int load_image(const char* image_path)
         LOG_INFO("Loading SVG file: %s", image_path);
         NSVGimage *image = NULL;
         NSVGrasterizer *rast = NULL;
-        
+
         image = nsvgParseFromFile(image_path, "px", 96.0f);
         if (!image) {
             LOG_ERROR("NanoSVG failed to parse SVG file: %s", image_path);
             glDeleteTextures(1, &texture);
             return 0;
         }
-        
+
         rast = nsvgCreateRasterizer();
         if (!rast) {
             LOG_ERROR("Failed to create NanoSVG rasterizer for: %s", image_path);
@@ -540,28 +540,28 @@ unsigned int load_image(const char* image_path)
             glDeleteTextures(1, &texture);
             return 0;
         }
-        
+
         img_width = (int)image->width;
         img_height = (int)image->height;
         nrChannels = 4;
-        
+
         LOG_INFO("SVG dimensions: %dx%d", img_width, img_height);
-        
+
         size_t data_size = img_width * img_height * 4;
         data = (unsigned char*)malloc(data_size);
         if (!data) {
-            LOG_ERROR("Failed to allocate memory for SVG rasterization: %s (needed %zu bytes)", 
+            LOG_ERROR("Failed to allocate memory for SVG rasterization: %s (needed %zu bytes)",
                      image_path, data_size);
             nsvgDeleteRasterizer(rast);
             nsvgDelete(image);
             glDeleteTextures(1, &texture);
             return 0;
         }
-        
+
         memset(data, 0, data_size);
         nsvgRasterize(rast, image, 0, 0, 1, data, img_width, img_height, img_width * 4);
         success = 1;
-        
+
         nsvgDeleteRasterizer(rast);
         nsvgDelete(image);
         LOG_INFO("Successfully rasterized SVG: %s", image_path);
@@ -591,7 +591,7 @@ unsigned int load_image(const char* image_path)
     if (!success || !data) {
         LOG_ERROR("Failed to load image data: %s", image_path);
         glDeleteTextures(1, &texture);
-        
+
         if (ext && strcasecmp(ext, ".svg") == 0) {
             free(data);
         } else {
@@ -603,7 +603,7 @@ unsigned int load_image(const char* image_path)
     if (img_width <= 0 || img_height <= 0) {
         LOG_ERROR("Invalid image dimensions: %s (%dx%d)", image_path, img_width, img_height);
         glDeleteTextures(1, &texture);
-        
+
         if (ext && strcasecmp(ext, ".svg") == 0) {
             free(data);
         } else {
@@ -622,13 +622,13 @@ unsigned int load_image(const char* image_path)
     size_t total_bytes = total_pixels * nrChannels;
     unsigned int zero_count = 0;
     unsigned int max_value = 0;
-    
+
     for (size_t i = 0; i < total_bytes && i < 100; i++) {
         if (data[i] == 0) zero_count++;
         if (data[i] > max_value) max_value = data[i];
     }
-    
-    LOG_INFO("Image data: %zu bytes, first 100 bytes - zeros: %u, max value: %u", 
+
+    LOG_INFO("Image data: %zu bytes, first 100 bytes - zeros: %u, max value: %u",
              total_bytes, zero_count, max_value);
 
     GLenum format;
@@ -648,17 +648,17 @@ unsigned int load_image(const char* image_path)
             return 0;
     }
 
-    LOG_INFO("Uploading texture data to GPU (format: 0x%X, %dx%d)", 
+    LOG_INFO("Uploading texture data to GPU (format: 0x%X, %dx%d)",
              format, img_width, img_height);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, format, img_width, img_height, 0, 
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format, img_width, img_height, 0,
                  format, GL_UNSIGNED_BYTE, data);
-    
+
     glError = glGetError();
     if (glError != GL_NO_ERROR) {
         LOG_ERROR("OpenGL error during glTexImage2D for texture %u: 0x%X", texture, glError);
         glDeleteTextures(1, &texture);
-        
+
         if (ext && strcasecmp(ext, ".svg") == 0) {
             free(data);
         } else {
@@ -666,9 +666,9 @@ unsigned int load_image(const char* image_path)
         }
         return 0;
     }
-    
+
     glGenerateMipmap(GL_TEXTURE_2D);
-    
+
     glError = glGetError();
     if (glError != GL_NO_ERROR) {
         LOG_WARNING("OpenGL warning during glGenerateMipmap for texture %u: 0x%X", texture, glError);
@@ -686,7 +686,7 @@ unsigned int load_image(const char* image_path)
         return 0;
     }
 
-    LOG_INFO("Texture %u successfully created: %s (%dx%d)", 
+    LOG_INFO("Texture %u successfully created: %s (%dx%d)",
              texture, image_path, img_width, img_height);
 
     return texture;
@@ -698,7 +698,7 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
         LOG_ERROR("Invalid data or length for memory image loading");
         return 0;
     }
-    
+
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -710,7 +710,7 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
 
     stbi_set_flip_vertically_on_load(1);
     int width, height, channels;
-    unsigned char *img_data = stbi_load_from_memory(data, (int)binary_length, 
+    unsigned char *img_data = stbi_load_from_memory(data, (int)binary_length,
                                                     &width, &height, &channels, 0);
     if (!img_data) {
         LOG_ERROR("Failed to load image from memory");
@@ -731,22 +731,22 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
             return 0;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, 
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
                  format, GL_UNSIGNED_BYTE, img_data);
     glGenerateMipmap(GL_TEXTURE_2D);
-    
+
     stbi_image_free(img_data);
-    
-    LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, %d channels)", 
+
+    LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, %d channels)",
              texture, width, height, channels);
     return texture;
 }
 
 void draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
 {
-    LOG_INFO("draw_image called: window=%zu, pos=(%d,%d), size=(%dx%d), texture=%u", 
+    LOG_INFO("draw_image called: window=%zu, pos=(%d,%d), size=(%dx%d), texture=%u",
              window_id, x, y, width, height, texture_id);
-    
+
     if (texture_id == 0) {
         LOG_ERROR("Cannot draw texture ID 0 (OpenGL reserved)");
         return;
@@ -759,10 +759,10 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     }
 
     platform->make_context_current(window_id);
-    
+
     if (!glIsTexture(texture_id)) {
         LOG_ERROR("Texture ID %u is not a valid OpenGL texture", texture_id);
-        
+
         // Check OpenGL error state
         GLenum error = glGetError();
         if (error != GL_NO_ERROR) {
@@ -774,7 +774,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     int window_width = 0;
     int window_height = 0;
     platform->get_window_size(window_id, &window_width, &window_height);
-    
+
     if (window_width <= 0 || window_height <= 0) {
         LOG_WARNING("Invalid window size: %dx%d", window_width, window_height);
         return;
@@ -788,7 +788,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
 
     Vertex vertices[6];
-    
+
     vec2 texCoords[6] = {
         {0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f},
         {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}
@@ -799,27 +799,27 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     float x1 = x0 + (float)width;
     float y1 = y0 + (float)height;
     for (int i = 0; i < 6; i++) {
-        vertices[i].col[0] = 1.0f;  
+        vertices[i].col[0] = 1.0f;
         vertices[i].col[1] = 1.0f;
         vertices[i].col[2] = 1.0f;
         vertices[i].texCoord[0] = texCoords[i][0];
         vertices[i].texCoord[1] = texCoords[i][1];
     }
 
-    vertices[0].pos[0] = x0; vertices[0].pos[1] = y0; 
-    vertices[1].pos[0] = x1; vertices[1].pos[1] = y0; 
-    vertices[2].pos[0] = x0; vertices[2].pos[1] = y1; 
-    
-    vertices[3].pos[0] = x1; vertices[3].pos[1] = y0;  
-    vertices[4].pos[0] = x1; vertices[4].pos[1] = y1;  
-    vertices[5].pos[0] = x0; vertices[5].pos[1] = y1;  
+    vertices[0].pos[0] = x0; vertices[0].pos[1] = y0;
+    vertices[1].pos[0] = x1; vertices[1].pos[1] = y0;
+    vertices[2].pos[0] = x0; vertices[2].pos[1] = y1;
+
+    vertices[3].pos[0] = x1; vertices[3].pos[1] = y0;
+    vertices[4].pos[0] = x1; vertices[4].pos[1] = y1;
+    vertices[5].pos[0] = x0; vertices[5].pos[1] = y1;
 
     glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     glUseProgram(ctx.shape_program);
-    
-    glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"), 
+
+    glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"),
                       1, GL_FALSE, (const GLfloat*)projection);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 1);
     glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), 0.0f, 0.0f);
@@ -828,36 +828,36 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), 0);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 0);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
-    
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "tex"), 0);
 
     glBindVertexArray(ctx.shape_vaos[window_id]);
-    
+
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, pos));
-    
+
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, col));
-    
+
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, texCoord));
-    
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    
+
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
         LOG_ERROR("OpenGL error during image draw: 0x%X", error);
     }
-    
+
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-    
+
     LOG_INFO("Image drawn successfully: texture %u", texture_id);
 }
 AromaGraphicsInterface aroma_graphics_gles3 = {
@@ -876,3 +876,4 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .draw_image = draw_image,
     .shutdown = shutdown
 };
+#endif

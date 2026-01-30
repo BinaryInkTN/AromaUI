@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_font.h"
 #include "aroma_logger.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define AROMA_DROPDOWN_MAX_OPTIONS 32
 #define AROMA_DROPDOWN_OPTION_MAX 128
 
@@ -40,8 +42,8 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
 
 void aroma_dropdown_add_option(AromaNode* dropdown_node, const char* option);
 
-void aroma_dropdown_set_on_change(AromaNode* dropdown_node, 
-    void (*on_change)(int index, const char* option, void* user_data), 
+void aroma_dropdown_set_on_change(AromaNode* dropdown_node,
+    void (*on_change)(int index, const char* option, void* user_data),
     void* user_data);
 
 void aroma_dropdown_setup_events(AromaNode* dropdown_node, void (*on_redraw_callback)(void*), void* user_data);
@@ -122,5 +124,7 @@ static inline void aroma_ui_dropdown_set_text_color(AromaDropdown* dropdown, uin
     if (!dropdown) return;
     aroma_dropdown_set_text_color((AromaNode*)dropdown, color);
 }
-
+#ifdef __cplusplus
+}
+#endif
 #endif

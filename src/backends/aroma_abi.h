@@ -3,8 +3,20 @@
 
 #include <stddef.h>
 
-typedef enum AromaGraphicsBackendType AromaGraphicsBackendType;
-typedef enum AromaPlatformBackendType AromaPlatformBackendType;
+typedef enum AromaPlatformBackendType {
+    PLATFORM_BACKEND_GLPS,
+    PLATFORM_BACKEND_TFT_ESPI
+} AromaPlatformBackendType;
+
+
+typedef enum AromaGraphicsBackendType {
+    GRAPHICS_BACKEND_GLES3,
+    GRAPHICS_BACKEND_SOFTWARE,
+    GRAPHICS_BACKEND_TFT_ESPI,
+    GRAPHICS_BACKEND_STM_SPI
+} AromaGraphicsBackendType;
+
+
 typedef struct AromaGraphicsInterface AromaGraphicsInterface;
 typedef struct AromaPlatformInterface AromaPlatformInterface;
 typedef struct AromaFont AromaFont;

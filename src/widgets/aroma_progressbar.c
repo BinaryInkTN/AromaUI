@@ -46,6 +46,11 @@ AromaNode* aroma_progressbar_create(AromaNode* parent, int x, int y, int width, 
     }
 
     aroma_node_set_draw_cb(node, aroma_progressbar_draw);
+   
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+   
     return node;
 }
 

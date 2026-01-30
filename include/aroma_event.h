@@ -4,71 +4,73 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaNode AromaNode;
 typedef struct AromaEvent AromaEvent;
 
 #define AROMA_KEY_MOD_CAPSLOCK 0x0001u
 
 typedef enum AromaEventType {
-    EVENT_TYPE_MOUSE_MOVE,          
-    EVENT_TYPE_MOUSE_CLICK,         
-    EVENT_TYPE_MOUSE_RELEASE,       
-    EVENT_TYPE_MOUSE_ENTER,         
-    EVENT_TYPE_MOUSE_EXIT,          
-    EVENT_TYPE_MOUSE_HOVER,         
-    EVENT_TYPE_MOUSE_DOUBLE_CLICK,  
-    EVENT_TYPE_KEY_PRESS,           
-    EVENT_TYPE_KEY_RELEASE,         
-    EVENT_TYPE_FOCUS_GAINED,        
-    EVENT_TYPE_FOCUS_LOST,          
-    EVENT_TYPE_CUSTOM,              
-    EVENT_TYPE_COUNT                
+    EVENT_TYPE_MOUSE_MOVE,
+    EVENT_TYPE_MOUSE_CLICK,
+    EVENT_TYPE_MOUSE_RELEASE,
+    EVENT_TYPE_MOUSE_ENTER,
+    EVENT_TYPE_MOUSE_EXIT,
+    EVENT_TYPE_MOUSE_HOVER,
+    EVENT_TYPE_MOUSE_DOUBLE_CLICK,
+    EVENT_TYPE_KEY_PRESS,
+    EVENT_TYPE_KEY_RELEASE,
+    EVENT_TYPE_FOCUS_GAINED,
+    EVENT_TYPE_FOCUS_LOST,
+    EVENT_TYPE_CUSTOM,
+    EVENT_TYPE_COUNT
 } AromaEventType;
 
 typedef struct {
-    int x;                          
-    int y;                          
-    int delta_x;                    
-    int delta_y;                    
-    uint8_t button;                 
-    uint8_t clicks;                 
+    int x;
+    int y;
+    int delta_x;
+    int delta_y;
+    uint8_t button;
+    uint8_t clicks;
 } AromaMouseEventData;
 
 typedef struct {
-    uint32_t key_code;              
-    uint32_t scan_code;             
-    uint16_t modifiers;             
-    bool repeat;                    
+    uint32_t key_code;
+    uint32_t scan_code;
+    uint16_t modifiers;
+    bool repeat;
 } AromaKeyEventData;
 
 typedef struct {
-    uint32_t custom_type;           
-    void* data;                     
-    void (*free_data)(void*);       
+    uint32_t custom_type;
+    void* data;
+    void (*free_data)(void*);
 } AromaCustomEventData;
 
 struct AromaEvent {
-    AromaEventType event_type;      
-    uint64_t target_node_id;        
-    AromaNode* target_node;         
-    struct timespec timestamp;      
-    bool consumed;                  
+    AromaEventType event_type;
+    uint64_t target_node_id;
+    AromaNode* target_node;
+    struct timespec timestamp;
+    bool consumed;
 
     union {
         AromaMouseEventData mouse;
         AromaKeyEventData key;
         AromaCustomEventData custom;
-    } data;                         
+    } data;
 };
 
 typedef bool (*AromaEventHandler)(AromaEvent* event, void* user_data);
 
 typedef struct {
-    AromaEventType event_type;      
-    AromaEventHandler handler;      
-    void* user_data;                
-    uint32_t priority;              
+    AromaEventType event_type;
+    AromaEventHandler handler;
+    void* user_data;
+    uint32_t priority;
 } AromaEventListener;
 
 bool aroma_event_system_init(void);
@@ -91,10 +93,10 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down);
 
 void aroma_event_resync_hover(void);
 
-bool aroma_event_subscribe(uint64_t node_id, AromaEventType event_type, 
+bool aroma_event_subscribe(uint64_t node_id, AromaEventType event_type,
                           AromaEventHandler handler, void* user_data, uint32_t priority);
 
-bool aroma_event_unsubscribe(uint64_t node_id, AromaEventType event_type, 
+bool aroma_event_unsubscribe(uint64_t node_id, AromaEventType event_type,
                             AromaEventHandler handler);
 
 AromaEvent* aroma_event_create_mouse(AromaEventType event_type, uint64_t target_node_id,
@@ -113,6 +115,7 @@ void aroma_event_consume(AromaEvent* event);
 AromaNode* aroma_event_hit_test(AromaNode* root, int x, int y);
 
 const char* aroma_event_type_name(AromaEventType event_type);
-
-#endif 
-
+#ifdef __cplusplus
+}
+#endif
+#endif

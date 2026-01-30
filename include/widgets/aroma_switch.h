@@ -6,7 +6,9 @@
 #include "aroma_logger.h"
 #include <stdbool.h>
 #include <stddef.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaWindow AromaWindow;
 
 typedef struct AromaSwitch
@@ -84,5 +86,7 @@ static inline void aroma_ui_destroy_switch(AromaSwitch* sw) {
     if (!sw) return;
     aroma_switch_destroy((AromaNode*)sw);
 }
-
+#ifdef __cplusplus
+}
+#endif
 #endif

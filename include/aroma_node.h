@@ -3,7 +3,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define AROMA_MAX_CHILD_NODES 16
 #define AROMA_NODE_ID_INVALID 0
 #define AROMA_MAX_DIRTY_NODES 256
@@ -20,17 +22,17 @@ typedef enum AromaNodeType {
 
 typedef struct AromaNode
 {
-    AromaNodeType node_type;           
-    uint64_t node_id;                  
-    int32_t z_index;                   
-    AromaNode* parent_node;            
-    AromaNode* child_nodes[AROMA_MAX_CHILD_NODES]; 
-    void *node_widget_ptr;             
-    AromaNodeDrawFn draw_cb;            
-    uint64_t child_count;              
-    bool is_dirty;                     
-    bool is_hidden;                    
-    bool propagate_dirty;              
+    AromaNodeType node_type;
+    uint64_t node_id;
+    int32_t z_index;
+    AromaNode* parent_node;
+    AromaNode* child_nodes[AROMA_MAX_CHILD_NODES];
+    void *node_widget_ptr;
+    AromaNodeDrawFn draw_cb;
+    uint64_t child_count;
+    bool is_dirty;
+    bool is_hidden;
+    bool propagate_dirty;
 } AromaNode;
 
 #define AROMA_NODE_AS(node, Type) ((Type*)((node) ? (node)->node_widget_ptr : NULL))
@@ -67,4 +69,7 @@ void aroma_dirty_list_init(void);
 void aroma_dirty_list_clear(void);
 AromaNode** aroma_dirty_list_get(size_t* count);
 void aroma_dirty_list_add(AromaNode* node);
+#ifdef __cplusplus
+}
+#endif
 #endif

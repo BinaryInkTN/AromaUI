@@ -99,6 +99,11 @@ AromaNode* aroma_menu_create(AromaNode* parent, int x, int y)
     aroma_node_set_draw_cb(node, aroma_menu_draw);
 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __menu_handle_event, NULL, 80);
+    
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+    
     return node;
 }
 

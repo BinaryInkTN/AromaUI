@@ -18,7 +18,7 @@
  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
+#ifndef ESP32
 #include "helpers_gles3.h"
 #include "core/aroma_logger.h"
 #include "aroma_abi.h"
@@ -79,3 +79,4 @@ void convert_hex_to_rgb(vec3 *rgb, unsigned int color_hex)
     (*rgb)[1] = ((color_hex >> 8) & 0xFF) / 255.0f;
     (*rgb)[2] = ((color_hex) & 0xFF) / 255.0f;
 }
+#endif

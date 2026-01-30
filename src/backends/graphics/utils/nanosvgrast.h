@@ -24,7 +24,7 @@
 
 #ifndef NANOSVGRAST_H
 #define NANOSVGRAST_H
-
+#ifndef ESP32
 #include "nanosvg.h"
 
 #ifndef NANOSVGRAST_CPLUSPLUS
@@ -1468,5 +1468,5 @@ void nsvgRasterize(NSVGrasterizer* r,
 }
 
 #endif // NANOSVGRAST_IMPLEMENTATION
-
+#endif
 #endif // NANOSVGRAST_H

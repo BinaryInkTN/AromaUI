@@ -67,6 +67,11 @@ AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int 
     }
 
     aroma_node_set_draw_cb(node, aroma_tooltip_draw);
+
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

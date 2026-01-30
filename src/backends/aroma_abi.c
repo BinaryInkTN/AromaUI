@@ -26,17 +26,14 @@
 #include <stdatomic.h>
 #include <stddef.h>
 
-static _Atomic(AromaGraphicsBackendType) current_graphics_backend = GRAPHICS_BACKEND_GLES3;
-static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BACKEND_GLPS;
+static _Atomic(AromaGraphicsBackendType) current_graphics_backend = GRAPHICS_BACKEND_TFT_ESPI;
+static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BACKEND_TFT_ESPI;
 
 static AromaGraphicsInterface* get_real_graphics_interface(void) {
     AromaGraphicsBackendType backend = atomic_load(&current_graphics_backend);
-    switch (backend) {
-        case GRAPHICS_BACKEND_GLES3:
-            return &aroma_graphics_gles3;
-        default:
-            return NULL;
-    }
+
+    return &aroma_graphics_tft;
+   // return &aroma_graphics_glps;
 }
 
 static void drawlist_proxy_clear(size_t window_id, uint32_t color)
@@ -156,7 +153,19 @@ static void drawlist_proxy_draw_image(size_t window_id, int x, int y, int width,
         real->draw_image(window_id, x, y, width, height, texture_id);
     }
 }
+static void drawlist_proxy_graphics_set_tft_context(void* tft) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_set_tft_context) {
+        real->graphics_set_tft_context(tft);
+    }
+}
 
+static void drawlist_proxy_graphics_set_sprite_mode(bool enable, void* sprite) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_set_sprite_mode) {
+        real->graphics_set_sprite_mode(enable, sprite);
+    }
+}
 
 static int drawlist_proxy_setup_shared_window_resources(void)
 {
@@ -198,12 +207,14 @@ static AromaGraphicsInterface drawlist_proxy = {
     .render_text = drawlist_proxy_render_text,
     .measure_text = drawlist_proxy_measure_text,
     .shutdown = drawlist_proxy_shutdown,
+    .graphics_set_sprite_mode = drawlist_proxy_graphics_set_sprite_mode,
+    .graphics_set_tft_context = drawlist_proxy_graphics_set_tft_context
 };
 
 void set_graphics_backend_type(AromaGraphicsBackendType type) {
     atomic_store(&current_graphics_backend, type);
 }
-    
+
 void set_platform_backend_type(AromaPlatformBackendType type) {
     atomic_store(&current_platform_backend, type);
 }
@@ -218,12 +229,10 @@ AromaGraphicsInterface* get_graphics_interface(void) {
 
 AromaPlatformInterface* get_platform_interface(void) {
     AromaPlatformBackendType backend = atomic_load(&current_platform_backend);
-    switch (backend) {
-        case PLATFORM_BACKEND_GLPS:
-            return &aroma_platform_glps;
-        default:
-            return NULL;
-    }    
+   // #ifndef ESP32
+     //   return &aroma_platform_glps;
+   // #endif
+    return &aroma_platform_tft;
 }
 
 AromaBackendABI aroma_backend_abi = {

@@ -1,27 +1,93 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-
 #include "core/aroma_font.h"
 #include "core/aroma_logger.h"
+
+#ifdef ESP32
+struct AromaFont {
+    int size_px;
+    int line_height;
+    int ascender;
+    int descender;
+    uint8_t font_type; // 0 = GLCD (default), 1 = Free Font
+};
+
+// TFT_eSPI GLCD (default) font metrics
+// Default font is 6x8 pixels for normal size
+#define GLCD_CHAR_WIDTH  6
+#define GLCD_CHAR_HEIGHT 8
+#define GLCD_LINE_HEIGHT (GLCD_CHAR_HEIGHT + 2) // 10px with spacing
+#define GLCD_ASCENDER    7  // Most characters are 7px tall (except g, j, p, q, y)
+#define GLCD_DESCENDER   1  // Descender for g, j, p, q, y
+
+AromaFont* aroma_font_create(const char* font_path, int size_px) {
+    (void)font_path;
+
+    if (size_px <= 0) return NULL;
+
+    AromaFont* font = (AromaFont*)malloc(sizeof(AromaFont));
+    if (!font) return NULL;
+
+    font->size_px = size_px;
+    font->font_type = 0; // GLCD default font
+    
+    // For GLCD font, size parameter is ignored - font is fixed size
+    // But we can scale metrics if user requested different size
+    float scale = size_px / 8.0f; // Base size is 8px
+    
+    font->line_height = (int)(GLCD_LINE_HEIGHT * scale);
+    font->ascender = (int)(GLCD_ASCENDER * scale);
+    font->descender = (int)(GLCD_DESCENDER * scale);
+    
+    // Ensure minimum values
+    if (font->line_height < 10) font->line_height = 10;
+    if (font->ascender < 7) font->ascender = 7;
+    if (font->descender < 1) font->descender = 1;
+
+    LOG_INFO("aroma_font_create: using TFT_eSPI GLCD font, size=%d, line_height=%d", 
+             size_px, font->line_height);
+
+    return font;
+}
+
+AromaFont* aroma_font_create_from_memory(
+    const unsigned char* data,
+    unsigned int data_len,
+    int size_px
+) {
+    (void)data;
+    (void)data_len;
+    // For ESP32, memory fonts are not supported - fall back to default
+    LOG_INFO("aroma_font_create_from_memory: falling back to default GLCD font");
+    return aroma_font_create(NULL, size_px);
+}
+
+void aroma_font_destroy(AromaFont* font) {
+    if (font) {
+        free(font);
+    }
+}
+
+int aroma_font_get_line_height(AromaFont* font) {
+    return font ? font->line_height : GLCD_LINE_HEIGHT;
+}
+
+int aroma_font_get_ascender(AromaFont* font) {
+    return font ? font->ascender : GLCD_ASCENDER;
+}
+
+int aroma_font_get_descender(AromaFont* font) {
+    return font ? font->descender : GLCD_DESCENDER;
+}
+
+void* aroma_font_get_face(AromaFont* font) {
+    (void)font;
+    return NULL;
+}
+
+#else
+/* ============================
+   DESKTOP / FULL IMPLEMENTATION
+   ============================ */
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <string.h>
@@ -52,38 +118,25 @@ struct AromaFont {
 static FT_Library ft_library = NULL;
 
 static bool init_freetype(void) {
-    if (ft_library != NULL) {
-        return true;
-    }
+    if (ft_library) return true;
 
     FT_Error error = FT_Init_FreeType(&ft_library);
     if (error) {
         LOG_ERROR("Failed to initialize FreeType: %d\n", error);
         return false;
     }
-
     return true;
 }
 
 AromaFont* aroma_font_create(const char* font_path, int size_px) {
-    if (!init_freetype()) {
+    if (!init_freetype() || !font_path || size_px <= 0)
         return NULL;
-    }
-
-    if (!font_path || size_px <= 0) {
-        LOG_ERROR("Invalid font parameters: path=%s, size=%d\n", font_path, size_px);
-        return NULL;
-    }
 
     AromaFont* font = malloc(sizeof(AromaFont));
-    if (!font) {
-        LOG_ERROR("Failed to allocate font structure\n");
-        return NULL;
-    }
+    if (!font) return NULL;
 
     FT_Error error = FT_New_Face(ft_library, font_path, 0, &font->face);
     if (error) {
-        LOG_ERROR("Failed to load font: %s (error: %d)\n", font_path, error);
         free(font);
         return NULL;
     }
@@ -96,69 +149,59 @@ AromaFont* aroma_font_create(const char* font_path, int size_px) {
     font->descender = font->face->size->metrics.descender >> 6;
     font->glyph_count = 0;
 
-    LOG_INFO("Font loaded: %s at %dpx (line_height=%d, ascender=%d, descender=%d)\n",
-             font_path, size_px, font->line_height, font->ascender, font->descender);
-
     return font;
 }
 
-AromaFont* aroma_font_create_from_memory(const unsigned char* data, unsigned int data_len, int size_px) {
-    if (!init_freetype()) {
+AromaFont* aroma_font_create_from_memory(
+    const unsigned char* data,
+    unsigned int data_len,
+    int size_px
+) {
+    if (!init_freetype() || !data || size_px <= 0)
         return NULL;
-    }
-    if (!data || data_len == 0 || size_px <= 0) {
-        LOG_ERROR("Invalid font memory parameters\n");
-        return NULL;
-    }
+
     AromaFont* font = malloc(sizeof(AromaFont));
-    if (!font) {
-        LOG_ERROR("Failed to allocate font structure\n");
-        return NULL;
-    }
-    FT_Error error = FT_New_Memory_Face(ft_library, data, data_len, 0, &font->face);
+    if (!font) return NULL;
+
+    FT_Error error = FT_New_Memory_Face(
+        ft_library, data, data_len, 0, &font->face
+    );
     if (error) {
-        LOG_ERROR("Failed to load font from memory (error: %d)\n", error);
         free(font);
         return NULL;
     }
+
     FT_Set_Pixel_Sizes(font->face, 0, size_px);
+
     font->size_px = size_px;
     font->line_height = font->face->size->metrics.height >> 6;
     font->ascender = font->face->size->metrics.ascender >> 6;
     font->descender = font->face->size->metrics.descender >> 6;
     font->glyph_count = 0;
-    LOG_INFO("Font loaded from memory at %dpx (line_height=%d, ascender=%d, descender=%d)\n",
-             size_px, font->line_height, font->ascender, font->descender);
+
     return font;
 }
+
 void aroma_font_destroy(AromaFont* font) {
-    if (!font) {
-        return;
-    }
-
-    if (font->face) {
-        FT_Done_Face(font->face);
-    }
-
+    if (!font) return;
+    if (font->face) FT_Done_Face(font->face);
     free(font);
 }
 
 int aroma_font_get_line_height(AromaFont* font) {
-    if (!font) return 0;
-    return font->line_height;
+    return font ? font->line_height : 0;
 }
 
 int aroma_font_get_ascender(AromaFont* font) {
-    if (!font) return 0;
-    return font->ascender;
+    return font ? font->ascender : 0;
 }
 
 int aroma_font_get_descender(AromaFont* font) {
-    if (!font) return 0;
-    return font->descender;
+    return font ? font->descender : 0;
 }
 
 void* aroma_font_get_face(AromaFont* font) {
-    if (!font) return NULL;
-    return font->face;
+    return font ? font->face : NULL;
 }
+
+#endif /* ESP32 */

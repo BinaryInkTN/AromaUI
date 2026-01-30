@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Chip variants
 typedef enum {
     CHIP_TYPE_ASSIST,    // Assist chip
@@ -33,5 +35,7 @@ void aroma_chip_draw(AromaNode* chip_node, size_t window_id);
 
 // Destroy chip
 void aroma_chip_destroy(AromaNode* chip_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_CHIP_H

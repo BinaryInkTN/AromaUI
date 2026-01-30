@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 List View
 typedef struct AromaListItem {
     char text[128];
@@ -35,5 +37,7 @@ void aroma_listview_draw(AromaNode* list_node, size_t window_id);
 
 // Destroy
 void aroma_listview_destroy(AromaNode* list_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_LISTVIEW_H

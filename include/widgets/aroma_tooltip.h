@@ -4,7 +4,9 @@
 #include "aroma_common.h"
 #include "aroma_node.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Tooltip
 typedef enum {
     TOOLTIP_POSITION_TOP,
@@ -33,5 +35,7 @@ void aroma_tooltip_draw(AromaNode* tooltip_node, size_t window_id);
 
 // Destroy
 void aroma_tooltip_destroy(AromaNode* tooltip_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_TOOLTIP_H

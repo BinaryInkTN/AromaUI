@@ -6,7 +6,9 @@
 #include "aroma_node.h"
 #include <stdbool.h>
 #include <stddef.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaDebugOverlay AromaDebugOverlay;
 
 AromaNode* aroma_debug_overlay_create(AromaNode* parent, int x, int y);
@@ -16,5 +18,7 @@ void aroma_debug_overlay_set_visible(AromaNode* overlay_node, bool visible);
 
 void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id);
 void aroma_debug_overlay_destroy(AromaNode* overlay_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Radio Button
 typedef struct AromaRadioButton AromaRadioButton;
 
@@ -31,5 +33,7 @@ bool aroma_radio_button_setup_events(AromaNode* node,
 
 // Destroy
 void aroma_radiobutton_destroy(AromaNode* radio_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_RADIO_BUTTON_H

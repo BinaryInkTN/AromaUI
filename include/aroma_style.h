@@ -3,34 +3,36 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaColorPalette {
-    uint32_t primary;       
-    uint32_t primary_dark;  
-    uint32_t primary_light; 
-    uint32_t secondary;     
-    uint32_t background;    
-    uint32_t surface;       
-    uint32_t text_primary;  
+    uint32_t primary;
+    uint32_t primary_dark;
+    uint32_t primary_light;
+    uint32_t secondary;
+    uint32_t background;
+    uint32_t surface;
+    uint32_t text_primary;
     uint32_t text_secondary;
-    uint32_t border;        
-    uint32_t error;         
+    uint32_t border;
+    uint32_t error;
 } AromaColorPalette;
 
 typedef struct AromaSpacing {
-    int padding;            
-    int margin;             
-    int border_radius;      
-    int border_width;       
-    int shadow_offset;      
+    int padding;
+    int margin;
+    int border_radius;
+    int border_width;
+    int shadow_offset;
 } AromaSpacing;
 
 typedef struct AromaTypography {
-    int font_size;          
-    int line_height;        
-    int letter_spacing;     
-    uint32_t font_color;    
-    const char* font_name;  
+    int font_size;
+    int line_height;
+    int letter_spacing;
+    uint32_t font_color;
+    const char* font_name;
 } AromaTypography;
 
 typedef struct AromaTheme {
@@ -38,8 +40,8 @@ typedef struct AromaTheme {
     AromaSpacing spacing;
     AromaTypography typography;
 
-    int transition_duration_ms;  
-    bool enable_shadows;         
+    int transition_duration_ms;
+    bool enable_shadows;
 } AromaTheme;
 
 typedef enum AromaMaterialThemePreset {
@@ -66,13 +68,13 @@ typedef struct AromaStyle {
     int border_radius;
     int border_width;
 
-    int shadow_blur;        
+    int shadow_blur;
     int shadow_offset_x;
     int shadow_offset_y;
     uint32_t shadow_color;
 
     bool is_disabled;
-    bool has_custom_colors;  
+    bool has_custom_colors;
 } AromaStyle;
 
 /* Light theme functions */
@@ -122,20 +124,22 @@ void aroma_color_extract_rgb(uint32_t color, uint8_t* r, uint8_t* g, uint8_t* b)
 
 /* Shadow functions */
 typedef struct AromaShadow {
-    int blur_radius;        
-    int offset_x;           
-    int offset_y;           
-    uint32_t color;         
-    float opacity;          
+    int blur_radius;
+    int offset_x;
+    int offset_y;
+    uint32_t color;
+    float opacity;
 } AromaShadow;
 
 AromaShadow aroma_shadow_create_soft(void);
 AromaShadow aroma_shadow_create_subtle(void);
 AromaShadow aroma_shadow_create_deep(void);
 AromaShadow aroma_shadow_create_dark_mode(void);
-AromaShadow aroma_shadow_create_custom(int blur_radius, int offset_x, int offset_y, 
+AromaShadow aroma_shadow_create_custom(int blur_radius, int offset_x, int offset_y,
                                         uint32_t color, float opacity);
 AromaShadow aroma_shadow_get_theme_default(void);
 void aroma_style_apply_shadow(AromaStyle* style, const AromaShadow* shadow);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -7,7 +7,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define AROMA_TEXTBOX_MAX_LENGTH 256
 #define AROMA_TEXTBOX_CURSOR_BLINK_RATE 500
 
@@ -149,5 +151,7 @@ static inline void aroma_ui_destroy_textbox(AromaTextbox* textbox) {
     if (!textbox) return;
     aroma_textbox_destroy((AromaNode*)textbox);
 }
-
+#ifdef __cplusplus
+}
+#endif
 #endif

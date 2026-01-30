@@ -8,7 +8,9 @@
 #include "aroma_style.h"
 #include <stdbool.h>
 #include <string.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaWindow AromaWindow;
 
 #define AROMA_BUTTON_LABEL_MAX 64
@@ -142,5 +144,7 @@ static inline void aroma_ui_destroy_button(AromaButton* button) {
     if (!button) return;
     aroma_button_destroy((AromaNode*)button);
 }
-
+#ifdef __cplusplus
+}
+#endif
 #endif

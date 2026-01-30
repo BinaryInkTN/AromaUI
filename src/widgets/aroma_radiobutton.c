@@ -221,6 +221,11 @@ AromaNode* aroma_radio_button_create(AromaNode* parent, AromaRadioGroup* group,
 
     LOG_INFO("Radio button created: label='%s'", data->label);
     __radiobutton_update_layout(data);
+
+    #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
+
     return node;
 }
 

@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Icon Button variants
 typedef enum {
     ICON_BUTTON_STANDARD,    // Standard icon button
@@ -33,5 +35,7 @@ void aroma_iconbutton_draw(AromaNode* button_node, size_t window_id);
 
 // Destroy
 void aroma_iconbutton_destroy(AromaNode* button_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_ICON_BUTTON_H

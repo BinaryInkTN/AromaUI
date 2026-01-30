@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Snackbar for temporary messages
 typedef struct AromaSnackbar AromaSnackbar;
 
@@ -13,7 +15,7 @@ typedef struct AromaSnackbar AromaSnackbar;
 AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int duration_ms);
 
 // Set snackbar action button
-void aroma_snackbar_set_action(AromaNode* snackbar_node, const char* action_text, 
+void aroma_snackbar_set_action(AromaNode* snackbar_node, const char* action_text,
                                 void (*callback)(void* user_data), void* user_data);
 
 // Set snackbar font
@@ -27,5 +29,7 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id);
 
 // Destroy snackbar
 void aroma_snackbar_destroy(AromaNode* snackbar_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_SNACKBAR_H

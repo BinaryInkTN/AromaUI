@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaFont AromaFont;
 
 
@@ -20,6 +22,7 @@ int aroma_font_get_ascender(AromaFont* font);
 int aroma_font_get_descender(AromaFont* font);
 
 void* aroma_font_get_face(AromaFont* font);
-
+#ifdef __cplusplus
+}
 #endif
-
+#endif

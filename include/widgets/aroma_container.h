@@ -3,7 +3,9 @@
 
 #include "aroma_common.h"
 #include "aroma_node.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct AromaContainer AromaContainer;
 
 AromaNode* aroma_container_create(AromaNode* parent, int x, int y, int width, int height);
@@ -15,5 +17,7 @@ void aroma_container_destroy(AromaNode* container_node);
 static inline AromaContainer* aroma_container_get(AromaNode* node) {
     return AROMA_NODE_AS(node, AromaContainer);
 }
-
+#ifdef __cplusplus
+}
+#endif
 #endif

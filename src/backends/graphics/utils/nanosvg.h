@@ -28,7 +28,7 @@
 
 #ifndef NANOSVG_H
 #define NANOSVG_H
-
+#ifndef ESP32
 #ifndef NANOSVG_CPLUSPLUS
 #ifdef __cplusplus
 extern "C" {
@@ -3128,5 +3128,5 @@ void nsvgDelete(NSVGimage* image)
 }
 
 #endif // NANOSVG_IMPLEMENTATION
-
+#endif
 #endif // NANOSVG_H

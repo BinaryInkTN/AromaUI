@@ -82,8 +82,13 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
         return NULL;
     }
 
-    aroma_node_set_draw_cb(node, aroma_label_draw);
 
+    aroma_node_set_draw_cb(node, aroma_label_draw);
+    
+    #ifdef ESP32
+    aroma_node_invalidate(node); 
+    #endif
+    
     return node;
 }
 
@@ -125,8 +130,11 @@ void aroma_label_draw(AromaNode* label_node, size_t window_id)
     AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
     if (aroma_node_is_hidden(label_node)) return;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    #ifndef ESP32
     if (!gfx || !gfx->render_text || !label->font) return;
-
+    #endif
+    //        aroma_node_invalidate(label_node);
+    if (!gfx || !gfx->render_text) return;    
     gfx->render_text(window_id, label->font, label->text, label->rect.x, label->rect.y, label->color, label->text_scale);
 }
 

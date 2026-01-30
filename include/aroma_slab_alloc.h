@@ -3,7 +3,9 @@
 
 #include <stdlib.h>
 #include "aroma_node.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define AROMA_GENERIC_PAGE_SIZE 2048
 #define AROMA_MAX_PAGES 32
 #define AROMA_NODE_POOL_INDEX 0xFF
@@ -50,5 +52,7 @@ void aroma_memory_system_destroy(void);
 void aroma_memory_system_stats(void);
 
 extern AromaMemorySystem global_memory_system;
-
+#ifdef __cplusplus
+}
+#endif
 #endif

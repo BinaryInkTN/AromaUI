@@ -6,7 +6,9 @@
 #include "aroma_node.h"
 #include <stdbool.h>
 #include <stddef.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #define AROMA_SIDEBAR_MAX_ITEMS 16
 #define AROMA_SIDEBAR_LABEL_MAX 32
 
@@ -30,5 +32,7 @@ bool aroma_sidebar_setup_events(AromaNode* sidebar_node, void (*on_redraw_callba
 
 void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id);
 void aroma_sidebar_destroy(AromaNode* sidebar_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif

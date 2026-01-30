@@ -5,7 +5,9 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 // Material Design 3 Dialog
 typedef enum {
     DIALOG_TYPE_BASIC,      // Basic dialog
@@ -32,5 +34,7 @@ void aroma_dialog_draw(AromaNode* dialog_node, size_t window_id);
 
 // Destroy
 void aroma_dialog_destroy(AromaNode* dialog_node);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // AROMA_DIALOG_H
