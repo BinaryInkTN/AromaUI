@@ -292,10 +292,9 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
         if (!list) return;
     }
 
-    #ifndef ESP32
     if (clear_color != AROMA_CLEAR_NONE) 
         aroma_graphics_clear(window_id, clear_color);
-    #endif
+
     AromaDrawTask tasks[AROMA_MAX_DIRTY_NODES];
     size_t task_count = 0;
 

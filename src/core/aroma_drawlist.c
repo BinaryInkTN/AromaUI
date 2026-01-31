@@ -250,7 +250,7 @@ void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int 
     cmd->data.image.width = width;
     cmd->data.image.height = height;
     cmd->data.image.texture_id = texture_id;
-        cmd->is_drawn = false;
+    cmd->is_drawn = false;
 
 }
 
@@ -370,8 +370,6 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
         AromaDrawCmd* cmd = &list->commands[i];
 
         switch (cmd->type) {
-
-        
             case AROMA_DRAW_CMD_FILL_RECT:
                 if (gfx->fill_rectangle &&
                     rect_intersects(cmd->data.fill_rect.x,
@@ -430,10 +428,13 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                 }
                 break;
 
-            case AROMA_DRAW_CMD_TEXT:
+        case AROMA_DRAW_CMD_TEXT: {
+               int text_top    = cmd->data.text.y - 14;
+                int text_bottom = text_top + 18;
+
                 if (gfx->render_text &&
-                    cmd->data.text.y >= y &&
-                    cmd->data.text.y < (y + height)) {
+                    text_bottom >= y &&
+                    text_top <= (y + height)) {
 
                     gfx->render_text(window_id,
                                      cmd->data.text.font,
@@ -444,7 +445,8 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                      cmd->data.text.scale);
                 }
                 break;
-
+            }
+          
             case AROMA_DRAW_CMD_IMAGE:
                 if (gfx->draw_image &&
                     rect_intersects(cmd->data.image.x,

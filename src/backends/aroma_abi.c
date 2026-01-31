@@ -38,12 +38,14 @@ static AromaGraphicsInterface* get_real_graphics_interface(void) {
 
 static void drawlist_proxy_clear(size_t window_id, uint32_t color)
 {
+    #ifndef ESP32
 
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_clear(list, color);
         return;
     }
+    #endif
 
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->clear) {
@@ -133,7 +135,11 @@ static void drawlist_proxy_unload_image(unsigned int texture_id)
     }
 }
 
+#ifndef ESP32
 static unsigned int drawlist_proxy_load_image_from_memory(unsigned char* data, size_t binary_length)
+#else 
+static unsigned int drawlist_proxy_load_image_from_memory(const uint16_t* data, size_t binary_length)
+#endif
 {
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if(real && real->load_image_from_memory)
