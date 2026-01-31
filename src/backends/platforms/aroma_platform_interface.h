@@ -43,6 +43,8 @@ typedef struct AromaPlatformInterface {
 
     void (*tft_mark_tiles_dirty)(int y, int h);
 
+    void (*set_clear_color)(uint16_t color);
+
 } AromaPlatformInterface;
 
 extern AromaPlatformInterface aroma_platform_tft;

@@ -17,8 +17,8 @@ static TFT_eSprite*  g_sprite     = nullptr;
 static bool          g_use_sprite = false; 
 static int           g_width      = 0;
 static int           g_height     = 0;
-
-#define TILE_H 50
+static uint16_t      g_clear_color = 0x0000;
+#define TILE_H 100
 #define MAX_TILES 10 
 static bool g_tile_dirty[MAX_TILES] = {false};
 
@@ -45,6 +45,10 @@ static void* g_callback_data = nullptr;
 static TFT_eSprite* get_target_sprite() {
     return g_sprite;  
 
+}
+
+void set_clear_color(uint16_t color) {
+    g_clear_color = color;
 }
 
 void tft_enable_tiling(bool enable) {
@@ -175,7 +179,7 @@ void call_flush_function_ptr(
     if (!gfx) return;
 
     gfx->graphics_set_sprite_mode(true, g_sprite);
-    
+
     int num_tiles = (full_height + TILE_H - 1) / TILE_H;
     for (int ty = 0; ty < num_tiles; ty++) {
         if (!g_tile_dirty[ty]) continue;  
@@ -184,9 +188,8 @@ void call_flush_function_ptr(
         int tile_h = min(TILE_H, full_height - tile_y);
 
         gfx->graphics_set_clip(0, tile_y, full_width, tile_h);
-        g_sprite->fillRect(0, 0, full_width, tile_h, TFT_BLACK); 
+        g_sprite->fillRect(0, 0, full_width, tile_h, g_clear_color); 
         flush_fn((AromaDrawList*) list, 0, 0, tile_y, full_width, tile_h);
-
         gfx->graphics_clear_clip();
         g_sprite->pushSprite(0, tile_y);
 
@@ -234,7 +237,8 @@ AromaPlatformInterface aroma_platform_tft = {
     .swap_buffers                = swap_buffers,
     .get_tft_context             = get_tft_context,
     .call_flush_function_ptr     = call_flush_function_ptr,
-    .tft_mark_tiles_dirty        = tft_mark_tiles_dirty
+    .tft_mark_tiles_dirty        = tft_mark_tiles_dirty,
+    .set_clear_color             = set_clear_color
 };
 
 #ifdef __cplusplus

@@ -20,16 +20,29 @@ static TFT_eSprite* g_sprite     = nullptr;
 static bool         g_use_sprite = false;
 static int          g_width      = 0;
 static int          g_height     = 0;
-#define TILE_H 100
 
 typedef struct {
     int x, y, w, h;
     bool enabled;
 } ClipRect;
+#define MAX_IMAGES 8
 
+typedef struct {
+    uint16_t* data;     
+    unsigned long len;  
+} ImageSlot;
+
+static ImageSlot g_images[MAX_IMAGES] = {0};
 static ClipRect g_clip = {0};
 
 #define USING_SPRITE() (g_use_sprite && g_sprite)
+
+static int find_free_slot() {
+    for (int i = 0; i < MAX_IMAGES; i++) {
+        if (g_images[i].data == NULL) return i;
+    }
+    return -1; 
+}
 
 void graphics_set_clip(int x, int y, int w, int h) {
     g_clip.x = x;
@@ -66,10 +79,11 @@ int setup_separate_window_resources(size_t window_id) {
 
 void clear(size_t window_id, uint32_t color) {
     if (window_id != 0 || !g_tft) return;
-    uint16_t c = RGB888_TO_565(0xFF0000);
-    LOG_ERROR("Clearing with color: 0x%06X", color);
-
-        g_tft->fillScreen(c);
+    uint16_t c = RGB888_TO_565(color);
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if(platform && platform->set_clear_color) {
+        platform->set_clear_color(c);
+    }
    
 }
 
@@ -108,13 +122,8 @@ void draw_hollow_rectangle(size_t window_id,
                            float cornerRadius) {
     if (window_id != 0 || !g_tft) return;
     
-
-    
-    
     uint16_t c = RGB888_TO_565(color);
     int r = (int)cornerRadius;
-
-
 
     for (int i = 0; i < border_width; i++) {
         if (USING_SPRITE()) {
@@ -162,40 +171,49 @@ void draw_arc(size_t window_id, int cx, int cy, int r,
         g_tft->drawArc(cx, cy, r, r, s, e, c, thickness);
     }
 }
-
 void render_text(size_t window_id, AromaFont* font,
                  const char* text, int x, int y,
-                 uint32_t color, float scale) {
-    (void)font;
+                 uint32_t color, float scale)
+{
     if (window_id != 0 || !g_tft || !text) return;
 
     uint16_t c = RGB888_TO_565(color);
-    uint8_t size = (uint8_t)fmaxf(scale, 1.0f);
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    
-    if(platform && platform->tft_mark_tiles_dirty)
-            platform->tft_mark_tiles_dirty(y, (int)(strlen(text) * 8 * scale));
+
+    int ascender    = 14;
+    int line_height = 18;
+
+    if (platform && platform->tft_mark_tiles_dirty) {
+        platform->tft_mark_tiles_dirty(
+            y,
+            line_height
+        );
+    }
+
+    int draw_x = x;
+    int draw_y = y + ascender;
 
     if (USING_SPRITE()) {
-       
-    
-                            int sx = x - g_clip.x;
-                            int sy = y - g_clip.y;
+        int sx = draw_x - g_clip.x;
+        int sy = draw_y - g_clip.y;
 
-        g_sprite->setFreeFont(NULL);
+        g_sprite->setFreeFont(&FreeSans12pt7b);
+        g_sprite->setTextSize(1);
         g_sprite->setTextColor(c, TFT_BLACK);
         g_sprite->setTextWrap(false);
-        g_sprite->setTextSize(size);
         g_sprite->setCursor(sx, sy);
         g_sprite->print(text);
     } else {
-        g_tft->setFreeFont(NULL);
+        g_tft->setFreeFont(&FreeSans12pt7b);
+        g_tft->setTextSize(1);
         g_tft->setTextColor(c);
         g_tft->setTextWrap(false);
-        g_tft->setTextSize(size);
-        g_tft->setCursor(x, y);
+        g_tft->setCursor(draw_x, draw_y);
         g_tft->print(text);
     }
+
+    (void)font;
+    (void)scale;
 }
 
 float measure_text(size_t window_id, AromaFont* font,
@@ -207,7 +225,7 @@ float measure_text(size_t window_id, AromaFont* font,
 
     uint8_t size = (uint8_t)fmaxf(scale, 1.0f);
 
-    g_tft->setFreeFont(nullptr);
+    g_tft->setFreeFont(&FreeSans12pt7b);
     g_tft->setTextSize(size);
 
     int w = g_tft->textWidth(text);
@@ -215,13 +233,42 @@ float measure_text(size_t window_id, AromaFont* font,
 }
 
 unsigned int load_image(const char* image_path) { (void)image_path; return 0; }
-unsigned int load_image_from_memory(unsigned char* data, unsigned long len) { (void)data; (void)len; return 0; }
-void unload_image(unsigned int texture_id) { (void)texture_id; }
+unsigned int load_image_from_memory(const uint16_t* data, unsigned long len) {
+    int slot = find_free_slot();
+    if (slot < 0) return 0; 
+
+    g_images[slot].data = (uint16_t*)data;
+    g_images[slot].len = len;  
+    return slot + 1; 
+}
+void unload_image(unsigned int texture_id) {
+    if (texture_id == 0 || texture_id > MAX_IMAGES) return;
+    int slot = texture_id - 1;
+    g_images[slot].data = NULL;
+    g_images[slot].len = 0;
+}
 void draw_image(size_t window_id, int x, int y,
                 int width, int height, unsigned int texture_id) {
-    (void)window_id; (void)x; (void)y; (void)width; (void)height; (void)texture_id;
-}
+    (void)window_id;
 
+    if (texture_id == 0 || texture_id > MAX_IMAGES) return;
+    int slot = texture_id - 1;
+    if (!g_images[slot].data) return;
+
+    int img_pixels = g_images[slot].len / 2; 
+    int src_width = width;
+    int src_height = height;
+
+    if (USING_SPRITE()) {
+        int sx = x - g_clip.x;
+        int sy = y - g_clip.y;
+        if (g_sprite) {
+            g_sprite->pushImage(sx, sy, width, height, g_images[slot].data);
+        }
+    } else {
+        g_tft->pushImage(x, y, width, height, g_images[slot].data);
+    }
+}
 void shutdown(void) {
     g_use_sprite = false;
     if (g_sprite) { g_sprite->deleteSprite(); delete g_sprite; g_sprite = nullptr; }

@@ -2,49 +2,64 @@
 #include "core/aroma_logger.h"
 
 #ifdef ESP32
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+
+#include "aroma_font.h"
+#include "core/aroma_logger.h"
+
+#define AROMA_FONT_GLCD      0
+#define AROMA_FONT_FREEFONT  1
+
+#define GLCD_LINE_HEIGHT  10
+#define GLCD_ASCENDER     7
+#define GLCD_DESCENDER    1
+
+#define FREESANS12_SIZE_PX      12
+#define FREESANS12_LINE_HEIGHT  18
+#define FREESANS12_ASCENDER     14
+#define FREESANS12_DESCENDER    4
+
 struct AromaFont {
     int size_px;
     int line_height;
     int ascender;
     int descender;
-    uint8_t font_type; // 0 = GLCD (default), 1 = Free Font
+    uint8_t font_type;
 };
 
-// TFT_eSPI GLCD (default) font metrics
-// Default font is 6x8 pixels for normal size
-#define GLCD_CHAR_WIDTH  6
-#define GLCD_CHAR_HEIGHT 8
-#define GLCD_LINE_HEIGHT (GLCD_CHAR_HEIGHT + 2) // 10px with spacing
-#define GLCD_ASCENDER    7  // Most characters are 7px tall (except g, j, p, q, y)
-#define GLCD_DESCENDER   1  // Descender for g, j, p, q, y
-
-AromaFont* aroma_font_create(const char* font_path, int size_px) {
-    (void)font_path;
-
-    if (size_px <= 0) return NULL;
-
+AromaFont* aroma_font_create(const char* font_path, int size_px)
+{
     AromaFont* font = (AromaFont*)malloc(sizeof(AromaFont));
     if (!font) return NULL;
 
-    font->size_px = size_px;
-    font->font_type = 0; // GLCD default font
-    
-    // For GLCD font, size parameter is ignored - font is fixed size
-    // But we can scale metrics if user requested different size
-    float scale = size_px / 8.0f; // Base size is 8px
-    
-    font->line_height = (int)(GLCD_LINE_HEIGHT * scale);
-    font->ascender = (int)(GLCD_ASCENDER * scale);
-    font->descender = (int)(GLCD_DESCENDER * scale);
-    
-    // Ensure minimum values
-    if (font->line_height < 10) font->line_height = 10;
-    if (font->ascender < 7) font->ascender = 7;
-    if (font->descender < 1) font->descender = 1;
+    if (!font_path || strstr(font_path, "FreeSans12pt7b")) {
+        font->font_type   = AROMA_FONT_FREEFONT;
+        font->size_px     = FREESANS12_SIZE_PX;
+        font->line_height = FREESANS12_LINE_HEIGHT;
+        font->ascender    = FREESANS12_ASCENDER;
+        font->descender   = FREESANS12_DESCENDER;
+        LOG_INFO("font: FreeSans12pt7b");
+        return font;
+    }
 
-    LOG_INFO("aroma_font_create: using TFT_eSPI GLCD font, size=%d, line_height=%d", 
-             size_px, font->line_height);
+    if (strstr(font_path, "GLCD")) {
+        font->font_type   = AROMA_FONT_GLCD;
+        font->size_px     = 12;
+        font->line_height = GLCD_LINE_HEIGHT;
+        font->ascender    = GLCD_ASCENDER;
+        font->descender   = GLCD_DESCENDER;
+        LOG_INFO("font: GLCD");
+        return font;
+    }
 
+    font->font_type   = AROMA_FONT_FREEFONT;
+    font->size_px     = FREESANS12_SIZE_PX;
+    font->line_height = FREESANS12_LINE_HEIGHT;
+    font->ascender    = FREESANS12_ASCENDER;
+    font->descender   = FREESANS12_DESCENDER;
+    LOG_INFO("font: fallback FreeSans12pt7b");
     return font;
 }
 
@@ -55,38 +70,37 @@ AromaFont* aroma_font_create_from_memory(
 ) {
     (void)data;
     (void)data_len;
-    // For ESP32, memory fonts are not supported - fall back to default
-    LOG_INFO("aroma_font_create_from_memory: falling back to default GLCD font");
-    return aroma_font_create(NULL, size_px);
+    (void)size_px;
+    return aroma_font_create(NULL, 12);
 }
 
-void aroma_font_destroy(AromaFont* font) {
-    if (font) {
-        free(font);
-    }
+void aroma_font_destroy(AromaFont* font)
+{
+    if (font) free(font);
 }
 
-int aroma_font_get_line_height(AromaFont* font) {
-    return font ? font->line_height : GLCD_LINE_HEIGHT;
+int aroma_font_get_line_height(AromaFont* font)
+{
+    return font ? font->line_height : FREESANS12_LINE_HEIGHT;
 }
 
-int aroma_font_get_ascender(AromaFont* font) {
-    return font ? font->ascender : GLCD_ASCENDER;
+int aroma_font_get_ascender(AromaFont* font)
+{
+    return font ? font->ascender : FREESANS12_ASCENDER;
 }
 
-int aroma_font_get_descender(AromaFont* font) {
-    return font ? font->descender : GLCD_DESCENDER;
+int aroma_font_get_descender(AromaFont* font)
+{
+    return font ? font->descender : FREESANS12_DESCENDER;
 }
 
-void* aroma_font_get_face(AromaFont* font) {
+void* aroma_font_get_face(AromaFont* font)
+{
     (void)font;
     return NULL;
 }
 
 #else
-/* ============================
-   DESKTOP / FULL IMPLEMENTATION
-   ============================ */
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

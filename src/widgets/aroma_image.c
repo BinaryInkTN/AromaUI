@@ -194,7 +194,9 @@ AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data
     }
 
     aroma_node_set_draw_cb(node, aroma_image_draw);
-    
+       #ifdef ESP32
+    aroma_node_invalidate(node);
+    #endif
     LOG_INFO("Created memory image widget at (%d, %d) size %dx%d, texture ID: %u", 
               x, y, width, height, image->texture_id);
     
