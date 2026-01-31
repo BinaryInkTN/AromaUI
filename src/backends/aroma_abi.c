@@ -38,11 +38,13 @@ static AromaGraphicsInterface* get_real_graphics_interface(void) {
 
 static void drawlist_proxy_clear(size_t window_id, uint32_t color)
 {
+
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_clear(list, color);
         return;
     }
+
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->clear) {
         real->clear(window_id, color);
@@ -193,6 +195,20 @@ static void drawlist_proxy_shutdown(void)
     }
 }
 
+void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_set_clip) {
+        real->graphics_set_clip(x, y, w, h);
+    }
+}
+
+void drawlist_proxy_graphics_clear_clip(void) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_clear_clip) {
+        real->graphics_clear_clip();
+    }
+}
+
 static AromaGraphicsInterface drawlist_proxy = {
     .setup_shared_window_resources = drawlist_proxy_setup_shared_window_resources,
     .setup_separate_window_resources = drawlist_proxy_setup_separate_window_resources,
@@ -208,7 +224,9 @@ static AromaGraphicsInterface drawlist_proxy = {
     .measure_text = drawlist_proxy_measure_text,
     .shutdown = drawlist_proxy_shutdown,
     .graphics_set_sprite_mode = drawlist_proxy_graphics_set_sprite_mode,
-    .graphics_set_tft_context = drawlist_proxy_graphics_set_tft_context
+    .graphics_set_tft_context = drawlist_proxy_graphics_set_tft_context,
+    .graphics_set_clip = drawlist_proxy_graphics_set_clip,
+    .graphics_clear_clip = drawlist_proxy_graphics_clear_clip,
 };
 
 void set_graphics_backend_type(AromaGraphicsBackendType type) {

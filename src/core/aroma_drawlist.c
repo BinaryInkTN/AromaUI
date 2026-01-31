@@ -27,6 +27,7 @@
 
 typedef struct AromaDrawCmd {
     AromaDrawCmdType type;
+    bool is_drawn;
     union {
         struct {
             uint32_t color;
@@ -126,7 +127,9 @@ void aroma_drawlist_reset(AromaDrawList* list)
         if (cmd->type == AROMA_DRAW_CMD_TEXT) {
             free(cmd->data.text.text);
             cmd->data.text.text = NULL;
+            
         }
+        cmd->is_drawn = false;
     }
     list->count = 0;
 }
@@ -153,11 +156,14 @@ AromaDrawList* aroma_drawlist_get_active(void)
 
 void aroma_drawlist_cmd_clear(AromaDrawList* list, uint32_t color)
 {
+    #ifndef ESP32
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_CLEAR;
     cmd->data.clear.color = color;
+    cmd->is_drawn = false;
+    #endif
 }
 
 void aroma_drawlist_cmd_fill_rect(AromaDrawList* list, int x, int y, int width, int height,
@@ -174,6 +180,8 @@ void aroma_drawlist_cmd_fill_rect(AromaDrawList* list, int x, int y, int width, 
     cmd->data.fill_rect.color = color;
     cmd->data.fill_rect.is_rounded = is_rounded;
     cmd->data.fill_rect.corner_radius = corner_radius;
+        cmd->is_drawn = false;
+
 }
 
 void aroma_drawlist_cmd_hollow_rect(AromaDrawList* list, int x, int y, int width, int height,
@@ -191,6 +199,8 @@ void aroma_drawlist_cmd_hollow_rect(AromaDrawList* list, int x, int y, int width
     cmd->data.hollow_rect.border_width = border_width;
     cmd->data.hollow_rect.is_rounded = is_rounded;
     cmd->data.hollow_rect.corner_radius = corner_radius;
+        cmd->is_drawn = false;
+
 }
 
 void aroma_drawlist_cmd_arc(AromaDrawList* list, int cx, int cy, int radius,
@@ -207,6 +217,8 @@ void aroma_drawlist_cmd_arc(AromaDrawList* list, int cx, int cy, int radius,
     cmd->data.arc.end_angle = end_angle;
     cmd->data.arc.color = color;
     cmd->data.arc.thickness = thickness;
+        cmd->is_drawn = false;
+
 }
 
 void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* text,
@@ -222,7 +234,8 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
     cmd->data.text.y = y;
     cmd->data.text.color = color;
     cmd->data.text.scale = scale;
-    
+        cmd->is_drawn = false;
+
 }
 
 
@@ -237,6 +250,8 @@ void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int 
     cmd->data.image.width = width;
     cmd->data.image.height = height;
     cmd->data.image.texture_id = texture_id;
+        cmd->is_drawn = false;
+
 }
 
 
@@ -255,6 +270,7 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
 
     for (size_t i = 0; i < list->count; i++) {
         const AromaDrawCmd* cmd = &list->commands[i];
+        
         switch (cmd->type) {
             case AROMA_DRAW_CMD_CLEAR:
                 if (gfx->clear) {
@@ -322,5 +338,131 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
     }
 
     aroma_drawlist_reset(list);
+    g_active_drawlist = previous;
+}
+
+static inline bool rect_intersects(
+    int ax, int ay, int aw, int ah,
+    int bx, int by, int bw, int bh)
+{
+    return !(ax + aw <= bx ||
+             bx + bw <= ax ||
+             ay + ah <= by ||
+             by + bh <= ay);
+}
+
+void aroma_drawlist_smart_flush(AromaDrawList* list,
+                                size_t window_id,
+                                int x, int y, int width, int height)
+{
+    if (!list || list->count == 0) return;
+
+    AromaDrawList* previous = g_active_drawlist;
+    g_active_drawlist = NULL;
+
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    if (!gfx) {
+        g_active_drawlist = previous;
+        return;
+    }
+
+    for (size_t i = 0; i < list->count; i++) {
+        AromaDrawCmd* cmd = &list->commands[i];
+
+        switch (cmd->type) {
+
+        
+            case AROMA_DRAW_CMD_FILL_RECT:
+                if (gfx->fill_rectangle &&
+                    rect_intersects(cmd->data.fill_rect.x,
+                                    cmd->data.fill_rect.y,
+                                    cmd->data.fill_rect.width,
+                                    cmd->data.fill_rect.height,
+                                    x, y, width, height)) {
+
+                    gfx->fill_rectangle(window_id,
+                                        cmd->data.fill_rect.x,
+                                        cmd->data.fill_rect.y,
+                                        cmd->data.fill_rect.width,
+                                        cmd->data.fill_rect.height,
+                                        cmd->data.fill_rect.color,
+                                        cmd->data.fill_rect.is_rounded,
+                                        cmd->data.fill_rect.corner_radius);
+                }
+                break;
+
+            case AROMA_DRAW_CMD_HOLLOW_RECT:
+                if (gfx->draw_hollow_rectangle &&
+                    rect_intersects(cmd->data.hollow_rect.x,
+                                    cmd->data.hollow_rect.y,
+                                    cmd->data.hollow_rect.width,
+                                    cmd->data.hollow_rect.height,
+                                    x, y, width, height)) {
+
+                    gfx->draw_hollow_rectangle(window_id,
+                                               cmd->data.hollow_rect.x,
+                                               cmd->data.hollow_rect.y,
+                                               cmd->data.hollow_rect.width,
+                                               cmd->data.hollow_rect.height,
+                                               cmd->data.hollow_rect.color,
+                                               cmd->data.hollow_rect.border_width,
+                                               cmd->data.hollow_rect.is_rounded,
+                                               cmd->data.hollow_rect.corner_radius);
+                }
+                break;
+
+            case AROMA_DRAW_CMD_ARC:
+                if (gfx->draw_arc &&
+                    rect_intersects(cmd->data.arc.cx - cmd->data.arc.radius,
+                                    cmd->data.arc.cy - cmd->data.arc.radius,
+                                    cmd->data.arc.radius * 2,
+                                    cmd->data.arc.radius * 2,
+                                    x, y, width, height)) {
+
+                    gfx->draw_arc(window_id,
+                                  cmd->data.arc.cx,
+                                  cmd->data.arc.cy,
+                                  cmd->data.arc.radius,
+                                  cmd->data.arc.start_angle,
+                                  cmd->data.arc.end_angle,
+                                  cmd->data.arc.color,
+                                  cmd->data.arc.thickness);
+                }
+                break;
+
+            case AROMA_DRAW_CMD_TEXT:
+                if (gfx->render_text &&
+                    cmd->data.text.y >= y &&
+                    cmd->data.text.y < (y + height)) {
+
+                    gfx->render_text(window_id,
+                                     cmd->data.text.font,
+                                     cmd->data.text.text ? cmd->data.text.text : "",
+                                     cmd->data.text.x,
+                                     cmd->data.text.y,
+                                     cmd->data.text.color,
+                                     cmd->data.text.scale);
+                }
+                break;
+
+            case AROMA_DRAW_CMD_IMAGE:
+                if (gfx->draw_image &&
+                    rect_intersects(cmd->data.image.x,
+                                    cmd->data.image.y,
+                                    cmd->data.image.width,
+                                    cmd->data.image.height,
+                                    x, y, width, height)) {
+
+                    gfx->draw_image(window_id,
+                                    cmd->data.image.x,
+                                    cmd->data.image.y,
+                                    cmd->data.image.width,
+                                    cmd->data.image.height,
+                                    cmd->data.image.texture_id);
+                }
+                break;
+        }
+    }
+
     g_active_drawlist = previous;
 }

@@ -47,6 +47,8 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
                              int x, int y, uint32_t color, float scale);
 void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int height, unsigned int texture_id);
 void aroma_drawlist_flush(AromaDrawList* list, size_t window_id);
+
+void aroma_drawlist_smart_flush(AromaDrawList* list, size_t window_id, int x, int y, int width, int height);
 #ifdef __cplusplus
 }
 #endif

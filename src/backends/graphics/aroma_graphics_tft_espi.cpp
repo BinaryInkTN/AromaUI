@@ -1,5 +1,6 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include "core/aroma_logger.h"
 
 #include <TFT_eSPI.h>
@@ -19,8 +20,28 @@ static TFT_eSprite* g_sprite     = nullptr;
 static bool         g_use_sprite = false;
 static int          g_width      = 0;
 static int          g_height     = 0;
+#define TILE_H 100
+
+typedef struct {
+    int x, y, w, h;
+    bool enabled;
+} ClipRect;
+
+static ClipRect g_clip = {0};
 
 #define USING_SPRITE() (g_use_sprite && g_sprite)
+
+void graphics_set_clip(int x, int y, int w, int h) {
+    g_clip.x = x;
+    g_clip.y = y;
+    g_clip.w = w;
+    g_clip.h = h;
+    g_clip.enabled = true;
+}
+
+void graphics_clear_clip(void) {
+    g_clip.enabled = false;
+}
 
 void graphics_set_tft_context(void* tft) {
     if (!tft) return;
@@ -45,9 +66,11 @@ int setup_separate_window_resources(size_t window_id) {
 
 void clear(size_t window_id, uint32_t color) {
     if (window_id != 0 || !g_tft) return;
-    uint16_t c = RGB888_TO_565(color);
-    if (USING_SPRITE()) g_sprite->fillSprite(c);
-    else g_tft->fillScreen(c);
+    uint16_t c = RGB888_TO_565(0xFF0000);
+    LOG_ERROR("Clearing with color: 0x%06X", color);
+
+        g_tft->fillScreen(c);
+   
 }
 
 void fill_rectangle(size_t window_id, int x, int y, int w, int h,
@@ -55,12 +78,21 @@ void fill_rectangle(size_t window_id, int x, int y, int w, int h,
     if (window_id != 0 || !g_tft) return;
     uint16_t c = RGB888_TO_565(color);
     int r = (int)radius;
+                        
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if(platform && platform->tft_mark_tiles_dirty) {
+        platform->tft_mark_tiles_dirty(y, h);
+    }
+       
+
 
     if (USING_SPRITE()) {
-        LOG_CRITICAL("USING SPRITE()");
 
-        round && r > 0 ? g_sprite->fillRoundRect(x, y, w, h, r, c)
-                       : g_sprite->fillRect(x, y, w, h, c);
+            int sx = x - g_clip.x;
+            int sy = y - g_clip.y;
+
+             round && r > 0 ? g_sprite->fillRoundRect(sx, sy, w, h, r, c)
+                       : g_sprite->fillRect(sx, sy, w, h, c);
     } else {
         round && r > 0 ? g_tft->fillRoundRect(x, y, w, h, r, c)
                        : g_tft->fillRect(x, y, w, h, c);
@@ -75,13 +107,25 @@ void draw_hollow_rectangle(size_t window_id,
                            bool rounded,
                            float cornerRadius) {
     if (window_id != 0 || !g_tft) return;
+    
+
+    
+    
     uint16_t c = RGB888_TO_565(color);
     int r = (int)cornerRadius;
 
+
+
     for (int i = 0; i < border_width; i++) {
         if (USING_SPRITE()) {
-            rounded && r > 0 ? g_sprite->drawRoundRect(x+i, y+i, width-2*i, height-2*i, r, c)
-                              : g_sprite->drawRect(x+i, y+i, width-2*i, height-2*i, c);
+                
+
+            int sx = x - g_clip.x;
+            int sy = y - g_clip.y;
+
+
+            rounded && r > 0 ? g_sprite->drawRoundRect(sx+i, sy+i, width-2*i, height-2*i, r, c)
+                              : g_sprite->drawRect(sx+i, sy+i, width-2*i, height-2*i, c);
         } else {
             rounded && r > 0 ? g_tft->drawRoundRect(x+i, y+i, width-2*i, height-2*i, r, c)
                               : g_tft->drawRect(x+i, y+i, width-2*i, height-2*i, c);
@@ -101,8 +145,22 @@ void draw_arc(size_t window_id, int cx, int cy, int r,
     int s = (int)(a0 * 180.0f / M_PI);
     int e = (int)(a1 * 180.0f / M_PI);
 
-    if (USING_SPRITE()) g_sprite->drawArc(cx, cy, r, r, s, e, c, thickness);
-    else g_tft->drawArc(cx, cy, r, r, s, e, c, thickness);
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if(platform && platform->tft_mark_tiles_dirty)
+        platform->tft_mark_tiles_dirty(cy, r*2); //TODO: better estimate
+
+
+    if (USING_SPRITE()) {
+     
+
+                        int sx = cx - g_clip.x;
+                        int sy = cy - g_clip.y;
+
+        g_sprite->drawArc(sx, sy, r, r, s, e, c, thickness);
+    }
+    else {
+        g_tft->drawArc(cx, cy, r, r, s, e, c, thickness);
+    }
 }
 
 void render_text(size_t window_id, AromaFont* font,
@@ -113,13 +171,22 @@ void render_text(size_t window_id, AromaFont* font,
 
     uint16_t c = RGB888_TO_565(color);
     uint8_t size = (uint8_t)fmaxf(scale, 1.0f);
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    
+    if(platform && platform->tft_mark_tiles_dirty)
+            platform->tft_mark_tiles_dirty(y, (int)(strlen(text) * 8 * scale));
 
     if (USING_SPRITE()) {
+       
+    
+                            int sx = x - g_clip.x;
+                            int sy = y - g_clip.y;
+
         g_sprite->setFreeFont(NULL);
         g_sprite->setTextColor(c, TFT_BLACK);
         g_sprite->setTextWrap(false);
         g_sprite->setTextSize(size);
-        g_sprite->setCursor(x, y);
+        g_sprite->setCursor(sx, sy);
         g_sprite->print(text);
     } else {
         g_tft->setFreeFont(NULL);
@@ -177,7 +244,9 @@ AromaGraphicsInterface aroma_graphics_tft = {
     .load_image_from_memory          = load_image_from_memory,
     .draw_image                      = draw_image,
     .graphics_set_tft_context        = graphics_set_tft_context,
-    .graphics_set_sprite_mode        = graphics_set_sprite_mode
+    .graphics_set_sprite_mode        = graphics_set_sprite_mode,
+    .graphics_set_clip               = graphics_set_clip,
+    .graphics_clear_clip             = graphics_clear_clip
 };
 
 #ifdef __cplusplus
