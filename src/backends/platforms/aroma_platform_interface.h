@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+typedef struct AromaDrawList AromaDrawList;
 typedef struct AromaPlatformInterface {
 
     int  (*initialize)(void);
@@ -39,6 +39,9 @@ typedef struct AromaPlatformInterface {
     void (*swap_buffers)(size_t window_id);
 
     void* (*get_tft_context)(void);
+    void (*call_flush_function_ptr)(void (*flush_fn)(struct AromaDrawList* list, size_t window_id, int x, int y, int width, int height), void* list);    
+
+    void (*tft_mark_tiles_dirty)(int y, int h);
 
 } AromaPlatformInterface;
 

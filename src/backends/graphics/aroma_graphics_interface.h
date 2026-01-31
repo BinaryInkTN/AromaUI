@@ -91,6 +91,10 @@ typedef struct AromaGraphicsInterface {
         void* sprite
     );
 
+    void (*graphics_set_clip)(int x, int y, int w, int h);
+
+    void (*graphics_clear_clip)(void);
+
 } AromaGraphicsInterface;
 
 #ifndef ESP32

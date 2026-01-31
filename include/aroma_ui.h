@@ -147,9 +147,7 @@ static inline void aroma_ui_render(AromaWindow* window) {
 
     aroma_ui_render_impl(window_data);
 
-    #ifdef ESP32
-     delay(16);
-     #endif
+
 }
 
 static inline void aroma_ui_render_all(void) {
