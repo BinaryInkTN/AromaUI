@@ -295,7 +295,8 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
     if (!tabs_node || !tabs_node->node_widget_ptr) return;
     if (aroma_node_is_hidden(tabs_node)) return;
     AromaTabs* tabs = (AromaTabs*)tabs_node->node_widget_ptr;
-
+    
+    #ifndef ESP32
     if (!tabs->font) {
         for (int i = 0; i < g_window_count; ++i) {
             if (g_windows[i].is_active && g_windows[i].window_id == window_id && g_windows[i].default_font) {
@@ -304,7 +305,9 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
             }
         }
     }
+    #endif
 
+   
     __tabs_update_content_visibility(tabs);
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
