@@ -5,8 +5,9 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdarg.h>
+#ifdef ESP32
 #include <Arduino.h>
-
+#endif 
 #if !defined(_WIN32) && !defined(ESP32)
 #include <execinfo.h>
 #endif

@@ -41,17 +41,18 @@ typedef struct AromaPlatformInterface {
     void* (*get_tft_context)(void);
     void (*call_flush_function_ptr)(void (*flush_fn)(struct AromaDrawList* list, size_t window_id, int x, int y, int width, int height), void* list);    
 
-    void (*tft_mark_tiles_dirty)(int y, int h);
 
+    // Dirty region set
+    // [TFT]
+    void (*tft_mark_tiles_dirty)(int y, int h);
     void (*set_clear_color)(uint16_t color);
 
 } AromaPlatformInterface;
 
-extern AromaPlatformInterface aroma_platform_tft;
 
-#ifndef ESP32
 extern AromaPlatformInterface aroma_platform_glps;
-#endif
+
+extern AromaPlatformInterface aroma_platform_tft;
 
 #ifdef __cplusplus
 }

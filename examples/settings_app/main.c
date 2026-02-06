@@ -348,12 +348,14 @@ int main(void)
     if (debug_overlay) {
         aroma_debug_overlay_set_font((AromaNode*)debug_overlay, font);
     }
-
+    // invalidate all nodes
     aroma_ui_request_redraw(NULL);
 
     while (aroma_ui_is_running()) {
         aroma_ui_process_events();
         aroma_ui_render(window);
+        // workaround to force redraw entire window
+        aroma_node_invalidate_tree((AromaNode*)window);
 
         usleep(16000);
     }

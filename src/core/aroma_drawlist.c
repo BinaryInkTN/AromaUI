@@ -266,7 +266,8 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
     if (!gfx) {
         g_active_drawlist = previous;
         return;
-    }
+    } 
+
 
     for (size_t i = 0; i < list->count; i++) {
         const AromaDrawCmd* cmd = &list->commands[i];
@@ -287,10 +288,12 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                         cmd->data.fill_rect.color,
                                         cmd->data.fill_rect.is_rounded,
                                         cmd->data.fill_rect.corner_radius);
+                 
                 }
                 break;
             case AROMA_DRAW_CMD_HOLLOW_RECT:
                 if (gfx->draw_hollow_rectangle) {
+                                      
                     gfx->draw_hollow_rectangle(window_id,
                                                cmd->data.hollow_rect.x,
                                                cmd->data.hollow_rect.y,
@@ -300,10 +303,12 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                                cmd->data.hollow_rect.border_width,
                                                cmd->data.hollow_rect.is_rounded,
                                                cmd->data.hollow_rect.corner_radius);
-                }
+                
+                                            }
                 break;
             case AROMA_DRAW_CMD_ARC:
                 if (gfx->draw_arc) {
+         
                     gfx->draw_arc(window_id,
                                   cmd->data.arc.cx,
                                   cmd->data.arc.cy,
@@ -312,26 +317,34 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                   cmd->data.arc.end_angle,
                                   cmd->data.arc.color,
                                   cmd->data.arc.thickness);
+
                 }
                 break;
             case AROMA_DRAW_CMD_TEXT:
                 if (gfx->render_text) {
+                 
+              
                     gfx->render_text(window_id,
                                      cmd->data.text.font,
                                      cmd->data.text.text ? cmd->data.text.text : "",
                                      cmd->data.text.x,
                                      cmd->data.text.y,
                                      cmd->data.text.color, cmd->data.text.scale);
-                }
+              
+             
+                                    }
                 break;
             case AROMA_DRAW_CMD_IMAGE:
                 if (gfx->draw_image) {
+              
+                 
                     gfx->draw_image(window_id,
                                     cmd->data.image.x,
                                     cmd->data.image.y,
                                     cmd->data.image.width,   
                                     cmd->data.image.height,
                                     cmd->data.image.texture_id);
+                
                     }
                     break;
         }

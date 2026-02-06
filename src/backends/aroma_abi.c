@@ -31,9 +31,11 @@ static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BAC
 
 static AromaGraphicsInterface* get_real_graphics_interface(void) {
     AromaGraphicsBackendType backend = atomic_load(&current_graphics_backend);
-
+#ifdef ESP32
     return &aroma_graphics_tft;
-   // return &aroma_graphics_glps;
+#else 
+    return &aroma_graphics_gles3;
+#endif
 }
 
 static void drawlist_proxy_clear(size_t window_id, uint32_t color)
@@ -253,10 +255,11 @@ AromaGraphicsInterface* get_graphics_interface(void) {
 
 AromaPlatformInterface* get_platform_interface(void) {
     AromaPlatformBackendType backend = atomic_load(&current_platform_backend);
-   // #ifndef ESP32
-     //   return &aroma_platform_glps;
-   // #endif
+#ifdef ESP32
     return &aroma_platform_tft;
+#else
+    return &aroma_platform_glps;
+#endif
 }
 
 AromaBackendABI aroma_backend_abi = {

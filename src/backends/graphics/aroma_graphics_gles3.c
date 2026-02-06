@@ -874,6 +874,7 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .load_image = load_image,
     .load_image_from_memory = load_image_from_memory,
     .draw_image = draw_image,
-    .shutdown = shutdown
+    .shutdown = shutdown,
+    
 };
 #endif

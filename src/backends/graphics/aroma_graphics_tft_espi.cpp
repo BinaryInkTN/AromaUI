@@ -293,7 +293,10 @@ AromaGraphicsInterface aroma_graphics_tft = {
     .graphics_set_tft_context        = graphics_set_tft_context,
     .graphics_set_sprite_mode        = graphics_set_sprite_mode,
     .graphics_set_clip               = graphics_set_clip,
-    .graphics_clear_clip             = graphics_clear_clip
+    .graphics_clear_clip             = graphics_clear_clip,
+    .gles3_mark_region_dirty      = nullptr,
+    .gles3_apply_scissor          = nullptr,
+    .gles3_end_frame              = nullptr
 };
 
 #ifdef __cplusplus

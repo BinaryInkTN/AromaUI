@@ -103,11 +103,10 @@ typedef struct AromaGraphicsInterface {
 
     void (*graphics_clear_clip)(void);
 
+
 } AromaGraphicsInterface;
 
-#ifndef ESP32
 extern AromaGraphicsInterface aroma_graphics_gles3;
-#endif
 
 extern AromaGraphicsInterface aroma_graphics_tft;
 
