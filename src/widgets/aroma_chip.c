@@ -89,6 +89,7 @@ static bool __chip_handle_event(AromaEvent* event, void* user_data)
 
 static void __chip_update_layout(AromaChip* chip)
 {
+    
     chip->rect.width = 80 + (chip->label ? strlen(chip->label) * 7 : 0);
     chip->rect.height = 32;
     chip->border_radius = 8.0f;
