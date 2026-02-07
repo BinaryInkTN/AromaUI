@@ -59,6 +59,7 @@ typedef struct
     bool is_running;
     size_t num_windows;
     GLES3TextRenderer text_renderers[256];
+    AromaFont* loaded_fonts[256];
     Glyph glyph_cache[128];
 
 } AromaGLES3Context;
@@ -306,11 +307,21 @@ static void render_text(size_t window_id, AromaFont* font, const char* text, int
         return;
     }
 
-    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
-
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current) {
         platform->make_context_current(window_id);
+    }
+
+    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
+    
+    // Check if we need to load/switch font
+    if (ctx.loaded_fonts[window_id] != font) {
+        FT_Face face = (FT_Face)aroma_font_get_face(font);
+        if (face) {
+            gles3_text_renderer_load_font(renderer, face);
+            ctx.loaded_fonts[window_id] = font;
+            LOG_INFO("Switched/Loaded font for window %zu", window_id);
+        }
     }
 
     gles3_text_render_text(renderer, ctx.text_programs[window_id], text,
@@ -324,6 +335,21 @@ static float measure_text(size_t window_id, AromaFont* font, const char* text, f
     }
 
     GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
+
+    // Lazy load font if needed (requires context for texture generation in load_font)
+    if (ctx.loaded_fonts[window_id] != font) {
+        AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+        if (platform && platform->make_context_current) {
+            platform->make_context_current(window_id);
+        }
+        
+        FT_Face face = (FT_Face)aroma_font_get_face(font);
+        if (face) {
+             gles3_text_renderer_load_font(renderer, face);
+             ctx.loaded_fonts[window_id] = font;
+        }
+    }
+
     if (renderer->glyph_count == 0) {
         return 0.0f;
     }
