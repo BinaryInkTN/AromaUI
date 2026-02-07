@@ -48,27 +48,39 @@ static void handle_input_mouse(int action, float x, float y) {
 }
 
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
-    int32_t type = AInputEvent_getType(event);
-    if (type == AINPUT_EVENT_TYPE_MOTION) {
-        int action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
-        float x = AMotionEvent_getX(event, 0);
-        float y = AMotionEvent_getY(event, 0);
-        
-        switch(action) {
-            case AMOTION_EVENT_ACTION_DOWN:
-                aroma_event_handle_pointer_move((int)x, (int)y, true);
-                break;
-            case AMOTION_EVENT_ACTION_UP:
-                aroma_event_handle_pointer_move((int)x, (int)y, false);
-                break;
-            case AMOTION_EVENT_ACTION_MOVE:
-                aroma_event_handle_pointer_move((int)x, (int)y, true);
-                break;
+    if (AInputEvent_getType(event) != AINPUT_EVENT_TYPE_MOTION)
+        return 0;
+
+    int action = AMotionEvent_getAction(event);
+    int actionMasked = action & AMOTION_EVENT_ACTION_MASK;
+    int index = (action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK)
+                >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+
+    float x = AMotionEvent_getX(event, index);
+    float y = AMotionEvent_getY(event, index);
+
+    switch (actionMasked) {
+        case AMOTION_EVENT_ACTION_DOWN:
+        case AMOTION_EVENT_ACTION_POINTER_DOWN:
+            aroma_event_handle_pointer_move((int)x, (int)y, true);
+            break;
+
+        case AMOTION_EVENT_ACTION_UP:
+        case AMOTION_EVENT_ACTION_POINTER_UP:
+            aroma_event_handle_pointer_move((int)x, (int)y, false);
+            break;
+
+        case AMOTION_EVENT_ACTION_MOVE: {
+            x = AMotionEvent_getX(event, 0);
+            y = AMotionEvent_getY(event, 0);
+            aroma_event_handle_pointer_move((int)x, (int)y, true);
+            break;
         }
-        return 1;
     }
-    return 0;
+
+    return 1;
 }
+
 
 static int init_display(struct android_app* app) {
     EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);

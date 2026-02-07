@@ -477,6 +477,17 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
             aroma_event_destroy(ev);
         }
     }
+
+    #ifdef __ANDROID__
+    if(button_down) {
+        AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_CLICK, 
+            current_id, x, y, 0);   
+        if (ev) {
+            aroma_event_dispatch(ev);
+            aroma_event_destroy(ev);
+        }
+    }
+    #endif
 }
 
 

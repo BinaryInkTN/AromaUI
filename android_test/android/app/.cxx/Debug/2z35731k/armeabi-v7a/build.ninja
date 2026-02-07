@@ -56,6 +56,8 @@ build CMakeFiles/aroma_app.dir/home/yassineaa/AromaUI/android_test/src/main.c.o:
   INCLUDES = -I/home/yassineaa/AromaUI/include -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/src/../include
   OBJECT_DIR = CMakeFiles/aroma_app.dir
   OBJECT_FILE_DIR = CMakeFiles/aroma_app.dir/home/yassineaa/AromaUI/android_test/src
+  TARGET_COMPILE_PDB = CMakeFiles/aroma_app.dir/
+  TARGET_PDB = /home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/armeabi-v7a/libaroma_app.pdb
 
 build CMakeFiles/aroma_app.dir/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue/android_native_app_glue.c.o: C_COMPILER__aroma_app_Debug /home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue/android_native_app_glue.c || cmake_object_order_depends_target_aroma_app
   DEFINES = -Daroma_app_EXPORTS
@@ -64,6 +66,8 @@ build CMakeFiles/aroma_app.dir/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sourc
   INCLUDES = -I/home/yassineaa/AromaUI/include -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/src/../include
   OBJECT_DIR = CMakeFiles/aroma_app.dir
   OBJECT_FILE_DIR = CMakeFiles/aroma_app.dir/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue
+  TARGET_COMPILE_PDB = CMakeFiles/aroma_app.dir/
+  TARGET_PDB = /home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/armeabi-v7a/libaroma_app.pdb
 
 
 # =============================================================================
@@ -82,8 +86,9 @@ build /home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/D
   PRE_LINK = :
   SONAME = libaroma_app.so
   SONAME_FLAG = -Wl,-soname,
+  TARGET_COMPILE_PDB = CMakeFiles/aroma_app.dir/
   TARGET_FILE = /home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/armeabi-v7a/libaroma_app.so
-  TARGET_PDB = aroma_app.so.dbg
+  TARGET_PDB = /home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/armeabi-v7a/libaroma_app.pdb
 
 
 #############################################
@@ -195,6 +200,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/autofit/autofit.c.o: C_COMPILER
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/autofit
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftbase.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftbase.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -203,6 +210,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftbase.c.o: C_COMPILER__fr
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftbbox.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftbbox.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -211,6 +220,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftbbox.c.o: C_COMPILER__fr
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftbdf.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftbdf.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -219,6 +230,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftbdf.c.o: C_COMPILER__fre
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftbitmap.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftbitmap.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -227,6 +240,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftbitmap.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftcid.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftcid.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -235,6 +250,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftcid.c.o: C_COMPILER__fre
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftfstype.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftfstype.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -243,6 +260,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftfstype.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftgasp.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftgasp.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -251,6 +270,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftgasp.c.o: C_COMPILER__fr
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftglyph.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftglyph.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -259,6 +280,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftglyph.c.o: C_COMPILER__f
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftgxval.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftgxval.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -267,6 +290,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftgxval.c.o: C_COMPILER__f
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftinit.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftinit.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -275,6 +300,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftinit.c.o: C_COMPILER__fr
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftmm.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftmm.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -283,6 +310,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftmm.c.o: C_COMPILER__free
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftotval.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftotval.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -291,6 +320,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftotval.c.o: C_COMPILER__f
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftpatent.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftpatent.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -299,6 +330,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftpatent.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftpfr.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftpfr.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -307,6 +340,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftpfr.c.o: C_COMPILER__fre
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftstroke.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftstroke.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -315,6 +350,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftstroke.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftsynth.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftsynth.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -323,6 +360,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftsynth.c.o: C_COMPILER__f
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/fttype1.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/fttype1.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -331,6 +370,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/fttype1.c.o: C_COMPILER__f
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftwinfnt.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftwinfnt.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -339,6 +380,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftwinfnt.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/bdf/bdf.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/bdf/bdf.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -347,6 +390,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/bdf/bdf.c.o: C_COMPILER__freety
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/bdf
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/bzip2/ftbzip2.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/bzip2/ftbzip2.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -355,6 +400,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/bzip2/ftbzip2.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/bzip2
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/cache/ftcache.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/cache/ftcache.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -363,6 +410,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/cache/ftcache.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/cache
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/cff/cff.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/cff/cff.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -371,6 +420,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/cff/cff.c.o: C_COMPILER__freety
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/cff
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/cid/type1cid.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/cid/type1cid.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -379,6 +430,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/cid/type1cid.c.o: C_COMPILER__f
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/cid
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/gzip/ftgzip.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/gzip/ftgzip.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -387,6 +440,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/gzip/ftgzip.c.o: C_COMPILER__fr
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/gzip
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/lzw/ftlzw.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/lzw/ftlzw.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -395,6 +450,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/lzw/ftlzw.c.o: C_COMPILER__free
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/lzw
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/pcf/pcf.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/pcf/pcf.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -403,6 +460,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/pcf/pcf.c.o: C_COMPILER__freety
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/pcf
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/pfr/pfr.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/pfr/pfr.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -411,6 +470,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/pfr/pfr.c.o: C_COMPILER__freety
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/pfr
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/psaux/psaux.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/psaux/psaux.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -419,6 +480,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/psaux/psaux.c.o: C_COMPILER__fr
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/psaux
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/pshinter/pshinter.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/pshinter/pshinter.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -427,6 +490,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/pshinter/pshinter.c.o: C_COMPIL
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/pshinter
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/psnames/psnames.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/psnames/psnames.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -435,6 +500,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/psnames/psnames.c.o: C_COMPILER
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/psnames
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/raster/raster.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/raster/raster.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -443,6 +510,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/raster/raster.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/raster
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/sdf/sdf.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/sdf/sdf.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -451,6 +520,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/sdf/sdf.c.o: C_COMPILER__freety
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/sdf
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/sfnt/sfnt.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/sfnt/sfnt.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -459,6 +530,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/sfnt/sfnt.c.o: C_COMPILER__free
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/sfnt
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/smooth/smooth.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/smooth/smooth.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -467,6 +540,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/smooth/smooth.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/smooth
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/svg/svg.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/svg/svg.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -475,6 +550,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/svg/svg.c.o: C_COMPILER__freety
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/svg
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/truetype/truetype.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/truetype/truetype.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -483,6 +560,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/truetype/truetype.c.o: C_COMPIL
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/truetype
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/type1/type1.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/type1/type1.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -491,6 +570,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/type1/type1.c.o: C_COMPILER__fr
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/type1
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/type42/type42.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/type42/type42.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -499,6 +580,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/type42/type42.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/type42
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/winfonts/winfnt.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/winfonts/winfnt.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -507,6 +590,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/winfonts/winfnt.c.o: C_COMPILER
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/winfonts
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/builds/unix/ftsystem.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/builds/unix/ftsystem.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -515,6 +600,8 @@ build freetype_build/CMakeFiles/freetype.dir/builds/unix/ftsystem.c.o: C_COMPILE
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/builds/unix
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 build freetype_build/CMakeFiles/freetype.dir/src/base/ftdebug.c.o: C_COMPILER__freetype_Debug /home/yassineaa/AromaUI/vendors/freetype/src/base/ftdebug.c || cmake_object_order_depends_target_freetype
   DEFINES = -DFT2_BUILD_LIBRARY
@@ -523,6 +610,8 @@ build freetype_build/CMakeFiles/freetype.dir/src/base/ftdebug.c.o: C_COMPILER__f
   INCLUDES = -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   OBJECT_FILE_DIR = freetype_build/CMakeFiles/freetype.dir/src/base
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 
 # =============================================================================
@@ -537,8 +626,9 @@ build freetype_build/libfreetyped.a: C_STATIC_LIBRARY_LINKER__freetype_Debug fre
   OBJECT_DIR = freetype_build/CMakeFiles/freetype.dir
   POST_BUILD = :
   PRE_LINK = :
+  TARGET_COMPILE_PDB = freetype_build/CMakeFiles/freetype.dir/freetype.pdb
   TARGET_FILE = freetype_build/libfreetyped.a
-  TARGET_PDB = freetyped.a.dbg
+  TARGET_PDB = freetype_build/libfreetyped.pdb
 
 
 #############################################
@@ -649,6 +739,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_ui_impl.c.o: C_COMPILER__aroma_D
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_logger.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_logger.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_logger.c.o.d
@@ -656,6 +748,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_logger.c.o: C_COMPILER__aroma_De
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_node.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_node.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_node.c.o.d
@@ -663,6 +757,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_node.c.o: C_COMPILER__aroma_Debu
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_slab_alloc.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_slab_alloc.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_slab_alloc.c.o.d
@@ -670,6 +766,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_slab_alloc.c.o: C_COMPILER__arom
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_event.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_event.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_event.c.o.d
@@ -677,6 +775,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_event.c.o: C_COMPILER__aroma_Deb
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_font.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_font.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_font.c.o.d
@@ -684,6 +784,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_font.c.o: C_COMPILER__aroma_Debu
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_graphics_wrapper.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_graphics_wrapper.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_graphics_wrapper.c.o.d
@@ -691,6 +793,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_graphics_wrapper.c.o: C_COMPILER
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_style.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_style.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_style.c.o.d
@@ -698,6 +802,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_style.c.o: C_COMPILER__aroma_Deb
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_time.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_time.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_time.c.o.d
@@ -705,6 +811,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_time.c.o: C_COMPILER__aroma_Debu
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_timer.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_timer.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_timer.c.o.d
@@ -712,6 +820,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_timer.c.o: C_COMPILER__aroma_Deb
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/core/aroma_drawlist.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o.d
@@ -719,6 +829,8 @@ build aroma_lib/CMakeFiles/aroma.dir/core/aroma_drawlist.c.o: C_COMPILER__aroma_
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/core
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o.d
@@ -726,6 +838,8 @@ build aroma_lib/CMakeFiles/aroma.dir/backends/graphics/aroma_graphics_gles3.c.o:
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/backends/graphics
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/backends/graphics/utils/helpers_gles3.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o.d
@@ -733,6 +847,8 @@ build aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils/helpers_gles3.c.o: 
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.o.d
@@ -740,6 +856,8 @@ build aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils/aroma_gles3_text.c.
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/backends/graphics/utils
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/backends/aroma_abi.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/backends/aroma_abi.c.o.d
@@ -747,6 +865,8 @@ build aroma_lib/CMakeFiles/aroma.dir/backends/aroma_abi.c.o: C_COMPILER__aroma_D
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/backends
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_window.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_window.c.o.d
@@ -754,6 +874,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_window.c.o: C_COMPILER__aroma
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_container.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_container.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_container.c.o.d
@@ -761,6 +883,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_container.c.o: C_COMPILER__ar
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_button.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_button.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_button.c.o.d
@@ -768,6 +892,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_button.c.o: C_COMPILER__aroma
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_slider.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o.d
@@ -775,6 +901,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_slider.c.o: C_COMPILER__aroma
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_switch.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o.d
@@ -782,6 +910,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_switch.c.o: C_COMPILER__aroma
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_textbox.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o.d
@@ -789,6 +919,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_textbox.c.o: C_COMPILER__arom
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_dropdown.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o.d
@@ -796,6 +928,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_dropdown.c.o: C_COMPILER__aro
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_checkbox.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o.d
@@ -803,6 +937,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_checkbox.c.o: C_COMPILER__aro
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_radiobutton.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o.d
@@ -810,6 +946,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_radiobutton.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_progressbar.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o.d
@@ -817,6 +955,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_progressbar.c.o: C_COMPILER__
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_label.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_label.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_label.c.o.d
@@ -824,6 +964,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_label.c.o: C_COMPILER__aroma_
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_divider.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o.d
@@ -831,6 +973,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_divider.c.o: C_COMPILER__arom
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_iconbutton.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o.d
@@ -838,6 +982,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_iconbutton.c.o: C_COMPILER__a
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_dialog.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o.d
@@ -845,6 +991,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_dialog.c.o: C_COMPILER__aroma
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_listview.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o.d
@@ -852,6 +1000,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_listview.c.o: C_COMPILER__aro
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_menu.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o.d
@@ -859,6 +1009,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_menu.c.o: C_COMPILER__aroma_D
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_tooltip.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o.d
@@ -866,6 +1018,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_tooltip.c.o: C_COMPILER__arom
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_card.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_card.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_card.c.o.d
@@ -873,6 +1027,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_card.c.o: C_COMPILER__aroma_D
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_chip.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o.d
@@ -880,6 +1036,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_chip.c.o: C_COMPILER__aroma_D
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_fab.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o.d
@@ -887,6 +1045,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_fab.c.o: C_COMPILER__aroma_De
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_snackbar.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o.d
@@ -894,6 +1054,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_snackbar.c.o: C_COMPILER__aro
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_tabs.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o.d
@@ -901,6 +1063,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_tabs.c.o: C_COMPILER__aroma_D
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_sidebar.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o.d
@@ -908,6 +1072,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_sidebar.c.o: C_COMPILER__arom
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_debug_overlay.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o.d
@@ -915,6 +1081,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_debug_overlay.c.o: C_COMPILER
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_image.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/widgets/aroma_image.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_image.c.o.d
@@ -922,6 +1090,8 @@ build aroma_lib/CMakeFiles/aroma.dir/widgets/aroma_image.c.o: C_COMPILER__aroma_
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/widgets
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 build aroma_lib/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_android.c.o: C_COMPILER__aroma_Debug /home/yassineaa/AromaUI/src/backends/platforms/aroma_platform_android.c || cmake_object_order_depends_target_aroma
   DEP_FILE = aroma_lib/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_android.c.o.d
@@ -929,6 +1099,8 @@ build aroma_lib/CMakeFiles/aroma.dir/backends/platforms/aroma_platform_android.c
   INCLUDES = -I/home/yassineaa/AromaUI/src/../include -I/home/yassineaa/AromaUI/src -I/home/yassineaa/AromaUI/src/backends -I/home/yassineaa/AromaUI/src/../vendors/glps/include -I/home/yassineaa/AromaUI/src/../vendors/glps/internal -I/home/yassineaa/Android/Sdk/ndk/25.1.8937393/sources/android/native_app_glue -I/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include -I/home/yassineaa/AromaUI/vendors/freetype/include
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   OBJECT_FILE_DIR = aroma_lib/CMakeFiles/aroma.dir/backends/platforms
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 
 # =============================================================================
@@ -943,8 +1115,9 @@ build aroma_lib/libaroma.a: C_STATIC_LIBRARY_LINKER__aroma_Debug aroma_lib/CMake
   OBJECT_DIR = aroma_lib/CMakeFiles/aroma.dir
   POST_BUILD = :
   PRE_LINK = :
+  TARGET_COMPILE_PDB = aroma_lib/CMakeFiles/aroma.dir/aroma.pdb
   TARGET_FILE = aroma_lib/libaroma.a
-  TARGET_PDB = aroma.a.dbg
+  TARGET_PDB = aroma_lib/libaroma.pdb
 
 
 #############################################
@@ -1081,14 +1254,14 @@ build freetype_build/all: phony freetype_build/libfreetyped.a
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCommonLanguageInclude.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeConfigurableFile.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDependentOption.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeGenericSystem.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeInitializeConfigs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeLanguageInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePackageConfigHelpers.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePushCheckState.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInitialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPack.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPackComponent.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckSymbolExists.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageMessage.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPkgConfig.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/GNUInstallDirs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Initialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Linux.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/UnixPaths.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/WriteBasicConfigVersionFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Templates/CPackConfig.cmake.in /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android-legacy.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/flags.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Clang.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Initialize.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/platforms.cmake /home/yassineaa/AromaUI/android_test/android/app/src/main/cpp/CMakeLists.txt /home/yassineaa/AromaUI/src/CMakeLists.txt /home/yassineaa/AromaUI/vendors/freetype/CMakeLists.txt CMakeCache.txt CMakeFiles/3.22.1-g37088a8/CMakeCCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeCXXCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCCompiler.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCCompilerABI.c /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXCompiler.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXCompilerABI.cpp /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCommonLanguageInclude.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCompilerIdDetection.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeConfigurableFile.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDependentOption.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCXXCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompileFeatures.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompilerABI.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompilerId.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineSystem.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeFindBinUtils.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeGenericSystem.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeInitializeConfigs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeLanguageInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePackageConfigHelpers.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeParseImplicitIncludeInfo.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeParseImplicitLinkInfo.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeParseLibraryArchitecture.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePushCheckState.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystem.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInitialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeTestCCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeTestCXXCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeTestCompilerCommon.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPack.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPackComponent.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.c.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckSymbolExists.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/ADSP-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/ARMCC-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/ARMClang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/AppleClang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Borland-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Bruce-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-DetermineCompilerInternal.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-FindBinUtils.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Comeau-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Compaq-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Cray-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Embarcadero-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Fujitsu-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GHS-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/HP-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/HP-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IAR-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Intel-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/MSVC-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/NVHPC-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/NVIDIA-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/PGI-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/PathScale-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SCO-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SDCC-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SunPro-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/TI-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Watcom-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XL-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XL-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XLClang-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/zOS-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageMessage.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPkgConfig.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/GNUInstallDirs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Internal/FeatureTesting.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Determine-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Determine-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Determine.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Initialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android/Determine-Compiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Linux.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/UnixPaths.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/WriteBasicConfigVersionFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Templates/CPackConfig.cmake.in /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android-legacy.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/flags.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Clang.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Determine.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Initialize.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Determine-Compiler.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/platforms.cmake /home/yassineaa/AromaUI/android_test/android/app/src/main/cpp/CMakeLists.txt /home/yassineaa/AromaUI/src/CMakeLists.txt /home/yassineaa/AromaUI/vendors/freetype/CMakeLists.txt CMakeCache.txt CMakeFiles/3.22.1-g37088a8/CMakeCCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeCXXCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCommonLanguageInclude.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeConfigurableFile.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDependentOption.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeGenericSystem.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeInitializeConfigs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeLanguageInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePackageConfigHelpers.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePushCheckState.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInitialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPack.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPackComponent.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckSymbolExists.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageMessage.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPkgConfig.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/GNUInstallDirs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Initialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Linux.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/UnixPaths.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/WriteBasicConfigVersionFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Templates/CPackConfig.cmake.in /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android-legacy.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/flags.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Clang.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Initialize.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/platforms.cmake /home/yassineaa/AromaUI/android_test/android/app/src/main/cpp/CMakeLists.txt /home/yassineaa/AromaUI/src/CMakeLists.txt /home/yassineaa/AromaUI/vendors/freetype/CMakeLists.txt CMakeCache.txt CMakeFiles/3.22.1-g37088a8/CMakeCCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeCXXCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeSystem.cmake: phony
+build /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCCompiler.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCCompilerABI.c /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXCompiler.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXCompilerABI.cpp /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCommonLanguageInclude.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCompilerIdDetection.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeConfigurableFile.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDependentOption.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCXXCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompileFeatures.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompilerABI.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineCompilerId.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeDetermineSystem.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeFindBinUtils.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeGenericSystem.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeInitializeConfigs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeLanguageInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePackageConfigHelpers.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeParseImplicitIncludeInfo.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeParseImplicitLinkInfo.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeParseLibraryArchitecture.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakePushCheckState.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystem.cmake.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInformation.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInitialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeTestCCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeTestCXXCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeTestCompilerCommon.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPack.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CPackComponent.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.c.in /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckIncludeFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CheckSymbolExists.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/ADSP-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/ARMCC-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/ARMClang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/AppleClang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Borland-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Bruce-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-DetermineCompilerInternal.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-FindBinUtils.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Comeau-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Compaq-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Cray-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Embarcadero-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Fujitsu-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GHS-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/HP-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/HP-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IAR-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Intel-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/MSVC-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/NVHPC-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/NVIDIA-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/PGI-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/PathScale-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SCO-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SDCC-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SunPro-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/TI-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Watcom-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XL-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XL-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XLClang-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/zOS-C-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageHandleStandardArgs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPackageMessage.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/FindPkgConfig.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/GNUInstallDirs.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Internal/FeatureTesting.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Determine-C.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Determine-CXX.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Determine.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Initialize.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android/Determine-Compiler.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Linux.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/UnixPaths.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/WriteBasicConfigVersionFile.cmake /home/yassineaa/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Templates/CPackConfig.cmake.in /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android-legacy.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android.toolchain.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/flags.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Clang.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Determine.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android-Initialize.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Android.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/hooks/pre/Determine-Compiler.cmake /home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/platforms.cmake /home/yassineaa/AromaUI/android_test/android/app/src/main/cpp/CMakeLists.txt /home/yassineaa/AromaUI/src/CMakeLists.txt /home/yassineaa/AromaUI/vendors/freetype/CMakeLists.txt CMakeCache.txt CMakeFiles/3.22.1-g37088a8/CMakeCCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeCXXCompiler.cmake CMakeFiles/3.22.1-g37088a8/CMakeSystem.cmake: phony
 
 
 #############################################

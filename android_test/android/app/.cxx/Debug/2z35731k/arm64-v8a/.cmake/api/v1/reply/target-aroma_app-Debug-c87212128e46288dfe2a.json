@@ -89,11 +89,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "aroma::@9df0d65908e3390db40e"
+			"id" : "freetype::@bdc1e324bbc9e3c81525"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "freetype::@bdc1e324bbc9e3c81525"
+			"id" : "aroma::@9df0d65908e3390db40e"
 		}
 	],
 	"id" : "aroma_app::@6890427a1f51a3e7e1df",
