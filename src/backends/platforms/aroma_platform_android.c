@@ -22,6 +22,8 @@
 #ifdef __ANDROID__
 #include "aroma_platform_interface.h"
 #include <android_native_app_glue.h>
+#include <android/native_window.h>
+#include <android/native_activity.h>
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
