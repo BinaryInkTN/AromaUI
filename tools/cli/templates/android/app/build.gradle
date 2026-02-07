@@ -3,13 +3,13 @@ plugins {
 }
 
 android {
-    namespace 'com.example.aromaapp'
-    compileSdk 34
+    namespace '{{PACKAGE_NAME}}'
+    compileSdk {{COMPILE_SDK}}
 
     defaultConfig {
-        applicationId "com.example.aromaapp"
-        minSdk 24
-        targetSdk 34
+        applicationId "{{PACKAGE_NAME}}"
+        minSdk {{MIN_SDK}}
+        targetSdk {{TARGET_SDK}}
         versionCode 1
         versionName "1.0"
 

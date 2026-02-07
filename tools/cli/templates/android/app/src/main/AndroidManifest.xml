@@ -2,11 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:label="Aroma App"
+        android:label="{{PROJECT_NAME}}"
         android:hasCode="false">
         
         <activity android:name="android.app.NativeActivity"
-                  android:label="Aroma App"
+                  android:label="{{PROJECT_NAME}}"
                   android:exported="true"
                   android:configChanges="orientation|keyboardHidden|screenSize">
             <meta-data android:name="android.app.lib_name"

@@ -5,6 +5,10 @@ import os
 import subprocess
 import shutil
 import platform
+import re
+import urllib.request
+import zipfile
+import ssl
 
 # Colors for output
 class Colors:
@@ -27,6 +31,9 @@ def print_success(msg):
 def print_error(msg):
     print(f"{Colors.FAIL}✗ {msg}{Colors.ENDC}")
 
+def print_info(msg):
+    print(f"{Colors.OKCYAN}i {msg}{Colors.ENDC}")
+
 def run_command(cmd, cwd=None, env=None, capture_output=False):
     try:
         if capture_output:
@@ -41,11 +48,139 @@ def run_command(cmd, cwd=None, env=None, capture_output=False):
         return None
 
 def find_aroma_root():
-    # Assuming this script is at <root>/tools/cli/aroma.py
     script_path = os.path.realpath(__file__)
+    # aroma.py is in tools/cli/
     return os.path.abspath(os.path.join(os.path.dirname(script_path), "../../"))
 
 AROMA_ROOT = find_aroma_root()
+
+def get_input(prompt, default=None, validator=None, error_msg="Invalid input"):
+    while True:
+        prompt_str = f"{Colors.BOLD}{prompt}{Colors.ENDC}"
+        if default:
+            prompt_str += f" [{default}]"
+        prompt_str += ": "
+        
+        try:
+            val = input(prompt_str).strip()
+        except KeyboardInterrupt:
+            print()
+            sys.exit(0)
+
+        if not val and default is not None:
+            return default
+        
+        if not val:
+            continue
+            
+        if validator and not validator(val):
+            print_error(error_msg)
+            continue
+            
+        return val
+
+def install_android_sdk():
+    default_sdk_root = os.path.expanduser("~/Android/Sdk")
+    sdk_root = os.environ.get("ANDROID_HOME", default_sdk_root)
+
+    print_step(f"Setting up Android SDK at {sdk_root}...")
+
+    cmdline_tools_dir = os.path.join(sdk_root, "cmdline-tools")
+    latest_dir = os.path.join(cmdline_tools_dir, "latest")
+    
+    if not os.path.exists(latest_dir):
+        os.makedirs(cmdline_tools_dir, exist_ok=True)
+        
+        # Download URL for Linux
+        # Ideally check OS for Mac/Windows support
+        if platform.system() == "Linux":
+            url = "https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip"
+        elif platform.system() == "Darwin":
+             url = "https://dl.google.com/android/repository/commandlinetools-mac-10406996_latest.zip"
+        else:
+             print_error("Auto-install only supported on Linux/Mac currently.")
+             return False
+
+        zip_path = os.path.join(sdk_root, "cmdline-tools.zip")
+        
+        print_info(f"Downloading Command Line Tools from {url}...")
+        try:
+            # Bypass SSL verify if needed (sometimes python missing certs)
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            
+            with urllib.request.urlopen(url, context=ctx) as r, open(zip_path, 'wb') as f:
+                shutil.copyfileobj(r, f)
+        except Exception as e:
+            print_error(f"Download failed: {e}")
+            return False
+
+        print_info("Extracting...")
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(cmdline_tools_dir)
+            os.remove(zip_path)
+            
+            # Move extracted 'cmdline-tools' folder to 'latest'
+            # The zip usually contains a 'cmdline-tools' top level folder
+            extracted_folder = os.path.join(cmdline_tools_dir, "cmdline-tools")
+            if os.path.exists(extracted_folder):
+                shutil.move(extracted_folder, latest_dir)
+            else:
+                 print_error(f"Unexpected zip structure. Expected 'cmdline-tools' folder inside.")
+                 return False
+                 
+        except Exception as e:
+            print_error(f"Extraction failed: {e}")
+            return False
+
+    # Find sdkmanager
+    sdkmanager = os.path.join(latest_dir, "bin", "sdkmanager")
+    if not os.path.exists(sdkmanager):
+        print_error("sdkmanager not found after installation.")
+        return False
+        
+    print_step("Installing SDK Components (Accepting Licenses)...")
+    
+    # Accept licenses
+    # yes | sdkmanager --licenses
+    try:
+        p = subprocess.Popen([sdkmanager, "--licenses"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Send yes repeatedly
+        p.communicate(input=b"y\n" * 50)
+    except Exception as e:
+        print_error(f"Failed to accept licenses: {e}")
+    
+    # Install packages
+    packages = [
+        "platform-tools",
+        "platforms;android-34",
+        "build-tools;34.0.0",
+        "ndk;25.1.8937393",
+        "cmake;3.22.1"
+    ]
+    
+    print_info(f"Installing: {', '.join(packages)}")
+    res = run_command([sdkmanager] + packages)
+    
+    if res and res.returncode == 0:
+        print_success("Android SDK & NDK installed successfully!")
+        return True
+    else:
+        print_error("Failed to install components.")
+        return False
+
+
+def validate_package_name(name):
+    return re.match(r'^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$', name) is not None
+
+def validate_int(val):
+    try:
+        int(val)
+        return True
+    except ValueError:
+        return False
 
 def cmd_doctor(args):
     print_step("Running Aroma Doctor...")
@@ -65,12 +200,14 @@ def cmd_doctor(args):
     if ninja:
         print_success(f"Ninja: {ninja.stdout.strip()}")
     else:
-        print_error("Ninja not found (Recommended for fast builds)")
+        print_info("Ninja not found (Recommended for fast builds)")
 
     # 4. Check Compilers
     gcc = run_command(["gcc", "--version"], capture_output=True)
     if gcc:
         print_success("GCC installed")
+    else:
+        print_error("GCC not found")
     
     # 5. Check Android SDK
     android_home = os.environ.get("ANDROID_HOME")
@@ -78,7 +215,8 @@ def cmd_doctor(args):
         # Try local.properties logic or common paths
         common_paths = [
             os.path.expanduser("~/Android/Sdk"),
-            "/usr/lib/android-sdk"
+            "/usr/lib/android-sdk",
+            "/Library/Android/sdk"
         ]
         for p in common_paths:
             if os.path.exists(p):
@@ -90,97 +228,148 @@ def cmd_doctor(args):
         # Check NDK
         ndk_path = os.path.join(android_home, "ndk")
         if os.path.exists(ndk_path) and os.listdir(ndk_path):
-            print_success("Android NDK installed")
+            versions = sorted(os.listdir(ndk_path))
+            print_success(f"Android NDK installed (found: {versions[-1]})")
         else:
-            print_error("Android NDK not found in SDK")
+            print_error("Android NDK not found in SDK (required for Android builds)")
+            try_install = get_input("Install Android SDK & NDK?", default="Y", validator=lambda x: x.lower() in ['y', 'n'])
+            if try_install.lower() == 'y':
+                install_android_sdk()
+                
     else:
         print_error("Android SDK not found (Set ANDROID_HOME)")
+        try_install = get_input("Install Android SDK & NDK?", default="Y", validator=lambda x: x.lower() in ['y', 'n'])
+        if try_install.lower() == 'y':
+            install_android_sdk()
 
     print_step("Doctor summary complete.")
 
 def cmd_create(args):
-    project_name = args.name
-    target_dir = os.path.abspath(project_name)
+    print_step("Configure New Project")
     
+    # 1. Interactive Config
+    project_name = args.name
+    if not project_name:
+        project_name = get_input("Project Name", validator=lambda x: len(x) > 0)
+    
+    target_dir = os.path.abspath(project_name)
     if os.path.exists(target_dir):
-        print_error(f"Directory {project_name} already exists.")
+        print_error(f"Directory '{project_name}' already exists.")
+        return
+
+    default_pkg = f"com.example.{project_name.lower().replace('-', '_')}"
+    package_name = get_input("Android Package Name", default=default_pkg, validator=validate_package_name, error_msg="Invalid package name format (e.g. com.example.app)")
+    
+    min_sdk = get_input("Min Android SDK", default="24", validator=validate_int, error_msg="Must be an integer")
+    target_sdk = get_input("Target Android SDK", default="34", validator=validate_int, error_msg="Must be an integer")
+    compile_sdk = get_input("Compile Android SDK", default="34", validator=validate_int, error_msg="Must be an integer")
+
+    print("\n" + Colors.BOLD + "Configuration Summary:" + Colors.ENDC)
+    print(f"  Name:        {project_name}")
+    print(f"  Directory:   {target_dir}")
+    print(f"  Package:     {package_name}")
+    print(f"  Min SDK:     {min_sdk}")
+    print(f"  Target SDK:  {target_sdk}")
+    print(f"  Compile SDK: {compile_sdk}")
+    print(f"  Aroma Root:  {AROMA_ROOT}")
+    
+    confirm = get_input("\nCreate Project?", default="Y", validator=lambda x: x.lower() in ['y', 'n', 'yes', 'no'])
+    if confirm.lower().startswith('n'):
+        print("Aborted.")
         return
 
     print_step(f"Creating project {project_name}...")
     
-    # 1. Create directory structure
-    os.makedirs(target_dir)
-    os.makedirs(os.path.join(target_dir, "src"))
-    
-    # 2. Create main.c
-    template_dir = os.path.join(os.path.dirname(__file__), "templates", "app")
-    
-    with open(os.path.join(template_dir, "main.c.tpl"), "r") as f:
-        main_c_content = f.read().replace("{{PROJECT_NAME}}", project_name)
+    try:
+        # Create directories
+        os.makedirs(target_dir)
+        os.makedirs(os.path.join(target_dir, "src"))
 
-    with open(os.path.join(target_dir, "src", "main.c"), "w") as f:
-        f.write(main_c_content)
+        # Templates directory
+        templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
-    # 3. Create CMakeLists.txt (Linux)
-    with open(os.path.join(template_dir, "CMakeLists.txt.tpl"), "r") as f:
-        cmake_content = f.read().replace("{{PROJECT_NAME}}", project_name).replace("{{AROMA_ROOT}}", AROMA_ROOT)
-
-    with open(os.path.join(target_dir, "CMakeLists.txt"), "w") as f:
-        f.write(cmake_content)
-
-    # 4. Copy Android Project Template
-    # Use the template from tools/cli/templates/android
-    android_tmpl = os.path.join(os.path.dirname(__file__), "templates", "android")
-    android_dest = os.path.join(target_dir, "android")
-    
-    if os.path.exists(android_tmpl):
-        shutil.copytree(android_tmpl, android_dest)
-    else:
-        print_error(f"Android template not found at {android_tmpl}")
-        # Create minimal android dir anyway so we don't crash later?
-        # But without build files it won't work.
-        pass
-
-    # 5. Create Android helper script or update android/app/src/main/cpp/CMakeLists.txt
-    # Modify android/app/src/main/cpp/CMakeLists.txt to include user source
-    android_cmake = os.path.join(android_dest, "app", "src", "main", "cpp", "CMakeLists.txt")
-    if os.path.exists(android_cmake):
-        with open(android_cmake, "w") as f:
-            f.write(f"""cmake_minimum_required(VERSION 3.22.1)
-project("{project_name}_android")
-
-set(AROMA_ROOT "{AROMA_ROOT}")
-# 1. Setup FreeType
-set(FT_DISABLE_ZLIB TRUE CACHE BOOL "" FORCE)
-set(FT_DISABLE_BZIP2 TRUE CACHE BOOL "" FORCE)
-set(FT_DISABLE_PNG TRUE CACHE BOOL "" FORCE)
-set(FT_DISABLE_BROTLI TRUE CACHE BOOL "" FORCE)
-add_subdirectory(${{AROMA_ROOT}}/vendors/freetype freetype_build)
-
-# 2. Setup AromaUI
-add_subdirectory(${{AROMA_ROOT}}/src aroma_lib)
-
-# 3. Setup Android Glue
-# We compile glue directly into the shared lib to ensure the entry point symbol is exported
-set(ANDROID_GLUE_DIR ${{ANDROID_NDK}}/sources/android/native_app_glue)
-set(ANDROID_GLUE_SRC ${{ANDROID_GLUE_DIR}}/android_native_app_glue.c)
-
-# 4. Main App
-add_library(aroma_app SHARED ../../../../../src/main.c ${{ANDROID_GLUE_SRC}})
-
-target_include_directories(aroma_app PRIVATE ${{AROMA_ROOT}}/include ${{ANDROID_GLUE_DIR}})
-
-target_link_libraries(aroma_app android aroma log)
-""")
+        # 1. Linux/Desktop Files
+        
+        # main.c
+        with open(os.path.join(templates_dir, "app", "main.c.tpl"), "r") as f:
+            main_c = f.read().replace("{{PROJECT_NAME}}", project_name)
+        with open(os.path.join(target_dir, "src", "main.c"), "w") as f:
+            f.write(main_c)
             
-    # Modify local.properties if we can find SDK
-    android_home = os.environ.get("ANDROID_HOME") or os.path.expanduser("~/Android/Sdk")
-    if os.path.exists(android_home):
-        with open(os.path.join(android_dest, "local.properties"), "w") as f:
-            f.write(f"sdk.dir={android_home}")
+        # CMakeLists.txt (Root)
+        with open(os.path.join(templates_dir, "app", "CMakeLists.txt.tpl"), "r") as f:
+            cmake_txt = f.read().replace("{{PROJECT_NAME}}", project_name).replace("{{AROMA_ROOT}}", AROMA_ROOT)
+        with open(os.path.join(target_dir, "CMakeLists.txt"), "w") as f:
+            f.write(cmake_txt)
 
-    print_success(f"Project '{project_name}' created!")
-    print(f"\nTo run:\n  cd {project_name}\n  aroma run linux")
+        # 2. Android Project
+        android_dest = os.path.join(target_dir, "android")
+        android_tmpl = os.path.join(templates_dir, "android")
+        
+        if os.path.exists(android_tmpl):
+            shutil.copytree(android_tmpl, android_dest)
+            
+            # recursive replace in android directory
+            # We must be careful not to replace placeholders in files that are not text
+            # But usually templates are safe
+            
+            replacements = {
+                "{{PROJECT_NAME}}": project_name,
+                "{{PACKAGE_NAME}}": package_name,
+                "{{MIN_SDK}}": min_sdk,
+                "{{TARGET_SDK}}": target_sdk,
+                "{{COMPILE_SDK}}": compile_sdk,
+                "{{AROMA_ROOT}}": AROMA_ROOT
+            }
+            
+            for root, dirs, files in os.walk(android_dest):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    
+                    # Handle .tpl files (like CMakeLists.txt.tpl)
+                    if file.endswith(".tpl"):
+                        new_path = file_path[:-4] # remove .tpl
+                        with open(file_path, "r") as f:
+                            content = f.read()
+                        
+                        for k, v in replacements.items():
+                            content = content.replace(k, str(v))
+                            
+                        with open(new_path, "w") as f:
+                            f.write(content)
+                        os.remove(file_path)
+                        continue
+                    
+                    # Handle known config files
+                    if file in ["build.gradle", "AndroidManifest.xml", "settings.gradle"]:
+                        with open(file_path, "r") as f:
+                            content = f.read()
+                        
+                        changed = False
+                        for k, v in replacements.items():
+                            if k in content:
+                                content = content.replace(k, str(v))
+                                changed = True
+                        
+                        if changed:
+                            with open(file_path, "w") as f:
+                                f.write(content)
+
+            # Setup local.properties
+            android_home = os.environ.get("ANDROID_HOME") or os.path.expanduser("~/Android/Sdk")
+            if os.path.exists(android_home):
+                with open(os.path.join(android_dest, "local.properties"), "w") as f:
+                    f.write(f"sdk.dir={android_home}\n")
+
+    except Exception as e:
+        print_error(f"Failed to create project: {e}")
+        # Clean up?
+        # shutil.rmtree(target_dir)
+        return
+
+    print_success(f"Project '{project_name}' created successfully!")
+    print(f"\nTo run on Linux:\n  cd {project_name}\n  aroma run linux")
+    print(f"\nTo run on Android:\n  cd {project_name}\n  aroma run android")
 
 def cmd_build(args):
     print_step(f"Building for {args.platform}...")
@@ -216,6 +405,7 @@ def cmd_build(args):
             os.chmod(gradlew, 0o755)
             cmd = [gradlew, "assembleDebug"]
         else:
+            print_info("gradlew not found, trying system gradle")
             cmd = ["gradle", "assembleDebug"]
             
         res = run_command(cmd, cwd=android_dir)
@@ -224,61 +414,77 @@ def cmd_build(args):
             return
             
         apk_path = os.path.join(android_dir, "app/build/outputs/apk/debug/app-debug.apk")
-        print_success(f"APK built at: {apk_path}")
+        if os.path.exists(apk_path):
+             print_success(f"APK built at: {apk_path}")
+        else:
+             print_error("Build finished but APK not found.")
 
 def cmd_run(args):
-    # Ensure built first?
-    cmd_build(args)
     cwd = os.getcwd()
     
     if args.platform == "linux":
         # Find executable. Usually name of dir.
-        project_name = os.path.basename(cwd)
+        project_name = os.path.basename(os.path.abspath(cwd))
         exe_path = os.path.join(cwd, "build", project_name)
         
         if not os.path.exists(exe_path):
             # Fallback scan
-            files = [f for f in os.listdir(os.path.join(cwd, "build")) if os.access(os.path.join(cwd, "build", f), os.X_OK) and not f.endswith(".so")]
-            if files:
-                exe_path = os.path.join(cwd, "build", files[0])
+            if os.path.exists(os.path.join(cwd, "build")):
+                 files = [f for f in os.listdir(os.path.join(cwd, "build")) if os.access(os.path.join(cwd, "build", f), os.X_OK) and not f.endswith(".so") and not os.path.isdir(os.path.join(cwd, "build", f)) and f != "Makefile" and f != "cmake_install.cmake"]
+                 if files:
+                     exe_path = os.path.join(cwd, "build", files[0])
         
         if os.path.exists(exe_path):
             print_step(f"Launching {exe_path}...")
             subprocess.run([exe_path])
         else:
-            print_error("Executable not found.")
+            print_error("Executable not found. Did you run 'aroma build linux'?")
 
     elif args.platform == "android":
+        print_step("Checking connected devices...")
+        res = run_command(["adb", "devices"], capture_output=True)
+        if not res or "device" not in res.stdout.replace("List of devices attached", "").strip():
+            print_error("No Android devices connected.")
+            return
+
         print_step("Installing to device...")
         android_dir = os.path.join(cwd, "android")
         apk_path = os.path.join(android_dir, "app/build/outputs/apk/debug/app-debug.apk")
         
         if not os.path.exists(apk_path):
-            print_error("APK not found")
+            print_error("APK not found. Please run 'aroma build android' first.")
             return
             
         res = run_command(["adb", "install", "-r", apk_path])
         if res is not None and res.returncode == 0:
             print_success("Installed.")
-            # Launch? We need package name.
-            # grep package name from build.gradle
+            # Launch logic
+            package_name = None
             build_gradle = os.path.join(android_dir, "app/build.gradle")
-            package_name = "com.example.aromaapp" # Default fallback
+            
+            # Try to grep package name
             if os.path.exists(build_gradle):
                 with open(build_gradle, 'r') as f:
                     for line in f:
-                        if "applicationId" in line:
-                            # applicationId "com.example.aromaapp"
-                            import re
-                            # Match text inside quotes
-                            m = re.search(r'applicationId\s+[\"\']([^\"\']+)[\"\']', line)
-                            if m:
-                                package_name = m.group(1)
-                                break
-            
+                        if "namespace" in line or "applicationId" in line:
+                             # crude matching
+                             parts = line.split()
+                             for p in parts:
+                                 clean_p = p.strip("'\"")
+                                 if "." in clean_p and not clean_p.startswith("com.android"):
+                                     package_name = clean_p
+                                     break
+                        if package_name: break
+
+            if not package_name:
+                print_info("Could not auto-detect package name. Please launch manually.")
+                return
+
             print_step(f"Launching {package_name}...")
-            # Assuming standard activity from template shell
+            # Using NativeActivity as per template
             run_command(["adb", "shell", "am", "start", "-n", f"{package_name}/android.app.NativeActivity"])
+        else:
+            print_error("Installation failed.")
 
 def main():
     parser = argparse.ArgumentParser(prog="aroma", description="AromaUI CLI Tool")
@@ -287,18 +493,26 @@ def main():
     # commands
     subparsers.add_parser("doctor", help="Check environment")
     
+    install_p = subparsers.add_parser("install-sdk", help="Install Android SDK & NDK")
+    
     create_p = subparsers.add_parser("create", help="Create new project")
-    create_p.add_argument("name", help="Project name")
+    create_p.add_argument("name", nargs="?", help="Project name")
     
     build_p = subparsers.add_parser("build", help="Build project")
-    build_p.add_argument("platform", choices=["linux", "android"], default="linux")
+    build_p.add_argument("platform", choices=["linux", "android"], default="linux", nargs="?")
     
     run_p = subparsers.add_parser("run", help="Run project")
-    run_p.add_argument("platform", choices=["linux", "android"], default="linux")
+    run_p.add_argument("platform", choices=["linux", "android"], default="linux", nargs="?")
     
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
     args = parser.parse_args()
     
-    if args.command == "doctor":
+    if args.command == "doinstall-sdk":
+        install_android_sdk()
+    elif args.command == "ctor":
         cmd_doctor(args)
     elif args.command == "create":
         cmd_create(args)
