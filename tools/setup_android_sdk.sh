@@ -7,10 +7,8 @@ TMP_ZIP="cmdline-tools.zip"
 
 echo "Setting up Android SDK at $SDK_ROOT..."
 
-# 1. Create Directory
 mkdir -p "$SDK_ROOT/cmdline-tools"
 
-# 2. Download Command Line Tools
 if [ ! -d "$SDK_ROOT/cmdline-tools/latest" ]; then
     echo "Downloading Command Line Tools..."
     wget -O $TMP_ZIP $CMDLINE_TOOLS_URL
@@ -25,12 +23,9 @@ if [ ! -d "$SDK_ROOT/cmdline-tools/latest" ]; then
         exit 1
     fi
 
-    # Handle the extracted folder structure
-    # Sometimes it extracts as cmdline-tools/cmdline-tools/* or just cmdline-tools/*
     if [ -d "$SDK_ROOT/cmdline-tools/cmdline-tools" ]; then
         mv "$SDK_ROOT/cmdline-tools/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
     elif [ -d "$SDK_ROOT/cmdline-tools/bin" ]; then
-        # It extracted directly into the target, move contents to 'latest'
         mkdir -p "$SDK_ROOT/cmdline-tools/latest"
         mv "$SDK_ROOT/cmdline-tools/bin" "$SDK_ROOT/cmdline-tools/latest/"
         mv "$SDK_ROOT/cmdline-tools/lib" "$SDK_ROOT/cmdline-tools/latest/"
@@ -45,7 +40,6 @@ fi
 if [ -f "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
     SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
 else
-    # Fallback to probable location if rename failed previously
     SDKMANAGER=$(find "$SDK_ROOT" -name sdkmanager -type f | head -n 1)
 fi
 
@@ -56,19 +50,10 @@ if [ -z "$SDKMANAGER" ]; then
     exit 1
 fi
 
-# 4. Accept Licenses
 echo "Accepting Licenses..."
 yes | $SDKMANAGER --licenses > /dev/null 2>&1
 
-# 5. Install Components
 echo "Installing Platform Tools and SDK 34..."
-# We install the NDK version requested by Gradle (found in error log usually) or a recent one
 $SDKMANAGER "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
 
-# 6. Update local.properties
-echo "Updating local.properties..."
-echo "sdk.dir=$SDK_ROOT" > android_project/local.properties
-
-echo "------------------------------------------------"
 echo "Android SDK Setup Complete!"
-echo "You can now run ./deploy_android.sh"
