@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <time.h>
 
+#include "../aroma_abi.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
 #include "core/aroma_node.h"
@@ -122,6 +123,27 @@ static int init_display(struct android_app* app) {
     g_width = w;
     g_height = h;
     g_has_window = true;
+
+    // Initialize Graphics Backend Resources (Shaders, VBOs, etc.)
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    if (gfx) {
+        if (gfx->setup_shared_window_resources) {
+            if (!gfx->setup_shared_window_resources()) {
+                LOGE("Failed to setup shared graphics resources");
+            } else {
+                LOGI("Shared graphics resources setup success");
+            }
+        }
+        
+        // We only support one window on Android (id: 1)
+        if (gfx->setup_separate_window_resources) {
+            if (!gfx->setup_separate_window_resources(1)) {
+                LOGE("Failed to setup separate resources for window 1");
+            } else {
+                 LOGI("Separate graphics resources setup success for window 1");
+            }
+        }
+    }
 
     // Force invalidate root nodes to ensure initial draw
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
