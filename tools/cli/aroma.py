@@ -132,6 +132,8 @@ def install_android_sdk():
     if not os.path.exists(sdkmanager):
         print_error("sdkmanager not found after installation.")
         return False
+
+    os.chmod(sdkmanager, 0o755)
         
     print_step("Installing SDK Components (Accepting Licenses)...")
     
