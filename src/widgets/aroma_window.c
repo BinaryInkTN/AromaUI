@@ -44,6 +44,10 @@ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int h
     
     AromaPlatformInterface* platform_interface = aroma_backend_abi.get_platform_interface();
     node->window_id = platform_interface->create_window(title, x, y, width, height);
+    node->rect.x = x;
+    node->rect.y = y;
+    node->rect.width = width;
+    node->rect.height = height;
 
     return scene_node;
 }

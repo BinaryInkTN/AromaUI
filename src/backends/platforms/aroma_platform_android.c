@@ -36,6 +36,7 @@
 #include "core/aroma_event.h"
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
+#include "widgets/aroma_window.h"
 
 static struct android_app* g_app = NULL;
 static EGLDisplay display = EGL_NO_DISPLAY;
@@ -97,6 +98,17 @@ static void update_surface_size(void) {
     }
     
     glViewport(0, 0, g_width, g_height);
+
+    extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
+    extern int g_window_count;
+    
+    for(int i = 0; i < g_window_count; i++) {
+        if(g_windows[i].root_node && g_windows[i].window) {
+            g_windows[i].window->rect.width = g_width;
+            g_windows[i].window->rect.height = g_height;
+            aroma_node_invalidate(g_windows[i].root_node);
+        }
+    }
 }
 
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
@@ -179,8 +191,13 @@ static int init_display(struct android_app* app) {
 
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     extern int g_window_count;
-    for (int i = 0; i < g_window_count; i++)
-        if (g_windows[i].root_node) aroma_node_invalidate(g_windows[i].root_node);
+    for (int i = 0; i < g_window_count; i++) {
+        if (g_windows[i].root_node && g_windows[i].window) {
+            g_windows[i].window->rect.width = g_width;
+            g_windows[i].window->rect.height = g_height;
+            aroma_node_invalidate(g_windows[i].root_node);
+        }
+    }
 
     return 0;
 }
