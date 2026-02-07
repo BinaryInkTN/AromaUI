@@ -42,9 +42,7 @@ int main(int argc, char** argv) {
     AromaNode* label = aroma_ui_create_label((AromaNode*)win, title, 250, 100, LABEL_STYLE_LABEL_LARGE);
     if(font) aroma_label_set_font(label, font);
     
-    AromaNode* switch_ = aroma_switch_create((AromaNode*)win, 300, 500, 200, 100, true);
-    aroma_switch_setup_events(switch_, aroma_ui_request_redraw, NULL);
-
+    
     while(aroma_ui_is_running()) {
        
         aroma_ui_process_events();

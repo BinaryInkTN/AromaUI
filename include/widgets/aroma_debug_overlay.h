@@ -11,8 +11,7 @@ extern "C" {
 #endif
 typedef struct AromaDebugOverlay AromaDebugOverlay;
 
-AromaNode* aroma_debug_overlay_create(AromaNode* parent, int x, int y);
-
+    AromaNode *aroma_debug_overlay_create(AromaNode *parent, int x, int y, int width);
 void aroma_debug_overlay_set_font(AromaNode* overlay_node, AromaFont* font);
 void aroma_debug_overlay_set_visible(AromaNode* overlay_node, bool visible);
 

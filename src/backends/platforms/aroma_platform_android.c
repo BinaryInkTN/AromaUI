@@ -114,13 +114,6 @@ static void update_surface_size(void) {
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     extern int g_window_count;
 
-    for (int i = 0; i < g_window_count; i++) {
-        if (g_windows[i].root_node && g_windows[i].window) {
-            g_windows[i].window->rect.width = g_width;
-            g_windows[i].window->rect.height = g_height;
-            aroma_node_invalidate(g_windows[i].root_node);
-        }
-    }
 }
 
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
@@ -246,6 +239,7 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
             break;
         case APP_CMD_WINDOW_RESIZED:
         case APP_CMD_CONTENT_RECT_CHANGED:
+        case APP_CMD_CONFIG_CHANGED:
             update_surface_size();
             break;
         case APP_CMD_TERM_WINDOW:

@@ -30,10 +30,11 @@ static _Atomic(AromaGraphicsBackendType) current_graphics_backend = GRAPHICS_BAC
 static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BACKEND_TFT_ESPI;
 
 static AromaGraphicsInterface* get_real_graphics_interface(void) {
-    AromaGraphicsBackendType backend = atomic_load(&current_graphics_backend);
 #ifdef ESP32
+    current_graphics_backend = GRAPHICS_BACKEND_TFT_ESPI;
     return &aroma_graphics_tft;
 #else 
+    current_graphics_backend = GRAPHICS_BACKEND_GLES3;
     return &aroma_graphics_gles3;
 #endif
 }
@@ -258,10 +259,16 @@ AromaPlatformInterface* get_platform_interface(void) {
 #ifdef ESP32
     return &aroma_platform_tft;
 #elif defined(__ANDROID__)
+    current_platform_backend = PLATFORM_BACKEND_ANDROID;
     return &aroma_platform_android;
 #else
+    current_platform_backend = PLATFORM_BACKEND_GLPS;
     return &aroma_platform_glps;
 #endif
+}
+
+AromaPlatformBackendType aroma_get_platform_backend_type(void) {
+    return atomic_load(&current_platform_backend);
 }
 
 AromaBackendABI aroma_backend_abi = {
@@ -269,5 +276,6 @@ AromaBackendABI aroma_backend_abi = {
     .set_platform_backend_type = set_platform_backend_type,
     .get_graphics_backend_type = aroma_get_graphics_backend_type,
     .get_graphics_interface = get_graphics_interface,
-    .get_platform_interface = get_platform_interface
+    .get_platform_interface = get_platform_interface,
+    .get_platform_backend_type = aroma_get_platform_backend_type
 };

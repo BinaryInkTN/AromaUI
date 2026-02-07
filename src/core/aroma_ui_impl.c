@@ -353,4 +353,6 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
     #ifndef ESP32
     aroma_dirty_list_clear();
     #endif
+    
+
 }

@@ -27,15 +27,17 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include <string.h>
 #define _POSIX_C_SOURCE 200809L
 #include <time.h>
 #include <stdio.h>
 
-struct AromaDebugOverlay {
+struct AromaDebugOverlay
+{
     AromaRect rect;
     bool visible;
-    AromaFont* font;
+    AromaFont *font;
     uint32_t bg_color;
     uint32_t text_color;
     uint32_t border_color;
@@ -52,16 +54,18 @@ static float __time_diff_sec(struct timespec a, struct timespec b)
     return sec + nsec;
 }
 
-AromaNode* aroma_debug_overlay_create(AromaNode* parent, int x, int y)
+    AromaNode *aroma_debug_overlay_create(AromaNode *parent, int x, int y, int width)
 {
-    if (!parent) return NULL;
-    AromaDebugOverlay* overlay = (AromaDebugOverlay*)aroma_widget_alloc(sizeof(AromaDebugOverlay));
-    if (!overlay) return NULL;
+    if (!parent)
+        return NULL;
+    AromaDebugOverlay *overlay = (AromaDebugOverlay *)aroma_widget_alloc(sizeof(AromaDebugOverlay));
+    if (!overlay)
+        return NULL;
 
     memset(overlay, 0, sizeof(AromaDebugOverlay));
     overlay->rect.x = x;
     overlay->rect.y = y;
-    overlay->rect.width = 170;
+    overlay->rect.width = width;
     overlay->rect.height = 170;
     overlay->visible = true;
     overlay->frame_count = 0;
@@ -74,53 +78,61 @@ AromaNode* aroma_debug_overlay_create(AromaNode* parent, int x, int y)
     overlay->border_color = theme.colors.border;
     overlay->corner_radius = 10.0f;
 
-    AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, overlay);
-    if (!node) {
+    AromaNode *node = __add_child_node(NODE_TYPE_WIDGET, parent, overlay);
+    if (!node)
+    {
         aroma_widget_free(overlay);
         return NULL;
     }
 
     aroma_node_set_draw_cb(node, aroma_debug_overlay_draw);
 
-    #ifdef ESP32
+#ifdef ESP32
     aroma_node_invalidate(node);
-    #endif
+#endif
 
     return node;
 }
 
-void aroma_debug_overlay_set_font(AromaNode* overlay_node, AromaFont* font)
+void aroma_debug_overlay_set_font(AromaNode *overlay_node, AromaFont *font)
 {
-    if (!overlay_node || !overlay_node->node_widget_ptr) return;
-    AromaDebugOverlay* overlay = (AromaDebugOverlay*)overlay_node->node_widget_ptr;
+    if (!overlay_node || !overlay_node->node_widget_ptr)
+        return;
+    AromaDebugOverlay *overlay = (AromaDebugOverlay *)overlay_node->node_widget_ptr;
     overlay->font = font;
 }
 
-void aroma_debug_overlay_set_visible(AromaNode* overlay_node, bool visible)
+void aroma_debug_overlay_set_visible(AromaNode *overlay_node, bool visible)
 {
-    if (!overlay_node || !overlay_node->node_widget_ptr) return;
-    AromaDebugOverlay* overlay = (AromaDebugOverlay*)overlay_node->node_widget_ptr;
+    if (!overlay_node || !overlay_node->node_widget_ptr)
+        return;
+    AromaDebugOverlay *overlay = (AromaDebugOverlay *)overlay_node->node_widget_ptr;
     overlay->visible = visible;
     aroma_node_invalidate(overlay_node);
 }
 
-
-static void count_nodes(AromaNode* node, size_t* count) {
-    if (!node) return;
+static void count_nodes(AromaNode *node, size_t *count)
+{
+    if (!node)
+        return;
     (*count)++;
-    for (uint64_t i = 0; i < node->child_count; ++i) {
+    for (uint64_t i = 0; i < node->child_count; ++i)
+    {
         count_nodes(node->child_nodes[i], count);
     }
 }
 
-void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
+void aroma_debug_overlay_draw(AromaNode *overlay_node, size_t window_id)
 {
-    if (!overlay_node || !overlay_node->node_widget_ptr) return;
-    AromaDebugOverlay* overlay = (AromaDebugOverlay*)overlay_node->node_widget_ptr;
-    if (!overlay->visible) return;
+    if (!overlay_node || !overlay_node->node_widget_ptr)
+        return;
+    AromaDebugOverlay *overlay = (AromaDebugOverlay *)overlay_node->node_widget_ptr;
+    if (!overlay->visible)
+        return;
 
-    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
-    if (!gfx) return;
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    if (!gfx)
+        return;
 
     size_t dirty_count = 0;
     aroma_dirty_list_get(&dirty_count);
@@ -129,7 +141,8 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
     float elapsed = __time_diff_sec(now, overlay->last_time);
-    if (elapsed >= 0.5f) {
+    if (elapsed >= 0.5f)
+    {
         overlay->fps = overlay->frame_count / elapsed;
         overlay->frame_count = 0;
         overlay->last_time = now;
@@ -142,31 +155,53 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
                                overlay->rect.width, overlay->rect.height,
                                overlay->border_color, 1, true, overlay->corner_radius);
 
-    if (overlay->font && gfx->render_text) {
+    if (overlay->font && gfx->render_text)
+    {
         char line1[64], line2[64], line3[64], line4[64], line5[64], line6[64], line7[64], line8[64];
         snprintf(line1, sizeof(line1), "AromaUI v%s", AROMA_VERSION_STRING);
 
-        const char* gfx_backend = "?";
-        switch (aroma_backend_abi.get_graphics_backend_type()) {
-            case 0: gfx_backend = "GLES3"; break;
-            case 1: gfx_backend = "Software"; break;
-            case 2: gfx_backend = "TFT_ESPI"; break;
-            case 3: gfx_backend = "STM_SPI"; break;
+        const char *gfx_backend = "?";
+        switch (aroma_backend_abi.get_graphics_backend_type())
+        {
+        case 0:
+            gfx_backend = "GLES3";
+            break;
+        case 1:
+            gfx_backend = "Software";
+            break;
+        case 2:
+            gfx_backend = "TFT_ESPI";
+            break;
+        case 3:
+            gfx_backend = "STM_SPI";
+            break;
         }
         snprintf(line2, sizeof(line2), "GFX: %s", gfx_backend);
 
-        const char* plat_backend = "?";
+        const char *plat_backend = "?";
         extern AromaBackendABI aroma_backend_abi;
-        AromaPlatformInterface* plat = aroma_backend_abi.get_platform_interface();
+        AromaPlatformInterface *plat = aroma_backend_abi.get_platform_interface();
 
-        plat_backend = "GLPS";
+        switch (aroma_backend_abi.get_platform_backend_type())
+        {
+        case PLATFORM_BACKEND_GLPS:
+            plat_backend = "GLPS";
+            break;
+        case PLATFORM_BACKEND_ANDROID:
+            plat_backend = "Android";
+            break;
+        case PLATFORM_BACKEND_TFT_ESPI:
+            plat_backend = "TFT_ESPI";
+            break;
+        }
+
         snprintf(line3, sizeof(line3), "PLAT: %s", plat_backend);
-
 
         size_t node_count = 0;
         {
-            AromaNode* root = overlay_node;
-            while (root && root->parent_node) root = root->parent_node;
+            AromaNode *root = overlay_node;
+            while (root && root->parent_node)
+                root = root->parent_node;
             count_nodes(root, &node_count);
         }
         snprintf(line4, sizeof(line4), "fps: %.1f", overlay->fps);
@@ -178,7 +213,7 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
         size_t total_free = global_memory_system.widget_pools[0].total_freed;
         snprintf(line7, sizeof(line7), "mem: %zu/%zu", total_alloc, total_free);
 
-        extern AromaNode* g_focused_node;
+        extern AromaNode *g_focused_node;
         snprintf(line8, sizeof(line8), "focus: %llu", g_focused_node ? (unsigned long long)g_focused_node->node_id : 0ULL);
 
         int line_height = aroma_font_get_line_height(overlay->font);
@@ -202,10 +237,12 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
     }
 }
 
-void aroma_debug_overlay_destroy(AromaNode* overlay_node)
+void aroma_debug_overlay_destroy(AromaNode *overlay_node)
 {
-    if (!overlay_node) return;
-    if (overlay_node->node_widget_ptr) {
+    if (!overlay_node)
+        return;
+    if (overlay_node->node_widget_ptr)
+    {
         aroma_widget_free(overlay_node->node_widget_ptr);
         overlay_node->node_widget_ptr = NULL;
     }
