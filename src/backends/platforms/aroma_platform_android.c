@@ -24,6 +24,7 @@ static int g_width = 0;
 static int g_height = 0;
 static bool g_has_window = false;
 
+
 static void (*g_update_callback)(size_t window_id, void *data) = NULL;
 static void* g_update_callback_data = NULL;
 
