@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "../aroma_abi.h"
+#include "../graphics/aroma_graphics_interface.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
 #include "core/aroma_node.h"
