@@ -1,6 +1,6 @@
 #include "aroma.h"
 #include <stdio.h>
-
+#include "logo_data.h"
 
 bool on_btn_click(AromaButton* btn, void* data) {
     (void)btn;
@@ -35,7 +35,15 @@ int main(int argc, char** argv) {
     
     aroma_ui_on_button_click(btn, on_btn_click, NULL);
     aroma_button_set_font((AromaNode*)btn, font);
-   
+
+    // Create an image from memory (logo_data.h)
+    AromaNode* img = aroma_image_create_from_memory(
+        (AromaNode*)win, 
+        (unsigned char*)logo_png, 
+        logo_png_len, 
+        50, 50, 100, 100
+    );
+
     aroma_window_get_size((AromaNode*)win, &w, &h);
     snprintf(title, sizeof(title), "Window Size: %dx%d", w, h);
 
