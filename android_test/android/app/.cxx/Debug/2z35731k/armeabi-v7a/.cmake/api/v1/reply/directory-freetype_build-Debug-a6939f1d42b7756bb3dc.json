@@ -17,37 +17,37 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 561,
+				"line" : 591,
 				"parent" : 0
 			},
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 569,
+				"line" : 599,
 				"parent" : 0
 			},
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 623,
+				"line" : 653,
 				"parent" : 0
 			},
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 634,
+				"line" : 664,
 				"parent" : 0
 			},
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 642,
+				"line" : 672,
 				"parent" : 0
 			},
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 647,
+				"line" : 677,
 				"parent" : 0
 			}
 		]
@@ -73,8 +73,8 @@
 			"destination" : "include/freetype2/freetype/config",
 			"paths" : 
 			[
-				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86/freetype_build/include/freetype/config/ftconfig.h",
-				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86/freetype_build/include/freetype/config/ftoption.h"
+				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config/ftconfig.h",
+				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/include/freetype/config/ftoption.h"
 			],
 			"type" : "file"
 		},
@@ -84,7 +84,7 @@
 			"destination" : "lib/pkgconfig",
 			"paths" : 
 			[
-				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86/freetype_build/freetype2.pc"
+				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/freetype2.pc"
 			],
 			"type" : "file"
 		},
@@ -128,7 +128,7 @@
 			"destination" : "lib/cmake/freetype",
 			"paths" : 
 			[
-				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86/freetype_build/freetype-config-version.cmake"
+				"/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/freetype-config-version.cmake"
 			],
 			"type" : "file"
 		}

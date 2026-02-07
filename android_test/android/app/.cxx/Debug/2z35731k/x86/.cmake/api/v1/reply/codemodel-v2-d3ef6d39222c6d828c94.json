@@ -27,10 +27,10 @@
 				{
 					"build" : "freetype_build",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-freetype_build-Debug-0dd1d8cfa9083a42bf7a.json",
+					"jsonFile" : "directory-freetype_build-Debug-c12aaf4337cb63868ccb.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.0"
+						"string" : "3.12"
 					},
 					"parentIndex" : 0,
 					"projectIndex" : 1,
@@ -94,21 +94,21 @@
 				{
 					"directoryIndex" : 2,
 					"id" : "aroma::@9df0d65908e3390db40e",
-					"jsonFile" : "target-aroma-Debug-e47e3cca896f65d59fc6.json",
+					"jsonFile" : "target-aroma-Debug-f47d923482446e8acdb0.json",
 					"name" : "aroma",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "aroma_app::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-aroma_app-Debug-bfd95e31e7d9eda772b1.json",
+					"jsonFile" : "target-aroma_app-Debug-c09c84385bdfd0a5ea66.json",
 					"name" : "aroma_app",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 1,
 					"id" : "freetype::@bdc1e324bbc9e3c81525",
-					"jsonFile" : "target-freetype-Debug-4b5b240ada0a9c8bb772.json",
+					"jsonFile" : "target-freetype-Debug-5ed4352e54ceabb32b4a.json",
 					"name" : "freetype",
 					"projectIndex" : 1
 				}
@@ -118,7 +118,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/armeabi-v7a",
+		"build" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86",
 		"source" : "/home/yassineaa/AromaUI/android_test/android/app/src/main/cpp"
 	},
 	"version" : 

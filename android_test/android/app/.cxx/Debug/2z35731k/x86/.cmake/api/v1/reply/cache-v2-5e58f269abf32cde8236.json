@@ -11,7 +11,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "x86_64"
+			"value" : "x86"
 		},
 		{
 			"name" : "ANDROID_NDK",
@@ -63,7 +63,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "x86_64"
+			"value" : "x86"
 		},
 		{
 			"name" : "CMAKE_ANDROID_NDK",
@@ -151,7 +151,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86_64"
+			"value" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -963,7 +963,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86_64"
+			"value" : "/home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86"
 		},
 		{
 			"name" : "CMAKE_LINKER",
@@ -1235,7 +1235,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86_64"
+			"value" : "/home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1475,10 +1475,10 @@
 			[
 				{
 					"name" : "HELPSTRING",
-					"value" : "The CMake toolchain file"
+					"value" : "No help, variable specified on the command line."
 				}
 			],
-			"type" : "FILEPATH",
+			"type" : "UNINITIALIZED",
 			"value" : "/home/yassineaa/Android/Sdk/ndk/25.1.8937393/build/cmake/android.toolchain.cmake"
 		},
 		{
@@ -1678,6 +1678,18 @@
 			"value" : "TRUE"
 		},
 		{
+			"name" : "FT_DYNAMIC_HARFBUZZ",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Load HarfBuzz library dynamically at runtime, if possible."
+				}
+			],
+			"type" : "BOOL",
+			"value" : "ON"
+		},
+		{
 			"name" : "FT_ENABLE_ERROR_STRINGS",
 			"properties" : 
 			[
@@ -1700,6 +1712,18 @@
 			],
 			"type" : "BOOL",
 			"value" : "OFF"
+		},
+		{
+			"name" : "HAVE_DLOPEN_IN_LIBC",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Have symbol dlopen"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : "1"
 		},
 		{
 			"name" : "HAVE_FCNTL_H",
@@ -2247,7 +2271,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86_64"
+			"value" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86"
 		},
 		{
 			"name" : "android_test_android_IS_TOP_LEVEL",
@@ -2283,7 +2307,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86_64/freetype_build"
+			"value" : "/home/yassineaa/AromaUI/android_test/android/app/.cxx/Debug/2z35731k/x86/freetype_build"
 		},
 		{
 			"name" : "freetype_IS_TOP_LEVEL",
