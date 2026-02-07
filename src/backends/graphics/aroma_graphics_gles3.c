@@ -128,6 +128,11 @@ int setup_shared_window_resources(void)
 
 int setup_separate_window_resources(size_t window_id)
 {
+    // Reset loaded font tracker for this window since context was lost/reset
+    if (window_id < 256) {
+        ctx.loaded_fonts[window_id] = NULL;
+    }
+
    ctx.text_programs[window_id] = glCreateProgram();
     glAttachShader(ctx.text_programs[window_id], ctx.text_vertex_shader);
     glAttachShader(ctx.text_programs[window_id], ctx.text_fragment_shader);

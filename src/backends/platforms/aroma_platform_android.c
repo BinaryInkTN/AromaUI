@@ -31,7 +31,6 @@ static void* g_update_callback_data = NULL;
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
-// Android Logging wrapper for Aroma Logger
 void android_log_wrapper(int level, const char* msg) {
     switch(level) {
         case 0: __android_log_print(ANDROID_LOG_DEBUG, "AromaUI", "%s", msg); break;
@@ -42,22 +41,9 @@ void android_log_wrapper(int level, const char* msg) {
     }
 }
 
-// Event input wrapper
 static void handle_input_mouse(int action, float x, float y) {
     bool is_down = (action == AMOTION_EVENT_ACTION_DOWN) || (action == AMOTION_EVENT_ACTION_MOVE);
-    // On Android, we just send "pointer move" with down flag.
-    // If we want click events, we need the event system to synthesize them or handle up/down better.
-    // AromaEvent system usually expects move events and handles clicks internally?
-    // Let's check aroma_event_handle_pointer_move...
-    // Assuming (x,y, is_down) covers hover vs drag/click.
-    
     aroma_event_handle_pointer_move((int)x, (int)y, is_down);
-    
-    // Also, if action is UP, we should probably send a move with is_down=false at that location
-    // The current code does:
-    // DOWN -> move(x, y, true)
-    // UP   -> move(x, y, false)
-    // MOVE -> move(x, y, true)
 }
 
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
@@ -84,7 +70,6 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event) {
 }
 
 static int init_display(struct android_app* app) {
-    // Initialize EGL
     EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     eglInitialize(dpy, 0, 0);
 
@@ -125,7 +110,6 @@ static int init_display(struct android_app* app) {
     g_height = h;
     g_has_window = true;
 
-    // Initialize Graphics Backend Resources (Shaders, VBOs, etc.)
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx) {
         if (gfx->setup_shared_window_resources) {
@@ -136,17 +120,15 @@ static int init_display(struct android_app* app) {
             }
         }
         
-        // We only support one window on Android (id: 1)
         if (gfx->setup_separate_window_resources) {
-            if (!gfx->setup_separate_window_resources(1)) {
-                LOGE("Failed to setup separate resources for window 1");
+            if (!gfx->setup_separate_window_resources(0)) {
+                LOGE("Failed to setup separate resources for window 0");
             } else {
-                 LOGI("Separate graphics resources setup success for window 1");
+                 LOGI("Separate graphics resources setup success for window 0");
             }
         }
     }
 
-    // Force invalidate root nodes to ensure initial draw
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     extern int g_window_count;
     
@@ -188,10 +170,8 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
             term_display();
             break;
         case APP_CMD_GAINED_FOCUS:
-            // Resume
             break;
         case APP_CMD_LOST_FOCUS:
-            // Pause
             break;
     }
 }
@@ -203,8 +183,6 @@ int initialize(void) {
         LOGE("Android App state not set. Call aroma_android_set_app first.");
         return 0;
     }
-    // Set logger hack?
-    // aroma_logger_set_callback(android_log_wrapper); 
     
     g_app->onAppCmd = handle_cmd;
     g_app->onInputEvent = handle_input;
@@ -217,9 +195,7 @@ void shutdown(void) {
 }
 
 size_t create_window(const char* title, int x, int y, int width, int height) {
-    // On Android, we just return a dummy ID 1, as we only support one window (the Activity)
-    // If the window isn't created yet, we wait for it in the event loop
-    return 1;
+    return 0;
 }
 
 void make_context_current(size_t window_id) {
@@ -244,15 +220,12 @@ void get_window_size(size_t window_id, int *window_width, int *window_height) {
 }
 
 void request_window_update(size_t window_id) {
-    // If we had an invalidation loop we could signal it.
-    // For now we assume we redraw every frame in the loop
 }
 
 bool run_event_loop(void) {
     int events;
     struct android_poll_source* source;
     
-    // Poll events
     while (ALooper_pollAll(0, NULL, &events, (void**)&source) >= 0) {
         if (source != NULL) {
             source->process(g_app, source);
@@ -264,7 +237,7 @@ bool run_event_loop(void) {
 
     if (g_has_window) {
         if (g_update_callback) {
-            g_update_callback(1, g_update_callback_data);
+            g_update_callback(0, g_update_callback_data);
         }
     }
     return true;
@@ -281,10 +254,6 @@ void call_flush_function_ptr(void (*flush_fn)(struct AromaDrawList* list, size_t
 void tft_mark_tiles_dirty(int y, int h) {}
 void set_clear_color(uint16_t color) {}
 
-
-// void aroma_android_set_app(struct android_app* state) {
-//    g_app = state;
-// }
 
 void platform_set_android_app(void* state) {
     g_app = (struct android_app*)state;
@@ -306,9 +275,5 @@ AromaPlatformInterface aroma_platform_android = {
     .set_clear_color = set_clear_color,
     .set_android_app = platform_set_android_app
 };
-
-// void aroma_android_set_app(struct android_app* state) {
-//    g_app = state;
-// }
 
 #endif
