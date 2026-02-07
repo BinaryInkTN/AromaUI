@@ -132,13 +132,20 @@ def install_android_sdk():
     if not os.path.exists(sdkmanager):
         print_error("sdkmanager not found after installation.")
         return False
+    
+    # Check for Java
+    if not run_command(["which", "java"], capture_output=True) and not os.environ.get("JAVA_HOME"):
+        print_error("Java is required for Android SDK but not found. Please install OpenJDK.")
+        return False
 
     os.chmod(sdkmanager, 0o755)
         
     print_step("Installing SDK Components (Accepting Licenses)...")
     
     try:
-        p = subprocess.Popen([sdkmanager, "--licenses"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Use bash explicitly to avoid permission issues with the script
+        cmd = ["bash", sdkmanager, "--licenses"] if platform.system() == "Linux" else [sdkmanager, "--licenses"]
+        p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         p.communicate(input=b"y\n" * 50)
     except Exception as e:
         print_error(f"Failed to accept licenses: {e}")
@@ -152,7 +159,10 @@ def install_android_sdk():
     ]
     
     print_info(f"Installing: {', '.join(packages)}")
-    res = run_command([sdkmanager] + packages)
+    
+    # Use bash here too
+    install_cmd = ["bash", sdkmanager] + packages if platform.system() == "Linux" else [sdkmanager] + packages
+    res = run_command(install_cmd)
     
     if res and res.returncode == 0:
         print_success("Android SDK & NDK installed successfully!")
