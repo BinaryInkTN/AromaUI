@@ -14,6 +14,7 @@ typedef struct AromaWindow
 } AromaWindow;
 
 AromaNode* aroma_window_create(const char* title, int x, int y, int width, int height);
+void aroma_window_get_size(AromaNode* window_node, int* width, int* height);
 #ifdef __cplusplus
 }
 #endif

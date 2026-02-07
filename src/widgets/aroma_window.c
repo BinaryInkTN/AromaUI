@@ -47,3 +47,14 @@ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int h
 
     return scene_node;
 }
+
+void aroma_window_get_size(AromaNode* window_node, int* width, int* height) {
+    if (!window_node || window_node->node_type != NODE_TYPE_ROOT || !window_node->node_widget_ptr) {
+        if (width) *width = 0;
+        if (height) *height = 0;
+        return;
+    }
+    AromaWindow* win = (AromaWindow*)window_node->node_widget_ptr;
+    AromaPlatformInterface* platform_interface = aroma_backend_abi.get_platform_interface();
+    platform_interface->get_window_size(win->window_id, width, height);
+}
