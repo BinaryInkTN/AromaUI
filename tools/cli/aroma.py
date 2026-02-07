@@ -161,15 +161,16 @@ add_subdirectory(${{AROMA_ROOT}}/vendors/freetype freetype_build)
 add_subdirectory(${{AROMA_ROOT}}/src aroma_lib)
 
 # 3. Setup Android Glue
-add_library(app-glue STATIC ${{ANDROID_NDK}}/sources/android/native_app_glue/android_native_app_glue.c)
-target_include_directories(app-glue PUBLIC ${{ANDROID_NDK}}/sources/android/native_app_glue)
+# We compile glue directly into the shared lib to ensure the entry point symbol is exported
+set(ANDROID_GLUE_DIR ${{ANDROID_NDK}}/sources/android/native_app_glue)
+set(ANDROID_GLUE_SRC ${{ANDROID_GLUE_DIR}}/android_native_app_glue.c)
 
 # 4. Main App
-add_library(aroma_app SHARED ../../../../../src/main.c)
+add_library(aroma_app SHARED ../../../../../src/main.c ${{ANDROID_GLUE_SRC}})
 
-target_include_directories(aroma_app PRIVATE ${{AROMA_ROOT}}/include)
+target_include_directories(aroma_app PRIVATE ${{AROMA_ROOT}}/include ${{ANDROID_GLUE_DIR}})
 
-target_link_libraries(aroma_app android aroma app-glue log)
+target_link_libraries(aroma_app android aroma log)
 """)
             
     # Modify local.properties if we can find SDK
@@ -260,12 +261,24 @@ def cmd_run(args):
         if res is not None and res.returncode == 0:
             print_success("Installed.")
             # Launch? We need package name.
-            # grep package name from Manifest
-            manifest = os.path.join(android_dir, "app/src/main/AndroidManifest.xml")
-            # This is tricky without parsing XML properly, but we can guess native activity
-            print_step("Launching...")
+            # grep package name from build.gradle
+            build_gradle = os.path.join(android_dir, "app/build.gradle")
+            package_name = "com.example.aromaapp" # Default fallback
+            if os.path.exists(build_gradle):
+                with open(build_gradle, 'r') as f:
+                    for line in f:
+                        if "applicationId" in line:
+                            # applicationId "com.example.aromaapp"
+                            import re
+                            # Match text inside quotes
+                            m = re.search(r'applicationId\s+[\"\']([^\"\']+)[\"\']', line)
+                            if m:
+                                package_name = m.group(1)
+                                break
+            
+            print_step(f"Launching {package_name}...")
             # Assuming standard activity from template shell
-            run_command(["adb", "shell", "am", "start", "-n", "com.binaryink.aromaexample/android.app.NativeActivity"])
+            run_command(["adb", "shell", "am", "start", "-n", f"{package_name}/android.app.NativeActivity"])
 
 def main():
     parser = argparse.ArgumentParser(prog="aroma", description="AromaUI CLI Tool")

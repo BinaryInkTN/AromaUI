@@ -79,6 +79,20 @@ static int init_display(struct android_app* app) {
     g_height = h;
     g_has_window = true;
 
+    // Trigger full redraw once window is ready
+    // We can't access g_windows/aroma_node directly cleanly here without casting or including internal headers
+    // But since we include "aroma_ui.h", we have access to g_windows and AromaNode.
+    // However, aroma_node_invalidate is in aroma_node.h
+    extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
+    extern int g_window_count;
+    
+    for(int i = 0; i < g_window_count; i++) {
+        if(g_windows[i].root_node) {
+            aroma_node_invalidate(g_windows[i].root_node);
+            LOGI("Invalidated window %d after init", (int)i);
+        }
+    }
+
     // Check Open GL extensions if needed
 
     return 0;
