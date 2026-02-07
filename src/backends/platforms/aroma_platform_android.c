@@ -24,6 +24,9 @@
 #include <android_native_app_glue.h>
 #include <android/native_window.h>
 #include <android/native_activity.h>
+#ifndef AWINDOW_FLAG_FULLSCREEN
+#define AWINDOW_FLAG_FULLSCREEN 0x00000400
+#endif
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
