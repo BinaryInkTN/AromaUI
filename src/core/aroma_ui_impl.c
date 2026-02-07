@@ -34,6 +34,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#ifdef __ANDROID__
+struct android_app;
+void aroma_android_set_app(struct android_app* state) {
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->set_android_app) {
+        platform->set_android_app(state);
+    }
+}
+#endif
+
 #ifdef ESP32
 #include <Arduino.h>
 #endif
@@ -241,6 +251,19 @@ void aroma_ui_destroy_window_impl(AromaWindow* window) {
             return;
         }
     }
+}
+
+void aroma_ui_process_events_impl(void) {
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->run_event_loop) {
+        if (!platform->run_event_loop()) {
+            // Signal main loop to stop? 
+            // Usually run_event_loop returns false if quit requested.
+            // aroma_ui_shutdown(); ?
+            // For now just continue, aroma_ui_is_running checks initialized flag.
+        }
+    }
+    aroma_event_process_queue();
 }
 
 AromaDrawList* aroma_ui_begin_frame(size_t window_id) {

@@ -257,6 +257,8 @@ AromaPlatformInterface* get_platform_interface(void) {
     AromaPlatformBackendType backend = atomic_load(&current_platform_backend);
 #ifdef ESP32
     return &aroma_platform_tft;
+#elif defined(__ANDROID__)
+    return &aroma_platform_android;
 #else
     return &aroma_platform_glps;
 #endif

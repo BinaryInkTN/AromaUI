@@ -104,6 +104,15 @@ void aroma_debug_overlay_set_visible(AromaNode* overlay_node, bool visible)
     aroma_node_invalidate(overlay_node);
 }
 
+
+static void count_nodes(AromaNode* node, size_t* count) {
+    if (!node) return;
+    (*count)++;
+    for (uint64_t i = 0; i < node->child_count; ++i) {
+        count_nodes(node->child_nodes[i], count);
+    }
+}
+
 void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
 {
     if (!overlay_node || !overlay_node->node_widget_ptr) return;
@@ -158,14 +167,7 @@ void aroma_debug_overlay_draw(AromaNode* overlay_node, size_t window_id)
         {
             AromaNode* root = overlay_node;
             while (root && root->parent_node) root = root->parent_node;
-            void count_nodes(AromaNode* node) {
-                if (!node) return;
-                node_count++;
-                for (uint64_t i = 0; i < node->child_count; ++i) {
-                    count_nodes(node->child_nodes[i]);
-                }
-            }
-            count_nodes(root);
+            count_nodes(root, &node_count);
         }
         snprintf(line4, sizeof(line4), "fps: %.1f", overlay->fps);
         snprintf(line5, sizeof(line5), "dirty: %zu", dirty_count);

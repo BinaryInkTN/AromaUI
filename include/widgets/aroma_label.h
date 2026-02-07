@@ -4,6 +4,9 @@
 #include "aroma_common.h"
 #include "aroma_node.h"
 #include "aroma_font.h"
+#include "aroma_logger.h"
+#include "widgets/aroma_window.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,6 +20,14 @@ typedef struct AromaLabel AromaLabel;
 
 // Create label
 AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y, AromaLabelStyle style);
+
+static inline AromaNode* aroma_ui_create_label(AromaNode* parent, const char* text, int x, int y, AromaLabelStyle style) {
+    if (!parent) {
+        LOG_ERROR("Invalid label parent");
+        return NULL;
+    }
+    return aroma_label_create(parent, text, x, y, style);
+}
 
 // Set text
 void aroma_label_set_text(AromaNode* label_node, const char* text);

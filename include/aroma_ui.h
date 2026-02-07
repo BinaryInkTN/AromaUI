@@ -125,9 +125,11 @@ static inline bool aroma_ui_is_running(void) {
     return aroma_ui_is_running_impl();
 }
 
+extern void aroma_ui_process_events_impl(void);
+
 static inline void aroma_ui_process_events(void) {
     if (!g_ui_initialized) return;
-    aroma_event_process_queue();
+    aroma_ui_process_events_impl();
 }
 
 extern void aroma_ui_render_impl(struct AromaWindow* window_data);
@@ -235,6 +237,13 @@ void aroma_graphics_render_text(size_t window_id, AromaFont* font, const char* t
 void aroma_graphics_swap_buffers(size_t window_id);
 
 void aroma_platform_set_window_update_callback(void (*callback)(size_t, void*), void* user_data);
+
+#ifdef __ANDROID__
+// Forward struct for Android App state
+struct android_app; 
+void aroma_android_set_app(struct android_app* state);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

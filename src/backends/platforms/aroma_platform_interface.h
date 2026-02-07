@@ -47,12 +47,17 @@ typedef struct AromaPlatformInterface {
     void (*tft_mark_tiles_dirty)(int y, int h);
     void (*set_clear_color)(uint16_t color);
 
+    // [Android]
+    void (*set_android_app)(void* app_state);
+
 } AromaPlatformInterface;
 
 
 extern AromaPlatformInterface aroma_platform_glps;
 
 extern AromaPlatformInterface aroma_platform_tft;
+
+extern AromaPlatformInterface aroma_platform_android;
 
 #ifdef __cplusplus
 }

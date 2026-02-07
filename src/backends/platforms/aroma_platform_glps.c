@@ -262,7 +262,8 @@ AromaPlatformInterface aroma_platform_glps = {
     .request_window_update = request_window_update,
     .run_event_loop = run_event_loop,
     .swap_buffers = swap_buffers,
-    .shutdown = shutdown
+    .shutdown = shutdown,
+    .set_android_app = NULL
 };
 
 #endif

@@ -1,4 +1,36 @@
-option(ENABLE_ASAN "Enable AddressSanitizer for debugging" OFF)
+if(NOT ANDROID)
+    # GLPS for Linux
+    if(NOT TARGET GLPS)
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/CMakeLists.txt")
+            add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps" glps_build)
+        else()
+            message(STATUS "GLPS vendor not found at ../vendors/glps")
+        endif()
+    endif()
+endif()
+
+# Freetype
+if(NOT TARGET freetype)
+    find_package(Freetype QUIET)
+    if(FREETYPE_FOUND)
+        # Create alias so we can link 'freetype' uniformly
+        if(NOT TARGET freetype)
+            add_library(freetype ALIAS Freetype::Freetype)
+        endif()
+    else()
+        # Try vendor
+        set(FT_VENDOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/freetype")
+        if(EXISTS "${FT_VENDOR_DIR}/CMakeLists.txt")
+             set(FT_DISABLE_ZLIB TRUE CACHE BOOL "" FORCE)
+             set(FT_DISABLE_BZIP2 TRUE CACHE BOOL "" FORCE)
+             set(FT_DISABLE_PNG TRUE CACHE BOOL "" FORCE)
+             set(FT_DISABLE_BROTLI TRUE CACHE BOOL "" FORCE)
+             add_subdirectory("${FT_VENDOR_DIR}" freetype_build)
+        else()
+             message(FATAL_ERROR "Freetype not found and vendor submodule missing.")
+        endif()
+    endif()
+endif()
 
 add_library(aroma
     core/aroma_ui_impl.c
@@ -12,7 +44,6 @@ add_library(aroma
     core/aroma_time.c
     core/aroma_timer.c
     core/aroma_drawlist.c
-    backends/platforms/aroma_platform_glps.c
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
     backends/graphics/utils/aroma_gles3_text.c
@@ -59,6 +90,16 @@ target_link_libraries(aroma
     PRIVATE freetype
     PRIVATE m
 )
+
+if(ANDROID)
+    target_sources(aroma PRIVATE backends/platforms/aroma_platform_android.c)
+    target_link_libraries(aroma PRIVATE android EGL log GLESv3 freetype)
+    target_include_directories(aroma PRIVATE ${ANDROID_NDK}/sources/android/native_app_glue)
+else()
+    target_sources(aroma PRIVATE backends/platforms/aroma_platform_glps.c)
+    target_link_libraries(aroma PRIVATE GLPS freetype)
+endif()
+
 
 set_target_properties(aroma PROPERTIES
     VERSION 1.0.0
