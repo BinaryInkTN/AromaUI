@@ -62,3 +62,14 @@ void aroma_window_get_size(AromaNode* window_node, int* width, int* height) {
     AromaPlatformInterface* platform_interface = aroma_backend_abi.get_platform_interface();
     platform_interface->get_window_size(win->window_id, width, height);
 }
+
+void aroma_window_set_fullscreen(AromaNode* window_node, bool enable) {
+    if (!window_node || window_node->node_type != NODE_TYPE_ROOT || !window_node->node_widget_ptr) {
+        return;
+    }
+    AromaWindow* win = (AromaWindow*)window_node->node_widget_ptr;
+    AromaPlatformInterface* platform_interface = aroma_backend_abi.get_platform_interface();
+    if (platform_interface->set_fullscreen) {
+        platform_interface->set_fullscreen(win->window_id, enable);
+    }
+}

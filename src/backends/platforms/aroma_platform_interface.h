@@ -49,6 +49,7 @@ typedef struct AromaPlatformInterface {
 
     // [Android]
     void (*set_android_app)(void* app_state);
+    void (*set_fullscreen)(size_t window_id, bool enabled);
 
 } AromaPlatformInterface;
 

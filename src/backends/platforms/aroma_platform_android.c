@@ -251,6 +251,8 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
 int initialize(void) {
     if (!g_app)
         return 0;
+    
+    cache_physical_screen_info(g_app);
 
     g_app->onAppCmd = handle_cmd;
     g_app->onInputEvent = handle_input;
@@ -277,12 +279,26 @@ void set_window_update_callback(void (*callback)(size_t, void*), void* data) {
 
 void get_window_size(size_t window_id, int* window_width, int* window_height) {
     if (!g_has_window) {
-        *window_width = 0;
-        *window_height = 0;
+        if (g_phys_cached) {
+            *window_width = g_phys_width;
+            *window_height = g_phys_height;
+        } else {
+            *window_width = 0;
+            *window_height = 0;
+        }
         return;
     }
     *window_width = g_width;
     *window_height = g_height;
+}
+
+void set_fullscreen(size_t window_id, bool enabled) {
+    if (!g_app || !g_app->activity) return;
+    if (enabled) {
+        ANativeActivity_setWindowFlags(g_app->activity, AWINDOW_FLAG_FULLSCREEN, 0);
+    } else {
+        ANativeActivity_setWindowFlags(g_app->activity, 0, AWINDOW_FLAG_FULLSCREEN);
+    }
 }
 
 void request_window_update(size_t window_id) {}
@@ -335,7 +351,8 @@ AromaPlatformInterface aroma_platform_android = {
     .call_flush_function_ptr = call_flush_function_ptr,
     .tft_mark_tiles_dirty = tft_mark_tiles_dirty,
     .set_clear_color = set_clear_color,
-    .set_android_app = platform_set_android_app
+    .set_android_app = platform_set_android_app,
+    .set_fullscreen = set_fullscreen
 };
 
 #endif
