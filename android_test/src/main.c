@@ -11,7 +11,7 @@ bool on_btn_click(AromaButton* btn, void* data) {
 int main(int argc, char** argv) {
     if (!aroma_ui_init()) return 1;
     
-    AromaWindow* win = aroma_ui_create_window("{{PROJECT_NAME}}", 800, 480);
+    AromaWindow* win = aroma_ui_create_window("android_test", 800, 480);
     
     // Attempt to load a default font
 #ifdef __ANDROID__

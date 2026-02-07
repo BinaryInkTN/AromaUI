@@ -1,0 +1,1 @@
+/home/yassineaa/AromaUI/android_test/android/app/build/intermediates/cxx/Debug/2z35731k/obj/armeabi-v7a
