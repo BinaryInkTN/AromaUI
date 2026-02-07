@@ -22,6 +22,8 @@ int aroma_font_get_ascender(AromaFont* font);
 int aroma_font_get_descender(AromaFont* font);
 
 void* aroma_font_get_face(AromaFont* font);
+
+int aroma_font_get_line_width(AromaFont* font, const char* text);
 #ifdef __cplusplus
 }
 #endif
