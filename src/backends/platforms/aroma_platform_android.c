@@ -40,10 +40,51 @@ void android_log_wrapper(int level, const char* msg) {
     }
 }
 
+// Event input wrapper
+static void handle_input_mouse(int action, float x, float y) {
+    bool is_down = (action == AMOTION_EVENT_ACTION_DOWN) || (action == AMOTION_EVENT_ACTION_MOVE);
+    // On Android, we just send "pointer move" with down flag.
+    // If we want click events, we need the event system to synthesize them or handle up/down better.
+    // AromaEvent system usually expects move events and handles clicks internally?
+    // Let's check aroma_event_handle_pointer_move...
+    // Assuming (x,y, is_down) covers hover vs drag/click.
+    
+    aroma_event_handle_pointer_move((int)x, (int)y, is_down);
+    
+    // Also, if action is UP, we should probably send a move with is_down=false at that location
+    // The current code does:
+    // DOWN -> move(x, y, true)
+    // UP   -> move(x, y, false)
+    // MOVE -> move(x, y, true)
+}
+
+static int32_t handle_input(struct android_app* app, AInputEvent* event) {
+    int32_t type = AInputEvent_getType(event);
+    if (type == AINPUT_EVENT_TYPE_MOTION) {
+        int action = AMotionEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
+        float x = AMotionEvent_getX(event, 0);
+        float y = AMotionEvent_getY(event, 0);
+        
+        switch(action) {
+            case AMOTION_EVENT_ACTION_DOWN:
+                aroma_event_handle_pointer_move((int)x, (int)y, true);
+                break;
+            case AMOTION_EVENT_ACTION_UP:
+                aroma_event_handle_pointer_move((int)x, (int)y, false);
+                break;
+            case AMOTION_EVENT_ACTION_MOVE:
+                aroma_event_handle_pointer_move((int)x, (int)y, true);
+                break;
+        }
+        return 1;
+    }
+    return 0;
+}
+
 static int init_display(struct android_app* app) {
     // Initialize EGL
-    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    eglInitialize(display, 0, 0);
+    EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    eglInitialize(dpy, 0, 0);
 
     const EGLint attribs[] = {
         EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -54,35 +95,35 @@ static int init_display(struct android_app* app) {
     };
     EGLint w, h, format;
     EGLint numConfigs;
-    eglChooseConfig(display, attribs, &config, 1, &numConfigs);
-    eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
+    eglChooseConfig(dpy, attribs, &config, 1, &numConfigs);
+    eglGetConfigAttrib(dpy, config, EGL_NATIVE_VISUAL_ID, &format);
 
     ANativeWindow_setBuffersGeometry(app->window, 0, 0, format);
 
-    EGLSurface surface = eglCreateWindowSurface(display, config, app->window, NULL);
+    EGLSurface surf = eglCreateWindowSurface(dpy, config, app->window, NULL);
     
     EGLint contextAttribs[] = {
         EGL_CONTEXT_CLIENT_VERSION, 3,
         EGL_NONE
     };
-    EGLContext context = eglCreateContext(display, config, NULL, contextAttribs);
+    EGLContext ctx = eglCreateContext(dpy, config, NULL, contextAttribs);
 
-    if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
+    if (eglMakeCurrent(dpy, surf, surf, ctx) == EGL_FALSE) {
         LOGE("Unable to eglMakeCurrent");
         return -1;
     }
 
-    eglQuerySurface(display, surface, EGL_WIDTH, &w);
-    eglQuerySurface(display, surface, EGL_HEIGHT, &h);
+    eglQuerySurface(dpy, surf, EGL_WIDTH, &w);
+    eglQuerySurface(dpy, surf, EGL_HEIGHT, &h);
 
+    display = dpy;
+    context = ctx;
+    surface = surf;
     g_width = w;
     g_height = h;
     g_has_window = true;
 
-    // Trigger full redraw once window is ready
-    // We can't access g_windows/aroma_node directly cleanly here without casting or including internal headers
-    // But since we include "aroma_ui.h", we have access to g_windows and AromaNode.
-    // However, aroma_node_invalidate is in aroma_node.h
+    // Force invalidate root nodes to ensure initial draw
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     extern int g_window_count;
     
@@ -92,8 +133,6 @@ static int init_display(struct android_app* app) {
             LOGI("Invalidated window %d after init", (int)i);
         }
     }
-
-    // Check Open GL extensions if needed
 
     return 0;
 }
@@ -113,29 +152,6 @@ static void term_display() {
     context = EGL_NO_CONTEXT;
     surface = EGL_NO_SURFACE;
     g_has_window = false;
-}
-
-static int32_t handle_input(struct android_app* app, AInputEvent* event) {
-    if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-        int action = AMotionEvent_getAction(event);
-        float x = AMotionEvent_getX(event, 0);
-        float y = AMotionEvent_getY(event, 0);
-        
-        bool is_down = (action == AMOTION_EVENT_ACTION_DOWN) || (action == AMOTION_EVENT_ACTION_MOVE);
-        int pointer_index = (action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
-        
-        // Handle touch as mouse
-        if (action == AMOTION_EVENT_ACTION_DOWN) {
-            aroma_event_handle_pointer_move((int)x, (int)y, true);
-        } else if (action == AMOTION_EVENT_ACTION_UP) {
-             aroma_event_handle_pointer_move((int)x, (int)y, false);
-        } else if (action == AMOTION_EVENT_ACTION_MOVE) {
-             aroma_event_handle_pointer_move((int)x, (int)y, true); // Assuming drag
-        }
-
-        return 1;
-    }
-    return 0;
 }
 
 static void handle_cmd(struct android_app* app, int32_t cmd) {
