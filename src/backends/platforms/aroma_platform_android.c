@@ -19,8 +19,6 @@
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
-
 #ifdef __ANDROID__
 #include "aroma_platform_interface.h"
 #include <android_native_app_glue.h>
@@ -39,13 +37,19 @@
 #include "widgets/aroma_window.h"
 
 static struct android_app* g_app = NULL;
+
 static EGLDisplay display = EGL_NO_DISPLAY;
 static EGLSurface surface = EGL_NO_SURFACE;
 static EGLContext context = EGL_NO_CONTEXT;
 static EGLConfig config;
+
 static int g_width = 0;
 static int g_height = 0;
 static bool g_has_window = false;
+
+static int g_phys_width = 0;
+static int g_phys_height = 0;
+static bool g_phys_cached = false;
 
 static void (*g_update_callback)(size_t window_id, void *data) = NULL;
 static void* g_update_callback_data = NULL;
@@ -54,56 +58,64 @@ static void* g_update_callback_data = NULL;
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
-static void get_physical_screen_info(struct android_app* app, int* width, int* height) {
+static void cache_physical_screen_info(struct android_app* app) {
+    if (g_phys_cached || !app || !app->activity) return;
+
     JNIEnv* env = NULL;
-    (*app->activity->vm)->AttachCurrentThread(app->activity->vm, &env, NULL);
+    if ((*app->activity->vm)->AttachCurrentThread(app->activity->vm, &env, NULL) != JNI_OK)
+        return;
 
     jclass activity_class = (*env)->GetObjectClass(env, app->activity->clazz);
-    jmethodID get_wm_method = (*env)->GetMethodID(env, activity_class, "getWindowManager", "()Landroid/view/WindowManager;");
-    jobject wm_obj = (*env)->CallObjectMethod(env, app->activity->clazz, get_wm_method);
+    jmethodID get_wm = (*env)->GetMethodID(env, activity_class, "getWindowManager", "()Landroid/view/WindowManager;");
+    jobject wm = (*env)->CallObjectMethod(env, app->activity->clazz, get_wm);
 
     jclass wm_class = (*env)->FindClass(env, "android/view/WindowManager");
-    jmethodID get_display_method = (*env)->GetMethodID(env, wm_class, "getDefaultDisplay", "()Landroid/view/Display;");
-    jobject display_obj = (*env)->CallObjectMethod(env, wm_obj, get_display_method);
+    jmethodID get_display = (*env)->GetMethodID(env, wm_class, "getDefaultDisplay", "()Landroid/view/Display;");
+    jobject display_obj = (*env)->CallObjectMethod(env, wm, get_display);
 
     jclass dm_class = (*env)->FindClass(env, "android/util/DisplayMetrics");
     jmethodID dm_ctor = (*env)->GetMethodID(env, dm_class, "<init>", "()V");
-    jobject dm_obj = (*env)->NewObject(env, dm_class, dm_ctor);
+    jobject dm = (*env)->NewObject(env, dm_class, dm_ctor);
 
     jclass display_class = (*env)->FindClass(env, "android/view/Display");
-    jmethodID get_real_metrics_method = (*env)->GetMethodID(env, display_class, "getRealMetrics", "(Landroid/util/DisplayMetrics;)V");
-    (*env)->CallVoidMethod(env, display_obj, get_real_metrics_method, dm_obj);
+    jmethodID get_real_metrics = (*env)->GetMethodID(env, display_class, "getRealMetrics", "(Landroid/util/DisplayMetrics;)V");
+    (*env)->CallVoidMethod(env, display_obj, get_real_metrics, dm);
 
-    jfieldID width_field = (*env)->GetFieldID(env, dm_class, "widthPixels", "I");
-    jfieldID height_field = (*env)->GetFieldID(env, dm_class, "heightPixels", "I");
+    jfieldID w_field = (*env)->GetFieldID(env, dm_class, "widthPixels", "I");
+    jfieldID h_field = (*env)->GetFieldID(env, dm_class, "heightPixels", "I");
 
-    if (width) *width = (*env)->GetIntField(env, dm_obj, width_field);
-    if (height) *height = (*env)->GetIntField(env, dm_obj, height_field);
+    g_phys_width = (*env)->GetIntField(env, dm, w_field);
+    g_phys_height = (*env)->GetIntField(env, dm, h_field);
+
+    g_phys_cached = true;
 
     (*app->activity->vm)->DetachCurrentThread(app->activity->vm);
 }
 
 static void update_surface_size(void) {
-    if (!g_app || !g_app->window) return;
+    if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
+        return;
 
-    int phys_w = 0, phys_h = 0;
-    get_physical_screen_info(g_app, &phys_w, &phys_h);
+    EGLint w = 0, h = 0;
+    eglQuerySurface(display, surface, EGL_WIDTH, &w);
+    eglQuerySurface(display, surface, EGL_HEIGHT, &h);
 
-    if (phys_w > 0 && phys_h > 0) {
-        g_width = phys_w;
-        g_height = phys_h;
-    } else {
-        g_width = ANativeWindow_getWidth(g_app->window);
-        g_height = ANativeWindow_getHeight(g_app->window);
-    }
-    
+    if (w <= 0 || h <= 0)
+        return;
+
+    if (w == g_width && h == g_height)
+        return;
+
+    g_width = w;
+    g_height = h;
+
     glViewport(0, 0, g_width, g_height);
 
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     extern int g_window_count;
-    
-    for(int i = 0; i < g_window_count; i++) {
-        if(g_windows[i].root_node && g_windows[i].window) {
+
+    for (int i = 0; i < g_window_count; i++) {
+        if (g_windows[i].root_node && g_windows[i].window) {
             g_windows[i].window->rect.width = g_width;
             g_windows[i].window->rect.height = g_height;
             aroma_node_invalidate(g_windows[i].root_node);
@@ -116,13 +128,14 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event) {
         return 0;
 
     int action = AMotionEvent_getAction(event);
-    int actionMasked = action & AMOTION_EVENT_ACTION_MASK;
-    int index = (action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+    int masked = action & AMOTION_EVENT_ACTION_MASK;
+    int index = (action & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK)
+                >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
 
     float x = AMotionEvent_getX(event, index);
     float y = AMotionEvent_getY(event, index);
 
-    switch (actionMasked) {
+    switch (masked) {
         case AMOTION_EVENT_ACTION_DOWN:
         case AMOTION_EVENT_ACTION_POINTER_DOWN:
             aroma_event_handle_pointer_move((int)x, (int)y, true);
@@ -132,71 +145,76 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event) {
             aroma_event_handle_pointer_move((int)x, (int)y, false);
             break;
         case AMOTION_EVENT_ACTION_MOVE:
-            x = AMotionEvent_getX(event, 0);
-            y = AMotionEvent_getY(event, 0);
-            aroma_event_handle_pointer_move((int)x, (int)y, true);
+            aroma_event_handle_pointer_move(
+                (int)AMotionEvent_getX(event, 0),
+                (int)AMotionEvent_getY(event, 0),
+                true
+            );
             break;
     }
     return 1;
 }
 
 static int init_display(struct android_app* app) {
-    if (!app->window) return -1;
+    if (!app || !app->window)
+        return -1;
+
+    cache_physical_screen_info(app);
 
     EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    if (dpy == EGL_NO_DISPLAY) return -1;
-    if (!eglInitialize(dpy, NULL, NULL)) return -1;
+    if (dpy == EGL_NO_DISPLAY)
+        return -1;
+
+    if (!eglInitialize(dpy, NULL, NULL))
+        return -1;
 
     const EGLint attribs[] = {
         EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
-        EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 8,
+        EGL_RED_SIZE, 8,
+        EGL_GREEN_SIZE, 8,
+        EGL_BLUE_SIZE, 8,
+        EGL_ALPHA_SIZE, 8,
         EGL_NONE
     };
 
-    EGLint numConfigs;
-    if (!eglChooseConfig(dpy, attribs, &config, 1, &numConfigs) || numConfigs == 0)
+    EGLint num;
+    if (!eglChooseConfig(dpy, attribs, &config, 1, &num) || num == 0)
         return -1;
 
     EGLint format;
     eglGetConfigAttrib(dpy, config, EGL_NATIVE_VISUAL_ID, &format);
-    
-    int phys_w, phys_h;
-    get_physical_screen_info(app, &phys_w, &phys_h);
-    ANativeWindow_setBuffersGeometry(app->window, phys_w, phys_h, format);
+    ANativeWindow_setBuffersGeometry(app->window, 0, 0, format);
 
     EGLSurface surf = eglCreateWindowSurface(dpy, config, app->window, NULL);
-    if (surf == EGL_NO_SURFACE) return -1;
+    if (surf == EGL_NO_SURFACE)
+        return -1;
 
-    const EGLint ctx_attribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
+    const EGLint ctx_attribs[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 3,
+        EGL_NONE
+    };
+
     EGLContext ctx = eglCreateContext(dpy, config, EGL_NO_CONTEXT, ctx_attribs);
-    if (ctx == EGL_NO_CONTEXT) return -1;
+    if (ctx == EGL_NO_CONTEXT)
+        return -1;
 
-    if (!eglMakeCurrent(dpy, surf, surf, ctx)) return -1;
+    if (!eglMakeCurrent(dpy, surf, surf, ctx))
+        return -1;
 
     display = dpy;
-    context = ctx;
     surface = surf;
-    g_width = phys_w;
-    g_height = phys_h;
+    context = ctx;
     g_has_window = true;
 
-    glViewport(0, 0, g_width, g_height);
+    update_surface_size();
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx) {
-        if (gfx->setup_shared_window_resources) gfx->setup_shared_window_resources();
-        if (gfx->setup_separate_window_resources) gfx->setup_separate_window_resources(0);
-    }
-
-    extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
-    extern int g_window_count;
-    for (int i = 0; i < g_window_count; i++) {
-        if (g_windows[i].root_node && g_windows[i].window) {
-            g_windows[i].window->rect.width = g_width;
-            g_windows[i].window->rect.height = g_height;
-            aroma_node_invalidate(g_windows[i].root_node);
-        }
+        if (gfx->setup_shared_window_resources)
+            gfx->setup_shared_window_resources();
+        if (gfx->setup_separate_window_resources)
+            gfx->setup_separate_window_resources(0);
     }
 
     return 0;
@@ -205,10 +223,13 @@ static int init_display(struct android_app* app) {
 static void term_display(void) {
     if (display != EGL_NO_DISPLAY) {
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        if (context != EGL_NO_CONTEXT) eglDestroyContext(display, context);
-        if (surface != EGL_NO_SURFACE) eglDestroySurface(display, surface);
+        if (context != EGL_NO_CONTEXT)
+            eglDestroyContext(display, context);
+        if (surface != EGL_NO_SURFACE)
+            eglDestroySurface(display, surface);
         eglTerminate(display);
     }
+
     display = EGL_NO_DISPLAY;
     context = EGL_NO_CONTEXT;
     surface = EGL_NO_SURFACE;
@@ -220,7 +241,8 @@ static void term_display(void) {
 static void handle_cmd(struct android_app* app, int32_t cmd) {
     switch (cmd) {
         case APP_CMD_INIT_WINDOW:
-            if (app->window) init_display(app);
+            if (app->window)
+                init_display(app);
             break;
         case APP_CMD_WINDOW_RESIZED:
         case APP_CMD_CONTENT_RECT_CHANGED:
@@ -233,7 +255,9 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
 }
 
 int initialize(void) {
-    if (!g_app) return 0;
+    if (!g_app)
+        return 0;
+
     g_app->onAppCmd = handle_cmd;
     g_app->onInputEvent = handle_input;
     return 1;
@@ -252,12 +276,12 @@ void make_context_current(size_t window_id) {
         eglMakeCurrent(display, surface, surface, context);
 }
 
-void set_window_update_callback(void (*callback)(size_t window_id, void *data), void* data) {
+void set_window_update_callback(void (*callback)(size_t, void*), void* data) {
     g_update_callback = callback;
     g_update_callback_data = data;
 }
 
-void get_window_size(size_t window_id, int *window_width, int *window_height) {
+void get_window_size(size_t window_id, int* window_width, int* window_height) {
     if (!g_has_window) {
         *window_width = 0;
         *window_height = 0;
@@ -272,13 +296,20 @@ void request_window_update(size_t window_id) {}
 bool run_event_loop(void) {
     int events;
     struct android_poll_source* source;
+
     while (ALooper_pollAll(0, NULL, &events, (void**)&source) >= 0) {
-        if (source) source->process(g_app, source);
-        if (g_app->destroyRequested) return false;
+        if (source)
+            source->process(g_app, source);
+        if (g_app->destroyRequested)
+            return false;
     }
-    if (g_has_window && g_update_callback) {
-        g_update_callback(0, g_update_callback_data);
+
+    if (g_has_window) {
+        update_surface_size();
+        if (g_update_callback)
+            g_update_callback(0, g_update_callback_data);
     }
+
     return true;
 }
 
@@ -288,7 +319,7 @@ void swap_buffers(size_t window_id) {
 }
 
 void* get_tft_context(void) { return NULL; }
-void call_flush_function_ptr(void (*flush_fn)(struct AromaDrawList* list, size_t window_id, int x, int y, int width, int height), void* list) {}
+void call_flush_function_ptr(void (*flush_fn)(struct AromaDrawList*, size_t, int, int, int, int), void* list) {}
 void tft_mark_tiles_dirty(int y, int h) {}
 void set_clear_color(uint16_t color) {}
 

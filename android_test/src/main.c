@@ -1,6 +1,7 @@
 #include "aroma.h"
 #include <stdio.h>
 
+
 bool on_btn_click(AromaButton* btn, void* data) {
     (void)btn;
     (void)data;
@@ -11,7 +12,7 @@ bool on_btn_click(AromaButton* btn, void* data) {
 int main(int argc, char** argv) {
     if (!aroma_ui_init()) return 1;
     
-    AromaTheme theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
+    AromaTheme theme = aroma_theme_create_material_black();
     aroma_ui_set_theme(&theme);
     AromaWindow* win = aroma_ui_create_window("test_app", 400, 800);
     // Attempt to load a default font
@@ -34,19 +35,16 @@ int main(int argc, char** argv) {
     
     aroma_ui_on_button_click(btn, on_btn_click, NULL);
     aroma_button_set_font((AromaNode*)btn, font);
-    AromaNode* dialog = aroma_dialog_create((AromaNode*)win, "Hello", "NIGGER", 400, 200, DIALOG_TYPE_FULL_SCREEN);
-    if (dialog) {
-        aroma_dialog_set_font((AromaNode*)dialog, font);
-        aroma_dialog_add_action((AromaNode*)dialog, "OK", NULL, NULL);
-        aroma_dialog_add_action((AromaNode*)dialog, "Cancel", NULL, NULL);
-        aroma_dialog_show((AromaNode*)dialog);
-    }
-      aroma_window_get_size((AromaNode*)win, &w, &h);
+   
+    aroma_window_get_size((AromaNode*)win, &w, &h);
     snprintf(title, sizeof(title), "Window Size: %dx%d", w, h);
 
     AromaNode* label = aroma_ui_create_label((AromaNode*)win, title, 250, 100, LABEL_STYLE_LABEL_LARGE);
     if(font) aroma_label_set_font(label, font);
     
+    AromaNode* switch_ = aroma_switch_create((AromaNode*)win, 300, 500, 200, 100, true);
+    aroma_switch_setup_events(switch_, aroma_ui_request_redraw, NULL);
+
     while(aroma_ui_is_running()) {
        
         aroma_ui_process_events();
