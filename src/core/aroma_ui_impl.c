@@ -75,6 +75,29 @@ static void __collect_draw_tasks(AromaNode* node, AromaDrawTask* tasks, size_t* 
             __collect_draw_tasks(node->child_nodes[i], tasks, task_count, max_tasks);
 }
 
+void aroma_ui_open_url_impl(const char* url) {
+    if (!url) return;
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->open_url) {
+        platform->open_url(url);
+    } else {
+        LOG_WARNING("Open URL not supported on this platform");
+    }
+}
+
+void aroma_ui_android_intent_impl(int action, const char* uri, const char* type, const AromaIntentExtra* extras, int extra_count) {
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    #ifdef __ANDROID__
+    if (platform && platform->android_send_intent) {
+        platform->android_send_intent(action, uri, type, (const void*)extras, extra_count);
+    } else {
+        LOG_ERROR("Android Intent not supported");
+    }
+    #else
+    LOG_WARNING("Android Intent called on non-Android platform");
+    #endif
+}
+
 bool aroma_ui_init_impl(void) {
     __node_system_init();
     aroma_event_system_init();

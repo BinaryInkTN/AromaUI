@@ -204,6 +204,7 @@ void aroma_button_set_font(AromaNode* button_node, AromaFont* font)
     if (!button) return;
 
     button->font = font;
+    button->rect.width = aroma_font_get_line_width(font, button->label) + 20; // Add padding
     aroma_button_update_text_position(button);
     aroma_node_invalidate(button_node);
 }

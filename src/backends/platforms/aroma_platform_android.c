@@ -106,6 +106,192 @@ static void cache_physical_screen_info(struct android_app* app) {
     (*app->activity->vm)->DetachCurrentThread(app->activity->vm);
 }
 
+static void android_open_url(const char* url) {
+    if (!g_app || !g_app->activity || !url) {
+        LOGE("Cannot open URL: Invalid state or URL");
+        return;
+    }
+
+    JNIEnv* env = NULL;
+    JavaVM* vm = g_app->activity->vm;
+    int status = (*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6);
+    bool did_attach = false;
+    
+    if (status < 0) {
+        if ((*vm)->AttachCurrentThread(vm, &env, NULL) != JNI_OK) {
+             LOGE("Failed to attach current thread for URL opening");
+             return;
+        }
+        did_attach = true;
+    }
+
+    jclass activity_class = (*env)->GetObjectClass(env, g_app->activity->clazz);
+    if (!activity_class) {
+         LOGE("Failed to get activity class");
+         if (did_attach) (*vm)->DetachCurrentThread(vm);
+         return;
+    }
+
+    // Launch Browser via Intent (ACTION_VIEW)
+    // Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+    // startActivity(intent);
+
+    jstring jurl = (*env)->NewStringUTF(env, url);
+
+    // 1. Uri.parse(url)
+    jclass uri_class = (*env)->FindClass(env, "android/net/Uri");
+    jmethodID uri_parse = (*env)->GetStaticMethodID(env, uri_class, "parse", "(Ljava/lang/String;)Landroid/net/Uri;");
+    jobject uri_obj = (*env)->CallStaticObjectMethod(env, uri_class, uri_parse, jurl);
+
+    // 2. new Intent(Intent.ACTION_VIEW, uri)
+    jclass intent_class = (*env)->FindClass(env, "android/content/Intent");
+    jfieldID action_view_field = (*env)->GetStaticFieldID(env, intent_class, "ACTION_VIEW", "Ljava/lang/String;");
+    jobject action_view = (*env)->GetStaticObjectField(env, intent_class, action_view_field);
+    
+    jmethodID intent_ctor = (*env)->GetMethodID(env, intent_class, "<init>", "(Ljava/lang/String;Landroid/net/Uri;)V");
+    jobject intent_obj = (*env)->NewObject(env, intent_class, intent_ctor, action_view, uri_obj);
+
+    // 3. startActivity(intent)
+    jmethodID start_activity = (*env)->GetMethodID(env, activity_class, "startActivity", "(Landroid/content/Intent;)V");
+    (*env)->CallVoidMethod(env, g_app->activity->clazz, start_activity, intent_obj);
+
+    (*env)->DeleteLocalRef(env, jurl);
+    (*env)->DeleteLocalRef(env, uri_obj);
+    (*env)->DeleteLocalRef(env, action_view);
+    (*env)->DeleteLocalRef(env, intent_obj);
+    (*env)->DeleteLocalRef(env, uri_class);
+    (*env)->DeleteLocalRef(env, intent_class);
+    (*env)->DeleteLocalRef(env, activity_class);
+
+    if ((*env)->ExceptionCheck(env)) {
+         (*env)->ExceptionDescribe(env);
+         (*env)->ExceptionClear(env);
+         LOGE("Exception occurred while launching browser intent");
+    }
+
+    if (did_attach) {
+        (*vm)->DetachCurrentThread(vm);
+    }
+}
+
+static void android_send_intent(int action_enum, const char* uri, const char* type, const void* extras, int extra_count) {
+    if (!g_app || !g_app->activity) {
+        LOGE("Cannot send intent: Invalid state");
+        return;
+    }
+
+    const char* action = "android.intent.action.VIEW";
+    switch (action_enum) {
+        case 0: action = "android.intent.action.VIEW"; break; // AROMA_INTENT_VIEW
+        case 1: action = "android.intent.action.SEND"; break; // AROMA_INTENT_SEND
+        case 2: action = "android.intent.action.EDIT"; break; // AROMA_INTENT_EDIT
+        case 3: action = "android.intent.action.DIAL"; break; // AROMA_INTENT_DIAL
+        case 4: action = "android.intent.action.CALL"; break; // AROMA_INTENT_CALL
+        default: break;
+    }
+
+    JNIEnv* env = NULL;
+    JavaVM* vm = g_app->activity->vm;
+    int status = (*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6);
+    bool did_attach = false;
+    
+    if (status < 0) {
+        if ((*vm)->AttachCurrentThread(vm, &env, NULL) != JNI_OK) {
+             LOGE("Failed to attach current thread for intent");
+             return;
+        }
+        did_attach = true;
+    }
+
+    // Classes and Methods
+    jclass intent_class = (*env)->FindClass(env, "android/content/Intent");
+    jclass uri_class = (*env)->FindClass(env, "android/net/Uri");
+    jclass activity_class = (*env)->GetObjectClass(env, g_app->activity->clazz);
+
+    if (!intent_class || !uri_class || !activity_class) {
+         LOGE("Failed to find required classes for intent");
+         if (did_attach) (*vm)->DetachCurrentThread(vm);
+         return;
+    }
+
+    // Intent(String action) constructor
+    jmethodID intent_ctor = (*env)->GetMethodID(env, intent_class, "<init>", "(Ljava/lang/String;)V");
+    jstring jaction = (*env)->NewStringUTF(env, action);
+    jobject intent_obj = (*env)->NewObject(env, intent_class, intent_ctor, jaction);
+
+    // Handle URI and Type
+    jobject uri_obj = NULL;
+    if (uri) {
+        jstring juri = (*env)->NewStringUTF(env, uri);
+        jmethodID uri_parse = (*env)->GetStaticMethodID(env, uri_class, "parse", "(Ljava/lang/String;)Landroid/net/Uri;");
+        uri_obj = (*env)->CallStaticObjectMethod(env, uri_class, uri_parse, juri);
+        (*env)->DeleteLocalRef(env, juri);
+    }
+
+    if (uri_obj && type) {
+        // setDataAndType(Uri data, String type)
+        jstring jtype = (*env)->NewStringUTF(env, type);
+        jmethodID set_data_and_type = (*env)->GetMethodID(env, intent_class, "setDataAndType", "(Landroid/net/Uri;Ljava/lang/String;)Landroid/content/Intent;");
+        (*env)->CallObjectMethod(env, intent_obj, set_data_and_type, uri_obj, jtype);
+        (*env)->DeleteLocalRef(env, jtype);
+    } 
+    else if (uri_obj) {
+        // setData(Uri data)
+        jmethodID set_data = (*env)->GetMethodID(env, intent_class, "setData", "(Landroid/net/Uri;)Landroid/content/Intent;");
+        (*env)->CallObjectMethod(env, intent_obj, set_data, uri_obj);
+    }
+    else if (type) {
+         // setType(String type)
+         jstring jtype = (*env)->NewStringUTF(env, type);
+         jmethodID set_type = (*env)->GetMethodID(env, intent_class, "setType", "(Ljava/lang/String;)Landroid/content/Intent;");
+         (*env)->CallObjectMethod(env, intent_obj, set_type, jtype);
+         (*env)->DeleteLocalRef(env, jtype);
+    }
+
+    // Handle Extras
+    if (extras && extra_count > 0) {
+        const AromaIntentExtra* extra_list = (const AromaIntentExtra*)extras;
+        // putExtra(String, String)
+        jmethodID put_extra = (*env)->GetMethodID(env, intent_class, "putExtra", "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;");
+        
+        if (put_extra) {
+            for (int i = 0; i < extra_count; i++) {
+                if (extra_list[i].key && extra_list[i].string_value) {
+                    jstring k = (*env)->NewStringUTF(env, extra_list[i].key);
+                    jstring v = (*env)->NewStringUTF(env, extra_list[i].string_value);
+                    jobject res = (*env)->CallObjectMethod(env, intent_obj, put_extra, k, v);
+                    if (res) (*env)->DeleteLocalRef(env, res);
+                    (*env)->DeleteLocalRef(env, k);
+                    (*env)->DeleteLocalRef(env, v);
+                }
+            }
+        }
+    }
+
+    // startActivity(Intent intent)
+    jmethodID start_activity = (*env)->GetMethodID(env, activity_class, "startActivity", "(Landroid/content/Intent;)V");
+    (*env)->CallVoidMethod(env, g_app->activity->clazz, start_activity, intent_obj);
+
+    if ((*env)->ExceptionCheck(env)) {
+         (*env)->ExceptionDescribe(env);
+         (*env)->ExceptionClear(env);
+         LOGE("Exception while sending intent");
+    }
+
+    // Cleanup
+    if (uri_obj) (*env)->DeleteLocalRef(env, uri_obj);
+    (*env)->DeleteLocalRef(env, intent_obj);
+    (*env)->DeleteLocalRef(env, jaction);
+    (*env)->DeleteLocalRef(env, activity_class);
+    (*env)->DeleteLocalRef(env, uri_class);
+    (*env)->DeleteLocalRef(env, intent_class);
+
+    if (did_attach) {
+        (*vm)->DetachCurrentThread(vm);
+    }
+}
+
+
 static void update_surface_size(void) {
     if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
         return;
@@ -578,7 +764,9 @@ AromaPlatformInterface aroma_platform_android = {
     .tft_mark_tiles_dirty = tft_mark_tiles_dirty,
     .set_clear_color = set_clear_color,
     .set_android_app = platform_set_android_app,
-    .set_fullscreen = set_fullscreen
+    .set_fullscreen = set_fullscreen,
+    .open_url = android_open_url,
+    .android_send_intent = android_send_intent
 };
 
 #endif

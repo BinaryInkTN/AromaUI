@@ -119,6 +119,27 @@ void aroma_label_set_font(AromaNode* label_node, AromaFont* font)
     aroma_node_invalidate(label_node);
 }
 
+const char* aroma_label_get_text(AromaNode* label_node)
+{
+    if (!label_node || !label_node->node_widget_ptr) return NULL;
+    AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
+    return label->text;
+}
+
+AromaFont* aroma_label_get_font(AromaNode* label_node)
+{
+    if (!label_node || !label_node->node_widget_ptr) return NULL;
+    AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
+    return label->font;
+}
+
+float aroma_label_get_scale(AromaNode* label_node)
+{
+    if (!label_node || !label_node->node_widget_ptr) return 1.0f;
+    AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
+    return label->text_scale;
+}
+
 void aroma_label_set_style(AromaNode* label_node, AromaLabelStyle style)
 {
     if (!label_node || !label_node->node_widget_ptr) return;

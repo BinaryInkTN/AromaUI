@@ -4,6 +4,8 @@
 
 #include "core/aroma_node.h"
 #include "core/aroma_common.h"
+#include "core/aroma_font.h"
+#include "widgets/aroma_label.h"
 #include <stdio.h>
 
 typedef struct WidgetBase {
@@ -77,15 +79,28 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
     int used_space = 0;
     int fixed_children_count = 0;
 
-    // First pass: Measure fixed size children
+    // First pass: Measure children and fixed size
     for (int i = 0; i < AROMA_MAX_CHILD_NODES; i++) {
         AromaNode* child = node->child_nodes[i];
         if (!child || child->is_hidden) continue;
 
+        WidgetBase* widget = (WidgetBase*)child->node_widget_ptr;
+        if (!widget) continue;
+
+        // Auto-measure text widgets if size is 0
+        if (child->draw_cb == aroma_label_draw && (widget->rect.width == 0 || widget->rect.height == 0)) {
+            const char* text = aroma_label_get_text(child);
+            AromaFont* font = aroma_label_get_font(child);
+            if (text && font) {
+                float scale = aroma_label_get_scale(child);
+                widget->rect.width = (int)(aroma_font_get_line_width(font, text) * scale);
+                widget->rect.height = (int)(aroma_font_get_line_height(font) * scale);
+            }
+        }
+
         total_grow += child->layout.flex_grow;
         
-        WidgetBase* widget = (WidgetBase*)child->node_widget_ptr;
-        if (child->layout.flex_grow == 0 && widget) {
+        if (child->layout.flex_grow == 0) {
            used_space += (is_row ? widget->rect.width : widget->rect.height);
         }
         fixed_children_count++;
@@ -101,7 +116,6 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
     int current_main_pos = 0;
     int gap_space = gap;
     
-    // Justify Content Logic
     if (total_grow == 0) {
         switch (node->layout.justify_content) {
             case AROMA_JUSTIFY_CENTER:
@@ -114,9 +128,7 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
                 if (fixed_children_count > 1) {
                     gap_space = remaining_space / (fixed_children_count - 1);
                     current_main_pos = 0;
-                    // Reset gap used in calculation implies distributing remaining space as gap
-                    // But here we just increase the gap.
-                    // Simplified: Since we use gap_space later instead of gap
+                  
                 }
                 break;
              case AROMA_JUSTIFY_SPACE_AROUND:
@@ -135,7 +147,6 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
         }
     }
 
-    // Second pass: Position children
     for (int i = 0; i < AROMA_MAX_CHILD_NODES; i++) {
         AromaNode* child = node->child_nodes[i];
         if (!child || child->is_hidden) continue;
@@ -156,7 +167,6 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
         if (is_row) widget->rect.width = child_main_size;
         else widget->rect.height = child_main_size;
 
-        // Align Items
         int child_cross_size = is_row ? widget->rect.height : widget->rect.width;
         int child_cross_pos = 0;
 
@@ -165,7 +175,7 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
                 child_cross_size = cross_axis_size;
                 break;
             case AROMA_ALIGN_CENTER:
-                child_cross_pos = (cross_axis_size - child_cross_size) / 2;
+                child_cross_pos =  (cross_axis_size - child_cross_size) / 2;
                 break;
             case AROMA_ALIGN_END:
                 child_cross_pos = cross_axis_size - child_cross_size;
@@ -185,7 +195,6 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
 
         current_main_pos += child_main_size + (total_grow == 0 ? gap_space : gap);
         
-        // Recurse
         aroma_node_update_layout(child, widget->rect.x, widget->rect.y, widget->rect.width, widget->rect.height);
     }
 }
@@ -237,8 +246,6 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
     int new_y = parent_y;
     int new_w = parent_width;
     int new_h = parent_height;
-
-    // 1. Position Myself (Self Layout)
     if (start_node->node_widget_ptr) {
         WidgetBase* widget = (WidgetBase*)start_node->node_widget_ptr;
         
@@ -284,13 +291,11 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
         new_h = widget->rect.height;
     }
     
-    // 2. Position Children
     if (start_node->layout.mode == AROMA_LAYOUT_MODE_FLEX) {
         apply_flex_layout(start_node, new_x, new_y, new_w, new_h);
     } else if (start_node->layout.mode == AROMA_LAYOUT_MODE_GRID) {
         apply_grid_layout(start_node, new_x, new_y, new_w, new_h);
     } else {
-        // Normal absolute/relative flow - children position themselves relative to parent
         for (int i = 0; i < AROMA_MAX_CHILD_NODES; i++) {
             if (start_node->child_nodes[i]) {
                 aroma_node_update_layout(start_node->child_nodes[i], new_x, new_y, new_w, new_h);

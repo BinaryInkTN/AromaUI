@@ -38,6 +38,15 @@ void aroma_label_set_color(AromaNode* label_node, uint32_t color);
 // Set font
 void aroma_label_set_font(AromaNode* label_node, AromaFont* font);
 
+// Get text
+const char* aroma_label_get_text(AromaNode* label_node);
+
+// Get font
+AromaFont* aroma_label_get_font(AromaNode* label_node);
+
+// Get scale
+float aroma_label_get_scale(AromaNode* label_node);
+
 // Set style
 void aroma_label_set_style(AromaNode* label_node, AromaLabelStyle style);
 

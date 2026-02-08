@@ -50,6 +50,9 @@ typedef struct AromaPlatformInterface {
     // [Android]
     void (*set_android_app)(void* app_state);
     void (*set_fullscreen)(size_t window_id, bool enabled);
+    void (*open_url)(const char* url);
+    // [Android] Generic Intent
+    void (*android_send_intent)(int action, const char* uri, const char* type, const void* extras, int extra_count);
 
     void (*show_keyboard)(void);
     void (*hide_keyboard)(void);

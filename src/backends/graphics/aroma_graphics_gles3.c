@@ -115,8 +115,6 @@ int setup_shared_window_resources(void)
     glAttachShader(ctx.shape_program, shape_fragment_shader);
     glLinkProgram(ctx.shape_program);
 
-    // Should we re-bind VAO here?
-    // glBindVertexArray(ctx.shape_vao);
     
     if(!check_shader_link(ctx.shape_program))
     {
@@ -131,20 +129,12 @@ int setup_shared_window_resources(void)
 
 int setup_separate_window_resources(size_t window_id)
 {
-    // Ensure we have a program or re-link it if context was lost and then restored but programs not?
-    // In our platform code, we preserve Context, so programs should be preserved.
-    // However, if we forced context recreation (fallback), this needs to run again.
-    
-    // Check if program exists?
     GLint prog = 0;
-    // ...
-    
-    // Reset loaded font tracker for this window since context was lost/reset
+ 
     if (window_id < 256) {
         ctx.loaded_fonts[window_id] = NULL;
     }
     
-    // If program is already valid, maybe delete it first to be safe if this is called?
     if (ctx.text_programs[window_id]) {
         glDeleteProgram(ctx.text_programs[window_id]);
         ctx.text_programs[window_id] = 0;
