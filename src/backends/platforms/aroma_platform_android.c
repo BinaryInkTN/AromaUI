@@ -262,15 +262,17 @@ static int init_display(struct android_app* app) {
         return -1;
     }
 
-    const EGLint ctx_attribs[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 3,
-        EGL_NONE
-    };
-
-    EGLContext ctx = eglCreateContext(dpy, config, EGL_NO_CONTEXT, ctx_attribs);
+    EGLContext ctx = context;
     if (ctx == EGL_NO_CONTEXT) {
-        LOGE("Failed to create context");
-        return -1;
+        const EGLint ctx_attribs[] = {
+            EGL_CONTEXT_CLIENT_VERSION, 3,
+            EGL_NONE
+        };
+        ctx = eglCreateContext(dpy, config, EGL_NO_CONTEXT, ctx_attribs);
+        if (ctx == EGL_NO_CONTEXT) {
+            LOGE("Failed to create context");
+            return -1;
+        }
     }
 
     if (!eglMakeCurrent(dpy, surf, surf, ctx)) {
@@ -296,49 +298,55 @@ static int init_display(struct android_app* app) {
     return 0;
 }
 
-static void term_display(void) {
+static void term_display_surface_only(void) {
     if (display != EGL_NO_DISPLAY) {
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        if (context != EGL_NO_CONTEXT)
-            eglDestroyContext(display, context);
-        if (surface != EGL_NO_SURFACE)
+        if (surface != EGL_NO_SURFACE) {
             eglDestroySurface(display, surface);
-        eglTerminate(display);
+        }
     }
-
-    display = EGL_NO_DISPLAY;
-    context = EGL_NO_CONTEXT;
     surface = EGL_NO_SURFACE;
     g_has_window = false;
     g_width = 0;
     g_height = 0;
 }
 
+static void term_display(void) {
+    term_display_surface_only();
+    if (display != EGL_NO_DISPLAY) {
+        if (context != EGL_NO_CONTEXT) {
+            eglDestroyContext(display, context);
+        }
+        eglTerminate(display);
+    }
+
+    display = EGL_NO_DISPLAY;
+    context = EGL_NO_CONTEXT;
+}
+
 static void handle_cmd(struct android_app* app, int32_t cmd) {
     switch (cmd) {
         case APP_CMD_INIT_WINDOW:
             if (app->window) {
-                term_display();
+                // Don't kill context if we don't have to
+                term_display_surface_only();
                 init_display(app);
             }
             break;
             
         case APP_CMD_WINDOW_RESIZED:
         case APP_CMD_CONFIG_CHANGED:
-            term_display();
+            term_display_surface_only();
             if (app->window)
                 init_display(app);
             break;
-
-        case APP_CMD_CONTENT_RECT_CHANGED:
-            update_surface_size();
-            break;
+        
+        // ... (APP_CMD_CONTENT_RECT_CHANGED, etc) ...
 
         case APP_CMD_GAINED_FOCUS:
         case APP_CMD_RESUME:
-           
             if (app->window && !g_has_window) {
-                term_display();
+                term_display_surface_only();
                 init_display(app);
             } else if (g_has_window) {
                  update_surface_size();
@@ -352,6 +360,10 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
             break;
             
         case APP_CMD_TERM_WINDOW:
+            term_display_surface_only();
+            break;
+            
+        case APP_CMD_DESTROY:
             term_display();
             break;
     }
@@ -368,6 +380,20 @@ int initialize(void) {
     g_update_callback = NULL;
     g_update_callback_data = NULL;
 
+    while (context == EGL_NO_CONTEXT && !g_app->destroyRequested) {
+        int events;
+        struct android_poll_source* source;
+        if (ALooper_pollAll(-1, NULL, &events, (void**)&source) >= 0) {
+            if (source) {
+                source->process(g_app, source);
+            }
+        }
+    }
+
+    if (g_app->destroyRequested) {
+        return 0;
+    }
+
     return 1;
 }
 
@@ -380,8 +406,16 @@ size_t create_window(const char* title, int x, int y, int width, int height) {
 }
 
 void make_context_current(size_t window_id) {
-    if (display != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE && context != EGL_NO_CONTEXT)
-        eglMakeCurrent(display, surface, surface, context);
+    if (display != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE && context != EGL_NO_CONTEXT) {
+        if (eglGetCurrentContext() != context || eglGetCurrentSurface(EGL_DRAW) != surface) {
+            if (!eglMakeCurrent(display, surface, surface, context)) {
+                EGLint error = eglGetError();
+                LOGE("make_context_current failed: 0x%x", error);
+            }
+        }
+    } else {
+        LOGE("Attempted to make context current but display/surface/context is invalid");
+    }
 }
 
 void set_window_update_callback(void (*callback)(size_t, void*), void* data) {

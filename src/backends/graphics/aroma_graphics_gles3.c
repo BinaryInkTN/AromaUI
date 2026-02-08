@@ -748,6 +748,13 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
         LOG_ERROR("Invalid data or length for memory image loading");
         return 0;
     }
+    
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current) {
+        platform->make_context_current(0);
+    } else {
+        LOG_WARNING("Platform interface missing make_context_current, proceeding without explicit context switch");
+    }
 
     unsigned int texture;
     glGenTextures(1, &texture);
@@ -767,18 +774,20 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
         glDeleteTextures(1, &texture);
         return 0;
     }
-
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, img_data);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    stbi_image_free(img_data);
+//    stbi_image_free(img_data);
 
     LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, Forced RGBA)",
              texture, width, height);
     return texture;
 }
+
 
 void draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
 {
@@ -797,6 +806,8 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     }
 
     platform->make_context_current(window_id);
+
+
 
     if (!glIsTexture(texture_id)) {
         LOG_ERROR("Texture ID %u is not a valid OpenGL texture", texture_id);
@@ -817,6 +828,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
         LOG_WARNING("Invalid window size: %dx%d", window_width, window_height);
         return;
     }
+
 
     glViewport(0, 0, window_width, window_height);
     glEnable(GL_BLEND);
@@ -861,12 +873,12 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
 
     glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"),
                       1, GL_FALSE, (const GLfloat*)projection);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 1);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), GL_TRUE);
     glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), (float)width, (float)height);
     glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), 0.0f);
     glUniform1f(glGetUniformLocation(ctx.shape_program, "borderWidth"), 0.0f);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), 0);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 0);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), GL_FALSE);
+    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), GL_FALSE);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
 
     glActiveTexture(GL_TEXTURE0);
@@ -897,6 +909,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
 
     LOG_INFO("Image drawn successfully: texture %u", texture_id);
 }

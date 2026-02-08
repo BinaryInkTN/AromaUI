@@ -337,8 +337,8 @@ int main(void)
     {
         aroma_ui_process_events();
         aroma_ui_render(window);
-        aroma_node_invalidate_tree((AromaNode *)window);
-        usleep(16000);
+      //  aroma_node_invalidate_tree((AromaNode *)window);
+        //usleep(16000);
     }
 
     aroma_ui_destroy_window(window);

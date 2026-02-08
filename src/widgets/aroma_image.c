@@ -95,6 +95,7 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
         return;
     }
     
+
     gfx->draw_image(window_id,
                     image->rect.x, image->rect.y, 
                     image->rect.width, image->rect.height, image->texture_id );
@@ -197,6 +198,7 @@ AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data
        #ifdef ESP32
     aroma_node_invalidate(node);
     #endif
+    
     LOG_INFO("Created memory image widget at (%d, %d) size %dx%d, texture ID: %u", 
               x, y, width, height, image->texture_id);
     
