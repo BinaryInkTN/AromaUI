@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="AromaUI - A modern, lightweight C UI framework for embedded systems with Material You design.">
+    <meta name="keywords" content="embedded gui, c gui library, material design, material you, embedded linux gui">
+    <meta name="author" content="Yassine AA">
+    <meta property="og:title" content="AromaUI - Modern Embedded UI Framework">
+    <meta property="og:description"
+        content="Build stunning, hardware-accelerated interfaces for embedded Linux with Material You aesthetics.">
+    <meta property="og:type" content="website">
+
+    <title>AromaUI - Material You C Framework</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                fontFamily: {
+                    sans: ['Outfit', 'sans-serif'],
+                    mono: ['JetBrains Mono', 'monospace'],
+                },
+                extend: {
+                    colors: {
+                        surface: {
+                            50: '#1a1625',
+                            100: '#15121e',
+                            200: '#0f0d15',
+                            300: '#0a090e',
+                            900: '#000000',
+                        },
+                        accent: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        },
+                        secondary: {
+                            400: '#d0bcff',
+                            500: '#9a82db',
+                        }
+                    },
+                    borderRadius: {
+                        '4xl': '2rem',
+                        '5xl': '2.5rem',
+                    },
+                    boxShadow: {
+                        'neon': '0 0 20px rgba(139, 92, 246, 0.3)',
+                        'neon-strong': '0 0 30px rgba(139, 92, 246, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-oled {
+                @apply bg-surface-100/60 backdrop-blur-xl border border-white/5;
+            }
+            .text-glow {
+                text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+            }
+            .grid-bg {
+                background-size: 50px 50px;
+                background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                                  linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            }
+        }
+        body {
+            background-color: #000000;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(76, 29, 149, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+
+<body class="text-gray-200 antialiased selection:bg-accent-500 selection:text-white">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 transition-all duration-300 glass-oled border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer group">
+                    <span
+                        class="font-bold text-2xl tracking-tight text-white group-hover:text-accent-300 transition-colors">Aroma<span
+                            class="text-accent-400">UI</span></span>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-10">
+                    <a href="#features"
+                        class="text-sm font-medium text-gray-400 hover:text-accent-300 transition-colors">Features</a>
+                    <a href="#examples"
+                        class="text-sm font-medium text-gray-400 hover:text-accent-300 transition-colors">Showcase</a>
+                    <a href="#docs"
+                        class="text-sm font-medium text-gray-400 hover:text-accent-300 transition-colors">Docs</a>
+                    <a href="https://github.com/yassineaa/AromaUI"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-surface-200 text-white text-sm font-medium border border-white/10 hover:border-accent-500/50 hover:bg-surface-100 transition-all hover:shadow-neon">
+                        <i class="ph-bold ph-github-logo"></i>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-40 pb-20 lg:pt-52 lg:pb-32 overflow-hidden grid-bg">
+        <div class="absolute top-1/4 left-10 w-24 h-24 bg-accent-600/10 rounded-full blur-2xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-10 w-32 h-32 bg-secondary-500/10 rounded-full blur-3xl animate-pulse"
+            style="animation-delay: 1s;"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="max-w-2xl relative z-10">
+                  
+                    <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight text-white mb-8 leading-[1.1]">
+                        Blazing-fast UIs<br>
+                        <span
+                            class="text-transparent bg-clip-text bg-gradient-to-r from-accent-300 via-secondary-400 to-accent-500 text-glow">For Desktop & Mobile</span>
+                    </h1>
+                    <p class="text-lg text-gray-400 mb-10 leading-relaxed font-light">  
+                        Native <strong class="text-accent-200 font-medium">Performance</strong> with a simple yet full featured <strong class="text-accent-200 font-medium">C API</strong>. Build stunning interfaces for Windows, Espressif, Embedded Linux and Android with ease.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-5">
+                        <a href="#get-started"
+                            class="px-8 py-4 rounded-full bg-accent-600 text-white font-semibold shadow-neon hover:shadow-neon-strong hover:bg-accent-500 hover:-translate-y-1 transition-all text-center flex items-center justify-center gap-2">
+                            <span>Get Started</span>
+                            <i class="ph-bold ph-arrow-right"></i>
+                        </a>
+                        <a href="https://github.com/yassineaa/AromaUI"
+                            class="px-8 py-4 rounded-full bg-surface-100 text-gray-300 font-medium border border-white/10 hover:border-accent-500/30 hover:text-white hover:bg-surface-50 transition-all text-center flex items-center justify-center gap-2">
+                            <i class="ph-fill ph-book-open"></i>
+                            <span>Reference</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="relative flex justify-center lg:justify-end">
+                    <div class="relative z-10 w-[300px] sm:w-[340px]">
+                        <div class="absolute inset-0 bg-accent-600/20 blur-[60px] rounded-full scale-110"></div>
+                        <div
+                            class="rounded-[2.5rem] overflow-hidden border-4 border-surface-100 shadow-2xl relative bg-surface-300 aspect-[9/19] flex items-center justify-center group">
+                            <!-- Placeholder with meaningful content -->
+                            <img src="aroma_phone_mockup.png" alt="AromaUI App Demo" class="w-full h-full object-cover">
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Installation Section -->
+    <section id="get-started" class="py-16 bg-surface-50/50 border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-6">Powerful CLI Tool</h2>
+                    <p class="text-gray-400 mb-8">Manage your AromaUI projects with ease using our built-in command line
+                        interface. Handle builds, SDK installation, and deployment.</p>
+
+                    <ol class="space-y-6">
+                        <li class="flex gap-4">
+                            <div
+                                class="w-8 h-8 rounded-full bg-accent-900/50 flex items-center justify-center text-accent-400 font-bold border border-accent-500/30">
+                                1</div>
+                            <div>
+                                <h4 class="font-semibold text-white">Create Projects</h4>
+                                <p class="text-sm text-gray-500 mt-1">Scaffold new apps with ease.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <div
+                                class="w-8 h-8 rounded-full bg-accent-900/50 flex items-center justify-center text-accent-400 font-bold border border-accent-500/30">
+                                2</div>
+                            <div>
+                                <h4 class="font-semibold text-white">Cross-Platform Build</h4>
+                                <p class="text-sm text-gray-500 mt-1">Compile for Linux Desktop or Android with one
+                                    command.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <div
+                                class="w-8 h-8 rounded-full bg-accent-900/50 flex items-center justify-center text-accent-400 font-bold border border-accent-500/30">
+                                3</div>
+                            <div>
+                                <h4 class="font-semibold text-white">Easy Deployment</h4>
+                                <p class="text-sm text-gray-500 mt-1">Install and launch on connected Android devices.
+                                </p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="glass-oled rounded-2xl p-6 border border-white/10 shadow-lg">
+                    <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+                        <span class="text-xs font-mono text-gray-500">terminal</span>
+                        <div class="flex gap-2">
+                            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                        </div>
+                    </div>
+                    <code class="font-mono text-sm text-gray-300 space-y-2 block">
+                        <div class="flex"><span class="text-accent-400 mr-3">$</span> ./tools/aroma doctor</div>
+                        <div class="flex text-green-400 text-xs ml-6">✓ Environment checks passed</div>
+                        <div class="flex"><span class="text-accent-400 mr-3">$</span> ./tools/aroma create my-app</div>
+                        <div class="flex"><span class="text-accent-400 mr-3">$</span> cd my-app</div>
+                        <div class="flex"><span class="text-accent-400 mr-3">$</span> ./tools/aroma run android</div>
+                        <div class="flex text-blue-300 text-xs ml-6">==> Building for Android...</div>
+                        <div class="flex text-blue-300 text-xs ml-6">==> Installing APK...</div>
+                    </code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Showcase Section -->
+    <section class="py-20 relative">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-white">Clean C API</h2>
+                <p class="text-gray-400 mt-2">Modern and consistent C interface.</p>
+            </div>
+
+            <div class="glass-oled rounded-3xl p-1 border border-white/10 shadow-2xl overflow-hidden">
+                <div class="bg-surface-300/90 p-4 border-b border-white/5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-gray-500">main.c</span>
+                    </div>
+                    <div class="text-xs font-mono text-gray-500">Reading Only</div>
+                </div>
+                <div class="p-8 bg-surface-900/50 overflow-auto max-h-[600px]">
+                    <pre class="font-mono text-sm leading-relaxed text-gray-300"><code class="language-c"><span class="text-gray-500">/**
+ *
+ * AromaUI minimal example
+ *
+ */</span>
+
+<span class="text-accent-400">#include</span> <span class="text-secondary-400">"aroma.h"</span>
+<span class="text-accent-400">#include</span> <span class="text-secondary-400">"logo.h"</span>
+<span class="text-accent-400">#include</span> <span class="text-secondary-400">&lt;stdio.h&gt;</span>
+<span class="text-accent-400">#include</span> <span class="text-secondary-400">&lt;unistd.h&gt;</span>
+
+<span class="text-accent-400">static</span> <span class="text-accent-400">bool</span> <span class="text-blue-400">on_btn_click</span>(<span class="text-secondary-400">AromaNode</span> *btn, <span class="text-accent-400">void</span> *data)
+{
+    <span class="text-blue-400">aroma_ui_android_intent</span>(AROMA_INTENT_VIEW,
+                            <span class="text-green-400">"https://github.com/BinaryInkTN/AromaUI"</span>, <span class="text-orange-300">NULL</span>, <span class="text-orange-300">NULL</span>, <span class="text-orange-300">0</span>);
+
+    <span class="text-accent-400">return</span> <span class="text-orange-300">true</span>;
+}
+
+<span class="text-accent-400">int</span> <span class="text-blue-400">main</span>(<span class="text-accent-400">int</span> argc, <span class="text-accent-400">char</span> **argv)
+{
+    <span class="text-accent-400">if</span> (!<span class="text-blue-400">aroma_ui_init</span>())
+    {
+        <span class="text-accent-400">return</span> <span class="text-orange-300">1</span>;
+    }
+
+    <span class="text-secondary-400">AromaTheme</span> theme = <span class="text-blue-400">aroma_theme_create_material_black</span>();
+    <span class="text-blue-400">aroma_ui_set_theme</span>(&theme);
+
+    <span class="text-secondary-400">AromaWindow</span> *win = <span class="text-blue-400">aroma_ui_create_window</span>(<span class="text-green-400">"AromaUI Showcase"</span>, <span class="text-orange-300">400</span>, <span class="text-orange-300">800</span>);
+    <span class="text-blue-400">aroma_window_set_fullscreen</span>((<span class="text-secondary-400">AromaNode</span> *)win, <span class="text-orange-300">true</span>);
+
+    <span class="text-secondary-400">AromaFont</span> *font_md = <span class="text-blue-400">aroma_font_create_from_memory</span>(
+        aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, <span class="text-orange-300">48</span>);
+
+    <span class="text-accent-400">int</span> w, h;
+    <span class="text-blue-400">aroma_window_get_size</span>(win, &w, &h);
+
+    <span class="text-secondary-400">AromaContainer</span> *root_container = <span class="text-blue-400">aroma_ui_container</span>(
+        (<span class="text-secondary-400">AromaNode</span> *)win, <span class="text-orange-300">0</span>, <span class="text-orange-300">0</span>, w, h,
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN,
+        AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
+
+    <span class="text-blue-400">aroma_node_set_gap</span>((<span class="text-secondary-400">AromaNode</span> *)root_container, <span class="text-orange-300">40</span>);
+
+    <span class="text-blue-400">aroma_ui_image_mem</span>((<span class="text-secondary-400">AromaNode</span> *)root_container,
+                       leaf_png, leaf_png_len, <span class="text-orange-300">100</span>, <span class="text-orange-300">50</span>, <span class="text-orange-300">256</span>, <span class="text-orange-300">256</span>);
+
+    <span class="text-blue-400">aroma_ui_divider</span>((<span class="text-secondary-400">AromaNode</span> *)win, <span class="text-orange-300">0</span>, <span class="text-orange-300">150</span>, w, DIVIDER_ORIENTATION_HORIZONTAL);
+
+    <span class="text-blue-400">aroma_ui_label</span>((<span class="text-secondary-400">AromaNode</span> *)win, <span class="text-green-400">"Minimal App"</span>, <span class="text-orange-300">40</span>, <span class="text-orange-300">50</span>,
+                   LABEL_STYLE_LABEL_LARGE, font_md);
+
+    <span class="text-secondary-400">AromaLabel</span> *label = <span class="text-blue-400">aroma_ui_create_label</span>(
+        (<span class="text-secondary-400">AromaNode</span> *)root_container, <span class="text-green-400">"Hello, AromaUI!"</span>, <span class="text-orange-300">20</span>, <span class="text-orange-300">20</span>,
+        LABEL_STYLE_LABEL_LARGE);
+    <span class="text-blue-400">aroma_label_set_font</span>(label, font_md);
+
+    <span class="text-secondary-400">AromaLabel</span> *description = <span class="text-blue-400">aroma_ui_create_label</span>(
+        (<span class="text-secondary-400">AromaNode</span> *)root_container,
+        <span class="text-green-400">"Press to visit our GitHub repository!"</span>, <span class="text-orange-300">20</span>, <span class="text-orange-300">20</span>,
+        LABEL_STYLE_LABEL_SMALL);
+    <span class="text-blue-400">aroma_label_set_font</span>((<span class="text-secondary-400">AromaNode</span> *)description, font_md);
+
+    <span class="text-blue-400">aroma_ui_button</span>((<span class="text-secondary-400">AromaNode</span> *)root_container, <span class="text-green-400">"Let's go!"</span>, <span class="text-orange-300">20</span>, <span class="text-orange-300">20</span>,
+                    <span class="text-orange-300">230</span>, <span class="text-orange-300">100</span>, on_btn_click, <span class="text-orange-300">NULL</span>, font_md);
+
+    <span class="text-accent-400">while</span> (<span class="text-blue-400">aroma_ui_is_running</span>())
+    {
+        <span class="text-blue-400">aroma_ui_process_events</span>();
+        <span class="text-blue-400">aroma_ui_render</span>(win);
+        <span class="text-blue-400">usleep</span>(<span class="text-orange-300">16000</span>);
+    }
+
+    <span class="text-blue-400">aroma_ui_shutdown</span>();
+    <span class="text-accent-400">return</span> <span class="text-orange-300">0</span>;
+}
+
+<span class="text-accent-400">#ifdef</span> __ANDROID__
+<span class="text-accent-400">#include</span> <span class="text-secondary-400">&lt;android_native_app_glue.h&gt;</span>
+<span class="text-accent-400">void</span> <span class="text-blue-400">android_main</span>(<span class="text-accent-400">struct</span> android_app *state)
+{
+    <span class="text-blue-400">aroma_android_set_app</span>(state);
+    <span class="text-blue-400">main</span>(<span class="text-orange-300">0</span>, <span class="text-orange-300">NULL</span>);
+}
+<span class="text-accent-400">#endif</span></code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Designed for <span
+                        class="text-accent-400">Performance</span></h2>
+                <p class="text-gray-400">Optimized for embedded hardware with no compromise on the Material aesthetics.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div
+                    class="group p-8 rounded-4xl bg-surface-100 border border-white/5 hover:border-accent-500/30 hover:bg-surface-200 transition-all duration-300">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-surface-300 border border-white/5 flex items-center justify-center text-accent-400 mb-6 group-hover:scale-110 transition-transform">
+                        <i class="ph-fill ph-paint-bucket text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Customizable Theming</h3>
+                    <p class="text-gray-400 leading-relaxed">Easily change colors and styles to match your brand or
+                        system theme using our flexible theming API.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div
+                    class="group p-8 rounded-4xl bg-surface-100 border border-white/5 hover:border-accent-500/30 hover:bg-surface-200 transition-all duration-300">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-surface-300 border border-white/5 flex items-center justify-center text-secondary-400 mb-6 group-hover:scale-110 transition-transform">
+                        <i class="ph-fill ph-circles-three-plus text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Modular Widgets</h3>
+                    <p class="text-gray-400 leading-relaxed">Cards, FABs, Switches, and Sliders. A collection of
+                        essential components to build your UI.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div
+                    class="group p-8 rounded-4xl bg-surface-100 border border-white/5 hover:border-accent-500/30 hover:bg-surface-200 transition-all duration-300">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-surface-300 border border-white/5 flex items-center justify-center text-pink-400 mb-6 group-hover:scale-110 transition-transform">
+                        <i class="ph-fill ph-lightning text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">OLED Optimized</h3>
+                    <p class="text-gray-400 leading-relaxed">Render pipeline optimized for true blacks, saving power on
+                        OLED displays common in modern embedded devices.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div
+                    class="group p-8 rounded-4xl bg-surface-100 border border-white/5 hover:border-accent-500/30 hover:bg-surface-200 transition-all duration-300">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-surface-300 border border-white/5 flex items-center justify-center text-yellow-400 mb-6 group-hover:scale-110 transition-transform">
+                        <i class="ph-fill ph-code text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Minimal Dependencies</h3>
+                    <p class="text-gray-400 leading-relaxed">Runs on Linux and Android. No complex dependencies. Just
+                        pure C.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div
+                    class="group p-8 rounded-4xl bg-surface-100 border border-white/5 hover:border-accent-500/30 hover:bg-surface-200 transition-all duration-300">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-surface-300 border border-white/5 flex items-center justify-center text-green-400 mb-6 group-hover:scale-110 transition-transform">
+                        <i class="ph-fill ph-android-logo text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Android Ready</h3>
+                    <p class="text-gray-400 leading-relaxed">Port existing Android views concepts to C. Familiar
+                        lifecycle and event handling.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div
+                    class="group p-8 rounded-4xl bg-surface-100 border border-white/5 hover:border-accent-500/30 hover:bg-surface-200 transition-all duration-300">
+                    <div
+                        class="w-14 h-14 rounded-2xl bg-surface-300 border border-white/5 flex items-center justify-center text-blue-400 mb-6 group-hover:scale-110 transition-transform">
+                        <i class="ph-fill ph-text-aa text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Typography Engine</h3>
+                    <p class="text-gray-400 leading-relaxed">Advanced font rendering with FreeType support, optimized
+                        for readability on small screens.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+
+</html>
