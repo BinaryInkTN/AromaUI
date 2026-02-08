@@ -310,6 +310,14 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         return;
     }
 
+    if (button->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        button->idle_color = theme.colors.primary;
+        button->hover_color = theme.colors.primary_light;
+        button->pressed_color = theme.colors.primary_dark;
+        button->text_color = theme.colors.surface; 
+    }
+
     uint32_t button_color;
     switch (button->state) {
         case BUTTON_STATE_PRESSED:

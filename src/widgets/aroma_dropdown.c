@@ -107,6 +107,7 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
     dd->hover_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.18f);
     dd->selected_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.35f);
     dd->border_color = 0x222222;
+    dd->use_theme_colors = true;
     dd->corner_radius = 6.0f;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, dd);
@@ -249,6 +250,14 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
     AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+
+    if (dd->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        dd->text_color = theme.colors.text_primary;
+        dd->list_bg_color = theme.colors.surface;
+        dd->hover_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.18f);
+        dd->selected_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.35f);
+    }
 
     uint32_t base_bg_color = dd->is_hovered ? dd->hover_bg_color : dd->list_bg_color;
     gfx->fill_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, base_bg_color, true, 3.0f);

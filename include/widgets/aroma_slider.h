@@ -20,6 +20,7 @@ typedef struct AromaSlider
     uint32_t track_color;
     uint32_t thumb_color;
     uint32_t thumb_hover_color;
+    bool use_theme_colors;
     bool is_hovered;
     bool is_dragging;
     bool (*on_change)(AromaNode*, void*);

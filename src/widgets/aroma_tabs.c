@@ -45,6 +45,7 @@ struct AromaTabs {
     uint32_t selected_color;
     uint32_t text_color;
     uint32_t text_selected_color;
+    bool use_theme_color;
     AromaFont* font;
     uint32_t hover_overlay_color;
     int indicator_height;
@@ -190,6 +191,7 @@ AromaNode* aroma_tabs_create(AromaNode* parent, int x, int y, int width, int hei
     tabs->text_color = theme.colors.text_primary;
     tabs->text_selected_color = theme.colors.text_primary;
     tabs->hover_overlay_color = aroma_color_blend(tabs->bg_color, tabs->selected_color, 0.12f);
+    tabs->use_theme_color = true;
     tabs->indicator_height = 3;
     tabs->indicator_padding = 8;
     tabs->corner_radius = 0.0f;
@@ -323,6 +325,15 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+
+    if (tabs->use_theme_color) {
+        AromaTheme theme = aroma_theme_get_global();
+        tabs->bg_color = theme.colors.surface;
+        tabs->selected_color = theme.colors.primary;
+        tabs->text_color = theme.colors.text_primary;
+        tabs->text_selected_color = theme.colors.text_primary;
+        tabs->hover_overlay_color = aroma_color_blend(tabs->bg_color, tabs->selected_color, 0.12f);
+    }
 
     gfx->fill_rectangle(window_id, tabs->rect.x, tabs->rect.y, tabs->rect.width,
                         tabs->rect.height, tabs->bg_color, false, tabs->corner_radius);

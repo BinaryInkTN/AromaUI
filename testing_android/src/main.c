@@ -21,6 +21,21 @@ void on_undo(void* user_data) {
     }
 }
 
+void on_dropdown_change(int index, const char* option_text, void* user_data) {
+        
+        static AromaTheme current_theme;
+    (void)user_data;
+        if (index == 0) {
+            current_theme = aroma_theme_create_material_black();
+            aroma_ui_set_theme(&current_theme);
+        } else if (index == 1) {
+            current_theme = aroma_theme_create_material_blue();
+            aroma_ui_set_theme(&current_theme);
+
+        }
+        
+    }
+
 int main(int argc, char** argv) {
     if (!aroma_ui_init()) return 1;
     
@@ -63,10 +78,11 @@ int main(int argc, char** argv) {
 
     AromaNode* dropdown = aroma_dropdown_create((AromaNode*)tab1_container, 0, 0, 250, 100);
     aroma_dropdown_setup_events(dropdown, aroma_ui_request_redraw, NULL);
-    aroma_dropdown_add_option(dropdown, "Option 1");
-    aroma_dropdown_add_option(dropdown, "Option 2");
+    aroma_dropdown_add_option(dropdown, "Black");
+    aroma_dropdown_add_option(dropdown, "Light");
     aroma_dropdown_set_font(dropdown, font);
-    
+    aroma_dropdown_set_on_change(dropdown, on_dropdown_change, NULL);
+
     AromaNode* slider = aroma_slider_create((AromaNode*)tab1_container, 0, 0, 400, 50, 0, 100, 0);
     aroma_slider_setup_events(slider, aroma_ui_request_redraw, NULL);
     

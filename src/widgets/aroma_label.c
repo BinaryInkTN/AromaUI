@@ -34,6 +34,7 @@ typedef struct AromaLabel {
     char text[AROMA_LABEL_TEXT_MAX];
     AromaLabelStyle style;
     uint32_t color;
+    bool use_theme_color;
     AromaFont* font;
     float text_scale;
 } AromaLabel;
@@ -61,6 +62,7 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
     label->rect.height = 0;
     label->style = style;
     label->color = __label_default_color();
+    label->use_theme_color = true;
     label->font = NULL;
     strncpy(label->text, text, AROMA_LABEL_TEXT_MAX - 1);
     
@@ -105,6 +107,7 @@ void aroma_label_set_color(AromaNode* label_node, uint32_t color)
     if (!label_node || !label_node->node_widget_ptr) return;
     AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
     label->color = color;
+    label->use_theme_color = false;
     aroma_node_invalidate(label_node);
 }
 
@@ -134,8 +137,15 @@ void aroma_label_draw(AromaNode* label_node, size_t window_id)
     if (!gfx || !gfx->render_text || !label->font) return;
     #endif
     //        aroma_node_invalidate(label_node);
-    if (!gfx || !gfx->render_text) return;    
-    gfx->render_text(window_id, label->font, label->text, label->rect.x, label->rect.y, label->color, label->text_scale);
+    if (!gfx || !gfx->render_text) return;  
+    
+    uint32_t color = label->color;
+    if (label->use_theme_color) {
+        AromaTheme theme = aroma_theme_get_global();
+        color = theme.colors.text_primary;
+    }
+  
+    gfx->render_text(window_id, label->font, label->text, label->rect.x, label->rect.y, color, label->text_scale);
 }
 
 void aroma_label_destroy(AromaNode* label_node)

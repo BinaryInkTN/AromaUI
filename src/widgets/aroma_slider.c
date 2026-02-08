@@ -42,6 +42,7 @@ AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int h
     data->track_color = aroma_color_blend(theme.colors.surface, theme.colors.border, 0.5f);
     data->thumb_color = theme.colors.primary;
     data->thumb_hover_color = aroma_color_adjust(theme.colors.primary, -0.08f);
+    data->use_theme_colors = true;
     data->is_hovered = false;
     data->is_dragging = false;
     data->on_change = NULL;
@@ -172,6 +173,13 @@ void aroma_slider_draw(AromaNode* node, size_t window_id)
     AromaSlider* data = (AromaSlider*)node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+
+    if (data->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        data->track_color = aroma_color_blend(theme.colors.surface, theme.colors.border, 0.5f);
+        data->thumb_color = theme.colors.primary;
+        data->thumb_hover_color = aroma_color_adjust(theme.colors.primary, -0.08f);
+    }
 
     int track_y = data->rect.y + (data->rect.height - data->track_height) / 2;
     gfx->fill_rectangle(window_id, data->rect.x, track_y, data->rect.width, data->track_height,

@@ -27,6 +27,9 @@ typedef struct AromaSnackbar {
     float corner_radius;
     float text_scale;
     uint32_t bg_color;
+    uint32_t text_color;
+    uint32_t action_color;
+    bool use_theme_color;
 } AromaSnackbar;
 
 static int g_win_w = 500;
@@ -93,7 +96,10 @@ AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int dur
     strncpy(bar->message, message, AROMA_SNACKBAR_TEXT_MAX - 1);
 
     AromaTheme theme = aroma_theme_get_global();
-    bar->bg_color = aroma_color_adjust(theme.colors.text_primary, -0.7f);
+    bar->bg_color = 0x333333;
+    bar->text_color = 0xFFFFFF;
+    bar->action_color = theme.colors.primary;
+    bar->use_theme_color = true;
 
     // fetch current window size
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
@@ -160,21 +166,27 @@ void aroma_snackbar_draw(AromaNode* snackbar_node, size_t window_id) {
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
 
+    if (bar->use_theme_color) {
+        AromaTheme theme = aroma_theme_get_global();
+        bar->bg_color = theme.colors.text_primary; 
+        bar->text_color = theme.colors.surface; 
+        bar->action_color = theme.colors.primary_light;
+    }
+
     gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y,
                         bar->rect.width, bar->rect.height,
                         bar->bg_color, true, bar->corner_radius);
 
     if (bar->font && gfx->render_text) {
-        AromaTheme theme = aroma_theme_get_global();
         gfx->render_text(window_id, bar->font, bar->message,
                          bar->rect.x + 12, bar->rect.y + 28,
-                         theme.colors.text_primary, bar->text_scale);
+                         bar->text_color, bar->text_scale);
 
         if (bar->action_label[0]) {
             gfx->render_text(window_id, bar->font, bar->action_label,
                              bar->rect.x + bar->rect.width - bar->action_hit_width,
                              bar->rect.y + 28,
-                             theme.colors.primary_light, bar->text_scale);
+                             bar->action_color, bar->text_scale);
         }
     }
 }
