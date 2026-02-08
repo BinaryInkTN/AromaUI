@@ -33,6 +33,7 @@ typedef struct AromaDivider {
     AromaDividerOrientation orientation;
     uint32_t color;
     int thickness;
+    bool use_theme_colors;
 } AromaDivider;
 
 AromaNode* aroma_divider_create(
@@ -54,6 +55,7 @@ AromaNode* aroma_divider_create(
     divider->orientation = orientation;
     divider->thickness = 1;
     divider->color = theme.colors.border;
+    divider->use_theme_colors = true;
 
     divider->rect.x = x;
     divider->rect.y = y;
@@ -79,6 +81,7 @@ void aroma_divider_set_color(AromaNode* divider_node, uint32_t color)
     if (!divider_node || !divider_node->node_widget_ptr) return;
 
     AromaDivider* divider = divider_node->node_widget_ptr;
+    divider->use_theme_colors = false;
     divider->color = color;
     aroma_node_invalidate(divider_node);
 }
@@ -108,7 +111,12 @@ void aroma_divider_draw(AromaNode* divider_node, size_t window_id)
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+if (divider->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        divider->color = theme.colors.border;
+    }
 
+    
     gfx->fill_rectangle(
         window_id,
         divider->rect.x,

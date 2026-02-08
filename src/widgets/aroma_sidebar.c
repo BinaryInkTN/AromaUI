@@ -29,6 +29,7 @@
 #include "aroma_ui.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include <string.h>
 
 #define AROMA_SIDEBAR_CONTENT_MAX 16
@@ -48,6 +49,13 @@ struct AromaSidebar {
     uint32_t selected_color;
     void (*on_select)(AromaNode*, int, void*);
     void* user_data;
+    
+    // Responsive features
+    bool responsive;
+    bool is_retracted;
+    int full_width;
+    int retracted_width;
+    int breakpoint;
 };
 
 static void __sidebar_request_redraw(void* user_data)
@@ -157,6 +165,13 @@ AromaNode* aroma_sidebar_create(AromaNode* parent, int x, int y, int width, int 
     sidebar->selected_index = 0;
     sidebar->hovered_index = -1;
     sidebar->item_height = 44;
+    
+    // Responsive defaults
+    sidebar->responsive = false;
+    sidebar->is_retracted = false;
+    sidebar->full_width = width;
+    sidebar->retracted_width = 60;
+    sidebar->breakpoint = 600;
 
     AromaTheme theme = aroma_theme_get_global();
     sidebar->bg_color = theme.colors.surface;
@@ -243,6 +258,48 @@ void aroma_sidebar_set_font(AromaNode* sidebar_node, AromaFont* font)
     aroma_node_invalidate(sidebar_node);
 }
 
+void aroma_sidebar_set_responsive(AromaNode* sidebar_node, bool enable)
+{
+    if (!sidebar_node || !sidebar_node->node_widget_ptr) return;
+    AromaSidebar* sidebar = (AromaSidebar*)sidebar_node->node_widget_ptr;
+    sidebar->responsive = enable;
+    if (enable) {
+        aroma_node_invalidate(sidebar_node);
+    }
+}
+
+void aroma_sidebar_set_retracted(AromaNode* sidebar_node, bool retracted)
+{
+    if (!sidebar_node || !sidebar_node->node_widget_ptr) return;
+    AromaSidebar* sidebar = (AromaSidebar*)sidebar_node->node_widget_ptr;
+    if (sidebar->is_retracted != retracted) {
+        sidebar->is_retracted = retracted;
+        sidebar->rect.width = retracted ? sidebar->retracted_width : sidebar->full_width;
+        aroma_node_invalidate(sidebar_node);
+        
+        // Notify parent layout if possible? 
+        // Force layout update on parent
+        if (sidebar_node->parent_node) {
+            // This assumes parent knows how to re-process based on child size change
+            // Just invalidating tree or parent might trigger layout in next pass if implemented
+        }
+    }
+}
+
+void aroma_sidebar_toggle(AromaNode* sidebar_node)
+{
+    if (!sidebar_node || !sidebar_node->node_widget_ptr) return;
+    AromaSidebar* sidebar = (AromaSidebar*)sidebar_node->node_widget_ptr;
+    aroma_sidebar_set_retracted(sidebar_node, !sidebar->is_retracted);
+}
+
+bool aroma_sidebar_is_retracted(AromaNode* sidebar_node)
+{
+    if (!sidebar_node || !sidebar_node->node_widget_ptr) return false;
+    AromaSidebar* sidebar = (AromaSidebar*)sidebar_node->node_widget_ptr;
+    return sidebar->is_retracted;
+}
+
 void aroma_sidebar_set_content(AromaNode* sidebar_node, int index, AromaNode** content_nodes, int content_count)
 {
     if (!sidebar_node || !sidebar_node->node_widget_ptr) return;
@@ -287,6 +344,22 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
 
+    if (sidebar->responsive) {
+        AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+        if (platform && platform->get_window_size) {
+            int w, h;
+            platform->get_window_size(window_id, &w, &h);
+            bool should_retract = (w < sidebar->breakpoint);
+            if (sidebar->is_retracted != should_retract) {
+                sidebar->is_retracted = should_retract;
+                sidebar->rect.width = should_retract ? sidebar->retracted_width : sidebar->full_width;
+                // Note: Changing rect width here might affect layout if parent uses flexbox, 
+                // but since layout is computed before draw, this is strictly visual for this frame
+                // and might lag one frame for layout. 
+            }
+        }
+    }
+
     AromaTheme theme = aroma_theme_get_global();
     sidebar->bg_color = theme.colors.surface;
     sidebar->text_color = theme.colors.text_primary;
@@ -295,7 +368,6 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
     gfx->fill_rectangle(window_id, sidebar->rect.x, sidebar->rect.y,
                         sidebar->rect.width, sidebar->rect.height,
                         sidebar->bg_color, true, 12.0f);
-
 
     for (int i = 0; i < sidebar->count; i++) {
         int item_y = sidebar->rect.y + i * sidebar->item_height;
@@ -315,11 +387,22 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
                             sidebar->rect.width - 12, sidebar->item_height - 8,
                             row_color, true, 10.0f);
 
-        if (sidebar->font && gfx->render_text) {
+        if (!sidebar->is_retracted && sidebar->font && gfx->render_text) {
             uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
             int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
             int text_y = item_y + (sidebar->item_height - line_height) / 2;
             gfx->render_text(window_id, sidebar->font, sidebar->labels[i], sidebar->rect.x + 14, text_y, text_color, 1.0f);
+        } else if (sidebar->is_retracted && sidebar->font && gfx->render_text) {
+             // Draw first letter centered if retracted
+             char glyph[2] = { sidebar->labels[i][0], '\0' };
+             if (glyph[0] != '\0') {
+                 float w = gfx->measure_text(window_id, sidebar->font, glyph, 1.0f);
+                 int text_x = sidebar->rect.x + (sidebar->rect.width - (int)w) / 2;
+                 int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
+                 int text_y = item_y + (sidebar->item_height - line_height) / 2;
+                 uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
+                 gfx->render_text(window_id, sidebar->font, glyph, text_x, text_y, text_color, 1.0f);
+             }
         }
     }
 }

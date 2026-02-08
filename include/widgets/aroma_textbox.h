@@ -46,6 +46,7 @@ typedef struct AromaTextbox
     int text_x;
     int cursor_height;
     size_t last_window_id;
+    bool use_theme_colors;
 
     bool (*on_text_changed)(AromaNode* node, const char* text, void* user_data);
     bool (*on_focus_changed)(AromaNode* node, bool focused, void* user_data);

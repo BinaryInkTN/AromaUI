@@ -152,6 +152,39 @@ static void update_surface_size(void) {
 }
 
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
+    if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_KEY) {
+        if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN) {
+            int32_t key_code = AKeyEvent_getKeyCode(event);
+            char ch = 0;
+            if (key_code >= AKEYCODE_0 && key_code <= AKEYCODE_9) ch = '0' + (key_code - AKEYCODE_0);
+            else if (key_code >= AKEYCODE_A && key_code <= AKEYCODE_Z) {
+                ch = 'a' + (key_code - AKEYCODE_A);
+                int meta = AKeyEvent_getMetaState(event);
+                if (meta & AMETA_SHIFT_ON) ch = 'A' + (key_code - AKEYCODE_A);
+            }
+            else if (key_code == AKEYCODE_SPACE) ch = ' ';
+            else if (key_code == AKEYCODE_DEL) ch = 8; 
+            else if (key_code == AKEYCODE_ENTER) ch = 10;
+            else if (key_code == AKEYCODE_PERIOD) ch = '.';
+            else if (key_code == AKEYCODE_COMMA) ch = ',';
+            else if (key_code == AKEYCODE_MINUS) ch = '-';
+            else if (key_code == AKEYCODE_AT) ch = '@';
+
+            if (ch != 0) {
+                AromaNode* focused = aroma_ui_get_focused_node();
+                if (focused) {
+                    AromaEvent* evt = aroma_event_create(EVENT_TYPE_KEY_PRESS, focused->node_id);
+                    if (evt) {
+                        evt->data.key.key_code = ch;
+                        aroma_event_queue(evt);
+                    }
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
     if (AInputEvent_getType(event) != AINPUT_EVENT_TYPE_MOTION)
         return 0;
 
@@ -414,6 +447,82 @@ void call_flush_function_ptr(void (*flush_fn)(struct AromaDrawList*, size_t, int
 void tft_mark_tiles_dirty(int y, int h) {}
 void set_clear_color(uint16_t color) {}
 
+static void android_show_keyboard(void) {
+    if (!g_app || !g_app->activity) {
+        LOGE("Cannot show keyboard: g_app is NULL");
+        return;
+    }
+    
+    LOGI("Requesting soft keyboard via JNI");
+    
+    JNIEnv* env = NULL;
+    (*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL);
+    
+    jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
+    
+    // Context.INPUT_METHOD_SERVICE = "input_method"
+    jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+    jstring serviceName = (*env)->NewStringUTF(env, "input_method");
+    jobject imm = (*env)->CallObjectMethod(env, g_app->activity->clazz, getSystemService, serviceName);
+    (*env)->DeleteLocalRef(env, serviceName);
+    
+    if (imm) {
+        // Get DecorView for token
+        jmethodID getWindow = (*env)->GetMethodID(env, activityClass, "getWindow", "()Landroid/view/Window;");
+        jobject window = (*env)->CallObjectMethod(env, g_app->activity->clazz, getWindow);
+        
+        jclass windowClass = (*env)->FindClass(env, "android/view/Window");
+        jmethodID getDecorView = (*env)->GetMethodID(env, windowClass, "getDecorView", "()Landroid/view/View;");
+        jobject decorView = (*env)->CallObjectMethod(env, window, getDecorView);
+        
+        // InputMethodManager.showSoftInput(View, int flags)
+        jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
+        jmethodID showSoftInput = (*env)->GetMethodID(env, immClass, "showSoftInput", "(Landroid/view/View;I)Z");
+        
+        // Flags: SHOW_IMPLICIT = 1, SHOW_FORCED = 2
+        (*env)->CallBooleanMethod(env, imm, showSoftInput, decorView, 2);
+        
+        LOGI("Keyboard show requested via JNI");
+    } else {
+        LOGE("Failed to get InputMethodManager");
+    }
+    
+    (*g_app->activity->vm)->DetachCurrentThread(g_app->activity->vm);
+}
+
+static void android_hide_keyboard(void) {
+    if (!g_app || !g_app->activity) return;
+    
+    JNIEnv* env = NULL;
+    (*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL);
+    
+    jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
+    jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+    jstring serviceName = (*env)->NewStringUTF(env, "input_method");
+    jobject imm = (*env)->CallObjectMethod(env, g_app->activity->clazz, getSystemService, serviceName);
+    (*env)->DeleteLocalRef(env, serviceName);
+    
+    if (imm) {
+        jmethodID getWindow = (*env)->GetMethodID(env, activityClass, "getWindow", "()Landroid/view/Window;");
+        jobject window = (*env)->CallObjectMethod(env, g_app->activity->clazz, getWindow);
+        jclass windowClass = (*env)->FindClass(env, "android/view/Window");
+        jmethodID getDecorView = (*env)->GetMethodID(env, windowClass, "getDecorView", "()Landroid/view/View;");
+        jobject decorView = (*env)->CallObjectMethod(env, window, getDecorView);
+        
+        jclass viewClass = (*env)->FindClass(env, "android/view/View");
+        jmethodID getWindowToken = (*env)->GetMethodID(env, viewClass, "getWindowToken", "()Landroid/os/IBinder;");
+        jobject token = (*env)->CallObjectMethod(env, decorView, getWindowToken);
+        
+        jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
+        jmethodID hideSoftInput = (*env)->GetMethodID(env, immClass, "hideSoftInputFromWindow", "(Landroid/os/IBinder;I)Z");
+        
+        (*env)->CallBooleanMethod(env, imm, hideSoftInput, token, 0);
+        LOGI("Keyboard hide requested via JNI");
+    }
+    
+    (*g_app->activity->vm)->DetachCurrentThread(g_app->activity->vm);
+}
+
 void platform_set_android_app(void* state) {
     g_app = (struct android_app*)state;
 }
@@ -422,6 +531,8 @@ AromaPlatformInterface aroma_platform_android = {
     .initialize = initialize,
     .shutdown = shutdown,
     .create_window = create_window,
+    .show_keyboard = android_show_keyboard,
+    .hide_keyboard = android_hide_keyboard,
     .make_context_current = make_context_current,
     .set_window_update_callback = set_window_update_callback,
     .get_window_size = get_window_size,

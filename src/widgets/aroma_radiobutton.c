@@ -46,6 +46,7 @@ struct AromaRadioButton {
     void* user_data;
     int text_x;
     int text_y;
+    bool use_theme_colors;
 };
 
 static inline uint32_t __radio_lighten(uint32_t color, float amount)
@@ -200,6 +201,7 @@ AromaNode* aroma_radio_button_create(AromaNode* parent, AromaRadioGroup* group,
     data->inner_radius = 0.0f;
     data->text_x = 0;
     data->text_y = 0;
+    data->use_theme_colors = true;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, data);
     if (!node) {
@@ -325,7 +327,16 @@ void aroma_radio_button_draw(AromaNode* node, size_t window_id)
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (aroma_node_is_hidden(node)) return;
     if (!gfx) return;
+if (data->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        data->ring_color = theme.colors.border;
+        data->dot_color = theme.colors.primary;
+        data->hover_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.12f);
+        data->text_color = theme.colors.text_primary;
+        data->background_color = theme.colors.surface;
+    }
 
+    
     uint32_t ring_color = data->ring_color;
     if (data->is_hovered) {
         ring_color = __radio_lighten(ring_color, 0.12f);

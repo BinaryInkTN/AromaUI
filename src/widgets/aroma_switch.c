@@ -38,6 +38,7 @@ AromaNode* aroma_switch_create(AromaNode* parent, int x, int y, int width, int h
     data->border_color = 0x333333;
     data->toggle_x = data->state ? (data->rect.x + data->rect.width - data->toggle_size - 2) : (data->rect.x + 2);
 
+    data->use_theme_colors = true;
     data->on_change = NULL;
     data->user_data = NULL;
 
@@ -96,6 +97,12 @@ void aroma_switch_draw(AromaNode* node, size_t window_id)
     AromaSwitch* data = (AromaSwitch*)node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+
+    if (data->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        data->color_on = theme.colors.primary;
+        data->color_off = theme.colors.border;
+    }
 
     uint32_t bg_color = data->state ? data->color_on : data->color_off;
     if (data->is_hovered) {

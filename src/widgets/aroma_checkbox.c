@@ -31,6 +31,7 @@ typedef struct AromaCheckbox {
     int box_y;
     int text_x;
     int text_y;
+    bool use_theme_colors;
 } AromaCheckbox;
 
 static inline uint32_t __checkbox_lighten(uint32_t color, float amount)
@@ -93,6 +94,7 @@ AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
     data->hover_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.12f);
     data->text_color = theme.colors.text_primary;
     data->border_radius = 4.0f;
+    data->use_theme_colors = true;
     data->font = NULL;
     data->on_change = NULL;
     data->user_data = NULL;
@@ -235,7 +237,16 @@ void aroma_checkbox_draw(AromaNode* node, size_t window_id)
     if (!gfx) return;
 
     if (data->box_size == 0) __checkbox_update_layout(data);
+if (data->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        data->box_color = theme.colors.surface;
+        data->border_color = theme.colors.border;
+        data->check_color = theme.colors.primary;
+        data->hover_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.12f);
+        data->text_color = theme.colors.text_primary;
+    }
 
+    
     uint32_t base_color = data->box_color;
     if (data->is_hovered) base_color = __checkbox_lighten(base_color, 0.06f);
     uint32_t border_color = data->border_color;

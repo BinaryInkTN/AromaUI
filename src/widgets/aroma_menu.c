@@ -43,6 +43,7 @@ typedef struct AromaMenu {
     uint32_t border_color;
     uint32_t text_color;
     float text_scale;
+    bool use_theme_colors;
 } AromaMenu;
 
 static bool __menu_handle_event(AromaEvent* event, void* user_data)
@@ -89,6 +90,7 @@ AromaNode* aroma_menu_create(AromaNode* parent, int x, int y)
     menu->border_color = theme.colors.border;
     menu->text_color = theme.colors.text_primary;
     menu->text_scale = 1.0f;
+    menu->use_theme_colors = true;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, menu);
     if (!node) {
@@ -166,6 +168,14 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
     if (!menu->visible) return;
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+
+    if (menu->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        menu->bg_color = theme.colors.surface;
+        menu->border_color = theme.colors.border;
+        menu->text_color = theme.colors.text_primary;
+    }
+
     if (!gfx) return;
     gfx->fill_rectangle(window_id, menu->rect.x, menu->rect.y, menu->rect.width, menu->rect.height,
                         menu->bg_color, true, menu->corner_radius);

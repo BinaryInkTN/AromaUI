@@ -39,6 +39,7 @@ typedef struct AromaTooltip {
     float corner_radius;
     float text_scale;
     uint32_t bg_color;
+    bool use_theme_colors;
 } AromaTooltip;
 
 AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int y, AromaTooltipPosition position)
@@ -59,6 +60,7 @@ AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int 
     tip->corner_radius = 6.0f;
     tip->text_scale = 1.0f;
     tip->bg_color = aroma_color_adjust(theme.colors.text_primary, -0.6f);
+    tip->use_theme_colors = true;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, tip);
     if (!node) {
@@ -119,6 +121,10 @@ void aroma_tooltip_draw(AromaNode* tooltip_node, size_t window_id)
     if (!gfx) return;
     if (aroma_node_is_hidden(tooltip_node)) return;
     AromaTheme theme = aroma_theme_get_global();
+
+    if (tip->use_theme_colors) {
+        tip->bg_color = aroma_color_adjust(theme.colors.text_primary, -0.6f);
+    }
 
     gfx->fill_rectangle(window_id, tip->rect.x, tip->rect.y, tip->rect.width, tip->rect.height,
                         tip->bg_color, true, tip->corner_radius);

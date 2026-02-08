@@ -25,6 +25,7 @@ typedef struct AromaSwitch
     uint32_t border_color;
     int toggle_x;
 
+    bool use_theme_colors;
 
     bool (*on_change)(AromaNode* node, void* user_data);
     void* user_data;

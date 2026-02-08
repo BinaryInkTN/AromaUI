@@ -25,6 +25,7 @@ typedef struct AromaChip {
     AromaFont* font;
     int text_x;
     int text_y;
+    bool use_theme_colors;
 } AromaChip;
 
 static void __chip_request_redraw(void* user_data)
@@ -118,6 +119,7 @@ AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label,
     chip->font = NULL;
     chip->text_x = 0;
     chip->text_y = 0;
+    chip->use_theme_colors = true;
 
     __chip_update_layout(chip);
 
@@ -172,6 +174,13 @@ void aroma_chip_draw(AromaNode* chip_node, size_t window_id) {
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+
+    if (chip->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        chip->bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.12f);
+        chip->text_color = theme.colors.text_primary;
+        chip->selected_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.35f);
+    }
 
     uint32_t bg_color = chip->selected ? chip->selected_color : chip->bg_color;
     if (chip->is_pressed) {

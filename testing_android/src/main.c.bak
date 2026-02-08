@@ -1,4 +1,5 @@
 #include "aroma.h"
+#include "widgets/aroma_textbox.h"
 #include "test_image.h"
 #include <stdio.h>
 
@@ -22,19 +23,24 @@ void on_undo(void* user_data) {
 }
 
 void on_dropdown_change(int index, const char* option_text, void* user_data) {
-        
-        static AromaTheme current_theme;
+    static AromaTheme current_theme;
     (void)user_data;
-        if (index == 0) {
-            current_theme = aroma_theme_create_material_black();
-            aroma_ui_set_theme(&current_theme);
-        } else if (index == 1) {
-            current_theme = aroma_theme_create_material_blue();
-            aroma_ui_set_theme(&current_theme);
-
-        }
-        
+    (void)option_text;
+    if (index == 0) {
+        current_theme = aroma_theme_create_material_black();
+        aroma_ui_set_theme(&current_theme);
+    } else if (index == 1) {
+        current_theme = aroma_theme_create_material_blue();
+        aroma_ui_set_theme(&current_theme);
     }
+}
+
+bool on_text_changed(AromaNode* node, const char* text, void* user_data) {
+    (void)node;
+    (void)user_data;
+    printf("Text changed: %s\n", text);
+    return true;
+}
 
 int main(int argc, char** argv) {
     if (!aroma_ui_init()) return 1;
@@ -57,7 +63,7 @@ int main(int argc, char** argv) {
     aroma_tabs_set_font(tabs, font);
     aroma_tabs_setup_events(tabs, aroma_ui_request_redraw, NULL);
 
-    AromaNode* tab1_container = aroma_container_create(win, 0, 120, w, h - 120);
+    AromaNode* tab1_container = aroma_container_create((AromaNode*)win, 0, 120, w, h - 120);
     aroma_tabs_set_content(tabs, 0, &tab1_container, 1);
     
     snackbar = aroma_snackbar_create((AromaNode*)win, "Hello, World!", 3000);
@@ -66,35 +72,38 @@ int main(int argc, char** argv) {
         aroma_snackbar_set_action(snackbar, "Undo", on_undo, NULL);
         aroma_node_set_hidden((AromaNode*)snackbar, true);  
     }
+    
     aroma_node_set_layout_mode(tab1_container, AROMA_LAYOUT_MODE_FLEX);
     aroma_node_set_flex_direction(tab1_container, AROMA_FLEX_COLUMN);
     aroma_node_set_justify_content(tab1_container, AROMA_JUSTIFY_START); 
     aroma_node_set_align_items(tab1_container, AROMA_ALIGN_START); 
-    aroma_node_set_gap(tab1_container, 200);
+    aroma_node_set_gap(tab1_container, 20); // Reduced gap from 200 to 20 for visibility
+
     AromaButton* btn = aroma_ui_create_button(tab1_container, "Click Me", 0, 0, 300, 100);
     aroma_ui_on_button_click(btn, on_btn_click, NULL);
     aroma_button_set_font((AromaNode*)btn, font);
 
-
-    AromaNode* dropdown = aroma_dropdown_create((AromaNode*)tab1_container, 0, 0, 250, 100);
+    AromaNode* dropdown = aroma_dropdown_create((AromaNode*)tab1_container, 0, 0, 250, 80);
     aroma_dropdown_setup_events(dropdown, aroma_ui_request_redraw, NULL);
     aroma_dropdown_add_option(dropdown, "Black");
-    aroma_dropdown_add_option(dropdown, "Light");
+    aroma_dropdown_add_option(dropdown, "Blue");
     aroma_dropdown_set_font(dropdown, font);
     aroma_dropdown_set_on_change(dropdown, on_dropdown_change, NULL);
-    AromaNode* textbox = aroma_textbox_create((AromaNode*)tab1_container, 0, 0, 300, 100);
-    aroma_textbox_set_font(textbox, font);
-    aroma_textbox_setup_events(textbox, aroma_ui_request_redraw, NULL, NULL);
-    
-    AromaNode* slider = aroma_slider_create((AromaNode*)tab1_container, 0, 0, 400, 50, 0, 100, 0);
+
+    AromaNode* slider = aroma_slider_create((AromaNode*)tab1_container, 0, 0, 350, 50, 0, 100, 50);
     aroma_slider_setup_events(slider, aroma_ui_request_redraw, NULL);
     
+    // START: Added Textbox for keyboard testing
+    AromaNode* textbox = aroma_textbox_create((AromaNode*)tab1_container, 0, 0, 350, 60);
+    aroma_textbox_set_placeholder(textbox, "Type here...");
+    aroma_textbox_setup_events(textbox, aroma_ui_request_redraw, on_text_changed, NULL);
+    aroma_textbox_set_font(textbox, font);
+    // END: Added Textbox
+
     char title[64];
     snprintf(title, sizeof(title), "Window Size: %dx%d", w, h);
     AromaNode* label = aroma_ui_create_label((AromaNode*)tab1_container, title, 0, 0, LABEL_STYLE_LABEL_LARGE);
     if(font) aroma_label_set_font(label, font);
-
-        aroma_button_set_font((AromaNode*)btn, font);
 
     int win_w, win_h;
     aroma_window_get_size((AromaNode*)win, &win_w, &win_h);

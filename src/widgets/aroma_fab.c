@@ -25,6 +25,7 @@ typedef struct AromaFAB {
     AromaFont* font;
     int text_x;
     int text_y;
+    bool use_theme_colors;
 } AromaFAB;
 
 static void __fab_request_redraw(void* user_data)
@@ -125,6 +126,7 @@ AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, 
     fab->font = NULL;
     fab->text_x = 0;
     fab->text_y = 0;
+    fab->use_theme_colors = true;
 
     __fab_update_layout(fab);
 
@@ -160,6 +162,7 @@ void aroma_fab_set_colors(AromaNode* fab_node, uint32_t bg_color, uint32_t icon_
     AromaFAB* fab = (AromaFAB*)fab_node->node_widget_ptr;
     if (!fab) return;
     fab->bg_color = bg_color;
+    fab->use_theme_colors = false;
     fab->icon_color = icon_color;
 }
 
@@ -188,7 +191,13 @@ void aroma_fab_draw(AromaNode* fab_node, size_t window_id) {
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+if (fab->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        fab->bg_color = theme.colors.primary;
+        fab->shadow_color = 0xC0C0C0;
+    }
 
+    
     uint32_t color = fab->bg_color;
     if (fab->is_pressed) {
         color = 0x4F378B;

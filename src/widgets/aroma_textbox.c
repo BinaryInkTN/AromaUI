@@ -8,6 +8,7 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -127,6 +128,7 @@ AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int 
     data->cursor_y = 0;
     data->cursor_height = 0;
     data->text_x = data->rect.x + AROMA_TEXTBOX_PADDING_X;
+    data->use_theme_colors = true;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, data);
     if (!node) {
@@ -186,10 +188,19 @@ void aroma_textbox_set_focused(AromaNode* node, bool focused)
         data->is_focused = focused;
         data->show_cursor = true;
         data->cursor_blink_time = __textbox_now_ms();
+        
+        AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+        
         if (focused) {
             aroma_ui_set_focused_node(node);
+            if (platform && platform->show_keyboard) {
+                platform->show_keyboard();
+            }
         } else {
             aroma_ui_clear_focused_node(node);
+            if (platform && platform->hide_keyboard) {
+                platform->hide_keyboard();
+            }
         }
         aroma_node_invalidate(node);
         if (data->on_focus_changed) {
@@ -212,7 +223,17 @@ void aroma_textbox_on_click(AromaNode* node, int mouse_x, int mouse_y)
     AromaTextbox* data = (AromaTextbox*)node->node_widget_ptr;
     bool inside = __textbox_contains_point(data, mouse_x, mouse_y);
     if (inside) {
+        bool was_focused = data->is_focused;
         aroma_textbox_set_focused(node, true);
+        
+        // Force show keyboard if it was already focused but keyboard might be hidden
+        if (was_focused) {
+            AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+            if (platform && platform->show_keyboard) {
+                platform->show_keyboard();
+            }
+        }
+        
         AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
         size_t window_id = data->last_window_id;
         size_t desired_cursor = __textbox_cursor_from_click(data, gfx, window_id, mouse_x);
@@ -322,6 +343,17 @@ void aroma_textbox_draw(AromaNode* node, size_t window_id)
     AromaTextbox* data = (AromaTextbox*)node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+
+    if (data->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        data->hover_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f);
+        data->focused_bg_color = theme.colors.surface;
+        data->text_color = theme.colors.text_primary;
+        data->border_color = theme.colors.border;
+        data->hover_border_color = aroma_color_adjust(theme.colors.border, 0.06f);
+        data->focused_border_color = theme.colors.primary;
+        data->bg_color = theme.colors.surface;
+    }
 
     uint32_t fill_color = data->bg_color;
     if (data->is_focused) fill_color = data->focused_bg_color;
@@ -505,6 +537,13 @@ static bool __textbox_default_keyboard_handler(AromaEvent* event, void* user_dat
     return false;
 }
 
+static bool __textbox_focus_handler(AromaEvent* event, void* user_data) {
+    if (!event || !event->target_node) return false;
+    bool new_focus = (event->event_type == EVENT_TYPE_FOCUS_GAINED);
+    aroma_textbox_set_focused(event->target_node, new_focus);
+    return false;
+}
+
 bool aroma_textbox_setup_events(AromaNode* textbox_node,
                                void (*on_redraw_callback)(void*),
                                bool (*on_text_changed_callback)(AromaNode*, const char*, void*),
@@ -520,5 +559,7 @@ bool aroma_textbox_setup_events(AromaNode* textbox_node,
     aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_MOUSE_ENTER, __textbox_default_mouse_handler, (void*)on_redraw_callback, 95);
     aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_MOUSE_EXIT, __textbox_default_mouse_handler, (void*)on_redraw_callback, 95);
     aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_KEY_PRESS, __textbox_default_keyboard_handler, (void*)on_redraw_callback, 100);
+    aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_FOCUS_GAINED, __textbox_focus_handler, (void*)on_redraw_callback, 100);
+    aroma_event_subscribe(textbox_node->node_id, EVENT_TYPE_FOCUS_LOST, __textbox_focus_handler, (void*)on_redraw_callback, 100);
     return true;
 }

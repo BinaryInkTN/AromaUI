@@ -18,6 +18,7 @@ typedef struct AromaCard {
     uint32_t shadow_color;
     bool is_hovered;
     bool is_pressed;
+    bool use_theme_colors;
     void (*click_callback)(void* user_data);
     void* user_data;
 } AromaCard;
@@ -96,6 +97,7 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
     card->shadow_color = 0xE0E0E0;
     card->is_hovered = false;
     card->is_pressed = false;
+    card->use_theme_colors = true;
     card->click_callback = NULL;
     card->user_data = NULL;
 
@@ -124,6 +126,7 @@ void aroma_card_set_colors(AromaNode* card_node, uint32_t bg_color, uint32_t bor
     AromaCard* card = (AromaCard*)card_node->node_widget_ptr;
     if (!card) return;
     card->bg_color = bg_color;
+    card->use_theme_colors = false;
     card->border_color = border_color;
 }
 
@@ -143,6 +146,13 @@ void aroma_card_draw(AromaNode* card_node, size_t window_id) {
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+    if(card->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        card->bg_color = card->type == CARD_TYPE_FILLED
+            ? aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f)
+            : theme.colors.surface;
+        card->border_color = theme.colors.border;
+    }
 
     if (card->type == CARD_TYPE_ELEVATED) {
         gfx->fill_rectangle(window_id, card->rect.x + 2, card->rect.y + 4,

@@ -26,6 +26,7 @@ typedef struct AromaIconButton {
     uint32_t border_color;
     int text_x;
     int text_y;
+    bool use_theme_colors;
 } AromaIconButton;
 
 static bool __iconbutton_handle_event(AromaEvent* event, void* user_data)
@@ -112,6 +113,7 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
     btn->border_color = theme.colors.border;
     btn->text_x = 0;
     btn->text_y = 0;
+    btn->use_theme_colors = true;
 
     if (icon_text) {
         strncpy(btn->icon_text, icon_text, AROMA_ICON_TEXT_MAX - 1);
@@ -155,6 +157,7 @@ void aroma_iconbutton_set_colors(AromaNode* button_node, uint32_t bg_color, uint
     AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
     btn->bg_color = bg_color;
     btn->icon_color = icon_color;
+    btn->use_theme_colors = false;
     aroma_node_invalidate(button_node);
 }
 
@@ -172,7 +175,18 @@ void aroma_iconbutton_draw(AromaNode* button_node, size_t window_id)
     AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+if (btn->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        btn->bg_color = (btn->variant == ICON_BUTTON_FILLED || btn->variant == ICON_BUTTON_TONAL)
+            ? theme.colors.primary
+            : theme.colors.surface;
+        btn->icon_color = (btn->variant == ICON_BUTTON_FILLED || btn->variant == ICON_BUTTON_TONAL)
+            ? theme.colors.surface
+            : theme.colors.text_primary;
+        btn->border_color = theme.colors.border;
+    }
 
+    
     uint32_t bg = btn->bg_color;
     if (btn->is_pressed) {
         if (aroma_node_is_hidden(button_node)) return;

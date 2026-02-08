@@ -423,6 +423,10 @@ void aroma_event_process_queue(void) {
 
     aroma_event_resync_hover();
 }
+#include "aroma_ui.h"
+#include "backends/aroma_abi.h"
+#include "backends/platforms/aroma_platform_interface.h"
+
 void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     if (!g_event_system.root_node || g_event_system.shutting_down) return;
 
@@ -437,6 +441,31 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     AromaNode* target =
         aroma_event_hit_test(g_event_system.root_node, x, y);
     uint64_t current_id = target ? target->node_id : 0;
+
+    // Focus handling: If clicking elsewhere, clear focus
+    if (button_down) {
+        AromaNode* focused = aroma_ui_get_focused_node();
+        if (focused && focused->node_id != current_id) {
+            // Check if target is a child of focused (unlikely for leaf widgets but possible for containers)
+            // For now, strict check.
+            
+            // 1. Notify focused node it lost focus
+            AromaEvent* focus_ev = aroma_event_create(EVENT_TYPE_FOCUS_LOST, focused->node_id);
+            if (focus_ev) {
+                aroma_event_dispatch(focus_ev);
+                aroma_event_destroy(focus_ev);
+            }
+            
+            // 2. Clear global focus
+            aroma_ui_clear_focused_node(focused);
+            
+            // 3. Hide keyboard via platform
+            AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+            if (platform && platform->hide_keyboard) {
+                platform->hide_keyboard();
+            }
+        }
+    }
 
     if (current_id != g_mouse_state.hovered_node_id) {
         if (g_mouse_state.hovered_node_id != 0) {

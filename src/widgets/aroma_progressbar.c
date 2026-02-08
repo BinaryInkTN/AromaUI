@@ -13,6 +13,7 @@ typedef struct AromaProgressBar {
     uint32_t indicator_color;
     float corner_radius;
     int fill_width;
+    bool use_theme_colors;
 } AromaProgressBar;
 
 static void __progressbar_update_fill(AromaProgressBar* bar)
@@ -38,6 +39,7 @@ AromaNode* aroma_progressbar_create(AromaNode* parent, int x, int y, int width, 
     bar->indicator_color = theme.colors.primary;
     bar->corner_radius = (float)bar->rect.height / 2.0f;
     bar->fill_width = 0;
+    bar->use_theme_colors = true;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, bar);
     if (!node) {
@@ -77,6 +79,7 @@ void aroma_progressbar_set_colors(AromaNode* progress_node, uint32_t track_color
     if (!progress_node || !progress_node->node_widget_ptr) return;
     AromaProgressBar* bar = (AromaProgressBar*)progress_node->node_widget_ptr;
     bar->track_color = track_color;
+    bar->use_theme_colors = false;
     bar->indicator_color = indicator_color;
     aroma_node_invalidate(progress_node);
 }
@@ -88,7 +91,13 @@ void aroma_progressbar_draw(AromaNode* progress_node, size_t window_id)
     AromaProgressBar* bar = (AromaProgressBar*)progress_node->node_widget_ptr;
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+if (bar->use_theme_colors) {
+        AromaTheme theme = aroma_theme_get_global();
+        bar->track_color = aroma_color_blend(theme.colors.surface, theme.colors.border, 0.45f);
+        bar->indicator_color = theme.colors.primary;
+    }
 
+    
     gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, bar->rect.width, bar->rect.height,
                         bar->track_color, true, bar->corner_radius);
 

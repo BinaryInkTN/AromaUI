@@ -28,6 +28,11 @@ void aroma_sidebar_set_font(AromaNode* sidebar_node, AromaFont* font);
 
 void aroma_sidebar_set_content(AromaNode* sidebar_node, int index, AromaNode** content_nodes, int content_count);
 
+void aroma_sidebar_set_responsive(AromaNode* sidebar_node, bool enable);
+void aroma_sidebar_set_retracted(AromaNode* sidebar_node, bool retracted);
+void aroma_sidebar_toggle(AromaNode* sidebar_node);
+bool aroma_sidebar_is_retracted(AromaNode* sidebar_node);
+
 bool aroma_sidebar_setup_events(AromaNode* sidebar_node, void (*on_redraw_callback)(void*), void* user_data);
 
 void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id);
