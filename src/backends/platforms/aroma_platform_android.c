@@ -119,11 +119,6 @@ static void update_surface_size(void) {
 
     if (w == g_width && h == g_height)
         return;
-
-    // Detect if dimensions are inverted or weird (e.g. orientation change not fully processed)
-    // For now, trust EGL surface.
-    
-    // Log change
     LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
 
     g_width = w;
@@ -133,18 +128,18 @@ static void update_surface_size(void) {
 
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     
-    // Force immediate layout update via event
     for (int i = 0; i < AROMA_MAX_WINDOWS; i++) {
         if (g_windows[i].is_active && g_windows[i].root_node) {
-             // Force sync the window internal data with the new surface size
              struct AromaWindow* win_widget = (struct AromaWindow*)g_windows[i].root_node->node_widget_ptr;
              if (win_widget) {
                  win_widget->rect.width = g_width;
                  win_widget->rect.height = g_height;
              }
              
-             // Update root node layout directly too?
              aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
+             
+             // Invalidate to ensure redraw on new surface
+             aroma_node_invalidate(g_windows[i].root_node);
              
              AromaEvent* event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
              if (event) {
@@ -192,7 +187,6 @@ static int init_display(struct android_app* app) {
     if (!app || !app->window)
         return -1;
 
-    // Force window to not cover status bar
     ANativeActivity_setWindowFlags(app->activity, 
         AWINDOW_FLAG_FORCE_NOT_FULLSCREEN, 
         AWINDOW_FLAG_FULLSCREEN | AWINDOW_FLAG_LAYOUT_IN_SCREEN | AWINDOW_FLAG_LAYOUT_NO_LIMITS
@@ -214,20 +208,26 @@ static int init_display(struct android_app* app) {
         EGL_GREEN_SIZE, 8,
         EGL_BLUE_SIZE, 8,
         EGL_ALPHA_SIZE, 8,
+        EGL_DEPTH_SIZE, 0,
+        EGL_STENCIL_SIZE, 0,
         EGL_NONE
     };
 
     EGLint num;
-    if (!eglChooseConfig(dpy, attribs, &config, 1, &num) || num == 0)
+    if (!eglChooseConfig(dpy, attribs, &config, 1, &num) || num == 0) {
+        LOGE("Failed to choose config");
         return -1;
+    }
 
     EGLint format;
     eglGetConfigAttrib(dpy, config, EGL_NATIVE_VISUAL_ID, &format);
     ANativeWindow_setBuffersGeometry(app->window, 0, 0, format);
 
     EGLSurface surf = eglCreateWindowSurface(dpy, config, app->window, NULL);
-    if (surf == EGL_NO_SURFACE)
+    if (surf == EGL_NO_SURFACE) {
+        LOGE("Failed to create window surface");
         return -1;
+    }
 
     const EGLint ctx_attribs[] = {
         EGL_CONTEXT_CLIENT_VERSION, 3,
@@ -235,11 +235,15 @@ static int init_display(struct android_app* app) {
     };
 
     EGLContext ctx = eglCreateContext(dpy, config, EGL_NO_CONTEXT, ctx_attribs);
-    if (ctx == EGL_NO_CONTEXT)
+    if (ctx == EGL_NO_CONTEXT) {
+        LOGE("Failed to create context");
         return -1;
+    }
 
-    if (!eglMakeCurrent(dpy, surf, surf, ctx))
+    if (!eglMakeCurrent(dpy, surf, surf, ctx)) {
+         LOGE("Failed to make current");
         return -1;
+    }
 
     display = dpy;
     surface = surf;
@@ -247,7 +251,7 @@ static int init_display(struct android_app* app) {
     g_has_window = true;
 
     update_surface_size();
-
+    
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx) {
         if (gfx->setup_shared_window_resources)
@@ -280,14 +284,40 @@ static void term_display(void) {
 static void handle_cmd(struct android_app* app, int32_t cmd) {
     switch (cmd) {
         case APP_CMD_INIT_WINDOW:
+            if (app->window) {
+                term_display();
+                init_display(app);
+            }
+            break;
+            
+        case APP_CMD_WINDOW_RESIZED:
+        case APP_CMD_CONFIG_CHANGED:
+            term_display();
             if (app->window)
                 init_display(app);
             break;
-        case APP_CMD_WINDOW_RESIZED:
+
         case APP_CMD_CONTENT_RECT_CHANGED:
-        case APP_CMD_CONFIG_CHANGED:
             update_surface_size();
             break;
+
+        case APP_CMD_GAINED_FOCUS:
+        case APP_CMD_RESUME:
+           
+            if (app->window && !g_has_window) {
+                term_display();
+                init_display(app);
+            } else if (g_has_window) {
+                 update_surface_size();
+                 extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
+                 for (int i = 0; i < AROMA_MAX_WINDOWS; i++) {
+                    if (g_windows[i].is_active && g_windows[i].root_node) {
+                         aroma_node_invalidate(g_windows[i].root_node);
+                    }
+                 }
+            }
+            break;
+            
         case APP_CMD_TERM_WINDOW:
             term_display();
             break;
@@ -302,6 +332,9 @@ int initialize(void) {
 
     g_app->onAppCmd = handle_cmd;
     g_app->onInputEvent = handle_input;
+    g_update_callback = NULL;
+    g_update_callback_data = NULL;
+
     return 1;
 }
 
@@ -325,7 +358,6 @@ void set_window_update_callback(void (*callback)(size_t, void*), void* data) {
 
 void get_window_size(size_t window_id, int* window_width, int* window_height) {
     if (!g_has_window) {
-        // Return 0 if window not ready, to force core to wait/poll
         *window_width = 0;
         *window_height = 0;
         return;
@@ -337,14 +369,6 @@ void get_window_size(size_t window_id, int* window_width, int* window_height) {
 void set_fullscreen(size_t window_id, bool enabled) {
     if (!g_app || !g_app->activity) return;
     
-    // ANativeActivity_setWindowFlags runs on the UI thread internally or schedules it.
-    // It updates the WindowManager flags.
-    // AWINDOW_FLAG_FULLSCREEN (FLAG_FULLSCREEN) hides the status bar.
-    // We cannot easily set View.SYSTEM_UI_... flags (Immersive Mode) from the native thread 
-    // without complex JNI helpers to runOnUiThead.
-    // However, updating the Window Flags should trigger a surface resize, 
-    // which our improved update_surface_size() will catch and relay to the UI layout.
-
     if (enabled) {
         // Add FULLSCREEN, remove nothing
         ANativeActivity_setWindowFlags(g_app->activity, AWINDOW_FLAG_FULLSCREEN, 0);
@@ -369,8 +393,12 @@ bool run_event_loop(void) {
 
     if (g_has_window) {
         update_surface_size();
-        if (g_update_callback)
+        if (g_update_callback) {
             g_update_callback(0, g_update_callback_data);
+        } else {
+             // Debug: Why no callback? 
+             // LOGI("Loop running but no update callback set!");
+        }
     }
 
     return true;

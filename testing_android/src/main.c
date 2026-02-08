@@ -24,7 +24,7 @@ void on_undo(void* user_data) {
 int main(int argc, char** argv) {
     if (!aroma_ui_init()) return 1;
     
-    AromaTheme theme = aroma_theme_create_material_blue_dark();
+    AromaTheme theme = aroma_theme_create_material_black();
     aroma_ui_set_theme(&theme);
     AromaWindow* win = aroma_ui_create_window("test_app", 400, 800);
     

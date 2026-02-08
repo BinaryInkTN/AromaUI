@@ -285,12 +285,23 @@ AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int heigh
             platform->make_context_current(g_windows[idx].window_id);
         }
         
+        // Added small delay to let context settle on Android
+        #ifndef ESP32
+        usleep(50000);
+        #endif
+        
         if (w <= 0 || h <= 0) {
              LOG_WARNING("Timed out waiting for window surface. Splash might fail.");
              w = (width > 0) ? width : 800;
              h = (height > 0) ? height : 600;
         }
 
+        // Force invalidation before splash to ensure backend is ready
+        aroma_node_invalidate(window);
+
+        // Render invalidation frame first
+        // aroma_event_process_queue(); ? 
+        
         __show_splash_screen(g_windows[idx].window_id, w, h);
     }
     
