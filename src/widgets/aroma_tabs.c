@@ -104,6 +104,17 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
             AromaNode* content = tabs->content_nodes[i][j];
             if (!content) continue;
             __tabs_set_hidden_recursive(content, hide);
+
+            if (!hide) {
+                // Force layout update for the shown content tree to ensure children positions are recalculated
+                // This is needed because children might have been skipped during layout while hidden
+                if (content->parent_node && content->parent_node->node_widget_ptr) {
+                    // Assuming generic widget structure starts with Rect
+                    typedef struct { int x; int y; int w; int h; } GenericRect;
+                    GenericRect* parent_rect = (GenericRect*)content->parent_node->node_widget_ptr;
+                    aroma_node_update_layout(content, parent_rect->x, parent_rect->y, parent_rect->w, parent_rect->h);
+                }
+            }
         }
     }
 }

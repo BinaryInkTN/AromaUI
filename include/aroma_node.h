@@ -20,6 +20,70 @@ typedef enum AromaNodeType {
     NODE_TYPE_WIDGET
 } AromaNodeType;
 
+typedef enum {
+    AROMA_LAYOUT_NONE,
+    AROMA_LAYOUT_FILL_PARENT,
+    AROMA_LAYOUT_CENTER,
+    AROMA_LAYOUT_ANCHOR
+} AromaLayoutType;
+
+typedef enum {
+    AROMA_LAYOUT_MODE_NONE,
+    AROMA_LAYOUT_MODE_FLEX,
+    AROMA_LAYOUT_MODE_GRID
+} AromaLayoutMode;
+
+typedef enum {
+    AROMA_FLEX_ROW,
+    AROMA_FLEX_COLUMN
+} AromaFlexDirection;
+
+typedef enum {
+    AROMA_JUSTIFY_START,
+    AROMA_JUSTIFY_CENTER,
+    AROMA_JUSTIFY_END,
+    AROMA_JUSTIFY_SPACE_BETWEEN,
+    AROMA_JUSTIFY_SPACE_AROUND,
+    AROMA_JUSTIFY_SPACE_EVENLY
+} AromaJustifyContent;
+
+typedef enum {
+    AROMA_ALIGN_START,
+    AROMA_ALIGN_CENTER,
+    AROMA_ALIGN_END,
+    AROMA_ALIGN_STRETCH
+} AromaAlignItems;
+
+typedef struct {
+    // Self Layout
+    AromaLayoutType type;
+    int left;
+    int top;
+    int right;
+    int bottom;
+    float width_percent;
+    float height_percent;
+    
+    // Flex Item props
+    float flex_grow;
+    float flex_shrink;
+    int flex_basis;
+
+    // Container Layout
+    AromaLayoutMode mode;
+    AromaFlexDirection flex_direction;
+    AromaJustifyContent justify_content;
+    AromaAlignItems align_items;
+    int gap;
+    
+    // Grid props
+    int grid_cols;
+    int grid_rows;
+    // Simple fixed column/row size for now, or use automated sizing
+    int grid_row_gap;
+    int grid_col_gap;
+} AromaLayout;
+
 typedef struct AromaNode
 {
     AromaNodeType node_type;
@@ -33,6 +97,7 @@ typedef struct AromaNode
     bool is_dirty;
     bool is_hidden;
     bool propagate_dirty;
+    AromaLayout layout;
 } AromaNode;
 
 #define AROMA_NODE_AS(node, Type) ((Type*)((node) ? (node)->node_widget_ptr : NULL))
@@ -48,6 +113,23 @@ AromaNode* __find_node_by_id(AromaNode* root, uint64_t node_id);
 
 uint64_t __generate_node_id(void);
 void __reset_node_id_counter(void);
+
+void aroma_node_set_layout_anchor(AromaNode* node, int left, int top, int right, int bottom);
+void aroma_node_set_layout_fill(AromaNode* node);
+void aroma_node_set_layout_center(AromaNode* node);
+
+// Flexbox & Grid helpers
+void aroma_node_set_layout_mode(AromaNode* node, AromaLayoutMode mode);
+void aroma_node_set_flex_direction(AromaNode* node, AromaFlexDirection dir);
+void aroma_node_set_justify_content(AromaNode* node, AromaJustifyContent justify);
+void aroma_node_set_align_items(AromaNode* node, AromaAlignItems align);
+void aroma_node_set_flex_grow(AromaNode* node, float grow);
+void aroma_node_set_gap(AromaNode* node, int gap);
+void aroma_node_set_grid_cols(AromaNode* node, int cols);
+void aroma_node_set_grid_rows(AromaNode* node, int rows);
+
+void aroma_node_update_layout(AromaNode* root, int parent_x, int parent_y, int parent_width, int parent_height);
+
 uint64_t __get_current_node_id_counter(void);
 
 void __print_node_tree(AromaNode* root_node);

@@ -753,6 +753,7 @@ const char* aroma_event_type_name(AromaEventType event_type) {
         "KEY_RELEASE",
         "FOCUS_GAINED",
         "FOCUS_LOST",
+        "WINDOW_RESIZE",
         "CUSTOM",
         "UNKNOWN"
     };

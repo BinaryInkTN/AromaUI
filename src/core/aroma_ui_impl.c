@@ -1,23 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
 #include "aroma_ui.h"
 #include "core/aroma_common.h"
@@ -55,7 +35,11 @@ int g_window_count = 0;
 AromaNode* g_focused_node = NULL;
 static bool g_immediate_mode = false;
 static AromaDrawList* g_window_drawlists[AROMA_MAX_WINDOWS] = {0};
+static bool g_splash_enabled = true;
 
+void aroma_splash(bool enabled) {
+    g_splash_enabled = enabled;
+}
 
 static inline int __draw_task_compare(const void* a, const void* b) {
     const AromaDrawTask* ta = (const AromaDrawTask*)a;
@@ -198,6 +182,58 @@ static void __window_update_callback(size_t window_id, void* data) {
    
 }
 
+#include "aroma_ubuntu_font.h"
+#include <unistd.h>
+
+static void __show_splash_screen(size_t window_id, int width, int height) {
+    if (!g_splash_enabled) return;
+
+    LOG_INFO("Showing splash screen...");
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    if (!gfx) return;
+
+    int splash_font_size = 128;
+    AromaFont* font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, splash_font_size);
+    if (!font) {
+        LOG_WARNING("Could not load font for splash screen");
+        return;
+    }
+
+    aroma_ui_prepare_font_for_window(window_id, font);
+    
+    AromaTheme theme = aroma_theme_get_global();
+    
+    if (gfx->clear) {
+        gfx->clear(window_id, theme.colors.background); 
+    }
+
+    const char* text = "AromaUI";
+    float scale = 1.0f;
+    float text_width = 0; 
+    
+    text_width = aroma_font_get_line_width(font, text) * scale;
+    int line_height = aroma_font_get_line_height(font) * scale;
+    int x = (width - (int)text_width) / 2;
+    int y = (height - line_height) / 2; 
+    LOG_INFO("Drawing splash: '%s' at (%d, %d) on %dx%d window", text, x, y, width, height);
+
+    if (gfx->render_text) {
+        gfx->render_text(window_id, font, text, x, y, theme.colors.primary, scale);
+    }
+
+    #ifndef ESP32
+    aroma_graphics_swap_buffers(window_id);
+    #endif
+
+    #ifndef ESP32
+    sleep(5); 
+    #else
+    delay(5000);
+    #endif
+
+    aroma_font_destroy(font);
+}
+
 AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int height) {
     if (g_window_count >= AROMA_MAX_WINDOWS) {
         LOG_ERROR("Maximum number of windows (%d) reached", AROMA_MAX_WINDOWS);
@@ -219,14 +255,51 @@ AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int heigh
     aroma_event_set_root(window);
     if (!g_main_window) g_main_window = window;
     LOG_INFO("Window %d created: title='%s', size=%dx%d", idx, title, width, height);
-    aroma_node_invalidate(window);
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+
+    if (g_window_count == 1 && g_splash_enabled) {
+        
+        int attempts = 0;
+        int max_attempts = 100; 
+        int w = 0, h = 0;
+        
+        while (attempts < max_attempts) {
+            aroma_ui_process_events_impl();
+            
+            if (platform && platform->get_window_size) {
+                platform->get_window_size(g_windows[idx].window_id, &w, &h);
+            }
+            
+            if (w > 0 && h > 0) {
+                break;
+            }
+            
+            #ifndef ESP32
+            usleep(20000); 
+            #endif
+            attempts++;
+        }
+        
+        if (platform && platform->make_context_current) {
+            platform->make_context_current(g_windows[idx].window_id);
+        }
+        
+        if (w <= 0 || h <= 0) {
+             LOG_WARNING("Timed out waiting for window surface. Splash might fail.");
+             w = (width > 0) ? width : 800;
+             h = (height > 0) ? height : 600;
+        }
+
+        __show_splash_screen(g_windows[idx].window_id, w, h);
+    }
+    
+    aroma_node_invalidate(window);
 
     if (platform && platform->set_window_update_callback) {
         platform->set_window_update_callback(__window_update_callback, NULL);
     }
-
+     
     return (AromaWindow*)window;
 }
 

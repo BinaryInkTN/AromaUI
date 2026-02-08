@@ -238,6 +238,8 @@ void aroma_graphics_swap_buffers(size_t window_id);
 
 void aroma_platform_set_window_update_callback(void (*callback)(size_t, void*), void* user_data);
 
+void aroma_splash(bool enabled);
+
 #ifdef __ANDROID__
 // Forward struct for Android App state
 struct android_app; 

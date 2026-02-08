@@ -22,10 +22,25 @@
 #include "widgets/aroma_window.h"
 #include "core/aroma_node.h"
 #include "core/aroma_slab_alloc.h"
+#include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include <stdlib.h>
 #include <string.h>
+
+static bool window_resize_handler(AromaEvent* event, void* user_data) {
+    AromaNode* window_node = (AromaNode*)user_data;
+    if (event->event_type == EVENT_TYPE_WINDOW_RESIZE) {
+        int w = event->data.resize.width;
+        int h = event->data.resize.height;
+        
+        // Window itself fills the screen/surface provided
+        aroma_node_set_layout_fill(window_node);
+        aroma_node_update_layout(window_node, 0, 0, w, h);
+        return true;
+    }
+    return false;
+}
 
 AromaNode* aroma_window_create(const char* title, int x, int y, int width, int height)
 {
@@ -46,8 +61,21 @@ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int h
     node->window_id = platform_interface->create_window(title, x, y, width, height);
     node->rect.x = x;
     node->rect.y = y;
+    
+    // Attempt to sync with actual platform window size immediately
+    if (platform_interface->get_window_size) {
+        int pw = 0, ph = 0;
+        platform_interface->get_window_size(node->window_id, &pw, &ph);
+        if (pw > 0 && ph > 0) {
+            width = pw;
+            height = ph;
+        }
+    }
+    
     node->rect.width = width;
     node->rect.height = height;
+
+    aroma_event_subscribe(scene_node->node_id, EVENT_TYPE_WINDOW_RESIZE, window_resize_handler, scene_node, 0);
 
     return scene_node;
 }

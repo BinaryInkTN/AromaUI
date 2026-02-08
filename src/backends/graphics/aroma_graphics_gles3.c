@@ -682,8 +682,10 @@ unsigned int load_image(const char* image_path)
     LOG_INFO("Uploading texture data to GPU (format: 0x%X, %dx%d)",
              format, img_width, img_height);
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, format, img_width, img_height, 0,
                  format, GL_UNSIGNED_BYTE, data);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     glError = glGetError();
     if (glError != GL_NO_ERROR) {
@@ -742,34 +744,22 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
     stbi_set_flip_vertically_on_load(1);
     int width, height, channels;
     unsigned char *img_data = stbi_load_from_memory(data, (int)binary_length,
-                                                    &width, &height, &channels, 0);
+                                                    &width, &height, &channels, 4);
     if (!img_data) {
         LOG_ERROR("Failed to load image from memory");
         glDeleteTextures(1, &texture);
         return 0;
     }
 
-    GLenum format;
-    switch (channels) {
-        case 1: format = GL_RED; break;
-        case 2: format = GL_RG; break;
-        case 3: format = GL_RGB; break;
-        case 4: format = GL_RGBA; break;
-        default:
-            LOG_ERROR("Unsupported number of channels in memory image: %d", channels);
-            stbi_image_free(img_data);
-            glDeleteTextures(1, &texture);
-            return 0;
-    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, img_data);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
-                 format, GL_UNSIGNED_BYTE, img_data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(img_data);
 
-    LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, %d channels)",
-             texture, width, height, channels);
+    LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, Forced RGBA)",
+             texture, width, height);
     return texture;
 }
 
@@ -814,6 +804,8 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glViewport(0, 0, window_width, window_height);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
 
     mat4x4 projection;
     mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
@@ -853,7 +845,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"),
                       1, GL_FALSE, (const GLfloat*)projection);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 1);
-    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), 0.0f, 0.0f);
+    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), (float)width, (float)height);
     glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), 0.0f);
     glUniform1f(glGetUniformLocation(ctx.shape_program, "borderWidth"), 0.0f);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), 0);

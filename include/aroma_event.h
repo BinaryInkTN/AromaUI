@@ -24,6 +24,7 @@ typedef enum AromaEventType {
     EVENT_TYPE_KEY_RELEASE,
     EVENT_TYPE_FOCUS_GAINED,
     EVENT_TYPE_FOCUS_LOST,
+    EVENT_TYPE_WINDOW_RESIZE,
     EVENT_TYPE_CUSTOM,
     EVENT_TYPE_COUNT
 } AromaEventType;
@@ -36,6 +37,11 @@ typedef struct {
     uint8_t button;
     uint8_t clicks;
 } AromaMouseEventData;
+
+typedef struct {
+    int width;
+    int height;
+} AromaWindowResizeEventData;
 
 typedef struct {
     uint32_t key_code;
@@ -60,6 +66,7 @@ struct AromaEvent {
     union {
         AromaMouseEventData mouse;
         AromaKeyEventData key;
+        AromaWindowResizeEventData resize;
         AromaCustomEventData custom;
     } data;
 };

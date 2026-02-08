@@ -27,6 +27,15 @@
 #ifndef AWINDOW_FLAG_FULLSCREEN
 #define AWINDOW_FLAG_FULLSCREEN 0x00000400
 #endif
+#ifndef AWINDOW_FLAG_FORCE_NOT_FULLSCREEN
+#define AWINDOW_FLAG_FORCE_NOT_FULLSCREEN 0x00000800
+#endif
+#ifndef AWINDOW_FLAG_LAYOUT_IN_SCREEN
+#define AWINDOW_FLAG_LAYOUT_IN_SCREEN 0x00000100
+#endif
+#ifndef AWINDOW_FLAG_LAYOUT_NO_LIMITS
+#define AWINDOW_FLAG_LAYOUT_NO_LIMITS 0x00000200
+#endif
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
@@ -111,14 +120,40 @@ static void update_surface_size(void) {
     if (w == g_width && h == g_height)
         return;
 
+    // Detect if dimensions are inverted or weird (e.g. orientation change not fully processed)
+    // For now, trust EGL surface.
+    
+    // Log change
+    LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
+
     g_width = w;
     g_height = h;
 
     glViewport(0, 0, g_width, g_height);
 
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
-    extern int g_window_count;
-
+    
+    // Force immediate layout update via event
+    for (int i = 0; i < AROMA_MAX_WINDOWS; i++) {
+        if (g_windows[i].is_active && g_windows[i].root_node) {
+             // Force sync the window internal data with the new surface size
+             struct AromaWindow* win_widget = (struct AromaWindow*)g_windows[i].root_node->node_widget_ptr;
+             if (win_widget) {
+                 win_widget->rect.width = g_width;
+                 win_widget->rect.height = g_height;
+             }
+             
+             // Update root node layout directly too?
+             aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
+             
+             AromaEvent* event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
+             if (event) {
+                 event->data.resize.width = g_width;
+                 event->data.resize.height = g_height;
+                 aroma_event_queue(event);
+             }
+        }
+    }
 }
 
 static int32_t handle_input(struct android_app* app, AInputEvent* event) {
@@ -156,6 +191,12 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event) {
 static int init_display(struct android_app* app) {
     if (!app || !app->window)
         return -1;
+
+    // Force window to not cover status bar
+    ANativeActivity_setWindowFlags(app->activity, 
+        AWINDOW_FLAG_FORCE_NOT_FULLSCREEN, 
+        AWINDOW_FLAG_FULLSCREEN | AWINDOW_FLAG_LAYOUT_IN_SCREEN | AWINDOW_FLAG_LAYOUT_NO_LIMITS
+    );
 
     cache_physical_screen_info(app);
 
@@ -284,13 +325,9 @@ void set_window_update_callback(void (*callback)(size_t, void*), void* data) {
 
 void get_window_size(size_t window_id, int* window_width, int* window_height) {
     if (!g_has_window) {
-        if (g_phys_cached) {
-            *window_width = g_phys_width;
-            *window_height = g_phys_height;
-        } else {
-            *window_width = 0;
-            *window_height = 0;
-        }
+        // Return 0 if window not ready, to force core to wait/poll
+        *window_width = 0;
+        *window_height = 0;
         return;
     }
     *window_width = g_width;
@@ -299,9 +336,20 @@ void get_window_size(size_t window_id, int* window_width, int* window_height) {
 
 void set_fullscreen(size_t window_id, bool enabled) {
     if (!g_app || !g_app->activity) return;
+    
+    // ANativeActivity_setWindowFlags runs on the UI thread internally or schedules it.
+    // It updates the WindowManager flags.
+    // AWINDOW_FLAG_FULLSCREEN (FLAG_FULLSCREEN) hides the status bar.
+    // We cannot easily set View.SYSTEM_UI_... flags (Immersive Mode) from the native thread 
+    // without complex JNI helpers to runOnUiThead.
+    // However, updating the Window Flags should trigger a surface resize, 
+    // which our improved update_surface_size() will catch and relay to the UI layout.
+
     if (enabled) {
+        // Add FULLSCREEN, remove nothing
         ANativeActivity_setWindowFlags(g_app->activity, AWINDOW_FLAG_FULLSCREEN, 0);
     } else {
+        // Remove FULLSCREEN
         ANativeActivity_setWindowFlags(g_app->activity, 0, AWINDOW_FLAG_FULLSCREEN);
     }
 }

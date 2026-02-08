@@ -47,13 +47,13 @@ static void aroma_button_update_text_position(AromaButton* button)
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->measure_text) return;
-int line_height;
+    
+    int line_height = 0;
     #ifdef ESP32
     if (!button->font)
     {
-
         button->text_width = strlen(button->label) * 6 * (int)button->text_scale;
-     line_height = 8 * (int)button->text_scale;
+        line_height = 8 * (int)button->text_scale;
     }
     else
     #endif
@@ -63,11 +63,8 @@ int line_height;
         button->text_width = (int)(measured_width + 0.5f);
         line_height = aroma_font_get_line_height(button->font) * (int)button->text_scale;
     }
-
-    const int padding = 6;
-    button->text_x = button->rect.x + (button->rect.width - button->text_width) / 2;
-    if (button->text_x < button->rect.x + padding) button->text_x = button->rect.x + padding;
-    button->text_y = button->rect.y + (button->rect.height - line_height) / 2;
+    
+    button->line_height = (float)line_height;
 }
 
 AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int y, int width, int height)
@@ -355,8 +352,15 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
     {
         if (gfx->render_text)
         {
+            // Recalculate text position dynamically to handle layout updates
+            const int padding = 6;
+            float text_x = button->rect.x + (button->rect.width - button->text_width) / 2.0f;
+            if (text_x < button->rect.x + padding) text_x = button->rect.x + padding;
+            
+            float text_y = button->rect.y + (button->rect.height - button->line_height) / 2.0f;
+
             gfx->render_text(window_id, button->font, button->label, 
-                           button->text_x, button->text_y, 
+                           text_x, text_y, 
                            button->text_color, button->text_scale);
         }
     }
