@@ -425,7 +425,7 @@ void aroma_event_process_queue(void) {
 }
 #include "aroma_ui.h"
 #include "backends/aroma_abi.h"
-#include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_platform_interface.h"
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     if (!g_event_system.root_node || g_event_system.shutting_down) return;

@@ -10,7 +10,7 @@
 #include "widgets/aroma_window.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
-#include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_platform_interface.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -231,17 +231,31 @@ static void __show_splash_screen(size_t window_id, int width, int height) {
     }
 
     const char* text = "AromaUI";
-    float scale = 1.0f;
-    float text_width = 0; 
+    const char* slogan = "Modern UI for Everywhere";
     
-    text_width = aroma_font_get_line_width(font, text) * scale;
+    float scale = 1.0f;
+    float slogan_scale = 0.3f;
+    
+    float text_width = aroma_font_get_line_width(font, text) * scale;
     int line_height = aroma_font_get_line_height(font) * scale;
+    
+    float slogan_width = aroma_font_get_line_width(font, slogan) * slogan_scale;
+    int slogan_height = aroma_font_get_line_height(font) * slogan_scale;
+    
+    int gap = 20;
+    int total_content_height = line_height + gap + slogan_height;
+    
+    int start_y = (height - total_content_height) / 2;
     int x = (width - (int)text_width) / 2;
-    int y = (height - line_height) / 2; 
-    LOG_INFO("Drawing splash: '%s' at (%d, %d) on %dx%d window", text, x, y, width, height);
+    int y = start_y;
+    
+    int slogan_x = (width - (int)slogan_width) / 2;
+    int slogan_y = y + line_height + gap;
 
     if (gfx->render_text) {
         gfx->render_text(window_id, font, text, x, y, theme.colors.primary, scale);
+        // Use a secondary color or just lighter opacity for slogan if possible, but for now reuse primary
+        gfx->render_text(window_id, font, slogan, slogan_x, slogan_y, theme.colors.text_secondary, slogan_scale);
     }
 
     #ifndef ESP32

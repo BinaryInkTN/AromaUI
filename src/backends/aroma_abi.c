@@ -21,7 +21,7 @@
 
 #include "aroma_abi.h"
 #include "graphics/aroma_graphics_interface.h"
-#include "platforms/aroma_platform_interface.h"
+#include "aroma_platform_interface.h"
 #include <aroma_drawlist.h>
 #include <stdatomic.h>
 #include <stddef.h>
@@ -254,7 +254,7 @@ AromaGraphicsInterface* get_graphics_interface(void) {
     return &drawlist_proxy;
 }
 
-AromaPlatformInterface* get_platform_interface(void) {
+AromaPlatformInterface* aroma_get_platform_interface(void) {
     AromaPlatformBackendType backend = atomic_load(&current_platform_backend);
 #ifdef ESP32
     return &aroma_platform_tft;
@@ -276,6 +276,6 @@ AromaBackendABI aroma_backend_abi = {
     .set_platform_backend_type = set_platform_backend_type,
     .get_graphics_backend_type = aroma_get_graphics_backend_type,
     .get_graphics_interface = get_graphics_interface,
-    .get_platform_interface = get_platform_interface,
+    .get_platform_interface = aroma_get_platform_interface,
     .get_platform_backend_type = aroma_get_platform_backend_type
 };

@@ -22,7 +22,7 @@
 #include "aroma_ui.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
-#include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_platform_interface.h"
 
 void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font);
 

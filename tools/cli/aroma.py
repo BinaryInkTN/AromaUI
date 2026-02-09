@@ -335,6 +335,22 @@ def cmd_create(args):
                             with open(file_path, "w") as f:
                                 f.write(content)
 
+            # Handle AromaHelper.java
+            helper_tpl_path = os.path.join(android_dest, "AromaHelper.java.tpl")
+            if os.path.exists(helper_tpl_path):
+                java_src_dir = os.path.join(android_dest, "app", "src", "main", "java")
+                package_path = package_name.replace('.', os.sep)
+                final_java_dir = os.path.join(java_src_dir, package_path)
+                os.makedirs(final_java_dir, exist_ok=True)
+                
+                with open(helper_tpl_path, "r") as f:
+                    helper_content = f.read().replace("{{PACKAGE_NAME}}", package_name)
+                
+                with open(os.path.join(final_java_dir, "AromaHelper.java"), "w") as f:
+                    f.write(helper_content)
+                
+                os.remove(helper_tpl_path)
+
             android_home = os.environ.get("ANDROID_HOME") or os.path.expanduser("~/Android/Sdk")
             if os.path.exists(android_home):
                 with open(os.path.join(android_dest, "local.properties"), "w") as f:

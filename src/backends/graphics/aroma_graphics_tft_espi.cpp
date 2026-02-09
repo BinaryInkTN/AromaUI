@@ -1,6 +1,6 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
-#include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_platform_interface.h"
 #include "core/aroma_logger.h"
 
 #include <TFT_eSPI.h>

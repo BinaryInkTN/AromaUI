@@ -25,7 +25,7 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
-#include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_platform_interface.h"
 #include "core/aroma_common.h"
 #include <string.h>
 

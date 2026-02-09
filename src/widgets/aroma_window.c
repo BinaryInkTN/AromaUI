@@ -24,7 +24,7 @@
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
-#include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_platform_interface.h"
 #include <stdlib.h>
 #include <string.h>
 

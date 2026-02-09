@@ -57,8 +57,27 @@ typedef struct AromaPlatformInterface {
     void (*show_keyboard)(void);
     void (*hide_keyboard)(void);
 
+    // [Android Extensions]
+    bool (*android_check_permission)(const char* permission_name);
+    void (*android_request_permission)(const char* permission_name);
+    void (*android_toast)(const char* msg, bool long_duration);
+    void (*android_open_settings)(void);
+    void (*android_vibrate)(int ms);
+    int (*android_get_battery_level)(void);
+    bool (*android_is_wifi_enabled)(void);
+    void (*android_set_wifi_enabled)(bool enabled);
+    bool (*android_is_bluetooth_enabled)(void);
+    void (*android_launch_camera)(void);
+    void (*android_launch_gallery)(void);
+    void* (*android_get_system_service)(const char* service_name);
+
+    // [Android Utils]
+    const char* (*android_get_internal_path)(void);
+    const char* (*android_get_external_path)(void);
+
 } AromaPlatformInterface;
 
+AromaPlatformInterface* aroma_get_platform_interface(void);
 
 extern AromaPlatformInterface aroma_platform_glps;
 

@@ -37,6 +37,11 @@
 #ifndef AWINDOW_FLAG_LAYOUT_NO_LIMITS
 #define AWINDOW_FLAG_LAYOUT_NO_LIMITS 0x00000200
 #endif
+
+#ifndef AWINDOW_FLAG_KEEP_SCREEN_ON
+#define AWINDOW_FLAG_KEEP_SCREEN_ON 0x00000080
+#endif
+
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
@@ -77,8 +82,14 @@ static void cache_physical_screen_info(struct android_app* app) {
     if (g_phys_cached || !app || !app->activity) return;
 
     JNIEnv* env = NULL;
-    if ((*app->activity->vm)->AttachCurrentThread(app->activity->vm, &env, NULL) != JNI_OK)
-        return;
+    int status = (*app->activity->vm)->GetEnv(app->activity->vm, (void**)&env, JNI_VERSION_1_6);
+    bool did_attach = false;
+    
+    if (status < 0) {
+        if ((*app->activity->vm)->AttachCurrentThread(app->activity->vm, &env, NULL) != JNI_OK)
+            return;
+        did_attach = true;
+    }
 
     jclass activity_class = (*env)->GetObjectClass(env, app->activity->clazz);
     jmethodID get_wm = (*env)->GetMethodID(env, activity_class, "getWindowManager", "()Landroid/view/WindowManager;");
@@ -104,7 +115,18 @@ static void cache_physical_screen_info(struct android_app* app) {
 
     g_phys_cached = true;
 
-    (*app->activity->vm)->DetachCurrentThread(app->activity->vm);
+    // Clean up local refs
+    (*env)->DeleteLocalRef(env, dm);
+    (*env)->DeleteLocalRef(env, dm_class);
+    (*env)->DeleteLocalRef(env, display_obj);
+    (*env)->DeleteLocalRef(env, display_class);
+    (*env)->DeleteLocalRef(env, wm);
+    (*env)->DeleteLocalRef(env, wm_class);
+    (*env)->DeleteLocalRef(env, activity_class);
+
+    if (did_attach) {
+        (*app->activity->vm)->DetachCurrentThread(app->activity->vm);
+    }
 }
 
 static void android_open_url(const char* url) {
@@ -129,7 +151,9 @@ static void android_open_url(const char* url) {
     jclass activity_class = (*env)->GetObjectClass(env, g_app->activity->clazz);
     if (!activity_class) {
          LOGE("Failed to get activity class");
-         if (did_attach) (*vm)->DetachCurrentThread(vm);
+         if (did_attach) {
+             // (*vm)->DetachCurrentThread(vm); // Disabled
+         }
          return;
     }
 
@@ -171,7 +195,7 @@ static void android_open_url(const char* url) {
     }
 
     if (did_attach) {
-        (*vm)->DetachCurrentThread(vm);
+        // (*vm)->DetachCurrentThread(vm); // Disabled: Main thread should stay attached
     }
 }
 
@@ -211,7 +235,9 @@ static void android_send_intent(int action_enum, const char* uri, const char* ty
 
     if (!intent_class || !uri_class || !activity_class) {
          LOGE("Failed to find required classes for intent");
-         if (did_attach) (*vm)->DetachCurrentThread(vm);
+         if (did_attach) { 
+             // (*vm)->DetachCurrentThread(vm); // Disabled
+         }
          return;
     }
 
@@ -288,7 +314,7 @@ static void android_send_intent(int action_enum, const char* uri, const char* ty
     (*env)->DeleteLocalRef(env, intent_class);
 
     if (did_attach) {
-        (*vm)->DetachCurrentThread(vm);
+        // (*vm)->DetachCurrentThread(vm); // Disabled: Keep main thread attached
     }
 }
 
@@ -407,8 +433,9 @@ static int init_display(struct android_app* app) {
     if (!app || !app->window)
         return -1;
 
+    // Use KEEP_SCREEN_ON to prevent device from sleeping while app is active
     ANativeActivity_setWindowFlags(app->activity, 
-        AWINDOW_FLAG_FORCE_NOT_FULLSCREEN, 
+        AWINDOW_FLAG_FORCE_NOT_FULLSCREEN | AWINDOW_FLAG_KEEP_SCREEN_ON, 
         AWINDOW_FLAG_FULLSCREEN | AWINDOW_FLAG_LAYOUT_IN_SCREEN | AWINDOW_FLAG_LAYOUT_NO_LIMITS
     );
 
@@ -677,7 +704,14 @@ static void android_show_keyboard(void) {
     LOGI("Requesting soft keyboard via JNI");
     
     JNIEnv* env = NULL;
-    (*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL);
+    int status = (*g_app->activity->vm)->GetEnv(g_app->activity->vm, (void**)&env, JNI_VERSION_1_6);
+    bool did_attach = false;
+    
+    if (status < 0) {
+        if ((*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL) != JNI_OK)
+            return;
+        did_attach = true;
+    }
     
     jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
     
@@ -696,26 +730,45 @@ static void android_show_keyboard(void) {
         jmethodID getDecorView = (*env)->GetMethodID(env, windowClass, "getDecorView", "()Landroid/view/View;");
         jobject decorView = (*env)->CallObjectMethod(env, window, getDecorView);
         
-        // InputMethodManager.showSoftInput(View, int flags)
-        jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
-        jmethodID showSoftInput = (*env)->GetMethodID(env, immClass, "showSoftInput", "(Landroid/view/View;I)Z");
-        
-        // Flags: SHOW_IMPLICIT = 1, SHOW_FORCED = 2
-        (*env)->CallBooleanMethod(env, imm, showSoftInput, decorView, 2);
-        
-        LOGI("Keyboard show requested via JNI");
+        if (decorView) {
+            // InputMethodManager.showSoftInput(View, int flags)
+            jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
+            jmethodID showSoftInput = (*env)->GetMethodID(env, immClass, "showSoftInput", "(Landroid/view/View;I)Z");
+            
+            // Flags: SHOW_IMPLICIT = 1, SHOW_FORCED = 2
+            (*env)->CallBooleanMethod(env, imm, showSoftInput, decorView, 2);
+            LOGI("Keyboard show requested via JNI");
+
+            (*env)->DeleteLocalRef(env, decorView);
+            (*env)->DeleteLocalRef(env, windowClass);
+            (*env)->DeleteLocalRef(env, immClass);
+        }
+
+        (*env)->DeleteLocalRef(env, window);
+        (*env)->DeleteLocalRef(env, imm);
     } else {
         LOGE("Failed to get InputMethodManager");
     }
     
-    (*g_app->activity->vm)->DetachCurrentThread(g_app->activity->vm);
+    (*env)->DeleteLocalRef(env, activityClass);
+
+    if (did_attach) {
+        (*g_app->activity->vm)->DetachCurrentThread(g_app->activity->vm);
+    }
 }
 
 static void android_hide_keyboard(void) {
     if (!g_app || !g_app->activity) return;
     
     JNIEnv* env = NULL;
-    (*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL);
+    int status = (*g_app->activity->vm)->GetEnv(g_app->activity->vm, (void**)&env, JNI_VERSION_1_6);
+    bool did_attach = false;
+    
+    if (status < 0) {
+        if ((*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL) != JNI_OK) 
+            return;
+        did_attach = true;
+    }
     
     jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
     jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
@@ -730,51 +783,53 @@ static void android_hide_keyboard(void) {
         jmethodID getDecorView = (*env)->GetMethodID(env, windowClass, "getDecorView", "()Landroid/view/View;");
         jobject decorView = (*env)->CallObjectMethod(env, window, getDecorView);
         
-        jclass viewClass = (*env)->FindClass(env, "android/view/View");
-        jmethodID getWindowToken = (*env)->GetMethodID(env, viewClass, "getWindowToken", "()Landroid/os/IBinder;");
-        jobject token = (*env)->CallObjectMethod(env, decorView, getWindowToken);
+        if (decorView) {
+            jclass viewClass = (*env)->FindClass(env, "android/view/View");
+            jmethodID getWindowToken = (*env)->GetMethodID(env, viewClass, "getWindowToken", "()Landroid/os/IBinder;");
+            jobject token = (*env)->CallObjectMethod(env, decorView, getWindowToken);
+            
+            if (token) {
+                jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
+                jmethodID hideSoftInput = (*env)->GetMethodID(env, immClass, "hideSoftInputFromWindow", "(Landroid/os/IBinder;I)Z");
+                
+                (*env)->CallBooleanMethod(env, imm, hideSoftInput, token, 0);
+                LOGI("Keyboard hide requested via JNI");
+                (*env)->DeleteLocalRef(env, token);
+                (*env)->DeleteLocalRef(env, immClass);
+            }
+            
+            (*env)->DeleteLocalRef(env, viewClass);
+            (*env)->DeleteLocalRef(env, decorView);
+        }
         
-        jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
-        jmethodID hideSoftInput = (*env)->GetMethodID(env, immClass, "hideSoftInputFromWindow", "(Landroid/os/IBinder;I)Z");
-        
-        (*env)->CallBooleanMethod(env, imm, hideSoftInput, token, 0);
-        LOGI("Keyboard hide requested via JNI");
+        (*env)->DeleteLocalRef(env, windowClass);
+        (*env)->DeleteLocalRef(env, window);
+        (*env)->DeleteLocalRef(env, imm);
     }
     
-    (*g_app->activity->vm)->DetachCurrentThread(g_app->activity->vm);
+    (*env)->DeleteLocalRef(env, activityClass);
+    
+    if (did_attach) {
+        (*g_app->activity->vm)->DetachCurrentThread(g_app->activity->vm);
+    }
+}
+
+static const char* impl_android_get_internal_path(void) {
+    if (!g_app || !g_app->activity) return NULL;
+    return g_app->activity->internalDataPath;
+}
+
+static const char* impl_android_get_external_path(void) {
+    if (!g_app || !g_app->activity) return NULL;
+    return g_app->activity->externalDataPath;
 }
 
 void platform_set_android_app(void* state) {
     g_app = (struct android_app*)state;
 }
 
-AromaPlatformInterface aroma_platform_android = {
-    .initialize = initialize,
-    .shutdown = shutdown,
-    .create_window = create_window,
-    .show_keyboard = android_show_keyboard,
-    .hide_keyboard = android_hide_keyboard,
-    .make_context_current = make_context_current,
-    .set_window_update_callback = set_window_update_callback,
-    .get_window_size = get_window_size,
-    .request_window_update = request_window_update,
-    .run_event_loop = run_event_loop,
-    .swap_buffers = swap_buffers,
-    .get_tft_context = get_tft_context,
-    .call_flush_function_ptr = call_flush_function_ptr,
-    .tft_mark_tiles_dirty = tft_mark_tiles_dirty,
-    .set_clear_color = set_clear_color,
-    .set_android_app = platform_set_android_app,
-    .set_fullscreen = set_fullscreen,
-    .open_url = android_open_url,
-    .android_send_intent = android_send_intent
-};
-
 #endif
 
-// ==========================================
-// Aroma Android Extensions Implementation
-// ==========================================
 
 JNIEnv* aroma_android_get_env() {
     if (!g_app || !g_app->activity || !g_app->activity->vm) return NULL;
@@ -799,27 +854,87 @@ static jstring StrToJstring(JNIEnv* env, const char* str) {
 
 // Helper to get Context class
 static jclass GetContextClass(JNIEnv* env) {
-    return (*env)->FindClass(env, "android/content/Context");
+    jclass cls = (*env)->FindClass(env, "android/content/Context");
+     if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        return NULL;
+    }
+    return cls;
 }
 
-bool aroma_android_check_permission(const char* permission_name) {
+// Robust FindClass that attempts to use the Activity ClassLoader if system lookup fails
+static jclass FindClassSafe(JNIEnv* env, const char* name) {
+    jclass cls = (*env)->FindClass(env, name);
+    if (!cls || (*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env); // Clear any exception (ClassNotFoundException)
+        
+        // Try using Activity ClassLoader
+        jobject activity = aroma_android_get_activity();
+        if (activity) {
+             jclass activityClass = (*env)->GetObjectClass(env, activity);
+             jmethodID getClassLoader = (*env)->GetMethodID(env, activityClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
+             
+             if (getClassLoader) {
+                jobject classLoader = (*env)->CallObjectMethod(env, activity, getClassLoader);
+                if (classLoader) {
+                    jclass classLoaderClass = (*env)->GetObjectClass(env, classLoader);
+                    jmethodID loadClass = (*env)->GetMethodID(env, classLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+                    
+                    if (loadClass) {
+                        // Convert slashes to dots for loadClass
+                        size_t len = strlen(name);
+                        char* dotted_name = (char*)malloc(len + 1);
+                        if (dotted_name) {
+                            strcpy(dotted_name, name);
+                            for(size_t i=0; i<len; i++) {
+                                if(dotted_name[i] == '/') dotted_name[i] = '.';
+                            }
+                            
+                            jstring jname = (*env)->NewStringUTF(env, dotted_name);
+                            cls = (jclass)(*env)->CallObjectMethod(env, classLoader, loadClass, jname);
+                            if ((*env)->ExceptionCheck(env)) {
+                                (*env)->ExceptionClear(env);
+                                cls = NULL;
+                            }
+                            (*env)->DeleteLocalRef(env, jname);
+                            free(dotted_name);
+                        }
+                    }
+                    (*env)->DeleteLocalRef(env, classLoaderClass);
+                    (*env)->DeleteLocalRef(env, classLoader);
+                }
+             }
+             (*env)->DeleteLocalRef(env, activityClass);
+        }
+    }
+    return cls;
+}
+
+static bool impl_android_check_permission(const char* permission_name) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return false;
 
     jobject activity = aroma_android_get_activity();
     jclass contextClass = GetContextClass(env);
+    if (!contextClass) return false;
     
     jmethodID checkSelfPermission = (*env)->GetMethodID(env, contextClass, "checkSelfPermission", "(Ljava/lang/String;)I");
     
-    jstring perm = StrToJstring(env, permission_name);
-    jint res = (*env)->CallIntMethod(env, activity, checkSelfPermission, perm);
-    (*env)->DeleteLocalRef(env, perm);
+    bool granted = false;
+    if (checkSelfPermission) {
+        jstring perm = StrToJstring(env, permission_name);
+        jint res = (*env)->CallIntMethod(env, activity, checkSelfPermission, perm);
+        granted = (res == 0); // PackageManager.PERMISSION_GRANTED == 0
+        (*env)->DeleteLocalRef(env, perm);
+    } else {
+        (*env)->ExceptionClear(env);
+    }
+    
     (*env)->DeleteLocalRef(env, contextClass);
-
-    return (res == 0); // PackageManager.PERMISSION_GRANTED == 0
+    return granted;
 }
 
-void aroma_android_request_permission(const char* permission_name) {
+static void impl_android_request_permission(const char* permission_name) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return;
 
@@ -829,67 +944,114 @@ void aroma_android_request_permission(const char* permission_name) {
     // requestPermissions(String[], int)
     jmethodID requestPermissions = (*env)->GetMethodID(env, activityClass, "requestPermissions", "([Ljava/lang/String;I)V");
     
-    jclass stringClass = (*env)->FindClass(env, "java/lang/String");
-    jobjectArray perms = (*env)->NewObjectArray(env, 1, stringClass, StrToJstring(env, permission_name));
+    if (requestPermissions) {
+        jclass stringClass = (*env)->FindClass(env, "java/lang/String");
+        if (stringClass) {
+            jobjectArray perms = (*env)->NewObjectArray(env, 1, stringClass, StrToJstring(env, permission_name));
+            (*env)->CallVoidMethod(env, activity, requestPermissions, perms, 101);
+            (*env)->DeleteLocalRef(env, perms);
+            (*env)->DeleteLocalRef(env, stringClass);
+        } else {
+            (*env)->ExceptionClear(env);
+        }
+    } else {
+        (*env)->ExceptionClear(env);
+    }
     
-    (*env)->CallVoidMethod(env, activity, requestPermissions, perms, 101);
-    
-    (*env)->DeleteLocalRef(env, perms);
-    (*env)->DeleteLocalRef(env, stringClass);
     (*env)->DeleteLocalRef(env, activityClass);
 }
 
 // Helper to get a system service
-jobject aroma_android_get_system_service(const char* service_name) {
+static void* impl_android_get_system_service(const char* service_name) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return NULL;
     
     jobject activity = aroma_android_get_activity();
+    if (!activity) return NULL;
+
     jclass activityClass = (*env)->GetObjectClass(env, activity);
     jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
     
-    jstring name = StrToJstring(env, service_name);
-    jobject service = (*env)->CallObjectMethod(env, activity, getSystemService, name);
+    jobject service = NULL;
+    if (getSystemService) {
+        jstring name = StrToJstring(env, service_name);
+        service = (*env)->CallObjectMethod(env, activity, getSystemService, name);
+        if ((*env)->ExceptionCheck(env)) {
+             (*env)->ExceptionClear(env);
+             if (service) {
+                 (*env)->DeleteLocalRef(env, service);
+                 service = NULL;
+             }
+        }
+        (*env)->DeleteLocalRef(env, name);
+    } else {
+        (*env)->ExceptionClear(env);
+    }
     
-    (*env)->DeleteLocalRef(env, name);
     (*env)->DeleteLocalRef(env, activityClass);
     return service;
 }
 
-void aroma_android_vibrate(int ms) {
+static void impl_android_vibrate(int ms) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return;
 
-    // Vibrator service is "vibrator"
-    jobject vibrator = aroma_android_get_system_service("vibrator");
+    jobject vibrator = (jobject)impl_android_get_system_service("vibrator");
     if (!vibrator) return;
     
     jclass vibratorClass = (*env)->GetObjectClass(env, vibrator);
     jmethodID vibrate = (*env)->GetMethodID(env, vibratorClass, "vibrate", "(J)V");
+    
+    // Clear exception if GetMethodID fails (e.g. method removed in future Android)
     if (!vibrate) {
-       // Try new API vibrate(VibrationEffect) if needed, but vibrate(long) is deprecated but often still present or we need correct signature
-       // Actually in newer API it needs VibrationEffect.
-       // Let's safe check for methods.
        (*env)->ExceptionClear(env);
     }
     
+    bool done = false;
     if (vibrate) {
         (*env)->CallVoidMethod(env, vibrator, vibrate, (jlong)ms);
-    } else {
-        // Fallback for newer Android (Oreo+) if vibrate(long) is missing/hidden?
-        // Actually public API is vibrate(VibrationEffect)
+        if (!(*env)->ExceptionCheck(env)) {
+            done = true;
+        } else {
+            // Important: Clear exception if it fails (e.g. missing permission or hardware issue)
+            (*env)->ExceptionClear(env);
+        }
+    } 
+    
+    if (!done) {
+        // Fallback for newer Android (Oreo+) uses vibrate(VibrationEffect)
         jclass effectClass = (*env)->FindClass(env, "android/os/VibrationEffect");
         if (effectClass) {
              jmethodID createOneShot = (*env)->GetStaticMethodID(env, effectClass, "createOneShot", "(JI)Landroid/os/VibrationEffect;");
              if (createOneShot) {
                 jobject effect = (*env)->CallStaticObjectMethod(env, effectClass, createOneShot, (jlong)ms, -1);
-                jmethodID vibrateEffect = (*env)->GetMethodID(env, vibratorClass, "vibrate", "(Landroid/os/VibrationEffect;)V");
-                if (vibrateEffect) {
-                    (*env)->CallVoidMethod(env, vibrator, vibrateEffect, effect);
+                
+                // Check if createOneShot threw an exception
+                if ((*env)->ExceptionCheck(env)) {
+                    (*env)->ExceptionClear(env);
+                    if (effect) (*env)->DeleteLocalRef(env, effect); // Should be NULL, but safe to check
+                    effect = NULL;
                 }
-                (*env)->DeleteLocalRef(env, effect);
+
+                if (effect) {
+                    jmethodID vibrateEffect = (*env)->GetMethodID(env, vibratorClass, "vibrate", "(Landroid/os/VibrationEffect;)V");
+                    if (vibrateEffect) {
+                        (*env)->CallVoidMethod(env, vibrator, vibrateEffect, effect);
+                        // Check if final vibrate call threw exception
+                        if ((*env)->ExceptionCheck(env)) {
+                            (*env)->ExceptionClear(env);
+                        }
+                    } else {
+                        (*env)->ExceptionClear(env);
+                    }
+                    (*env)->DeleteLocalRef(env, effect);
+                }
+             } else {
+                (*env)->ExceptionClear(env);
              }
              (*env)->DeleteLocalRef(env, effectClass);
+        } else {
+             (*env)->ExceptionClear(env);
         }
     }
     
@@ -897,66 +1059,123 @@ void aroma_android_vibrate(int ms) {
     (*env)->DeleteLocalRef(env, vibratorClass);
 }
 
-void aroma_android_toast(const char* msg, bool long_duration) {
-    // Toasts must be shown on UI Thread.
-    // Making a Runnable in C via JNI is painful (requires defining a class or Proxy).
-    // Alternative: Looper.prepare() ? No.
-    // Simpler: Just log it for now as "Not fully supported without Java helper", OR
-    // rely on a small trick if we can.
-    // 
-    // Actually, NativeActivity has runOnUiThread? No, Activity does.
-    // But we need a Runnable object.
+static void impl_android_toast(const char* msg, bool long_duration) {
+    JNIEnv* env = aroma_android_get_env();
+    if (!env) return;
+
+    // Resolve package name to find helper
+    jobject activity = aroma_android_get_activity();
+    if (!activity) return;
+
+    jclass activity_class = (*env)->GetObjectClass(env, activity);
+    jmethodID get_pkg_name = (*env)->GetMethodID(env, activity_class, "getPackageName", "()Ljava/lang/String;");
     
-    // For now, let's just log it. Implementing a dynamic proxy is too much code for this block.
-    LOGI("TOAST: %s", msg); 
+    char class_name[512] = {0};
+    
+    if (get_pkg_name) {
+        jstring pkg_name_jstr = (jstring)(*env)->CallObjectMethod(env, activity, get_pkg_name);
+        if (pkg_name_jstr) {
+            const char* pkg_name = (*env)->GetStringUTFChars(env, pkg_name_jstr, NULL);
+            int len = 0;
+            for (int i = 0; pkg_name[i] && len < 450; i++) {
+                class_name[len++] = (pkg_name[i] == '.') ? '/' : pkg_name[i];
+            }
+            strcat(class_name, "/AromaHelper");
+            
+            (*env)->ReleaseStringUTFChars(env, pkg_name_jstr, pkg_name);
+            (*env)->DeleteLocalRef(env, pkg_name_jstr);
+        }
+    } else {
+        (*env)->ExceptionClear(env);
+    }
+    (*env)->DeleteLocalRef(env, activity_class);
+    
+    if (class_name[0] == 0) return;
+
+    // Use FindClassSafe to ensure we find the app class
+    jclass helper_class = FindClassSafe(env, class_name);
+    
+    if (helper_class) {
+        jmethodID show_toast = (*env)->GetStaticMethodID(env, helper_class, "showToast", "(Landroid/app/Activity;Ljava/lang/String;Z)V");
+        if (show_toast) {
+            jstring jmsg = (*env)->NewStringUTF(env, msg);
+            (*env)->CallStaticVoidMethod(env, helper_class, show_toast, activity, jmsg, (jboolean)long_duration);
+            (*env)->DeleteLocalRef(env, jmsg);
+        } else {
+            (*env)->ExceptionClear(env);
+            LOGE("AromaHelper.showToast method not found");
+        }
+        (*env)->DeleteLocalRef(env, helper_class);
+    } else {
+        LOGE("AromaHelper class NOT FOUND at %s. Toasts require this Java helper.", class_name);
+    }
 }
 
-void aroma_android_launch_camera() {
+static void impl_android_launch_camera(void) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return;
     
     jclass intentClass = (*env)->FindClass(env, "android/content/Intent");
+    if (!intentClass) { (*env)->ExceptionClear(env); return; }
+
     jstring actionImageCapture = (*env)->NewStringUTF(env, "android.media.action.IMAGE_CAPTURE");
     jmethodID intentCtor = (*env)->GetMethodID(env, intentClass, "<init>", "(Ljava/lang/String;)V");
     jobject intent = (*env)->NewObject(env, intentClass, intentCtor, actionImageCapture);
     
     jobject activity = aroma_android_get_activity();
-    jclass activityClass = (*env)->GetObjectClass(env, activity);
-    // startActivity(Intent)
-    jmethodID startActivity = (*env)->GetMethodID(env, activityClass, "startActivity", "(Landroid/content/Intent;)V");
+    if (activity && intent) {
+        jclass activityClass = (*env)->GetObjectClass(env, activity);
+        jmethodID startActivity = (*env)->GetMethodID(env, activityClass, "startActivity", "(Landroid/content/Intent;)V");
+        if (startActivity) {
+            (*env)->CallVoidMethod(env, activity, startActivity, intent);
+        } else {
+            (*env)->ExceptionClear(env);
+        }
+        (*env)->DeleteLocalRef(env, activityClass);
+    }
     
-    (*env)->CallVoidMethod(env, activity, startActivity, intent);
-    
-    (*env)->DeleteLocalRef(env, intent);
+    if (intent) (*env)->DeleteLocalRef(env, intent);
     (*env)->DeleteLocalRef(env, actionImageCapture);
     (*env)->DeleteLocalRef(env, intentClass);
-    (*env)->DeleteLocalRef(env, activityClass);
 }
 
-bool aroma_android_is_wifi_enabled() {
+static bool impl_android_is_wifi_enabled(void) {
      JNIEnv* env = aroma_android_get_env();
      if (!env) return false;
-     jobject wifiMgr = aroma_android_get_system_service("wifi");
+     jobject wifiMgr = (jobject)impl_android_get_system_service("wifi");
      if (!wifiMgr) return false;
      
      jclass wifiClass = (*env)->GetObjectClass(env, wifiMgr);
      jmethodID isWifiEnabled = (*env)->GetMethodID(env, wifiClass, "isWifiEnabled", "()Z");
-     bool res = (*env)->CallBooleanMethod(env, wifiMgr, isWifiEnabled);
+     bool res = false;
+     if (isWifiEnabled) {
+        res = (*env)->CallBooleanMethod(env, wifiMgr, isWifiEnabled);
+     } else {
+        (*env)->ExceptionClear(env);
+     }
      
      (*env)->DeleteLocalRef(env, wifiMgr);
      (*env)->DeleteLocalRef(env, wifiClass);
      return res;
 }
 
-bool aroma_android_is_bluetooth_enabled() {
-     // BluetoothAdapter.getDefaultAdapter().isEnabled()
+static bool impl_android_is_bluetooth_enabled(void) {
      JNIEnv* env = aroma_android_get_env();
      if (!env) return false;
      
      jclass adapterClass = (*env)->FindClass(env, "android/bluetooth/BluetoothAdapter");
-     if (!adapterClass) return false;
+     if (!adapterClass) {
+         (*env)->ExceptionClear(env);
+         return false;
+     }
      
      jmethodID getDefaultAdapter = (*env)->GetStaticMethodID(env, adapterClass, "getDefaultAdapter", "()Landroid/bluetooth/BluetoothAdapter;");
+     if (!getDefaultAdapter) {
+          (*env)->ExceptionClear(env);
+          (*env)->DeleteLocalRef(env, adapterClass);
+          return false;
+     }
+     
      jobject adapter = (*env)->CallStaticObjectMethod(env, adapterClass, getDefaultAdapter);
      
      if (!adapter) {
@@ -965,100 +1184,168 @@ bool aroma_android_is_bluetooth_enabled() {
      }
      
      jmethodID isEnabled = (*env)->GetMethodID(env, adapterClass, "isEnabled", "()Z");
-     bool res = (*env)->CallBooleanMethod(env, adapter, isEnabled);
+     bool res = false;
+     if (isEnabled) {
+        res = (*env)->CallBooleanMethod(env, adapter, isEnabled);
+     } else {
+         (*env)->ExceptionClear(env);
+     }
      
      (*env)->DeleteLocalRef(env, adapter);
      (*env)->DeleteLocalRef(env, adapterClass);
      return res;
 }
 
-int aroma_android_get_battery_level() {
+static int impl_android_get_battery_level(void) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return -1;
     
-    jobject batteryManager = aroma_android_get_system_service("batterymanager");
+    jobject batteryManager = (jobject)impl_android_get_system_service("batterymanager");
     if (!batteryManager) return -1;
     
     jclass bmClass = (*env)->GetObjectClass(env, batteryManager);
     
     // BATTERY_PROPERTY_CAPACITY = 4
     jmethodID getIntProperty = (*env)->GetMethodID(env, bmClass, "getIntProperty", "(I)I");
-    int capacity = (*env)->CallIntMethod(env, batteryManager, getIntProperty, 4);
+    int capacity = -1;
+    if (getIntProperty) {
+        capacity = (*env)->CallIntMethod(env, batteryManager, getIntProperty, 4);
+    } else {
+        (*env)->ExceptionClear(env);
+    }
     
     (*env)->DeleteLocalRef(env, batteryManager);
     (*env)->DeleteLocalRef(env, bmClass);
     return capacity;
 }
 
-// Stub for symbols
-const char* aroma_android_get_id() { return "Unknown"; }
+const char* aroma_android_get_id() { return "Android"; }
 
-void aroma_android_set_wifi_enabled(bool enabled) {
+static void impl_android_set_wifi_enabled(bool enabled) {
      JNIEnv* env = aroma_android_get_env();
      if (!env) return;
-     jobject wifiMgr = aroma_android_get_system_service("wifi");
+     jobject wifiMgr = (jobject)impl_android_get_system_service("wifi");
      if (!wifiMgr) return;
      
      jclass wifiClass = (*env)->GetObjectClass(env, wifiMgr);
-     // setWifiEnabled was deprecated/removed for apps targeting Q+, but works on older or system apps.
-     // Might simple fail on modern Android.
      jmethodID setWifiEnabled = (*env)->GetMethodID(env, wifiClass, "setWifiEnabled", "(Z)Z");
      if (setWifiEnabled) {
         (*env)->CallBooleanMethod(env, wifiMgr, setWifiEnabled, (jboolean)enabled);
+        if ((*env)->ExceptionCheck(env)) {
+             (*env)->ExceptionClear(env); // Handle permission denial or deprecation error
+        }
+     } else {
+        (*env)->ExceptionClear(env); // Method removed in newer Android
      }
      
      (*env)->DeleteLocalRef(env, wifiMgr);
      (*env)->DeleteLocalRef(env, wifiClass);
 }
 
-void aroma_android_open_settings() {
+static void impl_android_open_settings(void) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return;
     
     jclass intentClass = (*env)->FindClass(env, "android/content/Intent");
+    if (!intentClass) { (*env)->ExceptionClear(env); return; }
+    
     jstring actionSettings = (*env)->NewStringUTF(env, "android.settings.SETTINGS");
     jmethodID intentCtor = (*env)->GetMethodID(env, intentClass, "<init>", "(Ljava/lang/String;)V");
     jobject intent = (*env)->NewObject(env, intentClass, intentCtor, actionSettings);
     
     jobject activity = aroma_android_get_activity();
-    jclass activityClass = (*env)->GetObjectClass(env, activity);
-    jmethodID startActivity = (*env)->GetMethodID(env, activityClass, "startActivity", "(Landroid/content/Intent;)V");
+    if (activity && intent) {
+        jclass activityClass = (*env)->GetObjectClass(env, activity);
+        jmethodID startActivity = (*env)->GetMethodID(env, activityClass, "startActivity", "(Landroid/content/Intent;)V");
+        if (startActivity) {
+            (*env)->CallVoidMethod(env, activity, startActivity, intent);
+        } else {
+            (*env)->ExceptionClear(env);
+        }
+        (*env)->DeleteLocalRef(env, activityClass);
+    }
     
-    (*env)->CallVoidMethod(env, activity, startActivity, intent);
-    
-    (*env)->DeleteLocalRef(env, intent);
+    if (intent) (*env)->DeleteLocalRef(env, intent);
     (*env)->DeleteLocalRef(env, actionSettings);
     (*env)->DeleteLocalRef(env, intentClass);
-    (*env)->DeleteLocalRef(env, activityClass);
 }
 
-void aroma_android_launch_gallery() {
+static void impl_android_launch_gallery(void) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return;
     
     jclass intentClass = (*env)->FindClass(env, "android/content/Intent");
+    if (!intentClass) { (*env)->ExceptionClear(env); return; }
+
     jstring actionMain = (*env)->NewStringUTF(env, "android.intent.action.MAIN");
     jstring categoryAppGallery = (*env)->NewStringUTF(env, "android.intent.category.APP_GALLERY");
     
     jmethodID intentCtor = (*env)->GetMethodID(env, intentClass, "<init>", "(Ljava/lang/String;)V");
     jobject intent = (*env)->NewObject(env, intentClass, intentCtor, actionMain);
     
-    jmethodID addCategory = (*env)->GetMethodID(env, intentClass, "addCategory", "(Ljava/lang/String;)Landroid/content/Intent;");
-    (*env)->CallObjectMethod(env, intent, addCategory, categoryAppGallery);
-    
-    // Or open document
-    // Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("content://media/internal/images/media"));
-    
-    jobject activity = aroma_android_get_activity();
-    jclass activityClass = (*env)->GetObjectClass(env, activity);
-    jmethodID startActivity = (*env)->GetMethodID(env, activityClass, "startActivity", "(Landroid/content/Intent;)V");
-    
-    (*env)->CallVoidMethod(env, activity, startActivity, intent);
+    if (intent) {
+        jmethodID addCategory = (*env)->GetMethodID(env, intentClass, "addCategory", "(Ljava/lang/String;)Landroid/content/Intent;");
+        if (addCategory) {
+            (*env)->CallObjectMethod(env, intent, addCategory, categoryAppGallery);
+        } else {
+            (*env)->ExceptionClear(env);
+        }
+        
+        jobject activity = aroma_android_get_activity();
+        if (activity) {
+            jclass activityClass = (*env)->GetObjectClass(env, activity);
+            jmethodID startActivity = (*env)->GetMethodID(env, activityClass, "startActivity", "(Landroid/content/Intent;)V");
+            if (startActivity) {
+                (*env)->CallVoidMethod(env, activity, startActivity, intent);
+            } else {
+                (*env)->ExceptionClear(env);
+            }
+            (*env)->DeleteLocalRef(env, activityClass);
+        }
+        (*env)->DeleteLocalRef(env, intent);
+    }
 
-    (*env)->DeleteLocalRef(env, intent);
     (*env)->DeleteLocalRef(env, actionMain);
     (*env)->DeleteLocalRef(env, categoryAppGallery);
     (*env)->DeleteLocalRef(env, intentClass);
-    (*env)->DeleteLocalRef(env, activityClass);
 }
+
+
+AromaPlatformInterface aroma_platform_android = {
+    .initialize = initialize,
+    .shutdown = shutdown,
+    .create_window = create_window,
+    .show_keyboard = android_show_keyboard,
+    .hide_keyboard = android_hide_keyboard,
+    .make_context_current = make_context_current,
+    .set_window_update_callback = set_window_update_callback,
+    .get_window_size = get_window_size,
+    .request_window_update = request_window_update,
+    .run_event_loop = run_event_loop,
+    .swap_buffers = swap_buffers,
+    .get_tft_context = get_tft_context,
+    .call_flush_function_ptr = call_flush_function_ptr,
+    .tft_mark_tiles_dirty = tft_mark_tiles_dirty,
+    .set_clear_color = set_clear_color,
+    .set_android_app = platform_set_android_app,
+    .set_fullscreen = set_fullscreen,
+    .open_url = android_open_url,
+    .android_send_intent = android_send_intent,
+    
+    // Android Extensions
+    .android_check_permission = impl_android_check_permission,
+    .android_request_permission = impl_android_request_permission,
+    .android_toast = impl_android_toast,
+    .android_open_settings = impl_android_open_settings,
+    .android_vibrate = impl_android_vibrate,
+    .android_get_battery_level = impl_android_get_battery_level,
+    .android_is_wifi_enabled = impl_android_is_wifi_enabled,
+    .android_set_wifi_enabled = impl_android_set_wifi_enabled,
+    .android_is_bluetooth_enabled = impl_android_is_bluetooth_enabled,
+    .android_launch_camera = impl_android_launch_camera,
+    .android_launch_gallery = impl_android_launch_gallery,
+    .android_get_system_service = impl_android_get_system_service,
+    .android_get_internal_path = impl_android_get_internal_path,
+    .android_get_external_path = impl_android_get_external_path
+};
 

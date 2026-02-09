@@ -14,6 +14,7 @@ static bool on_btn_click(AromaNode *btn, void *data)
     aroma_ui_android_intent(AROMA_INTENT_VIEW,
                             "https://github.com/BinaryInkTN/AromaUI", NULL, NULL, 0);
 
+
     return true;
 }
 
@@ -69,6 +70,7 @@ int main(int argc, char **argv)
     {
         aroma_ui_process_events();
         aroma_ui_render(win);
+
         usleep(16000);
     }
 
