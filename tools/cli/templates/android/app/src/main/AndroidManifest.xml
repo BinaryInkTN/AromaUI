@@ -3,7 +3,7 @@
 
     <application
         android:label="{{PROJECT_NAME}}"
-        android:hasCode="false">
+        android:hasCode="true">
         
         <activity android:name="android.app.NativeActivity"
                   android:label="{{PROJECT_NAME}}"

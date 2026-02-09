@@ -134,7 +134,6 @@ def install_android_sdk():
         print_error("sdkmanager not found after installation.")
         return False
     
-    # Check for Java
     if not run_command(["which", "java"], capture_output=True) and not os.environ.get("JAVA_HOME"):
         print_error("Java is required for Android SDK but not found. Please install OpenJDK.")
         return False
@@ -144,7 +143,6 @@ def install_android_sdk():
     print_step("Installing SDK Components (Accepting Licenses)...")
     
     try:
-        # Use bash explicitly to avoid permission issues with the script
         cmd = ["bash", sdkmanager, "--licenses"] if platform.system() == "Linux" else [sdkmanager, "--licenses"]
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         p.communicate(input=b"y\n" * 50)
@@ -161,7 +159,6 @@ def install_android_sdk():
     
     print_info(f"Installing: {', '.join(packages)}")
     
-    # Use bash here too
     install_cmd = ["bash", sdkmanager] + packages if platform.system() == "Linux" else [sdkmanager] + packages
     res = run_command(install_cmd)
     
@@ -283,6 +280,11 @@ def cmd_create(args):
             main_c = f.read().replace("{{PROJECT_NAME}}", project_name)
         with open(os.path.join(target_dir, "src", "main.c"), "w") as f:
             f.write(main_c)
+
+        with open(os.path.join(templates_dir, "app", "logo.h.tpl"), "r") as f:
+            logo_h = f.read().replace("{{PROJECT_NAME}}", project_name)
+        with open(os.path.join(target_dir, "src", "logo.h"), "w") as f:
+            f.write(logo_h)
             
         with open(os.path.join(templates_dir, "app", "CMakeLists.txt.tpl"), "r") as f:
             cmake_txt = f.read().replace("{{PROJECT_NAME}}", project_name).replace("{{AROMA_ROOT}}", AROMA_ROOT)
@@ -335,7 +337,6 @@ def cmd_create(args):
                             with open(file_path, "w") as f:
                                 f.write(content)
 
-            # Handle AromaHelper.java
             helper_tpl_path = os.path.join(android_dest, "AromaHelper.java.tpl")
             if os.path.exists(helper_tpl_path):
                 java_src_dir = os.path.join(android_dest, "app", "src", "main", "java")
@@ -390,7 +391,6 @@ def cmd_build(args):
             print_error("No 'android' directory found. Is this an Aroma project?")
             return
             
-        # Check Android SDK presence before building
         android_home = os.environ.get("ANDROID_HOME")
         if not android_home:
             common_paths = [
@@ -403,7 +403,6 @@ def cmd_build(args):
                     android_home = p
                     break
         
-        # If SDK missing or incomplete, auto-install
         should_install = False
         if not android_home or not os.path.exists(android_home):
             print_info("Android SDK not found.")
@@ -419,12 +418,10 @@ def cmd_build(args):
             if not install_android_sdk():
                 print_error("Aborting build due to missing SDK/NDK.")
                 return
-            # Refresh ANDROID_HOME if it was installed to default location
             if not android_home:
                 android_home = os.path.expanduser("~/Android/Sdk")
                 os.environ["ANDROID_HOME"] = android_home
 
-        # Determine NDK path
         ndk_path_root = os.path.join(android_home, "ndk")
         ndk_dir = None
         if os.path.exists(ndk_path_root):
@@ -433,7 +430,6 @@ def cmd_build(args):
                 ndk_dir = os.path.join(ndk_path_root, versions[-1])
                 os.environ["ANDROID_NDK_HOME"] = ndk_dir
                 
-        # Ensure local.properties exists/is correct
         local_prop = os.path.join(android_dir, "local.properties")
         if not os.path.exists(local_prop) and android_home:
              with open(local_prop, "w") as f:
@@ -471,7 +467,6 @@ def check_and_start_emulator():
     avdmanager = os.path.join(cmdline_tools, "avdmanager")
     emulator_bin = os.path.join(android_home, "emulator", "emulator")
     
-    # 1. Check if emulator is running
     res = run_command(["adb", "devices"], capture_output=True)
     if res and "emulator-" in res.stdout:
         print_info("Emulator is already running.")
@@ -479,7 +474,6 @@ def check_and_start_emulator():
         
     print_step("Checking Emulator requirements...")
     
-    # 2. Check components
     img_pkg = "system-images;android-34;google_apis;x86_64"
     if platform.machine() in ["arm64", "aarch64"]:
         img_pkg = "system-images;android-34;google_apis;arm64-v8a"
@@ -508,9 +502,7 @@ def check_and_start_emulator():
             print_error("Failed to install emulator components.")
             return False
 
-    # 3. Check AVD
     avd_name = "aroma_emu"
-    # Ensure avdmanager handles list correctly
     cmd_avd = ["bash", avdmanager] if platform.system() == "Linux" else [avdmanager]
     res = run_command(cmd_avd + ["list", "avd", "-c"], capture_output=True)
     existing = res.stdout.strip().splitlines() if res else []
@@ -529,7 +521,6 @@ def check_and_start_emulator():
             print_error(f"Error creating AVD: {e}")
             return False
             
-    # 4. Start Emulator
     print_step(f"Starting AVD '{avd_name}'...")
     log_file = open("emulator.log", "w")
     try:

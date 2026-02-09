@@ -60,9 +60,6 @@ int main(int argc, char** argv)
         "Press to visit our GitHub repository!", 20, 20,
         LABEL_STYLE_LABEL_SMALL);
     aroma_label_set_font((AromaNode*)description, font_md);
-    
-    status_label = (AromaNode*)description;
-    
     aroma_ui_button((AromaNode*)root_container, "Let's go!", 20, 20,
         230, 100, on_btn_click, NULL, font_md);
     
