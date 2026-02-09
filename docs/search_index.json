@@ -1,0 +1,1405 @@
+{
+  "functions": [
+    {
+      "name": "dump_memory",
+      "brief": "Dump a memory region to the log in hex format.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#api-dump_memory",
+      "type": "function"
+    },
+    {
+      "name": "log_message",
+      "brief": "Logging and debugging utilities. Provides a standardized logging interface with multiple severity levels (INFO, WARNING, ERROR, CRITICAL), helper macros for calling them with file/line context, and utilities for debugging like memory dumping.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#api-log_message",
+      "type": "function"
+    },
+    {
+      "name": "log_performance",
+      "brief": "Log a performance milestone timestamp.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#api-log_performance",
+      "type": "function"
+    },
+    {
+      "name": "print_stack_trace",
+      "brief": "Print the current call stack trace to the log.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#api-print_stack_trace",
+      "type": "function"
+    },
+    {
+      "name": "save_log_file",
+      "brief": "Save the current log buffer/session to a file.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#api-save_log_file",
+      "type": "function"
+    },
+    {
+      "name": "set_logging_enabled",
+      "brief": "Macro for performance logging.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#api-set_logging_enabled",
+      "type": "function"
+    },
+    {
+      "name": "set_minimum_log_level",
+      "brief": "Set the minimum severity level to log.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#api-set_minimum_log_level",
+      "type": "function"
+    },
+    {
+      "name": "aroma_android_set_app",
+      "brief": "Set the Android app state for JNI interfacing.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_android_set_app",
+      "type": "function"
+    },
+    {
+      "name": "aroma_card_create",
+      "brief": "Create a card helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_card_create",
+      "type": "function"
+    },
+    {
+      "name": "aroma_checkbox_set_callback",
+      "brief": "Create a checkbox helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_checkbox_set_callback",
+      "type": "function"
+    },
+    {
+      "name": "aroma_chip_set_callback",
+      "brief": "Create a chip helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_chip_set_callback",
+      "type": "function"
+    },
+    {
+      "name": "aroma_divider_create",
+      "brief": "Create a divider helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_divider_create",
+      "type": "function"
+    },
+    {
+      "name": "aroma_fab_set_click_callback",
+      "brief": "Create a Floating Action Button (FAB) helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_fab_set_click_callback",
+      "type": "function"
+    },
+    {
+      "name": "aroma_graphics_load_font_for_window",
+      "brief": "Core UI definitions and functions for AromaUI. This file contains the main API for initializing the library, creating windows, managing the event loop, and helper functions to create widgets.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_graphics_load_font_for_window",
+      "type": "function"
+    },
+    {
+      "name": "aroma_iconbutton_set_callback",
+      "brief": "Create an icon button helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_iconbutton_set_callback",
+      "type": "function"
+    },
+    {
+      "name": "aroma_listview_set_callback",
+      "brief": "Create a list view helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_listview_set_callback",
+      "type": "function"
+    },
+    {
+      "name": "aroma_radiobutton_set_callback",
+      "brief": "Create a radio button helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_radiobutton_set_callback",
+      "type": "function"
+    },
+    {
+      "name": "aroma_sidebar_set_on_select",
+      "brief": "Create a sidebar helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_sidebar_set_on_select",
+      "type": "function"
+    },
+    {
+      "name": "aroma_slider_set_on_change",
+      "brief": "Create a slider helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_slider_set_on_change",
+      "type": "function"
+    },
+    {
+      "name": "aroma_splash",
+      "brief": "Enable or disable the startup splash screen.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_splash",
+      "type": "function"
+    },
+    {
+      "name": "aroma_switch_set_on_change",
+      "brief": "Create a switch helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_switch_set_on_change",
+      "type": "function"
+    },
+    {
+      "name": "aroma_tabs_set_on_change",
+      "brief": "Create a tabs helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_tabs_set_on_change",
+      "type": "function"
+    },
+    {
+      "name": "aroma_textbox_set_placeholder",
+      "brief": "Create a textbox helper.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_textbox_set_placeholder",
+      "type": "function"
+    },
+    {
+      "name": "aroma_theme_get_global",
+      "brief": "Get the current global theme.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_theme_get_global",
+      "type": "function"
+    },
+    {
+      "name": "aroma_ui_set_immediate_mode",
+      "brief": "Get the currently focused node.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#api-aroma_ui_set_immediate_mode",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_begin",
+      "brief": "Mark a draw list as active/current for subsequent commands.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_begin",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_cmd_clear",
+      "brief": "Add a clear command specifically to the draw list.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_cmd_clear",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_cmd_image",
+      "brief": "Add a filled rectangle command.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_cmd_image",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_create",
+      "brief": "",
+      "description": "void (*draw_cb)(AromaNode* node, size_t window_id); /**< Callback function to execute drawing.",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_create",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_destroy",
+      "brief": "Destroy a draw list and free its resources.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_destroy",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_end",
+      "brief": "End the current draw list session.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_end",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_flush",
+      "brief": "Execute (flush) all commands in the list to the backend.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_flush",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_get_active",
+      "brief": "Get the currently active draw list.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_get_active",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_is_active",
+      "brief": "Check if there is a currently active draw list.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_is_active",
+      "type": "function"
+    },
+    {
+      "name": "aroma_drawlist_reset",
+      "brief": "Reset the draw list to an empty state.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#api-aroma_drawlist_reset",
+      "type": "function"
+    },
+    {
+      "name": "aroma_dirty_list_add",
+      "brief": "",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_dirty_list_add",
+      "type": "function"
+    },
+    {
+      "name": "aroma_dirty_list_clear",
+      "brief": "",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_dirty_list_clear",
+      "type": "function"
+    },
+    {
+      "name": "aroma_dirty_list_get",
+      "brief": "",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_dirty_list_get",
+      "type": "function"
+    },
+    {
+      "name": "aroma_dirty_list_init",
+      "brief": "",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_dirty_list_init",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_get_draw_cb",
+      "brief": "Get the current draw callback.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_get_draw_cb",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_get_z_index",
+      "brief": "Get the Z-index.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_get_z_index",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_invalidate",
+      "brief": "Mark a node as needing redraw.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_invalidate",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_invalidate_tree",
+      "brief": "Mark an entire subtree as needing redraw.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_invalidate_tree",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_is_dirty",
+      "brief": "Check if node is marked dirty.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_is_dirty",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_is_hidden",
+      "brief": "Check if node is hidden.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_is_hidden",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_mark_clean",
+      "brief": "Mark node as clean (no redraw needed).",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_mark_clean",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_align_items",
+      "brief": "Set cross axis alignment.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_align_items",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_draw_cb",
+      "brief": "Set the custom draw callback.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_draw_cb",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_flex_direction",
+      "brief": "Set flexbox direction.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_flex_direction",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_flex_grow",
+      "brief": "Set flex grow factor for this node (as a child).",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_flex_grow",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_gap",
+      "brief": "Set gap between children.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_gap",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_grid_cols",
+      "brief": "Set number of grid columns.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_grid_cols",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_grid_rows",
+      "brief": "Set number of grid rows.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_grid_rows",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_hidden",
+      "brief": "Set node visibility.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_hidden",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_justify_content",
+      "brief": "Set main axis alignment.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_justify_content",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_layout_anchor",
+      "brief": "Configure node to use anchor layout.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_layout_anchor",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_layout_center",
+      "brief": "Configure node to center itself in parent.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_layout_center",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_layout_fill",
+      "brief": "Configure node to fill its parent.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_layout_fill",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_layout_mode",
+      "brief": "Set the layout mode for valid children.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_layout_mode",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_set_z_index",
+      "brief": "Set the Z-index (draw order).",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_set_z_index",
+      "type": "function"
+    },
+    {
+      "name": "aroma_node_update_layout",
+      "brief": "Update layout calculations for the tree.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#api-aroma_node_update_layout",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_create",
+      "brief": "Create a new event object.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_create",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_dispatch",
+      "brief": "Dispatch an event immediately to the scene graph.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_dispatch",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_get_root",
+      "brief": "Get the current event root node.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_get_root",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_handle_pointer_move",
+      "brief": "Helper to inject a pointer move event into the system.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_handle_pointer_move",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_process_queue",
+      "brief": "Process all pending events in the queue.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_process_queue",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_queue",
+      "brief": "Add an event to the processing queue.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_queue",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_set_root",
+      "brief": "Set the global event root (usually the window root).",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_set_root",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_system_init",
+      "brief": "Structure representing a registered event listener.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_system_init",
+      "type": "function"
+    },
+    {
+      "name": "aroma_event_system_shutdown",
+      "brief": "Shutdown the event system.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#api-aroma_event_system_shutdown",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_create",
+      "brief": "Font loading, metrics, and management. Provides functions to load fonts from files or memory and query their metrics (text width, line height, etc.).",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_create",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_create_from_memory",
+      "brief": "Load a font from a memory buffer.",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_create_from_memory",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_destroy",
+      "brief": "Destroy a font and release its resources.",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_destroy",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_get_ascender",
+      "brief": "Get the font's ascender value.",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_get_ascender",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_get_descender",
+      "brief": "Get the font's descender value.",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_get_descender",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_get_face",
+      "brief": "Get the underlying implementation-specific font face object (e.g. FT_Face).",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_get_face",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_get_line_height",
+      "brief": "Get the line height of the font.",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_get_line_height",
+      "type": "function"
+    },
+    {
+      "name": "aroma_font_get_line_width",
+      "brief": "Calculate the width of a text string in pixels using this font.",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#api-aroma_font_get_line_width",
+      "type": "function"
+    },
+    {
+      "name": "aroma_get_platform_interface",
+      "brief": "Get the active platform implementation.",
+      "description": "",
+      "file": "aroma_platform_interface.h",
+      "url": "#api-aroma_get_platform_interface",
+      "type": "function"
+    },
+    {
+      "name": "aroma_memory_system_destroy",
+      "brief": "Destroy the global memory system.",
+      "description": "",
+      "file": "aroma_slab_alloc.h",
+      "url": "#api-aroma_memory_system_destroy",
+      "type": "function"
+    },
+    {
+      "name": "aroma_memory_system_init",
+      "brief": "Initialize the global memory system. Must be called before creating any nodes/widgets.",
+      "description": "",
+      "file": "aroma_slab_alloc.h",
+      "url": "#api-aroma_memory_system_init",
+      "type": "function"
+    },
+    {
+      "name": "aroma_memory_system_stats",
+      "brief": "Print memory usage statistics to the log.",
+      "description": "",
+      "file": "aroma_slab_alloc.h",
+      "url": "#api-aroma_memory_system_stats",
+      "type": "function"
+    },
+    {
+      "name": "aroma_widget_alloc",
+      "brief": "Allocate memory for a widget's data. Picks the appropriate pool based on size.",
+      "description": "",
+      "file": "aroma_slab_alloc.h",
+      "url": "#api-aroma_widget_alloc",
+      "type": "function"
+    },
+    {
+      "name": "aroma_widget_free",
+      "brief": "Free memory for a widget.",
+      "description": "",
+      "file": "aroma_slab_alloc.h",
+      "url": "#api-aroma_widget_free",
+      "type": "function"
+    },
+    {
+      "name": "aroma_android_get_activity",
+      "brief": "Get the Android Activity object.",
+      "description": "",
+      "file": "aroma_android.h",
+      "url": "#api-aroma_android_get_activity",
+      "type": "function"
+    },
+    {
+      "name": "aroma_android_get_env",
+      "brief": "Android-specific platform APIs. These functions are available only when compiling for Android (__ANDROID__ is defined). They provide access to Android system services, permissions, and intents.",
+      "description": "",
+      "file": "aroma_android.h",
+      "url": "#api-aroma_android_get_env",
+      "type": "function"
+    },
+    {
+      "name": "aroma_android_get_jvm",
+      "brief": "Get the Java VM instance.",
+      "description": "",
+      "file": "aroma_android.h",
+      "url": "#api-aroma_android_get_jvm",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_destroy",
+      "brief": "Destroys an image widget",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_destroy",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_draw",
+      "brief": "Draw callback for the image widget",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_draw",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_get_position",
+      "brief": "Gets the current image position",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_get_position",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_get_size",
+      "brief": "Gets the current image size",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_get_size",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_get_source",
+      "brief": "Gets the image source path",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_get_source",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_get_texture_id",
+      "brief": "Gets the OpenGL texture ID",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_get_texture_id",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_set_position",
+      "brief": "Changes the image position",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_set_position",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_set_size",
+      "brief": "Changes the image size",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_set_size",
+      "type": "function"
+    },
+    {
+      "name": "aroma_image_set_source",
+      "brief": "Creates a new image widget",
+      "description": "",
+      "file": "aroma_image.h",
+      "url": "#api-aroma_image_set_source",
+      "type": "function"
+    }
+  ],
+  "data_types": [
+    {
+      "name": "DebugLevel",
+      "type": "data_type",
+      "brief": "Logging and debugging utilities. Provides a standardized logging interface with multiple severity levels (INFO, WARNING, ERROR, CRITICAL), helper macros for calling them with file/line context, and utilities for debugging like memory dumping.",
+      "description": "",
+      "file": "aroma_logger.h",
+      "url": "#type-debuglevel"
+    },
+    {
+      "name": "AromaIntentAction",
+      "type": "data_type",
+      "brief": "Set window visibility.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-aromaintentaction"
+    },
+    {
+      "name": "AromaIntentExtra",
+      "type": "data_type",
+      "brief": "android.intent.action.VIEW",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-aromaintentextra"
+    },
+    {
+      "name": "AromaNode",
+      "type": "data_type",
+      "brief": "Core UI definitions and functions for AromaUI. This file contains the main API for initializing the library, creating windows, managing the event loop, and helper functions to create widgets.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-aromanode"
+    },
+    {
+      "name": "AromaWindow",
+      "type": "data_type",
+      "brief": "Get the current global theme.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-aromawindow"
+    },
+    {
+      "name": "AromaWindow",
+      "type": "data_type",
+      "brief": "Render a specific window.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-aromawindow"
+    },
+    {
+      "name": "AromaWindowHandle",
+      "type": "data_type",
+      "brief": "Internal handle for managing window state.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-aromawindowhandle"
+    },
+    {
+      "name": "android_app",
+      "type": "data_type",
+      "brief": "Create a generic top-level window (not part of the node tree structure usually).",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-android_app"
+    },
+    {
+      "name": "android_app",
+      "type": "data_type",
+      "brief": "Set the Android app state for JNI interfacing.",
+      "description": "",
+      "file": "aroma_ui.h",
+      "url": "#type-android_app"
+    },
+    {
+      "name": "AromaDrawCmdType",
+      "type": "data_type",
+      "brief": "",
+      "description": "AromaNode* node; /**< The UI node associated with this task.",
+      "file": "aroma_drawlist.h",
+      "url": "#type-aromadrawcmdtype"
+    },
+    {
+      "name": "AromaDrawList",
+      "type": "data_type",
+      "brief": "Opaque handle to a draw command list.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#type-aromadrawlist"
+    },
+    {
+      "name": "AromaDrawTask",
+      "type": "data_type",
+      "brief": "Represents a single drawing task for a node.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#type-aromadrawtask"
+    },
+    {
+      "name": "AromaFont",
+      "type": "data_type",
+      "brief": "Primitives for buffering drawing commands. The draw list system allows widgets to emit drawing commands that are buffered and executed later during the rendering phase, potentially allowing for batching and optimization.",
+      "description": "",
+      "file": "aroma_drawlist.h",
+      "url": "#type-aromafont"
+    },
+    {
+      "name": "AromaAlignItems",
+      "type": "data_type",
+      "brief": "",
+      "description": "AROMA_JUSTIFY_START, /**< Pack to start.",
+      "file": "aroma_node.h",
+      "url": "#type-aromaalignitems"
+    },
+    {
+      "name": "AromaFlexDirection",
+      "type": "data_type",
+      "brief": "",
+      "description": "AROMA_LAYOUT_MODE_NONE, /**< No automatic layout of children.",
+      "file": "aroma_node.h",
+      "url": "#type-aromaflexdirection"
+    },
+    {
+      "name": "AromaJustifyContent",
+      "type": "data_type",
+      "brief": "",
+      "description": "AROMA_FLEX_ROW, /**< Children arranged horizontally.",
+      "file": "aroma_node.h",
+      "url": "#type-aromajustifycontent"
+    },
+    {
+      "name": "AromaLayout",
+      "type": "data_type",
+      "brief": "",
+      "description": "AROMA_ALIGN_START, /**< Align to start of cross axis.",
+      "file": "aroma_node.h",
+      "url": "#type-aromalayout"
+    },
+    {
+      "name": "AromaLayoutMode",
+      "type": "data_type",
+      "brief": "",
+      "description": "AROMA_LAYOUT_NONE, /**< Absolute positioning.",
+      "file": "aroma_node.h",
+      "url": "#type-aromalayoutmode"
+    },
+    {
+      "name": "AromaLayoutType",
+      "type": "data_type",
+      "brief": "",
+      "description": "NODE_TYPE_ROOT, /**< Root window or scene node.",
+      "file": "aroma_node.h",
+      "url": "#type-aromalayouttype"
+    },
+    {
+      "name": "AromaNode",
+      "type": "data_type",
+      "brief": "Scene graph node and layout system. Defines the base unit of the UI tree (AromaNode), along with layout properties (Flexbox, Grid, Anchoring) and dirty state management for efficient rendering.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#type-aromanode"
+    },
+    {
+      "name": "AromaNode",
+      "type": "data_type",
+      "brief": "Base node structure for the scene graph.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#type-aromanode"
+    },
+    {
+      "name": "AromaNodeType",
+      "type": "data_type",
+      "brief": "Node types in the scene graph.",
+      "description": "",
+      "file": "aroma_node.h",
+      "url": "#type-aromanodetype"
+    },
+    {
+      "name": "AromaCustomEventData",
+      "type": "data_type",
+      "brief": "",
+      "description": "uint32_t key_code; /**< Virtual key code.",
+      "file": "aroma_event.h",
+      "url": "#type-aromacustomeventdata"
+    },
+    {
+      "name": "AromaEvent",
+      "type": "data_type",
+      "brief": "The main event structure passed to handlers.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#type-aromaevent"
+    },
+    {
+      "name": "AromaEventListener",
+      "type": "data_type",
+      "brief": "Structure representing a registered event listener.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#type-aromaeventlistener"
+    },
+    {
+      "name": "AromaEventType",
+      "type": "data_type",
+      "brief": "Modifier flag for Caps Lock.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#type-aromaeventtype"
+    },
+    {
+      "name": "AromaKeyEventData",
+      "type": "data_type",
+      "brief": "",
+      "description": "int width; /**< New window width.",
+      "file": "aroma_event.h",
+      "url": "#type-aromakeyeventdata"
+    },
+    {
+      "name": "AromaMouseEventData",
+      "type": "data_type",
+      "brief": "",
+      "description": "EVENT_TYPE_MOUSE_MOVE, /**< Pointer moved.",
+      "file": "aroma_event.h",
+      "url": "#type-aromamouseeventdata"
+    },
+    {
+      "name": "AromaNode",
+      "type": "data_type",
+      "brief": "Input and system event handling subsystem. Defines the event structures, types, and the event dispatcher mechanism used to propagate inputs (mouse, keyboard, etc.) and system events (window resize) to UI nodes.",
+      "description": "",
+      "file": "aroma_event.h",
+      "url": "#type-aromanode"
+    },
+    {
+      "name": "AromaWindowResizeEventData",
+      "type": "data_type",
+      "brief": "",
+      "description": "int x; /**< X coordinate relative to screen/window.",
+      "file": "aroma_event.h",
+      "url": "#type-aromawindowresizeeventdata"
+    },
+    {
+      "name": "timespec",
+      "type": "data_type",
+      "brief": "",
+      "description": "AromaEventType event_type; /**< Type of the event.",
+      "file": "aroma_event.h",
+      "url": "#type-timespec"
+    },
+    {
+      "name": "AromaFont",
+      "type": "data_type",
+      "brief": "Font loading, metrics, and management. Provides functions to load fonts from files or memory and query their metrics (text width, line height, etc.).",
+      "description": "",
+      "file": "aroma_font.h",
+      "url": "#type-aromafont"
+    },
+    {
+      "name": "AromaRect",
+      "type": "data_type",
+      "brief": "Common definitions and data structures for AromaUI.",
+      "description": "",
+      "file": "aroma_common.h",
+      "url": "#type-aromarect"
+    },
+    {
+      "name": "AromaDrawList",
+      "type": "data_type",
+      "brief": "Abstract interface for platform-specific operations. Defines the virtual table (struct AromaPlatformInterface) that backends (Android, SDL, TFT, etc.) must implement to handle window creation, input loops, rendering context management, and platform-specific capabilities (permissions, hardware access).",
+      "description": "",
+      "file": "aroma_platform_interface.h",
+      "url": "#type-aromadrawlist"
+    },
+    {
+      "name": "AromaDrawList",
+      "type": "data_type",
+      "brief": "Initialize the backend. Returns 0 on success.",
+      "description": "",
+      "file": "aroma_platform_interface.h",
+      "url": "#type-aromadrawlist"
+    },
+    {
+      "name": "AromaPlatformInterface",
+      "type": "data_type",
+      "brief": "VTable for platform-specific implementations.",
+      "description": "",
+      "file": "aroma_platform_interface.h",
+      "url": "#type-aromaplatforminterface"
+    },
+    {
+      "name": "AromaFreeSlot",
+      "type": "data_type",
+      "brief": "Slab-based memory allocator for UI nodes and widgets. Provides a custom memory allocator to efficiently manage creation and destruction of UI nodes and widget data structures, reducing fragmentation and malloc overhead.",
+      "description": "",
+      "file": "aroma_slab_alloc.h",
+      "url": "#type-aromafreeslot"
+    },
+    {
+      "name": "AromaMemorySystem",
+      "type": "data_type",
+      "brief": "",
+      "description": "size_t object_size; /**< Size of objects in this pool.",
+      "file": "aroma_slab_alloc.h",
+      "url": "#type-aromamemorysystem"
+    },
+    {
+      "name": "AromaSlabAllocator",
+      "type": "data_type",
+      "brief": "",
+      "description": "struct AromaSlabAllocatorPage* next_page; /**< Next page in the chain.",
+      "file": "aroma_slab_alloc.h",
+      "url": "#type-aromaslaballocator"
+    },
+    {
+      "name": "AromaSlabAllocatorPage",
+      "type": "data_type",
+      "brief": "",
+      "description": "struct AromaFreeSlot* next; /**< Pointer to next free slot.",
+      "file": "aroma_slab_alloc.h",
+      "url": "#type-aromaslaballocatorpage"
+    },
+    {
+      "name": "AromaSlabAllocatorPage",
+      "type": "data_type",
+      "brief": "",
+      "description": "uint8_t data[AROMA_GENERIC_PAGE_SIZE]; /**< Raw data block.",
+      "file": "aroma_slab_alloc.h",
+      "url": "#type-aromaslaballocatorpage"
+    }
+  ],
+  "pages": [
+    {
+      "title": "AromaUI",
+      "filename": "README.md",
+      "url": "#readme",
+      "type": "page"
+    },
+    {
+      "title": "GLPS (Gooey Low-Level Platform Services)",
+      "filename": "readme.md",
+      "url": "#readme",
+      "type": "page"
+    }
+  ],
+  "header_files": [
+    {
+      "name": "aroma_logger.h",
+      "brief": "Logging and debugging utilities. Provides a standardized logging interface with multiple severity levels (INFO, WARNING, ERROR, CRITICAL), helper macros for calling them with file/line context, and utilities for debugging like memory dumping.",
+      "description": "",
+      "url": "#file-aroma_logger-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_ui.h",
+      "brief": "Core UI definitions and functions for AromaUI. This file contains the main API for initializing the library, creating windows, managing the event loop, and helper functions to create widgets.",
+      "description": "",
+      "url": "#file-aroma_ui-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma.h",
+      "brief": "Public API umbrella header. This header includes all necessary components of the AromaUI framework. Users should typically include this file to access the library's functionality. See docs/API.md for module-level documentation.",
+      "description": "",
+      "url": "#file-aroma-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_window.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_window-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_time.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_time-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_drawlist.h",
+      "brief": "Primitives for buffering drawing commands. The draw list system allows widgets to emit drawing commands that are buffered and executed later during the rendering phase, potentially allowing for batching and optimization.",
+      "description": "",
+      "url": "#file-aroma_drawlist-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_node.h",
+      "brief": "Scene graph node and layout system. Defines the base unit of the UI tree (AromaNode), along with layout properties (Flexbox, Grid, Anchoring) and dirty state management for efficient rendering.",
+      "description": "",
+      "url": "#file-aroma_node-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_timer.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_timer-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_event.h",
+      "brief": "Input and system event handling subsystem. Defines the event structures, types, and the event dispatcher mechanism used to propagate inputs (mouse, keyboard, etc.) and system events (window resize) to UI nodes.",
+      "description": "",
+      "url": "#file-aroma_event-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_font.h",
+      "brief": "Font loading, metrics, and management. Provides functions to load fonts from files or memory and query their metrics (text width, line height, etc.).",
+      "description": "",
+      "url": "#file-aroma_font-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_common.h",
+      "brief": "Common definitions and data structures for AromaUI.",
+      "description": "",
+      "url": "#file-aroma_common-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_widgets.h",
+      "brief": "Umbrella header for all AromaUI widgets. This file includes all available widget headers.",
+      "description": "",
+      "url": "#file-aroma_widgets-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_platform_interface.h",
+      "brief": "Abstract interface for platform-specific operations. Defines the virtual table (struct AromaPlatformInterface) that backends (Android, SDL, TFT, etc.) must implement to handle window creation, input loops, rendering context management, and platform-specific capabilities (permissions, hardware access).",
+      "description": "",
+      "url": "#file-aroma_platform_interface-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_slab_alloc.h",
+      "brief": "Slab-based memory allocator for UI nodes and widgets. Provides a custom memory allocator to efficiently manage creation and destruction of UI nodes and widget data structures, reducing fragmentation and malloc overhead.",
+      "description": "",
+      "url": "#file-aroma_slab_alloc-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_ubuntu_font.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_ubuntu_font-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_android.h",
+      "brief": "Android-specific platform APIs. These functions are available only when compiling for Android (__ANDROID__ is defined). They provide access to Android system services, permissions, and intents.",
+      "description": "",
+      "url": "#file-aroma_android-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_style.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_style-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_radiobutton.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_radiobutton-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_tooltip.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_tooltip-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_card.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_card-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_dropdown.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_dropdown-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_divider.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_divider-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_iconbutton.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_iconbutton-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_checkbox.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_checkbox-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_switch.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_switch-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_sidebar.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_sidebar-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_textbox.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_textbox-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_debug_overlay.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_debug_overlay-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_menu.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_menu-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_image.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_image-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_listview.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_listview-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_fab.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_fab-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_chip.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_chip-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_button.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_button-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_snackbar.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_snackbar-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_container.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_container-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_progressbar.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_progressbar-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_tabs.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_tabs-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_label.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_label-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_dialog.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_dialog-h",
+      "type": "header_file"
+    },
+    {
+      "name": "aroma_slider.h",
+      "brief": "",
+      "description": "",
+      "url": "#file-aroma_slider-h",
+      "type": "header_file"
+    }
+  ]
+}
