@@ -9,6 +9,7 @@ import re
 import urllib.request
 import zipfile
 import ssl
+import time
 
 class Colors:
     HEADER = '\033[95m'
@@ -443,6 +444,97 @@ def cmd_build(args):
         else:
              print_error("Build finished but APK not found.")
 
+def check_and_start_emulator():
+    android_home = os.environ.get("ANDROID_HOME") or os.path.expanduser("~/Android/Sdk")
+    if not os.path.exists(android_home):
+        print_error("Android SDK not found. Install it first.")
+        return False
+        
+    cmdline_tools = os.path.join(android_home, "cmdline-tools", "latest", "bin")
+    sdkmanager = os.path.join(cmdline_tools, "sdkmanager")
+    avdmanager = os.path.join(cmdline_tools, "avdmanager")
+    emulator_bin = os.path.join(android_home, "emulator", "emulator")
+    
+    # 1. Check if emulator is running
+    res = run_command(["adb", "devices"], capture_output=True)
+    if res and "emulator-" in res.stdout:
+        print_info("Emulator is already running.")
+        return True
+        
+    print_step("Checking Emulator requirements...")
+    
+    # 2. Check components
+    img_pkg = "system-images;android-34;google_apis;x86_64"
+    if platform.machine() in ["arm64", "aarch64"]:
+        img_pkg = "system-images;android-34;google_apis;arm64-v8a"
+        
+    packages_needed = []
+    
+    sys_img_path = os.path.join(android_home, img_pkg.replace(";", os.sep))
+    if not os.path.exists(sys_img_path):
+        packages_needed.append(img_pkg)
+        
+    if not os.path.exists(emulator_bin):
+        packages_needed.append("emulator")
+        
+    if packages_needed:
+        print_info(f"Installing missing components: {', '.join(packages_needed)}")
+        
+        try:
+            cmd_lic = ["bash", sdkmanager, "--licenses"] if platform.system() == "Linux" else [sdkmanager, "--licenses"]
+            p = subprocess.Popen(cmd_lic, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            p.communicate(input=b"y\n" * 50)
+        except: pass
+        
+        cmd_install = ["bash", sdkmanager] + packages_needed if platform.system() == "Linux" else [sdkmanager] + packages_needed
+        res = run_command(cmd_install)
+        if not res or res.returncode != 0:
+            print_error("Failed to install emulator components.")
+            return False
+
+    # 3. Check AVD
+    avd_name = "aroma_emu"
+    # Ensure avdmanager handles list correctly
+    cmd_avd = ["bash", avdmanager] if platform.system() == "Linux" else [avdmanager]
+    res = run_command(cmd_avd + ["list", "avd", "-c"], capture_output=True)
+    existing = res.stdout.strip().splitlines() if res else []
+    
+    if avd_name not in existing:
+        print_step(f"Creating AVD '{avd_name}'...")
+        create_cmd = cmd_avd + ["create", "avd", "-n", avd_name, "-k", img_pkg, "--device", "pixel", "--force"]
+
+        try:
+            p = subprocess.Popen(create_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate(input=b"no\n")
+            if p.returncode != 0:
+                print_error(f"Failed to create AVD: {err.decode()}")
+                return False
+        except Exception as e:
+            print_error(f"Error creating AVD: {e}")
+            return False
+            
+    # 4. Start Emulator
+    print_step(f"Starting AVD '{avd_name}'...")
+    log_file = open("emulator.log", "w")
+    try:
+        subprocess.Popen([emulator_bin, "-avd", avd_name, "-no-snapshot-load", "-no-boot-anim"], stdout=log_file, stderr=log_file)
+    except Exception as e:
+        print_error(f"Failed to start emulator: {e}")
+        return False
+    
+    print_info("Waiting for device connection...")
+    run_command(["adb", "wait-for-device"])
+    
+    print_info("Waiting for boot completion...")
+    while True:
+        res = run_command(["adb", "shell", "getprop", "sys.boot_completed"], capture_output=True)
+        if res and res.stdout.strip() == "1":
+            break
+        time.sleep(2)
+        
+    print_success("Emulator ready.")
+    return True
+
 def cmd_run(args):
     cmd_build(args) 
     
@@ -465,6 +557,11 @@ def cmd_run(args):
             print_error("Executable not found. Did you run 'aroma build linux'?")
 
     elif args.platform == "android":
+        if args.emu:
+            if not check_and_start_emulator():
+                print_error("Failed to setup/start emulator.")
+                return
+
         print_step("Checking connected devices...")
         res = run_command(["adb", "devices"], capture_output=True)
         if not res or "device" not in res.stdout.replace("List of devices attached", "").strip():
@@ -522,6 +619,7 @@ def main():
     
     run_p = subparsers.add_parser("run", help="Run project")
     run_p.add_argument("platform", choices=["linux", "android"], default="linux", nargs="?")
+    run_p.add_argument("--emu", action="store_true", help="Run in emulator (auto-installs if needed)")
     
     if len(sys.argv) == 1:
         parser.print_help()

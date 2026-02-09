@@ -19,6 +19,7 @@
 #include "aroma_ui.h"
 #include "aroma_widgets.h"
 #include "aroma_ubuntu_font.h"
+#include "aroma_android.h"
 
 #endif 
 
