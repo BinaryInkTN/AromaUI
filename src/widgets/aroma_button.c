@@ -120,6 +120,10 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->text_x = 0;
     button->text_y = 0;
 
+    button->icon[0] = '\0';
+    button->icon_font = NULL;
+    button->icon_padding = -100;
+
     aroma_button_update_text_position(button);
 
     LOG_INFO("Button created: label='%s', x=%d, y=%d, w=%d, h=%d", label, x, y, width, height);
@@ -197,6 +201,41 @@ void aroma_button_set_colors(AromaNode* button_node, uint32_t idle_color, uint32
     aroma_node_invalidate(button_node);
 }
 
+static void __aroma_button_autosize(AromaButton* button) {
+    if (!button) return;
+    
+    int content_width = 0;
+    
+    // Measure Text
+    if (button->font && button->label[0] != '\0') {
+        int raw_w = aroma_font_get_line_width(button->font, button->label);
+        content_width += (int)(raw_w * button->text_scale);
+    }
+    
+    // Measure Icon
+    if (button->icon_font && button->icon[0] != '\0') {
+        int raw_icon_w = aroma_font_get_line_width(button->icon_font, button->icon);
+        int raw_icon_h = aroma_font_get_line_height(button->icon_font);
+        
+        float scale = 1.0f;
+        if (raw_icon_h > 0 && button->rect.height > 0) {
+            scale = (button->rect.height * 0.6f) / (float)raw_icon_h;
+        }
+        
+        content_width += (int)(raw_icon_w * scale);
+        
+        // Add gap if both present
+        if (button->font && button->label[0] != '\0') {
+            content_width += button->icon_padding;
+        }
+    }
+    
+    // If we have content, update width
+    if (content_width > 0) {
+        button->rect.width = content_width + 24;
+    }
+}
+
 void aroma_button_set_font(AromaNode* button_node, AromaFont* font)
 {
     if (!button_node) return;
@@ -204,8 +243,26 @@ void aroma_button_set_font(AromaNode* button_node, AromaFont* font)
     if (!button) return;
 
     button->font = font;
-    button->rect.width = aroma_font_get_line_width(font, button->label) + 20; // Add padding
+    __aroma_button_autosize(button);
     aroma_button_update_text_position(button);
+    aroma_node_invalidate(button_node);
+}
+
+void aroma_button_set_icon(AromaNode* button_node, const char* icon, AromaFont* icon_font)
+{
+    if (!button_node) return;
+    AromaButton* button = (AromaButton*)button_node->node_widget_ptr;
+    if (!button) return;
+    
+    if (icon) {
+        strncpy(button->icon, icon, 7);
+        button->icon[7] = '\0';
+    } else {
+        button->icon[0] = '\0';
+    }
+    
+    button->icon_font = icon_font;
+    __aroma_button_autosize(button);
     aroma_node_invalidate(button_node);
 }
 
@@ -357,20 +414,54 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
         button->corner_radius
     );
 
-    if (button->label[0] != '\0')
+    if (button->label[0] != '\0' || button->icon[0] != '\0')
     {
         if (gfx->render_text)
         {
             // Recalculate text position dynamically to handle layout updates
             const int padding = 6;
-            float text_x = button->rect.x + (button->rect.width - button->text_width) / 2.0f;
-            if (text_x < button->rect.x + padding) text_x = button->rect.x + padding;
             
-            float text_y = button->rect.y + (button->rect.height - button->line_height) / 2.0f;
+            float icon_scale = button->text_scale;
+            float icon_w = 0;
+            float icon_h_scaled = 0;
 
-            gfx->render_text(window_id, button->font, button->label, 
-                           text_x, text_y, 
-                           button->text_color, button->text_scale);
+            if (button->icon[0] != '\0' && button->icon_font) {
+                int raw_h = aroma_font_get_line_height(button->icon_font);
+                if (raw_h > 0 && button->rect.height > 0) {
+                     float target = button->rect.height * 0.6f;
+                     icon_scale = target / (float)raw_h;
+                }
+                icon_h_scaled = raw_h * icon_scale;
+                icon_w = (float)aroma_font_get_line_width(button->icon_font, button->icon) * icon_scale;
+            }
+            
+            float gap = (button->label[0] != '\0' && button->icon[0] != '\0') ? (float)button->icon_padding : 0;
+            float total_w = icon_w + gap + button->text_width;
+
+            float content_start_x = button->rect.x + (button->rect.width - total_w) / 2.0f;
+            if (content_start_x < button->rect.x + padding) content_start_x = button->rect.x + padding;
+            
+            float current_x = content_start_x;
+
+            // Draw Icon
+            if (button->icon[0] != '\0' && button->icon_font) {
+                float icon_y = button->rect.y + (button->rect.height - icon_h_scaled) / 2.0f;
+                
+                gfx->render_text(window_id, button->icon_font, button->icon,
+                               current_x, icon_y,
+                               button->text_color, icon_scale);
+                
+                current_x += icon_w + gap;
+            }
+
+            // Draw Text
+            if (button->label[0] != '\0') {
+                float text_y = button->rect.y + (button->rect.height - button->line_height) / 2.0f;
+
+                gfx->render_text(window_id, button->font, button->label, 
+                            current_x, text_y, 
+                            button->text_color, button->text_scale);
+            }
         }
     }
 }

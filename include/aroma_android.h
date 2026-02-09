@@ -13,7 +13,7 @@
 
 #include <jni.h>
 #include <stdbool.h>
-#include "aroma_platform_interface.h"
+#include "../src/backends/platforms/aroma_platform_interface.h"
 
 #ifdef __cplusplus
 extern "C" {

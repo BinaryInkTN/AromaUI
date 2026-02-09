@@ -5,7 +5,7 @@
 #include <GLES3/gl3.h>
 #include "linmath.h"
 #include <stdbool.h>
-#include "aroma_platform_interface.h"
+#include "../../platforms/aroma_platform_interface.h"
 
 typedef struct
 {

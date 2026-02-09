@@ -55,30 +55,23 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
         return;
     }
 
+    renderer->face = face; // Store face
     renderer->font_height = face->size->metrics.height >> 6;
+    renderer->glyph_count = 0;
 
-    for (unsigned char c = 32; c < 127; c++) {
-        int glyph_index = c - 32;
-
-        if (glyph_index >= 95) break;
-
+    // Preload ASCII 32-126 for performance
+    for (uint32_t c = 32; c < 127; c++) {
         FT_Error error = FT_Load_Char(face, c, FT_LOAD_RENDER);
-        if (error) {
-            LOG_ERROR("Failed to load glyph %c (0x%02x): %d\n", c, c, error);
-            renderer->glyphs[glyph_index].texture_id = 0;
-            continue;
-        }
+        if (error) continue;
 
         FT_GlyphSlot g = face->glyph;
-        if (!g) {
-            LOG_WARNING("Glyph %c slot is NULL\n", c);
-            renderer->glyphs[glyph_index].texture_id = 0;
-            continue;
-        }
+        if (!g) continue;
+
+        if (renderer->glyph_count >= MAX_GLYPHS) break;
 
         GLES3Glyph glyph = {
+            .codepoint = c,
             .texture_id = 0,
-
             .width = g->bitmap.width,
             .height = g->bitmap.rows,
             .bearing_x = g->bitmap_left,
@@ -90,28 +83,106 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
             GLuint texture;
             glGenTextures(1, &texture);
             glBindTexture(GL_TEXTURE_2D, texture);
-
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, g->bitmap.width, g->bitmap.rows, 0,
                          GL_RED, GL_UNSIGNED_BYTE, g->bitmap.buffer);
-
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glBindTexture(GL_TEXTURE_2D, 0);
-
             glyph.texture_id = texture;
         }
 
-        renderer->glyphs[glyph_index] = glyph;
+        renderer->glyphs[renderer->glyph_count++] = glyph;
     }
 
-    renderer->glyph_count = 95;
-
-    LOG_INFO("Loaded glyphs: %d\n", renderer->glyph_count);
+    LOG_INFO("Loaded initial glyphs: %d\n", renderer->glyph_count);
 }
+
+// Helper: Get or load glyph
+static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) {
+    // Search cache
+    for (int i = 0; i < renderer->glyph_count; i++) {
+        if (renderer->glyphs[i].codepoint == codepoint) {
+            return &renderer->glyphs[i];
+        }
+    }
+
+    // Not found, load it
+    if (renderer->glyph_count >= MAX_GLYPHS) {
+        // Cache full - simple strategy: do not load (or implement eviction)
+        // For icons, this might be an issue if we have > 512 distinct chars
+        return NULL;
+    }
+
+    if (!renderer->face) return NULL;
+
+    FT_Error error = FT_Load_Char(renderer->face, codepoint, FT_LOAD_RENDER);
+    if (error) return NULL;
+
+    FT_GlyphSlot g = renderer->face->glyph;
+    if (!g) return NULL;
+
+    GLES3Glyph glyph = {
+        .codepoint = codepoint,
+        .texture_id = 0,
+        .width = g->bitmap.width,
+        .height = g->bitmap.rows,
+        .bearing_x = g->bitmap_left,
+        .bearing_y = g->bitmap_top,
+        .advance = (int)(g->advance.x >> 6)
+    };
+
+    if (g->bitmap.width > 0 && g->bitmap.rows > 0 && g->bitmap.buffer) {
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, g->bitmap.width, g->bitmap.rows, 0,
+                     GL_RED, GL_UNSIGNED_BYTE, g->bitmap.buffer);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glyph.texture_id = texture;
+    }
+
+    renderer->glyphs[renderer->glyph_count] = glyph;
+    return &renderer->glyphs[renderer->glyph_count++];
+}
+
+static uint32_t __utf8_next(const char** p) {
+    const unsigned char* s = (const unsigned char*)*p;
+    uint32_t c = *s;
+    if (c == 0) return 0;
+
+    int len = 0;
+    if (c < 0x80) len = 1;
+    else if ((c & 0xE0) == 0xC0) len = 2;
+    else if ((c & 0xF0) == 0xE0) len = 3;
+    else if ((c & 0xF8) == 0xF0) len = 4;
+    else len = 1; // Invalid
+
+    if (len == 1) {
+        *p += 1;
+        return c;
+    }
+    
+    // Simple decoding
+    uint32_t v = 0;
+    if (len == 2) v = c & 0x1F;
+    else if (len == 3) v = c & 0x0F;
+    else if (len == 4) v = c & 0x07;
+
+    for (int i = 1; i < len; i++) {
+        v = (v << 6) | (s[i] & 0x3F);
+    }
+    *p += len;
+    return v;
+}
+
 
 void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
                             const char* text, float x, float y, float scale,
@@ -154,19 +225,16 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
 
     float current_x = x;
     int glyphs_rendered = 0;
+    
+    const char* p = text;
+    while (*p != '\0') {
+        uint32_t codepoint = __utf8_next(&p);
+        if (codepoint == 0) break;
 
-    for (const char* c = text; *c != '\0'; c++) {
-        unsigned char ch = (unsigned char)*c;
-
-        if (ch < 32 || ch >= 127) {
-            continue;
-        }
-
-        int glyph_index = ch - 32;
-        GLES3Glyph* g = &renderer->glyphs[glyph_index];
+        GLES3Glyph* g = __get_glyph(renderer, codepoint);
+        if (!g) continue;
 
         if (g->texture_id == 0) {
-
             current_x += g->advance * scale;
             continue;
         }
@@ -184,19 +252,12 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
         float h = (float)g->height * scale;
 
         float vertices[6][4] = {
-
             { x_pos,     y_pos,       0.0f, 1.0f },
-
             { x_pos,     y_pos + h,   0.0f, 0.0f },
-
             { x_pos + w, y_pos + h,   1.0f, 0.0f },
-
             { x_pos,     y_pos,       0.0f, 1.0f },
-
             { x_pos + w, y_pos + h,   1.0f, 0.0f },
-
             { x_pos + w, y_pos,       1.0f, 1.0f }
-
         };
 
         glBindTexture(GL_TEXTURE_2D, g->texture_id);
@@ -210,30 +271,38 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
 
     glDisable(GL_BLEND);
     glBindVertexArray(0);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     (void)glyphs_rendered;
 }
 
+// Helper declaration
+static uint32_t __utf8_next(const char** p);
+static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint);
+
 float gles3_text_measure_text(const GLES3TextRenderer* renderer, const char* text, float scale) {
     if (!renderer || !text || scale <= 0.0f) {
         return 0.0f;
     }
+    
+    // We cannot load glyphs in measure_text because it is const GLES3TextRenderer*
+    // However, for layout purposes, we really should. 
+    // But for now, let's just assume simple measurement or cast away const if really needed.
+    // Casting away const is unsafe if called from thread, but this is UI thread single threaded mostly.
+    
+    GLES3TextRenderer* mutable_renderer = (GLES3TextRenderer*)renderer;
 
     float width = 0.0f;
-    for (const char* c = text; *c != '\0'; ++c) {
-        unsigned char ch = (unsigned char)(*c);
-        if (ch < 32 || ch >= 127) {
-            continue;
+    const char* p = text;
+    while (*p != '\0') {
+        uint32_t codepoint = __utf8_next(&p);
+        if (codepoint == 0) break;
+        
+        GLES3Glyph* g = __get_glyph(mutable_renderer, codepoint);
+        if (g) {
+            width += (float)g->advance * scale;
         }
-
-        int glyph_index = ch - 32;
-        if (glyph_index < 0 || glyph_index >= renderer->glyph_count) {
-            continue;
-        }
-
-        const GLES3Glyph* glyph = &renderer->glyphs[glyph_index];
-        width += (float)glyph->advance * scale;
     }
 
     return width;

@@ -20,6 +20,7 @@
 #include "widgets/aroma_label.h"
 #include "widgets/aroma_divider.h"
 #include "widgets/aroma_iconbutton.h"
+#include "widgets/aroma_icon.h"
 #include "widgets/aroma_dialog.h"
 #include "widgets/aroma_listview.h"
 #include "widgets/aroma_menu.h"

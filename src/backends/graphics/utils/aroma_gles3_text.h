@@ -8,7 +8,10 @@
 #include FT_FREETYPE_H
 #include <stdint.h>
 
+#define MAX_GLYPHS 512
+
 typedef struct {
+    uint32_t codepoint; // Added codepoint
     uint32_t texture_id;
     int width;
     int height;
@@ -18,11 +21,12 @@ typedef struct {
 } GLES3Glyph;
 
 typedef struct {
-    GLES3Glyph glyphs[128];
+    GLES3Glyph glyphs[MAX_GLYPHS];
     int glyph_count;
     GLuint vao;
     GLuint vbo;
     int font_height;
+    FT_Face face; // Store FT_Face reference for on-demand loading
 } GLES3TextRenderer;
 
 int gles3_text_renderer_init(GLES3TextRenderer* renderer);

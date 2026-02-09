@@ -5,7 +5,7 @@
 #include "aroma_ui.h"
 #include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
-#include "aroma_platform_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 

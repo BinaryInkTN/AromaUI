@@ -29,7 +29,7 @@
 #include "aroma_ui.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
-#include "aroma_platform_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include <string.h>
 
 #define AROMA_SIDEBAR_CONTENT_MAX 16

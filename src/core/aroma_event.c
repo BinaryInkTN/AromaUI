@@ -21,10 +21,14 @@
 
 #include "core/aroma_event.h"
 #include "core/aroma_node.h"
+#include "aroma_ui.h"
 #include "core/aroma_common.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_logger.h"
 #include "widgets/aroma_dropdown.h"
+#include "backends/aroma_abi.h"
+#include "backends/platforms/aroma_platform_interface.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -423,9 +427,7 @@ void aroma_event_process_queue(void) {
 
     aroma_event_resync_hover();
 }
-#include "aroma_ui.h"
-#include "backends/aroma_abi.h"
-#include "aroma_platform_interface.h"
+
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     if (!g_event_system.root_node || g_event_system.shutting_down) return;

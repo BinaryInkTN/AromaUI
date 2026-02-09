@@ -44,11 +44,19 @@ typedef struct AromaButton {
     void* user_data;
 
     AromaFont* font;
+    
+    // Icon support
+    char icon[8];
+    AromaFont* icon_font;
+    int icon_padding;
+    
     AromaRect text_bounds;
     bool layout_dirty;
 } AromaButton;
 
 AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int y, int width, int height);
+
+void aroma_button_set_icon(AromaNode* button_node, const char* icon, AromaFont* icon_font);
 
 void aroma_button_set_on_click(AromaNode* button_node, bool (*on_click)(AromaNode*, void*), void* user_data);
 

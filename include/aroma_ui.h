@@ -18,7 +18,9 @@
 #include "aroma_slab_alloc.h"
 #include "aroma_style.h"
 #include "aroma_widgets.h"
+#include "aroma_material_icons.h"
 #include "aroma_drawlist.h"
+#include "aroma_material_font.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -56,6 +58,7 @@ typedef struct AromaSnackbar AromaSnackbar;
 typedef struct AromaTabs AromaTabs;
 typedef struct AromaSidebar AromaSidebar;
 typedef struct AromaDebugOverlay AromaDebugOverlay;
+typedef struct AromaIcon AromaIcon;
 
 /**
  * @struct AromaWindowHandle
@@ -432,6 +435,39 @@ static inline AromaNode* aroma_ui_button(
 }
 
 /**
+ * @brief Helper to create a button widget with an icon.
+ * 
+ * @param parent Parent node.
+ * @param text Button label text.
+ * @param x X position relative to parent.
+ * @param y Y position relative to parent.
+ * @param width Button width.
+ * @param height Button height.
+ * @param on_click Callback function for click event.
+ * @param user_data User data passed to callback.
+ * @param font Font to use for label (optional).
+ * @param icon_code Icon codepoint (e.g. AROMA_ICON_HOME).
+ * @param icon_font Font containing the icons.
+ * @return Pointer to the created button node.
+ */
+static inline AromaNode* aroma_ui_button_with_icon(
+    AromaNode* parent,
+    const char* text,
+    int x, int y, int width, int height,
+    bool (*on_click)(AromaNode*, void*),
+    void* user_data,
+    AromaFont* font,
+    const char* icon_code,
+    AromaFont* icon_font
+) {
+    AromaNode* btn = aroma_ui_button(parent, text, x, y, width, height, on_click, user_data, font);
+    if (btn && icon_code && icon_font) {
+        aroma_button_set_icon(btn, icon_code, icon_font);
+    }
+    return btn;
+}
+
+/**
  * @brief Helper to create a label widget.
  * 
  * @param parent Parent node.
@@ -490,6 +526,35 @@ static inline AromaNode* aroma_ui_image_mem(
     int x, int y, int width, int height
 ) {
     return aroma_image_create_from_memory(parent, data, len, x, y, width, height);
+}
+
+/**
+ * @brief Helper to create an icon widget.
+ * 
+ * @param parent Parent node.
+ * @param icon_code Icon codepoint string (e.g. AROMA_ICON_HOME).
+ * @param x X-coordinate.
+ * @param y Y-coordinate.
+ * @param size Icon size (width/height).
+ * @param color Icon color.
+ * @param font Font containing the icons (e.g. Material Icons font).
+ * @return Pointer to the new icon node.
+ */
+static inline AromaNode* aroma_ui_icon(
+    AromaNode* parent,
+    const char* icon_code,
+    int x, int y, int size,
+    uint32_t color,
+    AromaFont* font
+) {
+    AromaNode* node = aroma_icon_create(parent, x, y, size);
+    if (node) {
+        if (icon_code && font) {
+            aroma_icon_set_text(node, icon_code, font);
+        }
+        aroma_icon_set_color(node, color);
+    }
+    return node;
 }
 
 /**
