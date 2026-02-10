@@ -383,23 +383,56 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
         }
 
         if (tabs->font && gfx->render_text) {
-            int line_height = aroma_font_get_line_height(tabs->font);
             uint32_t text_color = selected ? tabs->text_selected_color : tabs->text_color;
-            int text_y = tabs->rect.y + (tabs->rect.height - line_height) / 2;
             
-            int text_x = x + 12;
+            int gap = -80;
+                        int text_w = 0;
+            int icon_w = 0;
+            float icon_scale = 1.0f;
+            
+            // Calculate text width
+            if (tabs->labels[i][0] != '\0') {
+                text_w = aroma_font_get_line_width(tabs->font, tabs->labels[i]) * tabs->text_scale;
+            }
+
+            // Calculate icon dimensions and scale
             if (tabs->icons[i][0] != '\0' && tabs->icon_font) {
-                 int icon_line_h = aroma_font_get_line_height(tabs->icon_font);
-                 int icon_y = tabs->rect.y + (tabs->rect.height / 2) - (icon_line_h / 2) + 2; 
+                 int default_icon_h = aroma_font_get_line_height(tabs->icon_font);
+                 
+                 // Autosize icon to approx 50% of tab height
+                 int target_h = tabs->rect.height * 0.5f;
+                 // But don't exceed reasonable limits relative to width if narrow
+                 if (target_h > w * 0.8f) target_h = w * 0.8f;
+                 
+                 if (default_icon_h > 0)
+                    icon_scale = (float)target_h / (float)default_icon_h;
+                 
+                 icon_w = aroma_font_get_line_width(tabs->icon_font, tabs->icons[i]) * icon_scale;
+            }
+
+            // Calculate total content width and starting positions (Centered)
+            int total_w = icon_w + ((icon_w > 0 && text_w > 0) ? gap : 0) + text_w;
+            int start_x = x + (w - total_w) / 2;
+            int center_y = tabs->rect.y + (tabs->rect.height / 2);
+
+            // Render Icon
+            if (icon_w > 0) {
+                 int icon_line_h = aroma_font_get_line_height(tabs->icon_font) * icon_scale;
+                 int icon_y = center_y - (icon_line_h / 2); 
                  
                  gfx->render_text(window_id, tabs->icon_font, tabs->icons[i], 
-                     text_x, icon_y, text_color, 1.0f);
+                     start_x, icon_y, text_color, icon_scale);
                  
-                 int icon_w = aroma_font_get_line_width(tabs->icon_font, tabs->icons[i]);
-                 text_x += icon_w + 8;
+                 start_x += icon_w + gap;
             }
             
-            gfx->render_text(window_id, tabs->font, tabs->labels[i], text_x, text_y, text_color, tabs->text_scale);
+            // Render Text
+            if (text_w > 0) {
+                int line_height = aroma_font_get_line_height(tabs->font) * tabs->text_scale;
+                int text_y = center_y - (line_height / 2);
+                
+                gfx->render_text(window_id, tabs->font, tabs->labels[i], start_x, text_y, text_color, tabs->text_scale);
+            }
         }
     }
 }
