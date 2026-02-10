@@ -804,6 +804,24 @@ static inline AromaNode* aroma_ui_chip(
     return chip;
 }
 
+static inline AromaNode* aroma_ui_chip_with_icon(
+    AromaNode* parent,
+    const char* label,
+    int x, int y,
+    AromaChipType type,
+    void (*callback)(void*),
+    void* user_data,
+    AromaFont* font,
+    const char* icon_code,
+    AromaFont* icon_font
+) {
+    AromaNode* chip = aroma_ui_chip(parent, label, x, y, type, callback, user_data, font);
+    if (chip && icon_code && icon_font) {
+        aroma_chip_set_icon(chip, icon_code, icon_font);
+    }
+    return chip;
+}
+
 /**
  * @brief Create a card helper.
  * 
@@ -975,6 +993,28 @@ static inline AromaNode* aroma_ui_tabs(
     return tabs;
 }
 
+static inline AromaNode* aroma_ui_tabs_with_icons(
+    AromaNode* parent,
+    int x, int y, int width, int height,
+    const char** labels, 
+    const char** icons,
+    int count,
+    void (*on_change)(AromaNode*, int, void*),
+    void* user_data,
+    AromaFont* font,
+    AromaFont* icon_font
+) {
+    AromaNode* tabs = aroma_ui_tabs(parent, x, y, width, height, labels, count, on_change, user_data, font);
+    if (tabs && icons && icon_font) {
+        for (int i = 0; i < count; i++) {
+            if (icons[i]) {
+                aroma_tabs_set_icon(tabs, i, icons[i], icon_font);
+            }
+        }
+    }
+    return tabs;
+}
+
 /**
  * @brief Create a snackbar helper.
  * 
@@ -1051,6 +1091,28 @@ static inline AromaNode* aroma_ui_sidebar(
         if (on_select) aroma_sidebar_set_on_select(sb, on_select, user_data);
         if (font) aroma_sidebar_set_font(sb, font);
         aroma_sidebar_setup_events(sb, aroma_ui_request_redraw, NULL);
+    }
+    return sb;
+}
+
+static inline AromaNode* aroma_ui_sidebar_with_icons(
+    AromaNode* parent,
+    int x, int y, int width, int height,
+    const char** labels,
+    const char** icons,
+    int count,
+    void (*on_select)(AromaNode*, int, void*),
+    void* user_data,
+    AromaFont* font,
+    AromaFont* icon_font
+) {
+    AromaNode* sb = aroma_ui_sidebar(parent, x, y, width, height, labels, count, on_select, user_data, font);
+    if (sb && icons && icon_font) {
+        for (int i = 0; i < count; i++) {
+            if (icons[i]) {
+                aroma_sidebar_set_icon(sb, i, icons[i], icon_font);
+            }
+        }
     }
     return sb;
 }

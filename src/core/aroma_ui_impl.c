@@ -24,6 +24,9 @@ void aroma_android_set_app(struct android_app* state) {
 }
 #endif
 
+// Forward declaration
+static void __window_update_callback(size_t window_id, void* data);
+
 #ifdef ESP32
 #include <Arduino.h>
 #endif
@@ -115,6 +118,13 @@ bool aroma_ui_init_impl(void) {
 
     if (getenv("AROMA_UI_IMMEDIATE") && getenv("AROMA_UI_IMMEDIATE")[0] == '1')
         aroma_ui_set_immediate_mode(true);
+    else
+        aroma_ui_set_immediate_mode(false); // Default to on-demand redraw
+
+    // Set callback if platform supports it
+    if (platform && platform->set_window_update_callback) {
+        platform->set_window_update_callback(__window_update_callback, NULL);
+    }
 
     g_ui_initialized = true;
     LOG_INFO("Aroma UI initialized successfully");
@@ -126,7 +136,12 @@ bool aroma_ui_is_immediate_mode(void) { return g_immediate_mode; }
 
 void aroma_ui_request_redraw(void* user_data) {
     (void)user_data;
-    if (g_main_window) aroma_node_invalidate(g_main_window);
+    if (g_main_window) {
+        aroma_node_invalidate(g_main_window);
+        
+        // Ensure dirty list is updated and wake up the loop if needed
+        aroma_ui_render_all_windows_impl();
+    }
 }
 
 bool aroma_ui_consume_redraw(void) {
@@ -189,7 +204,6 @@ void aroma_ui_render_all_windows_impl(void) {
 static void __window_update_callback(size_t window_id, void* data) {
     (void)data;
     if (!aroma_ui_consume_redraw()) {
-      
         return;
     }
 
@@ -203,6 +217,7 @@ static void __window_update_callback(size_t window_id, void* data) {
     aroma_graphics_swap_buffers(window_id);
     #endif
    
+    aroma_dirty_list_clear(); // Ensure we clear the dirty list after processing
 }
 
 #include "aroma_ubuntu_font.h"
@@ -421,9 +436,7 @@ void aroma_ui_end_frame(size_t window_id) {
 void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
     size_t dirty_count = 0;
     AromaNode** dirty_nodes = aroma_dirty_list_get(&dirty_count);
-    #ifdef ESP32
-        aroma_dirty_list_clear();
-    #endif
+    
     if (dirty_count == 0 && !aroma_ui_is_immediate_mode()) return;
 
     #ifndef ESP32
@@ -470,10 +483,4 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
 
     if (!frame_active)
         aroma_ui_end_frame(window_id);
-    
-    #ifndef ESP32
-    aroma_dirty_list_clear();
-    #endif
-    
-
 }

@@ -23,6 +23,8 @@ typedef struct AromaChip {
     void (*callback)(void* user_data);
     void* user_data;
     AromaFont* font;
+    char icon[8];
+    AromaFont* icon_font;
     int text_x;
     int text_y;
     bool use_theme_colors;
@@ -90,12 +92,17 @@ static bool __chip_handle_event(AromaEvent* event, void* user_data)
 
 static void __chip_update_layout(AromaChip* chip)
 {
+    int icon_w = (chip->icon[0] != '\0') ? 24 : 0;
+    int gap = (chip->icon[0] != '\0' && chip->label[0] != '\0') ? 8 : 0;
     
-    chip->rect.width = 80 + (chip->label ? strlen(chip->label) * 7 : 0);
+    chip->rect.width = 32 + icon_w + gap + (chip->label ? strlen(chip->label) * 8 : 0);
+    if (chip->rect.width < 64) chip->rect.width = 64;
+
     chip->rect.height = 32;
     chip->border_radius = 8.0f;
-    chip->text_x = chip->rect.x + 12;
-    chip->text_y = chip->rect.y + chip->rect.height / 2 + 8;
+    
+    chip->text_x = chip->rect.x + 12 + icon_w + gap;
+    chip->text_y = chip->rect.y + chip->rect.height / 2 + 5;
 }
 
 AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label, AromaChipType type) {
@@ -117,6 +124,8 @@ AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label,
     chip->callback = NULL;
     chip->user_data = NULL;
     chip->font = NULL;
+    chip->icon[0] = '\0';
+    chip->icon_font = NULL;
     chip->text_x = 0;
     chip->text_y = 0;
     chip->use_theme_colors = true;
@@ -166,6 +175,22 @@ void aroma_chip_set_font(AromaNode* chip_node, AromaFont* font) {
     chip->font = font;
 }
 
+void aroma_chip_set_icon(AromaNode* chip_node, const char* icon, AromaFont* icon_font) {
+    if (!chip_node) return;
+    AromaChip* chip = (AromaChip*)chip_node->node_widget_ptr;
+    if (!chip) return;
+    
+    if (icon) {
+        strncpy(chip->icon, icon, 7);
+        chip->icon[7] = '\0';
+    } else {
+        chip->icon[0] = '\0';
+    }
+    chip->icon_font = icon_font;
+    __chip_update_layout(chip);
+    aroma_node_invalidate(chip_node);
+}
+
 void aroma_chip_draw(AromaNode* chip_node, size_t window_id) {
     if (!chip_node) return;
     AromaChip* chip = (AromaChip*)chip_node->node_widget_ptr;
@@ -197,6 +222,12 @@ void aroma_chip_draw(AromaNode* chip_node, size_t window_id) {
         gfx->draw_hollow_rectangle(window_id, chip->rect.x, chip->rect.y,
                                    chip->rect.width, chip->rect.height,
                                    0x79747E, 1, true, chip->border_radius);
+    }
+
+    if (chip->icon[0] != '\0' && chip->icon_font) {
+         int icon_y = chip->rect.y + (chip->rect.height / 2) + 5;
+         gfx->render_text(window_id, chip->icon_font, chip->icon, 
+             chip->rect.x + 8, icon_y, chip->text_color, 1.0f);
     }
 
     if (gfx->render_text && chip->font && chip->label[0]) {

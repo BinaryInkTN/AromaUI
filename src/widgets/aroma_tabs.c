@@ -36,6 +36,8 @@
 struct AromaTabs {
     AromaRect rect;
     char labels[AROMA_TABS_MAX][AROMA_TAB_LABEL_MAX];
+    char icons[AROMA_TABS_MAX][8];
+    AromaFont* icon_font;
     int count;
     int selected_index;
     int hovered_index;
@@ -293,6 +295,26 @@ void aroma_tabs_set_content(AromaNode* tabs_node, int index, AromaNode** content
     __tabs_update_content_visibility(tabs);
 }
 
+void aroma_tabs_set_icon(AromaNode* tabs_node, int index, const char* icon_code, AromaFont* icon_font) {
+    if (!tabs_node || !tabs_node->node_widget_ptr) return;
+    AromaTabs* tabs = (AromaTabs*)tabs_node->node_widget_ptr;
+    
+    if (index < 0 || index >= tabs->count) return;
+    
+    if (icon_code) {
+        strncpy(tabs->icons[index], icon_code, 7);
+        tabs->icons[index][7] = '\0';
+    } else {
+        tabs->icons[index][0] = '\0';
+    }
+    
+    if (icon_font) {
+        tabs->icon_font = icon_font;
+    }
+    
+    aroma_node_invalidate(tabs_node);
+}
+
 bool aroma_tabs_setup_events(AromaNode* tabs_node, void (*on_redraw_callback)(void*), void* user_data)
 {
     (void)user_data;
@@ -364,7 +386,20 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
             int line_height = aroma_font_get_line_height(tabs->font);
             uint32_t text_color = selected ? tabs->text_selected_color : tabs->text_color;
             int text_y = tabs->rect.y + (tabs->rect.height - line_height) / 2;
-            gfx->render_text(window_id, tabs->font, tabs->labels[i], x + 12, text_y, text_color, tabs->text_scale);
+            
+            int text_x = x + 12;
+            if (tabs->icons[i][0] != '\0' && tabs->icon_font) {
+                 int icon_line_h = aroma_font_get_line_height(tabs->icon_font);
+                 int icon_y = tabs->rect.y + (tabs->rect.height / 2) - (icon_line_h / 2) + 2; 
+                 
+                 gfx->render_text(window_id, tabs->icon_font, tabs->icons[i], 
+                     text_x, icon_y, text_color, 1.0f);
+                 
+                 int icon_w = aroma_font_get_line_width(tabs->icon_font, tabs->icons[i]);
+                 text_x += icon_w + 8;
+            }
+            
+            gfx->render_text(window_id, tabs->font, tabs->labels[i], text_x, text_y, text_color, tabs->text_scale);
         }
     }
 }

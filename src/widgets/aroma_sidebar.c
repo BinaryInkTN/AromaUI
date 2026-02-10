@@ -37,6 +37,8 @@
 struct AromaSidebar {
     AromaRect rect;
     char labels[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_LABEL_MAX];
+    char icons[AROMA_SIDEBAR_MAX_ITEMS][8];
+    AromaFont* icon_font;
     int count;
     int selected_index;
     int hovered_index;
@@ -268,6 +270,26 @@ void aroma_sidebar_set_responsive(AromaNode* sidebar_node, bool enable)
     }
 }
 
+void aroma_sidebar_set_icon(AromaNode* sidebar_node, int index, const char* icon_code, AromaFont* icon_font) {
+    if (!sidebar_node || !sidebar_node->node_widget_ptr) return;
+    AromaSidebar* sidebar = (AromaSidebar*)sidebar_node->node_widget_ptr;
+    
+    if (index < 0 || index >= sidebar->count) return;
+    
+    if (icon_code) {
+        strncpy(sidebar->icons[index], icon_code, 7);
+        sidebar->icons[index][7] = '\0';
+    } else {
+        sidebar->icons[index][0] = '\0';
+    }
+    
+    if (icon_font) {
+        sidebar->icon_font = icon_font;
+    }
+    
+    aroma_node_invalidate(sidebar_node);
+}
+
 void aroma_sidebar_set_retracted(AromaNode* sidebar_node, bool retracted)
 {
     if (!sidebar_node || !sidebar_node->node_widget_ptr) return;
@@ -387,21 +409,48 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
                             sidebar->rect.width - 12, sidebar->item_height - 8,
                             row_color, true, 10.0f);
 
-        if (!sidebar->is_retracted && sidebar->font && gfx->render_text) {
+        if (!sidebar->is_retracted) {
+            int content_x = sidebar->rect.x + 14;
+            int icon_w = 0;
             uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
-            int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
-            int text_y = item_y + (sidebar->item_height - line_height) / 2;
-            gfx->render_text(window_id, sidebar->font, sidebar->labels[i], sidebar->rect.x + 14, text_y, text_color, 1.0f);
-        } else if (sidebar->is_retracted && sidebar->font && gfx->render_text) {
-             // Draw first letter centered if retracted
-             char glyph[2] = { sidebar->labels[i][0], '\0' };
-             if (glyph[0] != '\0') {
-                 float w = gfx->measure_text(window_id, sidebar->font, glyph, 1.0f);
-                 int text_x = sidebar->rect.x + (sidebar->rect.width - (int)w) / 2;
-                 int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
-                 int text_y = item_y + (sidebar->item_height - line_height) / 2;
-                 uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
-                 gfx->render_text(window_id, sidebar->font, glyph, text_x, text_y, text_color, 1.0f);
+
+            if (sidebar->icons[i][0] != '\0' && sidebar->icon_font && gfx->render_text) {
+                 int icon_line_h = aroma_font_get_line_height(sidebar->icon_font);
+                 int icon_y = item_y + (sidebar->item_height - icon_line_h) / 2;
+                 
+                 gfx->render_text(window_id, sidebar->icon_font, sidebar->icons[i], 
+                     content_x, icon_y, text_color, 1.0f);
+                 
+                 icon_w = aroma_font_get_line_width(sidebar->icon_font, sidebar->icons[i]);
+                 content_x += icon_w + 12;
+            }
+
+            if (sidebar->font && gfx->render_text) {
+                int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
+                int text_y = item_y + (sidebar->item_height - line_height) / 2;
+                gfx->render_text(window_id, sidebar->font, sidebar->labels[i], content_x, text_y, text_color, 1.0f);
+            }
+        } else {
+             uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
+             
+             if (sidebar->icons[i][0] != '\0' && sidebar->icon_font && gfx->render_text) {
+                 int w = aroma_font_get_line_width(sidebar->icon_font, sidebar->icons[i]);
+                 int icon_x = sidebar->rect.x + (sidebar->rect.width - w) / 2;
+                 int icon_line_h = aroma_font_get_line_height(sidebar->icon_font);
+                 int icon_y = item_y + (sidebar->item_height - icon_line_h) / 2;
+                 
+                 gfx->render_text(window_id, sidebar->icon_font, sidebar->icons[i], 
+                     icon_x, icon_y, text_color, 1.0f);
+             } 
+             else if (sidebar->font && gfx->render_text) {
+                 char glyph[2] = { sidebar->labels[i][0], '\0' };
+                 if (glyph[0] != '\0') {
+                     float w = gfx->measure_text(window_id, sidebar->font, glyph, 1.0f);
+                     int text_x = sidebar->rect.x + (sidebar->rect.width - (int)w) / 2;
+                     int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
+                     int text_y = item_y + (sidebar->item_height - line_height) / 2;
+                     gfx->render_text(window_id, sidebar->font, glyph, text_x, text_y, text_color, 1.0f);
+                 }
              }
         }
     }

@@ -28,6 +28,8 @@ void aroma_tabs_set_font(AromaNode* tabs_node, AromaFont* font);
 
 void aroma_tabs_set_content(AromaNode* tabs_node, int index, AromaNode** content_nodes, int content_count);
 
+void aroma_tabs_set_icon(AromaNode* tabs_node, int index, const char* icon_code, AromaFont* icon_font);
+
 bool aroma_tabs_setup_events(AromaNode* tabs_node, void (*on_redraw_callback)(void*), void* user_data);
 
 void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id);

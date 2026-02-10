@@ -12,6 +12,7 @@ extern "C" {
 typedef struct AromaListItem {
     char text[128];
     char secondary_text[128];
+    char icon[8];
     void* user_data;
 } AromaListItem;
 
@@ -23,6 +24,9 @@ AromaNode* aroma_listview_create(AromaNode* parent, int x, int y, int width, int
 // Add item
 void aroma_listview_add_item(AromaNode* list_node, const char* text, const char* secondary_text, void* user_data);
 
+// Add item with icon
+void aroma_listview_add_item_with_icon(AromaNode* list_node, const char* text, const char* secondary_text, const char* icon_code, void* user_data);
+
 // Clear all items
 void aroma_listview_clear(AromaNode* list_node);
 
@@ -31,6 +35,9 @@ void aroma_listview_set_callback(AromaNode* list_node, void (*callback)(int inde
 
 // Set font
 void aroma_listview_set_font(AromaNode* list_node, AromaFont* font);
+
+// Set icon font
+void aroma_listview_set_icon_font(AromaNode* list_node, AromaFont* font);
 
 // Draw
 void aroma_listview_draw(AromaNode* list_node, size_t window_id);

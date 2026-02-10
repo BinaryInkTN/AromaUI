@@ -37,6 +37,7 @@ typedef struct AromaMenu {
     size_t item_count;
     bool visible;
     AromaFont* font;
+    AromaFont* icon_font;
     int item_height;
     float corner_radius;
     uint32_t bg_color;
@@ -124,6 +125,24 @@ void aroma_menu_add_item(AromaNode* menu_node, const char* text, void (*callback
     menu->rect.height = (int)menu->item_count * menu->item_height;
 }
 
+void aroma_menu_add_item_with_icon(AromaNode* menu_node, const char* text, const char* icon_code, void (*callback)(void* user_data), void* user_data)
+{
+    if (!menu_node || !menu_node->node_widget_ptr || !text) return;
+    AromaMenu* menu = (AromaMenu*)menu_node->node_widget_ptr;
+    if (menu->item_count >= AROMA_MENU_MAX_ITEMS) return;
+
+    AromaMenuItem* item = &menu->items[menu->item_count++];
+    memset(item, 0, sizeof(AromaMenuItem));
+    strncpy(item->text, text, sizeof(item->text) - 1);
+    if (icon_code) {
+        strncpy(item->icon, icon_code, 7);
+    }
+    item->enabled = true;
+    item->callback = callback;
+    item->user_data = user_data;
+    menu->rect.height = (int)menu->item_count * menu->item_height;
+}
+
 void aroma_menu_add_separator(AromaNode* menu_node)
 {
     if (!menu_node || !menu_node->node_widget_ptr) return;
@@ -160,6 +179,13 @@ void aroma_menu_set_font(AromaNode* menu_node, AromaFont* font)
     menu->font = font;
 }
 
+void aroma_menu_set_icon_font(AromaNode* menu_node, AromaFont* font)
+{
+    if (!menu_node || !menu_node->node_widget_ptr) return;
+    AromaMenu* menu = (AromaMenu*)menu_node->node_widget_ptr;
+    menu->icon_font = font;
+}
+
 void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
 {
     if (!menu_node || !menu_node->node_widget_ptr) return;
@@ -190,7 +216,18 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
             continue;
         }
         if (menu->font && gfx->render_text) {
-            gfx->render_text(window_id, menu->font, menu->items[i].text, menu->rect.x + 12, y + (menu->item_height/2), menu->text_color, menu->text_scale);
+            int text_x = menu->rect.x + 12;
+            int text_y = y + (menu->item_height/2);
+            
+            if (menu->items[i].icon[0] != '\0' && menu->icon_font) {
+                 int line_h = aroma_font_get_line_height(menu->icon_font);
+                 gfx->render_text(window_id, menu->icon_font, menu->items[i].icon, 
+                     text_x, y + ((menu->item_height - line_h)/2), 
+                     menu->text_color, 1.0f);
+                 text_x += 24;
+            }
+            
+            gfx->render_text(window_id, menu->font, menu->items[i].text, text_x, text_y, menu->text_color, menu->text_scale);
         }
     }
 }

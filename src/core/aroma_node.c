@@ -23,6 +23,7 @@
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
 #include "core/aroma_slab_alloc.h"
+#include "aroma_ui.h"
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <string.h>
@@ -279,7 +280,11 @@ void aroma_node_invalidate(AromaNode* node) {
 
     if (node->propagate_dirty && node->parent_node) {
         aroma_node_invalidate(node->parent_node);
+        return;
     }
+    
+    // Notify the UI system that a redraw is needed
+    aroma_ui_render_all_windows_impl();
 }
 
 void aroma_node_invalidate_tree(AromaNode* root) {

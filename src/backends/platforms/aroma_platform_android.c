@@ -49,6 +49,7 @@ static bool g_has_window = false;
 static int g_phys_width = 0;
 static int g_phys_height = 0;
 static bool g_phys_cached = false;
+static bool g_window_flags_set = false;
 
 static void (*g_update_callback)(size_t window_id, void *data) = NULL;
 static void* g_update_callback_data = NULL;
@@ -309,7 +310,11 @@ static void update_surface_size(void) {
 
     if (w == g_width && h == g_height)
         return;
-    LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
+    
+    // Only log if we are changing from a valid size to another valid size
+    if (g_width != 0 && g_height != 0) {
+        LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
+    }
 
     g_width = w;
     g_height = h;
@@ -409,10 +414,13 @@ static int init_display(struct android_app* app) {
     if (!app || !app->window)
         return -1;
 
-    ANativeActivity_setWindowFlags(app->activity, 
-        AWINDOW_FLAG_FORCE_NOT_FULLSCREEN | AWINDOW_FLAG_KEEP_SCREEN_ON, 
-        AWINDOW_FLAG_FULLSCREEN | AWINDOW_FLAG_LAYOUT_IN_SCREEN | AWINDOW_FLAG_LAYOUT_NO_LIMITS
-    );
+    if (!g_window_flags_set) {
+        ANativeActivity_setWindowFlags(app->activity, 
+            AWINDOW_FLAG_FORCE_NOT_FULLSCREEN | AWINDOW_FLAG_KEEP_SCREEN_ON, 
+            AWINDOW_FLAG_FULLSCREEN | AWINDOW_FLAG_LAYOUT_IN_SCREEN | AWINDOW_FLAG_LAYOUT_NO_LIMITS
+        );
+        g_window_flags_set = true;
+    }
 
     cache_physical_screen_info(app);
 
@@ -511,6 +519,7 @@ static void term_display(void) {
 
     display = EGL_NO_DISPLAY;
     context = EGL_NO_CONTEXT;
+    g_window_flags_set = false;
 }
 
 static void handle_cmd(struct android_app* app, int32_t cmd) {

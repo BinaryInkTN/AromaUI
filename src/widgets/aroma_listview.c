@@ -39,6 +39,7 @@ typedef struct AromaListView
     size_t item_count;
     int selected_index;
     AromaFont *font;
+    AromaFont *icon_font;
     void (*callback)(int index, void *user_data);
     void *user_data;
     int item_height;
@@ -125,9 +126,30 @@ void aroma_listview_add_item(AromaNode *list_node, const char *text, const char 
         return;
 
     AromaListItem *item = &list->items[list->item_count++];
+    memset(item, 0, sizeof(AromaListItem));
     strncpy(item->text, text, sizeof(item->text) - 1);
     if (secondary_text)
         strncpy(item->secondary_text, secondary_text, sizeof(item->secondary_text) - 1);
+    item->user_data = user_data;
+    aroma_node_invalidate(list_node);
+}
+
+void aroma_listview_add_item_with_icon(AromaNode *list_node, const char *text, const char *secondary_text, const char *icon_code, void *user_data)
+{
+    if (!list_node || !list_node->node_widget_ptr || !text)
+        return;
+    AromaListView *list = (AromaListView *)list_node->node_widget_ptr;
+    if (list->item_count >= AROMA_LIST_MAX_ITEMS)
+        return;
+
+    AromaListItem *item = &list->items[list->item_count++];
+    memset(item, 0, sizeof(AromaListItem));
+    strncpy(item->text, text, sizeof(item->text) - 1);
+    if (secondary_text)
+        strncpy(item->secondary_text, secondary_text, sizeof(item->secondary_text) - 1);
+    if (icon_code)
+        strncpy(item->icon, icon_code, 7);
+    
     item->user_data = user_data;
     aroma_node_invalidate(list_node);
 }
@@ -175,6 +197,15 @@ void aroma_listview_set_font(AromaNode *list_node, AromaFont *font)
     aroma_node_invalidate(list_node);
 }
 
+void aroma_listview_set_icon_font(AromaNode *list_node, AromaFont *font)
+{
+    if (!list_node || !list_node->node_widget_ptr)
+        return;
+    AromaListView *list = (AromaListView *)list_node->node_widget_ptr;
+    list->icon_font = font;
+    aroma_node_invalidate(list_node);
+}
+
 void aroma_listview_draw(AromaNode *list_node, size_t window_id)
 {
     if (!list_node || !list_node->node_widget_ptr)
@@ -216,7 +247,16 @@ void aroma_listview_draw(AromaNode *list_node, size_t window_id)
                 text_y = y + (item_height - line_height) / 2;
             }
 
-            gfx->render_text(window_id, list->font, list->items[i].text, list->rect.x + 12, text_y, theme.colors.text_primary, list->text_scale);
+            int text_x = list->rect.x + 12;
+            if (list->items[i].icon[0] != '\0' && list->icon_font) {
+                int icon_lh = aroma_font_get_line_height(list->icon_font);
+                gfx->render_text(window_id, list->icon_font, list->items[i].icon, 
+                    text_x, y + ((item_height - icon_lh)/2), 
+                    theme.colors.text_primary, 1.0f);
+                text_x += 24;
+            }
+
+            gfx->render_text(window_id, list->font, list->items[i].text, text_x, text_y, theme.colors.text_primary, list->text_scale);
         }
     }
 }
