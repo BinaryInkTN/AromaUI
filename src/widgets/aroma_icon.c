@@ -1,6 +1,25 @@
 /*
  Copyright (c) 2026 BinaryInkTN
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy of
+ this software and associated documentation files (the "Software"), to deal in
+ the Software without restriction, including without limitation the rights to
+ use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ the Software, and to permit persons to whom the Software is furnished to do so,
+ subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
+
 
 #include "widgets/aroma_icon.h"
 #include "core/aroma_logger.h"
@@ -23,11 +42,11 @@ struct AromaIcon {
     AromaRect rect;
     AromaIconMode mode;
     
-    // Font mode
+    
     char icon_text[AROMA_ICON_TEXT_MAX];
     AromaFont* font;
     
-    // Image mode
+    
     char image_path[AROMA_ICON_PATH_MAX];
     unsigned int texture_id;
     bool owns_texture;
@@ -36,7 +55,7 @@ struct AromaIcon {
     float scale;
 };
 
-// Forward declaration
+
 void aroma_icon_draw(AromaNode* icon_node, size_t window_id);
 
 static void __icon_cleanup_texture(AromaIcon* icon) {
@@ -62,7 +81,7 @@ AromaNode* aroma_icon_create(AromaNode* parent, int x, int y, int size) {
     icon->rect.width = size;
     icon->rect.height = size;
     icon->mode = AROMA_ICON_MODE_NONE;
-    icon->color = 0xFF000000; // Default black
+    icon->color = 0xFF000000; 
     icon->scale = 1.0f;
     
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, icon);
@@ -115,7 +134,7 @@ void aroma_icon_set_texture(AromaNode* icon_node, unsigned int texture_id) {
     
     icon->mode = AROMA_ICON_MODE_IMAGE;
     icon->texture_id = texture_id;
-    icon->owns_texture = false; // External texture, don't auto-unload
+    icon->owns_texture = false; 
     icon->image_path[0] = '\0';
     
     aroma_node_invalidate(icon_node);
@@ -139,11 +158,11 @@ void aroma_icon_draw(AromaNode* icon_node, size_t window_id) {
     if (aroma_node_is_hidden(icon_node)) return;
 
     if (icon->mode == AROMA_ICON_MODE_FONT && icon->font && gfx->render_text) {
-        // Center text in rect
+        
         int ascent = aroma_font_get_ascender(icon->font);
         int line_height = aroma_font_get_line_height(icon->font);
-        // Assuming icon fonts are monospaced or square-ish, standard text centering
-        // Just use simple centering for now or rely on user to set font size == rect size
+        
+        
         int text_x = icon->rect.x + (icon->rect.width / 2) - (aroma_font_get_line_width(icon->font, icon->icon_text) / 2);
         int text_y = icon->rect.y + (icon->rect.height - line_height)/2; 
         
