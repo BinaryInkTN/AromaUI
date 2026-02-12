@@ -52,6 +52,9 @@ typedef struct AromaButton {
     
     AromaRect text_bounds;
     bool layout_dirty;
+    
+    // Multitouch support
+    int active_pointer_id;
 } AromaButton;
 
 AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int y, int width, int height);

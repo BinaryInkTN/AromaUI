@@ -33,6 +33,9 @@ void aroma_chip_set_font(AromaNode* chip_node, AromaFont* font);
 // Set chip icon
 void aroma_chip_set_icon(AromaNode* chip_node, const char* icon, AromaFont* icon_font);
 
+// Set chip text label
+void aroma_chip_set_text(AromaNode* chip_node, const char* text);
+
 // Draw chip
 void aroma_chip_draw(AromaNode* chip_node, size_t window_id);
 

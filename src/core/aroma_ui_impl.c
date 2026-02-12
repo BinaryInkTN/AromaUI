@@ -67,6 +67,18 @@ static inline bool __node_matches_window_id(AromaNode* node, size_t window_id) {
     return false;
 }
 
+static void __get_node_abs_pos(AromaNode* node, int* x, int* y) {
+    if (!node || !x || !y) return;
+    *x = 0;
+    *y = 0;
+    AromaNode* curr = node;
+    while (curr) {
+        *x += curr->x;
+        *y += curr->y;
+        curr = curr->parent_node;
+    }
+}
+
 static void __collect_draw_tasks(AromaNode* node, AromaDrawTask* tasks, size_t* task_count, size_t max_tasks) {
     if (!node || node->is_hidden) return;
     AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
@@ -78,30 +90,26 @@ static void __collect_draw_tasks(AromaNode* node, AromaDrawTask* tasks, size_t* 
             __collect_draw_tasks(node->child_nodes[i], tasks, task_count, max_tasks);
 }
 
-static void __collect_draw_tasks_intersect(AromaNode* node, AromaDrawTask* tasks, size_t* task_count, size_t max_tasks, int rx, int ry, int rw, int rh) {
+static void __collect_draw_tasks_intersect(AromaNode* node, AromaDrawTask* tasks, size_t* task_count, size_t max_tasks, int rx, int ry, int rw, int rh, int parent_abs_x, int parent_abs_y) {
     if (!node || node->is_hidden) return;
     
-    
+    int abs_x = parent_abs_x + node->x;
+    int abs_y = parent_abs_y + node->y;
+
     bool intersects = 
-        (node->x < rx + rw) && 
-        (node->x + node->width > rx) && 
-        (node->y < ry + rh) && 
-        (node->y + node->height > ry);
+        (abs_x < rx + rw) && 
+        (abs_x + node->width > rx) && 
+        (abs_y < ry + rh) && 
+        (abs_y + node->height > ry);
     
     AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
     if (intersects && draw_cb && *task_count < max_tasks) {
         tasks[(*task_count)++] = (AromaDrawTask){ .node = node, .draw_cb = draw_cb, .z_index = node->z_index };
     }
     
-    
-    
-    
-    
-    
-    
     for (uint64_t i = 0; i < node->child_count; ++i)
         if (node->child_nodes[i])
-            __collect_draw_tasks_intersect(node->child_nodes[i], tasks, task_count, max_tasks, rx, ry, rw, rh);
+            __collect_draw_tasks_intersect(node->child_nodes[i], tasks, task_count, max_tasks, rx, ry, rw, rh, abs_x, abs_y);
 }
 
 void aroma_ui_open_url_impl(const char* url) {
@@ -495,8 +503,8 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
         if (!node || node->is_hidden) continue;
         if (!__node_matches_window_id(node, window_id)) continue;
         
-        int nx = node->x;
-        int ny = node->y;
+        int nx = 0, ny = 0;
+        __get_node_abs_pos(node, &nx, &ny);
         int nw = node->width;
         int nh = node->height;
         
@@ -553,7 +561,10 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
                  }
             }
             if (root) {
-                 __collect_draw_tasks_intersect(root, tasks, &task_count, AROMA_MAX_DIRTY_NODES, min_x, min_y, max_x - min_x, max_y - min_y);
+                 int root_abs_x = 0;
+                 int root_abs_y = 0;
+                 // Assuming root window is at 0,0 abs coordinates in its own window space
+                 __collect_draw_tasks_intersect(root, tasks, &task_count, AROMA_MAX_DIRTY_NODES, min_x, min_y, max_x - min_x, max_y - min_y, root_abs_x, root_abs_y);
             }
         } else if (aroma_ui_is_immediate_mode()) {
             AromaNode* root = NULL;

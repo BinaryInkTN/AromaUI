@@ -42,10 +42,15 @@ static bool __chip_handle_event(AromaEvent* event, void* user_data)
     if (!event || !event->target_node) return false;
     AromaChip* chip = (AromaChip*)event->target_node->node_widget_ptr;
     if (!chip) return false;
+    
+    
+    int nx = event->target_node->x;
+    int ny = event->target_node->y;
+    int nw = event->target_node->width;
+    int nh = event->target_node->height;
 
-    AromaRect* r = &chip->rect;
-    bool in_bounds = (event->data.mouse.x >= r->x && event->data.mouse.x <= r->x + r->width &&
-                      event->data.mouse.y >= r->y && event->data.mouse.y <= r->y + r->height);
+    bool in_bounds = (event->data.mouse.x >= nx && event->data.mouse.x <= nx + nw &&
+                      event->data.mouse.y >= ny && event->data.mouse.y <= ny + nh);
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_ENTER:
@@ -92,17 +97,63 @@ static bool __chip_handle_event(AromaEvent* event, void* user_data)
 
 static void __chip_update_layout(AromaChip* chip)
 {
-    int icon_w = (chip->icon[0] != '\0') ? 24 : 0;
-    int gap = (chip->icon[0] != '\0' && chip->label[0] != '\0') ? 8 : 0;
+    if (!chip) return;
     
-    chip->rect.width = 32 + icon_w + gap + (chip->label ? strlen(chip->label) * 8 : 0);
-    if (chip->rect.width < 64) chip->rect.width = 64;
+    
+    int text_h = 0;
+    if (chip->label[0] != '\0' && chip->font) {
+        text_h = aroma_font_get_line_height(chip->font);
+    }
+    
+    
+    if (text_h == 0) text_h = 16;
+    
+    
+    chip->rect.height = text_h + 16;
+    
+    if (chip->rect.height < 32) chip->rect.height = 32;
 
-    chip->rect.height = 32;
     chip->border_radius = 8.0f;
+
+    int icon_w = 0;
+    int label_w = 0;
+    
+    
+    if (chip->icon[0] != '\0') {
+        if (chip->icon_font) {
+            int raw_h = aroma_font_get_line_height(chip->icon_font);
+            float scale = 1.0f;
+            if (raw_h > 0) {
+                 scale = (chip->rect.height * 0.6f) / (float)raw_h;
+            }
+            int raw_w = aroma_font_get_line_width(chip->icon_font, chip->icon);
+            icon_w = (int)(raw_w * scale * 0.8f);
+        } else {
+            icon_w = 20; 
+        }
+    }
+
+    
+    if (chip->label[0] != '\0') {
+        if (chip->font) {
+            label_w = aroma_font_get_line_width(chip->font, chip->label);
+        } else {
+            label_w = strlen(chip->label) * 8; 
+        }
+    }
+    
+    
+    int gap = (icon_w > 0 && label_w > 0) ? -4 : 0; 
+    int h_padding = 24; 
+
+    chip->rect.width = h_padding + icon_w + gap + label_w;
+    if (chip->rect.width < 48) chip->rect.width = 48; 
+    
     
     chip->text_x = chip->rect.x + 12 + icon_w + gap;
-    chip->text_y = chip->rect.y + chip->rect.height / 2 + 5;
+    
+    
+    chip->text_y = chip->rect.y + chip->rect.height / 2;
 }
 
 AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label, AromaChipType type) {
@@ -178,6 +229,10 @@ void aroma_chip_set_font(AromaNode* chip_node, AromaFont* font) {
     AromaChip* chip = (AromaChip*)chip_node->node_widget_ptr;
     if (!chip) return;
     chip->font = font;
+    __chip_update_layout(chip);
+    chip_node->width = chip->rect.width;
+    chip_node->height = chip->rect.height;
+    aroma_node_invalidate(chip_node);
 }
 
 void aroma_chip_set_icon(AromaNode* chip_node, const char* icon, AromaFont* icon_font) {
@@ -193,6 +248,22 @@ void aroma_chip_set_icon(AromaNode* chip_node, const char* icon, AromaFont* icon
     }
     chip->icon_font = icon_font;
     __chip_update_layout(chip);
+    chip_node->width = chip->rect.width;
+    chip_node->height = chip->rect.height;
+    aroma_node_invalidate(chip_node);
+}
+
+void aroma_chip_set_text(AromaNode* chip_node, const char* text) {
+    if (!chip_node || !text) return;
+    AromaChip* chip = (AromaChip*)chip_node->node_widget_ptr;
+    if (!chip) return;
+    
+    strncpy(chip->label, text, sizeof(chip->label) - 1);
+    chip->label[sizeof(chip->label) - 1] = '\0';
+    
+    __chip_update_layout(chip);
+    chip_node->width = chip->rect.width;
+    chip_node->height = chip->rect.height;
     aroma_node_invalidate(chip_node);
 }
 
@@ -211,6 +282,12 @@ void aroma_chip_draw(AromaNode* chip_node, size_t window_id) {
         chip->text_color = theme.colors.text_primary;
         chip->selected_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.35f);
     }
+    
+    
+    chip->rect.x = chip_node->x;
+    chip->rect.y = chip_node->y;
+    chip->rect.width = chip_node->width;
+    chip->rect.height = chip_node->height;
 
     uint32_t bg_color = chip->selected ? chip->selected_color : chip->bg_color;
     if (chip->is_pressed) {
@@ -228,15 +305,42 @@ void aroma_chip_draw(AromaNode* chip_node, size_t window_id) {
                                    chip->rect.width, chip->rect.height,
                                    0x79747E, 1, true, chip->border_radius);
     }
-
+    
+    
+    int icon_width = 0;
+    int gap = -4; 
+    int h_padding = 12;
+    
     if (chip->icon[0] != '\0' && chip->icon_font) {
-         int icon_y = chip->rect.y + (chip->rect.height / 2) + 5;
+         int icon_line_h = aroma_font_get_line_height(chip->icon_font);
+         
+         float scale = 1.0f;
+         if (icon_line_h > 0) {
+              scale = (chip->rect.height * 0.6f) / (float)icon_line_h;
+         }
+         
+         int display_h = (int)(icon_line_h * scale);
+         
+         int icon_y = chip->rect.y + (chip->rect.height - display_h) / 2;
+         
          gfx->render_text(window_id, chip->icon_font, chip->icon, 
-             chip->rect.x + 8, icon_y, chip->text_color, 1.0f);
+             chip->rect.x + h_padding, icon_y, chip->text_color, scale);
+             
+         
+         int raw_w = aroma_font_get_line_width(chip->icon_font, chip->icon);
+         // Apply same tightening factor to draw logic
+         icon_width = (int)(raw_w * scale * 0.8f);
+    } else {
+        gap = 0;
     }
 
     if (gfx->render_text && chip->font && chip->label[0]) {
-        gfx->render_text(window_id, chip->font, chip->label, chip->text_x, chip->text_y, chip->text_color, 1.0f);
+        int line_h = aroma_font_get_line_height(chip->font);
+        
+        int text_y = chip->rect.y + (chip->rect.height - line_h) / 2;
+        int text_x = chip->rect.x + h_padding + icon_width + gap;
+        
+        gfx->render_text(window_id, chip->font, chip->label, text_x, text_y, chip->text_color, 1.0f);
     }
 }
 

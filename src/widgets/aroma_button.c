@@ -97,7 +97,7 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->rect.width = width;
     button->rect.height = height;
     
-    // Update node geometry cache
+    
     button_node->x = x;
     button_node->y = y;
     button_node->width = width;
@@ -129,8 +129,7 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
 
     button->icon[0] = '\0';
     button->icon_font = NULL;
-    button->icon_padding = -100;
-
+    button->icon_padding = -200;    button->active_pointer_id = -1;
     aroma_button_update_text_position(button);
 
     LOG_INFO("Button created: label='%s', x=%d, y=%d, w=%d, h=%d", label, x, y, width, height);
@@ -213,13 +212,13 @@ static void __aroma_button_autosize(AromaButton* button) {
     
     int content_width = 0;
     
-    // Measure Text
+    
     if (button->font && button->label[0] != '\0') {
         int raw_w = aroma_font_get_line_width(button->font, button->label);
         content_width += (int)(raw_w * button->text_scale);
     }
     
-    // Measure Icon
+    
     if (button->icon_font && button->icon[0] != '\0') {
         int raw_icon_w = aroma_font_get_line_width(button->icon_font, button->icon);
         int raw_icon_h = aroma_font_get_line_height(button->icon_font);
@@ -231,13 +230,13 @@ static void __aroma_button_autosize(AromaButton* button) {
         
         content_width += (int)(raw_icon_w * scale);
         
-        // Add gap if both present
+        
         if (button->font && button->label[0] != '\0') {
             content_width += button->icon_padding;
         }
     }
     
-    // If we have content, update width
+    
     if (content_width > 0) {
         button->rect.width = content_width + 24;
     }
@@ -425,7 +424,7 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
     {
         if (gfx->render_text)
         {
-            // Recalculate text position dynamically to handle layout updates
+            
             const int padding = 6;
             
             float icon_scale = button->text_scale;
@@ -450,7 +449,7 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
             
             float current_x = content_start_x;
 
-            // Draw Icon
+            
             if (button->icon[0] != '\0' && button->icon_font) {
                 float icon_y = button->rect.y + (button->rect.height - icon_h_scaled) / 2.0f;
                 
@@ -461,9 +460,10 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
                 current_x += icon_w + gap;
             }
 
-            // Draw Text
+            
             if (button->label[0] != '\0') {
                 float text_y = button->rect.y + (button->rect.height - button->line_height) / 2.0f;
+
 
                 gfx->render_text(window_id, button->font, button->label, 
                             current_x, text_y, 
@@ -490,30 +490,62 @@ static bool __button_default_mouse_handler(AromaEvent* event, void* user_data)
 
     AromaButtonState prev_state = btn->state;
     bool in_bounds = false;
+    int x = 0, y = 0;
+    bool handle_logic = false;
+    bool is_down = false;
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_CLICK:
-            in_bounds = aroma_button_handle_mouse_event(event->target_node,
-                event->data.mouse.x, event->data.mouse.y, true);
+            if (btn->active_pointer_id != -1) return false;
+            handle_logic = true; is_down = true;
+            x = event->data.mouse.x; y = event->data.mouse.y;
             break;
         case EVENT_TYPE_MOUSE_RELEASE:
-        case EVENT_TYPE_MOUSE_MOVE:
-            in_bounds = aroma_button_handle_mouse_event(event->target_node,
-                event->data.mouse.x, event->data.mouse.y, false);
+            if (btn->active_pointer_id != -1) return false;
+            handle_logic = true; is_down = false;
+            x = event->data.mouse.x; y = event->data.mouse.y;
             break;
+        case EVENT_TYPE_MOUSE_MOVE:
         case EVENT_TYPE_MOUSE_ENTER:
-            in_bounds = aroma_button_handle_mouse_event(event->target_node,
-                event->data.mouse.x, event->data.mouse.y, false);
+            if (btn->active_pointer_id != -1) return false;
+            handle_logic = true;
+            is_down = (btn->state == BUTTON_STATE_PRESSED); 
+            x = event->data.mouse.x; y = event->data.mouse.y;
             break;
         case EVENT_TYPE_MOUSE_EXIT:
+            if (btn->active_pointer_id != -1) return false;
             if (btn->state != BUTTON_STATE_IDLE) {
                 btn->state = BUTTON_STATE_IDLE;
                 aroma_node_invalidate(event->target_node);
             }
             __button_request_redraw(user_data);
             return false;
-        default:
+            
+        case EVENT_TYPE_TOUCH_DOWN:
+            if (btn->active_pointer_id == -1) {
+                btn->active_pointer_id = event->data.touch.id;
+                handle_logic = true; is_down = true;
+                x = event->data.touch.x; y = event->data.touch.y;
+            }
             break;
+        case EVENT_TYPE_TOUCH_UP:
+            if (btn->active_pointer_id == event->data.touch.id) {
+                btn->active_pointer_id = -1;
+                handle_logic = true; is_down = false;
+                x = event->data.touch.x; y = event->data.touch.y;
+            }
+            break;
+        case EVENT_TYPE_TOUCH_MOVE:
+            if (btn->active_pointer_id == event->data.touch.id) {
+                handle_logic = true; is_down = true;
+                x = event->data.touch.x; y = event->data.touch.y;
+            }
+            break;
+        default: break;
+    }
+
+    if (handle_logic) {
+        in_bounds = aroma_button_handle_mouse_event(event->target_node, x, y, is_down);
     }
 
     if (btn->state != prev_state && user_data) __button_request_redraw(user_data);
@@ -528,5 +560,10 @@ bool aroma_button_setup_events(AromaNode* button_node, void (*on_redraw_callback
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_MOVE, __button_default_mouse_handler, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_ENTER, __button_default_mouse_handler, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(button_node->node_id, EVENT_TYPE_MOUSE_EXIT, __button_default_mouse_handler, (void*)on_redraw_callback, 80);
+    
+    // Subscribe to touch events
+    aroma_event_subscribe(button_node->node_id, EVENT_TYPE_TOUCH_DOWN, __button_default_mouse_handler, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(button_node->node_id, EVENT_TYPE_TOUCH_UP, __button_default_mouse_handler, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(button_node->node_id, EVENT_TYPE_TOUCH_MOVE, __button_default_mouse_handler, (void*)on_redraw_callback, 80);
     return true;
 }

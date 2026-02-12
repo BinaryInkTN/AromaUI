@@ -429,6 +429,49 @@ void aroma_event_process_queue(void) {
 }
 
 
+#define AROMA_MAX_TOUCHES 10
+static uint64_t g_touch_captures[AROMA_MAX_TOUCHES] = {0};
+
+void aroma_event_handle_touch(int id, int x, int y, int state) {
+    if (!g_event_system.root_node || g_event_system.shutting_down) return;
+    if (id < 0 || id >= AROMA_MAX_TOUCHES) return;
+
+    uint64_t target_id = 0;
+
+    if (state == 1) { // DOWN
+        AromaNode* target = aroma_event_hit_test(g_event_system.root_node, x, y);
+        target_id = target ? target->node_id : 0;
+        g_touch_captures[id] = target_id;
+    } else { // UP or MOVE
+        target_id = g_touch_captures[id];
+        // Fallback: if no capture (shouldn't happen for valid flow), hit test
+        if (target_id == 0) {
+             AromaNode* target = aroma_event_hit_test(g_event_system.root_node, x, y);
+             target_id = target ? target->node_id : 0;
+        }
+    }
+    
+    AromaEventType type;
+    if (state == 1) type = EVENT_TYPE_TOUCH_DOWN;
+    else if (state == 0) type = EVENT_TYPE_TOUCH_UP;
+    else type = EVENT_TYPE_TOUCH_MOVE;
+
+    AromaEvent* evt = aroma_event_create(type, target_id);
+    if (evt) {
+        evt->data.touch.id = id;
+        evt->data.touch.x = x;
+        evt->data.touch.y = y;
+        
+        // Dispatch immediately
+        aroma_event_dispatch(evt);
+        aroma_event_destroy(evt);
+    }
+
+    if (state == 0) { // UP
+        g_touch_captures[id] = 0;
+    }
+}
+
 void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     if (!g_event_system.root_node || g_event_system.shutting_down) return;
 

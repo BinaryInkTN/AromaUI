@@ -1,0 +1,18 @@
+                        -H/home/yassine/AromaUI/robot_control/android/app/src/main/cpp
+-DCMAKE_SYSTEM_NAME=Android
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+-DCMAKE_SYSTEM_VERSION=24
+-DANDROID_PLATFORM=android-24
+-DANDROID_ABI=x86_64
+-DCMAKE_ANDROID_ARCH_ABI=x86_64
+-DANDROID_NDK=/home/yassine/Android/Sdk/ndk/25.1.8937393
+-DCMAKE_ANDROID_NDK=/home/yassine/Android/Sdk/ndk/25.1.8937393
+-DCMAKE_TOOLCHAIN_FILE=/home/yassine/Android/Sdk/ndk/25.1.8937393/build/cmake/android.toolchain.cmake
+-DCMAKE_MAKE_PROGRAM=/home/yassine/Android/Sdk/cmake/3.22.1/bin/ninja
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/yassine/AromaUI/robot_control/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86_64
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/home/yassine/AromaUI/robot_control/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86_64
+-DCMAKE_BUILD_TYPE=Debug
+-B/home/yassine/AromaUI/robot_control/android/app/.cxx/Debug/2z35731k/x86_64
+-GNinja
+                        Build command args: []
+                        Version: 2

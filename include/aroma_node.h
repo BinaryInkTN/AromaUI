@@ -286,6 +286,13 @@ void aroma_node_set_z_index(AromaNode* node, int32_t z_index);
 int32_t aroma_node_get_z_index(AromaNode* node);
 
 /**
+ * @brief Get the root window node for a given node.
+ * @param node Any node in the hierarchy.
+ * @return The root window node, or NULL if not found.
+ */
+AromaNode* aroma_node_get_window(AromaNode* node);
+
+/**
  * @brief Mark a node as needing redraw.
  * @param node Target node.
  */

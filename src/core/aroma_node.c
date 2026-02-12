@@ -272,6 +272,18 @@ int32_t aroma_node_get_z_index(AromaNode* node) {
     return node->z_index;
 }
 
+AromaNode* aroma_node_get_window(AromaNode* node) {
+    if (!node) return NULL;
+    AromaNode* current = node;
+    while (current->parent_node) {
+        current = current->parent_node;
+    }
+    // Usually the root node is the window or scene root
+    // But we should check if it's actually a window type if applicable.
+    // For now, returning the root is the standard behavior for "get window" in this context.
+    return current;
+}
+
 void aroma_node_invalidate(AromaNode* node) {
     if (!node || node->is_dirty) return;
 

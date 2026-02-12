@@ -56,7 +56,16 @@ static void __dialog_recompute_action_layout(AromaDialog* dlg, AromaGraphicsInte
     if (!dlg) return;
 
     const int padding = 16;
-    const int button_height = 36;
+    int button_height = 36;
+    
+    // Adjust button height based on font
+    if (dlg->font) {
+        int font_h = aroma_font_get_line_height(dlg->font);
+        if (font_h > 20) {
+            button_height = font_h + 24; // Padding
+        }
+    }
+    
     const int spacing = 8;
 
     dlg->action_button_height = button_height;
@@ -87,7 +96,8 @@ static void __dialog_recompute_action_layout(AromaDialog* dlg, AromaGraphicsInte
         x += dlg->action_button_widths[i] + spacing;
     }
 
-    dlg->action_button_y = dlg->rect.y + dlg->rect.height - padding - button_height;
+    int btn_y = dlg->rect.y + dlg->rect.height - padding - button_height;
+    dlg->action_button_y = btn_y;
 }
 
 static bool __dialog_handle_event(AromaEvent* event, void* user_data) {
@@ -141,8 +151,20 @@ AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char*
     int win_h, win_w;
     platform->get_window_size(0, &win_w, &win_h);
 
+#ifdef __ANDROID__
+    // Force fullscreen for Android
+    width = win_w;
+    height = win_h;
+    dlg->centered_x = 0;
+    dlg->centered_y = 0;
+#else
     dlg->centered_x = (win_w - width) / 2;
     dlg->centered_y = (win_h - height) / 2;
+#endif
+
+    dlg->rect.width = width;
+    dlg->rect.height = height;
+
     __dialog_update_rect(dlg);
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
@@ -153,7 +175,7 @@ AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char*
         aroma_widget_free(dlg);
         return NULL;
     }
-
+    
     node->x = dlg->rect.x;
     node->y = dlg->rect.y;
     node->width = dlg->rect.width;

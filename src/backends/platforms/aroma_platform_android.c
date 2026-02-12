@@ -398,19 +398,32 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event) {
     switch (masked) {
         case AMOTION_EVENT_ACTION_DOWN:
         case AMOTION_EVENT_ACTION_POINTER_DOWN:
+            aroma_event_handle_touch(AMotionEvent_getPointerId(event, index), (int)x, (int)y, 1);
             aroma_event_handle_pointer_move((int)x, (int)y, true);
             break;
         case AMOTION_EVENT_ACTION_UP:
         case AMOTION_EVENT_ACTION_POINTER_UP:
+            aroma_event_handle_touch(AMotionEvent_getPointerId(event, index), (int)x, (int)y, 0);
             aroma_event_handle_pointer_move((int)x, (int)y, false);
             break;
-        case AMOTION_EVENT_ACTION_MOVE:
+        case AMOTION_EVENT_ACTION_MOVE: {
+            size_t ptr_count = AMotionEvent_getPointerCount(event);
+            for (size_t i = 0; i < ptr_count; i++) {
+                aroma_event_handle_touch(
+                    AMotionEvent_getPointerId(event, i),
+                    (int)AMotionEvent_getX(event, i),
+                    (int)AMotionEvent_getY(event, i),
+                    2
+                );
+            }
+            // Keep mouse emulation for index 0
             aroma_event_handle_pointer_move(
                 (int)AMotionEvent_getX(event, 0),
                 (int)AMotionEvent_getY(event, 0),
                 true
             );
             break;
+        }
     }
     return 1;
 }
@@ -1092,6 +1105,14 @@ static void impl_android_toast(const char* msg, bool long_duration) {
 
     jclass helper_class = FindClassSafe(env, class_name);
 
+    /* Fallbacks: try common package used by the robot_control example or plain class name */
+    if (!helper_class) {
+        helper_class = FindClassSafe(env, "com/example/robot_control/AromaHelper");
+    }
+    if (!helper_class) {
+        helper_class = FindClassSafe(env, "AromaHelper");
+    }
+
     if (helper_class) {
         jmethodID show_toast = (*env)->GetStaticMethodID(env, helper_class, "showToast", "(Landroid/app/Activity;Ljava/lang/String;Z)V");
         if (show_toast) {
@@ -1104,7 +1125,7 @@ static void impl_android_toast(const char* msg, bool long_duration) {
         }
         (*env)->DeleteLocalRef(env, helper_class);
     } else {
-        LOGE("AromaHelper class NOT FOUND at %s. Toasts require this Java helper.", class_name);
+        LOGE("AromaHelper class NOT FOUND. Toasts require this Java helper.");
     }
 }
 
@@ -1191,6 +1212,106 @@ static bool impl_android_is_bluetooth_enabled(void) {
      (*env)->DeleteLocalRef(env, adapter);
      (*env)->DeleteLocalRef(env, adapterClass);
      return res;
+}
+
+static int impl_android_bt_get_paired(char out_addrs[][18], char out_names[][248], int max_devices) {
+    JNIEnv* env = aroma_android_get_env();
+    if (!env) return 0;
+
+    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
+    if (!helper) { (*env)->ExceptionClear(env); return 0; }
+
+    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btGetPairedDevices", "()[Ljava/lang/String;");
+    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return 0; }
+
+    jobjectArray arr = (jobjectArray)(*env)->CallStaticObjectMethod(env, helper, mid);
+    if (!arr) { (*env)->DeleteLocalRef(env, helper); return 0; }
+
+    jsize len = (*env)->GetArrayLength(env, arr);
+    int written = 0;
+    for (jsize i = 0; i < len && written < max_devices; i++) {
+        jstring s = (jstring)(*env)->GetObjectArrayElement(env, arr, i);
+        const char* str = (*env)->GetStringUTFChars(env, s, NULL);
+        // expected format: "ADDR;NAME"
+        char addr[18] = {0};
+        char name[248] = {0};
+        const char* sep = strchr(str, ';');
+        if (sep) {
+            int a_len = sep - str;
+            if (a_len >= 17) a_len = 17;
+            strncpy(addr, str, a_len);
+            addr[a_len] = '\0';
+            strncpy(name, sep+1, 247);
+            name[247] = '\0';
+        } else {
+            strncpy(addr, str, 17);
+            addr[17] = '\0';
+            strncpy(name, "", 1);
+        }
+
+        strncpy(out_addrs[written], addr, 18);
+        strncpy(out_names[written], name, 248);
+        written++;
+
+        (*env)->ReleaseStringUTFChars(env, s, str);
+        (*env)->DeleteLocalRef(env, s);
+    }
+
+    (*env)->DeleteLocalRef(env, arr);
+    (*env)->DeleteLocalRef(env, helper);
+    return written;
+}
+
+static bool impl_android_bt_connect(const char* addr) {
+    JNIEnv* env = aroma_android_get_env();
+    if (!env || !addr) return false;
+    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
+    if (!helper) { (*env)->ExceptionClear(env); return false; }
+    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btConnect", "(Ljava/lang/String;)Z");
+    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return false; }
+    jstring jaddr = (*env)->NewStringUTF(env, addr);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, helper, mid, jaddr);
+    (*env)->DeleteLocalRef(env, jaddr);
+    (*env)->DeleteLocalRef(env, helper);
+    return res == JNI_TRUE;
+}
+
+static void impl_android_bt_disconnect(void) {
+    JNIEnv* env = aroma_android_get_env();
+    if (!env) return;
+    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
+    if (!helper) { (*env)->ExceptionClear(env); return; }
+    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btDisconnect", "()V");
+    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return; }
+    (*env)->CallStaticVoidMethod(env, helper, mid);
+    (*env)->DeleteLocalRef(env, helper);
+}
+
+static int impl_android_bt_send(const char* data, int len) {
+    JNIEnv* env = aroma_android_get_env();
+    if (!env || !data || len <= 0) return -1;
+    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
+    if (!helper) { (*env)->ExceptionClear(env); return -1; }
+    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btSend", "([B)I");
+    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return -1; }
+    jbyteArray arr = (*env)->NewByteArray(env, len);
+    (*env)->SetByteArrayRegion(env, arr, 0, len, (const jbyte*)data);
+    jint written = (*env)->CallStaticIntMethod(env, helper, mid, arr);
+    (*env)->DeleteLocalRef(env, arr);
+    (*env)->DeleteLocalRef(env, helper);
+    return (int)written;
+}
+
+static bool impl_android_bt_is_connected(void) {
+    JNIEnv* env = aroma_android_get_env();
+    if (!env) return false;
+    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
+    if (!helper) { (*env)->ExceptionClear(env); return false; }
+    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btIsConnected", "()Z");
+    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return false; }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, helper, mid);
+    (*env)->DeleteLocalRef(env, helper);
+    return res == JNI_TRUE;
 }
 
 static int impl_android_get_battery_level(void) {
@@ -1338,6 +1459,11 @@ AromaPlatformInterface aroma_platform_android = {
     .android_is_wifi_enabled = impl_android_is_wifi_enabled,
     .android_set_wifi_enabled = impl_android_set_wifi_enabled,
     .android_is_bluetooth_enabled = impl_android_is_bluetooth_enabled,
+    .android_bt_get_paired = impl_android_bt_get_paired,
+    .android_bt_connect = impl_android_bt_connect,
+    .android_bt_disconnect = impl_android_bt_disconnect,
+    .android_bt_send = impl_android_bt_send,
+    .android_bt_is_connected = impl_android_bt_is_connected,
     .android_launch_camera = impl_android_launch_camera,
     .android_launch_gallery = impl_android_launch_gallery,
     .android_get_system_service = impl_android_get_system_service,

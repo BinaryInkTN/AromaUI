@@ -1,0 +1,129 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "freetype_build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-freetype_build-Debug-6b67f69a50f98e395ced.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "/home/yassine/AromaUI/vendors/freetype",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "aroma_lib",
+					"jsonFile" : "directory-aroma_lib-Debug-b07766826c6f071a1858.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "/home/yassine/AromaUI/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						2
+					],
+					"name" : "robot_control_android",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "freetype",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "aroma::@9df0d65908e3390db40e",
+					"jsonFile" : "target-aroma-Debug-131ec5a50f96cdef4403.json",
+					"name" : "aroma",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "aroma_app::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-aroma_app-Debug-4a3910cefa4422eb0751.json",
+					"name" : "aroma_app",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "freetype::@bdc1e324bbc9e3c81525",
+					"jsonFile" : "target-freetype-Debug-bb506cfe78c4709267ba.json",
+					"name" : "freetype",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/yassine/AromaUI/robot_control/android/app/.cxx/Debug/2z35731k/armeabi-v7a",
+		"source" : "/home/yassine/AromaUI/robot_control/android/app/src/main/cpp"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

@@ -36,9 +36,21 @@ typedef enum AromaEventType {
     EVENT_TYPE_FOCUS_GAINED,      /**< Node gained keyboard focus. */
     EVENT_TYPE_FOCUS_LOST,        /**< Node lost keyboard focus. */
     EVENT_TYPE_WINDOW_RESIZE,     /**< Host window resized. */
+    EVENT_TYPE_TOUCH_DOWN,        /**< Touch point down. */
+    EVENT_TYPE_TOUCH_UP,          /**< Touch point up. */
+    EVENT_TYPE_TOUCH_MOVE,        /**< Touch point moved. */
     EVENT_TYPE_CUSTOM,            /**< User-defined custom event. */
     EVENT_TYPE_COUNT              /**< Total number of event types. */
 } AromaEventType;
+
+/**
+ * @brief Data associated with touch events.
+ */
+typedef struct {
+    int id;         /**< Touch pointer ID. */
+    int x;          /**< X coordinate. */
+    int y;          /**< Y coordinate. */
+} AromaTouchEventData;
 
 /**
  * @brief Data associated with mouse/pointer events.
@@ -91,6 +103,7 @@ struct AromaEvent {
 
     union {
         AromaMouseEventData mouse;     /**< Mouse event payload. */
+        AromaTouchEventData touch;     /**< Touch event payload. */
         AromaKeyEventData key;         /**< Keyboard event payload. */
         AromaWindowResizeEventData resize; /**< Window resize payload. */
         AromaCustomEventData custom;   /**< Custom event payload. */
@@ -164,6 +177,16 @@ bool aroma_event_queue(AromaEvent* event);
  * @brief Process all pending events in the queue.
  */
 void aroma_event_process_queue(void);
+
+/**
+ * @brief Inject a touch event into the system.
+ * 
+ * @param id Touch pointer ID.
+ * @param x X coordinate.
+ * @param y Y coordinate.
+ * @param state 0=UP, 1=DOWN, 2=MOVE.
+ */
+void aroma_event_handle_touch(int id, int x, int y, int state);
 
 /**
  * @brief Helper to inject a pointer move event into the system.

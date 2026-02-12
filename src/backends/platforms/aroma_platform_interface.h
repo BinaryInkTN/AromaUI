@@ -131,6 +131,16 @@ typedef struct AromaPlatformInterface {
     
     /** @brief [Android] Check if Bluetooth is enabled. */
     bool (*android_is_bluetooth_enabled)(void);
+    /** @brief [Android] Get paired Bluetooth devices. Fills out_addrs[out_names] arrays. */
+    int  (*android_bt_get_paired)(char out_addrs[][18], char out_names[][248], int max_devices);
+    /** @brief [Android] Connect to Bluetooth device by address. */
+    bool (*android_bt_connect)(const char* addr);
+    /** @brief [Android] Disconnect current Bluetooth connection. */
+    void (*android_bt_disconnect)(void);
+    /** @brief [Android] Send data over active Bluetooth connection. Returns bytes written or -1. */
+    int  (*android_bt_send)(const char* data, int len);
+    /** @brief [Android] Check if bluetooth connection active. */
+    bool (*android_bt_is_connected)(void);
     
     /** @brief [Android] Launch camera app. */
     void (*android_launch_camera)(void);

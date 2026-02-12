@@ -145,6 +145,52 @@ static inline bool aroma_android_is_bluetooth_enabled() {
 }
 
 /**
+ * @brief Get paired Bluetooth devices (address and name arrays).
+ * @param out_addrs Caller-provided buffer of size [max_devices][18].
+ * @param out_names Caller-provided buffer of size [max_devices][248].
+ * @param max_devices Maximum devices to fill.
+ * @return Number of devices written.
+ */
+static inline int aroma_android_bt_get_paired(char out_addrs[][18], char out_names[][248], int max_devices) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_bt_get_paired) {
+        return platform->android_bt_get_paired(out_addrs, out_names, max_devices);
+    }
+    return 0;
+}
+
+static inline bool aroma_android_bt_connect(const char* addr) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_bt_connect) {
+        return platform->android_bt_connect(addr);
+    }
+    return false;
+}
+
+static inline void aroma_android_bt_disconnect(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_bt_disconnect) {
+        platform->android_bt_disconnect();
+    }
+}
+
+static inline int aroma_android_bt_send(const char* data, int len) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_bt_send) {
+        return platform->android_bt_send(data, len);
+    }
+    return -1;
+}
+
+static inline bool aroma_android_bt_is_connected(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_bt_is_connected) {
+        return platform->android_bt_is_connected();
+    }
+    return false;
+}
+
+/**
  * @brief Launch the default camera application to capture an image.
  */
 static inline void aroma_android_launch_camera() {

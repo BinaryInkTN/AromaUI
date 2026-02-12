@@ -30,6 +30,7 @@ AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int h
         return NULL;
     }
 
+    data->active_pointer_id = -1;
     data->rect.x = x;
     data->rect.y = y;
     data->rect.width = width;

@@ -48,6 +48,18 @@ typedef struct AromaListView
     float text_scale;
 } AromaListView;
 
+static void __get_abs_pos(AromaNode* node, int* x, int* y) {
+    if (!node || !x || !y) return;
+    *x = 0;
+    *y = 0;
+    AromaNode* curr = node;
+    while (curr) {
+        *x += curr->x;
+        *y += curr->y;
+        curr = curr->parent_node;
+    }
+}
+
 static bool __listview_handle_event(AromaEvent *event, void *user_data)
 {
     (void)user_data;
@@ -59,9 +71,17 @@ static bool __listview_handle_event(AromaEvent *event, void *user_data)
 
     if (event->event_type != EVENT_TYPE_MOUSE_CLICK)
         return false;
-    int rel_y = event->data.mouse.y - list->rect.y;
-    if (rel_y < 0 || rel_y >= list->rect.height)
-        return false;
+    
+    int abs_x, abs_y;
+    __get_abs_pos(event->target_node, &abs_x, &abs_y);
+    
+    int rel_y = event->data.mouse.y - abs_y; // relative to list top (abs_y is top)
+    // Also check bounds
+    int rel_x = event->data.mouse.x - abs_x;
+    
+    if (rel_x < 0 || rel_x > list->rect.width) return false;
+    if (rel_y < 0 || rel_y >= list->rect.height) return false;
+
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     int item_height = list->item_height;
     int index = rel_y / item_height;
@@ -221,21 +241,26 @@ void aroma_listview_draw(AromaNode *list_node, size_t window_id)
         return;
     AromaTheme theme = aroma_theme_get_global();
 
-    gfx->fill_rectangle(window_id, list->rect.x, list->rect.y, list->rect.width, list->rect.height,
-                        theme.colors.surface, true, list->corner_radius);
+    int abs_x, abs_y;
+    __get_abs_pos(list_node, &abs_x, &abs_y);
+
     if (aroma_node_is_hidden(list_node))
         return;
+    
+    // Draw background
+    gfx->fill_rectangle(window_id, abs_x, abs_y, list->rect.width, list->rect.height,
+                        theme.colors.surface, true, list->corner_radius);
 
     int item_height = list->item_height;
     for (size_t i = 0; i < list->item_count; ++i)
     {
-        int y = list->rect.y + (int)i * item_height;
-        if (y + item_height > list->rect.y + list->rect.height)
+        int y = abs_y + (int)i * item_height;
+        if (y + item_height > abs_y + list->rect.height)
             break;
 
         if ((int)i == list->selected_index)
         {
-            gfx->fill_rectangle(window_id, list->rect.x + 2, y, list->rect.width - 4, item_height,
+            gfx->fill_rectangle(window_id, abs_x + 2, y, list->rect.width - 4, item_height,
                                 aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.2f), true, list->selected_corner_radius);
         }
 
@@ -252,13 +277,13 @@ void aroma_listview_draw(AromaNode *list_node, size_t window_id)
                 text_y = y + (item_height - line_height) / 2;
             }
 
-            int text_x = list->rect.x + 12;
+            int text_x = abs_x + 12;
             if (list->items[i].icon[0] != '\0' && list->icon_font) {
                 int icon_lh = aroma_font_get_line_height(list->icon_font);
                 gfx->render_text(window_id, list->icon_font, list->items[i].icon, 
                     text_x, y + ((item_height - icon_lh)/2), 
                     theme.colors.text_primary, 1.0f);
-                text_x += 24;
+                text_x += icon_lh + 24; // Dynamic spacing based on icon size
             }
 
             gfx->render_text(window_id, list->font, list->items[i].text, text_x, text_y, theme.colors.text_primary, list->text_scale);
