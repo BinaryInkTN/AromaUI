@@ -135,6 +135,11 @@ AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, 
         aroma_widget_free(fab);
         return NULL;
     }
+    
+    node->x = fab->rect.x;
+    node->y = fab->rect.y;
+    node->width = fab->rect.width;
+    node->height = fab->rect.height;
 
     aroma_node_set_draw_cb(node, aroma_fab_draw);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __fab_handle_event, aroma_ui_request_redraw, 60);

@@ -99,6 +99,11 @@ AromaNode* aroma_menu_create(AromaNode* parent, int x, int y)
         return NULL;
     }
 
+    node->x = x;
+    node->y = y;
+    node->width = menu->rect.width;
+    node->height = menu->rect.height;
+
     aroma_node_set_draw_cb(node, aroma_menu_draw);
 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __menu_handle_event, NULL, 80);

@@ -75,6 +75,11 @@ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int h
     node->rect.width = width;
     node->rect.height = height;
 
+    scene_node->x = x;
+    scene_node->y = y;
+    scene_node->width = width;
+    scene_node->height = height;
+
     aroma_event_subscribe(scene_node->node_id, EVENT_TYPE_WINDOW_RESIZE, window_resize_handler, scene_node, 0);
 
     return scene_node;

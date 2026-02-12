@@ -34,6 +34,11 @@ AromaNode* aroma_container_create(AromaNode* parent, int x, int y, int width, in
         return NULL;
     }
 
+    node->x = x;
+    node->y = y;
+    node->width = width;
+    node->height = height;
+
     aroma_node_set_draw_cb(node, aroma_container_draw);
     aroma_node_invalidate(node);
 
@@ -48,6 +53,12 @@ void aroma_container_set_rect(AromaNode* container_node, int x, int y, int width
     container->rect.y = y;
     container->rect.width = width;
     container->rect.height = height;
+
+    container_node->x = x;
+    container_node->y = y;
+    container_node->width = width;
+    container_node->height = height;
+
     aroma_node_invalidate(container_node);
 }
 

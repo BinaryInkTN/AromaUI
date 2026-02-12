@@ -216,6 +216,11 @@ AromaNode* aroma_tabs_create(AromaNode* parent, int x, int y, int width, int hei
         aroma_widget_free(tabs);
         return NULL;
     }
+    
+    node->x = x;
+    node->y = y;
+    node->width = width;
+    node->height = height;
 
     aroma_node_set_draw_cb(node, aroma_tabs_draw);
 

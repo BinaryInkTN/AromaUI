@@ -129,6 +129,12 @@ struct AromaNode
     bool is_hidden;             /**< True if node is strictly invisible. */
     bool propagate_dirty;       /**< True if dirty state affects children. */
     AromaLayout layout;         /**< Layout configuration. */
+    
+    // Cached absolute/relative geometry for rendering engine
+    int x;
+    int y;
+    int width;
+    int height;
 };
 
 /** @brief Helper macro to cast a node's user pointer to a specific type. */

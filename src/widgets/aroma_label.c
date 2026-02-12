@@ -39,6 +39,34 @@ typedef struct AromaLabel {
     float text_scale;
 } AromaLabel;
 
+static const float LABEL_SCALES[] = {
+    [LABEL_STYLE_LABEL_LARGE]     = 1.0f,
+    [LABEL_STYLE_LABEL_MEDIUM]    = 0.9f,
+    [LABEL_STYLE_LABEL_SMALL]     = 0.8f
+};
+
+static void __update_label_geometry(AromaNode* node) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaLabel* label = (AromaLabel*)node->node_widget_ptr;
+    
+    node->x = label->rect.x;
+    node->y = label->rect.y;
+
+    if (label->font) {
+        int w = aroma_font_get_line_width(label->font, label->text);
+        int h = aroma_font_get_line_height(label->font);
+        
+        node->width = (int)(w * label->text_scale);
+        node->height = (int)(h * label->text_scale);
+        
+        label->rect.width = node->width;
+        label->rect.height = node->height;
+    } else {
+        node->width = 0;
+        node->height = 0;
+    }
+}
+
 static uint32_t __label_default_color(void)
 {
     AromaTheme theme = aroma_theme_get_global();
@@ -66,12 +94,6 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
     label->font = NULL;
     strncpy(label->text, text, AROMA_LABEL_TEXT_MAX - 1);
     
-    static const float LABEL_SCALES[] = {
-        [LABEL_STYLE_LABEL_LARGE]     = 1.0f,
-        [LABEL_STYLE_LABEL_MEDIUM]    = 0.9f,
-        [LABEL_STYLE_LABEL_SMALL]     = 0.8f
-    };
-
     if (style >= 0 && style < (int)(sizeof(LABEL_SCALES) / sizeof(float))) {
         label->text_scale = LABEL_SCALES[style];
     } else {
@@ -84,6 +106,7 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
         return NULL;
     }
 
+    __update_label_geometry(node);
 
     aroma_node_set_draw_cb(node, aroma_label_draw);
     
@@ -99,6 +122,7 @@ void aroma_label_set_text(AromaNode* label_node, const char* text)
     if (!label_node || !label_node->node_widget_ptr || !text) return;
     AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
     strncpy(label->text, text, AROMA_LABEL_TEXT_MAX - 1);
+    __update_label_geometry(label_node);
     aroma_node_invalidate(label_node);
 }
 
@@ -116,6 +140,7 @@ void aroma_label_set_font(AromaNode* label_node, AromaFont* font)
     if (!label_node || !label_node->node_widget_ptr) return;
     AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
     label->font = font;
+    __update_label_geometry(label_node);
     aroma_node_invalidate(label_node);
 }
 
@@ -145,6 +170,14 @@ void aroma_label_set_style(AromaNode* label_node, AromaLabelStyle style)
     if (!label_node || !label_node->node_widget_ptr) return;
     AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
     label->style = style;
+    
+    if (style >= 0 && style < (int)(sizeof(LABEL_SCALES) / sizeof(float))) {
+        label->text_scale = LABEL_SCALES[style];
+    } else {
+        label->text_scale = 1.0f;
+    }
+    
+    __update_label_geometry(label_node);
     aroma_node_invalidate(label_node);
 }
 

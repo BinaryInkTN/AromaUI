@@ -40,7 +40,9 @@ typedef enum AromaDrawCmdType {
     AROMA_DRAW_CMD_HOLLOW_RECT, /**< Outlined rectangle. */
     AROMA_DRAW_CMD_ARC,         /**< Arc or circle segment. */
     AROMA_DRAW_CMD_TEXT,        /**< Text rendering. */
-    AROMA_DRAW_CMD_IMAGE        /**< Image rendering. */
+    AROMA_DRAW_CMD_IMAGE,       /**< Image rendering. */
+    AROMA_DRAW_CMD_SET_SCISSOR, /**< Set clipping rectangle. */
+    AROMA_DRAW_CMD_RESET_SCISSOR /**< Reset clipping range */
 } AromaDrawCmdType;
 
 /**
@@ -157,6 +159,22 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
  * @param texture_id GPU texture ID.
  */
 void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int height, unsigned int texture_id);
+
+/**
+ * @brief Add a command to set the scissor (clipping) rectangle.
+ * @param list Target draw list.
+ * @param x Left coordinate.
+ * @param y Top coordinate.
+ * @param width Width.
+ * @param height Height.
+ */
+void aroma_drawlist_cmd_set_scissor(AromaDrawList* list, int x, int y, int width, int height);
+
+/**
+ * @brief Add a command to reset/disable the scissor test.
+ * @param list Target draw list.
+ */
+void aroma_drawlist_cmd_reset_scissor(AromaDrawList* list);
 
 /**
  * @brief Execute (flush) all commands in the list to the backend.

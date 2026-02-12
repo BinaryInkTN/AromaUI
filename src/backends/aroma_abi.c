@@ -1,23 +1,4 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
 #include "aroma_abi.h"
 #include "graphics/aroma_graphics_interface.h"
@@ -204,6 +185,32 @@ static void drawlist_proxy_shutdown(void)
     }
 }
 
+static void drawlist_proxy_set_scissor(size_t window_id, int x, int y, int width, int height)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_set_scissor(list, x, y, width, height);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->set_scissor) {
+        real->set_scissor(window_id, x, y, width, height);
+    }
+}
+
+static void drawlist_proxy_reset_scissor(size_t window_id)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_reset_scissor(list);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->reset_scissor) {
+        real->reset_scissor(window_id);
+    }
+}
+
 void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->graphics_set_clip) {
@@ -232,6 +239,8 @@ static AromaGraphicsInterface drawlist_proxy = {
     .render_text = drawlist_proxy_render_text,
     .measure_text = drawlist_proxy_measure_text,
     .shutdown = drawlist_proxy_shutdown,
+    .set_scissor = drawlist_proxy_set_scissor,
+    .reset_scissor = drawlist_proxy_reset_scissor,
     .graphics_set_sprite_mode = drawlist_proxy_graphics_set_sprite_mode,
     .graphics_set_tft_context = drawlist_proxy_graphics_set_tft_context,
     .graphics_set_clip = drawlist_proxy_graphics_set_clip,

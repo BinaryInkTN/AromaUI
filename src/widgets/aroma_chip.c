@@ -138,6 +138,11 @@ AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label,
         return NULL;
     }
 
+    node->x = x;
+    node->y = y;
+    node->width = chip->rect.width; 
+    node->height = chip->rect.height;
+
     aroma_node_set_draw_cb(node, aroma_chip_draw);
 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __chip_handle_event, aroma_ui_request_redraw, 60);

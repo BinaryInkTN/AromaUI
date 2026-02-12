@@ -119,6 +119,11 @@ AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
         return NULL;
     }
 
+    node->x = x;
+    node->y = y;
+    node->width = width;
+    node->height = height;
+
     aroma_node_set_draw_cb(node, aroma_checkbox_draw);
 
     LOG_INFO("Checkbox created: label='%s'", data->label);

@@ -289,6 +289,11 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
         new_y = widget->rect.y;
         new_w = widget->rect.width;
         new_h = widget->rect.height;
+
+        start_node->x = new_x;
+        start_node->y = new_y;
+        start_node->width = new_w;
+        start_node->height = new_h;
     }
     
     if (start_node->layout.mode == AROMA_LAYOUT_MODE_FLEX) {

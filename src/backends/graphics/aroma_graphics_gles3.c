@@ -1,23 +1,4 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 #ifndef ESP32
 #include "aroma_graphics_interface.h"
 #include "utils/helpers_gles3.h"
@@ -298,6 +279,12 @@ static void clear(size_t window_id, uint32_t color)
 
     platform->make_context_current(window_id);
 
+    
+    
+    
+    
+    
+
     int window_width = 0;
     int window_height = 0;
     platform->get_window_size(window_id, &window_width, &window_height);
@@ -326,7 +313,7 @@ static void render_text(size_t window_id, AromaFont* font, const char* text, int
 
     GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
     
-    // Check if we need to load/switch font
+    
     if (ctx.loaded_fonts[window_id] != font) {
         FT_Face face = (FT_Face)aroma_font_get_face(font);
         if (face) {
@@ -348,7 +335,7 @@ static float measure_text(size_t window_id, AromaFont* font, const char* text, f
 
     GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
 
-    // Lazy load font if needed (requires context for texture generation in load_font)
+    
     if (ctx.loaded_fonts[window_id] != font) {
         AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
         if (platform && platform->make_context_current) {
@@ -771,7 +758,7 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
-//    stbi_image_free(img_data);
+
 
     LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, Forced RGBA)",
              texture, width, height);
@@ -802,7 +789,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     if (!glIsTexture(texture_id)) {
         LOG_ERROR("Texture ID %u is not a valid OpenGL texture", texture_id);
 
-        // Check OpenGL error state
+        
         GLenum error = glGetError();
         if (error != GL_NO_ERROR) {
             LOG_ERROR("OpenGL error before drawing: 0x%X", error);
@@ -903,6 +890,38 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
 
     LOG_INFO("Image drawn successfully: texture %u", texture_id);
 }
+
+void set_scissor(size_t window_id, int x, int y, int width, int height)
+{
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (!platform || !platform->make_context_current || !platform->get_window_size) {
+        return;
+    }
+
+    platform->make_context_current(window_id);
+
+    int window_width = 0;
+    int window_height = 0;
+    platform->get_window_size(window_id, &window_width, &window_height);
+
+    if (width < 0) width = 0;
+    if (height < 0) height = 0;
+
+    glEnable(GL_SCISSOR_TEST);
+    
+    glScissor(x, window_height - y - height, width, height);
+}
+
+void reset_scissor(size_t window_id)
+{
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (!platform || !platform->make_context_current) {
+        return;
+    }
+    platform->make_context_current(window_id);
+    glDisable(GL_SCISSOR_TEST);
+}
+
 AromaGraphicsInterface aroma_graphics_gles3 = {
     .setup_shared_window_resources = setup_shared_window_resources,
     .setup_separate_window_resources = setup_separate_window_resources,
@@ -918,6 +937,8 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .load_image_from_memory = load_image_from_memory,
     .draw_image = draw_image,
     .shutdown = shutdown,
+    .set_scissor = set_scissor,
+    .reset_scissor = reset_scissor,
     
 };
 #endif

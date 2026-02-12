@@ -106,6 +106,11 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
         aroma_widget_free(card);
         return NULL;
     }
+    
+    node->x = x;
+    node->y = y;
+    node->width = width;
+    node->height = height;
 
     aroma_node_set_draw_cb(node, aroma_card_draw);
 

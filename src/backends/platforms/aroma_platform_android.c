@@ -22,6 +22,7 @@
 #endif
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
 #include <stdbool.h>
@@ -34,6 +35,10 @@
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 #include "widgets/aroma_window.h"
+
+#ifndef EGL_SWAP_BEHAVIOR_PRESERVED_BIT
+#define EGL_SWAP_BEHAVIOR_PRESERVED_BIT 0x0400
+#endif
 
 static struct android_app* g_app = NULL;
 
@@ -432,7 +437,7 @@ static int init_display(struct android_app* app) {
         return -1;
 
     const EGLint attribs[] = {
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT | EGL_SWAP_BEHAVIOR_PRESERVED_BIT,
         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
         EGL_RED_SIZE, 8,
         EGL_GREEN_SIZE, 8,
@@ -444,9 +449,24 @@ static int init_display(struct android_app* app) {
     };
 
     EGLint num;
+    // Try with EGL_SWAP_BEHAVIOR_PRESERVED_BIT
     if (!eglChooseConfig(dpy, attribs, &config, 1, &num) || num == 0) {
-        LOGE("Failed to choose config");
-        return -1;
+        LOGE("Failed to choose config with preserved swap behavior, trying fallback");
+        const EGLint attribs_fallback[] = {
+            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+            EGL_RED_SIZE, 8,
+            EGL_GREEN_SIZE, 8,
+            EGL_BLUE_SIZE, 8,
+            EGL_ALPHA_SIZE, 8,
+            EGL_DEPTH_SIZE, 0,
+            EGL_STENCIL_SIZE, 0,
+            EGL_NONE
+        };
+        if (!eglChooseConfig(dpy, attribs_fallback, &config, 1, &num) || num == 0) {
+            LOGE("Failed to choose fallback config");
+            return -1;
+        }
     }
 
     EGLint format;
@@ -476,6 +496,12 @@ static int init_display(struct android_app* app) {
          LOGE("Failed to make current");
         return -1;
     }
+
+    // Attempt to set swap behavior to preserved, but ignore error if it fails (fallback mode)
+    eglSurfaceAttrib(dpy, surf, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
+    
+    // Also explicitly disable scissor test on context init to prevent black screen from persistent state
+    glDisable(GL_SCISSOR_TEST);
 
     display = dpy;
     surface = surf;

@@ -115,6 +115,12 @@ AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int dur
         aroma_widget_free(bar);
         return NULL;
     }
+    
+    // Initial sync
+    node->x = bar->rect.x;
+    node->y = bar->rect.y;
+    node->width = bar->rect.width;
+    node->height = bar->rect.height;
 
     aroma_node_set_z_index(node, INT_MAX);
     aroma_node_set_draw_cb(node, aroma_snackbar_draw);
@@ -140,6 +146,12 @@ void aroma_snackbar_set_action(AromaNode* snackbar_node, const char* action_text
     bar->action_hit_width = aroma_font_get_line_width(bar->font, action_text) + 25;
 
     __calculate_snackbar_size(bar);
+    
+    // Sync node geometry
+    snackbar_node->x = bar->rect.x;
+    snackbar_node->y = bar->rect.y;
+    snackbar_node->width = bar->rect.width;
+    snackbar_node->height = bar->rect.height;
 }
 
 void aroma_snackbar_set_font(AromaNode* snackbar_node, AromaFont* font) {
@@ -148,6 +160,12 @@ void aroma_snackbar_set_font(AromaNode* snackbar_node, AromaFont* font) {
     bar->font = font;
 
     __calculate_snackbar_size(bar);
+    
+    // Sync node geometry
+    snackbar_node->x = bar->rect.x;
+    snackbar_node->y = bar->rect.y;
+    snackbar_node->width = bar->rect.width;
+    snackbar_node->height = bar->rect.height;
 }
 
 void aroma_snackbar_show(AromaNode* snackbar_node) {

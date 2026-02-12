@@ -105,6 +105,11 @@ AromaNode *aroma_listview_create(AromaNode *parent, int x, int y, int width, int
         aroma_widget_free(list);
         return NULL;
     }
+    
+    node->x = x;
+    node->y = y;
+    node->width = width;
+    node->height = height;
 
     aroma_node_set_draw_cb(node, aroma_listview_draw);
 

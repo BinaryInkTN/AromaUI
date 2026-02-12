@@ -142,6 +142,11 @@ AromaNode* aroma_image_create(AromaNode* parent, const char* image_path, int x, 
         return NULL;
     }
 
+    node->x = x;
+    node->y = y;
+    node->width = width;
+    node->height = height;
+
     aroma_node_set_draw_cb(node, aroma_image_draw);
     
     LOG_INFO("Created image widget at (%d, %d) size %dx%d, texture ID: %u", 
@@ -193,6 +198,11 @@ AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data
         aroma_widget_free(image);
         return NULL;
     }
+
+    node->x = x;
+    node->y = y;
+    node->width = width;
+    node->height = height;
 
     aroma_node_set_draw_cb(node, aroma_image_draw);
        #ifdef ESP32
