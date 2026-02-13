@@ -16,18 +16,15 @@
 #ifndef AWINDOW_FLAG_LAYOUT_NO_LIMITS
 #define AWINDOW_FLAG_LAYOUT_NO_LIMITS 0x00000200
 #endif
-
 #ifndef AWINDOW_FLAG_KEEP_SCREEN_ON
 #define AWINDOW_FLAG_KEEP_SCREEN_ON 0x00000080
 #endif
-
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
 #include <stdbool.h>
 #include <jni.h>
-
 #include "../aroma_abi.h"
 #include "../graphics/aroma_graphics_interface.h"
 #include "core/aroma_logger.h"
@@ -41,27 +38,120 @@
 #endif
 
 static struct android_app* g_app = NULL;
-
 static EGLDisplay display = EGL_NO_DISPLAY;
 static EGLSurface surface = EGL_NO_SURFACE;
 static EGLContext context = EGL_NO_CONTEXT;
 static EGLConfig config;
-
 static int g_width = 0;
 static int g_height = 0;
 static bool g_has_window = false;
-
 static int g_phys_width = 0;
 static int g_phys_height = 0;
 static bool g_phys_cached = false;
 static bool g_window_flags_set = false;
-
 static void (*g_update_callback)(size_t window_id, void *data) = NULL;
 static void* g_update_callback_data = NULL;
 
 #define LOG_TAG "AromaUI-Android"
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
+
+typedef struct {
+    jclass helper_class;
+    jmethodID show_toast;
+    jmethodID bt_get_paired;
+    jmethodID bt_connect;
+    jmethodID bt_disconnect;
+    jmethodID bt_send;
+    jmethodID bt_is_connected;
+    bool initialized;
+} AromaHelperCache;
+
+static AromaHelperCache g_helper_cache = {0};
+
+static bool ensure_aroma_helper_initialized(JNIEnv* env) {
+    if (g_helper_cache.initialized && g_helper_cache.helper_class != NULL) {
+        return true;
+    }
+    
+    memset(&g_helper_cache, 0, sizeof(g_helper_cache));
+    
+    jobject activity = aroma_android_get_activity();
+    if (!activity) {
+        LOGE("Cannot find AromaHelper: no activity");
+        return false;
+    }
+    
+    jclass activityClass = (*env)->GetObjectClass(env, activity);
+    jmethodID getClassLoader = (*env)->GetMethodID(env, activityClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
+    
+    if (!getClassLoader) {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, activityClass);
+        LOGE("Failed to get class loader method");
+        return false;
+    }
+    
+    jobject classLoader = (*env)->CallObjectMethod(env, activity, getClassLoader);
+    if (!classLoader || (*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, activityClass);
+        LOGE("Failed to get class loader");
+        return false;
+    }
+    
+    jclass classLoaderClass = (*env)->GetObjectClass(env, classLoader);
+    jmethodID loadClass = (*env)->GetMethodID(env, classLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+    
+    if (!loadClass) {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, classLoaderClass);
+        (*env)->DeleteLocalRef(env, classLoader);
+        (*env)->DeleteLocalRef(env, activityClass);
+        LOGE("Failed to get loadClass method");
+        return false;
+    }
+    
+    jstring jclassName = (*env)->NewStringUTF(env, "AromaHelper");
+    jclass helper = (jclass)(*env)->CallObjectMethod(env, classLoader, loadClass, jclassName);
+    
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, jclassName);
+        (*env)->DeleteLocalRef(env, classLoaderClass);
+        (*env)->DeleteLocalRef(env, classLoader);
+        (*env)->DeleteLocalRef(env, activityClass);
+        LOGE("AromaHelper class not found");
+        return false;
+    }
+    
+    (*env)->DeleteLocalRef(env, jclassName);
+    
+    g_helper_cache.helper_class = (jclass)(*env)->NewGlobalRef(env, helper);
+    
+    g_helper_cache.show_toast = (*env)->GetStaticMethodID(env, helper, "showToast", "(Landroid/app/Activity;Ljava/lang/String;Z)V");
+    g_helper_cache.bt_get_paired = (*env)->GetStaticMethodID(env, helper, "btGetPairedDevices", "()[Ljava/lang/String;");
+    g_helper_cache.bt_connect = (*env)->GetStaticMethodID(env, helper, "btConnect", "(Ljava/lang/String;)Z");
+    g_helper_cache.bt_disconnect = (*env)->GetStaticMethodID(env, helper, "btDisconnect", "()V");
+    g_helper_cache.bt_send = (*env)->GetStaticMethodID(env, helper, "btSend", "([B)I");
+    g_helper_cache.bt_is_connected = (*env)->GetStaticMethodID(env, helper, "btIsConnected", "()Z");
+    
+    if (!g_helper_cache.show_toast) (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_get_paired) (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_connect) (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_disconnect) (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_send) (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_is_connected) (*env)->ExceptionClear(env);
+    
+    (*env)->DeleteLocalRef(env, helper);
+    (*env)->DeleteLocalRef(env, classLoaderClass);
+    (*env)->DeleteLocalRef(env, classLoader);
+    (*env)->DeleteLocalRef(env, activityClass);
+    
+    g_helper_cache.initialized = true;
+    LOGI("AromaHelper initialized successfully");
+    return true;
+}
 
 static void cache_physical_screen_info(struct android_app* app) {
     if (g_phys_cached || !app || !app->activity) return;
@@ -136,9 +226,6 @@ static void android_open_url(const char* url) {
     if (!activity_class) {
          LOGE("Failed to get activity class");
          if (did_attach) {
-
-// Disabled
-
          }
          return;
     }
@@ -174,9 +261,6 @@ static void android_open_url(const char* url) {
     }
 
     if (did_attach) {
-
-// Disabled: Main thread should stay attached
-
     }
 }
 
@@ -189,15 +273,10 @@ static void android_send_intent(int action_enum, const char* uri, const char* ty
     const char* action = "android.intent.action.VIEW";
     switch (action_enum) {
         case 0: action = "android.intent.action.VIEW"; break; 
-
         case 1: action = "android.intent.action.SEND"; break; 
-
         case 2: action = "android.intent.action.EDIT"; break; 
-
         case 3: action = "android.intent.action.DIAL"; break; 
-
         case 4: action = "android.intent.action.CALL"; break; 
-
         default: break;
     }
 
@@ -221,9 +300,6 @@ static void android_send_intent(int action_enum, const char* uri, const char* ty
     if (!intent_class || !uri_class || !activity_class) {
          LOGE("Failed to find required classes for intent");
          if (did_attach) { 
-
-// Disabled
-
          }
          return;
     }
@@ -241,19 +317,16 @@ static void android_send_intent(int action_enum, const char* uri, const char* ty
     }
 
     if (uri_obj && type) {
-
         jstring jtype = (*env)->NewStringUTF(env, type);
         jmethodID set_data_and_type = (*env)->GetMethodID(env, intent_class, "setDataAndType", "(Landroid/net/Uri;Ljava/lang/String;)Landroid/content/Intent;");
         (*env)->CallObjectMethod(env, intent_obj, set_data_and_type, uri_obj, jtype);
         (*env)->DeleteLocalRef(env, jtype);
     } 
     else if (uri_obj) {
-
         jmethodID set_data = (*env)->GetMethodID(env, intent_class, "setData", "(Landroid/net/Uri;)Landroid/content/Intent;");
         (*env)->CallObjectMethod(env, intent_obj, set_data, uri_obj);
     }
     else if (type) {
-
          jstring jtype = (*env)->NewStringUTF(env, type);
          jmethodID set_type = (*env)->GetMethodID(env, intent_class, "setType", "(Ljava/lang/String;)Landroid/content/Intent;");
          (*env)->CallObjectMethod(env, intent_obj, set_type, jtype);
@@ -262,9 +335,7 @@ static void android_send_intent(int action_enum, const char* uri, const char* ty
 
     if (extras && extra_count > 0) {
         const AromaIntentExtra* extra_list = (const AromaIntentExtra*)extras;
-
         jmethodID put_extra = (*env)->GetMethodID(env, intent_class, "putExtra", "(Ljava/lang/String;Ljava/lang/String;)Landroid/content/Intent;");
-
         if (put_extra) {
             for (int i = 0; i < extra_count; i++) {
                 if (extra_list[i].key && extra_list[i].string_value) {
@@ -296,9 +367,6 @@ static void android_send_intent(int action_enum, const char* uri, const char* ty
     (*env)->DeleteLocalRef(env, intent_class);
 
     if (did_attach) {
-
-// Disabled: Keep main thread attached
-
     }
 }
 
@@ -316,7 +384,6 @@ static void update_surface_size(void) {
     if (w == g_width && h == g_height)
         return;
     
-    // Only log if we are changing from a valid size to another valid size
     if (g_width != 0 && g_height != 0) {
         LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
     }
@@ -337,7 +404,6 @@ static void update_surface_size(void) {
              }
 
              aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
-
              aroma_node_invalidate(g_windows[i].root_node);
 
              AromaEvent* event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
@@ -416,7 +482,6 @@ static int32_t handle_input(struct android_app* app, AInputEvent* event) {
                     2
                 );
             }
-            // Keep mouse emulation for index 0
             aroma_event_handle_pointer_move(
                 (int)AMotionEvent_getX(event, 0),
                 (int)AMotionEvent_getY(event, 0),
@@ -462,7 +527,6 @@ static int init_display(struct android_app* app) {
     };
 
     EGLint num;
-    // Try with EGL_SWAP_BEHAVIOR_PRESERVED_BIT
     if (!eglChooseConfig(dpy, attribs, &config, 1, &num) || num == 0) {
         LOGE("Failed to choose config with preserved swap behavior, trying fallback");
         const EGLint attribs_fallback[] = {
@@ -510,10 +574,7 @@ static int init_display(struct android_app* app) {
         return -1;
     }
 
-    // Attempt to set swap behavior to preserved, but ignore error if it fails (fallback mode)
     eglSurfaceAttrib(dpy, surf, EGL_SWAP_BEHAVIOR, EGL_BUFFER_PRESERVED);
-    
-    // Also explicitly disable scissor test on context init to prevent black screen from persistent state
     glDisable(GL_SCISSOR_TEST);
 
     display = dpy;
@@ -565,19 +626,16 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
     switch (cmd) {
         case APP_CMD_INIT_WINDOW:
             if (app->window) {
-
                 term_display_surface_only();
                 init_display(app);
             }
             break;
-
         case APP_CMD_WINDOW_RESIZED:
         case APP_CMD_CONFIG_CHANGED:
             term_display_surface_only();
             if (app->window)
                 init_display(app);
             break;
-
         case APP_CMD_GAINED_FOCUS:
         case APP_CMD_RESUME:
             if (app->window && !g_has_window) {
@@ -593,11 +651,9 @@ static void handle_cmd(struct android_app* app, int32_t cmd) {
                  }
             }
             break;
-
         case APP_CMD_TERM_WINDOW:
             term_display_surface_only();
             break;
-
         case APP_CMD_DESTROY:
             term_display();
             break;
@@ -672,10 +728,8 @@ void set_fullscreen(size_t window_id, bool enabled) {
     if (!g_app || !g_app->activity) return;
 
     if (enabled) {
-
         ANativeActivity_setWindowFlags(g_app->activity, AWINDOW_FLAG_FULLSCREEN, 0);
     } else {
-
         ANativeActivity_setWindowFlags(g_app->activity, 0, AWINDOW_FLAG_FULLSCREEN);
     }
 }
@@ -698,7 +752,6 @@ bool run_event_loop(void) {
         if (g_update_callback) {
             g_update_callback(0, g_update_callback_data);
         } else {
-
         }
     }
 
@@ -734,29 +787,23 @@ static void android_show_keyboard(void) {
     }
 
     jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
-
     jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
     jstring serviceName = (*env)->NewStringUTF(env, "input_method");
     jobject imm = (*env)->CallObjectMethod(env, g_app->activity->clazz, getSystemService, serviceName);
     (*env)->DeleteLocalRef(env, serviceName);
 
     if (imm) {
-
         jmethodID getWindow = (*env)->GetMethodID(env, activityClass, "getWindow", "()Landroid/view/Window;");
         jobject window = (*env)->CallObjectMethod(env, g_app->activity->clazz, getWindow);
-
         jclass windowClass = (*env)->FindClass(env, "android/view/Window");
         jmethodID getDecorView = (*env)->GetMethodID(env, windowClass, "getDecorView", "()Landroid/view/View;");
         jobject decorView = (*env)->CallObjectMethod(env, window, getDecorView);
 
         if (decorView) {
-
             jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
             jmethodID showSoftInput = (*env)->GetMethodID(env, immClass, "showSoftInput", "(Landroid/view/View;I)Z");
-
             (*env)->CallBooleanMethod(env, imm, showSoftInput, decorView, 2);
             LOGI("Keyboard show requested via JNI");
-
             (*env)->DeleteLocalRef(env, decorView);
             (*env)->DeleteLocalRef(env, windowClass);
             (*env)->DeleteLocalRef(env, immClass);
@@ -809,7 +856,6 @@ static void android_hide_keyboard(void) {
             if (token) {
                 jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
                 jmethodID hideSoftInput = (*env)->GetMethodID(env, immClass, "hideSoftInputFromWindow", "(Landroid/os/IBinder;I)Z");
-
                 (*env)->CallBooleanMethod(env, imm, hideSoftInput, token, 0);
                 LOGI("Keyboard hide requested via JNI");
                 (*env)->DeleteLocalRef(env, token);
@@ -846,8 +892,6 @@ void platform_set_android_app(void* state) {
     g_app = (struct android_app*)state;
 }
 
-
-
 JNIEnv* aroma_android_get_env() {
     if (!g_app || !g_app->activity || !g_app->activity->vm) return NULL;
     JNIEnv* env = NULL;
@@ -882,20 +926,16 @@ static jclass FindClassSafe(JNIEnv* env, const char* name) {
     jclass cls = (*env)->FindClass(env, name);
     if (!cls || (*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env); 
-
         jobject activity = aroma_android_get_activity();
         if (activity) {
              jclass activityClass = (*env)->GetObjectClass(env, activity);
              jmethodID getClassLoader = (*env)->GetMethodID(env, activityClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
-
              if (getClassLoader) {
                 jobject classLoader = (*env)->CallObjectMethod(env, activity, getClassLoader);
                 if (classLoader) {
                     jclass classLoaderClass = (*env)->GetObjectClass(env, classLoader);
                     jmethodID loadClass = (*env)->GetMethodID(env, classLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
-
                     if (loadClass) {
-
                         size_t len = strlen(name);
                         char* dotted_name = (char*)malloc(len + 1);
                         if (dotted_name) {
@@ -903,7 +943,6 @@ static jclass FindClassSafe(JNIEnv* env, const char* name) {
                             for(size_t i=0; i<len; i++) {
                                 if(dotted_name[i] == '/') dotted_name[i] = '.';
                             }
-
                             jstring jname = (*env)->NewStringUTF(env, dotted_name);
                             cls = (jclass)(*env)->CallObjectMethod(env, classLoader, loadClass, jname);
                             if ((*env)->ExceptionCheck(env)) {
@@ -939,7 +978,6 @@ static bool impl_android_check_permission(const char* permission_name) {
         jstring perm = StrToJstring(env, permission_name);
         jint res = (*env)->CallIntMethod(env, activity, checkSelfPermission, perm);
         granted = (res == 0); 
-
         (*env)->DeleteLocalRef(env, perm);
     } else {
         (*env)->ExceptionClear(env);
@@ -955,7 +993,6 @@ static void impl_android_request_permission(const char* permission_name) {
 
     jobject activity = aroma_android_get_activity();
     jclass activityClass = (*env)->GetObjectClass(env, activity);
-
     jmethodID requestPermissions = (*env)->GetMethodID(env, activityClass, "requestPermissions", "([Ljava/lang/String;I)V");
 
     if (requestPermissions) {
@@ -1025,23 +1062,19 @@ static void impl_android_vibrate(int ms) {
         if (!(*env)->ExceptionCheck(env)) {
             done = true;
         } else {
-
             (*env)->ExceptionClear(env);
         }
     } 
 
     if (!done) {
-
         jclass effectClass = (*env)->FindClass(env, "android/os/VibrationEffect");
         if (effectClass) {
              jmethodID createOneShot = (*env)->GetStaticMethodID(env, effectClass, "createOneShot", "(JI)Landroid/os/VibrationEffect;");
              if (createOneShot) {
                 jobject effect = (*env)->CallStaticObjectMethod(env, effectClass, createOneShot, (jlong)ms, -1);
-
                 if ((*env)->ExceptionCheck(env)) {
                     (*env)->ExceptionClear(env);
                     if (effect) (*env)->DeleteLocalRef(env, effect); 
-
                     effect = NULL;
                 }
 
@@ -1049,7 +1082,6 @@ static void impl_android_vibrate(int ms) {
                     jmethodID vibrateEffect = (*env)->GetMethodID(env, vibratorClass, "vibrate", "(Landroid/os/VibrationEffect;)V");
                     if (vibrateEffect) {
                         (*env)->CallVoidMethod(env, vibrator, vibrateEffect, effect);
-
                         if ((*env)->ExceptionCheck(env)) {
                             (*env)->ExceptionClear(env);
                         }
@@ -1075,57 +1107,20 @@ static void impl_android_toast(const char* msg, bool long_duration) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return;
 
+    if (!ensure_aroma_helper_initialized(env)) {
+        LOGE("AromaHelper not available for toast");
+        return;
+    }
+
     jobject activity = aroma_android_get_activity();
     if (!activity) return;
 
-    jclass activity_class = (*env)->GetObjectClass(env, activity);
-    jmethodID get_pkg_name = (*env)->GetMethodID(env, activity_class, "getPackageName", "()Ljava/lang/String;");
-
-    char class_name[512] = {0};
-
-    if (get_pkg_name) {
-        jstring pkg_name_jstr = (jstring)(*env)->CallObjectMethod(env, activity, get_pkg_name);
-        if (pkg_name_jstr) {
-            const char* pkg_name = (*env)->GetStringUTFChars(env, pkg_name_jstr, NULL);
-            int len = 0;
-            for (int i = 0; pkg_name[i] && len < 450; i++) {
-                class_name[len++] = (pkg_name[i] == '.') ? '/' : pkg_name[i];
-            }
-            strcat(class_name, "/AromaHelper");
-
-            (*env)->ReleaseStringUTFChars(env, pkg_name_jstr, pkg_name);
-            (*env)->DeleteLocalRef(env, pkg_name_jstr);
-        }
+    if (g_helper_cache.show_toast) {
+        jstring jmsg = (*env)->NewStringUTF(env, msg);
+        (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.show_toast, activity, jmsg, (jboolean)long_duration);
+        (*env)->DeleteLocalRef(env, jmsg);
     } else {
-        (*env)->ExceptionClear(env);
-    }
-    (*env)->DeleteLocalRef(env, activity_class);
-
-    if (class_name[0] == 0) return;
-
-    jclass helper_class = FindClassSafe(env, class_name);
-
-    /* Fallbacks: try common package used by the robot_control example or plain class name */
-    if (!helper_class) {
-        helper_class = FindClassSafe(env, "com/example/robot_control/AromaHelper");
-    }
-    if (!helper_class) {
-        helper_class = FindClassSafe(env, "AromaHelper");
-    }
-
-    if (helper_class) {
-        jmethodID show_toast = (*env)->GetStaticMethodID(env, helper_class, "showToast", "(Landroid/app/Activity;Ljava/lang/String;Z)V");
-        if (show_toast) {
-            jstring jmsg = (*env)->NewStringUTF(env, msg);
-            (*env)->CallStaticVoidMethod(env, helper_class, show_toast, activity, jmsg, (jboolean)long_duration);
-            (*env)->DeleteLocalRef(env, jmsg);
-        } else {
-            (*env)->ExceptionClear(env);
-            LOGE("AromaHelper.showToast method not found");
-        }
-        (*env)->DeleteLocalRef(env, helper_class);
-    } else {
-        LOGE("AromaHelper class NOT FOUND. Toasts require this Java helper.");
+        LOGE("showToast method not available");
     }
 }
 
@@ -1218,21 +1213,25 @@ static int impl_android_bt_get_paired(char out_addrs[][18], char out_names[][248
     JNIEnv* env = aroma_android_get_env();
     if (!env) return 0;
 
-    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
-    if (!helper) { (*env)->ExceptionClear(env); return 0; }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_paired) {
+        LOGE("btGetPairedDevices not available");
+        return 0;
+    }
 
-    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btGetPairedDevices", "()[Ljava/lang/String;");
-    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return 0; }
-
-    jobjectArray arr = (jobjectArray)(*env)->CallStaticObjectMethod(env, helper, mid);
-    if (!arr) { (*env)->DeleteLocalRef(env, helper); return 0; }
+    jobjectArray arr = (jobjectArray)(*env)->CallStaticObjectMethod(env, g_helper_cache.helper_class, g_helper_cache.bt_get_paired);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        return 0;
+    }
+    
+    if (!arr) return 0;
 
     jsize len = (*env)->GetArrayLength(env, arr);
     int written = 0;
     for (jsize i = 0; i < len && written < max_devices; i++) {
         jstring s = (jstring)(*env)->GetObjectArrayElement(env, arr, i);
         const char* str = (*env)->GetStringUTFChars(env, s, NULL);
-        // expected format: "ADDR;NAME"
+        
         char addr[18] = {0};
         char name[248] = {0};
         const char* sep = strchr(str, ';');
@@ -1258,59 +1257,85 @@ static int impl_android_bt_get_paired(char out_addrs[][18], char out_names[][248
     }
 
     (*env)->DeleteLocalRef(env, arr);
-    (*env)->DeleteLocalRef(env, helper);
     return written;
 }
 
 static bool impl_android_bt_connect(const char* addr) {
     JNIEnv* env = aroma_android_get_env();
     if (!env || !addr) return false;
-    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
-    if (!helper) { (*env)->ExceptionClear(env); return false; }
-    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btConnect", "(Ljava/lang/String;)Z");
-    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return false; }
+    
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_connect) {
+        LOGE("btConnect not available");
+        return false;
+    }
+    
     jstring jaddr = (*env)->NewStringUTF(env, addr);
-    jboolean res = (*env)->CallStaticBooleanMethod(env, helper, mid, jaddr);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.bt_connect, jaddr);
+    
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    
     (*env)->DeleteLocalRef(env, jaddr);
-    (*env)->DeleteLocalRef(env, helper);
     return res == JNI_TRUE;
 }
 
 static void impl_android_bt_disconnect(void) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return;
-    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
-    if (!helper) { (*env)->ExceptionClear(env); return; }
-    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btDisconnect", "()V");
-    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return; }
-    (*env)->CallStaticVoidMethod(env, helper, mid);
-    (*env)->DeleteLocalRef(env, helper);
+    
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_disconnect) {
+        LOGE("btDisconnect not available");
+        return;
+    }
+    
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.bt_disconnect);
+    
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+    }
 }
 
 static int impl_android_bt_send(const char* data, int len) {
     JNIEnv* env = aroma_android_get_env();
     if (!env || !data || len <= 0) return -1;
-    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
-    if (!helper) { (*env)->ExceptionClear(env); return -1; }
-    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btSend", "([B)I");
-    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return -1; }
+    
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_send) {
+        LOGE("btSend not available");
+        return -1;
+    }
+    
     jbyteArray arr = (*env)->NewByteArray(env, len);
     (*env)->SetByteArrayRegion(env, arr, 0, len, (const jbyte*)data);
-    jint written = (*env)->CallStaticIntMethod(env, helper, mid, arr);
+    
+    jint written = (*env)->CallStaticIntMethod(env, g_helper_cache.helper_class, g_helper_cache.bt_send, arr);
+    
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        written = -1;
+    }
+    
     (*env)->DeleteLocalRef(env, arr);
-    (*env)->DeleteLocalRef(env, helper);
     return (int)written;
 }
 
 static bool impl_android_bt_is_connected(void) {
     JNIEnv* env = aroma_android_get_env();
     if (!env) return false;
-    jclass helper = (*env)->FindClass(env, "com/binaryink/robot_control/AromaHelper");
-    if (!helper) { (*env)->ExceptionClear(env); return false; }
-    jmethodID mid = (*env)->GetStaticMethodID(env, helper, "btIsConnected", "()Z");
-    if (!mid) { (*env)->ExceptionClear(env); (*env)->DeleteLocalRef(env, helper); return false; }
-    jboolean res = (*env)->CallStaticBooleanMethod(env, helper, mid);
-    (*env)->DeleteLocalRef(env, helper);
+    
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_is_connected) {
+        LOGE("btIsConnected not available");
+        return false;
+    }
+    
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.bt_is_connected);
+    
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    
     return res == JNI_TRUE;
 }
 
@@ -1322,7 +1347,6 @@ static int impl_android_get_battery_level(void) {
     if (!batteryManager) return -1;
 
     jclass bmClass = (*env)->GetObjectClass(env, batteryManager);
-
     jmethodID getIntProperty = (*env)->GetMethodID(env, bmClass, "getIntProperty", "(I)I");
     int capacity = -1;
     if (getIntProperty) {
@@ -1350,11 +1374,9 @@ static void impl_android_set_wifi_enabled(bool enabled) {
         (*env)->CallBooleanMethod(env, wifiMgr, setWifiEnabled, (jboolean)enabled);
         if ((*env)->ExceptionCheck(env)) {
              (*env)->ExceptionClear(env); 
-
         }
      } else {
         (*env)->ExceptionClear(env); 
-
      }
 
      (*env)->DeleteLocalRef(env, wifiMgr);
@@ -1449,7 +1471,6 @@ AromaPlatformInterface aroma_platform_android = {
     .set_fullscreen = set_fullscreen,
     .open_url = android_open_url,
     .android_send_intent = android_send_intent,
-
     .android_check_permission = impl_android_check_permission,
     .android_request_permission = impl_android_request_permission,
     .android_toast = impl_android_toast,

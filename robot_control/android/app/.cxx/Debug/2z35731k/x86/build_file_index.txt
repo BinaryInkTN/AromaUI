@@ -1,3 +1,0 @@
-/home/yassine/AromaUI/robot_control/android/app/src/main/cpp/CMakeLists.txt
-/home/yassine/AromaUI/src/CMakeLists.txt
-/home/yassine/AromaUI/vendors/freetype/CMakeLists.txt
