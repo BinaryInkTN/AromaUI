@@ -48,6 +48,7 @@ public class AromaHelper {
                     devices.add(device.getAddress() + ";" + device.getName());
                 }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,6 +57,10 @@ public class AromaHelper {
     }
     
     public static boolean btConnect(String address) {
+        if (address == null || address.length() != 17) {
+            return false;
+        }
+        
         btDisconnect();
         
         try {

@@ -1,0 +1,93 @@
+{
+    "name": "AromaUI",
+    "version": "0.0.1 (alpha)",
+    "description": "Browse AromaUI's APIs with detailed documentation and examples.",
+    "categories": [
+        {
+            "name": "Connectivity",
+            "icon": "network",
+            "description": "Network and device connectivity APIs"
+        },
+        {
+            "name": "System",
+            "icon": "settings",
+            "description": "Low-level system and JNI access"
+        },
+        {
+            "name": "Media",
+            "icon": "photo_camera",
+            "description": "Camera, gallery and media handling"
+        },
+        {
+            "name": "UI",
+            "icon": "widgets",
+            "description": "User interface utilities"
+        }
+    ],
+    "sections": [
+        {
+            "title": "Bluetooth API",
+            "description": "Bluetooth device management and communication. Scan, connect, and communicate with Bluetooth devices.",
+            "icon": "bluetooth",
+            "color": "#6750A4",
+            "category": "Connectivity",
+            "file": "docs/bluetooth.md"
+        },
+        {
+            "title": "Wi-Fi API",
+            "description": "Wi-Fi state and control. Scan networks, manage connections, and monitor signal strength.",
+            "icon": "wifi",
+            "color": "#1D192B",
+            "category": "Connectivity",
+            "file": "docs/wifi.md"
+        },
+        {
+            "title": "Core JNI API",
+            "description": "Low-level JNI and Android runtime access. Direct access to native system functions.",
+            "icon": "memory",
+            "color": "#006875",
+            "category": "System",
+            "file": "docs/core_jni.md"
+        },
+        {
+            "title": "Permissions API",
+            "description": "Runtime permission handling. Request and manage app permissions easily.",
+            "icon": "security",
+            "color": "#B3261E",
+            "category": "System",
+            "file": "docs/permissions.md"
+        },
+        {
+            "title": "System Services & File System API",
+            "description": "System services and storage access. Manage files, preferences, and system settings.",
+            "icon": "folder",
+            "color": "#4A4458",
+            "category": "System",
+            "file": "docs/services_fs.md"
+        },
+        {
+            "title": "Device Information API",
+            "description": "Battery and device runtime information. Monitor device status and hardware info.",
+            "icon": "battery_full",
+            "color": "#386A20",
+            "category": "System",
+            "file": "docs/device_informations.md"
+        },
+        {
+            "title": "Camera & Gallery API",
+            "description": "Media capture and selection. Take photos, record videos, and pick from gallery.",
+            "icon": "photo_camera",
+            "color": "#9A4521",
+            "category": "Media",
+            "file": "docs/camera_gallery.md"
+        },
+        {
+            "title": "UI Utilities API",
+            "description": "Android UI feedback utilities. Toasts, dialogs, and material components.",
+            "icon": "widgets",
+            "color": "#7D5260",
+            "category": "UI",
+            "file": "docs/ui_utilities.md"
+        }
+    ]
+}

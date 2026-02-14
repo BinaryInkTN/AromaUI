@@ -1,3 +1,0 @@
-/home/yassineaa/AromaUI/apptest/android/app/src/main/cpp/CMakeLists.txt
-/home/yassineaa/AromaUI/src/CMakeLists.txt
-/home/yassineaa/AromaUI/vendors/freetype/CMakeLists.txt
