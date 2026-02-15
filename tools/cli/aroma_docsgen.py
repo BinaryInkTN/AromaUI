@@ -41,17 +41,16 @@ class DocGenerator:
         repo_id = giscus_config.get('repo_id', '')
         category = giscus_config.get('category', 'Announcements')
         category_id = giscus_config.get('category_id', '')
-        mapping = giscus_config.get('mapping', 'pathname')
         reactions = '1' if giscus_config.get('reactions_enabled', True) else '0'
         emit_metadata = '1' if giscus_config.get('emit_metadata', False) else '0'
         input_position = giscus_config.get('input_position', 'top')
         lang = giscus_config.get('lang', 'en')
         
-        # Check if we want a shared comment section across all pages
-        shared_comments = giscus_config.get('shared', True)  # Default to True for shared comments
-        
         if not repo or not repo_id:
             return ''  # Return empty if Giscus not configured
+        
+        # Use a fixed term for all pages
+        fixed_term = "aroma-ui-documentation"
         
         return f'''
         <!-- Comment Section -->
@@ -67,45 +66,27 @@ class DocGenerator:
                 </div>
             </div>
             <div class="comments-container">
-                <div class="giscus" id="giscus-container"></div>
+                <script src="https://giscus.app/client.js"
+                    data-repo="{repo}"
+                    data-repo-id="{repo_id}"
+                    data-category="{category}"
+                    data-category-id="{category_id}"
+                    data-mapping="specific"
+                    data-term="{fixed_term}"
+                    data-strict="0"
+                    data-reactions-enabled="{reactions}"
+                    data-emit-metadata="{emit_metadata}"
+                    data-input-position="{input_position}"
+                    data-theme="light"
+                    data-lang="{lang}"
+                    data-loading="lazy"
+                    crossorigin="anonymous"
+                    async>
+                </script>
             </div>
         </div>
         
-        <!-- Giscus script - will be initialized per page -->
         <script>
-            function loadGiscusForPage(pageId) {{
-                const container = document.getElementById('giscus-container');
-                if (!container) return;
-                
-                // Clear previous giscus instance
-                container.innerHTML = '';
-                
-                // Create new script element
-                const script = document.createElement('script');
-                script.src = 'https://giscus.app/client.js';
-                script.setAttribute('data-repo', '{repo}');
-                script.setAttribute('data-repo-id', '{repo_id}');
-                script.setAttribute('data-category', '{category}');
-                script.setAttribute('data-category-id', '{category_id}');
-                script.setAttribute('data-mapping', '{'specific' if shared_comments else mapping}');
-                script.setAttribute('data-strict', '0');
-                script.setAttribute('data-reactions-enabled', '{reactions}');
-                script.setAttribute('data-emit-metadata', '{emit_metadata}');
-                script.setAttribute('data-input-position', '{input_position}');
-                script.setAttribute('data-lang', '{lang}');
-                script.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.getAttribute('data-theme') === 'nord' ? 'dark' : 'light');
-                script.setAttribute('data-loading', 'lazy');
-                script.crossOrigin = 'anonymous';
-                script.async = true;
-                
-                // SHARED COMMENTS: All pages use the same thread
-                if ({str(shared_comments).lower()}) {{
-                    script.setAttribute('data-term', 'aroma-ui-documentation');
-                }}
-                
-                container.appendChild(script);
-            }}
-            
             // Function to update Giscus theme when site theme changes
             function updateGiscusTheme(theme) {{
                 const giscusTheme = theme === 'dark' || theme === 'nord' ? 'dark' : 'light';

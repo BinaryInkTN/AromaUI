@@ -2122,45 +2122,27 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
                 </div>
             </div>
             <div class="comments-container">
-                <div class="giscus" id="giscus-container"></div>
+                <script src="https://giscus.app/client.js"
+                    data-repo="BinaryInkTN/AromaUI"
+                    data-repo-id="R_kgDOQ7EUDQ"
+                    data-category="General"
+                    data-category-id="DIC_kwDOQ7EUDc4C2gVd"
+                    data-mapping="specific"
+                    data-term="aroma-ui-documentation"
+                    data-strict="0"
+                    data-reactions-enabled="1"
+                    data-emit-metadata="0"
+                    data-input-position="top"
+                    data-theme="light"
+                    data-lang="en"
+                    data-loading="lazy"
+                    crossorigin="anonymous"
+                    async>
+                </script>
             </div>
         </div>
         
-        <!-- Giscus script - will be initialized per page -->
         <script>
-            function loadGiscusForPage(pageId) {
-                const container = document.getElementById('giscus-container');
-                if (!container) return;
-                
-                // Clear previous giscus instance
-                container.innerHTML = '';
-                
-                // Create new script element
-                const script = document.createElement('script');
-                script.src = 'https://giscus.app/client.js';
-                script.setAttribute('data-repo', 'BinaryInkTN/AromaUI');
-                script.setAttribute('data-repo-id', 'R_kgDOQ7EUDQ');
-                script.setAttribute('data-category', 'General');
-                script.setAttribute('data-category-id', 'DIC_kwDOQ7EUDc4C2gVd');
-                script.setAttribute('data-mapping', 'specific');
-                script.setAttribute('data-strict', '0');
-                script.setAttribute('data-reactions-enabled', '1');
-                script.setAttribute('data-emit-metadata', '0');
-                script.setAttribute('data-input-position', 'top');
-                script.setAttribute('data-lang', 'en');
-                script.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.getAttribute('data-theme') === 'nord' ? 'dark' : 'light');
-                script.setAttribute('data-loading', 'lazy');
-                script.crossOrigin = 'anonymous';
-                script.async = true;
-                
-                // SHARED COMMENTS: All pages use the same thread
-                if (true) {
-                    script.setAttribute('data-term', 'aroma-ui-documentation');
-                }
-                
-                container.appendChild(script);
-            }
-            
             // Function to update Giscus theme when site theme changes
             function updateGiscusTheme(theme) {
                 const giscusTheme = theme === 'dark' || theme === 'nord' ? 'dark' : 'light';
