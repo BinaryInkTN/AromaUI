@@ -2142,7 +2142,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
                 script.setAttribute('data-repo-id', 'R_kgDOQ7EUDQ');
                 script.setAttribute('data-category', 'General');
                 script.setAttribute('data-category-id', 'DIC_kwDOQ7EUDc4C2gVd');
-                script.setAttribute('data-mapping', 'pathname');
+                script.setAttribute('data-mapping', 'specific');
                 script.setAttribute('data-strict', '0');
                 script.setAttribute('data-reactions-enabled', '1');
                 script.setAttribute('data-emit-metadata', '0');
@@ -2153,11 +2153,9 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
                 script.crossOrigin = 'anonymous';
                 script.async = true;
                 
-                // Set the page identifier based on the page ID
-                if ('pathname' === 'pathname') {
-                    script.setAttribute('data-term', window.location.pathname + '#' + pageId);
-                } else if ('pathname' === 'title') {
-                    script.setAttribute('data-term', document.getElementById('doc-title')?.textContent || pageId);
+                // SHARED COMMENTS: All pages use the same thread
+                if (true) {
+                    script.setAttribute('data-term', 'aroma-ui-documentation');
                 }
                 
                 container.appendChild(script);
@@ -2472,7 +2470,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             
             initializeCopyButtons();
             
-            // Load Giscus for this page
+            // Load Giscus for this page (shared comments)
             if (typeof loadGiscusForPage === 'function') {
                 loadGiscusForPage(id);
             }

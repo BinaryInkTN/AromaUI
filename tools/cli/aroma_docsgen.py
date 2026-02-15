@@ -47,6 +47,9 @@ class DocGenerator:
         input_position = giscus_config.get('input_position', 'top')
         lang = giscus_config.get('lang', 'en')
         
+        # Check if we want a shared comment section across all pages
+        shared_comments = giscus_config.get('shared', True)  # Default to True for shared comments
+        
         if not repo or not repo_id:
             return ''  # Return empty if Giscus not configured
         
@@ -84,7 +87,7 @@ class DocGenerator:
                 script.setAttribute('data-repo-id', '{repo_id}');
                 script.setAttribute('data-category', '{category}');
                 script.setAttribute('data-category-id', '{category_id}');
-                script.setAttribute('data-mapping', '{mapping}');
+                script.setAttribute('data-mapping', '{'specific' if shared_comments else mapping}');
                 script.setAttribute('data-strict', '0');
                 script.setAttribute('data-reactions-enabled', '{reactions}');
                 script.setAttribute('data-emit-metadata', '{emit_metadata}');
@@ -95,11 +98,9 @@ class DocGenerator:
                 script.crossOrigin = 'anonymous';
                 script.async = true;
                 
-                // Set the page identifier based on the page ID
-                if ('{mapping}' === 'pathname') {{
-                    script.setAttribute('data-term', window.location.pathname + '#' + pageId);
-                }} else if ('{mapping}' === 'title') {{
-                    script.setAttribute('data-term', document.getElementById('doc-title')?.textContent || pageId);
+                // SHARED COMMENTS: All pages use the same thread
+                if ({str(shared_comments).lower()}) {{
+                    script.setAttribute('data-term', 'aroma-ui-documentation');
                 }}
                 
                 container.appendChild(script);
@@ -2102,7 +2103,7 @@ class DocGenerator:
             
             initializeCopyButtons();
             
-            // Load Giscus for this page
+            // Load Giscus for this page (shared comments)
             if (typeof loadGiscusForPage === 'function') {{
                 loadGiscusForPage(id);
             }}
