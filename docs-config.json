@@ -8,7 +8,7 @@
         "repo_id": "R_kgDOQ7EUDQ",
         "category": "General",
         "category_id": "DIC_kwDOQ7EUDc4C2gVd",
-        "mapping": "pathname",
+        "mapping": "specific",
         "reactions_enabled": true,
         "emit_metadata": false,
         "input_position": "top",
