@@ -34,6 +34,94 @@ class DocGenerator:
         }}
         '''
     
+    def _get_comment_section(self, config: dict) -> str:
+        """Generate the comment section HTML with Giscus integration"""
+        giscus_config = config.get('comments', {})
+        repo = giscus_config.get('repo', '')
+        repo_id = giscus_config.get('repo_id', '')
+        category = giscus_config.get('category', 'Announcements')
+        category_id = giscus_config.get('category_id', '')
+        mapping = giscus_config.get('mapping', 'pathname')
+        reactions = '1' if giscus_config.get('reactions_enabled', True) else '0'
+        emit_metadata = '1' if giscus_config.get('emit_metadata', False) else '0'
+        input_position = giscus_config.get('input_position', 'top')
+        lang = giscus_config.get('lang', 'en')
+        
+        if not repo or not repo_id:
+            return ''  # Return empty if Giscus not configured
+        
+        return f'''
+        <!-- Comment Section -->
+        <div class="comments-section" id="comments-section">
+            <div class="comments-header">
+                <h3 class="comments-title">
+                    <span class="material-symbols-outlined">chat</span>
+                    Discussion
+                </h3>
+                <div class="comments-info">
+                    <span class="material-symbols-outlined">info</span>
+                    <span>Join the conversation using GitHub Discussions</span>
+                </div>
+            </div>
+            <div class="comments-container">
+                <div class="giscus" id="giscus-container"></div>
+            </div>
+        </div>
+        
+        <!-- Giscus script - will be initialized per page -->
+        <script>
+            function loadGiscusForPage(pageId) {{
+                const container = document.getElementById('giscus-container');
+                if (!container) return;
+                
+                // Clear previous giscus instance
+                container.innerHTML = '';
+                
+                // Create new script element
+                const script = document.createElement('script');
+                script.src = 'https://giscus.app/client.js';
+                script.setAttribute('data-repo', '{repo}');
+                script.setAttribute('data-repo-id', '{repo_id}');
+                script.setAttribute('data-category', '{category}');
+                script.setAttribute('data-category-id', '{category_id}');
+                script.setAttribute('data-mapping', '{mapping}');
+                script.setAttribute('data-strict', '0');
+                script.setAttribute('data-reactions-enabled', '{reactions}');
+                script.setAttribute('data-emit-metadata', '{emit_metadata}');
+                script.setAttribute('data-input-position', '{input_position}');
+                script.setAttribute('data-lang', '{lang}');
+                script.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' || document.documentElement.getAttribute('data-theme') === 'nord' ? 'dark' : 'light');
+                script.setAttribute('data-loading', 'lazy');
+                script.crossOrigin = 'anonymous';
+                script.async = true;
+                
+                // Set the page identifier based on the page ID
+                if ('{mapping}' === 'pathname') {{
+                    script.setAttribute('data-term', window.location.pathname + '#' + pageId);
+                }} else if ('{mapping}' === 'title') {{
+                    script.setAttribute('data-term', document.getElementById('doc-title')?.textContent || pageId);
+                }}
+                
+                container.appendChild(script);
+            }}
+            
+            // Function to update Giscus theme when site theme changes
+            function updateGiscusTheme(theme) {{
+                const giscusTheme = theme === 'dark' || theme === 'nord' ? 'dark' : 'light';
+                const iframe = document.querySelector('iframe.giscus-frame');
+                if (iframe) {{
+                    iframe.contentWindow.postMessage({{
+                        giscus: {{
+                            setConfig: {{
+                                theme: giscusTheme
+                            }}
+                        }}
+                    }}, 'https://giscus.app');
+                }}
+            }}
+        </script>
+        '''
+    
     def _get_template(self) -> str:
         template = '''<!DOCTYPE html>
 <html lang="en">
@@ -91,6 +179,7 @@ class DocGenerator:
             --copy-btn-bg: #ffffff;
             --copy-btn-hover: #f1f5f9;
             --footer-bg: #f1f5f9;
+            --comments-bg: #ffffff;
         }}
 
         :root[data-theme="dark"] {{
@@ -125,6 +214,7 @@ class DocGenerator:
             --copy-btn-bg: #334155;
             --copy-btn-hover: #475569;
             --footer-bg: #1e293b;
+            --comments-bg: #1e293b;
         }}
 
         :root[data-theme="sepia"] {{
@@ -159,6 +249,7 @@ class DocGenerator:
             --copy-btn-bg: #d8ccbc;
             --copy-btn-hover: #c8bcac;
             --footer-bg: #e8dccc;
+            --comments-bg: #e8dccc;
         }}
 
         :root[data-theme="nord"] {{
@@ -193,6 +284,7 @@ class DocGenerator:
             --copy-btn-bg: #434c5e;
             --copy-btn-hover: #4c566a;
             --footer-bg: #3b4252;
+            --comments-bg: #3b4252;
         }}
 
         :root[data-theme="solarized"] {{
@@ -227,6 +319,7 @@ class DocGenerator:
             --copy-btn-bg: #93a1a1;
             --copy-btn-hover: #839496;
             --footer-bg: #eee8d5;
+            --comments-bg: #eee8d5;
         }}
 
         body {{
@@ -637,6 +730,43 @@ class DocGenerator:
             transition: all var(--transition-speed) var(--transition-timing);
         }}
 
+        /* Make cards grid scrollable */
+        .cards-grid-container {{
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            margin-bottom: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) var(--surface-1);
+        }}
+
+        .cards-grid-container::-webkit-scrollbar {{
+            width: 8px;
+        }}
+
+        .cards-grid-container::-webkit-scrollbar-track {{
+            background: var(--surface-1);
+            border-radius: 4px;
+        }}
+
+        .cards-grid-container::-webkit-scrollbar-thumb {{
+            background: var(--border);
+            border-radius: 4px;
+        }}
+
+        .cards-grid-container::-webkit-scrollbar-thumb:hover {{
+            background: var(--border-dark);
+        }}
+
+        .cards-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-bottom: 2rem;
+        }}
+
         .warning-banner {{
             background: var(--surface-0);
             border: 1px solid var(--warning);
@@ -796,15 +926,6 @@ class DocGenerator:
             }}
         }}
 
-        .cards-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding-bottom: 2rem;
-        }}
-
         .card {{
             background: var(--surface-0);
             border: 1px solid var(--border);
@@ -924,6 +1045,8 @@ class DocGenerator:
             max-width: 100%;
             margin: 0;
             animation: fadeIn 0.4s var(--transition-timing);
+            height: 100%;
+            overflow-y: auto;
         }}
 
         .doc-header {{
@@ -999,6 +1122,68 @@ class DocGenerator:
             box-shadow: var(--shadow);
             overflow-x: auto;
             margin-bottom: 2rem;
+        }}
+
+        /* Comments section styles */
+        .comments-section {{
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border);
+        }}
+
+        .comments-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }}
+
+        .comments-title {{
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }}
+
+        .comments-title .material-symbols-outlined {{
+            font-size: 24px;
+            color: var(--primary);
+        }}
+
+        .comments-info {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--surface-2);
+            border-radius: 100px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }}
+
+        .comments-info .material-symbols-outlined {{
+            font-size: 18px;
+            color: var(--primary);
+        }}
+
+        .comments-container {{
+            background: var(--comments-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-height: 200px;
+        }}
+
+        /* Giscus theme overrides */
+        .comments-container .giscus {{
+            width: 100%;
+        }}
+
+        .comments-container .giscus-frame {{
+            background: transparent !important;
         }}
 
         .footer {{
@@ -1399,6 +1584,10 @@ class DocGenerator:
                 padding: 1rem;
             }}
             
+            .cards-grid-container {{
+                max-height: calc(100vh - 250px);
+            }}
+            
             .cards-grid {{
                 grid-template-columns: 1fr;
             }}
@@ -1564,8 +1753,10 @@ class DocGenerator:
                         <div class="search-stats" id="searchStats" aria-live="polite"></div>
                     </div>
                     
-                    <div class="cards-grid" id="cardsGrid" role="grid" aria-label="Documentation sections">
-                        {cards_html}
+                    <div class="cards-grid-container">
+                        <div class="cards-grid" id="cardsGrid" role="grid" aria-label="Documentation sections">
+                            {cards_html}
+                        </div>
                     </div>
 
                     <div class="footer">
@@ -1615,6 +1806,9 @@ class DocGenerator:
                         </div>
                     </div>
                     <div class="doc-content markdown-body" id="doc-content"></div>
+                    
+                    <!-- Comment Section -->
+                    {comment_section}
                     
                     <div class="footer">
                         <div class="footer-content">
@@ -1702,6 +1896,9 @@ class DocGenerator:
                 'solarized': 'Solarized'
             }};
             document.getElementById('current-theme-label').textContent = themeNames[theme];
+
+            // Update Giscus theme
+            updateGiscusTheme(theme);
         }}
 
         // Sidebar functions
@@ -1904,6 +2101,11 @@ class DocGenerator:
             currentPageId = id;
             
             initializeCopyButtons();
+            
+            // Load Giscus for this page
+            if (typeof loadGiscusForPage === 'function') {{
+                loadGiscusForPage(id);
+            }}
         }}
 
         const github_url = 'https://github.com/BinaryInkTN/AromaUI/blob/main';
@@ -2137,6 +2339,7 @@ class DocGenerator:
             ''')
         
         pygments_styles = self._get_pygments_styles()
+        comment_section = self._get_comment_section(config)
         current_year = datetime.now().year
         last_updated = datetime.now().strftime('%B %d, %Y')
         
@@ -2151,6 +2354,7 @@ class DocGenerator:
             pages_json=json.dumps(pages_dict),
             titles_json=json.dumps(titles_dict),
             markdown_files_json=json.dumps(markdown_files),
+            comment_section=comment_section,
             year=current_year,
             last_updated=last_updated
         )
