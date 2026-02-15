@@ -1338,7 +1338,7 @@ class DocGenerator:
                             <span class="material-symbols-outlined">warning</span>
                             <div class="warning-text">
                                 <strong>Alpha Software</strong>
-                                <p>aromaUi is currently in alpha and unstable. Not recommended for critical applications.</p>
+                                <p>AromaUI is currently in alpha and unstable. Not recommended for critical applications.</p>
                             </div>
                         </div>
                         <button class="warning-close" onclick="dismissWarning()">
