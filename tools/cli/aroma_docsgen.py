@@ -1346,7 +1346,6 @@ class DocGenerator:
                         </button>
                     </div>
 
-                    <h1 style="margin-bottom: 2rem; text-align: center; font-size: 2.5rem; font-weight: 400;">Welcome to the {project_name} Documentation</h1>
 
                     <div class="search-container">
                         <span class="material-symbols-outlined search-icon">search</span>
