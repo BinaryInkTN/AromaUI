@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AromaUI • Documentation</title>
-    
-    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" rel="stylesheet" />
-    
     <style>
-        /* ===== RESET & VARIABLES ===== */
         * {
             margin: 0;
             padding: 0;
@@ -20,457 +16,332 @@
         }
 
         :root {
-            /* Light Theme (Default) */
-            --md-primary: #006A6A;
-            --md-primary-light: #489E9E;
-            --md-primary-dark: #004040;
-            --md-secondary: #625B71;
-            --md-secondary-light: #918999;
-            --md-secondary-dark: #444056;
-            --md-tertiary: #7E5260;
-            --md-tertiary-light: #B08796;
-            --md-tertiary-dark: #4F2D3B;
-            --md-error: #BA1A1A;
-            --md-error-light: #FFB4AB;
-            --md-error-dark: #93000A;
-            --md-background: #F8FDF8;
-            --md-surface: #FFFFFF;
-            --md-surface-variant: #DAE5E5;
-            --md-outline: #6F7979;
-            --md-outline-variant: #BEC9C9;
-            --md-shadow: rgba(0,0,0,0.08);
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --surface-0: #ffffff;
+            --surface-1: #f8fafc;
+            --surface-2: #f1f5f9;
+            --surface-3: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-tertiary: #64748b;
+            --border: #e2e8f0;
+            --border-dark: #cbd5e1;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --sidebar-width: 280px;
+            --header-height: 64px;
             
-            /* Surface Colors */
-            --surface-1: #FFFFFF;
-            --surface-2: #F5FBFB;
-            --surface-3: #ECF2F2;
-            --surface-4: #E2E8E8;
-            --surface-5: #D9DFDF;
-            
-            /* Text Colors */
-            --text-primary: #161D1D;
-            --text-secondary: #494F4F;
-            --text-disabled: #6C7373;
-            --text-inverse: #FFFFFF;
-            
-            /* Component Variables */
-            --sidebar-width: 320px;
-            --header-height: 72px;
-            --border-radius-sm: 12px;
-            --border-radius-md: 20px;
-            --border-radius-lg: 28px;
-            --border-radius-xl: 36px;
-            
-            /* Shadows */
-            --shadow-sm: 0 2px 8px var(--md-shadow);
-            --shadow-md: 0 4px 20px var(--md-shadow);
-            --shadow-lg: 0 8px 30px var(--md-shadow);
-            --shadow-xl: 0 12px 40px var(--md-shadow);
-            
-            /* Animations */
-            --transition-fast: 0.2s cubic-bezier(0.2, 0, 0, 1);
-            --transition-base: 0.3s cubic-bezier(0.2, 0, 0, 1);
-            --transition-slow: 0.5s cubic-bezier(0.2, 0, 0, 1);
+            /* Code highlighting colors - Light */
+            --code-bg: #f8fafc;
+            --code-text: #1e293b;
+            --code-keyword: #7c3aed;
+            --code-string: #059669;
+            --code-comment: #64748b;
+            --code-function: #2563eb;
+            --code-number: #d97706;
+            --code-operator: #334155;
+            --code-punctuation: #475569;
         }
 
-        /* Dark Theme */
         [data-theme="dark"] {
-            --md-primary: #9BCFCF;
-            --md-primary-light: #B7EBEB;
-            --md-primary-dark: #7EB3B3;
-            --md-secondary: #CBC2DB;
-            --md-secondary-light: #E7DEF7;
-            --md-secondary-dark: #B0A7BF;
-            --md-tertiary: #EFB8C8;
-            --md-tertiary-light: #FFD9E4;
-            --md-tertiary-dark: #D49AAE;
-            --md-error: #FFB4AB;
-            --md-error-light: #FFDAD6;
-            --md-error-dark: #93000A;
-            --md-background: #1A1C1C;
-            --md-surface: #252828;
-            --md-surface-variant: #404A4A;
-            --md-outline: #909A9A;
-            --md-outline-variant: #404A4A;
-            --md-shadow: rgba(0,0,0,0.4);
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #60a5fa;
+            --surface-0: #0f172a;
+            --surface-1: #1e293b;
+            --surface-2: #334155;
+            --surface-3: #475569;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border: #334155;
+            --border-dark: #475569;
             
-            --surface-1: #252828;
-            --surface-2: #2D3131;
-            --surface-3: #353939;
-            --surface-4: #3D4141;
-            --surface-5: #454A4A;
-            
-            --text-primary: #E1E3E3;
-            --text-secondary: #C1C6C6;
-            --text-disabled: #9CA4A4;
-            --text-inverse: #1A1C1C;
+            /* Code highlighting colors - Dark */
+            --code-bg: #1e1e2e;
+            --code-text: #f8fafc;
+            --code-keyword: #f38ba8;
+            --code-string: #a6e3a1;
+            --code-comment: #7f849c;
+            --code-function: #89b4fa;
+            --code-number: #fab387;
+            --code-operator: #94e2d5;
+            --code-punctuation: #bac2de;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--md-background);
+            background: var(--surface-1);
             color: var(--text-primary);
             line-height: 1.6;
-            font-size: 16px;
-            display: flex;
-            flex-direction: column;
+            font-size: 15px;
             height: 100vh;
             overflow: hidden;
-            transition: background-color var(--transition-base), color var(--transition-base);
         }
 
-        /* Material Symbols */
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            font-size: 24px;
-            vertical-align: middle;
-        }
-        
-        .material-symbols-outlined.fill {
-            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        /* ===== TOP BAR ===== */
-        .top-bar {
-            background-color: var(--surface-1);
-            border-bottom: 1px solid var(--md-outline-variant);
-            padding: 0 2rem;
-            height: var(--header-height);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            background-color: rgba(var(--surface-1-rgb), 0.8);
-            transition: background-color var(--transition-base), border-color var(--transition-base);
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 1.2rem;
-        }
-
-        .logo {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--md-primary), var(--md-primary-dark));
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            box-shadow: var(--shadow-md);
-            transition: transform var(--transition-fast), box-shadow var(--transition-base);
-        }
-
-        .logo:hover {
-            transform: scale(1.05) rotate(5deg);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .logo .material-symbols-outlined {
-            font-size: 28px;
-            color: white;
-        }
-
-        .project-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .project-name {
-            font-weight: 700;
-            color: var(--text-primary);
-            font-size: 1.3rem;
-            letter-spacing: -0.02em;
-        }
-
-        .project-version {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .top-bar-right {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .stats {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.5rem 1rem;
-            background: var(--surface-2);
-            border-radius: 40px;
-            border: 1px solid var(--md-outline-variant);
-            transition: background-color var(--transition-base), border-color var(--transition-base);
-        }
-
-        .stat-item .material-symbols-outlined {
             font-size: 20px;
-            color: var(--md-primary);
         }
 
-        .stat-label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        .stat-value {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .theme-toggle {
+        .app {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            background: var(--surface-2);
-            border-radius: 40px;
-            border: 1px solid var(--md-outline-variant);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-
-        .theme-toggle:hover {
-            background: var(--surface-3);
-            transform: scale(1.05);
-        }
-
-        .theme-toggle .material-symbols-outlined {
-            font-size: 20px;
-            color: var(--md-primary);
-        }
-
-        .date-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--surface-2);
-            border-radius: 40px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            border: 1px solid var(--md-outline-variant);
-            transition: background-color var(--transition-base), border-color var(--transition-base);
-        }
-
-        .date-badge .material-symbols-outlined {
-            font-size: 20px;
-            color: var(--md-primary);
-        }
-
-        /* ===== MAIN WRAPPER ===== */
-        .doc-wrapper {
-            display: flex;
-            margin-top: var(--header-height);
-            height: calc(100vh - var(--header-height));
+            height: 100vh;
             overflow: hidden;
         }
 
-        /* ===== SIDEBAR ===== */
         .sidebar {
             width: var(--sidebar-width);
-            background-color: var(--surface-1);
-            border-right: 1px solid var(--md-outline-variant);
+            background: var(--surface-0);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             flex-shrink: 0;
-            padding: 2rem 0;
-            transition: background-color var(--transition-base), border-color var(--transition-base);
         }
 
-        .sidebar::-webkit-scrollbar {
-            width: 8px;
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
         }
 
-        .sidebar::-webkit-scrollbar-track {
-            background: var(--surface-2);
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background-color: var(--md-outline-variant);
-            border-radius: 8px;
-            border: 2px solid var(--surface-1);
-        }
-
-        .sidebar-section {
-            margin-bottom: 2rem;
-        }
-
-        .category-header {
-            padding: 0.8rem 1.5rem;
-            margin-bottom: 0.3rem;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            cursor: pointer;
-            user-select: none;
-            border-radius: 0 40px 40px 0;
-            transition: background-color var(--transition-fast);
-        }
-
-        .category-header:hover {
-            background-color: var(--surface-2);
-        }
-
-        .category-header .material-symbols-outlined {
-            font-size: 20px;
-            color: var(--md-primary);
-            transition: transform var(--transition-fast);
-        }
-
-        .category-header.collapsed .material-symbols-outlined:first-child {
-            transform: rotate(-90deg);
-        }
-
-        .category-name {
+        .project-name {
             font-weight: 600;
+            font-size: 1.25rem;
             color: var(--text-primary);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .project-version {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
             flex: 1;
         }
 
-        .category-count {
-            background: var(--surface-3);
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+        .nav-category {
+            margin-bottom: 1.5rem;
+        }
+
+        .category-header {
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .category-header .material-symbols-outlined {
+            font-size: 16px;
         }
 
         .category-items {
-            transition: all var(--transition-base);
-            overflow: hidden;
+            margin-top: 0.25rem;
         }
 
         .category-items.collapsed {
             display: none;
         }
 
-        .sidebar-item {
-            padding: 0.7rem 1.5rem 0.7rem 4rem;
-            font-size: 0.95rem;
+        .nav-item {
+            padding: 0.625rem 1.5rem 0.625rem 3.5rem;
             color: var(--text-secondary);
-            border-left: 4px solid transparent;
-            transition: all var(--transition-fast);
+            font-size: 0.9375rem;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.75rem;
             position: relative;
+            transition: all 0.2s;
         }
 
-        .sidebar-item .material-symbols-outlined {
-            font-size: 20px;
-            color: var(--text-disabled);
-            transition: all var(--transition-fast);
+        .nav-item:hover {
+            background: var(--surface-2);
+            color: var(--text-primary);
         }
 
-        .sidebar-item:hover {
-            background-color: var(--surface-2);
-            border-left-color: var(--md-outline);
-        }
-
-        .sidebar-item:hover .material-symbols-outlined {
-            color: var(--md-primary);
-        }
-
-        .sidebar-item.active {
-            background-color: var(--md-surface-variant);
-            border-left-color: var(--md-primary);
-            color: var(--md-primary-dark);
+        .nav-item.active {
+            background: var(--surface-2);
+            color: var(--primary);
             font-weight: 500;
         }
 
-        .sidebar-item.active .material-symbols-outlined {
-            color: var(--md-primary);
-            font-variation-settings: 'FILL' 1;
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary);
         }
 
-        /* ===== MAIN CONTENT ===== */
-        .main-content {
+        .nav-item .material-symbols-outlined {
+            font-size: 18px;
+            color: var(--text-tertiary);
+        }
+
+        .nav-item.active .material-symbols-outlined {
+            color: var(--primary);
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            height: var(--header-height);
+            background: var(--surface-0);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .menu-button {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+
+        .breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--primary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--surface-2);
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            color: var(--text-secondary);
+        }
+
+        .stat .material-symbols-outlined {
+            font-size: 16px;
+            color: var(--text-tertiary);
+        }
+
+        .theme-toggle {
+            padding: 0.375rem;
+            background: var(--surface-2);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--surface-3);
+        }
+
+        .content {
             flex: 1;
             overflow-y: auto;
             padding: 2rem;
-            background: var(--md-background);
-            transition: background-color var(--transition-base);
         }
 
-        .main-content::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        .main-content::-webkit-scrollbar-track {
-            background: var(--surface-2);
-        }
-
-        .main-content::-webkit-scrollbar-thumb {
-            background-color: var(--md-outline-variant);
-            border-radius: 10px;
-            border: 2px solid var(--surface-1);
-        }
-
-        /* ===== SEARCH BAR ===== */
         .search-container {
-            margin: 1rem 0 2rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
             position: relative;
-        }
-
-        .search-bar {
-            width: 100%;
-            padding: 1.2rem 1.2rem 1.2rem 4rem;
-            background: var(--surface-1);
-            border: 2px solid var(--md-outline-variant);
-            border-radius: 60px;
-            font-size: 1.1rem;
-            color: var(--text-primary);
-            transition: all var(--transition-base);
-            outline: none;
-        }
-
-        .search-bar:focus {
-            border-color: var(--md-primary);
-            box-shadow: 0 0 0 4px var(--md-primary-light);
-            background: var(--surface-2);
-        }
-
-        .search-bar::placeholder {
-            color: var(--text-disabled);
         }
 
         .search-icon {
             position: absolute;
-            left: 1.5rem;
+            left: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-disabled);
-            pointer-events: none;
+            color: var(--text-tertiary);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1rem 0.875rem 3rem;
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .search-clear {
             position: absolute;
-            right: 1.5rem;
+            right: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-disabled);
+            color: var(--text-tertiary);
             cursor: pointer;
             display: none;
         }
@@ -479,402 +350,475 @@
             display: block;
         }
 
-        .search-clear:hover {
-            color: var(--md-primary);
-        }
-
         .search-stats {
-            margin-top: 0.8rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
         }
 
-        /* ===== HOME VIEW ===== */
-        .home-view {
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
             max-width: 1400px;
             margin: 0 auto;
         }
 
-        .hero {
-            text-align: center;
-            margin: 1rem 0 2rem;
-            padding: 0 2rem;
-        }
-
-        .hero h1 {
-            font-weight: 800;
-            font-size: 3.5rem;
-            background: linear-gradient(135deg, var(--md-primary-dark) 0%, var(--md-primary) 50%, var(--md-tertiary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1rem;
-            letter-spacing: -0.03em;
-            line-height: 1.2;
-        }
-
-        .hero .lead {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        /* ===== CARDS GRID ===== */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-            margin: 2rem 0;
-        }
-
-        .doc-card {
-            background: var(--surface-1);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: var(--border-radius-lg);
-            padding: 2rem;
-            transition: all var(--transition-base);
+        .card {
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            transition: all 0.2s;
         }
 
-        .doc-card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-xl);
-            border-color: transparent;
-        }
-
-        .doc-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--md-primary), var(--md-tertiary));
-            opacity: 0;
-            transition: opacity var(--transition-base);
-        }
-
-        .doc-card:hover::before {
-            opacity: 1;
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
         }
 
         .card-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--md-primary-light), var(--md-primary));
-            border-radius: 20px;
+            width: 48px;
+            height: 48px;
+            background: var(--surface-2);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow-md);
+            margin-bottom: 1.25rem;
+            color: var(--primary);
         }
 
         .card-icon .material-symbols-outlined {
-            font-size: 36px;
-            color: white;
+            font-size: 24px;
         }
 
-        .doc-card h3 {
-            font-weight: 700;
-            font-size: 1.5rem;
-            margin-bottom: 0.8rem;
+        .card h3 {
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
             color: var(--text-primary);
-            letter-spacing: -0.02em;
         }
 
-        .doc-card p {
+        .card p {
             color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-            flex: 1;
+            font-size: 0.9375rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
         }
 
         .card-footer {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            margin-top: auto;
         }
 
-        .card-tag {
+        .card-category {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.75rem;
             background: var(--surface-2);
-            padding: 0.4rem 1.2rem;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: 1px solid var(--md-outline-variant);
-        }
-
-        .card-tag .material-symbols-outlined {
-            font-size: 18px;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+            color: var(--text-tertiary);
         }
 
         .card-arrow {
-            color: var(--md-primary);
-            transition: transform var(--transition-fast);
+            color: var(--text-tertiary);
+            transition: transform 0.2s;
         }
 
-        .doc-card:hover .card-arrow {
-            transform: translateX(8px);
+        .card:hover .card-arrow {
+            transform: translateX(4px);
+            color: var(--primary);
         }
 
-        /* Empty State */
+        .doc-view {
+            display: none;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .doc-content {
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2.5rem;
+        }
+
+        .markdown-body {
+            color: var(--text-primary);
+        }
+
+        .markdown-body h1 {
+            font-size: 2.25rem;
+            font-weight: 600;
+            margin: 0 0 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .markdown-body h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .markdown-body h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .markdown-body p {
+            margin: 1.25rem 0;
+            color: var(--text-secondary);
+        }
+
+        .markdown-body code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875em;
+            padding: 0.2em 0.4em;
+            background: var(--code-bg);
+            border-radius: 4px;
+            color: var(--code-text);
+        }
+
+        .markdown-body pre {
+            margin: 1.5rem 0;
+            padding: 1.25rem;
+            background: var(--code-bg);
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        .markdown-body pre code {
+            padding: 0;
+            background: none;
+            color: var(--code-text);
+            font-size: 0.875rem;
+            line-height: 1.7;
+        }
+
+        /* Code highlighting */
+        .markdown-body .k, .markdown-body .kd, .markdown-body .kn, .markdown-body .kp, .markdown-body .kr, .markdown-body .kt {
+            color: var(--code-keyword);
+            font-weight: 500;
+        }
+
+        .markdown-body .s, .markdown-body .s1, .markdown-body .s2, .markdown-body .sb, .markdown-body .sc, .markdown-body .sd, .markdown-body .se, .markdown-body .sh, .markdown-body .si, .markdown-body .sx {
+            color: var(--code-string);
+        }
+
+        .markdown-body .c, .markdown-body .c1, .markdown-body .cm, .markdown-body .cp, .markdown-body .cs {
+            color: var(--code-comment);
+            font-style: italic;
+        }
+
+        .markdown-body .nf, .markdown-body .na, .markdown-body .nc {
+            color: var(--code-function);
+        }
+
+        .markdown-body .m, .markdown-body .mi, .markdown-body .mf, .markdown-body .mh, .markdown-body .mo {
+            color: var(--code-number);
+        }
+
+        .markdown-body .o, .markdown-body .ow {
+            color: var(--code-operator);
+        }
+
+        .markdown-body .p {
+            color: var(--code-punctuation);
+        }
+
+        .markdown-body .err {
+            color: var(--error);
+            background: none;
+        }
+
+        .markdown-body .gd {
+            color: var(--error);
+        }
+
+        .markdown-body .gi {
+            color: var(--success);
+        }
+
+        .markdown-body .gh {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .markdown-body .gu {
+            color: var(--text-tertiary);
+        }
+
+        .markdown-body blockquote {
+            margin: 1.5rem 0;
+            padding: 0.75rem 1.5rem;
+            border-left: 4px solid var(--primary);
+            background: var(--surface-2);
+            color: var(--text-secondary);
+        }
+
+        .markdown-body table {
+            width: 100%;
+            margin: 1.5rem 0;
+            border-collapse: collapse;
+        }
+
+        .markdown-body th {
+            padding: 0.75rem 1rem;
+            background: var(--surface-2);
+            font-weight: 600;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+
+        .markdown-body td {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .markdown-body hr {
+            margin: 2rem 0;
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
-            background: var(--surface-1);
-            border-radius: var(--border-radius-lg);
-            border: 2px dashed var(--md-outline-variant);
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 12px;
         }
 
         .empty-state .material-symbols-outlined {
-            font-size: 64px;
-            color: var(--text-disabled);
+            font-size: 48px;
+            color: var(--text-tertiary);
             margin-bottom: 1rem;
         }
 
         .empty-state h3 {
-            font-size: 1.5rem;
-            color: var(--text-primary);
+            font-size: 1.25rem;
             margin-bottom: 0.5rem;
         }
 
         .empty-state p {
-            color: var(--text-secondary);
+            color: var(--text-tertiary);
         }
 
-        /* ===== DOC VIEW ===== */
-        .doc-view {
-            display: none;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem 1.5rem;
-            background: var(--surface-1);
-            border-radius: var(--border-radius-md);
-            box-shadow: var(--shadow-sm);
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            border: 1px solid var(--md-outline-variant);
-            transition: background-color var(--transition-base), border-color var(--transition-base);
-        }
-
-        .breadcrumb a {
-            color: var(--md-primary);
-            text-decoration: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all var(--transition-fast);
-        }
-
-        .breadcrumb a:hover {
-            color: var(--md-primary-dark);
-            transform: translateX(-2px);
-        }
-
-        .breadcrumb .material-symbols-outlined {
-            font-size: 20px;
-        }
-
-        .doc-content {
-            background: var(--surface-1);
-            border-radius: var(--border-radius-lg);
-            padding: 3rem;
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--md-outline-variant);
-            transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
-        }
-
-        /* ===== MARKDOWN STYLING ===== */
-        .markdown-content {
-            color: var(--text-primary);
-            line-height: 1.8;
-        }
-
-        .markdown-content h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 2.5rem 0 1.5rem;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
-        }
-
-        .markdown-content h1:first-child {
-            margin-top: 0;
-        }
-
-        .markdown-content h2 {
-            font-size: 2rem;
-            font-weight: 600;
-            margin: 2rem 0 1rem;
-            color: var(--text-primary);
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--md-outline-variant);
-        }
-
-        .markdown-content h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 1.5rem 0 1rem;
-            color: var(--text-primary);
-        }
-
-        .markdown-content p {
-            margin: 1.2rem 0;
-            color: var(--text-secondary);
-        }
-
-        .markdown-content a {
-            color: var(--md-primary);
-            text-decoration: none;
-            border-bottom: 2px solid var(--md-primary-light);
-            transition: all var(--transition-fast);
-        }
-
-        .markdown-content a:hover {
-            border-bottom-color: var(--md-primary);
-        }
-
-        .markdown-content code {
-            background: var(--surface-2);
-            color: var(--md-tertiary-dark);
-            padding: 0.2rem 0.4rem;
-            border-radius: var(--border-radius-sm);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9em;
-            border: 1px solid var(--md-outline-variant);
-        }
-
-        .markdown-content pre {
-            background: var(--surface-2);
-            color: var(--text-primary);
-            padding: 1.5rem;
-            border-radius: var(--border-radius-md);
-            overflow-x: auto;
-            margin: 1.5rem 0;
-            border: 1px solid var(--md-outline-variant);
-        }
-
-        .markdown-content pre code {
-            background: none;
-            color: inherit;
-            padding: 0;
-            border: none;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        .markdown-content blockquote {
-            border-left: 4px solid var(--md-primary);
-            padding: 1rem 1.5rem;
-            margin: 1.5rem 0;
-            background: var(--surface-2);
-            border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
-            color: var(--text-secondary);
-        }
-
-        .markdown-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1.5rem 0;
-            border-radius: var(--border-radius-md);
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .markdown-content th {
-            background: var(--surface-2);
-            color: var(--text-primary);
-            font-weight: 600;
-            padding: 1rem;
-            text-align: left;
-            border: 1px solid var(--md-outline-variant);
-        }
-
-        .markdown-content td {
-            padding: 1rem;
-            border: 1px solid var(--md-outline-variant);
-            color: var(--text-secondary);
-        }
-
-        /* ===== FOOTER ===== */
         footer {
             margin-top: 3rem;
             padding: 2rem 0;
             text-align: center;
-            border-top: 1px solid var(--md-outline-variant);
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
         }
 
-        footer .material-symbols-outlined {
-            font-size: 18px;
-            color: var(--md-primary);
+        .codehilite {
+            background: transparent !important;
         }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 1024px) {
-            .sidebar {
-                width: 280px;
-            }
-            
-            .stats {
-                display: none;
-            }
+        
+        
+        /* Light mode syntax highlighting */
+        pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #ffffcc }
+.codehilite { background: #f8f8f8; }
+.codehilite .c { color: #3D7B7B; font-style: italic } /* Comment */
+.codehilite .err { border: 1px solid #FF0000 } /* Error */
+.codehilite .k { color: #008000; font-weight: bold } /* Keyword */
+.codehilite .o { color: #666666 } /* Operator */
+.codehilite .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #9C6500 } /* Comment.Preproc */
+.codehilite .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.codehilite .gd { color: #A00000 } /* Generic.Deleted */
+.codehilite .ge { font-style: italic } /* Generic.Emph */
+.codehilite .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #E40000 } /* Generic.Error */
+.codehilite .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #008400 } /* Generic.Inserted */
+.codehilite .go { color: #717171 } /* Generic.Output */
+.codehilite .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.codehilite .gt { color: #0044DD } /* Generic.Traceback */
+.codehilite .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.codehilite .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.codehilite .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.codehilite .kp { color: #008000 } /* Keyword.Pseudo */
+.codehilite .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.codehilite .kt { color: #B00040 } /* Keyword.Type */
+.codehilite .m { color: #666666 } /* Literal.Number */
+.codehilite .s { color: #BA2121 } /* Literal.String */
+.codehilite .na { color: #687822 } /* Name.Attribute */
+.codehilite .nb { color: #008000 } /* Name.Builtin */
+.codehilite .nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #880000 } /* Name.Constant */
+.codehilite .nd { color: #AA22FF } /* Name.Decorator */
+.codehilite .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.codehilite .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.codehilite .nf { color: #0000FF } /* Name.Function */
+.codehilite .nl { color: #767600 } /* Name.Label */
+.codehilite .nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.codehilite .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.codehilite .nv { color: #19177C } /* Name.Variable */
+.codehilite .ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.codehilite .w { color: #bbbbbb } /* Text.Whitespace */
+.codehilite .mb { color: #666666 } /* Literal.Number.Bin */
+.codehilite .mf { color: #666666 } /* Literal.Number.Float */
+.codehilite .mh { color: #666666 } /* Literal.Number.Hex */
+.codehilite .mi { color: #666666 } /* Literal.Number.Integer */
+.codehilite .mo { color: #666666 } /* Literal.Number.Oct */
+.codehilite .sa { color: #BA2121 } /* Literal.String.Affix */
+.codehilite .sb { color: #BA2121 } /* Literal.String.Backtick */
+.codehilite .sc { color: #BA2121 } /* Literal.String.Char */
+.codehilite .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.codehilite .s2 { color: #BA2121 } /* Literal.String.Double */
+.codehilite .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.codehilite .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.codehilite .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.codehilite .sx { color: #008000 } /* Literal.String.Other */
+.codehilite .sr { color: #A45A77 } /* Literal.String.Regex */
+.codehilite .s1 { color: #BA2121 } /* Literal.String.Single */
+.codehilite .ss { color: #19177C } /* Literal.String.Symbol */
+.codehilite .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #0000FF } /* Name.Function.Magic */
+.codehilite .vc { color: #19177C } /* Name.Variable.Class */
+.codehilite .vg { color: #19177C } /* Name.Variable.Global */
+.codehilite .vi { color: #19177C } /* Name.Variable.Instance */
+.codehilite .vm { color: #19177C } /* Name.Variable.Magic */
+.codehilite .il { color: #666666 } /* Literal.Number.Integer.Long */
+        
+        /* Dark mode syntax highlighting */
+        [data-theme="dark"] .codehilite {
+            pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #49483e }
+.codehilite { background: #272822; color: #f8f8f2 }
+.codehilite .c { color: #959077 } /* Comment */
+.codehilite .err { color: #ed007e; background-color: #1e0010 } /* Error */
+.codehilite .esc { color: #f8f8f2 } /* Escape */
+.codehilite .g { color: #f8f8f2 } /* Generic */
+.codehilite .k { color: #66d9ef } /* Keyword */
+.codehilite .l { color: #ae81ff } /* Literal */
+.codehilite .n { color: #f8f8f2 } /* Name */
+.codehilite .o { color: #ff4689 } /* Operator */
+.codehilite .x { color: #f8f8f2 } /* Other */
+.codehilite .p { color: #f8f8f2 } /* Punctuation */
+.codehilite .ch { color: #959077 } /* Comment.Hashbang */
+.codehilite .cm { color: #959077 } /* Comment.Multiline */
+.codehilite .cp { color: #959077 } /* Comment.Preproc */
+.codehilite .cpf { color: #959077 } /* Comment.PreprocFile */
+.codehilite .c1 { color: #959077 } /* Comment.Single */
+.codehilite .cs { color: #959077 } /* Comment.Special */
+.codehilite .gd { color: #ff4689 } /* Generic.Deleted */
+.codehilite .ge { color: #f8f8f2; font-style: italic } /* Generic.Emph */
+.codehilite .ges { color: #f8f8f2; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #f8f8f2 } /* Generic.Error */
+.codehilite .gh { color: #f8f8f2 } /* Generic.Heading */
+.codehilite .gi { color: #a6e22e } /* Generic.Inserted */
+.codehilite .go { color: #66d9ef } /* Generic.Output */
+.codehilite .gp { color: #ff4689; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { color: #f8f8f2; font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #959077 } /* Generic.Subheading */
+.codehilite .gt { color: #f8f8f2 } /* Generic.Traceback */
+.codehilite .kc { color: #66d9ef } /* Keyword.Constant */
+.codehilite .kd { color: #66d9ef } /* Keyword.Declaration */
+.codehilite .kn { color: #ff4689 } /* Keyword.Namespace */
+.codehilite .kp { color: #66d9ef } /* Keyword.Pseudo */
+.codehilite .kr { color: #66d9ef } /* Keyword.Reserved */
+.codehilite .kt { color: #66d9ef } /* Keyword.Type */
+.codehilite .ld { color: #e6db74 } /* Literal.Date */
+.codehilite .m { color: #ae81ff } /* Literal.Number */
+.codehilite .s { color: #e6db74 } /* Literal.String */
+.codehilite .na { color: #a6e22e } /* Name.Attribute */
+.codehilite .nb { color: #f8f8f2 } /* Name.Builtin */
+.codehilite .nc { color: #a6e22e } /* Name.Class */
+.codehilite .no { color: #66d9ef } /* Name.Constant */
+.codehilite .nd { color: #a6e22e } /* Name.Decorator */
+.codehilite .ni { color: #f8f8f2 } /* Name.Entity */
+.codehilite .ne { color: #a6e22e } /* Name.Exception */
+.codehilite .nf { color: #a6e22e } /* Name.Function */
+.codehilite .nl { color: #f8f8f2 } /* Name.Label */
+.codehilite .nn { color: #f8f8f2 } /* Name.Namespace */
+.codehilite .nx { color: #a6e22e } /* Name.Other */
+.codehilite .py { color: #f8f8f2 } /* Name.Property */
+.codehilite .nt { color: #ff4689 } /* Name.Tag */
+.codehilite .nv { color: #f8f8f2 } /* Name.Variable */
+.codehilite .ow { color: #ff4689 } /* Operator.Word */
+.codehilite .pm { color: #f8f8f2 } /* Punctuation.Marker */
+.codehilite .w { color: #f8f8f2 } /* Text.Whitespace */
+.codehilite .mb { color: #ae81ff } /* Literal.Number.Bin */
+.codehilite .mf { color: #ae81ff } /* Literal.Number.Float */
+.codehilite .mh { color: #ae81ff } /* Literal.Number.Hex */
+.codehilite .mi { color: #ae81ff } /* Literal.Number.Integer */
+.codehilite .mo { color: #ae81ff } /* Literal.Number.Oct */
+.codehilite .sa { color: #e6db74 } /* Literal.String.Affix */
+.codehilite .sb { color: #e6db74 } /* Literal.String.Backtick */
+.codehilite .sc { color: #e6db74 } /* Literal.String.Char */
+.codehilite .dl { color: #e6db74 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #e6db74 } /* Literal.String.Doc */
+.codehilite .s2 { color: #e6db74 } /* Literal.String.Double */
+.codehilite .se { color: #ae81ff } /* Literal.String.Escape */
+.codehilite .sh { color: #e6db74 } /* Literal.String.Heredoc */
+.codehilite .si { color: #e6db74 } /* Literal.String.Interpol */
+.codehilite .sx { color: #e6db74 } /* Literal.String.Other */
+.codehilite .sr { color: #e6db74 } /* Literal.String.Regex */
+.codehilite .s1 { color: #e6db74 } /* Literal.String.Single */
+.codehilite .ss { color: #e6db74 } /* Literal.String.Symbol */
+.codehilite .bp { color: #f8f8f2 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #a6e22e } /* Name.Function.Magic */
+.codehilite .vc { color: #f8f8f2 } /* Name.Variable.Class */
+.codehilite .vg { color: #f8f8f2 } /* Name.Variable.Global */
+.codehilite .vi { color: #f8f8f2 } /* Name.Variable.Instance */
+.codehilite .vm { color: #f8f8f2 } /* Name.Variable.Magic */
+.codehilite .il { color: #ae81ff } /* Literal.Number.Integer.Long */
         }
+        
 
         @media (max-width: 768px) {
-            .top-bar {
-                padding: 0 1rem;
-            }
-            
-            .date-badge {
-                display: none;
-            }
-            
             .sidebar {
                 position: fixed;
                 left: -280px;
-                transition: left var(--transition-base);
-                z-index: 90;
-                height: calc(100vh - var(--header-height));
-                box-shadow: var(--shadow-xl);
+                transition: left 0.3s;
+                z-index: 100;
+                height: 100vh;
             }
             
             .sidebar.active {
                 left: 0;
             }
             
-            .main-content {
-                padding: 1rem;
+            .menu-button {
+                display: block;
             }
             
-            .hero h1 {
-                font-size: 2.2rem;
+            .stats {
+                display: none;
+            }
+            
+            .content {
+                padding: 1rem;
             }
             
             .cards-grid {
@@ -888,424 +832,373 @@
     </style>
 </head>
 <body>
-    <!-- Top Bar -->
-    <div class="top-bar">
-        <div class="logo-area">
-         
-            <div class="project-info">
-                <span class="project-name">AromaUI</span>
-                <span class="project-version">v0.0.1 (alpha)</span>
-            </div>
-        </div>
-        
-        <div class="top-bar-right">
-            <div class="stats">
-                <div class="stat-item">
-                    <span class="material-symbols-outlined">category</span>
-                    <span class="stat-label">Categories</span>
-                    <span class="stat-value">4</span>
-                </div>
-                <div class="stat-item">
-                    <span class="material-symbols-outlined">description</span>
-                    <span class="stat-label">Sections</span>
-                    <span class="stat-value">8</span>
-                </div>
-            </div>
-            
-            <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle">
-                <span class="material-symbols-outlined">light_mode</span>
-            </div>
-            
-            <div class="date-badge">
-                <span class="material-symbols-outlined">calendar_today</span>
-                February 14, 2026
-            </div>
-            
-            <span class="material-symbols-outlined menu-icon" onclick="toggleSidebar()" style="display: none;">menu</span>
-        </div>
-    </div>
-
-    <!-- Main Wrapper -->
-    <div class="doc-wrapper">
-        <!-- Sidebar -->
+    <div class="app">
         <div class="sidebar" id="sidebar">
-            <div class="sidebar-section">
-                <div class="category-header" onclick="toggleCategory('home')">
-                    <span class="material-symbols-outlined">chevron_right</span>
-                    <span class="material-symbols-outlined">home</span>
-                    <span class="category-name">Overview</span>
-                </div>
-                <div class="category-items" id="category-home">
-                    <div class="sidebar-item active" onclick="showHome()" id="nav-home">
-                        <span class="material-symbols-outlined">home</span>
-                        Home
+            <div class="sidebar-header">
+                <div class="project-name">AromaUI</div>
+                <!-- docs badge -->
+                <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                    <symbol id="docs-badge" viewBox="0 0 24 24" fill="none">
+                        <rect width="24" height="24" fill="var(--primary)"/>
+                        <text x="12" y="16" text-anchor="middle" fill="#fff" font-size="10" font-family="Inter, sans-serif" font-weight="600">DOCS</text>
+                    </symbol>
+                </svg>
+                <div class="project-version">v0.0.1 (alpha)</div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-category">
+                    <div class="category-header" onclick="toggleCategory('home')">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                        <span>Overview</span>
+                    </div>
+                    <div class="category-items" id="category-home">
+                        <div class="nav-item active" onclick="showHome()">
+                            <span class="material-symbols-outlined">home</span>
+                            Home
+                        </div>
                     </div>
                 </div>
+                
+                <div class="nav-category">
+                    <div class="category-header" onclick="toggleCategory('connectivity')">
+                        <span class="material-symbols-outlined">expand_more</span>
+                        <span>Connectivity</span>
+                    </div>
+                    <div class="category-items" id="category-connectivity">
+            
+
+                        <div class="nav-item" onclick="showPage('bluetooth-api')">
+                            <span class="material-symbols-outlined">bluetooth</span>
+                            Bluetooth API
+                        </div>
+                
+
+                        <div class="nav-item" onclick="showPage('wi-fi-api')">
+                            <span class="material-symbols-outlined">wifi</span>
+                            Wi-Fi API
+                        </div>
+                
+</div></div>
+
+                <div class="nav-category">
+                    <div class="category-header" onclick="toggleCategory('system')">
+                        <span class="material-symbols-outlined">expand_more</span>
+                        <span>System</span>
+                    </div>
+                    <div class="category-items" id="category-system">
+            
+
+                        <div class="nav-item" onclick="showPage('core-jni-api')">
+                            <span class="material-symbols-outlined">description</span>
+                            Core JNI API
+                        </div>
+                
+
+                        <div class="nav-item" onclick="showPage('permissions-api')">
+                            <span class="material-symbols-outlined">lock</span>
+                            Permissions API
+                        </div>
+                
+
+                        <div class="nav-item" onclick="showPage('system-services-&-file-system-api')">
+                            <span class="material-symbols-outlined">folder</span>
+                            System Services & File System API
+                        </div>
+                
+
+                        <div class="nav-item" onclick="showPage('device-information-api')">
+                            <span class="material-symbols-outlined">description</span>
+                            Device Information API
+                        </div>
+                
+</div></div>
+
+                <div class="nav-category">
+                    <div class="category-header" onclick="toggleCategory('media')">
+                        <span class="material-symbols-outlined">expand_more</span>
+                        <span>Media</span>
+                    </div>
+                    <div class="category-items" id="category-media">
+            
+
+                        <div class="nav-item" onclick="showPage('camera-&-gallery-api')">
+                            <span class="material-symbols-outlined">description</span>
+                            Camera & Gallery API
+                        </div>
+                
+</div></div>
+
+                <div class="nav-category">
+                    <div class="category-header" onclick="toggleCategory('ui')">
+                        <span class="material-symbols-outlined">expand_more</span>
+                        <span>UI</span>
+                    </div>
+                    <div class="category-items" id="category-ui">
+            
+
+                        <div class="nav-item" onclick="showPage('ui-utilities-api')">
+                            <span class="material-symbols-outlined">description</span>
+                            UI Utilities API
+                        </div>
+                
+</div></div>
             </div>
-            
-            
-            <div class="sidebar-section">
-                <div class="category-header" onclick="toggleCategory('connectivity')">
-                    <span class="material-symbols-outlined">chevron_right</span>
-                    <span class="material-symbols-outlined">device_hub</span>
-                    <span class="category-name">Connectivity</span>
-                    <span class="category-count">2</span>
-                </div>
-                <div class="category-items" id="category-connectivity">
-            
-
-                <div class="sidebar-item" onclick="showPage('bluetooth-api')">
-                    <span class="material-symbols-outlined">bluetooth</span>
-                    Bluetooth API
-                </div>
-                
-
-                <div class="sidebar-item" onclick="showPage('wi-fi-api')">
-                    <span class="material-symbols-outlined">wifi</span>
-                    Wi-Fi API
-                </div>
-                
-
-                </div>
-            </div>
-            
-
-            <div class="sidebar-section">
-                <div class="category-header" onclick="toggleCategory('system')">
-                    <span class="material-symbols-outlined">chevron_right</span>
-                    <span class="material-symbols-outlined">settings</span>
-                    <span class="category-name">System</span>
-                    <span class="category-count">4</span>
-                </div>
-                <div class="category-items" id="category-system">
-            
-
-                <div class="sidebar-item" onclick="showPage('core-jni-api')">
-                    <span class="material-symbols-outlined">description</span>
-                    Core JNI API
-                </div>
-                
-
-                <div class="sidebar-item" onclick="showPage('permissions-api')">
-                    <span class="material-symbols-outlined">lock</span>
-                    Permissions API
-                </div>
-                
-
-                <div class="sidebar-item" onclick="showPage('system-services-&-file-system-api')">
-                    <span class="material-symbols-outlined">folder</span>
-                    System Services & File System API
-                </div>
-                
-
-                <div class="sidebar-item" onclick="showPage('device-information-api')">
-                    <span class="material-symbols-outlined">description</span>
-                    Device Information API
-                </div>
-                
-
-                </div>
-            </div>
-            
-
-            <div class="sidebar-section">
-                <div class="category-header" onclick="toggleCategory('media')">
-                    <span class="material-symbols-outlined">chevron_right</span>
-                    <span class="material-symbols-outlined">description</span>
-                    <span class="category-name">Media</span>
-                    <span class="category-count">1</span>
-                </div>
-                <div class="category-items" id="category-media">
-            
-
-                <div class="sidebar-item" onclick="showPage('camera-&-gallery-api')">
-                    <span class="material-symbols-outlined">description</span>
-                    Camera & Gallery API
-                </div>
-                
-
-                </div>
-            </div>
-            
-
-            <div class="sidebar-section">
-                <div class="category-header" onclick="toggleCategory('ui')">
-                    <span class="material-symbols-outlined">chevron_right</span>
-                    <span class="material-symbols-outlined">description</span>
-                    <span class="category-name">UI</span>
-                    <span class="category-count">1</span>
-                </div>
-                <div class="category-items" id="category-ui">
-            
-
-                <div class="sidebar-item" onclick="showPage('ui-utilities-api')">
-                    <span class="material-symbols-outlined">description</span>
-                    UI Utilities API
-                </div>
-                
-
-                </div>
-            </div>
-            
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content" id="main-content">
-            <!-- Home View -->
-            <div id="home-view" class="home-view">
-                <div class="hero">
-                    <h1>AromaUI</h1>
-                    <p class="lead">Browse AromaUI's APIs with detailed documentation and examples.</p>
+        <div class="main">
+            <div class="header">
+                <div class="header-left">
+                    <button class="menu-button" onclick="toggleSidebar()">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <div class="breadcrumb" id="breadcrumb">
+                        <a onclick="showHome()">
+                            <span class="material-symbols-outlined">home</span>
+                        </a>
+                        <span class="material-symbols-outlined">chevron_right</span>
+                        <span id="current-section">Home</span>
+                    </div>
                 </div>
-                
-                <!-- Search Bar -->
-                <div class="search-container">
-                    <span class="material-symbols-outlined search-icon">search</span>
-                    <input type="text" class="search-bar" id="searchInput" placeholder="Search documentation..." autocomplete="off">
-                    <span class="material-symbols-outlined search-clear" id="searchClear" onclick="clearSearch()">close</span>
-                    <div class="search-stats" id="searchStats"></div>
+                <div class="header-right">
+                    <div class="stats">
+                        <div class="stat">
+                            <span class="material-symbols-outlined">category</span>
+                            4
+                        </div>
+                        <div class="stat">
+                            <span class="material-symbols-outlined">description</span>
+                            8
+                        </div>
+                    </div>
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <span class="material-symbols-outlined">light_mode</span>
+                    </button>
                 </div>
-                
-                <div class="cards-grid" id="cardsGrid">
+            </div>
+
+            <div class="content" id="content">
+                <div id="home-view">
+                                <h1 style="margin-bottom: 2rem; text-align: center; font-size: 2rem; font-weight: 200;">Welcome to the AromaUI Documentation</h1>
+
+                    <div class="search-container">
+                        <span class="material-symbols-outlined search-icon">search</span>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search documentation...">
+                        <span class="material-symbols-outlined search-clear" id="searchClear" onclick="clearSearch()">close</span>
+                        <div class="search-stats" id="searchStats"></div>
+                    </div>
                     
-            <div class="doc-card" onclick="showPage('bluetooth-api')" data-category="Connectivity">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">bluetooth</span>
+                    <div class="cards-grid" id="cardsGrid">
+                        
+                <div class="card" onclick="showPage('bluetooth-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">bluetooth</span>
+                    </div>
+                    <h3>Bluetooth API</h3>
+                    <p>Bluetooth device management and communication. Scan, connect, and communicate with Bluetooth devices.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            Connectivity
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>Bluetooth API</h3>
-                <p>Bluetooth device management and communication. Scan, connect, and communicate with Bluetooth devices.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> Connectivity
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
 
-            <div class="doc-card" onclick="showPage('wi-fi-api')" data-category="Connectivity">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">wifi</span>
+                <div class="card" onclick="showPage('wi-fi-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">wifi</span>
+                    </div>
+                    <h3>Wi-Fi API</h3>
+                    <p>Wi-Fi state and control. Scan networks, manage connections, and monitor signal strength.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            Connectivity
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>Wi-Fi API</h3>
-                <p>Wi-Fi state and control. Scan networks, manage connections, and monitor signal strength.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> Connectivity
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
 
-            <div class="doc-card" onclick="showPage('core-jni-api')" data-category="System">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">description</span>
+                <div class="card" onclick="showPage('core-jni-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <h3>Core JNI API</h3>
+                    <p>Low-level JNI and Android runtime access. Direct access to native system functions.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            System
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>Core JNI API</h3>
-                <p>Low-level JNI and Android runtime access. Direct access to native system functions.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> System
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
 
-            <div class="doc-card" onclick="showPage('permissions-api')" data-category="System">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">lock</span>
+                <div class="card" onclick="showPage('permissions-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">lock</span>
+                    </div>
+                    <h3>Permissions API</h3>
+                    <p>Runtime permission handling. Request and manage app permissions easily.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            System
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>Permissions API</h3>
-                <p>Runtime permission handling. Request and manage app permissions easily.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> System
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
 
-            <div class="doc-card" onclick="showPage('system-services-&-file-system-api')" data-category="System">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">folder</span>
+                <div class="card" onclick="showPage('system-services-&-file-system-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">folder</span>
+                    </div>
+                    <h3>System Services & File System API</h3>
+                    <p>System services and storage access. Manage files, preferences, and system settings.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            System
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>System Services & File System API</h3>
-                <p>System services and storage access. Manage files, preferences, and system settings.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> System
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
 
-            <div class="doc-card" onclick="showPage('device-information-api')" data-category="System">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">description</span>
+                <div class="card" onclick="showPage('device-information-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <h3>Device Information API</h3>
+                    <p>Battery and device runtime information. Monitor device status and hardware info.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            System
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>Device Information API</h3>
-                <p>Battery and device runtime information. Monitor device status and hardware info.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> System
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
 
-            <div class="doc-card" onclick="showPage('camera-&-gallery-api')" data-category="Media">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">description</span>
+                <div class="card" onclick="showPage('camera-&-gallery-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <h3>Camera & Gallery API</h3>
+                    <p>Media capture and selection. Take photos, record videos, and pick from gallery.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            Media
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>Camera & Gallery API</h3>
-                <p>Media capture and selection. Take photos, record videos, and pick from gallery.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> Media
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
 
-            <div class="doc-card" onclick="showPage('ui-utilities-api')" data-category="UI">
-                <div class="card-icon">
-                    <span class="material-symbols-outlined">description</span>
+                <div class="card" onclick="showPage('ui-utilities-api')">
+                    <div class="card-icon">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <h3>UI Utilities API</h3>
+                    <p>Android UI feedback utilities. Toasts, dialogs, and material components.</p>
+                    <div class="card-footer">
+                        <span class="card-category">
+                            <span class="material-symbols-outlined">folder</span>
+                            UI
+                        </span>
+                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                    </div>
                 </div>
-                <h3>UI Utilities API</h3>
-                <p>Android UI feedback utilities. Toasts, dialogs, and material components.</p>
-                <div class="card-footer">
-                    <span class="card-tag">
-                        <span class="material-symbols-outlined">folder</span> UI
-                    </span>
-                    <span class="material-symbols-outlined card-arrow">arrow_forward</span>
-                </div>
-            </div>
             
+                    </div>
                 </div>
-            </div>
 
-            <!-- Doc View -->
-            <div id="doc-view" class="doc-view">
-                <div class="breadcrumb">
-                    <a onclick="showHome()">
-                        <span class="material-symbols-outlined">arrow_back</span>
-                        All sections
-                    </a>
-                    <span class="material-symbols-outlined">chevron_right</span>
-                    <span id="current-section"></span>
+                <div id="doc-view" class="doc-view">
+                    <div class="doc-content markdown-body" id="doc-content"></div>
                 </div>
-                <div class="doc-content markdown-content" id="doc-content">
-                    <!-- Content loads here -->
-                </div>
-            </div>
 
-            <footer>
-                <span class="material-symbols-outlined">code</span>
-                Generated with AromaUI Documentation Generator
-            </footer>
+            </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script>
-        // Theme management
-        function getTheme() {
-            return localStorage.getItem('theme') || 'light';
-        }
-
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-            
-            // Update icon
-            const icon = document.querySelector('#themeToggle .material-symbols-outlined');
-            if (icon) {
-                icon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
-            }
-        }
+        const pages = {"bluetooth-api": "<h1 id=\"bluetooth-api-aroma_androidh\">Bluetooth API \u2013 <code>aroma_android.h</code></h1>\n<p>Provides Bluetooth device enumeration, connection management, and data transmission.</p>\n<hr />\n<h2 id=\"int-aroma_android_bt_get_pairedchar-out_addrs18-char-out_names248-int-max_devices\"><code>int aroma_android_bt_get_paired(char out_addrs[][18], char out_names[][248], int max_devices);</code></h2>\n<p>Retrieves paired Bluetooth devices.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"kt\">char</span><span class=\"w\"> </span><span class=\"n\">addrs</span><span class=\"p\">[</span><span class=\"mi\">8</span><span class=\"p\">][</span><span class=\"mi\">18</span><span class=\"p\">];</span>\n<span class=\"kt\">char</span><span class=\"w\"> </span><span class=\"n\">names</span><span class=\"p\">[</span><span class=\"mi\">8</span><span class=\"p\">][</span><span class=\"mi\">248</span><span class=\"p\">];</span>\n<span class=\"kt\">int</span><span class=\"w\"> </span><span class=\"n\">count</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_bt_get_paired</span><span class=\"p\">(</span><span class=\"n\">addrs</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"n\">names</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"mi\">8</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Buffers must be preallocated.</li>\n<li>Address format: \"XX:XX:XX:XX:XX:XX\".</li>\n</ul>\n<hr />\n<h2 id=\"bool-aroma_android_bt_connectconst-char-addr\"><code>bool aroma_android_bt_connect(const char* addr);</code></h2>\n<p>Connects to a Bluetooth device.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">aroma_android_bt_connect</span><span class=\"p\">(</span><span class=\"s\">&quot;00:11:22:33:44:55&quot;</span><span class=\"p\">))</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"n\">aroma_android_toast</span><span class=\"p\">(</span><span class=\"s\">&quot;Connected&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"nb\">false</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<hr />\n<h2 id=\"void-aroma_android_bt_disconnectvoid\"><code>void aroma_android_bt_disconnect(void);</code></h2>\n<p>Disconnects current connection.</p>\n<hr />\n<h2 id=\"int-aroma_android_bt_sendconst-char-data-int-len\"><code>int aroma_android_bt_send(const char* data, int len);</code></h2>\n<p>Sends raw data.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">msg</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"s\">&quot;HELLO&quot;</span><span class=\"p\">;</span>\n<span class=\"n\">aroma_android_bt_send</span><span class=\"p\">(</span><span class=\"n\">msg</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"mi\">5</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<hr />\n<h2 id=\"bool-aroma_android_bt_is_connectedvoid\"><code>bool aroma_android_bt_is_connected(void);</code></h2>\n<p>Returns connection status.</p>\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Ensure Bluetooth permissions are granted.</li>\n<li>Connection flow may be asynchronous internally.</li>\n</ul>", "wi-fi-api": "<h1 id=\"wifi-api-aroma_androidh\">Wi\u2011Fi API \u2013 <code>aroma_android.h</code></h1>\n<p>Provides programmatic access to Wi\u2011Fi state and control.</p>\n<hr />\n<h2 id=\"bool-aroma_android_is_wifi_enabled\"><code>bool aroma_android_is_wifi_enabled();</code></h2>\n<p>Returns whether Wi\u2011Fi is enabled.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"o\">!</span><span class=\"n\">aroma_android_is_wifi_enabled</span><span class=\"p\">())</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"n\">aroma_android_set_wifi_enabled</span><span class=\"p\">(</span><span class=\"nb\">true</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Some Android versions restrict direct Wi\u2011Fi toggling.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_set_wifi_enabledbool-enabled\"><code>void aroma_android_set_wifi_enabled(bool enabled);</code></h2>\n<p>Enables or disables Wi\u2011Fi.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_set_wifi_enabled</span><span class=\"p\">(</span><span class=\"nb\">false</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Behavior varies across Android API levels.</li>\n<li>May require elevated permissions.</li>\n</ul>", "core-jni-api": "<h1 id=\"core-jni-access-aroma_androidh\">Core JNI Access \u2013 <code>aroma_android.h</code></h1>\n<p>This section exposes low\u2011level access to the Android runtime. These APIs are intended for advanced use cases such as custom JNI bridging, third\u2011party SDK integration, or manual thread attachment.</p>\n<p>All functions are available only when compiling with <code>__ANDROID__</code> defined.</p>\n<hr />\n<h2 id=\"jnienv-aroma_android_get_env\"><code>JNIEnv* aroma_android_get_env();</code></h2>\n<p>Returns the <code>JNIEnv</code> for the current thread.</p>\n<h3 id=\"returns\">Returns</h3>\n<ul>\n<li>Pointer to <code>JNIEnv</code></li>\n<li><code>NULL</code> if the thread is not attached to the JVM</li>\n</ul>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">JNIEnv</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">env</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_env</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"o\">!</span><span class=\"n\">env</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"c1\">// Thread not attached</span>\n<span class=\"w\">    </span><span class=\"k\">return</span><span class=\"p\">;</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Each native thread must be attached to the JVM before using JNI.</li>\n<li>Do not store <code>JNIEnv*</code> globally across threads.</li>\n</ul>\n<hr />\n<h2 id=\"jobject-aroma_android_get_activity\"><code>jobject aroma_android_get_activity();</code></h2>\n<p>Returns a global reference to the active Android <code>Activity</code>.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">jobject</span><span class=\"w\"> </span><span class=\"n\">activity</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_activity</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">activity</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"c1\">// Use activity in JNI calls</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Managed internally by the platform layer.</li>\n<li>Do not delete this reference.</li>\n</ul>\n<hr />\n<h2 id=\"javavm-aroma_android_get_jvm\"><code>JavaVM* aroma_android_get_jvm();</code></h2>\n<p>Returns the Java VM instance.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">JavaVM</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">jvm</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_jvm</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">jvm</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"c1\">// Attach worker threads if needed</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes_2\">Notes</h3>\n<ul>\n<li>Useful for background threads requiring JNI access.</li>\n<li>Not required for standard AromaUI usage.</li>\n</ul>", "permissions-api": "<h1 id=\"permissions-api-aroma_androidh\">Permissions API \u2013 <code>aroma_android.h</code></h1>\n<p>The Permissions API provides runtime permission management in compliance with Android's security model. It supports permission grouping, Android version\u2013specific behavior, and asynchronous permission handling.</p>\n<hr />\n<h1 id=\"1-permission-checking\">1. Permission Checking</h1>\n<h2 id=\"bool-aroma_android_check_permissionconst-char-permission_name\"><code>bool aroma_android_check_permission(const char* permission_name);</code></h2>\n<p>Checks whether a specific permission has been granted to the application.</p>\n<h3 id=\"parameters\">Parameters</h3>\n<table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Description</th>\n<th>Example</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>permission_name</code></td>\n<td>Fully qualified Android permission string</td>\n<td><code>\"android.permission.CAMERA\"</code></td>\n</tr>\n</tbody>\n</table>\n<h3 id=\"returns\">Returns</h3>\n<table>\n<thead>\n<tr>\n<th>Value</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>true</code></td>\n<td>Permission is granted</td>\n</tr>\n<tr>\n<td><code>false</code></td>\n<td>Permission is denied or not yet requested</td>\n</tr>\n</tbody>\n</table>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"o\">!</span><span class=\"n\">aroma_android_check_permission</span><span class=\"p\">(</span><span class=\"s\">&quot;android.permission.CAMERA&quot;</span><span class=\"p\">))</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">permissions</span><span class=\"p\">[]</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"p\">{</span><span class=\"s\">&quot;android.permission.CAMERA&quot;</span><span class=\"p\">};</span>\n<span class=\"w\">    </span><span class=\"n\">aroma_android_request_permissions</span><span class=\"p\">(</span><span class=\"n\">permissions</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"mi\">1</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h1 id=\"2-permission-requesting\">2. Permission Requesting</h1>\n<h2 id=\"void-aroma_android_request_permissionsconst-char-permissions-int-permcount\"><code>void aroma_android_request_permissions(const char** permissions, int permCount);</code></h2>\n<p>Requests one or more permissions from the user.</p>\n<h2 id=\"parameters_1\">Parameters</h2>\n<table>\n<thead>\n<tr>\n<th>Parameter</th>\n<th>Description</th>\n<th>Example</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><code>permissions</code></td>\n<td>Array of permission strings</td>\n<td><code>{ \"android.permission.CAMERA\", \"android.permission.RECORD_AUDIO\" }</code></td>\n</tr>\n<tr>\n<td><code>permCount</code></td>\n<td>Number of permissions in the array</td>\n<td><code>2</code></td>\n</tr>\n</tbody>\n</table>\n<h2 id=\"example_1\">Example</h2>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"c1\">// Request camera and microphone permissions</span>\n<span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">permissions</span><span class=\"p\">[]</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"s\">&quot;android.permission.CAMERA&quot;</span><span class=\"p\">,</span>\n<span class=\"w\">    </span><span class=\"s\">&quot;android.permission.RECORD_AUDIO&quot;</span>\n<span class=\"p\">};</span>\n\n<span class=\"n\">aroma_android_request_permissions</span><span class=\"p\">(</span><span class=\"n\">permissions</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"mi\">2</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h1 id=\"3-android-version-behavior\">3. Android Version Behavior</h1>\n<table>\n<thead>\n<tr>\n<th>Android Version</th>\n<th>Behavior</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>API &lt; 23</td>\n<td>Permissions granted at install time. Function returns immediately.</td>\n</tr>\n<tr>\n<td>API 23+</td>\n<td>Runtime permission dialog(s) shown to user.</td>\n</tr>\n<tr>\n<td>API 31+</td>\n<td>Automatically handles Bluetooth\u2013Location dependency.</td>\n</tr>\n</tbody>\n</table>\n<h1 id=\"4-automatic-permission-grouping\">4. Automatic Permission Grouping</h1>\n<p>Permissions are grouped to comply with Android system requirements.</p>\n<table>\n<thead>\n<tr>\n<th>Group</th>\n<th>Permissions</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>NEARBY_DEVICES</td>\n<td>BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT</td>\n</tr>\n<tr>\n<td>LOCATION</td>\n<td>ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, ACCESS_BACKGROUND_LOCATION</td>\n</tr>\n<tr>\n<td>NOTIFICATIONS</td>\n<td>POST_NOTIFICATIONS</td>\n</tr>\n<tr>\n<td>STORAGE</td>\n<td>READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO</td>\n</tr>\n<tr>\n<td>CAMERA</td>\n<td>CAMERA</td>\n</tr>\n<tr>\n<td>MICROPHONE</td>\n<td>RECORD_AUDIO</td>\n</tr>\n</tbody>\n</table>\n<h1 id=\"5-common-permission-strings\">5. Common Permission Strings</h1>\n<table>\n<thead>\n<tr>\n<th>Permission</th>\n<th>String Constant</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Camera</td>\n<td>android.permission.CAMERA</td>\n</tr>\n<tr>\n<td>Fine Location</td>\n<td>android.permission.ACCESS_FINE_LOCATION</td>\n</tr>\n<tr>\n<td>Coarse Location</td>\n<td>android.permission.ACCESS_COARSE_LOCATION</td>\n</tr>\n<tr>\n<td>Bluetooth Scan</td>\n<td>android.permission.BLUETOOTH_SCAN</td>\n</tr>\n<tr>\n<td>Bluetooth Connect</td>\n<td>android.permission.BLUETOOTH_CONNECT</td>\n</tr>\n<tr>\n<td>Record Audio</td>\n<td>android.permission.RECORD_AUDIO</td>\n</tr>\n<tr>\n<td>Read Storage</td>\n<td>android.permission.READ_EXTERNAL_STORAGE</td>\n</tr>\n<tr>\n<td>Write Storage</td>\n<td>android.permission.WRITE_EXTERNAL_STORAGE</td>\n</tr>\n<tr>\n<td>Post Notifications</td>\n<td>android.permission.POST_NOTIFICATIONS</td>\n</tr>\n</tbody>\n</table>", "system-services-&-file-system-api": "<h1 id=\"system-services-file-system-aroma_androidh\">System Services &amp; File System \u2013 <code>aroma_android.h</code></h1>\n<p>Provides access to Android system services and application storage paths.</p>\n<hr />\n<h2 id=\"jobject-aroma_android_get_system_serviceconst-char-service_name\"><code>jobject aroma_android_get_system_service(const char* service_name);</code></h2>\n<p>Returns a system service object.</p>\n<h3 id=\"parameters\">Parameters</h3>\n<ul>\n<li><code>service_name</code> \u2013 e.g. \"vibrator\", \"wifi\", \"bluetooth\"</li>\n</ul>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">jobject</span><span class=\"w\"> </span><span class=\"n\">service</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_system_service</span><span class=\"p\">(</span><span class=\"s\">&quot;vibrator&quot;</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Returned object is a JNI reference.</li>\n<li>Service availability depends on device and Android version.</li>\n</ul>\n<hr />\n<h2 id=\"const-char-aroma_android_get_internal_path\"><code>const char* aroma_android_get_internal_path();</code></h2>\n<p>Returns the app's internal storage directory.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">path</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_internal_path</span><span class=\"p\">();</span>\n<span class=\"n\">printf</span><span class=\"p\">(</span><span class=\"s\">&quot;Internal: %s</span><span class=\"se\">\\n</span><span class=\"s\">&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"n\">path</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Private to the application.</li>\n<li>No special permissions required.</li>\n</ul>\n<hr />\n<h2 id=\"const-char-aroma_android_get_external_path\"><code>const char* aroma_android_get_external_path();</code></h2>\n<p>Returns the app's external storage directory.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">path</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_external_path</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes_2\">Notes</h3>\n<ul>\n<li>May require storage permission depending on API level.</li>\n<li>Availability depends on device storage state.</li>\n</ul>", "device-information-api": "<h1 id=\"device-information-aroma_androidh\">Device Information \u2013 <code>aroma_android.h</code></h1>\n<p>Provides runtime access to device-level system information.</p>\n<hr />\n<h2 id=\"int-aroma_android_get_battery_level\"><code>int aroma_android_get_battery_level();</code></h2>\n<p>Returns the current battery percentage.</p>\n<h3 id=\"returns\">Returns</h3>\n<ul>\n<li>0\u2013100</li>\n<li><code>-1</code> if unavailable</li>\n</ul>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"kt\">int</span><span class=\"w\"> </span><span class=\"n\">level</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_battery_level</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">level</span><span class=\"w\"> </span><span class=\"o\">&gt;=</span><span class=\"w\"> </span><span class=\"mi\">0</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"n\">printf</span><span class=\"p\">(</span><span class=\"s\">&quot;Battery: %d%%</span><span class=\"se\">\\n</span><span class=\"s\">&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"n\">level</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>May not update in real-time unless refreshed.</li>\n<li>Suitable for dashboards and monitoring apps.</li>\n</ul>", "camera-&-gallery-api": "<h1 id=\"camera-gallery-aroma_androidh\">Camera &amp; Gallery \u2013 <code>aroma_android.h</code></h1>\n<p>Provides access to Android media intents for capturing and selecting images.</p>\n<hr />\n<h2 id=\"void-aroma_android_launch_camera\"><code>void aroma_android_launch_camera();</code></h2>\n<p>Launches the default camera application.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_launch_camera</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Requires camera permission.</li>\n<li>Result must be handled on the Java side.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_launch_gallery\"><code>void aroma_android_launch_gallery();</code></h2>\n<p>Launches image picker.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_launch_gallery</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Used for selecting existing media.</li>\n<li>Result is delivered asynchronously.</li>\n</ul>", "ui-utilities-api": "<h1 id=\"ui-utilities-aroma_androidh\">UI Utilities \u2013 <code>aroma_android.h</code></h1>\n<p>Provides lightweight access to common Android UI feedback mechanisms.</p>\n<hr />\n<h2 id=\"void-aroma_android_toastconst-char-msg-bool-long_duration\"><code>void aroma_android_toast(const char* msg, bool long_duration);</code></h2>\n<p>Displays a Toast message.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_toast</span><span class=\"p\">(</span><span class=\"s\">&quot;Operation successful&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"nb\">false</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Non-blocking UI feedback.</li>\n<li>Avoid excessive usage.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_open_settings\"><code>void aroma_android_open_settings();</code></h2>\n<p>Opens Android system settings.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_open_settings</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Useful when users must manually enable permissions.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_vibrateint-ms\"><code>void aroma_android_vibrate(int ms);</code></h2>\n<p>Triggers device vibration.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_vibrate</span><span class=\"p\">(</span><span class=\"mi\">150</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes_2\">Notes</h3>\n<ul>\n<li>Keep vibration short for good UX.</li>\n</ul>"};
+        const titles = {"bluetooth-api": "Bluetooth API", "wi-fi-api": "Wi-Fi API", "core-jni-api": "Core JNI API", "permissions-api": "Permissions API", "system-services-&-file-system-api": "System Services & File System API", "device-information-api": "Device Information API", "camera-&-gallery-api": "Camera & Gallery API", "ui-utilities-api": "UI Utilities API"};
 
         function toggleTheme() {
-            const current = getTheme();
-            setTheme(current === 'dark' ? 'light' : 'dark');
+            const html = document.documentElement;
+            const theme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            document.querySelector('.theme-toggle .material-symbols-outlined').textContent = 
+                theme === 'dark' ? 'dark_mode' : 'light_mode';
         }
 
-        // Initialize theme
-        setTheme(getTheme());
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.querySelector('.theme-toggle .material-symbols-outlined').textContent = 
+            savedTheme === 'dark' ? 'dark_mode' : 'light_mode';
 
-        // Toggle sidebar on mobile
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
         }
 
-        // Show/hide menu icon based on screen size
-        function checkScreenSize() {
-            const menuIcon = document.querySelector('.menu-icon');
-            if (window.innerWidth <= 768) {
-                menuIcon.style.display = 'block';
-            } else {
-                menuIcon.style.display = 'none';
-                document.getElementById('sidebar').classList.remove('active');
-            }
+        function toggleCategory(id) {
+            const items = document.getElementById('category-' + id);
+            const header = items.previousElementSibling;
+            const icon = header.querySelector('.material-symbols-outlined');
+            
+            items.classList.toggle('collapsed');
+            icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
         }
 
-        window.addEventListener('resize', checkScreenSize);
-        checkScreenSize();
-
-        // Page data
-        const pages = {"bluetooth-api": "<h1 id=\"bluetooth-api-aroma_androidh\">Bluetooth API \u2013 <code>aroma_android.h</code></h1>\n<p>Provides Bluetooth device enumeration, connection management, and data transmission.</p>\n<hr />\n<h2 id=\"int-aroma_android_bt_get_pairedchar-out_addrs18-char-out_names248-int-max_devices\"><code>int aroma_android_bt_get_paired(char out_addrs[][18], char out_names[][248], int max_devices);</code></h2>\n<p>Retrieves paired Bluetooth devices.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"kt\">char</span><span class=\"w\"> </span><span class=\"n\">addrs</span><span class=\"p\">[</span><span class=\"mi\">8</span><span class=\"p\">][</span><span class=\"mi\">18</span><span class=\"p\">];</span>\n<span class=\"kt\">char</span><span class=\"w\"> </span><span class=\"n\">names</span><span class=\"p\">[</span><span class=\"mi\">8</span><span class=\"p\">][</span><span class=\"mi\">248</span><span class=\"p\">];</span>\n<span class=\"kt\">int</span><span class=\"w\"> </span><span class=\"n\">count</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_bt_get_paired</span><span class=\"p\">(</span><span class=\"n\">addrs</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"n\">names</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"mi\">8</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Buffers must be preallocated.</li>\n<li>Address format: \"XX:XX:XX:XX:XX:XX\".</li>\n</ul>\n<hr />\n<h2 id=\"bool-aroma_android_bt_connectconst-char-addr\"><code>bool aroma_android_bt_connect(const char* addr);</code></h2>\n<p>Connects to a Bluetooth device.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">aroma_android_bt_connect</span><span class=\"p\">(</span><span class=\"s\">&quot;00:11:22:33:44:55&quot;</span><span class=\"p\">))</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"n\">aroma_android_toast</span><span class=\"p\">(</span><span class=\"s\">&quot;Connected&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"nb\">false</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<hr />\n<h2 id=\"void-aroma_android_bt_disconnectvoid\"><code>void aroma_android_bt_disconnect(void);</code></h2>\n<p>Disconnects current connection.</p>\n<hr />\n<h2 id=\"int-aroma_android_bt_sendconst-char-data-int-len\"><code>int aroma_android_bt_send(const char* data, int len);</code></h2>\n<p>Sends raw data.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">msg</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"s\">&quot;HELLO&quot;</span><span class=\"p\">;</span>\n<span class=\"n\">aroma_android_bt_send</span><span class=\"p\">(</span><span class=\"n\">msg</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"mi\">5</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<hr />\n<h2 id=\"bool-aroma_android_bt_is_connectedvoid\"><code>bool aroma_android_bt_is_connected(void);</code></h2>\n<p>Returns connection status.</p>\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Ensure Bluetooth permissions are granted.</li>\n<li>Connection flow may be asynchronous internally.</li>\n</ul>", "wi-fi-api": "<h1 id=\"wifi-api-aroma_androidh\">Wi\u2011Fi API \u2013 <code>aroma_android.h</code></h1>\n<p>Provides programmatic access to Wi\u2011Fi state and control.</p>\n<hr />\n<h2 id=\"bool-aroma_android_is_wifi_enabled\"><code>bool aroma_android_is_wifi_enabled();</code></h2>\n<p>Returns whether Wi\u2011Fi is enabled.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"o\">!</span><span class=\"n\">aroma_android_is_wifi_enabled</span><span class=\"p\">())</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"n\">aroma_android_set_wifi_enabled</span><span class=\"p\">(</span><span class=\"nb\">true</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Some Android versions restrict direct Wi\u2011Fi toggling.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_set_wifi_enabledbool-enabled\"><code>void aroma_android_set_wifi_enabled(bool enabled);</code></h2>\n<p>Enables or disables Wi\u2011Fi.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_set_wifi_enabled</span><span class=\"p\">(</span><span class=\"nb\">false</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Behavior varies across Android API levels.</li>\n<li>May require elevated permissions.</li>\n</ul>", "core-jni-api": "<h1 id=\"core-jni-access-aroma_androidh\">Core JNI Access \u2013 <code>aroma_android.h</code></h1>\n<p>This section exposes low\u2011level access to the Android runtime. These APIs are intended for advanced use cases such as custom JNI bridging, third\u2011party SDK integration, or manual thread attachment.</p>\n<p>All functions are available only when compiling with <code>__ANDROID__</code> defined.</p>\n<hr />\n<h2 id=\"jnienv-aroma_android_get_env\"><code>JNIEnv* aroma_android_get_env();</code></h2>\n<p>Returns the <code>JNIEnv</code> for the current thread.</p>\n<h3 id=\"returns\">Returns</h3>\n<ul>\n<li>Pointer to <code>JNIEnv</code></li>\n<li><code>NULL</code> if the thread is not attached to the JVM</li>\n</ul>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">JNIEnv</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">env</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_env</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"o\">!</span><span class=\"n\">env</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"c1\">// Thread not attached</span>\n<span class=\"w\">    </span><span class=\"k\">return</span><span class=\"p\">;</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Each native thread must be attached to the JVM before using JNI.</li>\n<li>Do not store <code>JNIEnv*</code> globally across threads.</li>\n</ul>\n<hr />\n<h2 id=\"jobject-aroma_android_get_activity\"><code>jobject aroma_android_get_activity();</code></h2>\n<p>Returns a global reference to the active Android <code>Activity</code>.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">jobject</span><span class=\"w\"> </span><span class=\"n\">activity</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_activity</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">activity</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"c1\">// Use activity in JNI calls</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Managed internally by the platform layer.</li>\n<li>Do not delete this reference.</li>\n</ul>\n<hr />\n<h2 id=\"javavm-aroma_android_get_jvm\"><code>JavaVM* aroma_android_get_jvm();</code></h2>\n<p>Returns the Java VM instance.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">JavaVM</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">jvm</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_jvm</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">jvm</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"c1\">// Attach worker threads if needed</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes_2\">Notes</h3>\n<ul>\n<li>Useful for background threads requiring JNI access.</li>\n<li>Not required for standard AromaUI usage.</li>\n</ul>", "permissions-api": "<h1 id=\"permissions-api-aroma_androidh\">Permissions API \u2013 <code>aroma_android.h</code></h1>\n<p>The Permissions API enables runtime permission checks and requests in compliance with modern Android security requirements.</p>\n<hr />\n<h2 id=\"bool-aroma_android_check_permissionconst-char-permission_name\"><code>bool aroma_android_check_permission(const char* permission_name);</code></h2>\n<p>Checks whether a permission has already been granted.</p>\n<h3 id=\"parameters\">Parameters</h3>\n<ul>\n<li><code>permission_name</code> \u2013 e.g. \"android.permission.CAMERA\"</li>\n</ul>\n<h3 id=\"returns\">Returns</h3>\n<ul>\n<li><code>true</code> if granted</li>\n<li><code>false</code> otherwise</li>\n</ul>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"o\">!</span><span class=\"n\">aroma_android_check_permission</span><span class=\"p\">(</span><span class=\"s\">&quot;android.permission.CAMERA&quot;</span><span class=\"p\">))</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"n\">aroma_android_request_permission</span><span class=\"p\">(</span><span class=\"s\">&quot;android.permission.CAMERA&quot;</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Always check before performing restricted operations.</li>\n<li>Required for camera, Bluetooth, storage, and location.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_request_permissionconst-char-permission_name\"><code>void aroma_android_request_permission(const char* permission_name);</code></h2>\n<p>Requests a permission from the user.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_request_permission</span><span class=\"p\">(</span><span class=\"s\">&quot;android.permission.ACCESS_FINE_LOCATION&quot;</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Asynchronous operation.</li>\n<li>Result must be handled on the Java side.</li>\n</ul>", "system-services-&-file-system-api": "<h1 id=\"system-services-file-system-aroma_androidh\">System Services &amp; File System \u2013 <code>aroma_android.h</code></h1>\n<p>Provides access to Android system services and application storage paths.</p>\n<hr />\n<h2 id=\"jobject-aroma_android_get_system_serviceconst-char-service_name\"><code>jobject aroma_android_get_system_service(const char* service_name);</code></h2>\n<p>Returns a system service object.</p>\n<h3 id=\"parameters\">Parameters</h3>\n<ul>\n<li><code>service_name</code> \u2013 e.g. \"vibrator\", \"wifi\", \"bluetooth\"</li>\n</ul>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">jobject</span><span class=\"w\"> </span><span class=\"n\">service</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_system_service</span><span class=\"p\">(</span><span class=\"s\">&quot;vibrator&quot;</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Returned object is a JNI reference.</li>\n<li>Service availability depends on device and Android version.</li>\n</ul>\n<hr />\n<h2 id=\"const-char-aroma_android_get_internal_path\"><code>const char* aroma_android_get_internal_path();</code></h2>\n<p>Returns the app's internal storage directory.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">path</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_internal_path</span><span class=\"p\">();</span>\n<span class=\"n\">printf</span><span class=\"p\">(</span><span class=\"s\">&quot;Internal: %s</span><span class=\"se\">\\n</span><span class=\"s\">&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"n\">path</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Private to the application.</li>\n<li>No special permissions required.</li>\n</ul>\n<hr />\n<h2 id=\"const-char-aroma_android_get_external_path\"><code>const char* aroma_android_get_external_path();</code></h2>\n<p>Returns the app's external storage directory.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"k\">const</span><span class=\"w\"> </span><span class=\"kt\">char</span><span class=\"o\">*</span><span class=\"w\"> </span><span class=\"n\">path</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_external_path</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes_2\">Notes</h3>\n<ul>\n<li>May require storage permission depending on API level.</li>\n<li>Availability depends on device storage state.</li>\n</ul>", "device-information-api": "<h1 id=\"device-information-aroma_androidh\">Device Information \u2013 <code>aroma_android.h</code></h1>\n<p>Provides runtime access to device-level system information.</p>\n<hr />\n<h2 id=\"int-aroma_android_get_battery_level\"><code>int aroma_android_get_battery_level();</code></h2>\n<p>Returns the current battery percentage.</p>\n<h3 id=\"returns\">Returns</h3>\n<ul>\n<li>0\u2013100</li>\n<li><code>-1</code> if unavailable</li>\n</ul>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"kt\">int</span><span class=\"w\"> </span><span class=\"n\">level</span><span class=\"w\"> </span><span class=\"o\">=</span><span class=\"w\"> </span><span class=\"n\">aroma_android_get_battery_level</span><span class=\"p\">();</span>\n<span class=\"k\">if</span><span class=\"w\"> </span><span class=\"p\">(</span><span class=\"n\">level</span><span class=\"w\"> </span><span class=\"o\">&gt;=</span><span class=\"w\"> </span><span class=\"mi\">0</span><span class=\"p\">)</span><span class=\"w\"> </span><span class=\"p\">{</span>\n<span class=\"w\">    </span><span class=\"n\">printf</span><span class=\"p\">(</span><span class=\"s\">&quot;Battery: %d%%</span><span class=\"se\">\\n</span><span class=\"s\">&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"n\">level</span><span class=\"p\">);</span>\n<span class=\"p\">}</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>May not update in real-time unless refreshed.</li>\n<li>Suitable for dashboards and monitoring apps.</li>\n</ul>", "camera-&-gallery-api": "<h1 id=\"camera-gallery-aroma_androidh\">Camera &amp; Gallery \u2013 <code>aroma_android.h</code></h1>\n<p>Provides access to Android media intents for capturing and selecting images.</p>\n<hr />\n<h2 id=\"void-aroma_android_launch_camera\"><code>void aroma_android_launch_camera();</code></h2>\n<p>Launches the default camera application.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_launch_camera</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Requires camera permission.</li>\n<li>Result must be handled on the Java side.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_launch_gallery\"><code>void aroma_android_launch_gallery();</code></h2>\n<p>Launches image picker.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_launch_gallery</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Used for selecting existing media.</li>\n<li>Result is delivered asynchronously.</li>\n</ul>", "ui-utilities-api": "<h1 id=\"ui-utilities-aroma_androidh\">UI Utilities \u2013 <code>aroma_android.h</code></h1>\n<p>Provides lightweight access to common Android UI feedback mechanisms.</p>\n<hr />\n<h2 id=\"void-aroma_android_toastconst-char-msg-bool-long_duration\"><code>void aroma_android_toast(const char* msg, bool long_duration);</code></h2>\n<p>Displays a Toast message.</p>\n<h3 id=\"example\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_toast</span><span class=\"p\">(</span><span class=\"s\">&quot;Operation successful&quot;</span><span class=\"p\">,</span><span class=\"w\"> </span><span class=\"nb\">false</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes\">Notes</h3>\n<ul>\n<li>Non-blocking UI feedback.</li>\n<li>Avoid excessive usage.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_open_settings\"><code>void aroma_android_open_settings();</code></h2>\n<p>Opens Android system settings.</p>\n<h3 id=\"example_1\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_open_settings</span><span class=\"p\">();</span>\n</code></pre></div>\n\n<h3 id=\"notes_1\">Notes</h3>\n<ul>\n<li>Useful when users must manually enable permissions.</li>\n</ul>\n<hr />\n<h2 id=\"void-aroma_android_vibrateint-ms\"><code>void aroma_android_vibrate(int ms);</code></h2>\n<p>Triggers device vibration.</p>\n<h3 id=\"example_2\">Example</h3>\n<div class=\"codehilite\"><pre><span></span><code><span class=\"n\">aroma_android_vibrate</span><span class=\"p\">(</span><span class=\"mi\">150</span><span class=\"p\">);</span>\n</code></pre></div>\n\n<h3 id=\"notes_2\">Notes</h3>\n<ul>\n<li>Keep vibration short for good UX.</li>\n</ul>"};
-        const titles = {"bluetooth-api": "Bluetooth API", "wi-fi-api": "Wi-Fi API", "core-jni-api": "Core JNI API", "permissions-api": "Permissions API", "system-services-&-file-system-api": "System Services & File System API", "device-information-api": "Device Information API", "camera-&-gallery-api": "Camera & Gallery API", "ui-utilities-api": "UI Utilities API"};
-
-        // Search functionality
         const searchInput = document.getElementById('searchInput');
         const searchClear = document.getElementById('searchClear');
         const searchStats = document.getElementById('searchStats');
         const cardsGrid = document.getElementById('cardsGrid');
-        
+
         function filterCards() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
+            const term = searchInput.value.toLowerCase();
             
-            if (searchTerm.length > 0) {
+            if (term.length > 0) {
                 searchClear.classList.add('visible');
             } else {
                 searchClear.classList.remove('visible');
             }
             
-            let visibleCount = 0;
+            let visible = 0;
             const cards = cardsGrid.children;
             
             for (let i = 0; i < cards.length; i++) {
                 const card = cards[i];
-                // Skip empty state element if it exists
                 if (card.id === 'empty-search-state') continue;
                 
                 const title = card.querySelector('h3').textContent.toLowerCase();
                 const desc = card.querySelector('p').textContent.toLowerCase();
-                const tags = card.querySelector('.card-tag').textContent.toLowerCase();
+                const category = card.querySelector('.card-category').textContent.toLowerCase();
                 
-                if (title.includes(searchTerm) || desc.includes(searchTerm) || tags.includes(searchTerm)) {
-                    card.style.display = 'flex';
-                    visibleCount++;
+                if (title.includes(term) || desc.includes(term) || category.includes(term)) {
+                    card.style.display = 'block';
+                    visible++;
                 } else {
                     card.style.display = 'none';
                 }
             }
             
-            // Update stats
-            if (searchTerm.length > 0) {
-                searchStats.innerHTML = 'Found ' + visibleCount + ' matching section' + (visibleCount !== 1 ? 's' : '');
+            if (term.length > 0) {
+                searchStats.textContent = `Found ${visible} section${visible !== 1 ? 's' : ''}`;
             } else {
-                searchStats.innerHTML = '';
+                searchStats.textContent = '';
             }
             
-            // Show empty state if no results
             let emptyState = document.getElementById('empty-search-state');
-            if (visibleCount === 0 && searchTerm.length > 0) {
+            if (visible === 0 && term.length > 0) {
                 if (!emptyState) {
                     emptyState = document.createElement('div');
                     emptyState.id = 'empty-search-state';
@@ -1313,7 +1206,7 @@
                     emptyState.innerHTML = `
                         <span class="material-symbols-outlined">search_off</span>
                         <h3>No results found</h3>
-                        <p>Try adjusting your search terms or browse all sections</p>
+                        <p>Try adjusting your search terms</p>
                     `;
                     cardsGrid.appendChild(emptyState);
                 }
@@ -1328,119 +1221,55 @@
             searchInput.focus();
         }
 
-        // Debounce search for better performance
         let searchTimeout;
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', () => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(filterCards, 300);
         });
 
-        // Category toggle
-        function toggleCategory(categoryId) {
-            const items = document.getElementById('category-' + categoryId);
-            const header = items.previousElementSibling;
-            
-            if (items) {
-                items.classList.toggle('collapsed');
-                header.classList.toggle('collapsed');
-                
-                // Save state to localStorage
-                const collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories') || '{}');
-                collapsedCategories[categoryId] = items.classList.contains('collapsed');
-                localStorage.setItem('collapsedCategories', JSON.stringify(collapsedCategories));
-            }
-        }
-
-        // Restore category states
-        function restoreCategoryStates() {
-            const collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories') || '{}');
-            
-            for (const [categoryId, collapsed] of Object.entries(collapsedCategories)) {
-                const items = document.getElementById('category-' + categoryId);
-                if (items && collapsed) {
-                    items.classList.add('collapsed');
-                    items.previousElementSibling.classList.add('collapsed');
-                }
-            }
-        }
-
         function showHome() {
             document.getElementById('home-view').style.display = 'block';
             document.getElementById('doc-view').style.display = 'none';
-            
-            // Update active state in sidebar
-            document.querySelectorAll('.sidebar-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            const navHome = document.getElementById('nav-home');
-            if (navHome) navHome.classList.add('active');
-            
-            // Close sidebar on mobile
+            document.getElementById('current-section').textContent = 'Home';
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.querySelector('[onclick="showHome()"]').classList.add('active');
             document.getElementById('sidebar').classList.remove('active');
-            
-            // Update URL
             window.location.hash = '';
-            
-            // Clear search when returning home
             clearSearch();
         }
 
-        function showPage(pageId) {
+        function showPage(id) {
             document.getElementById('home-view').style.display = 'none';
             document.getElementById('doc-view').style.display = 'block';
+            document.getElementById('doc-content').innerHTML = pages[id];
+            document.getElementById('current-section').textContent = titles[id];
             
-            // Load content
-            document.getElementById('doc-content').innerHTML = pages[pageId];
-            document.getElementById('current-section').innerHTML = titles[pageId] || pageId;
-            
-            // Update active state in sidebar
-            document.querySelectorAll('.sidebar-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Find and highlight the clicked item
-            const activeItem = Array.from(document.querySelectorAll('.sidebar-item')).find(
-                item => item.getAttribute('onclick') && item.getAttribute('onclick').includes(pageId)
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            const activeItem = Array.from(document.querySelectorAll('.nav-item')).find(
+                i => i.getAttribute('onclick') && i.getAttribute('onclick').includes(id)
             );
-            if (activeItem) {
-                activeItem.classList.add('active');
-            }
+            if (activeItem) activeItem.classList.add('active');
             
-            // Close sidebar on mobile
             document.getElementById('sidebar').classList.remove('active');
-            
-            // Update URL
-            window.location.hash = pageId;
-            
-            // Scroll to top
-            document.querySelector('.main-content').scrollTop = 0;
+            document.getElementById('content').scrollTop = 0;
+            window.location.hash = id;
         }
 
-        // Load page from hash on startup
-        window.onload = function() {
-            restoreCategoryStates();
-            
+        window.onload = () => {
             if (window.location.hash) {
-                const pageId = window.location.hash.substring(1);
-                if (pages[pageId]) {
-                    showPage(pageId);
-                } else {
-                    showHome();
-                }
+                const id = window.location.hash.substring(1);
+                if (pages[id]) showPage(id);
+                else showHome();
             } else {
                 showHome();
             }
         };
 
-        // Handle browser back/forward
-        window.onhashchange = function() {
+        window.onhashchange = () => {
             if (window.location.hash) {
-                const pageId = window.location.hash.substring(1);
-                if (pages[pageId]) {
-                    showPage(pageId);
-                } else {
-                    showHome();
-                }
+                const id = window.location.hash.substring(1);
+                if (pages[id]) showPage(id);
+                else showHome();
             } else {
                 showHome();
             }
