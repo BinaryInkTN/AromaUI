@@ -59,7 +59,6 @@ class DocGenerator:
             --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
         }}
 
-        /* Theme: Light */
         :root[data-theme="light"] {{
             --primary: #2563eb;
             --primary-light: #3b82f6;
@@ -91,9 +90,9 @@ class DocGenerator:
             --overlay-bg: rgba(0,0,0,0.5);
             --copy-btn-bg: #ffffff;
             --copy-btn-hover: #f1f5f9;
+            --footer-bg: #f1f5f9;
         }}
 
-        /* Theme: Dark */
         :root[data-theme="dark"] {{
             --primary: #3b82f6;
             --primary-light: #60a5fa;
@@ -125,9 +124,9 @@ class DocGenerator:
             --overlay-bg: rgba(0,0,0,0.7);
             --copy-btn-bg: #334155;
             --copy-btn-hover: #475569;
+            --footer-bg: #1e293b;
         }}
 
-        /* Theme: Sepia */
         :root[data-theme="sepia"] {{
             --primary: #8b5a2b;
             --primary-light: #a67b5b;
@@ -159,9 +158,9 @@ class DocGenerator:
             --overlay-bg: rgba(0,0,0,0.3);
             --copy-btn-bg: #d8ccbc;
             --copy-btn-hover: #c8bcac;
+            --footer-bg: #e8dccc;
         }}
 
-        /* Theme: Nord */
         :root[data-theme="nord"] {{
             --primary: #88c0d0;
             --primary-light: #8fbcbb;
@@ -193,9 +192,9 @@ class DocGenerator:
             --overlay-bg: rgba(0,0,0,0.7);
             --copy-btn-bg: #434c5e;
             --copy-btn-hover: #4c566a;
+            --footer-bg: #3b4252;
         }}
 
-        /* Theme: Solarized */
         :root[data-theme="solarized"] {{
             --primary: #268bd2;
             --primary-light: #6c71c4;
@@ -227,6 +226,7 @@ class DocGenerator:
             --overlay-bg: rgba(0,0,0,0.3);
             --copy-btn-bg: #93a1a1;
             --copy-btn-hover: #839496;
+            --footer-bg: #eee8d5;
         }}
 
         body {{
@@ -289,11 +289,39 @@ class DocGenerator:
             border-bottom: 1px solid var(--border);
         }}
 
+        .project-header {{
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }}
+
         .project-name {{
             font-weight: 600;
             font-size: 1.25rem;
             color: var(--text-primary);
-            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }}
+
+        .docs-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 100px;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }}
+
+        .docs-badge .material-symbols-outlined {{
+            font-size: 14px;
+            color: white;
         }}
 
         .project-version {{
@@ -356,6 +384,7 @@ class DocGenerator:
             transition: all var(--transition-speed) var(--transition-timing);
             margin-right: 1rem;
             border-radius: 0 24px 24px 0;
+            word-break: break-word;
         }}
 
         .nav-item:hover {{
@@ -395,6 +424,7 @@ class DocGenerator:
             font-size: 18px;
             color: var(--text-tertiary);
             transition: all var(--transition-speed) var(--transition-timing);
+            flex-shrink: 0;
         }}
 
         .nav-item.active .material-symbols-outlined {{
@@ -424,10 +454,10 @@ class DocGenerator:
             display: flex;
             align-items: center;
             gap: 1rem;
+            min-width: 0;
         }}
 
         .menu-button {{
-            display: none;
             background: none;
             border: none;
             color: var(--text-secondary);
@@ -435,10 +465,11 @@ class DocGenerator:
             width: 42px;
             height: 42px;
             border-radius: 21px;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             transition: all var(--transition-speed) var(--transition-timing);
+            flex-shrink: 0;
         }}
 
         .menu-button:hover {{
@@ -453,6 +484,8 @@ class DocGenerator:
             gap: 0.5rem;
             color: var(--text-tertiary);
             font-size: 0.875rem;
+            min-width: 0;
+            flex-wrap: wrap;
         }}
 
         .breadcrumb a {{
@@ -465,6 +498,7 @@ class DocGenerator:
             padding: 0.5rem;
             border-radius: 6px;
             transition: all var(--transition-speed) var(--transition-timing);
+            flex-shrink: 0;
         }}
 
         .breadcrumb a:hover {{
@@ -473,10 +507,17 @@ class DocGenerator:
             transform: translateX(-2px);
         }}
 
+        .breadcrumb span:last-child {{
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }}
+
         .header-right {{
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            flex-shrink: 0;
         }}
 
         .stats {{
@@ -667,6 +708,7 @@ class DocGenerator:
             align-items: center;
             justify-content: center;
             transition: all var(--transition-speed) var(--transition-timing);
+            flex-shrink: 0;
         }}
 
         .warning-close:hover {{
@@ -760,6 +802,7 @@ class DocGenerator:
             gap: 1.5rem;
             max-width: 1400px;
             margin: 0 auto;
+            padding-bottom: 2rem;
         }}
 
         .card {{
@@ -801,6 +844,7 @@ class DocGenerator:
             margin-bottom: 1.25rem;
             color: var(--primary);
             transition: all var(--transition-speed) var(--transition-timing);
+            flex-shrink: 0;
         }}
 
         .card:hover .card-icon {{
@@ -813,12 +857,16 @@ class DocGenerator:
             font-size: 26px;
         }}
 
+        .card-header {{
+            margin-bottom: 0.5rem;
+        }}
+
         .card h3 {{
             font-weight: 600;
             font-size: 1.125rem;
-            margin-bottom: 0.5rem;
             color: var(--text-primary);
             transition: all var(--transition-speed) var(--transition-timing);
+            word-break: break-word;
         }}
 
         .card:hover h3 {{
@@ -830,6 +878,7 @@ class DocGenerator:
             font-size: 0.9375rem;
             margin-bottom: 1.5rem;
             line-height: 1.5;
+            word-break: break-word;
         }}
 
         .card-footer {{
@@ -848,6 +897,7 @@ class DocGenerator:
             font-size: 0.8125rem;
             color: var(--text-tertiary);
             transition: all var(--transition-speed) var(--transition-timing);
+            word-break: break-word;
         }}
 
         .card:hover .card-category {{
@@ -860,6 +910,7 @@ class DocGenerator:
             transition: all var(--transition-speed) var(--transition-timing);
             opacity: 0;
             transform: translateX(-10px);
+            flex-shrink: 0;
         }}
 
         .card:hover .card-arrow {{
@@ -875,17 +926,130 @@ class DocGenerator:
             animation: fadeIn 0.4s var(--transition-timing);
         }}
 
+        .doc-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }}
+
+        .doc-title-container {{
+            flex: 1;
+        }}
+
+        .doc-title {{
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }}
+
+        .doc-meta {{
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }}
+
+        .doc-meta-item {{
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }}
+
+        .doc-actions {{
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }}
+
+        .doc-action-button {{
+            padding: 0.5rem 1rem;
+            background: var(--surface-2);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .doc-action-button:hover {{
+            background: var(--surface-3);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }}
+
+        .doc-action-button .material-symbols-outlined {{
+            font-size: 18px;
+        }}
+
         .doc-content {{
             background: var(--surface-0);
             border: 1px solid var(--border);
             border-radius: 24px;
             padding: 3rem;
             box-shadow: var(--shadow);
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }}
+
+        .footer {{
+            background: var(--footer-bg);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            border-radius: 16px;
+        }}
+
+        .footer-content {{
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }}
+
+        .footer-copyright {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }}
+
+        .footer-copyright .material-symbols-outlined {{
+            font-size: 16px;
+            color: var(--text-tertiary);
+        }}
+
+        .footer-info {{
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }}
+
+        .footer-info-item {{
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
         }}
 
         .markdown-body {{
             color: var(--text-primary);
             width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
         }}
 
         .markdown-body h1 {{
@@ -897,6 +1061,7 @@ class DocGenerator:
             border-bottom: 2px solid var(--border);
             padding-bottom: 0.75rem;
             animation: slideInFromLeft 0.4s var(--transition-timing);
+            word-break: break-word;
         }}
 
         @keyframes slideInFromLeft {{
@@ -917,6 +1082,7 @@ class DocGenerator:
             color: var(--text-primary);
             border-bottom: 1px solid var(--border);
             padding-bottom: 0.5rem;
+            word-break: break-word;
         }}
 
         .markdown-body h3 {{
@@ -924,6 +1090,7 @@ class DocGenerator:
             font-weight: 600;
             margin: 2rem 0 1rem;
             color: var(--text-primary);
+            word-break: break-word;
         }}
 
         .markdown-body h4 {{
@@ -931,6 +1098,7 @@ class DocGenerator:
             font-weight: 600;
             margin: 1.5rem 0 0.75rem;
             color: var(--text-primary);
+            word-break: break-word;
         }}
 
         .markdown-body p {{
@@ -938,6 +1106,7 @@ class DocGenerator:
             color: var(--text-secondary);
             line-height: 1.7;
             font-size: 1rem;
+            word-break: break-word;
         }}
 
         .markdown-body a {{
@@ -945,6 +1114,7 @@ class DocGenerator:
             text-decoration: none;
             border-bottom: 1px solid transparent;
             transition: border-color var(--transition-speed) var(--transition-timing);
+            word-break: break-word;
         }}
 
         .markdown-body a:hover {{
@@ -1016,6 +1186,7 @@ class DocGenerator:
             background: var(--code-bg);
             border-radius: 6px;
             color: var(--code-text);
+            word-break: break-word;
         }}
 
         .markdown-body pre code {{
@@ -1026,6 +1197,8 @@ class DocGenerator:
             line-height: 1.6;
             display: block;
             overflow-x: auto;
+            white-space: pre;
+            word-break: normal;
         }}
 
         .markdown-body blockquote {{
@@ -1037,6 +1210,7 @@ class DocGenerator:
             color: var(--text-secondary);
             font-style: italic;
             transition: all var(--transition-speed) var(--transition-timing);
+            word-break: break-word;
         }}
 
         .markdown-body blockquote:hover {{
@@ -1052,6 +1226,7 @@ class DocGenerator:
             overflow: hidden;
             box-shadow: var(--shadow);
             transition: all var(--transition-speed) var(--transition-timing);
+            word-break: break-word;
         }}
 
         .markdown-body table:hover {{
@@ -1066,6 +1241,7 @@ class DocGenerator:
             text-align: left;
             border: none;
             color: var(--text-primary);
+            word-break: break-word;
         }}
 
         .markdown-body td {{
@@ -1074,6 +1250,7 @@ class DocGenerator:
             border-top: 1px solid var(--border);
             color: var(--text-secondary);
             transition: all var(--transition-speed) var(--transition-timing);
+            word-break: break-word;
         }}
 
         .markdown-body tr:hover td {{
@@ -1091,11 +1268,13 @@ class DocGenerator:
             margin: 1.25rem 0;
             padding-left: 2rem;
             color: var(--text-secondary);
+            word-break: break-word;
         }}
 
         .markdown-body li {{
             margin: 0.5rem 0;
             transition: all var(--transition-speed) var(--transition-timing);
+            word-break: break-word;
         }}
 
         .markdown-body li:hover {{
@@ -1112,6 +1291,7 @@ class DocGenerator:
             border-radius: 12px;
             box-shadow: var(--shadow);
             transition: all var(--transition-speed) var(--transition-timing);
+            height: auto;
         }}
 
         .markdown-body img:hover {{
@@ -1150,6 +1330,7 @@ class DocGenerator:
             grid-column: 1 / -1;
             box-shadow: var(--shadow-sm);
             animation: fadeIn 0.4s var(--transition-timing);
+            margin-bottom: 2rem;
         }}
 
         .empty-state .material-symbols-outlined {{
@@ -1173,11 +1354,13 @@ class DocGenerator:
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: var(--text-primary);
+            word-break: break-word;
         }}
 
         .empty-state p {{
             color: var(--text-tertiary);
             font-size: 1rem;
+            word-break: break-word;
         }}
 
         .codehilite {{
@@ -1189,6 +1372,10 @@ class DocGenerator:
         @media (max-width: 768px) {{
             :root {{
                 --header-height: 60px;
+            }}
+            
+            .menu-button {{
+                display: flex;
             }}
             
             .sidebar {{
@@ -1203,10 +1390,6 @@ class DocGenerator:
             
             .sidebar.active {{
                 transform: translateX(0);
-            }}
-            
-            .menu-button {{
-                display: flex;
             }}
             
             .stats {{
@@ -1246,6 +1429,27 @@ class DocGenerator:
                 width: 42px;
                 justify-content: center;
             }}
+            
+            .doc-header {{
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }}
+            
+            .doc-actions {{
+                width: 100%;
+                justify-content: flex-start;
+            }}
+            
+            .footer-content {{
+                flex-direction: column;
+                text-align: center;
+            }}
+            
+            .footer-info {{
+                flex-direction: column;
+                gap: 0.75rem;
+            }}
         }}
     </style>
 </head>
@@ -1255,7 +1459,13 @@ class DocGenerator:
         
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <div class="project-name">{project_name}</div>
+                <div class="project-header">
+                    <span class="project-name">{project_name}</span>
+                    <span class="docs-badge">
+                        <span class="material-symbols-outlined">menu_book</span>
+                        DOCS
+                    </span>
+                </div>
                 <div class="project-version">v{version}</div>
             </div>
             <div class="sidebar-nav">
@@ -1278,11 +1488,11 @@ class DocGenerator:
         <div class="main">
             <div class="header">
                 <div class="header-left">
-                    <button class="menu-button" onclick="toggleSidebar()">
+                    <button class="menu-button" onclick="toggleSidebar()" aria-label="Toggle sidebar">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
                     <div class="breadcrumb" id="breadcrumb">
-                        <a onclick="showHome()">
+                        <a onclick="showHome()" aria-label="Go to home">
                             <span class="material-symbols-outlined">home</span>
                         </a>
                         <span class="material-symbols-outlined">chevron_right</span>
@@ -1290,40 +1500,40 @@ class DocGenerator:
                     </div>
                 </div>
                 <div class="header-right">
-                    <div class="stats">
+                    <div class="stats" aria-label="Documentation statistics">
                         <div class="stat">
-                            <span class="material-symbols-outlined">category</span>
-                            {category_count}
+                            <span class="material-symbols-outlined" aria-hidden="true">category</span>
+                            <span>{category_count}</span>
                         </div>
                         <div class="stat">
-                            <span class="material-symbols-outlined">description</span>
-                            {section_count}
+                            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                            <span>{section_count}</span>
                         </div>
                     </div>
                     <div class="theme-selector">
-                        <button class="theme-button" onclick="toggleThemeDropdown()">
-                            <span class="material-symbols-outlined">palette</span>
+                        <button class="theme-button" onclick="toggleThemeDropdown()" aria-label="Select theme" aria-haspopup="true" aria-expanded="false">
+                            <span class="material-symbols-outlined" aria-hidden="true">palette</span>
                             <span id="current-theme-label">Light</span>
                         </button>
-                        <div class="theme-dropdown" id="themeDropdown">
-                            <div class="theme-option active" onclick="setTheme('light')">
-                                <span class="material-symbols-outlined">light_mode</span>
+                        <div class="theme-dropdown" id="themeDropdown" role="menu" aria-label="Theme options">
+                            <div class="theme-option active" onclick="setTheme('light', event)" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">light_mode</span>
                                 Light
                             </div>
-                            <div class="theme-option" onclick="setTheme('dark')">
-                                <span class="material-symbols-outlined">dark_mode</span>
+                            <div class="theme-option" onclick="setTheme('dark', event)" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
                                 Dark
                             </div>
-                            <div class="theme-option" onclick="setTheme('sepia')">
-                                <span class="material-symbols-outlined">book</span>
+                            <div class="theme-option" onclick="setTheme('sepia', event)" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">book</span>
                                 Sepia
                             </div>
-                            <div class="theme-option" onclick="setTheme('nord')">
-                                <span class="material-symbols-outlined">ac_unit</span>
+                            <div class="theme-option" onclick="setTheme('nord', event)" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">ac_unit</span>
                                 Nord
                             </div>
-                            <div class="theme-option" onclick="setTheme('solarized')">
-                                <span class="material-symbols-outlined">wb_sunny</span>
+                            <div class="theme-option" onclick="setTheme('solarized', event)" role="menuitem">
+                                <span class="material-symbols-outlined" aria-hidden="true">wb_sunny</span>
                                 Solarized
                             </div>
                         </div>
@@ -1333,52 +1543,123 @@ class DocGenerator:
 
             <div class="content" id="content">
                 <div id="home-view">
-                    <div class="warning-banner" id="alphaWarning">
+                    <div class="warning-banner" id="alphaWarning" role="alert">
                         <div class="warning-content">
-                            <span class="material-symbols-outlined">warning</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
                             <div class="warning-text">
                                 <strong>Alpha Software</strong>
                                 <p>AromaUI is currently in alpha and unstable. Not recommended for critical applications.</p>
                             </div>
                         </div>
-                        <button class="warning-close" onclick="dismissWarning()">
-                            <span class="material-symbols-outlined">close</span>
+                        <button class="warning-close" onclick="dismissWarning()" aria-label="Dismiss warning">
+                            <span class="material-symbols-outlined" aria-hidden="true">close</span>
                         </button>
                     </div>
 
-
                     <div class="search-container">
-                        <span class="material-symbols-outlined search-icon">search</span>
-                        <input type="text" class="search-input" id="searchInput" placeholder="Search documentation...">
-                        <span class="material-symbols-outlined search-clear" id="searchClear" onclick="clearSearch()">close</span>
-                        <div class="search-stats" id="searchStats"></div>
+                        <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search documentation... (Press / to focus)" aria-label="Search documentation">
+                        <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search">
+                            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                        </button>
+                        <div class="search-stats" id="searchStats" aria-live="polite"></div>
                     </div>
                     
-                    <div class="cards-grid" id="cardsGrid">
+                    <div class="cards-grid" id="cardsGrid" role="grid" aria-label="Documentation sections">
                         {cards_html}
+                    </div>
+
+                    <div class="footer">
+                        <div class="footer-content">
+                            <div class="footer-copyright">
+                                <span class="material-symbols-outlined">copyright</span>
+                                <span>{year} {project_name}. All rights reserved.</span>
+                            </div>
+                            <div class="footer-info">
+                                <div class="footer-info-item">
+                                    <span class="material-symbols-outlined">description</span>
+                                    <span>v{version}</span>
+                                </div>
+                                <div class="footer-info-item">
+                                    <span class="material-symbols-outlined">update</span>
+                                    <span>Last updated: {last_updated}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div id="doc-view" class="doc-view">
+                    <div class="doc-header">
+                        <div class="doc-title-container">
+                            <h1 class="doc-title" id="doc-title"></h1>
+                            <div class="doc-meta" id="doc-meta">
+                                <span class="doc-meta-item" id="doc-category">
+                                    <span class="material-symbols-outlined">folder</span>
+                                    <span></span>
+                                </span>
+                                <span class="doc-meta-item" id="doc-file">
+                                    <span class="material-symbols-outlined">description</span>
+                                    <span></span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="doc-actions">
+                            <button class="doc-action-button" id="editGithubBtn" onclick="editOnGithub()">
+                                <span class="material-symbols-outlined">edit</span>
+                                Edit on GitHub
+                            </button>
+                            <button class="doc-action-button" onclick="copyPageLink()">
+                                <span class="material-symbols-outlined">link</span>
+                                Copy Link
+                            </button>
+                        </div>
+                    </div>
                     <div class="doc-content markdown-body" id="doc-content"></div>
+                    
+                    <div class="footer">
+                        <div class="footer-content">
+                            <div class="footer-copyright">
+                                <span class="material-symbols-outlined">copyright</span>
+                                <span>{year} {project_name}. All rights reserved.</span>
+                            </div>
+                            <div class="footer-info">
+                                <div class="footer-info-item">
+                                    <span class="material-symbols-outlined">description</span>
+                                    <span>v{version}</span>
+                                </div>
+                                <div class="footer-info-item">
+                                    <span class="material-symbols-outlined">update</span>
+                                    <span>Last updated: {last_updated}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
             </div>
         </div>
     </div>
 
     <script>
+        // Global variables
         const pages = {pages_json};
         const titles = {titles_json};
+        const markdownFiles = {markdown_files_json};
 
+        let searchTimeout;
+        let currentPageId = null;
+
+        // Theme functions
         function toggleThemeDropdown() {{
             const dropdown = document.getElementById('themeDropdown');
+            const button = document.querySelector('.theme-button');
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            
             dropdown.classList.toggle('show');
+            button.setAttribute('aria-expanded', (!isExpanded).toString());
             
             if (dropdown.classList.contains('show')) {{
-                setTimeout(() => {{
-                    document.addEventListener('click', closeThemeDropdown);
-                }}, 0);
+                document.addEventListener('click', closeThemeDropdown);
             }}
         }}
 
@@ -1388,6 +1669,7 @@ class DocGenerator:
             
             if (!button.contains(event.target) && !dropdown.contains(event.target)) {{
                 dropdown.classList.remove('show');
+                button.setAttribute('aria-expanded', 'false');
                 document.removeEventListener('click', closeThemeDropdown);
             }}
         }}
@@ -1396,12 +1678,21 @@ class DocGenerator:
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
             
-            document.getElementById('themeDropdown').classList.remove('show');
+            const dropdown = document.getElementById('themeDropdown');
+            const button = document.querySelector('.theme-button');
+            dropdown.classList.remove('show');
+            button.setAttribute('aria-expanded', 'false');
             
             const options = document.querySelectorAll('.theme-option');
             options.forEach(opt => opt.classList.remove('active'));
+            
             if (event) {{
                 event.target.closest('.theme-option').classList.add('active');
+            }} else {{
+                const activeOption = Array.from(options).find(opt => 
+                    opt.textContent.toLowerCase().includes(theme)
+                );
+                if (activeOption) activeOption.classList.add('active');
             }}
             
             const themeNames = {{
@@ -1414,24 +1705,22 @@ class DocGenerator:
             document.getElementById('current-theme-label').textContent = themeNames[theme];
         }}
 
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        setTheme(savedTheme);
-
+        // Sidebar functions
         function toggleSidebar() {{
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
+            const isActive = sidebar.classList.contains('active');
+            
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
             
-            if (sidebar.classList.contains('active')) {{
-                document.body.style.overflow = 'hidden';
-            }} else {{
-                document.body.style.overflow = '';
-            }}
+            document.body.style.overflow = isActive ? '' : 'hidden';
         }}
 
         function toggleCategory(id) {{
             const items = document.getElementById('category-' + id);
+            if (!items) return;
+            
             const header = items.previousElementSibling;
             const icon = header.querySelector('.material-symbols-outlined');
             
@@ -1446,14 +1735,17 @@ class DocGenerator:
             }}
         }}
 
+        // Copy button function
         function initializeCopyButtons() {{
             document.querySelectorAll('.markdown-body pre').forEach(pre => {{
                 if (!pre.querySelector('.copy-button')) {{
                     const button = document.createElement('button');
                     button.className = 'copy-button';
                     button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
+                    button.setAttribute('aria-label', 'Copy code to clipboard');
                     
-                    button.addEventListener('click', async () => {{
+                    button.addEventListener('click', async (e) => {{
+                        e.stopPropagation();
                         const code = pre.querySelector('code');
                         if (code) {{
                             try {{
@@ -1482,13 +1774,14 @@ class DocGenerator:
             }});
         }}
 
+        // Search functions
         const searchInput = document.getElementById('searchInput');
         const searchClear = document.getElementById('searchClear');
         const searchStats = document.getElementById('searchStats');
         const cardsGrid = document.getElementById('cardsGrid');
 
         function filterCards() {{
-            const term = searchInput.value.toLowerCase();
+            const term = searchInput.value.toLowerCase().trim();
             
             if (term.length > 0) {{
                 searchClear.classList.add('visible');
@@ -1503,13 +1796,12 @@ class DocGenerator:
                 const card = cards[i];
                 if (card.id === 'empty-search-state') continue;
                 
-                const title = card.querySelector('h3').textContent.toLowerCase();
-                const desc = card.querySelector('p').textContent.toLowerCase();
-                const category = card.querySelector('.card-category').textContent.toLowerCase();
+                const title = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
+                const category = card.querySelector('.card-category')?.textContent.toLowerCase() || '';
                 
                 if (title.includes(term) || desc.includes(term) || category.includes(term)) {{
                     card.style.display = 'block';
-                    card.style.animation = 'cardFadeIn 0.4s var(--transition-timing)';
                     visible++;
                 }} else {{
                     card.style.display = 'none';
@@ -1529,7 +1821,7 @@ class DocGenerator:
                     emptyState.id = 'empty-search-state';
                     emptyState.className = 'empty-state';
                     emptyState.innerHTML = `
-                        <span class="material-symbols-outlined">search_off</span>
+                        <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
                         <h3>No results found</h3>
                         <p>Try adjusting your search terms</p>
                     `;
@@ -1546,33 +1838,27 @@ class DocGenerator:
             searchInput.focus();
         }}
 
-        let searchTimeout;
-        searchInput.addEventListener('input', () => {{
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(filterCards, 300);
-        }});
-
         function dismissWarning() {{
             const warning = document.getElementById('alphaWarning');
-            warning.style.animation = 'slideDown 0.4s var(--transition-timing) reverse';
-            setTimeout(() => {{
-                warning.style.display = 'none';
-                localStorage.setItem('alphaWarningDismissed', 'true');
-            }}, 300);
+            warning.style.display = 'none';
+            localStorage.setItem('alphaWarningDismissed', 'true');
         }}
 
         function showHome() {{
             document.getElementById('home-view').style.display = 'block';
             document.getElementById('doc-view').style.display = 'none';
             document.getElementById('current-section').textContent = 'Home';
+            
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.querySelector('[onclick="showHome()"]').classList.add('active');
+            const homeItem = document.querySelector('[onclick="showHome()"]');
+            if (homeItem) homeItem.classList.add('active');
             
             if (window.innerWidth <= 768) {{
                 toggleSidebar();
             }}
             
             window.location.hash = '';
+            currentPageId = null;
             clearSearch();
             
             if (localStorage.getItem('alphaWarningDismissed') === 'true') {{
@@ -1581,16 +1867,34 @@ class DocGenerator:
         }}
 
         function showPage(id) {{
+            if (!pages[id]) return;
+            
             document.getElementById('home-view').style.display = 'none';
             document.getElementById('doc-view').style.display = 'block';
             document.getElementById('doc-content').innerHTML = pages[id];
+            document.getElementById('doc-title').textContent = titles[id];
             document.getElementById('current-section').textContent = titles[id];
             
+            // Update meta info
+            const categorySpan = document.querySelector('#doc-category span:last-child');
+            const fileSpan = document.querySelector('#doc-file span:last-child');
+            
+            // Find category from nav
+            const activeNav = document.querySelector(`[onclick="showPage('${{id}}')"]`);
+            if (activeNav) {{
+                const categoryHeader = activeNav.closest('.nav-category')?.querySelector('.category-header span:last-child');
+                if (categoryHeader && categorySpan) {{
+                    categorySpan.textContent = categoryHeader.textContent;
+                }}
+            }}
+            
+            // Set filename
+            if (markdownFiles[id] && fileSpan) {{
+                fileSpan.textContent = markdownFiles[id].split('/').pop() || 'unknown.md';
+            }}
+            
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            const activeItem = Array.from(document.querySelectorAll('.nav-item')).find(
-                i => i.getAttribute('onclick') && i.getAttribute('onclick').includes(id)
-            );
-            if (activeItem) activeItem.classList.add('active');
+            if (activeNav) activeNav.classList.add('active');
             
             if (window.innerWidth <= 768) {{
                 toggleSidebar();
@@ -1598,37 +1902,42 @@ class DocGenerator:
             
             document.getElementById('content').scrollTop = 0;
             window.location.hash = id;
+            currentPageId = id;
             
             initializeCopyButtons();
         }}
 
-        window.onload = () => {{
-            if (localStorage.getItem('alphaWarningDismissed') === 'true') {{
-                document.getElementById('alphaWarning').style.display = 'none';
+        const github_url = 'https://github.com/BinaryInkTN/AromaUI/blob/main';
+
+        function editOnGithub() {{
+            const id = window.location.hash.substring(1);
+            if (id && markdownFiles[id]) {{
+                window.open(`${{github_url}}/docs/${{markdownFiles[id].split('/').pop()}}`, '_blank');
+            }}
+        }}
+
+        function copyPageLink() {{
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
+        }}
+
+        function handleKeyDown(e) {{
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {{
+                e.preventDefault();
+                searchInput.focus();
             }}
             
-            if (window.location.hash) {{
-                const id = window.location.hash.substring(1);
-                if (pages[id]) showPage(id);
-                else showHome();
-            }} else {{
-                showHome();
+            if (e.key === 'Escape' && document.activeElement === searchInput) {{
+                searchInput.blur();
             }}
             
-            initializeCopyButtons();
-        }};
-
-        window.onhashchange = () => {{
-            if (window.location.hash) {{
-                const id = window.location.hash.substring(1);
-                if (pages[id]) showPage(id);
-                else showHome();
-            }} else {{
-                showHome();
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {{
+                e.preventDefault();
+                searchInput.focus();
             }}
-        }};
+        }}
 
-        window.addEventListener('resize', () => {{
+        function handleResize() {{
             if (window.innerWidth > 768) {{
                 const sidebar = document.getElementById('sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
@@ -1636,6 +1945,47 @@ class DocGenerator:
                 overlay.classList.remove('active');
                 document.body.style.overflow = '';
             }}
+        }}
+
+        function handleHashChange() {{
+            if (window.location.hash) {{
+                const id = window.location.hash.substring(1);
+                if (pages[id]) {{
+                    showPage(id);
+                }} else {{
+                    showHome();
+                }}
+            }} else {{
+                showHome();
+            }}
+        }}
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {{
+            // Set up event listeners
+            document.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('resize', handleResize);
+            window.addEventListener('hashchange', handleHashChange);
+            
+            searchInput.addEventListener('input', () => {{
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(filterCards, 300);
+            }});
+
+            // Initialize theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+            
+            // Handle warning banner
+            if (localStorage.getItem('alphaWarningDismissed') === 'true') {{
+                document.getElementById('alphaWarning').style.display = 'none';
+            }}
+            
+            // Handle initial hash
+            handleHashChange();
+            
+            // Initialize copy buttons if needed
+            initializeCopyButtons();
         }});
     </script>
 </body>
@@ -1696,11 +2046,21 @@ class DocGenerator:
             categories = [{'name': name, 'icon': 'folder'} for name in sorted(category_names)]
         
         sidebar_sections = {}
+        markdown_files = {}
+        
         for section in sections:
             category = section.get('category', 'General')
             if category not in sidebar_sections:
                 sidebar_sections[category] = []
             sidebar_sections[category].append(section)
+            
+            # Store markdown file path for edit on GitHub
+            markdown_file = section.get('file', '')
+            if markdown_file and not os.path.isabs(markdown_file):
+                markdown_file = os.path.join(base_dir, markdown_file)
+            title = section.get('title', 'Untitled')
+            section_id = title.lower().replace(' ', '-')
+            markdown_files[section_id] = markdown_file
         
         sidebar_content = []
         category_count = len(categories)
@@ -1710,28 +2070,29 @@ class DocGenerator:
             category_id = category_name.lower().replace(' ', '-')
             category_sections = sidebar_sections.get(category_name, [])
             
-            sidebar_content.append(f'''
+            if category_sections:
+                sidebar_content.append(f'''
                 <div class="nav-category">
                     <div class="category-header" onclick="toggleCategory('{category_id}')">
                         <span class="material-symbols-outlined">expand_more</span>
                         <span>{category_name}</span>
                     </div>
                     <div class="category-items" id="category-{category_id}">
-            ''')
-            
-            for section in category_sections:
-                title = section.get('title', 'Untitled')
-                section_id = title.lower().replace(' ', '-')
-                icon = self._get_icon_name(section.get('icon', 'default'))
+                ''')
                 
-                sidebar_content.append(f'''
+                for section in category_sections:
+                    title = section.get('title', 'Untitled')
+                    section_id = title.lower().replace(' ', '-')
+                    icon = self._get_icon_name(section.get('icon', 'default'))
+                    
+                    sidebar_content.append(f'''
                         <div class="nav-item" onclick="showPage('{section_id}')">
                             <span class="material-symbols-outlined">{icon}</span>
                             {title}
                         </div>
-                ''')
-            
-            sidebar_content.append('</div></div>')
+                    ''')
+                
+                sidebar_content.append('</div></div>')
         
         cards_html = []
         pages_dict = {}
@@ -1758,23 +2119,27 @@ class DocGenerator:
             titles_dict[section_id] = title
             
             cards_html.append(f'''
-                <div class="card" onclick="showPage('{section_id}')">
-                    <div class="card-icon">
+                <div class="card" onclick="showPage('{section_id}')" role="gridcell" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){{showPage('{section_id}')}}">
+                    <div class="card-icon" aria-hidden="true">
                         <span class="material-symbols-outlined">{icon}</span>
                     </div>
-                    <h3>{title}</h3>
+                    <div class="card-header">
+                        <h3>{title}</h3>
+                    </div>
                     <p>{description}</p>
                     <div class="card-footer">
                         <span class="card-category">
-                            <span class="material-symbols-outlined">folder</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">folder</span>
                             {category}
                         </span>
-                        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+                        <span class="material-symbols-outlined card-arrow" aria-hidden="true">arrow_forward</span>
                     </div>
                 </div>
             ''')
         
         pygments_styles = self._get_pygments_styles()
+        current_year = datetime.now().year
+        last_updated = datetime.now().strftime('%B %d, %Y')
         
         html = self.template.format(
             project_name=project_name,
@@ -1785,7 +2150,10 @@ class DocGenerator:
             sidebar_content='\n'.join(sidebar_content),
             cards_html='\n'.join(cards_html),
             pages_json=json.dumps(pages_dict),
-            titles_json=json.dumps(titles_dict)
+            titles_json=json.dumps(titles_dict),
+            markdown_files_json=json.dumps(markdown_files),
+            year=current_year,
+            last_updated=last_updated
         )
         
         os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
@@ -1795,101 +2163,24 @@ class DocGenerator:
         
         print(f'Documentation generated: {output_file}')
 
-def create_example_config():
-    config = {
-        "name": "SDK Documentation",
-        "version": "2.1.0",
-        "categories": [
-            {"name": "Connectivity", "icon": "network"},
-            {"name": "Security", "icon": "security"},
-            {"name": "Networking", "icon": "api"},
-            {"name": "Setup", "icon": "settings"},
-            {"name": "Guides", "icon": "guide"}
-        ],
-        "sections": [
-            {
-                "title": "Bluetooth API",
-                "description": "Bluetooth LE and Classic API reference",
-                "icon": "bluetooth",
-                "category": "Connectivity",
-                "file": "docs/bluetooth.md"
-            },
-            {
-                "title": "WiFi Manager",
-                "description": "Network connectivity and configuration",
-                "icon": "wifi",
-                "category": "Connectivity",
-                "file": "docs/wifi.md"
-            },
-            {
-                "title": "Permissions System",
-                "description": "Runtime permission handling",
-                "icon": "permissions",
-                "category": "Security",
-                "file": "docs/permissions.md"
-            },
-            {
-                "title": "REST API Client",
-                "description": "HTTP client and data models",
-                "icon": "api",
-                "category": "Networking",
-                "file": "docs/api.md"
-            },
-            {
-                "title": "Configuration",
-                "description": "Library settings and initialization",
-                "icon": "settings",
-                "category": "Setup",
-                "file": "docs/config.md"
-            },
-            {
-                "title": "Code Examples",
-                "description": "Sample code and patterns",
-                "icon": "code",
-                "category": "Guides",
-                "file": "docs/examples.md"
-            }
-        ]
-    }
-    
-    with open('docs-config.json', 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=2)
-
-    os.makedirs('docs', exist_ok=True)
-    
-    example_files = {
-        'bluetooth.md': '# Bluetooth API\n\n## Overview\nBluetooth API provides support for Bluetooth LE and Classic devices.\n\n## Features\n- Device discovery\n- Connection management\n- Service handling\n\n## Example\n```python\nfrom sdk.bluetooth import BluetoothManager\n\nmanager = BluetoothManager()\nmanager.start_scan()\n\ndef on_device_found(device):\n    print(f"Found: {device.name}")\n```',
-        'wifi.md': '# WiFi Manager\n\n## Overview\nManage WiFi connections and network scanning.\n\n## Usage\n```python\nfrom sdk.wifi import WiFiManager\n\nwifi = WiFiManager()\nnetworks = wifi.scan()\nwifi.connect("SSID", "password")\n```',
-        'permissions.md': '# Permissions System\n\n## Overview\nHandle runtime permissions.\n\n## Example\n```python\nfrom sdk.permissions import PermissionManager\n\npm = PermissionManager()\npm.request("camera")\n```',
-        'api.md': '# REST API Client\n\n## Overview\nHTTP client with built-in features.\n\n## Example\n```python\nfrom sdk.api import APIClient\n\nclient = APIClient("https://api.example.com")\nresponse = client.get("/users")\n```',
-        'config.md': '# Configuration\n\n## Overview\nLibrary configuration options.\n\n## Settings\n```python\nfrom sdk import config\n\nconfig.set("logging", True)\nconfig.set("timeout", 30)\n```',
-        'examples.md': '# Code Examples\n\n## Complete Examples\n\n### Bluetooth Scanning\n```python\nfrom sdk.bluetooth import BluetoothManager\n\nmanager = BluetoothManager()\nfor device in manager.scan(timeout=5):\n    print(device.name)\n```'
-    }
-    
-    for filename, content in example_files.items():
-        with open(f'docs/{filename}', 'w', encoding='utf-8') as f:
-            f.write(content)
-    
-    print('Example configuration created: docs-config.json')
-
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', default='docs-config.json')
-    parser.add_argument('-o', '--output', default='docs/index.html')
-    parser.add_argument('--init', action='store_true')
+    parser = argparse.ArgumentParser(description='Generate beautiful documentation from markdown files')
+    parser.add_argument('-c', '--config', required=True, help='Configuration file (JSON or YAML)')
+    parser.add_argument('-o', '--output', default='docs/index.html', help='Output HTML file path')
     
     args = parser.parse_args()
     
-    if args.init:
-        create_example_config()
-        return
-    
     if not os.path.exists(args.config):
-        print(f'Config not found: {args.config}')
-        return
+        print(f'Error: Config file not found: {args.config}')
+        return 1
     
-    generator = DocGenerator()
-    generator.generate(args.config, args.output)
+    try:
+        generator = DocGenerator()
+        generator.generate(args.config, args.output)
+        return 0
+    except Exception as e:
+        print(f'Error generating documentation: {e}')
+        return 1
 
 if __name__ == '__main__':
-    main()
+    exit(main())
