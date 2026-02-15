@@ -4,10 +4,16 @@
     "description": "Browse AromaUI's APIs with detailed documentation and examples.",
     "categories": [
         {
+            "name": "Guides",
+            "icon": "book",
+            "description": "Guides and tutorials for AromaUI usage"
+        },
+        {
             "name": "Connectivity",
             "icon": "network_check",
             "description": "Network and device connectivity APIs"
         },
+        
         {
             "name": "System",
             "icon": "settings_applications",
@@ -23,8 +29,17 @@
             "icon": "dashboard",
             "description": "User interface utilities"
         }
+
     ],
     "sections": [
+          {
+            "title": "Building and Running AromaUI",
+            "description": "Instructions for building and running AromaUI on Android devices.",
+            "icon": "build",
+            "color": "#7D5260",
+            "category": "Guides",
+            "file": "docs/getting_started.md"
+        },
         {
             "title": "Bluetooth API",
             "description": "Bluetooth device management and communication. Scan, connect, and communicate with Bluetooth devices.",
@@ -89,5 +104,7 @@
             "category": "UI",
             "file": "docs/ui_utilities.md"
         }
+        
+       
     ]
 }

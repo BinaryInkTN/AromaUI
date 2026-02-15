@@ -1289,7 +1289,6 @@ class DocGenerator:
         .markdown-body img {{
             max-width: 100%;
             border-radius: 12px;
-            box-shadow: var(--shadow);
             transition: all var(--transition-speed) var(--transition-timing);
             height: auto;
         }}
