@@ -1,3 +1,5 @@
+
+
 #ifndef AROMA_ANDROID_H
 #define AROMA_ANDROID_H
 
@@ -18,6 +20,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /**
  * @brief Get the JNI environment for the current thread.
@@ -56,10 +59,10 @@ static inline bool aroma_android_check_permission(const char* permission_name) {
  * This is an asynchronous operation. The result is delivered to the Activity.
  * @param permission_name The full Java class name of the permission.
  */
-static inline void aroma_android_request_permission(const char* permission_name) {
+static inline void aroma_android_request_permission(const char** permissions, int permCount) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_request_permission) {
-        platform->android_request_permission(permission_name);
+        platform->android_request_permission(permissions, permCount);
     }
 }
 

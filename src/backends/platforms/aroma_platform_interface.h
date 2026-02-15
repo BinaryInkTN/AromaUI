@@ -109,8 +109,7 @@ typedef struct AromaPlatformInterface {
     bool (*android_check_permission)(const char* permission_name);
     
     /** @brief [Android] Request runtime permission. */
-    void (*android_request_permission)(const char* permission_name);
-    
+    void (*android_request_permission)(const char** permissions, int permCount);
     /** @brief [Android] Show a toast message. */
     void (*android_toast)(const char* msg, bool long_duration);
     
