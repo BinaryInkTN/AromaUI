@@ -18,7 +18,6 @@ class DocGenerator:
         self.template = self._get_template()
     
     def _get_pygments_styles(self) -> str:
-        # Get styles for both light and dark themes
         light_formatter = HtmlFormatter(style='default', noclasses=False)
         dark_formatter = HtmlFormatter(style='monokai', noclasses=False)
         
@@ -45,7 +44,7 @@ class DocGenerator:
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         * {{
             margin: 0;
@@ -54,9 +53,17 @@ class DocGenerator:
         }}
 
         :root {{
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --transition-speed: 0.3s;
+            --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+        }}
+
+        /* Theme: Light */
+        :root[data-theme="light"] {{
             --primary: #2563eb;
-            --primary-dark: #1d4ed8;
             --primary-light: #3b82f6;
+            --primary-dark: #1d4ed8;
             --secondary: #64748b;
             --success: #22c55e;
             --warning: #f59e0b;
@@ -73,25 +80,28 @@ class DocGenerator:
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            --sidebar-width: 280px;
-            --header-height: 64px;
-            
-            /* Code highlighting colors - Light */
-            --code-bg: #f8fafc;
-            --code-text: #1e293b;
+            --code-bg: #f1f5f9;
+            --code-text: #0f172a;
             --code-keyword: #7c3aed;
             --code-string: #059669;
             --code-comment: #64748b;
             --code-function: #2563eb;
             --code-number: #d97706;
-            --code-operator: #334155;
-            --code-punctuation: #475569;
+            --hover-overlay: rgba(0,0,0,0.04);
+            --overlay-bg: rgba(0,0,0,0.5);
+            --copy-btn-bg: #ffffff;
+            --copy-btn-hover: #f1f5f9;
         }}
 
-        [data-theme="dark"] {{
+        /* Theme: Dark */
+        :root[data-theme="dark"] {{
             --primary: #3b82f6;
-            --primary-dark: #2563eb;
             --primary-light: #60a5fa;
+            --primary-dark: #2563eb;
+            --secondary: #94a3b8;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #f87171;
             --surface-0: #0f172a;
             --surface-1: #1e293b;
             --surface-2: #334155;
@@ -101,8 +111,9 @@ class DocGenerator:
             --text-tertiary: #94a3b8;
             --border: #334155;
             --border-dark: #475569;
-            
-            /* Code highlighting colors - Dark */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4);
             --code-bg: #1e1e2e;
             --code-text: #f8fafc;
             --code-keyword: #f38ba8;
@@ -110,12 +121,116 @@ class DocGenerator:
             --code-comment: #7f849c;
             --code-function: #89b4fa;
             --code-number: #fab387;
-            --code-operator: #94e2d5;
-            --code-punctuation: #bac2de;
+            --hover-overlay: rgba(255,255,255,0.04);
+            --overlay-bg: rgba(0,0,0,0.7);
+            --copy-btn-bg: #334155;
+            --copy-btn-hover: #475569;
+        }}
+
+        /* Theme: Sepia */
+        :root[data-theme="sepia"] {{
+            --primary: #8b5a2b;
+            --primary-light: #a67b5b;
+            --primary-dark: #6b4423;
+            --secondary: #8b7e6e;
+            --success: #6b8e4c;
+            --warning: #c49a6c;
+            --error: #b55a4a;
+            --surface-0: #f4ecd8;
+            --surface-1: #e8dccc;
+            --surface-2: #d8ccbc;
+            --surface-3: #c8bcac;
+            --text-primary: #3e2e23;
+            --text-secondary: #5e4e3e;
+            --text-tertiary: #7e6e5e;
+            --border: #d8ccbc;
+            --border-dark: #c8bcac;
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.1);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --code-bg: #e8dccc;
+            --code-text: #3e2e23;
+            --code-keyword: #8b5a2b;
+            --code-string: #6b8e4c;
+            --code-comment: #8b7e6e;
+            --code-function: #a67b5b;
+            --code-number: #b55a4a;
+            --hover-overlay: rgba(0,0,0,0.04);
+            --overlay-bg: rgba(0,0,0,0.3);
+            --copy-btn-bg: #d8ccbc;
+            --copy-btn-hover: #c8bcac;
+        }}
+
+        /* Theme: Nord */
+        :root[data-theme="nord"] {{
+            --primary: #88c0d0;
+            --primary-light: #8fbcbb;
+            --primary-dark: #81a1c1;
+            --secondary: #d8dee9;
+            --success: #a3be8c;
+            --warning: #ebcb8b;
+            --error: #bf616a;
+            --surface-0: #2e3440;
+            --surface-1: #3b4252;
+            --surface-2: #434c5e;
+            --surface-3: #4c566a;
+            --text-primary: #eceff4;
+            --text-secondary: #e5e9f0;
+            --text-tertiary: #d8dee9;
+            --border: #434c5e;
+            --border-dark: #4c566a;
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.3);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+            --code-bg: #3b4252;
+            --code-text: #eceff4;
+            --code-keyword: #81a1c1;
+            --code-string: #a3be8c;
+            --code-comment: #4c566a;
+            --code-function: #88c0d0;
+            --code-number: #b48ead;
+            --hover-overlay: rgba(255,255,255,0.04);
+            --overlay-bg: rgba(0,0,0,0.7);
+            --copy-btn-bg: #434c5e;
+            --copy-btn-hover: #4c566a;
+        }}
+
+        /* Theme: Solarized */
+        :root[data-theme="solarized"] {{
+            --primary: #268bd2;
+            --primary-light: #6c71c4;
+            --primary-dark: #2aa198;
+            --secondary: #657b83;
+            --success: #859900;
+            --warning: #b58900;
+            --error: #dc322f;
+            --surface-0: #fdf6e3;
+            --surface-1: #eee8d5;
+            --surface-2: #93a1a1;
+            --surface-3: #839496;
+            --text-primary: #002b36;
+            --text-secondary: #073642;
+            --text-tertiary: #586e75;
+            --border: #93a1a1;
+            --border-dark: #839496;
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.1);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --code-bg: #eee8d5;
+            --code-text: #002b36;
+            --code-keyword: #268bd2;
+            --code-string: #859900;
+            --code-comment: #586e75;
+            --code-function: #6c71c4;
+            --code-number: #b58900;
+            --hover-overlay: rgba(0,0,0,0.04);
+            --overlay-bg: rgba(0,0,0,0.3);
+            --copy-btn-bg: #93a1a1;
+            --copy-btn-hover: #839496;
         }}
 
         body {{
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--surface-1);
             color: var(--text-primary);
             line-height: 1.6;
@@ -125,14 +240,36 @@ class DocGenerator:
         }}
 
         .material-symbols-outlined {{
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
             font-size: 20px;
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .app {{
             display: flex;
             height: 100vh;
             overflow: hidden;
+            background: var(--surface-1);
+            position: relative;
+        }}
+
+        .sidebar-overlay {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--overlay-bg);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-speed) var(--transition-timing);
+            backdrop-filter: blur(2px);
+        }}
+
+        .sidebar-overlay.active {{
+            opacity: 1;
+            visibility: visible;
         }}
 
         .sidebar {{
@@ -143,10 +280,12 @@ class DocGenerator:
             flex-direction: column;
             overflow-y: auto;
             flex-shrink: 0;
+            transition: transform var(--transition-speed) var(--transition-timing);
+            z-index: 100;
         }}
 
         .sidebar-header {{
-            padding: 1.5rem;
+            padding: 1.5rem 1.5rem 1rem;
             border-bottom: 1px solid var(--border);
         }}
 
@@ -168,7 +307,7 @@ class DocGenerator:
         }}
 
         .nav-category {{
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }}
 
         .category-header {{
@@ -183,14 +322,22 @@ class DocGenerator:
             letter-spacing: 0.05em;
             cursor: pointer;
             user-select: none;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .category-header:hover {{
+            background: var(--hover-overlay);
+            color: var(--text-primary);
         }}
 
         .category-header .material-symbols-outlined {{
             font-size: 16px;
+            transition: transform var(--transition-speed) var(--transition-timing);
         }}
 
         .category-items {{
             margin-top: 0.25rem;
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .category-items.collapsed {{
@@ -198,7 +345,7 @@ class DocGenerator:
         }}
 
         .nav-item {{
-            padding: 0.625rem 1.5rem 0.625rem 3.5rem;
+            padding: 0.5rem 1.5rem 0.5rem 3.5rem;
             color: var(--text-secondary);
             font-size: 0.9375rem;
             cursor: pointer;
@@ -206,12 +353,15 @@ class DocGenerator:
             align-items: center;
             gap: 0.75rem;
             position: relative;
-            transition: all 0.2s;
+            transition: all var(--transition-speed) var(--transition-timing);
+            margin-right: 1rem;
+            border-radius: 0 24px 24px 0;
         }}
 
         .nav-item:hover {{
-            background: var(--surface-2);
+            background: var(--hover-overlay);
             color: var(--text-primary);
+            transform: translateX(4px);
         }}
 
         .nav-item.active {{
@@ -228,11 +378,23 @@ class DocGenerator:
             bottom: 0;
             width: 3px;
             background: var(--primary);
+            border-radius: 0 2px 2px 0;
+            animation: slideIn 0.2s var(--transition-timing);
+        }}
+
+        @keyframes slideIn {{
+            from {{
+                transform: scaleY(0);
+            }}
+            to {{
+                transform: scaleY(1);
+            }}
         }}
 
         .nav-item .material-symbols-outlined {{
             font-size: 18px;
             color: var(--text-tertiary);
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .nav-item.active .material-symbols-outlined {{
@@ -255,6 +417,7 @@ class DocGenerator:
             align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .header-left {{
@@ -269,6 +432,19 @@ class DocGenerator:
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
+            width: 42px;
+            height: 42px;
+            border-radius: 21px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .menu-button:hover {{
+            background: var(--hover-overlay);
+            color: var(--primary);
+            transform: scale(1.05);
         }}
 
         .breadcrumb {{
@@ -286,26 +462,33 @@ class DocGenerator:
             display: flex;
             align-items: center;
             gap: 0.25rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .breadcrumb a:hover {{
+            background: var(--hover-overlay);
             color: var(--primary);
+            transform: translateX(-2px);
         }}
 
         .header-right {{
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
         }}
 
         .stats {{
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.375rem 0.75rem;
+            padding: 0.5rem 1rem;
             background: var(--surface-2);
-            border-radius: 6px;
+            border-radius: 100px;
             font-size: 0.875rem;
+            height: 42px;
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .stat {{
@@ -320,58 +503,212 @@ class DocGenerator:
             color: var(--text-tertiary);
         }}
 
-        .theme-toggle {{
-            padding: 0.375rem;
+        .theme-selector {{
+            position: relative;
+        }}
+
+        .theme-button {{
+            padding: 0.5rem 1.25rem;
             background: var(--surface-2);
             border: none;
-            border-radius: 6px;
+            border-radius: 100px;
             color: var(--text-secondary);
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            height: 42px;
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
-        .theme-toggle:hover {{
+        .theme-button:hover {{
             background: var(--surface-3);
+            color: var(--text-primary);
+            transform: scale(1.02);
+        }}
+
+        .theme-button .material-symbols-outlined {{
+            font-size: 18px;
+        }}
+
+        .theme-dropdown {{
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.75rem;
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            z-index: 1000;
+            min-width: 180px;
+            overflow: hidden;
+            animation: dropdownFade 0.2s var(--transition-timing);
+        }}
+
+        @keyframes dropdownFade {{
+            from {{
+                opacity: 0;
+                transform: translateY(-10px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        .theme-dropdown.show {{
+            display: block;
+        }}
+
+        .theme-option {{
+            padding: 0.875rem 1.25rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .theme-option:hover {{
+            background: var(--hover-overlay);
+            color: var(--text-primary);
+            padding-left: 1.75rem;
+        }}
+
+        .theme-option.active {{
+            background: var(--surface-2);
+            color: var(--primary);
+        }}
+
+        .theme-option .material-symbols-outlined {{
+            font-size: 18px;
         }}
 
         .content {{
             flex: 1;
             overflow-y: auto;
             padding: 2rem;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .warning-banner {{
+            background: var(--surface-0);
+            border: 1px solid var(--warning);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            animation: slideDown 0.4s var(--transition-timing);
+            box-shadow: var(--shadow);
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        @keyframes slideDown {{
+            from {{
+                opacity: 0;
+                transform: translateY(-30px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        .warning-content {{
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }}
+
+        .warning-content .material-symbols-outlined {{
+            color: var(--warning);
+            font-size: 24px;
+            animation: pulse 2s infinite;
+        }}
+
+        @keyframes pulse {{
+            0%, 100% {{
+                opacity: 1;
+            }}
+            50% {{
+                opacity: 0.7;
+            }}
+        }}
+
+        .warning-text strong {{
+            color: var(--warning);
+            font-weight: 600;
+        }}
+
+        .warning-text p {{
+            margin: 0.25rem 0 0;
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+        }}
+
+        .warning-close {{
+            width: 40px;
+            height: 40px;
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .warning-close:hover {{
+            background: var(--hover-overlay);
+            color: var(--text-primary);
+            transform: rotate(90deg);
         }}
 
         .search-container {{
             max-width: 600px;
-            margin: 0 auto 2rem;
+            margin: 0 auto 2.5rem;
             position: relative;
         }}
 
         .search-icon {{
             position: absolute;
-            left: 1rem;
+            left: 1.25rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-tertiary);
+            pointer-events: none;
+            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .search-input {{
             width: 100%;
-            padding: 0.875rem 1rem 0.875rem 3rem;
+            padding: 1rem 1.25rem 1rem 3.5rem;
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 32px;
             font-family: 'Inter', sans-serif;
-            font-size: 0.9375rem;
+            font-size: 1rem;
             color: var(--text-primary);
             outline: none;
-            transition: all 0.2s;
+            transition: all var(--transition-speed) var(--transition-timing);
+            box-shadow: var(--shadow-sm);
         }}
 
         .search-input:focus {{
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+            transform: scale(1.01);
         }}
 
         .search-clear {{
@@ -382,16 +719,39 @@ class DocGenerator:
             color: var(--text-tertiary);
             cursor: pointer;
             display: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .search-clear:hover {{
+            background: var(--hover-overlay);
+            color: var(--text-primary);
+            transform: translateY(-50%) scale(1.1);
         }}
 
         .search-clear.visible {{
-            display: block;
+            display: flex;
         }}
 
         .search-stats {{
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
             font-size: 0.875rem;
             color: var(--text-tertiary);
+            text-align: center;
+            animation: fadeIn 0.3s var(--transition-timing);
+        }}
+
+        @keyframes fadeIn {{
+            from {{
+                opacity: 0;
+            }}
+            to {{
+                opacity: 1;
+            }}
         }}
 
         .cards-grid {{
@@ -405,32 +765,52 @@ class DocGenerator:
         .card {{
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 20px;
             padding: 1.5rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all var(--transition-speed) var(--transition-timing);
+            box-shadow: var(--shadow-sm);
+            animation: cardFadeIn 0.4s var(--transition-timing);
+        }}
+
+        @keyframes cardFadeIn {{
+            from {{
+                opacity: 0;
+                transform: translateY(20px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
         }}
 
         .card:hover {{
             border-color: var(--primary);
             box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
+            transform: translateY(-4px) scale(1.02);
         }}
 
         .card-icon {{
-            width: 48px;
-            height: 48px;
+            width: 52px;
+            height: 52px;
             background: var(--surface-2);
-            border-radius: 10px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 1.25rem;
             color: var(--primary);
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .card:hover .card-icon {{
+            background: var(--primary);
+            color: white;
+            transform: rotate(5deg) scale(1.1);
         }}
 
         .card-icon .material-symbols-outlined {{
-            font-size: 24px;
+            font-size: 26px;
         }}
 
         .card h3 {{
@@ -438,12 +818,17 @@ class DocGenerator:
             font-size: 1.125rem;
             margin-bottom: 0.5rem;
             color: var(--text-primary);
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .card:hover h3 {{
+            color: var(--primary);
         }}
 
         .card p {{
             color: var(--text-secondary);
             font-size: 0.9375rem;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
             line-height: 1.5;
         }}
 
@@ -457,64 +842,171 @@ class DocGenerator:
             display: inline-flex;
             align-items: center;
             gap: 0.375rem;
-            padding: 0.25rem 0.75rem;
+            padding: 0.375rem 0.875rem;
             background: var(--surface-2);
-            border-radius: 4px;
+            border-radius: 100px;
             font-size: 0.8125rem;
             color: var(--text-tertiary);
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .card:hover .card-category {{
+            background: var(--surface-3);
+            color: var(--text-secondary);
         }}
 
         .card-arrow {{
             color: var(--text-tertiary);
-            transition: transform 0.2s;
+            transition: all var(--transition-speed) var(--transition-timing);
+            opacity: 0;
+            transform: translateX(-10px);
         }}
 
         .card:hover .card-arrow {{
-            transform: translateX(4px);
+            opacity: 1;
+            transform: translateX(0);
             color: var(--primary);
         }}
 
         .doc-view {{
             display: none;
-            max-width: 900px;
-            margin: 0 auto;
+            max-width: 100%;
+            margin: 0;
+            animation: fadeIn 0.4s var(--transition-timing);
         }}
 
         .doc-content {{
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2.5rem;
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: var(--shadow);
         }}
 
         .markdown-body {{
             color: var(--text-primary);
+            width: 100%;
         }}
 
         .markdown-body h1 {{
-            font-size: 2.25rem;
+            font-size: 2.5rem;
             font-weight: 600;
             margin: 0 0 1.5rem;
             letter-spacing: -0.02em;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.75rem;
+            animation: slideInFromLeft 0.4s var(--transition-timing);
+        }}
+
+        @keyframes slideInFromLeft {{
+            from {{
+                opacity: 0;
+                transform: translateX(-20px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateX(0);
+            }}
         }}
 
         .markdown-body h2 {{
-            font-size: 1.5rem;
+            font-size: 1.875rem;
             font-weight: 600;
-            margin: 2rem 0 1rem;
-            padding-bottom: 0.5rem;
+            margin: 2.5rem 0 1rem;
+            color: var(--text-primary);
             border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
         }}
 
         .markdown-body h3 {{
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--text-primary);
+        }}
+
+        .markdown-body h4 {{
             font-size: 1.25rem;
             font-weight: 600;
-            margin: 1.5rem 0 1rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text-primary);
         }}
 
         .markdown-body p {{
             margin: 1.25rem 0;
             color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 1rem;
+        }}
+
+        .markdown-body a {{
+            color: var(--primary);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color var(--transition-speed) var(--transition-timing);
+        }}
+
+        .markdown-body a:hover {{
+            border-bottom-color: var(--primary);
+        }}
+
+        .markdown-body pre {{
+            margin: 1.5rem 0;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .markdown-body pre:hover {{
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }}
+
+        .markdown-body pre .copy-button {{
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: var(--copy-btn-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: all var(--transition-speed) var(--transition-timing);
+            z-index: 10;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
+        }}
+
+        .markdown-body pre:hover .copy-button {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
+
+        .markdown-body pre .copy-button:hover {{
+            background: var(--copy-btn-hover);
+            color: var(--text-primary);
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }}
+
+        .markdown-body pre .copy-button.copied {{
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }}
+
+        .markdown-body pre .copy-button .material-symbols-outlined {{
+            font-size: 16px;
         }}
 
         .markdown-body code {{
@@ -522,28 +1014,111 @@ class DocGenerator:
             font-size: 0.875em;
             padding: 0.2em 0.4em;
             background: var(--code-bg);
-            border-radius: 4px;
+            border-radius: 6px;
             color: var(--code-text);
-        }}
-
-        .markdown-body pre {{
-            margin: 1.5rem 0;
-            padding: 1.25rem;
-            background: var(--code-bg);
-            border-radius: 8px;
-            overflow-x: auto;
-            border: 1px solid var(--border);
         }}
 
         .markdown-body pre code {{
-            padding: 0;
-            background: none;
+            padding: 1.5rem;
+            background: var(--code-bg);
             color: var(--code-text);
             font-size: 0.875rem;
-            line-height: 1.7;
+            line-height: 1.6;
+            display: block;
+            overflow-x: auto;
         }}
 
-        /* Code highlighting */
+        .markdown-body blockquote {{
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            border-left: 4px solid var(--primary);
+            background: var(--surface-2);
+            border-radius: 0 16px 16px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .markdown-body blockquote:hover {{
+            border-left-width: 6px;
+            transform: translateX(4px);
+        }}
+
+        .markdown-body table {{
+            width: 100%;
+            margin: 1.5rem 0;
+            border-collapse: collapse;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .markdown-body table:hover {{
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }}
+
+        .markdown-body th {{
+            padding: 0.875rem 1.25rem;
+            background: var(--surface-2);
+            font-weight: 600;
+            text-align: left;
+            border: none;
+            color: var(--text-primary);
+        }}
+
+        .markdown-body td {{
+            padding: 0.875rem 1.25rem;
+            border: none;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .markdown-body tr:hover td {{
+            background: var(--hover-overlay);
+            padding-left: 1.5rem;
+        }}
+
+        .markdown-body hr {{
+            margin: 2.5rem 0;
+            border: none;
+            border-top: 2px solid var(--border);
+        }}
+
+        .markdown-body ul, .markdown-body ol {{
+            margin: 1.25rem 0;
+            padding-left: 2rem;
+            color: var(--text-secondary);
+        }}
+
+        .markdown-body li {{
+            margin: 0.5rem 0;
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .markdown-body li:hover {{
+            transform: translateX(4px);
+            color: var(--text-primary);
+        }}
+
+        .markdown-body li > ul, .markdown-body li > ol {{
+            margin: 0.25rem 0 0.25rem 1.5rem;
+        }}
+
+        .markdown-body img {{
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            transition: all var(--transition-speed) var(--transition-timing);
+        }}
+
+        .markdown-body img:hover {{
+            box-shadow: var(--shadow-lg);
+            transform: scale(1.01);
+        }}
+
         .markdown-body .k, .markdown-body .kd, .markdown-body .kn, .markdown-body .kp, .markdown-body .kr, .markdown-body .kt {{
             color: var(--code-keyword);
             font-weight: 500;
@@ -566,100 +1141,43 @@ class DocGenerator:
             color: var(--code-number);
         }}
 
-        .markdown-body .o, .markdown-body .ow {{
-            color: var(--code-operator);
-        }}
-
-        .markdown-body .p {{
-            color: var(--code-punctuation);
-        }}
-
-        .markdown-body .err {{
-            color: var(--error);
-            background: none;
-        }}
-
-        .markdown-body .gd {{
-            color: var(--error);
-        }}
-
-        .markdown-body .gi {{
-            color: var(--success);
-        }}
-
-        .markdown-body .gh {{
-            color: var(--primary);
-            font-weight: 500;
-        }}
-
-        .markdown-body .gu {{
-            color: var(--text-tertiary);
-        }}
-
-        .markdown-body blockquote {{
-            margin: 1.5rem 0;
-            padding: 0.75rem 1.5rem;
-            border-left: 4px solid var(--primary);
-            background: var(--surface-2);
-            color: var(--text-secondary);
-        }}
-
-        .markdown-body table {{
-            width: 100%;
-            margin: 1.5rem 0;
-            border-collapse: collapse;
-        }}
-
-        .markdown-body th {{
-            padding: 0.75rem 1rem;
-            background: var(--surface-2);
-            font-weight: 600;
-            text-align: left;
-            border: 1px solid var(--border);
-        }}
-
-        .markdown-body td {{
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-        }}
-
-        .markdown-body hr {{
-            margin: 2rem 0;
-            border: none;
-            border-top: 1px solid var(--border);
-        }}
-
         .empty-state {{
             text-align: center;
             padding: 4rem 2rem;
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 24px;
+            grid-column: 1 / -1;
+            box-shadow: var(--shadow-sm);
+            animation: fadeIn 0.4s var(--transition-timing);
         }}
 
         .empty-state .material-symbols-outlined {{
-            font-size: 48px;
+            font-size: 56px;
             color: var(--text-tertiary);
             margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }}
+
+        @keyframes bounce {{
+            0%, 100% {{
+                transform: translateY(0);
+            }}
+            50% {{
+                transform: translateY(-10px);
+            }}
         }}
 
         .empty-state h3 {{
-            font-size: 1.25rem;
+            font-size: 1.5rem;
+            font-weight: 600;
             margin-bottom: 0.5rem;
+            color: var(--text-primary);
         }}
 
         .empty-state p {{
             color: var(--text-tertiary);
-        }}
-
-        footer {{
-            margin-top: 3rem;
-            padding: 2rem 0;
-            text-align: center;
-            border-top: 1px solid var(--border);
-            color: var(--text-tertiary);
-            font-size: 0.875rem;
+            font-size: 1rem;
         }}
 
         .codehilite {{
@@ -669,20 +1187,26 @@ class DocGenerator:
         {pygments_styles}
 
         @media (max-width: 768px) {{
+            :root {{
+                --header-height: 60px;
+            }}
+            
             .sidebar {{
                 position: fixed;
-                left: -280px;
-                transition: left 0.3s;
-                z-index: 100;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                box-shadow: var(--shadow-lg);
                 height: 100vh;
             }}
             
             .sidebar.active {{
-                left: 0;
+                transform: translateX(0);
             }}
             
             .menu-button {{
-                display: block;
+                display: flex;
             }}
             
             .stats {{
@@ -700,11 +1224,35 @@ class DocGenerator:
             .doc-content {{
                 padding: 1.5rem;
             }}
+            
+            .markdown-body h1 {{
+                font-size: 2rem;
+            }}
+            
+            .markdown-body h2 {{
+                font-size: 1.5rem;
+            }}
+            
+            .markdown-body h3 {{
+                font-size: 1.25rem;
+            }}
+            
+            .theme-button span:not(.material-symbols-outlined) {{
+                display: none;
+            }}
+            
+            .theme-button {{
+                padding: 0.5rem;
+                width: 42px;
+                justify-content: center;
+            }}
         }}
     </style>
 </head>
 <body>
     <div class="app">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="project-name">{project_name}</div>
@@ -752,15 +1300,53 @@ class DocGenerator:
                             {section_count}
                         </div>
                     </div>
-                    <button class="theme-toggle" onclick="toggleTheme()">
-                        <span class="material-symbols-outlined">light_mode</span>
-                    </button>
+                    <div class="theme-selector">
+                        <button class="theme-button" onclick="toggleThemeDropdown()">
+                            <span class="material-symbols-outlined">palette</span>
+                            <span id="current-theme-label">Light</span>
+                        </button>
+                        <div class="theme-dropdown" id="themeDropdown">
+                            <div class="theme-option active" onclick="setTheme('light')">
+                                <span class="material-symbols-outlined">light_mode</span>
+                                Light
+                            </div>
+                            <div class="theme-option" onclick="setTheme('dark')">
+                                <span class="material-symbols-outlined">dark_mode</span>
+                                Dark
+                            </div>
+                            <div class="theme-option" onclick="setTheme('sepia')">
+                                <span class="material-symbols-outlined">book</span>
+                                Sepia
+                            </div>
+                            <div class="theme-option" onclick="setTheme('nord')">
+                                <span class="material-symbols-outlined">ac_unit</span>
+                                Nord
+                            </div>
+                            <div class="theme-option" onclick="setTheme('solarized')">
+                                <span class="material-symbols-outlined">wb_sunny</span>
+                                Solarized
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="content" id="content">
                 <div id="home-view">
-                                <h1 style="margin-bottom: 2rem; text-align: center; font-size: 2rem; font-weight: 200;">Welcome to the {project_name} Documentation</h1>
+                    <div class="warning-banner" id="alphaWarning">
+                        <div class="warning-content">
+                            <span class="material-symbols-outlined">warning</span>
+                            <div class="warning-text">
+                                <strong>Alpha Software</strong>
+                                <p>aromaUi is currently in alpha and unstable. Not recommended for critical applications.</p>
+                            </div>
+                        </div>
+                        <button class="warning-close" onclick="dismissWarning()">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+
+                    <h1 style="margin-bottom: 2rem; text-align: center; font-size: 2.5rem; font-weight: 400;">Welcome to the {project_name} Documentation</h1>
 
                     <div class="search-container">
                         <span class="material-symbols-outlined search-icon">search</span>
@@ -786,22 +1372,63 @@ class DocGenerator:
         const pages = {pages_json};
         const titles = {titles_json};
 
-        function toggleTheme() {{
-            const html = document.documentElement;
-            const theme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', theme);
+        function toggleThemeDropdown() {{
+            const dropdown = document.getElementById('themeDropdown');
+            dropdown.classList.toggle('show');
+            
+            if (dropdown.classList.contains('show')) {{
+                setTimeout(() => {{
+                    document.addEventListener('click', closeThemeDropdown);
+                }}, 0);
+            }}
+        }}
+
+        function closeThemeDropdown(event) {{
+            const dropdown = document.getElementById('themeDropdown');
+            const button = document.querySelector('.theme-button');
+            
+            if (!button.contains(event.target) && !dropdown.contains(event.target)) {{
+                dropdown.classList.remove('show');
+                document.removeEventListener('click', closeThemeDropdown);
+            }}
+        }}
+
+        function setTheme(theme, event) {{
+            document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            document.querySelector('.theme-toggle .material-symbols-outlined').textContent = 
-                theme === 'dark' ? 'dark_mode' : 'light_mode';
+            
+            document.getElementById('themeDropdown').classList.remove('show');
+            
+            const options = document.querySelectorAll('.theme-option');
+            options.forEach(opt => opt.classList.remove('active'));
+            if (event) {{
+                event.target.closest('.theme-option').classList.add('active');
+            }}
+            
+            const themeNames = {{
+                'light': 'Light',
+                'dark': 'Dark',
+                'sepia': 'Sepia',
+                'nord': 'Nord',
+                'solarized': 'Solarized'
+            }};
+            document.getElementById('current-theme-label').textContent = themeNames[theme];
         }}
 
         const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        document.querySelector('.theme-toggle .material-symbols-outlined').textContent = 
-            savedTheme === 'dark' ? 'dark_mode' : 'light_mode';
+        setTheme(savedTheme);
 
         function toggleSidebar() {{
-            document.getElementById('sidebar').classList.toggle('active');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            
+            if (sidebar.classList.contains('active')) {{
+                document.body.style.overflow = 'hidden';
+            }} else {{
+                document.body.style.overflow = '';
+            }}
         }}
 
         function toggleCategory(id) {{
@@ -810,7 +1437,50 @@ class DocGenerator:
             const icon = header.querySelector('.material-symbols-outlined');
             
             items.classList.toggle('collapsed');
-            icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
+            
+            if (items.classList.contains('collapsed')) {{
+                icon.style.transform = 'rotate(0deg)';
+                icon.textContent = 'chevron_right';
+            }} else {{
+                icon.style.transform = 'rotate(90deg)';
+                icon.textContent = 'expand_more';
+            }}
+        }}
+
+        function initializeCopyButtons() {{
+            document.querySelectorAll('.markdown-body pre').forEach(pre => {{
+                if (!pre.querySelector('.copy-button')) {{
+                    const button = document.createElement('button');
+                    button.className = 'copy-button';
+                    button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
+                    
+                    button.addEventListener('click', async () => {{
+                        const code = pre.querySelector('code');
+                        if (code) {{
+                            try {{
+                                await navigator.clipboard.writeText(code.textContent || '');
+                                button.classList.add('copied');
+                                button.innerHTML = '<span class="material-symbols-outlined">check</span><span>Copied!</span>';
+                                
+                                setTimeout(() => {{
+                                    button.classList.remove('copied');
+                                    button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
+                                }}, 2000);
+                            }} catch (err) {{
+                                console.error('Failed to copy:', err);
+                                button.innerHTML = '<span class="material-symbols-outlined">error</span><span>Failed</span>';
+                                
+                                setTimeout(() => {{
+                                    button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
+                                }}, 2000);
+                            }}
+                        }}
+                    }});
+                    
+                    pre.style.position = 'relative';
+                    pre.appendChild(button);
+                }}
+            }});
         }}
 
         const searchInput = document.getElementById('searchInput');
@@ -840,6 +1510,7 @@ class DocGenerator:
                 
                 if (title.includes(term) || desc.includes(term) || category.includes(term)) {{
                     card.style.display = 'block';
+                    card.style.animation = 'cardFadeIn 0.4s var(--transition-timing)';
                     visible++;
                 }} else {{
                     card.style.display = 'none';
@@ -882,15 +1553,32 @@ class DocGenerator:
             searchTimeout = setTimeout(filterCards, 300);
         }});
 
+        function dismissWarning() {{
+            const warning = document.getElementById('alphaWarning');
+            warning.style.animation = 'slideDown 0.4s var(--transition-timing) reverse';
+            setTimeout(() => {{
+                warning.style.display = 'none';
+                localStorage.setItem('alphaWarningDismissed', 'true');
+            }}, 300);
+        }}
+
         function showHome() {{
             document.getElementById('home-view').style.display = 'block';
             document.getElementById('doc-view').style.display = 'none';
             document.getElementById('current-section').textContent = 'Home';
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.querySelector('[onclick="showHome()"]').classList.add('active');
-            document.getElementById('sidebar').classList.remove('active');
+            
+            if (window.innerWidth <= 768) {{
+                toggleSidebar();
+            }}
+            
             window.location.hash = '';
             clearSearch();
+            
+            if (localStorage.getItem('alphaWarningDismissed') === 'true') {{
+                document.getElementById('alphaWarning').style.display = 'none';
+            }}
         }}
 
         function showPage(id) {{
@@ -905,12 +1593,21 @@ class DocGenerator:
             );
             if (activeItem) activeItem.classList.add('active');
             
-            document.getElementById('sidebar').classList.remove('active');
+            if (window.innerWidth <= 768) {{
+                toggleSidebar();
+            }}
+            
             document.getElementById('content').scrollTop = 0;
             window.location.hash = id;
+            
+            initializeCopyButtons();
         }}
 
         window.onload = () => {{
+            if (localStorage.getItem('alphaWarningDismissed') === 'true') {{
+                document.getElementById('alphaWarning').style.display = 'none';
+            }}
+            
             if (window.location.hash) {{
                 const id = window.location.hash.substring(1);
                 if (pages[id]) showPage(id);
@@ -918,6 +1615,8 @@ class DocGenerator:
             }} else {{
                 showHome();
             }}
+            
+            initializeCopyButtons();
         }};
 
         window.onhashchange = () => {{
@@ -929,50 +1628,23 @@ class DocGenerator:
                 showHome();
             }}
         }};
+
+        window.addEventListener('resize', () => {{
+            if (window.innerWidth > 768) {{
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }}
+        }});
     </script>
 </body>
 </html>'''
         return template
     
     def _get_icon_name(self, icon_name: str) -> str:
-        icon_map = {
-            'bluetooth': 'bluetooth',
-            'wifi': 'wifi',
-            'permissions': 'security',
-            'api': 'cloud',
-            'settings': 'settings',
-            'network': 'device_hub',
-            'security': 'lock',
-            'database': 'database',
-            'code': 'code',
-            'docs': 'description',
-            'guide': 'explore',
-            'example': 'code_blocks',
-            'config': 'tune',
-            'home': 'home',
-            'user': 'person',
-            'cog': 'settings_applications',
-            'search': 'search',
-            'download': 'download',
-            'upload': 'upload',
-            'refresh': 'refresh',
-            'warning': 'warning',
-            'error': 'error',
-            'info': 'info',
-            'question': 'help',
-            'plus': 'add',
-            'edit': 'edit',
-            'delete': 'delete',
-            'save': 'save',
-            'copy': 'content_copy',
-            'link': 'link',
-            'calendar': 'calendar_today',
-            'clock': 'schedule',
-            'folder': 'folder',
-            'archive': 'archive',
-            'default': 'description'
-        }
-        return icon_map.get(icon_name.lower(), icon_map['default'])
+        return icon_name.lower()
     
     def _process_markdown(self, content: str) -> str:
         html = markdown.markdown(

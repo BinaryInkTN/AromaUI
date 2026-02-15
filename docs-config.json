@@ -5,22 +5,22 @@
     "categories": [
         {
             "name": "Connectivity",
-            "icon": "network",
+            "icon": "network_check",
             "description": "Network and device connectivity APIs"
         },
         {
             "name": "System",
-            "icon": "settings",
+            "icon": "settings_applications",
             "description": "Low-level system and JNI access"
         },
         {
             "name": "Media",
-            "icon": "photo_camera",
+            "icon": "camera_alt",
             "description": "Camera, gallery and media handling"
         },
         {
             "name": "UI",
-            "icon": "widgets",
+            "icon": "dashboard",
             "description": "User interface utilities"
         }
     ],
@@ -44,7 +44,7 @@
         {
             "title": "Core JNI API",
             "description": "Low-level JNI and Android runtime access. Direct access to native system functions.",
-            "icon": "memory",
+            "icon": "data_object",
             "color": "#006875",
             "category": "System",
             "file": "docs/core_jni.md"
@@ -60,7 +60,7 @@
         {
             "title": "System Services & File System API",
             "description": "System services and storage access. Manage files, preferences, and system settings.",
-            "icon": "folder",
+            "icon": "folder_open",
             "color": "#4A4458",
             "category": "System",
             "file": "docs/services_fs.md"
@@ -68,7 +68,7 @@
         {
             "title": "Device Information API",
             "description": "Battery and device runtime information. Monitor device status and hardware info.",
-            "icon": "battery_full",
+            "icon": "mobile_gear",
             "color": "#386A20",
             "category": "System",
             "file": "docs/device_informations.md"
