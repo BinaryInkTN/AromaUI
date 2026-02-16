@@ -2,18 +2,6 @@
     "name": "AromaUI",
     "version": "0.0.1 (alpha)",
     "description": "Browse AromaUI's APIs with detailed documentation and examples.",
-    
-    "comments": {
-        "repo": "BinaryInkTN/AromaUI",
-        "repo_id": "R_kgDOQ7EUDQ",
-        "category": "General",
-        "category_id": "DIC_kwDOQ7EUDc4C2gVd",
-        "mapping": "specific",
-        "reactions_enabled": true,
-        "emit_metadata": false,
-        "input_position": "top",
-        "lang": "en"
-    },
     "categories": [
         {
             "name": "Guides",

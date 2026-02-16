@@ -75,16 +75,12 @@ typedef struct AromaPlatformInterface {
     /** @brief Callback to flush custom draw lists (embedded specific). */
     void (*call_flush_function_ptr)(void (*flush_fn)(struct AromaDrawList* list, size_t window_id, int x, int y, int width, int height), void* list);    
 
-    // Dirty region set
-    
     /** @brief [Embedded] Mark TFT tile rows as dirty. */
     void (*tft_mark_tiles_dirty)(int y, int h);
     
     /** @brief [Embedded] Set the global clear color. */
     void (*set_clear_color)(uint16_t color);
 
-    // [Android]
-    
     /** @brief [Android] Set the native glue app pointer. */
     void (*set_android_app)(void* app_state);
     
@@ -103,13 +99,12 @@ typedef struct AromaPlatformInterface {
     /** @brief Hide software keyboard. */
     void (*hide_keyboard)(void);
 
-    // [Android Extensions]
-    
     /** @brief [Android] Check runtime permission. */
     bool (*android_check_permission)(const char* permission_name);
     
     /** @brief [Android] Request runtime permission. */
     void (*android_request_permission)(const char** permissions, int permCount);
+    
     /** @brief [Android] Show a toast message. */
     void (*android_toast)(const char* msg, bool long_duration);
     
@@ -130,16 +125,51 @@ typedef struct AromaPlatformInterface {
     
     /** @brief [Android] Check if Bluetooth is enabled. */
     bool (*android_is_bluetooth_enabled)(void);
+    
+    /** @brief [Android] Start Bluetooth scan. Returns 0 on failure, 1 on success. */
+    int (*android_bt_scan)(int scan_mode, void (*callback)(const char* addr, const char* name, int type, int rssi));
+    
+    /** @brief [Android] Stop Bluetooth scan. */
+    void (*android_bt_stop_scan)(void);
+    
     /** @brief [Android] Get paired Bluetooth devices. Fills out_addrs[out_names] arrays. */
-    int  (*android_bt_get_paired)(char out_addrs[][18], char out_names[][248], int max_devices);
+    int (*android_bt_get_paired)(char out_addrs[][18], char out_names[][248], int max_devices);
+    
+    /** @brief [Android] Pair with Bluetooth device. */
+    bool (*android_bt_pair)(const char* addr);
+    
+    /** @brief [Android] Unpair Bluetooth device. */
+    bool (*android_bt_unpair)(const char* addr);
+    
+    /** @brief [Android] Get Bluetooth device pair state. */
+    int (*android_bt_get_pair_state)(const char* addr);
+    
     /** @brief [Android] Connect to Bluetooth device by address. */
     bool (*android_bt_connect)(const char* addr);
+    
+    /** @brief [Android] Connect to Bluetooth device with specific mode. */
+    bool (*android_bt_connect_with_mode)(const char* addr, int mode);
+    
     /** @brief [Android] Disconnect current Bluetooth connection. */
     void (*android_bt_disconnect)(void);
+    
     /** @brief [Android] Send data over active Bluetooth connection. Returns bytes written or -1. */
-    int  (*android_bt_send)(const char* data, int len);
+    int (*android_bt_send)(const char* data, int len);
+    
     /** @brief [Android] Check if bluetooth connection active. */
     bool (*android_bt_is_connected)(void);
+    
+    /** @brief [Android] Get connected Bluetooth device type. */
+    int (*android_bt_get_device_type)(void);
+    
+    /** @brief [Android] Get connected Bluetooth device name. */
+    const char* (*android_bt_get_device_name)(void);
+    
+    /** @brief [Android] Get current Bluetooth connection mode. */
+    int (*android_bt_get_current_mode)(void);
+    
+    /** @brief [Android] Get Bluetooth mode name string. */
+    const char* (*android_bt_get_mode_name)(void);
     
     /** @brief [Android] Launch camera app. */
     void (*android_launch_camera)(void);
@@ -150,8 +180,6 @@ typedef struct AromaPlatformInterface {
     /** @brief [Android] Get generic system service (JObject). */
     void* (*android_get_system_service)(const char* service_name);
 
-    // [Android Utils]
-    
     /** @brief [Android] Get internal storage path. */
     const char* (*android_get_internal_path)(void);
     
@@ -166,7 +194,6 @@ typedef struct AromaPlatformInterface {
  */
 AromaPlatformInterface* aroma_get_platform_interface(void);
 
-/** @brief GL/SDL/Simulator platform instance. */
 extern AromaPlatformInterface aroma_platform_glps;
 
 /** @brief Bare metal / TFT platform instance. */
@@ -179,5 +206,4 @@ extern AromaPlatformInterface aroma_platform_android;
 }
 #endif
 
-#endif 
-
+#endif

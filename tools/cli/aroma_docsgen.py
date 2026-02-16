@@ -33,76 +33,7 @@ class DocGenerator:
             {dark_styles}
         }}
         '''
-    
-    def _get_comment_section(self, config: dict) -> str:
-        """Generate the comment section HTML with Giscus integration"""
-        giscus_config = config.get('comments', {})
-        repo = giscus_config.get('repo', '')
-        repo_id = giscus_config.get('repo_id', '')
-        category = giscus_config.get('category', 'Announcements')
-        category_id = giscus_config.get('category_id', '')
-        reactions = '1' if giscus_config.get('reactions_enabled', True) else '0'
-        emit_metadata = '1' if giscus_config.get('emit_metadata', False) else '0'
-        input_position = giscus_config.get('input_position', 'top')
-        lang = giscus_config.get('lang', 'en')
-        
-        if not repo or not repo_id:
-            return ''  # Return empty if Giscus not configured
-        
-        # Use a fixed term for all pages
-        fixed_term = "aroma-ui-documentation"
-        
-        return f'''
-        <!-- Comment Section -->
-        <div class="comments-section" id="comments-section">
-            <div class="comments-header">
-                <h3 class="comments-title">
-                    <span class="material-symbols-outlined">chat</span>
-                    Discussion
-                </h3>
-                <div class="comments-info">
-                    <span class="material-symbols-outlined">info</span>
-                    <span>Join the conversation using GitHub Discussions</span>
-                </div>
-            </div>
-            <div class="comments-container">
-                <script src="https://giscus.app/client.js"
-                    data-repo="{repo}"
-                    data-repo-id="{repo_id}"
-                    data-category="{category}"
-                    data-category-id="{category_id}"
-                    data-mapping="specific"
-                    data-term="{fixed_term}"
-                    data-strict="0"
-                    data-reactions-enabled="{reactions}"
-                    data-emit-metadata="{emit_metadata}"
-                    data-input-position="{input_position}"
-                    data-theme="light"
-                    data-lang="{lang}"
-                    data-loading="lazy"
-                    crossorigin="anonymous"
-                    async>
-                </script>
-            </div>
-        </div>
-        
-        <script>
-            // Function to update Giscus theme when site theme changes
-            function updateGiscusTheme(theme) {{
-                const giscusTheme = theme === 'dark' || theme === 'nord' ? 'dark' : 'light';
-                const iframe = document.querySelector('iframe.giscus-frame');
-                if (iframe) {{
-                    iframe.contentWindow.postMessage({{
-                        giscus: {{
-                            setConfig: {{
-                                theme: giscusTheme
-                            }}
-                        }}
-                    }}, 'https://giscus.app');
-                }}
-            }}
-        </script>
-        '''
+  
     
     def _get_template(self) -> str:
         template = '''<!DOCTYPE html>
@@ -1788,10 +1719,7 @@ class DocGenerator:
                         </div>
                     </div>
                     <div class="doc-content markdown-body" id="doc-content"></div>
-                    
-                    <!-- Comment Section -->
-                    {comment_section}
-                    
+             
                     <div class="footer">
                         <div class="footer-content">
                             <div class="footer-copyright">
@@ -2321,7 +2249,6 @@ class DocGenerator:
             ''')
         
         pygments_styles = self._get_pygments_styles()
-        comment_section = self._get_comment_section(config)
         current_year = datetime.now().year
         last_updated = datetime.now().strftime('%B %d, %Y')
         
@@ -2336,7 +2263,6 @@ class DocGenerator:
             pages_json=json.dumps(pages_dict),
             titles_json=json.dumps(titles_dict),
             markdown_files_json=json.dumps(markdown_files),
-            comment_section=comment_section,
             year=current_year,
             last_updated=last_updated
         )

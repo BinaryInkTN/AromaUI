@@ -312,8 +312,8 @@ If builds fail:
 
 #include "aroma.h"
 #include "logo.h"
-#include &lt;stdio.h&gt;
-#include &lt;unistd.h&gt;
+#include <stdio.h>
+#include <unistd.h>
 
 static bool on_btn_click(AromaNode* btn, void* data)
 {
@@ -380,7 +380,7 @@ int main(int argc, char** argv)
 }
 
 #ifdef __ANDROID__
-#include &lt;android_native_app_glue.h&gt;
+#include <android_native_app_glue.h>
 void android_main(struct android_app* state)
 {
     aroma_android_set_app(state);

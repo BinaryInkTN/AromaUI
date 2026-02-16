@@ -240,6 +240,9 @@ void aroma_listview_add_item(AromaNode *list_node,
     AromaListView *list =
         (AromaListView *)list_node->node_widget_ptr;
 
+    if(!list)
+        return;
+
     if (list->item_count >= AROMA_LIST_MAX_ITEMS)
         return;
 
@@ -277,6 +280,9 @@ void aroma_listview_add_item_with_icon(AromaNode *list_node,
     AromaListView *list =
         (AromaListView *)list_node->node_widget_ptr;
 
+    if(!list)
+        return;
+        
     if (list->item_count >= AROMA_LIST_MAX_ITEMS)
         return;
 
