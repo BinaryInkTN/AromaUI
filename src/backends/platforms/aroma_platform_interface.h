@@ -152,6 +152,12 @@ typedef struct AromaPlatformInterface {
     
     /** @brief [Android] Disconnect current Bluetooth connection. */
     void (*android_bt_disconnect)(void);
+
+    void (*android_bt_register_callbacks)(void (*device_cb)(const char*, const char*, int, int),
+                                      void (*scan_finished_cb)(void),
+                                      void (*pairing_cb)(bool, const char*, const char*),
+                                      void (*connection_cb)(bool, const char*, int, int),
+                                      void (*data_cb)(const char*, int));
     
     /** @brief [Android] Send data over active Bluetooth connection. Returns bytes written or -1. */
     int (*android_bt_send)(const char* data, int len);

@@ -1635,6 +1635,22 @@ static bool impl_android_is_bluetooth_enabled(void)
     return res;
 }
 
+void impl_bt_register_callbacks(
+    void (*device_cb)(const char*, const char*, int, int),
+    void (*scan_finished_cb)(void),
+    void (*pairing_cb)(bool, const char*, const char*),
+    void (*connection_cb)(bool, const char*, int, int),
+    void (*data_cb)(const char*, int))
+{
+    g_bt_callbacks.device_discovered_cb = device_cb;
+    g_bt_callbacks.scan_finished_cb = scan_finished_cb;
+    g_bt_callbacks.pairing_result_cb = pairing_cb;
+    g_bt_callbacks.connection_result_cb = connection_cb;
+    g_bt_callbacks.data_received_cb = data_cb;
+    
+    LOGI("All Bluetooth callbacks registered");
+}
+
 static int impl_android_bt_scan(int scan_mode, void (*callback)(const char* addr, const char* name, int type, int rssi))
 {
     int attach = 0;
@@ -1648,7 +1664,9 @@ static int impl_android_bt_scan(int scan_mode, void (*callback)(const char* addr
         return 0;
     }
 
-    g_bt_callbacks.device_discovered_cb = callback;
+    if (callback) {
+        g_bt_callbacks.device_discovered_cb = callback;
+    }
 
     (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.bt_scan, (jint)scan_mode);
 
@@ -1683,7 +1701,6 @@ static void impl_android_bt_stop_scan(void)
         (*env)->ExceptionClear(env);
     }
 
-    g_bt_callbacks.device_discovered_cb = NULL;
     detach_jni_env(attach);
 }
 
@@ -2252,6 +2269,7 @@ AromaPlatformInterface aroma_platform_android = {
     .android_bt_get_device_name = impl_android_bt_get_device_name,
     .android_bt_get_current_mode = impl_android_bt_get_current_mode,
     .android_bt_get_mode_name = impl_android_bt_get_mode_name,
+    .android_bt_register_callbacks = impl_bt_register_callbacks,
     .android_launch_camera = impl_android_launch_camera,
     .android_launch_gallery = impl_android_launch_gallery,
     .android_get_system_service = impl_android_get_system_service,

@@ -222,6 +222,18 @@ static inline void aroma_android_bt_stop_scan(void) {
 }
 
 
+static inline void aroma_android_bt_register_callbacks(void (*device_cb)(const char*, const char*, int, int),
+                                      void (*scan_finished_cb)(void),
+                                      void (*pairing_cb)(bool, const char*, const char*),
+                                      void (*connection_cb)(bool, const char*, int, int),
+                                      void (*data_cb)(const char*, int)) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_bt_register_callbacks) {
+        platform->android_bt_register_callbacks(device_cb, scan_finished_cb, pairing_cb, connection_cb, data_cb);
+    }
+}
+
+
 /**
  * @brief Get a list of paired Bluetooth devices.
  * @param out_addrs Output array for device addresses (size: max_devices x 18).
