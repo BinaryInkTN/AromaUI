@@ -130,11 +130,8 @@ struct AromaNode
     bool propagate_dirty;       /**< True if dirty state affects children. */
     AromaLayout layout;         /**< Layout configuration. */
     
-    // Cached absolute/relative geometry for rendering engine
-    int x;
-    int y;
-    int width;
-    int height;
+    // Geometry is stored on the widget side (WidgetBase->rect).
+    // Deprecated: node geometry fields removed — use widget->rect instead.
 };
 
 /** @brief Helper macro to cast a node's user pointer to a specific type. */

@@ -89,12 +89,6 @@ AromaNode* aroma_icon_create(AromaNode* parent, int x, int y, int size) {
         aroma_widget_free(icon);
         return NULL;
     }
-    
-    node->x = x;
-    node->y = y;
-    node->width = size;
-    node->height = size;
-    
     aroma_node_set_draw_cb(node, (void (*)(AromaNode*, size_t))aroma_icon_draw);
     
     return node;

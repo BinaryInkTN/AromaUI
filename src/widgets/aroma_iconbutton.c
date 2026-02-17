@@ -128,12 +128,6 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
         aroma_widget_free(btn);
         return NULL;
     }
-
-    node->x = btn->rect.x;
-    node->y = btn->rect.y;
-    node->width = btn->rect.width;
-    node->height = btn->rect.height;
-    
     aroma_node_set_draw_cb(node, aroma_iconbutton_draw);
 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __iconbutton_handle_event, NULL, 60);

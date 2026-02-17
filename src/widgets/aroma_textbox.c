@@ -136,12 +136,6 @@ AromaNode* aroma_textbox_create(AromaNode* parent, int x, int y, int width, int 
         aroma_widget_free(data);
         return NULL;
     }
-    
-    node->x = x;
-    node->y = y;
-    node->width = width;
-    node->height = height;
-
     aroma_node_set_draw_cb(node, aroma_textbox_draw);
 
     LOG_INFO("Textbox created: x=%d, y=%d, w=%d, h=%d\n", x, y, width, height);

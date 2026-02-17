@@ -107,10 +107,7 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
         return NULL;
     }
     
-    node->x = x;
-    node->y = y;
-    node->width = width;
-    node->height = height;
+    // Node geometry fields removed; card->rect contains geometry
 
     aroma_node_set_draw_cb(node, aroma_card_draw);
 

@@ -96,12 +96,7 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->rect.y = y;
     button->rect.width = width;
     button->rect.height = height;
-    
-    
-    button_node->x = x;
-    button_node->y = y;
-    button_node->width = width;
-    button_node->height = height;
+    // Node geometry fields removed; widget->rect holds geometry
     
     strncpy(button->label, label, AROMA_BUTTON_LABEL_MAX - 1);
     button->label[AROMA_BUTTON_LABEL_MAX - 1] = '\0';

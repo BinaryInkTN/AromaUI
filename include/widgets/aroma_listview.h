@@ -5,46 +5,49 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_font.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-// Material Design 3 List View
+
 typedef struct AromaListItem {
-    char text[128];
-    char secondary_text[128];
-    char icon[8];
+    char text[64];
+    char secondary_text[64];
+    char icon[32];
     void* user_data;
 } AromaListItem;
 
 typedef struct AromaListView AromaListView;
 
-// Create list view
+#define AROMA_LIST_ITEM_NORMAL      0
+#define AROMA_LIST_ITEM_HEADER       1
+#define AROMA_LIST_ITEM_SEPARATOR    2
+
 AromaNode* aroma_listview_create(AromaNode* parent, int x, int y, int width, int height);
-
-// Add item
 void aroma_listview_add_item(AromaNode* list_node, const char* text, const char* secondary_text, void* user_data);
-
-// Add item with icon
 void aroma_listview_add_item_with_icon(AromaNode* list_node, const char* text, const char* secondary_text, const char* icon_code, void* user_data);
-
-// Clear all items
+void aroma_listview_add_header(AromaNode* list_node, const char* text);
+void aroma_listview_add_separator(AromaNode* list_node);
+void aroma_listview_remove_item(AromaNode* list_node, int index);
 void aroma_listview_clear(AromaNode* list_node);
-
-// Set selection callback
+int aroma_listview_get_selected(AromaNode* list_node);
+size_t aroma_listview_get_count(AromaNode* list_node);
+void* aroma_listview_get_item_data(AromaNode* list_node, int index);
 void aroma_listview_set_callback(AromaNode* list_node, void (*callback)(int index, void* user_data), void* user_data);
-
-// Set font
 void aroma_listview_set_font(AromaNode* list_node, AromaFont* font);
-
-// Set icon font
+void aroma_listview_set_secondary_font(AromaNode* list_node, AromaFont* font);
 void aroma_listview_set_icon_font(AromaNode* list_node, AromaFont* font);
-
-// Draw
+void aroma_listview_set_item_height(AromaNode* list_node, int height);
+void aroma_listview_set_text_scale(AromaNode* list_node, float scale);
+void aroma_listview_set_secondary_text_scale(AromaNode* list_node, float scale);
+void aroma_listview_set_corner_radius(AromaNode* list_node, float radius);
+void aroma_listview_set_selected_corner_radius(AromaNode* list_node, float radius);
+void aroma_listview_show_headers(AromaNode* list_node, bool show);
+void aroma_listview_set_header_colors(AromaNode* list_node, uint32_t bg_color, uint32_t text_color);
 void aroma_listview_draw(AromaNode* list_node, size_t window_id);
-
-// Destroy
 void aroma_listview_destroy(AromaNode* list_node);
 #ifdef __cplusplus
 }
 #endif
-#endif // AROMA_LISTVIEW_H
+
+#endif

@@ -175,12 +175,6 @@ AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char*
         aroma_widget_free(dlg);
         return NULL;
     }
-    
-    node->x = dlg->rect.x;
-    node->y = dlg->rect.y;
-    node->width = dlg->rect.width;
-    node->height = dlg->rect.height;
-
     aroma_node_set_draw_cb(node, aroma_dialog_draw);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __dialog_handle_event, aroma_ui_request_redraw, 100);
 
@@ -223,8 +217,6 @@ void aroma_dialog_show(AromaNode* dialog_node) {
     dlg->visible = true;
     __dialog_update_rect(dlg);
     
-    dialog_node->x = dlg->rect.x;
-    dialog_node->y = dlg->rect.y;
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     __dialog_recompute_action_layout(dlg, gfx, 0);

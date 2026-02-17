@@ -48,22 +48,14 @@ static const float LABEL_SCALES[] = {
 static void __update_label_geometry(AromaNode* node) {
     if (!node || !node->node_widget_ptr) return;
     AromaLabel* label = (AromaLabel*)node->node_widget_ptr;
-    
-    node->x = label->rect.x;
-    node->y = label->rect.y;
-
     if (label->font) {
         int w = aroma_font_get_line_width(label->font, label->text);
         int h = aroma_font_get_line_height(label->font);
-        
-        node->width = (int)(w * label->text_scale);
-        node->height = (int)(h * label->text_scale);
-        
-        label->rect.width = node->width;
-        label->rect.height = node->height;
+        label->rect.width = (int)(w * label->text_scale);
+        label->rect.height = (int)(h * label->text_scale);
     } else {
-        node->width = 0;
-        node->height = 0;
+        label->rect.width = 0;
+        label->rect.height = 0;
     }
 }
 

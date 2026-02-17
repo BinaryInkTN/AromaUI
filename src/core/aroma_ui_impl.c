@@ -73,8 +73,11 @@ static void __get_node_abs_pos(AromaNode* node, int* x, int* y) {
     *y = 0;
     AromaNode* curr = node;
     while (curr) {
-        *x += curr->x;
-        *y += curr->y;
+        if (curr->node_widget_ptr) {
+            AromaRect* r = (AromaRect*)curr->node_widget_ptr;
+            *x += r->x;
+            *y += r->y;
+        }
         curr = curr->parent_node;
     }
 }
@@ -93,14 +96,23 @@ static void __collect_draw_tasks(AromaNode* node, AromaDrawTask* tasks, size_t* 
 static void __collect_draw_tasks_intersect(AromaNode* node, AromaDrawTask* tasks, size_t* task_count, size_t max_tasks, int rx, int ry, int rw, int rh, int parent_abs_x, int parent_abs_y) {
     if (!node || node->is_hidden) return;
     
-    int abs_x = parent_abs_x + node->x;
-    int abs_y = parent_abs_y + node->y;
+    int node_x = 0, node_y = 0, node_w = 0, node_h = 0;
+    if (node->node_widget_ptr) {
+        AromaRect* r = (AromaRect*)node->node_widget_ptr;
+        node_x = r->x;
+        node_y = r->y;
+        node_w = r->width;
+        node_h = r->height;
+    }
 
-    bool intersects = 
-        (abs_x < rx + rw) && 
-        (abs_x + node->width > rx) && 
-        (abs_y < ry + rh) && 
-        (abs_y + node->height > ry);
+    int abs_x = parent_abs_x + node_x;
+    int abs_y = parent_abs_y + node_y;
+
+    bool intersects =
+        (abs_x < rx + rw) &&
+        (abs_x + node_w > rx) &&
+        (abs_y < ry + rh) &&
+        (abs_y + node_h > ry);
     
     AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
     if (intersects && draw_cb && *task_count < max_tasks) {
@@ -162,6 +174,7 @@ bool aroma_ui_init_impl(void) {
 
     g_ui_initialized = true;
     LOG_INFO("Aroma UI initialized successfully");
+
     return true;
 }
 
@@ -505,10 +518,14 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
         
         int nx = 0, ny = 0;
         __get_node_abs_pos(node, &nx, &ny);
-        int nw = node->width;
-        int nh = node->height;
-        
-        if (nw <= 0 || nh <= 0) continue; 
+        int nw = 0, nh = 0;
+        if (node->node_widget_ptr) {
+            AromaRect* r = (AromaRect*)node->node_widget_ptr;
+            nw = r->width;
+            nh = r->height;
+        }
+
+        if (nw <= 0 || nh <= 0) continue;
 
         if (nx < min_x) min_x = nx;
         if (ny < min_y) min_y = ny;

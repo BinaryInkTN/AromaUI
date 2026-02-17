@@ -2,10 +2,15 @@
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_node.h"
+#include "backends/aroma_abi.h"
+#include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 
 typedef struct AromaContainer {
     AromaRect rect;
+    
+    uint32_t bg_color;  
+    bool draw_background;  
 } AromaContainer;
 
 AromaNode* aroma_container_create(AromaNode* parent, int x, int y, int width, int height)
@@ -26,6 +31,9 @@ AromaNode* aroma_container_create(AromaNode* parent, int x, int y, int width, in
     container->rect.y = y;
     container->rect.width = width;
     container->rect.height = height;
+    container->draw_background = false;  
+    
+    
 
     AromaNode* node = __add_child_node(NODE_TYPE_CONTAINER, parent, container);
     if (!node) {
@@ -33,12 +41,7 @@ AromaNode* aroma_container_create(AromaNode* parent, int x, int y, int width, in
         LOG_ERROR("Failed to create container node");
         return NULL;
     }
-
-    node->x = x;
-    node->y = y;
-    node->width = width;
-    node->height = height;
-
+    
     aroma_node_set_draw_cb(node, aroma_container_draw);
     aroma_node_invalidate(node);
 
@@ -49,15 +52,26 @@ void aroma_container_set_rect(AromaNode* container_node, int x, int y, int width
 {
     AromaContainer* container = aroma_container_get(container_node);
     if (!container) return;
+    
+    
+    if (container->rect.x == x && container->rect.y == y && 
+        container->rect.width == width && container->rect.height == height) {
+        return;
+    }
+    
     container->rect.x = x;
     container->rect.y = y;
     container->rect.width = width;
     container->rect.height = height;
 
-    container_node->x = x;
-    container_node->y = y;
-    container_node->width = width;
-    container_node->height = height;
+    
+    for (uint64_t i = 0; i < container_node->child_count; i++) {
+        AromaNode* child = container_node->child_nodes[i];
+        if (child && !child->is_hidden) {
+            
+            aroma_node_update_layout(child, x, y, width, height);
+        }
+    }
 
     aroma_node_invalidate(container_node);
 }
@@ -72,10 +86,37 @@ AromaRect aroma_container_get_rect(AromaNode* container_node)
     return container->rect;
 }
 
+
+void aroma_container_set_debug_bg(AromaNode* container_node, uint32_t color)
+{
+    AromaContainer* container = aroma_container_get(container_node);
+    if (!container) return;
+    
+    container->bg_color = color;
+    container->draw_background = true;
+    aroma_node_invalidate(container_node);
+}
+
 void aroma_container_draw(AromaNode* container_node, size_t window_id)
 {
-    (void)container_node;
-    (void)window_id;
+    AromaContainer* container = aroma_container_get(container_node);
+    if (!container) return;
+    
+    
+    if (container->draw_background) {
+        AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+        if (gfx && gfx->fill_rectangle) {
+            gfx->fill_rectangle(window_id, 
+                               container->rect.x, 
+                               container->rect.y, 
+                               container->rect.width, 
+                               container->rect.height, 
+                               container->bg_color, 
+                               false, 
+                               0.0f);
+        }
+    }
+    
 }
 
 void aroma_container_destroy(AromaNode* container_node)

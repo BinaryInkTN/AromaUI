@@ -69,12 +69,6 @@ AromaNode* aroma_divider_create(
         aroma_widget_free(divider);
         return NULL;
     }
-    
-    node->x = divider->rect.x;
-    node->y = divider->rect.y;
-    node->width = divider->rect.width;
-    node->height = divider->rect.height;
-
     aroma_node_set_draw_cb(node, aroma_divider_draw);
     aroma_node_invalidate(node);
 

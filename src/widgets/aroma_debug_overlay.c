@@ -84,12 +84,6 @@ static float __time_diff_sec(struct timespec a, struct timespec b)
         aroma_widget_free(overlay);
         return NULL;
     }
-    
-    node->x = x;
-    node->y = y;
-    node->width = width;
-    node->height = overlay->rect.height;
-
     aroma_node_set_draw_cb(node, aroma_debug_overlay_draw);
 
 #ifdef ESP32

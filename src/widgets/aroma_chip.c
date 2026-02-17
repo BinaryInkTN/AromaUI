@@ -44,10 +44,11 @@ static bool __chip_handle_event(AromaEvent* event, void* user_data)
     if (!chip) return false;
     
     
-    int nx = event->target_node->x;
-    int ny = event->target_node->y;
-    int nw = event->target_node->width;
-    int nh = event->target_node->height;
+    AromaRect* r = (AromaRect*)event->target_node->node_widget_ptr;
+    int nx = r ? r->x : 0;
+    int ny = r ? r->y : 0;
+    int nw = r ? r->width : 0;
+    int nh = r ? r->height : 0;
 
     bool in_bounds = (event->data.mouse.x >= nx && event->data.mouse.x <= nx + nw &&
                       event->data.mouse.y >= ny && event->data.mouse.y <= ny + nh);
@@ -188,12 +189,6 @@ AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label,
         aroma_widget_free(chip);
         return NULL;
     }
-
-    node->x = x;
-    node->y = y;
-    node->width = chip->rect.width; 
-    node->height = chip->rect.height;
-
     aroma_node_set_draw_cb(node, aroma_chip_draw);
 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __chip_handle_event, aroma_ui_request_redraw, 60);
@@ -230,8 +225,7 @@ void aroma_chip_set_font(AromaNode* chip_node, AromaFont* font) {
     if (!chip) return;
     chip->font = font;
     __chip_update_layout(chip);
-    chip_node->width = chip->rect.width;
-    chip_node->height = chip->rect.height;
+    
     aroma_node_invalidate(chip_node);
 }
 
@@ -248,8 +242,7 @@ void aroma_chip_set_icon(AromaNode* chip_node, const char* icon, AromaFont* icon
     }
     chip->icon_font = icon_font;
     __chip_update_layout(chip);
-    chip_node->width = chip->rect.width;
-    chip_node->height = chip->rect.height;
+    
     aroma_node_invalidate(chip_node);
 }
 
@@ -262,8 +255,7 @@ void aroma_chip_set_text(AromaNode* chip_node, const char* text) {
     chip->label[sizeof(chip->label) - 1] = '\0';
     
     __chip_update_layout(chip);
-    chip_node->width = chip->rect.width;
-    chip_node->height = chip->rect.height;
+    
     aroma_node_invalidate(chip_node);
 }
 
@@ -284,10 +276,7 @@ void aroma_chip_draw(AromaNode* chip_node, size_t window_id) {
     }
     
     
-    chip->rect.x = chip_node->x;
-    chip->rect.y = chip_node->y;
-    chip->rect.width = chip_node->width;
-    chip->rect.height = chip_node->height;
+    
 
     uint32_t bg_color = chip->selected ? chip->selected_color : chip->bg_color;
     if (chip->is_pressed) {

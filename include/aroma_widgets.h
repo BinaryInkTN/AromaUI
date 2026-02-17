@@ -6,6 +6,11 @@
  */
 #ifndef AROMA_WIDGETS_H
 #define AROMA_WIDGETS_H
+#include "aroma_common.h"
+
+typedef struct WidgetBase {
+	AromaRect rect;
+} WidgetBase;
 
 #include "widgets/aroma_window.h"
 #include "widgets/aroma_container.h"

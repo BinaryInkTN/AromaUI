@@ -1,23 +1,4 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
 #include "core/aroma_node.h"
 #include "core/aroma_logger.h"
@@ -81,6 +62,7 @@ AromaNode* __create_node(AromaNodeType node_type, AromaNode* parent_node, void* 
         return NULL;
     }
 
+    
     AromaNode* new_node = (AromaNode*)__slab_pool_alloc(&global_memory_system.node_pool);
     if (!new_node) {
         LOG_CRITICAL("Failed to allocate memory for new node.");
@@ -278,9 +260,9 @@ AromaNode* aroma_node_get_window(AromaNode* node) {
     while (current->parent_node) {
         current = current->parent_node;
     }
-    // Usually the root node is the window or scene root
-    // But we should check if it's actually a window type if applicable.
-    // For now, returning the root is the standard behavior for "get window" in this context.
+    
+    
+    
     return current;
 }
 
@@ -295,7 +277,7 @@ void aroma_node_invalidate(AromaNode* node) {
         return;
     }
     
-    // Notify the UI system that a redraw is needed
+    
     aroma_ui_render_all_windows_impl();
 }
 

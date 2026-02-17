@@ -209,12 +209,6 @@ AromaNode* aroma_radio_button_create(AromaNode* parent, AromaRadioGroup* group,
         LOG_ERROR("Failed to create radio button node");
         return NULL;
     }
-
-    node->x = x;
-    node->y = y;
-    node->width = width;
-    node->height = height;
-
     aroma_node_set_draw_cb(node, aroma_radiobutton_draw);
 
     if (group) {

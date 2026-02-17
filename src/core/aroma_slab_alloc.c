@@ -31,7 +31,6 @@ void __slab_pool_init(AromaSlabAllocator* pool, size_t object_size) {
     if (!pool) return;
     memset(pool, 0, sizeof(AromaSlabAllocator));
     pool->object_size = object_size;
-    
 }
 
 void __slab_pool_destroy(AromaSlabAllocator* pool) {
@@ -115,6 +114,7 @@ static uint8_t __find_bucket_index(size_t size) {
 
 void* aroma_widget_alloc(size_t size) {
     if (size == 0) return NULL;
+    #ifdef ESP32
     uint8_t bucket_index = __find_bucket_index(size);
     size_t bucket_size = WIDGET_BUCKET_SIZES[bucket_index];
     void* allocation = __slab_pool_alloc(&global_memory_system.widget_pools[bucket_index]);
@@ -123,14 +123,21 @@ void* aroma_widget_alloc(size_t size) {
     *tagged_ptr = bucket_index;
     void* widget_ptr = tagged_ptr + 1;
     return widget_ptr;
+    #else
+    return malloc(size);
+    #endif
 }
 
 void aroma_widget_free(void* widget) {
     if (!widget) return;
+    #ifdef ESP32
     uint8_t* tagged_ptr = (uint8_t*)widget - 1;
     uint8_t bucket_index = *tagged_ptr;
     if (bucket_index >= AROMA_WIDGET_BUCKET_COUNT) return;
     __slab_pool_free(&global_memory_system.widget_pools[bucket_index], tagged_ptr);
+    #else
+    free(widget);
+    #endif
 }
 
 void aroma_memory_system_init(void) {
