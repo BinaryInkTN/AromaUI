@@ -222,6 +222,15 @@ static inline void aroma_android_bt_stop_scan(void) {
 }
 
 
+/**
+ * @brief Register callbacks for Bluetooth events.
+ * @param device_cb Called when a device is discovered during scanning.
+ * @param scan_finished_cb Called when a Bluetooth scan finishes.
+ * @param pairing_cb Called when a pairing attempt completes.
+ * @param connection_cb Called when a connection attempt completes.
+ * @param data_cb Called when data is received from a connected device.
+ */
+
 static inline void aroma_android_bt_register_callbacks(void (*device_cb)(const char*, const char*, int, int),
                                       void (*scan_finished_cb)(void),
                                       void (*pairing_cb)(bool, const char*, const char*),

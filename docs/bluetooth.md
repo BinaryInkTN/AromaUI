@@ -1,191 +1,341 @@
+# AromaUI Bluetooth Classic API
 
-# Bluetooth API (Classic Only)
 
-Supports device scanning, pairing, RFCOMM data communication, and connection state management.
+## Table of Contents
 
----
-
-## Bluetooth Scan Modes
-
-| Constant                    | Description                    |
-| --------------------------- | ------------------------------ |
-| `AROMA_BT_SCAN_MODE_PAIRED` | Scan paired devices only       |
-| `AROMA_BT_SCAN_MODE_NEW`    | Scan new unpaired devices only |
-| `AROMA_BT_SCAN_MODE_ALL`    | Scan all devices               |
-
----
-
-## Bluetooth Device Types
-
-| Constant                  | Description         |
-| ------------------------- | ------------------- |
-| `AROMA_BT_TYPE_UNKNOWN`   | Unknown device type |
-| `AROMA_BT_TYPE_HEADSET`   | Headset device      |
-| `AROMA_BT_TYPE_PHONE`     | Phone device        |
-| `AROMA_BT_TYPE_SPEAKER`   | Speaker device      |
-| `AROMA_BT_TYPE_WEARABLE`  | Wearable device     |
-| `AROMA_BT_TYPE_KEYBOARD`  | Keyboard device     |
-| `AROMA_BT_TYPE_MOUSE`     | Mouse device        |
-| `AROMA_BT_TYPE_PRINTER`   | Printer device      |
-| `AROMA_BT_TYPE_CAR`       | Car device          |
-| `AROMA_BT_TYPE_MEDICAL`   | Medical device      |
-| `AROMA_BT_TYPE_ARDUINO`   | Arduino device      |
-| `AROMA_BT_TYPE_RASPBERRY` | Raspberry Pi device |
+1. Architecture Overview
+2. Android Permissions
+3. Registering Callbacks
+4. Device Scanning
+5. Getting Paired Devices
+6. Pairing Management
+7. Connecting to a Device
+8. Sending Data
+9. Connected Device Information
+10. Recommended Connection Flow
 
 ---
 
-## Bluetooth Bond States
+This guide provides a structured, comprehensive explanation of the AromaUI Bluetooth Classic API for Android.
 
-| Constant                | Description         |
-| ----------------------- | ------------------- |
-| `AROMA_BT_BOND_NONE`    | Not bonded          |
-| `AROMA_BT_BOND_BONDING` | Bonding in progress |
-| `AROMA_BT_BOND_BONDED`  | Bonded              |
+The API supports:
+
+| Feature                     | Description                               |
+| --------------------------- | ----------------------------------------- |
+| Device scanning             | Discover nearby Bluetooth Classic devices |
+| Pairing management          | Create and remove device bonds            |
+| RFCOMM data communication   | Send and receive raw data                 |
+| Connection state management | Monitor and control active connections    |
+| Device type detection       | Identify connected device category        |
+
+Limitations:
+
+| Limitation           | Status        |
+| -------------------- | ------------- |
+| Bluetooth Classic    | Supported     |
+| Bluetooth Low Energy | Not supported |
+| GATT                 | Not supported |
+
+All APIs are valid only when compiling with **ANDROID** defined.
 
 ---
 
-## Bluetooth Connection Modes
+# 1. Architecture Overview
 
-| Constant              | Description                 |
-| --------------------- | --------------------------- |
-| `AROMA_BT_MODE_DATA`  | RFCOMM data mode            |
-| `AROMA_BT_MODE_AUDIO` | Audio mode                  |
-| `AROMA_BT_MODE_HID`   | HID mode                    |
-| `AROMA_BT_MODE_AUTO`  | Automatically selected mode |
+The Bluetooth layer is exposed through inline wrappers that delegate to AromaPlatformInterface.
+
+Flow:
+
+Application Code
+aroma_android_* wrapper
+AromaPlatformInterface
+Android Java or Kotlin implementation
+
+Many operations are asynchronous internally. Design your application around callbacks rather than blocking logic.
 
 ---
 
-# Device Discovery
+# 2. Android Permissions
 
-## `int aroma_android_bt_scan(int scan_mode, void (*callback)(const char* addr, const char* name, int type, int rssi));`
+Modern Android versions require runtime permissions.
 
-Starts Bluetooth Classic device scanning.
+For Android 12 and above:
 
-### Parameters
+* android.permission.BLUETOOTH_SCAN
+* android.permission.BLUETOOTH_CONNECT
+* android.permission.ACCESS_FINE_LOCATION
 
-* `scan_mode` One of the AROMA_BT_SCAN_MODE constants
-* `callback` Invoked for each discovered device
-
-### Callback Signature
+Check permission:
 
 ```
-void callback(const char* addr, const char* name, int type, int rssi);
+bool granted = aroma_android_check_permission(
+    "android.permission.BLUETOOTH_SCAN"
+);
 ```
 
-### Notes
+Request permissions:
 
-* Scanning may be asynchronous internally
-* Requires Bluetooth and location permissions on modern Android versions
+```
+const char* perms[] = {
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.BLUETOOTH_CONNECT"
+};
+
+aroma_android_request_permission(perms, 2);
+```
+
+Always verify Bluetooth state before scanning:
+
+```
+if (!aroma_android_is_bluetooth_enabled()) {
+    // Prompt user to enable Bluetooth
+}
+```
 
 ---
 
-## `void aroma_android_bt_stop_scan(void);`
+# 3. Registering Callbacks
 
-Stops an ongoing scan.
+Register all callbacks before scanning or connecting.
+
+```
+aroma_android_bt_register_callbacks(
+    device_cb,
+    scan_finished_cb,
+    pairing_cb,
+    connection_cb,
+    data_cb
+);
+```
+
+## Callback Signatures
+
+Device discovered:
+
+```
+void device_cb(const char* addr,
+               const char* name,
+               int type,
+               int rssi);
+```
+
+Scan finished:
+
+```
+void scan_finished_cb(void);
+```
+
+Pairing result:
+
+```
+void pairing_cb(bool success,
+                const char* addr,
+                const char* name);
+```
+
+Connection result:
+
+```
+void connection_cb(bool success,
+                   const char* addr,
+                   int mode,
+                   int device_type);
+```
+
+Data received:
+
+```
+void data_cb(const char* data,
+             int len);
+```
 
 ---
 
-# Paired Devices
+# 4. Device Scanning
 
-## `int aroma_android_bt_get_paired(char out_addrs[][18], char out_names[][248], int max_devices);`
+## Scan Modes
 
-Retrieves paired Bluetooth devices.
+| Constant                  | Description                    |
+| ------------------------- | ------------------------------ |
+| AROMA_BT_SCAN_MODE_PAIRED | Scan paired devices only       |
+| AROMA_BT_SCAN_MODE_NEW    | Scan new unpaired devices only |
+| AROMA_BT_SCAN_MODE_ALL    | Scan all devices               |
 
-### Example
+Start scanning:
+
+```
+aroma_android_bt_scan(
+    AROMA_BT_SCAN_MODE_ALL,
+    device_cb
+);
+```
+
+Stop scanning:
+
+```
+aroma_android_bt_stop_scan();
+```
+
+Device callback example:
+
+```
+void device_cb(const char* addr,
+               const char* name,
+               int type,
+               int rssi) {
+
+    printf("Device: %s [%s] RSSI: %d Type: %d\n",
+           name, addr, rssi, type);
+}
+```
+
+---
+
+# 5. Getting Paired Devices
 
 ```
 char addrs[8][18];
 char names[8][248];
-int count = aroma_android_bt_get_paired(addrs, names, 8);
+
+int count = aroma_android_bt_get_paired(
+    addrs,
+    names,
+    8
+);
 ```
 
-### Notes
+Address format:
 
-* Buffers must be preallocated
-* Address format is "XX:XX:XX:XX:XX:XX"
+XX:XX:XX:XX:XX:XX
 
----
-
-# Pairing Management
-
-## `bool aroma_android_bt_pair(const char* addr);`
-
-Initiates pairing with a device.
-
-## `bool aroma_android_bt_unpair(const char* addr);`
-
-Removes pairing with a device.
-
-## `int aroma_android_bt_get_pair_state(const char* addr);`
-
-Returns one of the AROMA_BT_BOND constants.
+Buffers must be preallocated.
 
 ---
 
-# Connection Management
+# 6. Pairing Management
 
-## `bool aroma_android_bt_connect(const char* addr);`
+Start pairing:
 
-Connects using default mode.
+```
+bool started = aroma_android_bt_pair(addr);
+```
 
-## `bool aroma_android_bt_connect_with_mode(const char* addr, int mode);`
+Unpair:
 
-Connects using a specific mode.
+```
+aroma_android_bt_unpair(addr);
+```
 
-## `void aroma_android_bt_disconnect(void);`
+Check bond state:
 
-Disconnects the active connection.
+```
+int state = aroma_android_bt_get_pair_state(addr);
+```
 
-## `bool aroma_android_bt_is_connected(void);`
+Bond states:
 
-Returns connection status.
+| Constant              | Description         |
+| --------------------- | ------------------- |
+| AROMA_BT_BOND_NONE    | Not bonded          |
+| AROMA_BT_BOND_BONDING | Bonding in progress |
+| AROMA_BT_BOND_BONDED  | Bonded              |
 
 ---
 
-# Data Transmission
+# 7. Connecting to a Device
 
-## `int aroma_android_bt_send(const char* data, int len);`
+Default connection:
 
-Sends raw bytes over RFCOMM.
+```
+aroma_android_bt_connect(addr);
+```
 
-### Example
+Connection with mode:
+
+```
+aroma_android_bt_connect_with_mode(
+    addr,
+    AROMA_BT_MODE_DATA
+);
+```
+
+Connection modes:
+
+| Constant            | Description                 |
+| ------------------- | --------------------------- |
+| AROMA_BT_MODE_DATA  | RFCOMM data mode            |
+| AROMA_BT_MODE_AUDIO | Audio profile mode          |
+| AROMA_BT_MODE_HID   | Human Interface Device mode |
+| AROMA_BT_MODE_AUTO  | Automatically selected mode |
+
+Disconnect:
+
+```
+aroma_android_bt_disconnect();
+```
+
+Check connection:
+
+```
+bool connected = aroma_android_bt_is_connected();
+```
+
+---
+
+# 8. Sending Data
 
 ```
 const char* msg = "HELLO";
-aroma_android_bt_send(msg, 5);
+
+int sent = aroma_android_bt_send(msg, 5);
 ```
 
-### Notes
+Returns:
 
-* Returns number of bytes sent
-* Returns -1 on error
+* Number of bytes sent
+* Returns negative one on error
 
----
-
-# Connected Device Information
-
-## `int aroma_android_bt_get_device_type(void);`
-
-Returns device type constant.
-
-## `const char* aroma_android_bt_get_device_name(void);`
-
-Returns connected device name or NULL.
-
-## `int aroma_android_bt_get_current_mode(void);`
-
-Returns current connection mode.
-
-## `const char* aroma_android_bt_get_mode_name(void);`
-
-Returns human readable mode name.
+Data reception happens through data_cb.
 
 ---
 
-# Important Limitations
+# 9. Connected Device Information
 
-* Bluetooth Classic only
-* No BLE support yet
-* No GATT support
-* Connection flow may be asynchronous internally
-* Proper Android runtime permissions are required
+Device type:
+
+```
+int type = aroma_android_bt_get_device_type();
+```
+
+Device name:
+
+```
+const char* name = aroma_android_bt_get_device_name();
+```
+
+Current mode:
+
+```
+int mode = aroma_android_bt_get_current_mode();
+```
+
+Mode name:
+
+```
+const char* modeName = aroma_android_bt_get_mode_name();
+```
+
+---
+
+# 10. Recommended Connection Flow
+
+1. Check permissions
+2. Ensure Bluetooth is enabled
+3. Register callbacks
+4. Scan for devices
+5. Pair if needed
+6. Connect with appropriate mode
+7. Send and receive data
+8. Handle disconnection
+
+---
