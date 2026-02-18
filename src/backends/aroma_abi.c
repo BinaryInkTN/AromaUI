@@ -185,31 +185,7 @@ static void drawlist_proxy_shutdown(void)
     }
 }
 
-static void drawlist_proxy_set_scissor(size_t window_id, int x, int y, int width, int height)
-{
-    AromaDrawList* list = aroma_drawlist_get_active();
-    if (list) {
-        aroma_drawlist_cmd_set_scissor(list, x, y, width, height);
-        return;
-    }
-    AromaGraphicsInterface* real = get_real_graphics_interface();
-    if (real && real->set_scissor) {
-        real->set_scissor(window_id, x, y, width, height);
-    }
-}
 
-static void drawlist_proxy_reset_scissor(size_t window_id)
-{
-    AromaDrawList* list = aroma_drawlist_get_active();
-    if (list) {
-        aroma_drawlist_cmd_reset_scissor(list);
-        return;
-    }
-    AromaGraphicsInterface* real = get_real_graphics_interface();
-    if (real && real->reset_scissor) {
-        real->reset_scissor(window_id);
-    }
-}
 
 void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {
     AromaGraphicsInterface* real = get_real_graphics_interface();
@@ -239,8 +215,6 @@ static AromaGraphicsInterface drawlist_proxy = {
     .render_text = drawlist_proxy_render_text,
     .measure_text = drawlist_proxy_measure_text,
     .shutdown = drawlist_proxy_shutdown,
-    .set_scissor = drawlist_proxy_set_scissor,
-    .reset_scissor = drawlist_proxy_reset_scissor,
     .graphics_set_sprite_mode = drawlist_proxy_graphics_set_sprite_mode,
     .graphics_set_tft_context = drawlist_proxy_graphics_set_tft_context,
     .graphics_set_clip = drawlist_proxy_graphics_set_clip,

@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include "aroma_ubuntu_font.h"
 #include <unistd.h>
+
 #ifdef __ANDROID__
 struct android_app;
 void aroma_android_set_app(struct android_app* state) {
@@ -68,21 +69,6 @@ static inline bool __node_matches_window_id(AromaNode* node, size_t window_id) {
     return false;
 }
 
-static void __get_node_abs_pos(AromaNode* node, int* x, int* y) {
-    if (!node || !x || !y) return;
-    *x = 0;
-    *y = 0;
-    AromaNode* curr = node;
-    while (curr) {
-        if (curr->node_widget_ptr) {
-            AromaRect* r = (AromaRect*)curr->node_widget_ptr;
-            *x += r->x;
-            *y += r->y;
-        }
-        curr = curr->parent_node;
-    }
-}
-
 static void __collect_draw_tasks(AromaNode* node, AromaDrawTask* tasks, size_t* task_count, size_t max_tasks) {
     if (!node || node->is_hidden) return;
     AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
@@ -92,37 +78,6 @@ static void __collect_draw_tasks(AromaNode* node, AromaDrawTask* tasks, size_t* 
     for (uint64_t i = 0; i < node->child_count; ++i)
         if (node->child_nodes[i])
             __collect_draw_tasks(node->child_nodes[i], tasks, task_count, max_tasks);
-}
-
-static void __collect_draw_tasks_intersect(AromaNode* node, AromaDrawTask* tasks, size_t* task_count, size_t max_tasks, int rx, int ry, int rw, int rh, int parent_abs_x, int parent_abs_y) {
-    if (!node || node->is_hidden) return;
-    
-    int node_x = 0, node_y = 0, node_w = 0, node_h = 0;
-    if (node->node_widget_ptr) {
-        AromaRect* r = (AromaRect*)node->node_widget_ptr;
-        node_x = r->x;
-        node_y = r->y;
-        node_w = r->width;
-        node_h = r->height;
-    }
-
-    int abs_x = parent_abs_x + node_x;
-    int abs_y = parent_abs_y + node_y;
-
-    bool intersects =
-        (abs_x < rx + rw) &&
-        (abs_x + node_w > rx) &&
-        (abs_y < ry + rh) &&
-        (abs_y + node_h > ry);
-    
-    AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
-    if (intersects && draw_cb && *task_count < max_tasks) {
-        tasks[(*task_count)++] = (AromaDrawTask){ .node = node, .draw_cb = draw_cb, .z_index = node->z_index };
-    }
-    
-    for (uint64_t i = 0; i < node->child_count; ++i)
-        if (node->child_nodes[i])
-            __collect_draw_tasks_intersect(node->child_nodes[i], tasks, task_count, max_tasks, rx, ry, rw, rh, abs_x, abs_y);
 }
 
 void aroma_ui_open_url_impl(const char* url) {
@@ -175,7 +130,6 @@ bool aroma_ui_init_impl(void) {
 
     g_ui_initialized = true;
     LOG_INFO("Aroma UI initialized successfully");
-
     return true;
 }
 
@@ -261,7 +215,6 @@ static void __window_update_callback(size_t window_id, void* data) {
     aroma_dropdown_render_overlays(window_id);
 
     aroma_ui_end_frame(window_id);
-
    
     aroma_dirty_list_clear(); 
 }
@@ -392,7 +345,6 @@ AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int heigh
              h = (height > 0) ? height : 600;
         }
 
-        
         aroma_node_invalidate(window);
 
         
@@ -435,7 +387,10 @@ void aroma_ui_process_events_impl(void) {
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->run_event_loop) {
         if (!platform->run_event_loop()) {
-LOG_INFO("Event loop signaled to stop"); return;
+            
+            
+            
+            
         }
     }
     aroma_event_process_queue();
@@ -471,10 +426,13 @@ void aroma_ui_end_frame(size_t window_id) {
     }
 #endif
 
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+#ifndef ESP32
+AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+
     if (platform && platform->swap_buffers) {
         platform->swap_buffers(window_id);
     }
+#endif
 }
 
 void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
@@ -493,129 +451,38 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color) {
         if (!list) return;
     }
 
-    int backend_type = aroma_backend_abi.get_graphics_backend_type ?
-        aroma_backend_abi.get_graphics_backend_type() : -1;
-
-    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
-    
-
-    int min_x = 10000; 
-    int min_y = 10000;
-    int max_x = -10000;
-    int max_y = -10000;
-    bool has_dirty = false;
-
-
-    if (dirty_count > 0) {
-        min_x = 0x7FFFFFFF;
-        min_y = 0x7FFFFFFF;
-        max_x = -0x7FFFFFFF;
-        max_y = -0x7FFFFFFF;
-    }
-
-    for (size_t i = 0; i < dirty_count; ++i) {
-        AromaNode* node = dirty_nodes[i];
-        if (!node || node->is_hidden) continue;
-       // if (!__node_matches_window_id(node, window_id)) continue;
-        
-        int nx = 0, ny = 0;
-        __get_node_abs_pos(node, &nx, &ny);
-        int nw = 0, nh = 0;
-        if (node->node_widget_ptr) {
-            AromaRect* r = (AromaRect*)node->node_widget_ptr;
-            nw = r->width;
-            nh = r->height;
-        }
-
-        if (nw <= 0 || nh <= 0) continue;
-
-        if (nx < min_x) min_x = nx;
-        if (ny < min_y) min_y = ny;
-        if (nx + nw > max_x) max_x = nx + nw;
-        if (ny + nh > max_y) max_y = ny + nh;
-        has_dirty = true;
-    }
-
-    if (min_x < 0) min_x = 0;
-    if (min_y < 0) min_y = 0;
-
-    if (backend_type == GRAPHICS_BACKEND_GLES3) {
-        if (has_dirty) {
-            int uw = max_x - min_x;
-            int uh = max_y - min_y;
-             
-            if (uw > 0 && uh > 0) {
-                if (gfx && gfx->set_scissor) {
-                    gfx->set_scissor(window_id, min_x, min_y, uw, uh);
-                }
-                if (gfx && gfx->clear && clear_color != AROMA_CLEAR_NONE) {
-                    gfx->clear(window_id, clear_color);
-                }
-            } else {
-               has_dirty = false;
-            }
-        }
-        else if (clear_color != AROMA_CLEAR_NONE) {
-             if (aroma_ui_is_immediate_mode()) {
-                 if (gfx && gfx->reset_scissor) gfx->reset_scissor(window_id);
-                 if (gfx && gfx->clear) gfx->clear(window_id, clear_color);
-             }
-        }
-    } else {
-        if (clear_color != AROMA_CLEAR_NONE) {
-             aroma_graphics_clear(window_id, clear_color);
-        }
-    }
+    if (clear_color != AROMA_CLEAR_NONE) 
+        aroma_graphics_clear(window_id, clear_color);
 
     AromaDrawTask tasks[AROMA_MAX_DIRTY_NODES];
     size_t task_count = 0;
 
+    int backend_type = aroma_backend_abi.get_graphics_backend_type ?
+        aroma_backend_abi.get_graphics_backend_type() : -1;
+
     if (backend_type == GRAPHICS_BACKEND_GLES3) {
-        if (has_dirty) {
-            AromaNode* root = NULL;
-            for (int i = 0; i < g_window_count; ++i) {
-                 if (g_windows[i].window_id == window_id) {
-                     root = g_windows[i].root_node;
-                     break;
-                 }
-            }
-            if (root) {
-                 int root_abs_x = 0;
-                 int root_abs_y = 0;
-                 __collect_draw_tasks_intersect(root, tasks, &task_count, AROMA_MAX_DIRTY_NODES, min_x, min_y, max_x - min_x, max_y - min_y, root_abs_x, root_abs_y);
-            }
-        } else if (aroma_ui_is_immediate_mode()) {
-            AromaNode* root = NULL;
-            for (int i = 0; i < g_window_count; ++i) {
-                 if (g_windows[i].window_id == window_id) {
-                     root = g_windows[i].root_node;
-                     break;
-                 }
-            }
-            if (root) {
-                 __collect_draw_tasks(root, tasks, &task_count, AROMA_MAX_DIRTY_NODES);
+        for (int i = 0; i < g_window_count; ++i) {
+            if (g_windows[i].window_id == window_id && g_windows[i].root_node) {
+                __collect_draw_tasks(g_windows[i].root_node, tasks, &task_count, AROMA_MAX_DIRTY_NODES);
+                break;
             }
         }
     } else {
         for (size_t i = 0; i < dirty_count && task_count < AROMA_MAX_DIRTY_NODES; ++i) {
             AromaNode* node = dirty_nodes[i];
             if (!node || node->is_hidden) continue;
-          //  if (!__node_matches_window_id(node, window_id)) continue;
+            if (!__node_matches_window_id(node, window_id)) continue;
             AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
             if (!draw_cb) continue;
             tasks[task_count++] = (AromaDrawTask){ .node = node, .draw_cb = draw_cb, .z_index = node->z_index };
         }
     }
-    
     if (task_count > 1)
         qsort(tasks, task_count, sizeof(AromaDrawTask), __draw_task_compare);
 
     for (size_t i = 0; i < task_count; ++i)
         tasks[i].draw_cb(tasks[i].node, window_id);
 
-    if (backend_type == GRAPHICS_BACKEND_GLES3 && gfx && gfx->reset_scissor) {
-        gfx->reset_scissor(window_id);
-    }
     if (!frame_active)
         aroma_ui_end_frame(window_id);
 }

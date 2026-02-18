@@ -260,27 +260,6 @@ void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int 
 
 }
 
-void aroma_drawlist_cmd_set_scissor(AromaDrawList* list, int x, int y, int width, int height)
-{
-    if (!list) return;
-    aroma_drawlist_reserve(list, 1);
-    AromaDrawCmd* cmd = &list->commands[list->count++];
-    cmd->type = AROMA_DRAW_CMD_SET_SCISSOR;
-    cmd->data.scissor.x = x;
-    cmd->data.scissor.y = y;
-    cmd->data.scissor.width = width;
-    cmd->data.scissor.height = height;
-    cmd->is_drawn = false;
-}
-
-void aroma_drawlist_cmd_reset_scissor(AromaDrawList* list)
-{
-    if (!list) return;
-    aroma_drawlist_reserve(list, 1);
-    AromaDrawCmd* cmd = &list->commands[list->count++];
-    cmd->type = AROMA_DRAW_CMD_RESET_SCISSOR;
-    cmd->is_drawn = false;
-}
 
 
 void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
@@ -375,20 +354,6 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                 
                     }
                     break;
-            case AROMA_DRAW_CMD_SET_SCISSOR:
-                if (gfx->set_scissor) {
-                    gfx->set_scissor(window_id,
-                                    cmd->data.scissor.x,
-                                    cmd->data.scissor.y,
-                                    cmd->data.scissor.width,
-                                    cmd->data.scissor.height);
-                }
-                break;
-            case AROMA_DRAW_CMD_RESET_SCISSOR:
-                if (gfx->reset_scissor) {
-                    gfx->reset_scissor(window_id);
-                }
-                break;
         }
     }
 

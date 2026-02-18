@@ -1,4 +1,3 @@
-
 #ifndef ESP32
 #include "aroma_graphics_interface.h"
 #include "utils/helpers_gles3.h"
@@ -885,37 +884,6 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     LOG_INFO("Image drawn successfully: texture %u", texture_id);
 }
 
-void set_scissor(size_t window_id, int x, int y, int width, int height)
-{
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (!platform || !platform->make_context_current || !platform->get_window_size) {
-        return;
-    }
-
-    platform->make_context_current(window_id);
-
-    int window_width = 0;
-    int window_height = 0;
-    platform->get_window_size(window_id, &window_width, &window_height);
-
-    if (width < 0) width = 0;
-    if (height < 0) height = 0;
-
-    glEnable(GL_SCISSOR_TEST);
-    
-    glScissor(x, window_height - y - height, width, height);
-}
-
-void reset_scissor(size_t window_id)
-{
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (!platform || !platform->make_context_current) {
-        return;
-    }
-    platform->make_context_current(window_id);
-    glDisable(GL_SCISSOR_TEST);
-}
-
 AromaGraphicsInterface aroma_graphics_gles3 = {
     .setup_shared_window_resources = setup_shared_window_resources,
     .setup_separate_window_resources = setup_separate_window_resources,
@@ -931,8 +899,5 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .load_image_from_memory = load_image_from_memory,
     .draw_image = draw_image,
     .shutdown = shutdown,
-    .set_scissor = set_scissor,
-    .reset_scissor = reset_scissor,
-    
 };
 #endif

@@ -91,17 +91,7 @@ typedef struct AromaGraphicsInterface {
         int width, int height,
         unsigned int texture_id
     );
-    
-    void (*set_scissor)(
-        size_t window_id,
-        int x, int y,
-        int width, int height
-    );
-
-    void (*reset_scissor)(
-        size_t window_id
-    );
-
+ 
     void (*graphics_set_tft_context)(void* tft);
 
     void (*graphics_set_sprite_mode)(
