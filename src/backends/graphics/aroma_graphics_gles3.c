@@ -279,12 +279,6 @@ static void clear(size_t window_id, uint32_t color)
 
     platform->make_context_current(window_id);
 
-    
-    
-    
-    
-    
-
     int window_width = 0;
     int window_height = 0;
     platform->get_window_size(window_id, &window_width, &window_height);

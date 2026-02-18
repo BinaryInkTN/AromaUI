@@ -13,7 +13,8 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include "aroma_ubuntu_font.h"
+#include <unistd.h>
 #ifdef __ANDROID__
 struct android_app;
 void aroma_android_set_app(struct android_app* state) {
@@ -267,8 +268,6 @@ static void __window_update_callback(size_t window_id, void* data) {
     aroma_dirty_list_clear(); 
 }
 
-#include "aroma_ubuntu_font.h"
-#include <unistd.h>
 
 static void __show_splash_screen(size_t window_id, int width, int height) {
     if (!g_splash_enabled) return;

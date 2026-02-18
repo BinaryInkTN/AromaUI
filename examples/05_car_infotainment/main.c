@@ -333,8 +333,11 @@ int main(void)
     aroma_sidebar_set_selected((AromaNode *)sidebar, 0);
     aroma_ui_request_redraw(NULL);
 
+//aroma_ui_debug_overlay((AromaNode *)window, 10, 10, 300, ui_font);
+
     while (aroma_ui_is_running())
     {
+
         aroma_ui_process_events();
         aroma_ui_render(window);
       //  aroma_node_invalidate_tree((AromaNode *)window);

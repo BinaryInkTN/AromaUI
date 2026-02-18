@@ -319,7 +319,6 @@ void aroma_node_set_hidden(AromaNode* node, bool hidden) {
         if (node->parent_node) {
             aroma_node_invalidate(node->parent_node);
         }
-        aroma_event_resync_hover();
     }
 }
 

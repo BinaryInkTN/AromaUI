@@ -37,7 +37,10 @@ class DocGenerator:
         platform_icons = {
             'linux': 'terminal',
             'windows': 'window',
-            'android': 'android'
+            'android': 'android',
+            'ios': 'phone_iphone',
+            'macos': 'desktop_mac',
+            'web': 'language'
         }
         
         unique_platforms = sorted(set([p.lower() for p in all_platforms if p.lower() in platform_icons]))
@@ -2100,7 +2103,10 @@ class DocGenerator:
                 icon_map = {
                     'linux': 'terminal',
                     'windows': 'window',
-                    'android': 'android'
+                    'android': 'android',
+                    'ios': 'phone_iphone',
+                    'macos': 'desktop_mac',
+                    'web': 'language'
                 }
                 icon_name = icon_map.get(platform_lower, 'devices')
                 platform_icons += f'''

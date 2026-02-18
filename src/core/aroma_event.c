@@ -1,23 +1,4 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
 #include "core/aroma_event.h"
 #include "core/aroma_node.h"
@@ -438,13 +419,13 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
 
     uint64_t target_id = 0;
 
-    if (state == 1) { // DOWN
+    if (state == 1) { 
         AromaNode* target = aroma_event_hit_test(g_event_system.root_node, x, y);
         target_id = target ? target->node_id : 0;
         g_touch_captures[id] = target_id;
-    } else { // UP or MOVE
+    } else { 
         target_id = g_touch_captures[id];
-        // Fallback: if no capture (shouldn't happen for valid flow), hit test
+        
         if (target_id == 0) {
              AromaNode* target = aroma_event_hit_test(g_event_system.root_node, x, y);
              target_id = target ? target->node_id : 0;
@@ -462,12 +443,12 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
         evt->data.touch.x = x;
         evt->data.touch.y = y;
         
-        // Dispatch immediately
+        
         aroma_event_dispatch(evt);
         aroma_event_destroy(evt);
     }
 
-    if (state == 0) { // UP
+    if (state == 0) { 
         g_touch_captures[id] = 0;
     }
 }
@@ -482,36 +463,42 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
 
     g_mouse_state.last_x = x;
     g_mouse_state.last_y = y;
-
     AromaNode* target =
         aroma_event_hit_test(g_event_system.root_node, x, y);
     uint64_t current_id = target ? target->node_id : 0;
+    #ifdef __ANDROID__
+    if(button_down) {
+        AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_CLICK, 
+            current_id, x, y, 0);   
+        if (ev) {
+            aroma_event_dispatch(ev);
+            aroma_event_destroy(ev);
+        }
+    }
+    #endif
 
-    // Focus handling: If clicking elsewhere, clear focus
     if (button_down) {
         AromaNode* focused = aroma_ui_get_focused_node();
         if (focused && focused->node_id != current_id) {
-            // Check if target is a child of focused (unlikely for leaf widgets but possible for containers)
-            // For now, strict check.
-            
-            // 1. Notify focused node it lost focus
+         
             AromaEvent* focus_ev = aroma_event_create(EVENT_TYPE_FOCUS_LOST, focused->node_id);
             if (focus_ev) {
                 aroma_event_dispatch(focus_ev);
                 aroma_event_destroy(focus_ev);
             }
-            
-            // 2. Clear global focus
+     
             aroma_ui_clear_focused_node(focused);
-            
-            // 3. Hide keyboard via platform
+       
             AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
             if (platform && platform->hide_keyboard) {
                 platform->hide_keyboard();
             }
         }
+    } else {
+        return; 
     }
-
+    // TODO FIX EVENTS
+    
     if (current_id != g_mouse_state.hovered_node_id) {
         if (g_mouse_state.hovered_node_id != 0) {
             AromaNode* old =
@@ -552,16 +539,7 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
         }
     }
 
-    #ifdef __ANDROID__
-    if(button_down) {
-        AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_CLICK, 
-            current_id, x, y, 0);   
-        if (ev) {
-            aroma_event_dispatch(ev);
-            aroma_event_destroy(ev);
-        }
-    }
-    #endif
+   
 }
 
 
