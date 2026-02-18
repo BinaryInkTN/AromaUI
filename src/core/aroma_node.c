@@ -277,8 +277,7 @@ void aroma_node_invalidate(AromaNode* node) {
         return;
     }
     
-
-
+    
     aroma_ui_render_all_windows_impl();
 }
 
