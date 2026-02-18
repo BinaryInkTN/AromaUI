@@ -494,52 +494,7 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
                 platform->hide_keyboard();
             }
         }
-    } else {
-        return; 
     }
-    // TODO FIX EVENTS
-    
-    if (current_id != g_mouse_state.hovered_node_id) {
-        if (g_mouse_state.hovered_node_id != 0) {
-            AromaNode* old =
-                __find_node_by_id(g_event_system.root_node,
-                                  g_mouse_state.hovered_node_id);
-            if (old) {
-                AromaEvent* ev =
-                    aroma_event_create_mouse(EVENT_TYPE_MOUSE_EXIT,
-                                             old->node_id, x, y, 0);
-                if (ev) {
-                    aroma_event_dispatch(ev);
-                    aroma_event_destroy(ev);
-                }
-            }
-        }
-
-        if (target) {
-            AromaEvent* ev =
-                aroma_event_create_mouse(EVENT_TYPE_MOUSE_ENTER,
-                                         target->node_id, x, y, 0);
-            if (ev) {
-                aroma_event_dispatch(ev);
-                aroma_event_destroy(ev);
-            }
-        }
-
-        g_mouse_state.hovered_node_id = current_id;
-    }
-
-    if (target) {
-        AromaEvent* ev =
-            aroma_event_create_mouse(EVENT_TYPE_MOUSE_MOVE,
-                                     target->node_id, x, y,
-                                     button_down ? 1 : 0);
-        if (ev) {
-            aroma_event_dispatch(ev);
-            aroma_event_destroy(ev);
-        }
-    }
-
-   
 }
 
 

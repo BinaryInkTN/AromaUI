@@ -344,20 +344,20 @@ int main(void)
         aroma_tabs_set_content((AromaNode*)tabs, 2, security_nodes, 1);
     }
 
-    debug_overlay = (AromaDebugOverlay*)aroma_debug_overlay_create(content_root_node, 700, 300);
+    debug_overlay = (AromaDebugOverlay*)aroma_debug_overlay_create(content_root_node, 300, 300, 300);
     if (debug_overlay) {
         aroma_debug_overlay_set_font((AromaNode*)debug_overlay, font);
     }
     // invalidate all nodes
-    aroma_ui_request_redraw(NULL);
+   // aroma_ui_request_redraw(NULL);
 
     while (aroma_ui_is_running()) {
         aroma_ui_process_events();
         aroma_ui_render(window);
         // workaround to force redraw entire window
-        aroma_node_invalidate_tree((AromaNode*)window);
+       // aroma_node_invalidate_tree((AromaNode*)window);
 
-        usleep(16000);
+      //  usleep(16000);
     }
 
     aroma_ui_destroy_window(window);

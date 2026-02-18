@@ -117,23 +117,26 @@ typedef struct {
  */
 struct AromaNode
 {
-    AromaNodeType node_type;    /**< Type of node. */
-    uint64_t node_id;           /**< Unique ID. */
-    int32_t z_index;            /**< Drawing order (higher is on top). */
-    AromaNode* parent_node;     /**< Pointer to parent. */
-    AromaNode* child_nodes[AROMA_MAX_CHILD_NODES]; /**< Array of children. */
-    void *node_widget_ptr;      /**< Pointer to specific widget data struct. */
-    AromaNodeDrawFn draw_cb;    /**< Custom drawing callback. */
-    uint64_t child_count;       /**< Current number of children. */
-    bool is_dirty;              /**< True if node needs redrawing. */
-    bool is_hidden;             /**< True if node is strictly invisible. */
-    bool propagate_dirty;       /**< True if dirty state affects children. */
-    AromaLayout layout;         /**< Layout configuration. */
-    
-    // Geometry is stored on the widget side (WidgetBase->rect).
-    // Deprecated: node geometry fields removed — use widget->rect instead.
+    AromaNodeType node_type;
+    uint64_t node_id;
+    int32_t z_index;
+    AromaNode* parent_node;
+    AromaNode* child_nodes[AROMA_MAX_CHILD_NODES];
+    void *node_widget_ptr;
+    AromaNodeDrawFn draw_cb;
+    uint64_t child_count;
+    bool is_dirty;
+    bool is_hidden;
+    bool propagate_dirty;
+    AromaLayout layout;
+    size_t window_id;
+    int32_t abs_x;
+    int32_t abs_y;
+    int32_t cached_width;
+    int32_t cached_height;
+    uint32_t state_hash;
+    uint32_t last_render_hash;
 };
-
 /** @brief Helper macro to cast a node's user pointer to a specific type. */
 #define AROMA_NODE_AS(node, Type) ((Type*)((node) ? (node)->node_widget_ptr : NULL))
 
