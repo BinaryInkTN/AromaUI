@@ -3,10 +3,13 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothA2dp;
+import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -88,15 +91,20 @@ public class AromaHelper {
     private static BroadcastReceiver scanReceiver = null;
     private static List<BluetoothDevice> discoveredDevices = new CopyOnWriteArrayList<>();
     
-    
     private static ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
     
-    
     private static long lastToastTime = 0;
-    private static final long TOAST_THROTTLE_MS = 1000; 
+    private static final long TOAST_THROTTLE_MS = 1000;
     private static String pendingToastMessage = null;
     private static boolean pendingToastLongDuration = false;
     private static Runnable toastRunnable = null;
+    
+    private static int audioConnectionAttempts = 0;
+    private static final int MAX_AUDIO_CONNECTION_ATTEMPTS = 3;
+    private static final int AUDIO_CONNECTION_TIMEOUT_MS = 10000;
+    private static String pendingAudioConnectionAddress = null;
+    private static Runnable audioConnectionTimeoutRunnable = null;
+    private static boolean audioConnectionVerified = false;
     
     public interface BluetoothCallback {
         void onConnectionResult(boolean success, String deviceName, int deviceType, int mode);
@@ -207,36 +215,143 @@ public class AromaHelper {
             }
         }, BluetoothProfile.HEADSET);
         
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            try {
+                Class<?> a2dpClass = Class.forName("android.bluetooth.BluetoothA2dp");
+                java.lang.reflect.Field field = a2dpClass.getField("ACTION_CONNECTION_STATE_CHANGED");
+                String a2dpAction = (String) field.get(null);
+                filter.addAction(a2dpAction);
+                
+                Class<?> headsetClass = Class.forName("android.bluetooth.BluetoothHeadset");
+                field = headsetClass.getField("ACTION_CONNECTION_STATE_CHANGED");
+                String headsetAction = (String) field.get(null);
+                filter.addAction(headsetAction);
+            } catch (Exception e) {
+                Log.e(TAG, "Error adding audio actions to filter", e);
+            }
+        }
+        
+        appContext.registerReceiver(audioConnectionReceiver, filter);
+        
         Log.d(TAG, "Audio profile listeners registered");
+    }
+    
+    private static final BroadcastReceiver audioConnectionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            
+            if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (device != null) {
+                    Log.d(TAG, "ACL connected: " + device.getName());
+                    handleAudioConnectionVerified(device);
+                }
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (device != null && device.getAddress().equals(connectedDeviceAddress)) {
+                    Log.d(TAG, "ACL disconnected: " + device.getName());
+                    handleAudioDisconnection();
+                }
+            } else if (action != null && action.contains("CONNECTION_STATE_CHANGED")) {
+                int state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (device != null) {
+                    Log.d(TAG, "Profile state changed: " + state + " for " + device.getName());
+                    if (state == BluetoothProfile.STATE_CONNECTED) {
+                        handleAudioConnectionVerified(device);
+                    } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                        if (device.getAddress().equals(connectedDeviceAddress)) {
+                            handleAudioDisconnection();
+                        }
+                    }
+                }
+            }
+        }
+    };
+    
+    private static void handleAudioConnectionVerified(BluetoothDevice device) {
+        if (pendingAudioConnectionAddress != null && 
+            device.getAddress().equals(pendingAudioConnectionAddress)) {
+            Log.d(TAG, "Audio connection verified for: " + device.getName());
+            
+            if (audioConnectionTimeoutRunnable != null) {
+                mainHandler.removeCallbacks(audioConnectionTimeoutRunnable);
+                audioConnectionTimeoutRunnable = null;
+            }
+            
+            audioConnectionVerified = true;
+            pendingAudioConnectionAddress = null;
+            audioConnectionAttempts = 0;
+            
+            connectedDevice = device;
+            connectedDeviceName = device.getName();
+            if (connectedDeviceName == null) connectedDeviceName = "Unknown";
+            connectedDeviceAddress = device.getAddress();
+            connectedDeviceType = detectDeviceType(device);
+            
+            isConnected = true;
+            currentMode = MODE_AUDIO;
+            
+            notifyConnectionResult(true, connectedDeviceName, connectedDeviceType, MODE_AUDIO);
+        }
+    }
+    
+    private static void handleAudioDisconnection() {
+        if (isConnected && currentMode == MODE_AUDIO) {
+            Log.d(TAG, "Audio connection lost");
+            isConnected = false;
+            notifyConnectionResult(false, connectedDeviceName, connectedDeviceType, MODE_AUDIO);
+        }
     }
     
     private static void checkAudioConnections() {
         Log.d(TAG, "checkAudioConnections");
         if (a2dpProfile != null) {
-            List<BluetoothDevice> devices = a2dpProfile.getConnectedDevices();
-            a2dpConnected = !devices.isEmpty();
-            Log.d(TAG, "A2DP connected devices: " + devices.size() + ", a2dpConnected: " + a2dpConnected);
-            if (a2dpConnected && devices.size() > 0) {
-                connectedDevice = devices.get(0);
-                connectedDeviceName = connectedDevice.getName();
-                if (connectedDeviceName == null) connectedDeviceName = "Unknown";
-                connectedDeviceAddress = connectedDevice.getAddress();
-                connectedDeviceType = detectDeviceType(connectedDevice);
-                Log.d(TAG, "A2DP device: " + connectedDeviceName + ", type: " + connectedDeviceType);
+            try {
+                Method getConnectedDevices = a2dpProfile.getClass().getMethod("getConnectedDevices");
+                @SuppressWarnings("unchecked")
+                List<BluetoothDevice> devices = (List<BluetoothDevice>) getConnectedDevices.invoke(a2dpProfile);
+                a2dpConnected = devices != null && !devices.isEmpty();
+                Log.d(TAG, "A2DP connected devices: " + (devices != null ? devices.size() : 0) + ", a2dpConnected: " + a2dpConnected);
+                if (a2dpConnected && devices != null && devices.size() > 0) {
+                    connectedDevice = devices.get(0);
+                    connectedDeviceName = connectedDevice.getName();
+                    if (connectedDeviceName == null) connectedDeviceName = "Unknown";
+                    connectedDeviceAddress = connectedDevice.getAddress();
+                    connectedDeviceType = detectDeviceType(connectedDevice);
+                    Log.d(TAG, "A2DP device: " + connectedDeviceName + ", type: " + connectedDeviceType);
+                    isConnected = true;
+                    currentMode = MODE_AUDIO;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error checking A2DP connections", e);
             }
         }
         
         if (headsetProfile != null) {
-            List<BluetoothDevice> devices = headsetProfile.getConnectedDevices();
-            headsetConnected = !devices.isEmpty();
-            Log.d(TAG, "Headset connected devices: " + devices.size() + ", headsetConnected: " + headsetConnected);
-            if (headsetConnected && devices.size() > 0 && !a2dpConnected) {
-                connectedDevice = devices.get(0);
-                connectedDeviceName = connectedDevice.getName();
-                if (connectedDeviceName == null) connectedDeviceName = "Unknown";
-                connectedDeviceAddress = connectedDevice.getAddress();
-                connectedDeviceType = detectDeviceType(connectedDevice);
-                Log.d(TAG, "Headset device: " + connectedDeviceName + ", type: " + connectedDeviceType);
+            try {
+                Method getConnectedDevices = headsetProfile.getClass().getMethod("getConnectedDevices");
+                @SuppressWarnings("unchecked")
+                List<BluetoothDevice> devices = (List<BluetoothDevice>) getConnectedDevices.invoke(headsetProfile);
+                headsetConnected = devices != null && !devices.isEmpty();
+                Log.d(TAG, "Headset connected devices: " + (devices != null ? devices.size() : 0) + ", headsetConnected: " + headsetConnected);
+                if (headsetConnected && devices != null && devices.size() > 0 && !a2dpConnected) {
+                    connectedDevice = devices.get(0);
+                    connectedDeviceName = connectedDevice.getName();
+                    if (connectedDeviceName == null) connectedDeviceName = "Unknown";
+                    connectedDeviceAddress = connectedDevice.getAddress();
+                    connectedDeviceType = detectDeviceType(connectedDevice);
+                    Log.d(TAG, "Headset device: " + connectedDeviceName + ", type: " + connectedDeviceType);
+                    isConnected = true;
+                    currentMode = MODE_AUDIO;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error checking headset connections", e);
             }
         }
         
@@ -248,13 +363,10 @@ public class AromaHelper {
         isConnected = a2dpConnected || headsetConnected;
         Log.d(TAG, "updateAudioConnectionState - wasConnected: " + wasConnected + ", isConnected: " + isConnected);
         
-        if (isConnected) {
-            currentMode = MODE_AUDIO;
-            if (!wasConnected) {
-                Log.d(TAG, "Audio connection established, notifying");
-                notifyConnectionResult(true, connectedDeviceName, connectedDeviceType, MODE_AUDIO);
-            }
-        } else if (wasConnected) {
+        if (isConnected && !wasConnected) {
+            Log.d(TAG, "Audio connection established, notifying");
+            notifyConnectionResult(true, connectedDeviceName, connectedDeviceType, MODE_AUDIO);
+        } else if (!isConnected && wasConnected) {
             Log.d(TAG, "Audio connection lost, notifying");
             notifyConnectionResult(false, "", TYPE_UNKNOWN, MODE_AUDIO);
         }
@@ -273,11 +385,9 @@ public class AromaHelper {
             return;
         }
         
-        
         long now = System.currentTimeMillis();
         
         synchronized (AromaHelper.class) {
-            
             if (toastRunnable != null) {
                 mainHandler.removeCallbacks(toastRunnable);
                 toastRunnable = null;
@@ -327,7 +437,6 @@ public class AromaHelper {
         
         if (!btAdapter.isEnabled()) {
             Log.e(TAG, "Bluetooth is not enabled");
-            
             showToast(null, "Please enable Bluetooth", true);
             return;
         }
@@ -343,7 +452,6 @@ public class AromaHelper {
         if (scanMode == SCAN_MODE_PAIRED || scanMode == SCAN_MODE_ALL) {
             Set<BluetoothDevice> pairedDevices = btAdapter.getBondedDevices();
             Log.d(TAG, "Adding " + pairedDevices.size() + " paired devices");
-            
             
             backgroundExecutor.execute(new Runnable() {
                 @Override
@@ -380,7 +488,6 @@ public class AromaHelper {
                         
                         if (device != null && !discoveredDevices.contains(device)) {
                             discoveredDevices.add(device);
-                            
                             
                             backgroundExecutor.execute(new Runnable() {
                                 @Override
@@ -786,7 +893,6 @@ public class AromaHelper {
         connectThread = new ConnectThread(device);
         connectThread.start();
         
-        
         showToast(null, "Connecting to " + device.getName() + " (Data Mode)...", false);
         
         return true;
@@ -795,18 +901,110 @@ public class AromaHelper {
     private static boolean connectAudioMode(BluetoothDevice device) {
         Log.d(TAG, "connectAudioMode for device: " + device.getName());
         
-        
         showToast(null, "Connecting to " + device.getName() + " (Audio Mode)...", false);
         
-        if (headsetProfile != null && headsetProfile instanceof BluetoothProfile) {
-            isConnected = true;
-            notifyConnectionResult(true, device.getName(), connectedDeviceType, MODE_AUDIO);
-            Log.d(TAG, "Audio mode connection successful");
+        if (isDeviceAudioConnected(device)) {
+            Log.d(TAG, "Device already connected via audio profile");
+            handleAudioConnectionVerified(device);
             return true;
         }
         
-        Log.d(TAG, "Audio mode connection initiated (will be handled by system)");
+        audioConnectionVerified = false;
+        audioConnectionAttempts++;
+        pendingAudioConnectionAddress = device.getAddress();
+        
+        if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+            Log.d(TAG, "Device not paired, attempting to pair first");
+            btPair(device.getAddress());
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (!audioConnectionVerified && pendingAudioConnectionAddress != null) {
+                        Log.d(TAG, "Retrying audio connection after pairing");
+                        connectAudioMode(device);
+                    }
+                }
+            }, 3000);
+            return true;
+        }
+        
+        try {
+            if (a2dpProfile != null) {
+                Method connectMethod = a2dpProfile.getClass().getMethod("connect", BluetoothDevice.class);
+                connectMethod.invoke(a2dpProfile, device);
+                Log.d(TAG, "Called A2DP connect");
+            }
+            
+            if (headsetProfile != null) {
+                Method connectMethod = headsetProfile.getClass().getMethod("connect", BluetoothDevice.class);
+                connectMethod.invoke(headsetProfile, device);
+                Log.d(TAG, "Called Headset connect");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error connecting audio profiles", e);
+        }
+        
+        if (audioConnectionTimeoutRunnable != null) {
+            mainHandler.removeCallbacks(audioConnectionTimeoutRunnable);
+        }
+        
+        audioConnectionTimeoutRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!audioConnectionVerified && pendingAudioConnectionAddress != null) {
+                    Log.d(TAG, "Audio connection timeout for: " + device.getName());
+                    
+                    if (audioConnectionAttempts < MAX_AUDIO_CONNECTION_ATTEMPTS) {
+                        Log.d(TAG, "Retrying audio connection (attempt " + (audioConnectionAttempts + 1) + "/" + MAX_AUDIO_CONNECTION_ATTEMPTS + ")");
+                        connectAudioMode(device);
+                    } else {
+                        Log.e(TAG, "Max audio connection attempts reached for: " + device.getName());
+                        pendingAudioConnectionAddress = null;
+                        audioConnectionAttempts = 0;
+                        notifyConnectionResult(false, device.getName(), connectedDeviceType, MODE_AUDIO);
+                    }
+                }
+                audioConnectionTimeoutRunnable = null;
+            }
+        };
+        
+        mainHandler.postDelayed(audioConnectionTimeoutRunnable, AUDIO_CONNECTION_TIMEOUT_MS);
+        
         return true;
+    }
+    
+    private static boolean isDeviceAudioConnected(BluetoothDevice device) {
+        try {
+            if (a2dpProfile != null) {
+                Method getConnectedDevices = a2dpProfile.getClass().getMethod("getConnectedDevices");
+                @SuppressWarnings("unchecked")
+                List<BluetoothDevice> connectedDevices = (List<BluetoothDevice>) getConnectedDevices.invoke(a2dpProfile);
+                if (connectedDevices != null) {
+                    for (BluetoothDevice d : connectedDevices) {
+                        if (d.getAddress().equals(device.getAddress())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            if (headsetProfile != null) {
+                Method getConnectedDevices = headsetProfile.getClass().getMethod("getConnectedDevices");
+                @SuppressWarnings("unchecked")
+                List<BluetoothDevice> connectedDevices = (List<BluetoothDevice>) getConnectedDevices.invoke(headsetProfile);
+                if (connectedDevices != null) {
+                    for (BluetoothDevice d : connectedDevices) {
+                        if (d.getAddress().equals(device.getAddress())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking device audio connection", e);
+        }
+        
+        return false;
     }
     
     private static boolean connectHIDMode(BluetoothDevice device) {
@@ -814,7 +1012,6 @@ public class AromaHelper {
         isConnecting = true;
         connectThread = new ConnectThread(device, UUID_HID);
         connectThread.start();
-        
         
         showToast(null, "Connecting to " + device.getName() + " (HID Mode)...", false);
         
@@ -826,6 +1023,14 @@ public class AromaHelper {
         synchronized (lock) {
             isConnecting = false;
             isConnected = false;
+            
+            if (pendingAudioConnectionAddress != null) {
+                pendingAudioConnectionAddress = null;
+                if (audioConnectionTimeoutRunnable != null) {
+                    mainHandler.removeCallbacks(audioConnectionTimeoutRunnable);
+                    audioConnectionTimeoutRunnable = null;
+                }
+            }
             
             if (connectThread != null) {
                 Log.d(TAG, "Interrupting connect thread");
@@ -885,7 +1090,7 @@ public class AromaHelper {
     public static boolean btIsConnected() {
         boolean connected;
         if (currentMode == MODE_AUDIO) {
-            connected = a2dpConnected || headsetConnected;
+            connected = isDeviceAudioConnected(connectedDevice);
         } else {
             connected = isConnected;
         }
@@ -1152,6 +1357,18 @@ public class AromaHelper {
         stopScan();
         btDisconnect();
         
+        if (audioConnectionTimeoutRunnable != null) {
+            mainHandler.removeCallbacks(audioConnectionTimeoutRunnable);
+            audioConnectionTimeoutRunnable = null;
+        }
+        
+        try {
+            if (appContext != null) {
+                appContext.unregisterReceiver(audioConnectionReceiver);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error unregistering audio receiver", e);
+        }
         
         synchronized (AromaHelper.class) {
             if (toastRunnable != null) {

@@ -2,6 +2,29 @@
     "name": "AromaUI",
     "version": "0.0.1 (alpha)",
     "description": "Browse AromaUI's APIs with detailed documentation and examples.",
+
+    "hero": {
+        "title": "Don't have AromaSDK?",
+        "description": "Build beautiful cross-platform applications",
+        "badges": [
+            {"icon": "terminal", "text": "Linux"},
+            {"icon": "window", "text": "Windows"},
+            {"icon": "android", "text": "Android"}
+        ],
+        "actions": [
+            {"icon": "download", "text": "Download SDK", "primary": true, "onclick": "window.open('https://aromaui.com/download')"}
+        ],
+        "stats": [
+            {"value": "50+", "label": "Components"},
+            {"value": "3", "label": "Platforms"},
+            {"value": "100%", "label": "Open Source"}
+        ],
+        "platformIcons": [
+            {"icon": "terminal", "title": "Linux"},
+            {"icon": "window", "title": "Windows"},
+            {"icon": "android", "title": "Android"}
+        ]
+    },
     "categories": [
         {
             "name": "Guides",
@@ -13,7 +36,6 @@
             "icon": "network_check",
             "description": "Network and device connectivity APIs"
         },
-        
         {
             "name": "System",
             "icon": "settings_applications",
@@ -29,16 +51,16 @@
             "icon": "dashboard",
             "description": "User interface utilities"
         }
-
     ],
     "sections": [
-          {
+        {
             "title": "Building and Running",
             "description": "Instructions for building and running AromaUI on Android devices.",
             "icon": "build",
             "color": "#7D5260",
             "category": "Guides",
-            "file": "docs/getting_started.md"
+            "file": "docs/getting_started.md",
+            "platforms": ["android", "linux"]
         },
         {
             "title": "Bluetooth API",
@@ -46,7 +68,8 @@
             "icon": "bluetooth",
             "color": "#6750A4",
             "category": "Connectivity",
-            "file": "docs/bluetooth.md"
+            "file": "docs/bluetooth.md",
+            "platforms": ["android"]
         },
         {
             "title": "Wi-Fi API",
@@ -54,7 +77,8 @@
             "icon": "wifi",
             "color": "#1D192B",
             "category": "Connectivity",
-            "file": "docs/wifi.md"
+            "file": "docs/wifi.md",
+            "platforms": ["android"]
         },
         {
             "title": "Core JNI API",
@@ -62,7 +86,8 @@
             "icon": "data_object",
             "color": "#006875",
             "category": "System",
-            "file": "docs/core_jni.md"
+            "file": "docs/core_jni.md",
+            "platforms": ["android", "linux"]
         },
         {
             "title": "Permissions API",
@@ -70,7 +95,8 @@
             "icon": "security",
             "color": "#B3261E",
             "category": "System",
-            "file": "docs/permissions.md"
+            "file": "docs/permissions.md",
+            "platforms": ["android"]
         },
         {
             "title": "System Services & File System API",
@@ -78,7 +104,8 @@
             "icon": "folder_open",
             "color": "#4A4458",
             "category": "System",
-            "file": "docs/services_fs.md"
+            "file": "docs/services_fs.md",
+            "platforms": ["android", "linux"]
         },
         {
             "title": "Device Information API",
@@ -86,7 +113,8 @@
             "icon": "mobile_gear",
             "color": "#386A20",
             "category": "System",
-            "file": "docs/device_informations.md"
+            "file": "docs/device_informations.md",
+            "platforms": ["android"]
         },
         {
             "title": "Camera & Gallery API",
@@ -94,7 +122,8 @@
             "icon": "photo_camera",
             "color": "#9A4521",
             "category": "Media",
-            "file": "docs/camera_gallery.md"
+            "file": "docs/camera_gallery.md",
+            "platforms": ["android"]
         },
         {
             "title": "UI Utilities API",
@@ -102,9 +131,8 @@
             "icon": "widgets",
             "color": "#7D5260",
             "category": "UI",
-            "file": "docs/ui_utilities.md"
+            "file": "docs/ui_utilities.md",
+            "platforms": ["android"]
         }
-        
-       
     ]
 }

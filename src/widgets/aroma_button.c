@@ -96,7 +96,6 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->rect.y = y;
     button->rect.width = width;
     button->rect.height = height;
-    // Node geometry fields removed; widget->rect holds geometry
     
     strncpy(button->label, label, AROMA_BUTTON_LABEL_MAX - 1);
     button->label[AROMA_BUTTON_LABEL_MAX - 1] = '\0';
@@ -124,7 +123,8 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
 
     button->icon[0] = '\0';
     button->icon_font = NULL;
-    button->icon_padding = -200;    button->active_pointer_id = -1;
+    button->icon_padding = -80;
+    button->active_pointer_id = -1;
     aroma_button_update_text_position(button);
 
     LOG_INFO("Button created: label='%s', x=%d, y=%d, w=%d, h=%d", label, x, y, width, height);

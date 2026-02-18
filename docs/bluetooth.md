@@ -1,21 +1,7 @@
-# AromaUI Bluetooth Classic API
+# Bluetooth Classic API
+#### Author: AHMED ALI Mohamed Yassine
 
-
-## Table of Contents
-
-1. Architecture Overview
-2. Android Permissions
-3. Registering Callbacks
-4. Device Scanning
-5. Getting Paired Devices
-6. Pairing Management
-7. Connecting to a Device
-8. Sending Data
-9. Connected Device Information
-10. Recommended Connection Flow
-
----
-
+<br/>
 This guide provides a structured, comprehensive explanation of the AromaUI Bluetooth Classic API for Android.
 
 The API supports:
@@ -38,7 +24,7 @@ Limitations:
 
 All APIs are valid only when compiling with **ANDROID** defined.
 
----
+
 
 # 1. Architecture Overview
 
@@ -53,7 +39,6 @@ Android Java or Kotlin implementation
 
 Many operations are asynchronous internally. Design your application around callbacks rather than blocking logic.
 
----
 
 # 2. Android Permissions
 
@@ -91,8 +76,6 @@ if (!aroma_android_is_bluetooth_enabled()) {
     // Prompt user to enable Bluetooth
 }
 ```
-
----
 
 # 3. Registering Callbacks
 
@@ -149,8 +132,6 @@ void data_cb(const char* data,
              int len);
 ```
 
----
-
 # 4. Device Scanning
 
 ## Scan Modes
@@ -189,8 +170,6 @@ void device_cb(const char* addr,
 }
 ```
 
----
-
 # 5. Getting Paired Devices
 
 ```
@@ -210,7 +189,7 @@ XX:XX:XX:XX:XX:XX
 
 Buffers must be preallocated.
 
----
+
 
 # 6. Pairing Management
 
@@ -240,7 +219,6 @@ Bond states:
 | AROMA_BT_BOND_BONDING | Bonding in progress |
 | AROMA_BT_BOND_BONDED  | Bonded              |
 
----
 
 # 7. Connecting to a Device
 
@@ -280,8 +258,6 @@ Check connection:
 bool connected = aroma_android_bt_is_connected();
 ```
 
----
-
 # 8. Sending Data
 
 ```
@@ -296,8 +272,6 @@ Returns:
 * Returns negative one on error
 
 Data reception happens through data_cb.
-
----
 
 # 9. Connected Device Information
 
@@ -325,17 +299,4 @@ Mode name:
 const char* modeName = aroma_android_bt_get_mode_name();
 ```
 
----
 
-# 10. Recommended Connection Flow
-
-1. Check permissions
-2. Ensure Bluetooth is enabled
-3. Register callbacks
-4. Scan for devices
-5. Pair if needed
-6. Connect with appropriate mode
-7. Send and receive data
-8. Handle disconnection
-
----

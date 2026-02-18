@@ -5,12 +5,11 @@ import json
 import argparse
 import markdown
 import yaml
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List
 import re
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name, guess_lexer
+from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 
 class DocGenerator:
@@ -25,15 +24,136 @@ class DocGenerator:
         dark_styles = dark_formatter.get_style_defs('.codehilite')
         
         return f'''
-        /* Light mode syntax highlighting */
         {light_styles}
-        
-        /* Dark mode syntax highlighting */
         [data-theme="dark"] .codehilite {{
             {dark_styles}
         }}
+        [data-theme="nord"] .codehilite {{
+            {dark_styles}
+        }}
         '''
-  
+    
+    def _get_platform_filters(self, all_platforms: List[str]) -> str:
+        platform_icons = {
+            'linux': 'terminal',
+            'windows': 'window',
+            'android': 'android'
+        }
+        
+        unique_platforms = sorted(set([p.lower() for p in all_platforms if p.lower() in platform_icons]))
+        
+        if not unique_platforms:
+            return ''
+        
+        filters = ['<div class="platform-filters" role="tablist">']
+        filters.append('''
+            <button class="platform-filter active" data-platform="all" onclick="filterByPlatform('all')" role="tab">
+                <span class="material-symbols-outlined">apps</span>
+                <span>All</span>
+            </button>
+        ''')
+        
+        for platform in unique_platforms:
+            icon = platform_icons.get(platform, 'devices')
+            platform_display = platform.capitalize()
+            
+            filters.append(f'''
+                <button class="platform-filter" data-platform="{platform}" onclick="filterByPlatform('{platform}')" role="tab">
+                    <span class="material-symbols-outlined">{icon}</span>
+                    <span>{platform_display}</span>
+                </button>
+            ''')
+        
+        filters.append('</div>')
+        return '\n'.join(filters)
+    
+    def _get_hero_section(self, config: Dict) -> str:
+        hero_config = config.get('hero', {})
+        
+        hero_title = hero_config.get('title', 'AromaSDK')
+        description = hero_config.get('description', 'The complete software development kit for building cross-platform applications.')
+        version = config.get('version', '1.0.0')
+        
+        badges = hero_config.get('badges', [])
+        badges_html = ''
+        if badges:
+            badge_items = []
+            for badge in badges:
+                icon = badge.get('icon', 'code')
+                text = badge.get('text', '')
+                badge_items.append(f'''
+                    <span class="hero-badge">
+                        <span class="material-symbols-outlined">{icon}</span>
+                        {text}
+                    </span>
+                ''')
+            badges_html = f'<div class="hero-badges">{"".join(badge_items)}</div>'
+        
+        actions = hero_config.get('actions', [])
+        actions_html = ''
+        if actions:
+            action_items = []
+            for action in actions:
+                icon = action.get('icon', 'download')
+                text = action.get('text', 'Button')
+                type_class = 'hero-button-primary' if action.get('primary', False) else 'hero-button-secondary'
+                onclick = action.get('onclick', '')
+                
+                action_items.append(f'''
+                    <button class="hero-button {type_class}" onclick="{onclick}">
+                        <span class="material-symbols-outlined">{icon}</span>
+                        {text}
+                    </button>
+                ''')
+            actions_html = f'<div class="hero-actions">{"".join(action_items)}</div>'
+        
+        stats = hero_config.get('stats', [])
+        stats_html = ''
+        if stats:
+            stat_items = []
+            for stat in stats:
+                value = stat.get('value', '0')
+                label = stat.get('label', '')
+                stat_items.append(f'''
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">{value}</span>
+                        <span class="hero-stat-label">{label}</span>
+                    </div>
+                ''')
+            stats_html = f'<div class="hero-stats">{"".join(stat_items)}</div>'
+        
+        platform_icons = hero_config.get('platformIcons', [])
+        platform_icons_html = ''
+        if platform_icons:
+            icon_items = []
+            for platform in platform_icons:
+                icon = platform.get('icon', 'code')
+                title = platform.get('title', '')
+                icon_items.append(f'''
+                    <span class="hero-platform-icon" title="{title}">
+                        <span class="material-symbols-outlined">{icon}</span>
+                    </span>
+                ''')
+            platform_icons_html = f'<div class="hero-platform-icons">{"".join(icon_items)}</div>'
+        
+        hero_html = f'''
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    {hero_title} <span>v{version}</span>
+                </h1>
+                <p class="hero-description">{description}</p>
+                
+                {badges_html}
+                {actions_html}
+                {stats_html}
+            </div>
+            
+            {platform_icons_html}
+        </div>
+        '''
+        
+        return hero_html
     
     def _get_template(self) -> str:
         template = '''<!DOCTYPE html>
@@ -41,10 +161,10 @@ class DocGenerator:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{project_name} • Documentation</title>
+    <title>{project_name} - Documentation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         * {{
@@ -55,89 +175,59 @@ class DocGenerator:
 
         :root {{
             --sidebar-width: 280px;
-            --header-height: 70px;
-            --transition-speed: 0.3s;
-            --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+            --progress-indicator-width: 300px;
+            --header-height: 64px;
         }}
 
         :root[data-theme="light"] {{
-            --primary: #2563eb;
-            --primary-light: #3b82f6;
-            --primary-dark: #1d4ed8;
-            --secondary: #64748b;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --error: #ef4444;
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
             --surface-0: #ffffff;
-            --surface-1: #f8fafc;
-            --surface-2: #f1f5f9;
-            --surface-3: #e2e8f0;
-            --text-primary: #0f172a;
-            --text-secondary: #334155;
-            --text-tertiary: #64748b;
-            --border: #e2e8f0;
-            --border-dark: #cbd5e1;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            --code-bg: #f1f5f9;
-            --code-text: #0f172a;
-            --code-keyword: #7c3aed;
-            --code-string: #059669;
-            --code-comment: #64748b;
-            --code-function: #2563eb;
-            --code-number: #d97706;
+            --surface-1: #f8f9fa;
+            --surface-2: #f1f3f4;
+            --surface-3: #e8eaed;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-tertiary: #80868b;
+            --border: #dadce0;
+            --border-dark: #bdc1c6;
+            --shadow: 0 1px 2px 0 rgba(60,64,67,0.1);
+            --shadow-hover: 0 1px 3px 0 rgba(60,64,67,0.2);
+            --code-bg: #f8f9fa;
+            --code-text: #202124;
             --hover-overlay: rgba(0,0,0,0.04);
-            --overlay-bg: rgba(0,0,0,0.5);
-            --copy-btn-bg: #ffffff;
-            --copy-btn-hover: #f1f5f9;
-            --footer-bg: #f1f5f9;
-            --comments-bg: #ffffff;
+            --footer-bg: #f8f9fa;
+            --progress-bar-bg: #e8eaed;
+            --progress-dot: #9aa0a6;
+            --progress-dot-active: #1a73e8;
         }}
 
         :root[data-theme="dark"] {{
-            --primary: #3b82f6;
-            --primary-light: #60a5fa;
-            --primary-dark: #2563eb;
-            --secondary: #94a3b8;
-            --success: #4ade80;
-            --warning: #fbbf24;
-            --error: #f87171;
-            --surface-0: #0f172a;
-            --surface-1: #1e293b;
-            --surface-2: #334155;
-            --surface-3: #475569;
-            --text-primary: #f8fafc;
-            --text-secondary: #cbd5e1;
-            --text-tertiary: #94a3b8;
-            --border: #334155;
-            --border-dark: #475569;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.4);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4);
-            --code-bg: #1e1e2e;
-            --code-text: #f8fafc;
-            --code-keyword: #f38ba8;
-            --code-string: #a6e3a1;
-            --code-comment: #7f849c;
-            --code-function: #89b4fa;
-            --code-number: #fab387;
+            --primary: #8ab4f8;
+            --primary-light: #1e2a3a;
+            --surface-0: #202124;
+            --surface-1: #292a2d;
+            --surface-2: #303134;
+            --surface-3: #3c4043;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --text-tertiary: #80868b;
+            --border: #3c4043;
+            --border-dark: #5f6368;
+            --shadow: 0 1px 2px 0 rgba(0,0,0,0.3);
+            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.4);
+            --code-bg: #303134;
+            --code-text: #e8eaed;
             --hover-overlay: rgba(255,255,255,0.04);
-            --overlay-bg: rgba(0,0,0,0.7);
-            --copy-btn-bg: #334155;
-            --copy-btn-hover: #475569;
-            --footer-bg: #1e293b;
-            --comments-bg: #1e293b;
+            --footer-bg: #292a2d;
+            --progress-bar-bg: #3c4043;
+            --progress-dot: #5f6368;
+            --progress-dot-active: #8ab4f8;
         }}
 
         :root[data-theme="sepia"] {{
             --primary: #8b5a2b;
-            --primary-light: #a67b5b;
-            --primary-dark: #6b4423;
-            --secondary: #8b7e6e;
-            --success: #6b8e4c;
-            --warning: #c49a6c;
-            --error: #b55a4a;
+            --primary-light: #f4ecd8;
             --surface-0: #f4ecd8;
             --surface-1: #e8dccc;
             --surface-2: #d8ccbc;
@@ -147,32 +237,20 @@ class DocGenerator:
             --text-tertiary: #7e6e5e;
             --border: #d8ccbc;
             --border-dark: #c8bcac;
-            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.1);
-            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow: 0 1px 2px 0 rgba(0,0,0,0.1);
+            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.15);
             --code-bg: #e8dccc;
             --code-text: #3e2e23;
-            --code-keyword: #8b5a2b;
-            --code-string: #6b8e4c;
-            --code-comment: #8b7e6e;
-            --code-function: #a67b5b;
-            --code-number: #b55a4a;
             --hover-overlay: rgba(0,0,0,0.04);
-            --overlay-bg: rgba(0,0,0,0.3);
-            --copy-btn-bg: #d8ccbc;
-            --copy-btn-hover: #c8bcac;
             --footer-bg: #e8dccc;
-            --comments-bg: #e8dccc;
+            --progress-bar-bg: #d8ccbc;
+            --progress-dot: #8b7b6b;
+            --progress-dot-active: #8b5a2b;
         }}
 
         :root[data-theme="nord"] {{
             --primary: #88c0d0;
-            --primary-light: #8fbcbb;
-            --primary-dark: #81a1c1;
-            --secondary: #d8dee9;
-            --success: #a3be8c;
-            --warning: #ebcb8b;
-            --error: #bf616a;
+            --primary-light: #eceff4;
             --surface-0: #2e3440;
             --surface-1: #3b4252;
             --surface-2: #434c5e;
@@ -182,32 +260,20 @@ class DocGenerator:
             --text-tertiary: #d8dee9;
             --border: #434c5e;
             --border-dark: #4c566a;
-            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.3);
-            --shadow: 0 4px 6px -1px rgba(0,0,0,0.4);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+            --shadow: 0 1px 2px 0 rgba(0,0,0,0.3);
+            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.4);
             --code-bg: #3b4252;
             --code-text: #eceff4;
-            --code-keyword: #81a1c1;
-            --code-string: #a3be8c;
-            --code-comment: #4c566a;
-            --code-function: #88c0d0;
-            --code-number: #b48ead;
             --hover-overlay: rgba(255,255,255,0.04);
-            --overlay-bg: rgba(0,0,0,0.7);
-            --copy-btn-bg: #434c5e;
-            --copy-btn-hover: #4c566a;
             --footer-bg: #3b4252;
-            --comments-bg: #3b4252;
+            --progress-bar-bg: #434c5e;
+            --progress-dot: #4c566a;
+            --progress-dot-active: #88c0d0;
         }}
 
         :root[data-theme="solarized"] {{
             --primary: #268bd2;
-            --primary-light: #6c71c4;
-            --primary-dark: #2aa198;
-            --secondary: #657b83;
-            --success: #859900;
-            --warning: #b58900;
-            --error: #dc322f;
+            --primary-light: #eee8d5;
             --surface-0: #fdf6e3;
             --surface-1: #eee8d5;
             --surface-2: #93a1a1;
@@ -217,45 +283,37 @@ class DocGenerator:
             --text-tertiary: #586e75;
             --border: #93a1a1;
             --border-dark: #839496;
-            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.1);
-            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow: 0 1px 2px 0 rgba(0,0,0,0.1);
+            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.15);
             --code-bg: #eee8d5;
             --code-text: #002b36;
-            --code-keyword: #268bd2;
-            --code-string: #859900;
-            --code-comment: #586e75;
-            --code-function: #6c71c4;
-            --code-number: #b58900;
             --hover-overlay: rgba(0,0,0,0.04);
-            --overlay-bg: rgba(0,0,0,0.3);
-            --copy-btn-bg: #93a1a1;
-            --copy-btn-hover: #839496;
             --footer-bg: #eee8d5;
-            --comments-bg: #eee8d5;
+            --progress-bar-bg: #93a1a1;
+            --progress-dot: #586e75;
+            --progress-dot-active: #268bd2;
         }}
 
         body {{
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--surface-1);
             color: var(--text-primary);
-            line-height: 1.6;
-            font-size: 15px;
+            font-size: 14px;
             height: 100vh;
             overflow: hidden;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }}
 
         .material-symbols-outlined {{
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
             font-size: 20px;
-            transition: all var(--transition-speed) var(--transition-timing);
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
         }}
 
         .app {{
             display: flex;
             height: 100vh;
             overflow: hidden;
-            background: var(--surface-1);
             position: relative;
         }}
 
@@ -265,12 +323,11 @@ class DocGenerator:
             left: 0;
             right: 0;
             bottom: 0;
-            background: var(--overlay-bg);
+            background: rgba(0,0,0,0.5);
             z-index: 90;
             opacity: 0;
             visibility: hidden;
-            transition: all var(--transition-speed) var(--transition-timing);
-            backdrop-filter: blur(2px);
+            transition: opacity 0.2s;
         }}
 
         .sidebar-overlay.active {{
@@ -286,7 +343,6 @@ class DocGenerator:
             flex-direction: column;
             overflow-y: auto;
             flex-shrink: 0;
-            transition: transform var(--transition-speed) var(--transition-timing);
             z-index: 100;
         }}
 
@@ -298,41 +354,67 @@ class DocGenerator:
         .project-header {{
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.5rem;
-            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
         }}
 
         .project-name {{
-            font-weight: 600;
+            font-weight: 500;
             font-size: 1.25rem;
             color: var(--text-primary);
-            word-break: break-word;
         }}
 
         .docs-badge {{
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.25rem 0.75rem;
-            background: var(--primary);
-            color: white;
+            padding: 0.125rem 0.5rem;
+            background: var(--primary-light);
+            color: var(--primary);
             font-size: 0.75rem;
             font-weight: 500;
-            border-radius: 100px;
-            letter-spacing: 0.025em;
+            border-radius: 4px;
             text-transform: uppercase;
-            white-space: nowrap;
-        }}
-
-        .docs-badge .material-symbols-outlined {{
-            font-size: 14px;
-            color: white;
         }}
 
         .project-version {{
             color: var(--text-tertiary);
+            font-size: 0.8125rem;
+        }}
+
+        .platform-filters {{
+            display: flex;
+            gap: 0.5rem;
+            margin: 1.5rem 0 2rem;
+            padding: 0.25rem;
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 36px;
+        }}
+
+        .platform-filter {{
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 32px;
+            background: transparent;
+            color: var(--text-secondary);
             font-size: 0.875rem;
+            font-weight: 500;
+            font-family: 'Google Sans', sans-serif;
+            cursor: pointer;
+        }}
+
+        .platform-filter:hover {{
+            background: var(--hover-overlay);
+        }}
+
+        .platform-filter.active {{
+            background: var(--primary-light);
+            color: var(--primary);
         }}
 
         .sidebar-nav {{
@@ -351,27 +433,19 @@ class DocGenerator:
             gap: 0.75rem;
             color: var(--text-tertiary);
             font-size: 0.75rem;
-            font-weight: 600;
+            font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.025em;
             cursor: pointer;
             user-select: none;
-            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .category-header:hover {{
             background: var(--hover-overlay);
-            color: var(--text-primary);
         }}
 
         .category-header .material-symbols-outlined {{
             font-size: 16px;
-            transition: transform var(--transition-speed) var(--transition-timing);
-        }}
-
-        .category-items {{
-            margin-top: 0.25rem;
-            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .category-items.collapsed {{
@@ -381,28 +455,23 @@ class DocGenerator:
         .nav-item {{
             padding: 0.5rem 1.5rem 0.5rem 3.5rem;
             color: var(--text-secondary);
-            font-size: 0.9375rem;
+            font-size: 0.875rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.75rem;
             position: relative;
-            transition: all var(--transition-speed) var(--transition-timing);
-            margin-right: 1rem;
+            margin-right: 0.5rem;
             border-radius: 0 24px 24px 0;
-            word-break: break-word;
         }}
 
         .nav-item:hover {{
             background: var(--hover-overlay);
-            color: var(--text-primary);
-            transform: translateX(4px);
         }}
 
         .nav-item.active {{
-            background: var(--surface-2);
+            background: var(--primary-light);
             color: var(--primary);
-            font-weight: 500;
         }}
 
         .nav-item.active::before {{
@@ -411,26 +480,14 @@ class DocGenerator:
             left: 0;
             top: 0;
             bottom: 0;
-            width: 3px;
+            width: 4px;
             background: var(--primary);
-            border-radius: 0 2px 2px 0;
-            animation: slideIn 0.2s var(--transition-timing);
-        }}
-
-        @keyframes slideIn {{
-            from {{
-                transform: scaleY(0);
-            }}
-            to {{
-                transform: scaleY(1);
-            }}
+            border-radius: 0 4px 4px 0;
         }}
 
         .nav-item .material-symbols-outlined {{
             font-size: 18px;
             color: var(--text-tertiary);
-            transition: all var(--transition-speed) var(--transition-timing);
-            flex-shrink: 0;
         }}
 
         .nav-item.active .material-symbols-outlined {{
@@ -442,6 +499,7 @@ class DocGenerator:
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }}
 
         .header {{
@@ -453,14 +511,12 @@ class DocGenerator:
             align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
-            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .header-left {{
             display: flex;
             align-items: center;
             gap: 1rem;
-            min-width: 0;
         }}
 
         .menu-button {{
@@ -468,20 +524,16 @@ class DocGenerator:
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
-            width: 42px;
-            height: 42px;
-            border-radius: 21px;
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
             display: none;
             align-items: center;
             justify-content: center;
-            transition: all var(--transition-speed) var(--transition-timing);
-            flex-shrink: 0;
         }}
 
         .menu-button:hover {{
             background: var(--hover-overlay);
-            color: var(--primary);
-            transform: scale(1.05);
         }}
 
         .breadcrumb {{
@@ -490,8 +542,6 @@ class DocGenerator:
             gap: 0.5rem;
             color: var(--text-tertiary);
             font-size: 0.875rem;
-            min-width: 0;
-            flex-wrap: wrap;
         }}
 
         .breadcrumb a {{
@@ -500,42 +550,33 @@ class DocGenerator:
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 0.25rem;
             padding: 0.5rem;
-            border-radius: 6px;
-            transition: all var(--transition-speed) var(--transition-timing);
-            flex-shrink: 0;
+            border-radius: 20px;
         }}
 
         .breadcrumb a:hover {{
             background: var(--hover-overlay);
-            color: var(--primary);
-            transform: translateX(-2px);
         }}
 
         .breadcrumb span:last-child {{
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            color: var(--text-primary);
+            font-weight: 500;
         }}
 
         .header-right {{
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            flex-shrink: 0;
+            gap: 0.5rem;
         }}
 
         .stats {{
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.5rem 1rem;
+            padding: 0.375rem 0.75rem;
             background: var(--surface-2);
             border-radius: 100px;
-            font-size: 0.875rem;
-            height: 42px;
-            transition: all var(--transition-speed) var(--transition-timing);
+            font-size: 0.8125rem;
         }}
 
         .stat {{
@@ -545,65 +586,41 @@ class DocGenerator:
             color: var(--text-secondary);
         }}
 
-        .stat .material-symbols-outlined {{
-            font-size: 16px;
-            color: var(--text-tertiary);
-        }}
-
         .theme-selector {{
             position: relative;
         }}
 
         .theme-button {{
-            padding: 0.5rem 1.25rem;
+            padding: 0.5rem 1rem;
             background: var(--surface-2);
             border: none;
-            border-radius: 100px;
+            border-radius: 20px;
             color: var(--text-secondary);
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.5rem;
             font-size: 0.875rem;
-            height: 42px;
-            transition: all var(--transition-speed) var(--transition-timing);
+            font-family: 'Google Sans', sans-serif;
         }}
 
         .theme-button:hover {{
             background: var(--surface-3);
-            color: var(--text-primary);
-            transform: scale(1.02);
-        }}
-
-        .theme-button .material-symbols-outlined {{
-            font-size: 18px;
         }}
 
         .theme-dropdown {{
             position: absolute;
             top: 100%;
             right: 0;
-            margin-top: 0.75rem;
+            margin-top: 0.5rem;
             background: var(--surface-0);
             border: 1px solid var(--border);
             border-radius: 16px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-hover);
             display: none;
             z-index: 1000;
             min-width: 180px;
             overflow: hidden;
-            animation: dropdownFade 0.2s var(--transition-timing);
-        }}
-
-        @keyframes dropdownFade {{
-            from {{
-                opacity: 0;
-                transform: translateY(-10px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateY(0);
-            }}
         }}
 
         .theme-dropdown.show {{
@@ -611,308 +628,386 @@ class DocGenerator:
         }}
 
         .theme-option {{
-            padding: 0.875rem 1.25rem;
+            padding: 0.75rem 1rem;
             cursor: pointer;
             color: var(--text-secondary);
-            font-size: 0.9375rem;
+            font-size: 0.875rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .theme-option:hover {{
             background: var(--hover-overlay);
-            color: var(--text-primary);
-            padding-left: 1.75rem;
         }}
 
         .theme-option.active {{
-            background: var(--surface-2);
+            background: var(--primary-light);
             color: var(--primary);
         }}
 
-        .theme-option .material-symbols-outlined {{
-            font-size: 18px;
+        .content-wrapper {{
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
         }}
 
         .content {{
             flex: 1;
             overflow-y: auto;
             padding: 2rem;
-            transition: all var(--transition-speed) var(--transition-timing);
+            scroll-behavior: smooth;
         }}
 
-        /* Make cards grid scrollable */
-        .cards-grid-container {{
-            max-height: calc(100vh - 300px);
-            overflow-y: auto;
-            padding-right: 0.5rem;
-            margin-bottom: 1rem;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border) var(--surface-1);
-        }}
-
-        .cards-grid-container::-webkit-scrollbar {{
-            width: 8px;
-        }}
-
-        .cards-grid-container::-webkit-scrollbar-track {{
-            background: var(--surface-1);
-            border-radius: 4px;
-        }}
-
-        .cards-grid-container::-webkit-scrollbar-thumb {{
-            background: var(--border);
-            border-radius: 4px;
-        }}
-
-        .cards-grid-container::-webkit-scrollbar-thumb:hover {{
-            background: var(--border-dark);
-        }}
-
-        .cards-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding-bottom: 2rem;
-        }}
-
-        .warning-banner {{
+        .progress-indicator {{
+            width: var(--progress-indicator-width);
             background: var(--surface-0);
-            border: 1px solid var(--warning);
-            border-radius: 16px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            animation: slideDown 0.4s var(--transition-timing);
-            box-shadow: var(--shadow);
-            transition: all var(--transition-speed) var(--transition-timing);
-        }}
-
-        @keyframes slideDown {{
-            from {{
-                opacity: 0;
-                transform: translateY(-30px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateY(0);
-            }}
-        }}
-
-        .warning-content {{
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex: 1;
-        }}
-
-        .warning-content .material-symbols-outlined {{
-            color: var(--warning);
-            font-size: 24px;
-            animation: pulse 2s infinite;
-        }}
-
-        @keyframes pulse {{
-            0%, 100% {{
-                opacity: 1;
-            }}
-            50% {{
-                opacity: 0.7;
-            }}
-        }}
-
-        .warning-text strong {{
-            color: var(--warning);
-            font-weight: 600;
-        }}
-
-        .warning-text p {{
-            margin: 0.25rem 0 0;
-            font-size: 0.9375rem;
-            color: var(--text-secondary);
-        }}
-
-        .warning-close {{
-            width: 40px;
-            height: 40px;
-            background: none;
-            border: none;
-            color: var(--text-tertiary);
-            cursor: pointer;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all var(--transition-speed) var(--transition-timing);
+            border-left: 1px solid var(--border);
+            padding: 1.5rem 0;
+            overflow-y: auto;
+            display: none;
             flex-shrink: 0;
         }}
 
-        .warning-close:hover {{
+        .progress-indicator.visible {{
+            display: block;
+        }}
+
+        .progress-header {{
+            padding: 0 1rem 1rem 1rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }}
+
+        .progress-title {{
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }}
+
+        .progress-bar-container {{
+            padding: 0 1rem 1rem 1rem;
+        }}
+
+        .progress-bar {{
+            height: 4px;
+            background: var(--progress-bar-bg);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }}
+
+        .progress-fill {{
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s ease;
+        }}
+
+        .progress-percentage {{
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: right;
+        }}
+
+        .section-list {{
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }}
+
+        .section-item {{
+            padding: 0.5rem 1rem;
+            margin: 0.125rem 0;
+            cursor: pointer;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-left: 2px solid transparent;
+            transition: all 0.2s ease;
+        }}
+
+        .section-item:hover {{
             background: var(--hover-overlay);
+        }}
+
+        .section-item.active {{
+            color: var(--primary);
+            border-left-color: var(--primary);
+            background: var(--primary-light);
+        }}
+
+        .section-dot {{
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--progress-dot);
+            flex-shrink: 0;
+        }}
+
+        .section-item.active .section-dot {{
+            background: var(--progress-dot-active);
+            transform: scale(1.2);
+        }}
+
+        .section-title {{
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+
+        .hero-section {{
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 2rem;
+        }}
+
+        .hero-content {{
+            flex: 1;
+        }}
+
+        .hero-title {{
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
             color: var(--text-primary);
-            transform: rotate(90deg);
+            letter-spacing: -0.01em;
+        }}
+
+        .hero-title span {{
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            padding: 0.125rem 0.75rem;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            margin-left: 0.75rem;
+            vertical-align: middle;
+        }}
+
+        .hero-description {{
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            max-width: 600px;
+        }}
+
+        .hero-badges {{
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }}
+
+        .hero-badge {{
+            background: var(--surface-2);
+            padding: 0.375rem 0.875rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }}
+
+        .hero-actions {{
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }}
+
+        .hero-button {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.5rem;
+            border-radius: 24px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            font-family: 'Google Sans', sans-serif;
+        }}
+
+        .hero-button-primary {{
+            background: var(--primary);
+            color: var(--surface-0);
+        }}
+
+        .hero-button-primary:hover {{
+            background: var(--primary-dark);
+            color : var(--text-primary);
+        }}
+
+        .hero-button-secondary {{
+            background: var(--surface-2);
+            color: var(--text-secondary);
+        }}
+
+        .hero-button-secondary:hover {{
+            background: var(--surface-3);
+        }}
+
+        .hero-stats {{
+            display: flex;
+            gap: 2rem;
+        }}
+
+        .hero-stat {{
+            display: flex;
+            flex-direction: column;
+        }}
+
+        .hero-stat-value {{
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--primary);
+            margin-bottom: 0.125rem;
+        }}
+
+        .hero-stat-label {{
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }}
+
+        .hero-platform-icons {{
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }}
+
+        .hero-platform-icon {{
+            width: 40px;
+            height: 40px;
+            background: var(--surface-2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }}
+
+        .hero-platform-icon:hover {{
+            background: var(--surface-3);
         }}
 
         .search-container {{
             max-width: 600px;
-            margin: 0 auto 2.5rem;
+            margin: 0 auto 1.5rem;
             position: relative;
         }}
 
         .search-icon {{
             position: absolute;
-            left: 1.25rem;
+            left: 1rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-tertiary);
             pointer-events: none;
-            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .search-input {{
             width: 100%;
-            padding: 1rem 1.25rem 1rem 3.5rem;
+            padding: 0.75rem 1rem 0.75rem 3rem;
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 32px;
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
+            border-radius: 24px;
+            font-family: 'Google Sans', sans-serif;
+            font-size: 0.9375rem;
             color: var(--text-primary);
             outline: none;
-            transition: all var(--transition-speed) var(--transition-timing);
-            box-shadow: var(--shadow-sm);
         }}
 
         .search-input:focus {{
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-            transform: scale(1.01);
+            box-shadow: 0 0 0 2px var(--primary-light);
         }}
 
         .search-clear {{
             position: absolute;
-            right: 1rem;
+            right: 0.5rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-tertiary);
             cursor: pointer;
             display: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 18px;
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
             align-items: center;
             justify-content: center;
-            transition: all var(--transition-speed) var(--transition-timing);
+            background: var(--surface-0);
+            border: none;
         }}
 
         .search-clear:hover {{
             background: var(--hover-overlay);
-            color: var(--text-primary);
-            transform: translateY(-50%) scale(1.1);
         }}
 
         .search-clear.visible {{
             display: flex;
         }}
 
-        .search-stats {{
-            margin-top: 0.75rem;
-            font-size: 0.875rem;
-            color: var(--text-tertiary);
-            text-align: center;
-            animation: fadeIn 0.3s var(--transition-timing);
-        }}
-
-        @keyframes fadeIn {{
-            from {{
-                opacity: 0;
-            }}
-            to {{
-                opacity: 1;
-            }}
+        .cards-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }}
 
         .card {{
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 1.5rem;
+            border-radius: 8px;
+            padding: 1.25rem;
             cursor: pointer;
-            transition: all var(--transition-speed) var(--transition-timing);
-            box-shadow: var(--shadow-sm);
-            animation: cardFadeIn 0.4s var(--transition-timing);
-        }}
-
-        @keyframes cardFadeIn {{
-            from {{
-                opacity: 0;
-                transform: translateY(20px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateY(0);
-            }}
         }}
 
         .card:hover {{
+            background: var(--surface-1);
             border-color: var(--primary);
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-4px) scale(1.02);
         }}
 
         .card-icon {{
-            width: 52px;
-            height: 52px;
+            width: 40px;
+            height: 40px;
             background: var(--surface-2);
-            border-radius: 14px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
             color: var(--primary);
-            transition: all var(--transition-speed) var(--transition-timing);
-            flex-shrink: 0;
-        }}
-
-        .card:hover .card-icon {{
-            background: var(--primary);
-            color: white;
-            transform: rotate(5deg) scale(1.1);
-        }}
-
-        .card-icon .material-symbols-outlined {{
-            font-size: 26px;
-        }}
-
-        .card-header {{
-            margin-bottom: 0.5rem;
         }}
 
         .card h3 {{
-            font-weight: 600;
-            font-size: 1.125rem;
+            font-weight: 500;
+            font-size: 1rem;
             color: var(--text-primary);
-            transition: all var(--transition-speed) var(--transition-timing);
-            word-break: break-word;
-        }}
-
-        .card:hover h3 {{
-            color: var(--primary);
+            margin-bottom: 0.5rem;
         }}
 
         .card p {{
             color: var(--text-secondary);
-            font-size: 0.9375rem;
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-            word-break: break-word;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
         }}
 
         .card-footer {{
@@ -925,189 +1020,93 @@ class DocGenerator:
             display: inline-flex;
             align-items: center;
             gap: 0.375rem;
-            padding: 0.375rem 0.875rem;
+            padding: 0.25rem 0.75rem;
             background: var(--surface-2);
-            border-radius: 100px;
-            font-size: 0.8125rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
             color: var(--text-tertiary);
-            transition: all var(--transition-speed) var(--transition-timing);
-            word-break: break-word;
         }}
 
-        .card:hover .card-category {{
-            background: var(--surface-3);
-            color: var(--text-secondary);
+        .card-platforms {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
         }}
 
-        .card-arrow {{
+        .card-platform {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
             color: var(--text-tertiary);
-            transition: all var(--transition-speed) var(--transition-timing);
-            opacity: 0;
-            transform: translateX(-10px);
-            flex-shrink: 0;
-        }}
-
-        .card:hover .card-arrow {{
-            opacity: 1;
-            transform: translateX(0);
-            color: var(--primary);
+            background: var(--surface-2);
         }}
 
         .doc-view {{
             display: none;
-            max-width: 100%;
-            margin: 0;
-            animation: fadeIn 0.4s var(--transition-timing);
-            height: 100%;
-            overflow-y: auto;
+            max-width: 900px;
+            margin: 0 auto;
         }}
 
         .doc-header {{
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--border);
         }}
 
-        .doc-title-container {{
-            flex: 1;
-        }}
-
         .doc-title {{
-            font-size: 2rem;
-            font-weight: 600;
+            font-size: 1.75rem;
+            font-weight: 500;
             color: var(--text-primary);
-            margin-bottom: 0.25rem;
-            word-break: break-word;
-        }}
-
-        .doc-meta {{
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            color: var(--text-tertiary);
-            font-size: 0.875rem;
-        }}
-
-        .doc-meta-item {{
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
         }}
 
         .doc-actions {{
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }}
 
         .doc-action-button {{
             padding: 0.5rem 1rem;
             background: var(--surface-2);
             border: none;
-            border-radius: 8px;
+            border-radius: 20px;
             color: var(--text-secondary);
             font-size: 0.875rem;
+            font-family: 'Google Sans', sans-serif;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            transition: all var(--transition-speed) var(--transition-timing);
         }}
 
         .doc-action-button:hover {{
             background: var(--surface-3);
-            color: var(--text-primary);
-            transform: translateY(-2px);
-        }}
-
-        .doc-action-button .material-symbols-outlined {{
-            font-size: 18px;
         }}
 
         .doc-content {{
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 3rem;
-            box-shadow: var(--shadow);
-            overflow-x: auto;
-            margin-bottom: 2rem;
-        }}
-
-        /* Comments section styles */
-        .comments-section {{
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 2px solid var(--border);
-        }}
-
-        .comments-header {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }}
-
-        .comments-title {{
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }}
-
-        .comments-title .material-symbols-outlined {{
-            font-size: 24px;
-            color: var(--primary);
-        }}
-
-        .comments-info {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--surface-2);
-            border-radius: 100px;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }}
-
-        .comments-info .material-symbols-outlined {{
-            font-size: 18px;
-            color: var(--primary);
-        }}
-
-        .comments-container {{
-            background: var(--comments-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            min-height: 200px;
-        }}
-
-        /* Giscus theme overrides */
-        .comments-container .giscus {{
-            width: 100%;
-        }}
-
-        .comments-container .giscus-frame {{
-            background: transparent !important;
+            border-radius: 8px;
+            padding: 2rem;
         }}
 
         .footer {{
             background: var(--footer-bg);
             border-top: 1px solid var(--border);
-            padding: 1.5rem 2rem;
+            padding: 1rem 1.5rem;
             margin-top: 2rem;
             text-align: center;
             color: var(--text-tertiary);
-            font-size: 0.875rem;
-            border-radius: 16px;
+            font-size: 0.8125rem;
+            border-radius: 8px;
         }}
 
         .footer-content {{
@@ -1116,348 +1115,174 @@ class DocGenerator:
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }}
-
-        .footer-copyright {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }}
-
-        .footer-copyright .material-symbols-outlined {{
-            font-size: 16px;
-            color: var(--text-tertiary);
         }}
 
         .footer-info {{
             display: flex;
-            align-items: center;
             gap: 1.5rem;
-        }}
-
-        .footer-info-item {{
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
         }}
 
         .markdown-body {{
             color: var(--text-primary);
-            width: 100%;
-            max-width: 100%;
-            overflow-x: auto;
         }}
 
         .markdown-body h1 {{
-            font-size: 2.5rem;
-            font-weight: 600;
-            margin: 0 0 1.5rem;
-            letter-spacing: -0.02em;
-            color: var(--text-primary);
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 0.75rem;
-            animation: slideInFromLeft 0.4s var(--transition-timing);
-            word-break: break-word;
-        }}
-
-        @keyframes slideInFromLeft {{
-            from {{
-                opacity: 0;
-                transform: translateX(-20px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateX(0);
-            }}
-        }}
-
-        .markdown-body h2 {{
-            font-size: 1.875rem;
-            font-weight: 600;
-            margin: 2.5rem 0 1rem;
+            font-size: 1.75rem;
+            font-weight: 500;
+            margin: 0 0 1rem;
             color: var(--text-primary);
             border-bottom: 1px solid var(--border);
             padding-bottom: 0.5rem;
-            word-break: break-word;
+            scroll-margin-top: 2rem;
+        }}
+
+        .markdown-body h2 {{
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text-primary);
+            scroll-margin-top: 2rem;
         }}
 
         .markdown-body h3 {{
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 2rem 0 1rem;
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin: 1.25rem 0 0.5rem;
             color: var(--text-primary);
-            word-break: break-word;
+            scroll-margin-top: 2rem;
         }}
 
-        .markdown-body h4 {{
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin: 1.5rem 0 0.75rem;
-            color: var(--text-primary);
-            word-break: break-word;
+        .markdown-body h4, .markdown-body h5, .markdown-body h6 {{
+            scroll-margin-top: 2rem;
         }}
 
         .markdown-body p {{
-            margin: 1.25rem 0;
+            margin: 0.75rem 0;
             color: var(--text-secondary);
-            line-height: 1.7;
-            font-size: 1rem;
-            word-break: break-word;
         }}
 
         .markdown-body a {{
             color: var(--primary);
             text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: border-color var(--transition-speed) var(--transition-timing);
-            word-break: break-word;
         }}
 
         .markdown-body a:hover {{
-            border-bottom-color: var(--primary);
+            text-decoration: underline;
         }}
 
         .markdown-body pre {{
-            margin: 1.5rem 0;
+            margin: 1rem 0;
             position: relative;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
-            transition: all var(--transition-speed) var(--transition-timing);
-        }}
-
-        .markdown-body pre:hover {{
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
+            background: var(--code-bg);
+            border: 1px solid var(--border);
         }}
 
         .markdown-body pre .copy-button {{
             position: absolute;
-            top: 0.75rem;
-            right: 0.75rem;
-            padding: 0.5rem 1rem;
-            background: var(--copy-btn-bg);
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 16px;
             color: var(--text-secondary);
-            font-size: 0.8125rem;
+            font-size: 0.75rem;
+            font-family: 'Google Sans', sans-serif;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.375rem;
             opacity: 0;
-            transform: translateY(-5px);
-            transition: all var(--transition-speed) var(--transition-timing);
-            z-index: 10;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            box-shadow: var(--shadow-sm);
         }}
 
         .markdown-body pre:hover .copy-button {{
             opacity: 1;
-            transform: translateY(0);
         }}
 
         .markdown-body pre .copy-button:hover {{
-            background: var(--copy-btn-hover);
-            color: var(--text-primary);
-            transform: scale(1.05);
-            border-color: var(--primary);
+            background: var(--surface-2);
         }}
 
         .markdown-body pre .copy-button.copied {{
-            background: var(--success);
+            background: var(--primary);
             color: white;
-            border-color: var(--success);
-        }}
-
-        .markdown-body pre .copy-button .material-symbols-outlined {{
-            font-size: 16px;
         }}
 
         .markdown-body code {{
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'Google Sans Mono', monospace;
             font-size: 0.875em;
             padding: 0.2em 0.4em;
             background: var(--code-bg);
-            border-radius: 6px;
+            border-radius: 4px;
             color: var(--code-text);
-            word-break: break-word;
         }}
 
         .markdown-body pre code {{
-            padding: 1.5rem;
-            background: var(--code-bg);
-            color: var(--code-text);
-            font-size: 0.875rem;
-            line-height: 1.6;
+            padding: 1rem;
+            background: transparent;
+            font-size: 0.8125rem;
+            line-height: 1.5;
             display: block;
             overflow-x: auto;
-            white-space: pre;
-            word-break: normal;
-        }}
-
-        .markdown-body blockquote {{
-            margin: 1.5rem 0;
-            padding: 1rem 1.5rem;
-            border-left: 4px solid var(--primary);
-            background: var(--surface-2);
-            border-radius: 0 16px 16px 0;
-            color: var(--text-secondary);
-            font-style: italic;
-            transition: all var(--transition-speed) var(--transition-timing);
-            word-break: break-word;
-        }}
-
-        .markdown-body blockquote:hover {{
-            border-left-width: 6px;
-            transform: translateX(4px);
         }}
 
         .markdown-body table {{
             width: 100%;
-            margin: 1.5rem 0;
+            margin: 1rem 0;
             border-collapse: collapse;
-            border-radius: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: all var(--transition-speed) var(--transition-timing);
-            word-break: break-word;
-        }}
-
-        .markdown-body table:hover {{
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
         }}
 
         .markdown-body th {{
-            padding: 0.875rem 1.25rem;
+            padding: 0.5rem 1rem;
             background: var(--surface-2);
-            font-weight: 600;
+            font-weight: 500;
             text-align: left;
-            border: none;
-            color: var(--text-primary);
-            word-break: break-word;
+            border-bottom: 1px solid var(--border);
         }}
 
         .markdown-body td {{
-            padding: 0.875rem 1.25rem;
-            border: none;
-            border-top: 1px solid var(--border);
-            color: var(--text-secondary);
-            transition: all var(--transition-speed) var(--transition-timing);
-            word-break: break-word;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border);
         }}
 
-        .markdown-body tr:hover td {{
-            background: var(--hover-overlay);
-            padding-left: 1.5rem;
-        }}
-
-        .markdown-body hr {{
-            margin: 2.5rem 0;
-            border: none;
-            border-top: 2px solid var(--border);
+        .markdown-body tr:last-child td {{
+            border-bottom: none;
         }}
 
         .markdown-body ul, .markdown-body ol {{
-            margin: 1.25rem 0;
-            padding-left: 2rem;
-            color: var(--text-secondary);
-            word-break: break-word;
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
         }}
 
         .markdown-body li {{
-            margin: 0.5rem 0;
-            transition: all var(--transition-speed) var(--transition-timing);
-            word-break: break-word;
-        }}
-
-        .markdown-body li:hover {{
-            transform: translateX(4px);
-            color: var(--text-primary);
-        }}
-
-        .markdown-body li > ul, .markdown-body li > ol {{
-            margin: 0.25rem 0 0.25rem 1.5rem;
-        }}
-
-        .markdown-body img {{
-            max-width: 100%;
-            border-radius: 12px;
-            transition: all var(--transition-speed) var(--transition-timing);
-            height: auto;
-        }}
-
-        .markdown-body img:hover {{
-            box-shadow: var(--shadow-lg);
-            transform: scale(1.01);
-        }}
-
-        .markdown-body .k, .markdown-body .kd, .markdown-body .kn, .markdown-body .kp, .markdown-body .kr, .markdown-body .kt {{
-            color: var(--code-keyword);
-            font-weight: 500;
-        }}
-
-        .markdown-body .s, .markdown-body .s1, .markdown-body .s2, .markdown-body .sb, .markdown-body .sc, .markdown-body .sd, .markdown-body .se, .markdown-body .sh, .markdown-body .si, .markdown-body .sx {{
-            color: var(--code-string);
-        }}
-
-        .markdown-body .c, .markdown-body .c1, .markdown-body .cm, .markdown-body .cp, .markdown-body .cs {{
-            color: var(--code-comment);
-            font-style: italic;
-        }}
-
-        .markdown-body .nf, .markdown-body .na, .markdown-body .nc {{
-            color: var(--code-function);
-        }}
-
-        .markdown-body .m, .markdown-body .mi, .markdown-body .mf, .markdown-body .mh, .markdown-body .mo {{
-            color: var(--code-number);
+            margin: 0.25rem 0;
         }}
 
         .empty-state {{
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 3rem;
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 24px;
+            border-radius: 8px;
             grid-column: 1 / -1;
-            box-shadow: var(--shadow-sm);
-            animation: fadeIn 0.4s var(--transition-timing);
-            margin-bottom: 2rem;
         }}
 
         .empty-state .material-symbols-outlined {{
-            font-size: 56px;
+            font-size: 48px;
             color: var(--text-tertiary);
             margin-bottom: 1rem;
-            animation: bounce 2s infinite;
-        }}
-
-        @keyframes bounce {{
-            0%, 100% {{
-                transform: translateY(0);
-            }}
-            50% {{
-                transform: translateY(-10px);
-            }}
         }}
 
         .empty-state h3 {{
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.25rem;
+            font-weight: 500;
             margin-bottom: 0.5rem;
             color: var(--text-primary);
-            word-break: break-word;
-        }}
-
-        .empty-state p {{
-            color: var(--text-tertiary);
-            font-size: 1rem;
-            word-break: break-word;
         }}
 
         .codehilite {{
@@ -1467,10 +1292,6 @@ class DocGenerator:
         {pygments_styles}
 
         @media (max-width: 768px) {{
-            :root {{
-                --header-height: 60px;
-            }}
-            
             .menu-button {{
                 display: flex;
             }}
@@ -1481,8 +1302,7 @@ class DocGenerator:
                 top: 0;
                 bottom: 0;
                 transform: translateX(-100%);
-                box-shadow: var(--shadow-lg);
-                height: 100vh;
+                transition: transform 0.2s;
             }}
             
             .sidebar.active {{
@@ -1497,38 +1317,17 @@ class DocGenerator:
                 padding: 1rem;
             }}
             
-            .cards-grid-container {{
-                max-height: calc(100vh - 250px);
+            .hero-section {{
+                flex-direction: column;
+                padding: 1.5rem;
+            }}
+            
+            .hero-platform-icons {{
+                justify-content: center;
             }}
             
             .cards-grid {{
                 grid-template-columns: 1fr;
-            }}
-            
-            .doc-content {{
-                padding: 1.5rem;
-            }}
-            
-            .markdown-body h1 {{
-                font-size: 2rem;
-            }}
-            
-            .markdown-body h2 {{
-                font-size: 1.5rem;
-            }}
-            
-            .markdown-body h3 {{
-                font-size: 1.25rem;
-            }}
-            
-            .theme-button span:not(.material-symbols-outlined) {{
-                display: none;
-            }}
-            
-            .theme-button {{
-                padding: 0.5rem;
-                width: 42px;
-                justify-content: center;
             }}
             
             .doc-header {{
@@ -1539,22 +1338,37 @@ class DocGenerator:
             
             .doc-actions {{
                 width: 100%;
-                justify-content: flex-start;
             }}
             
             .footer-content {{
                 flex-direction: column;
-                text-align: center;
+                gap: 0.5rem;
             }}
             
             .footer-info {{
                 flex-direction: column;
-                gap: 0.75rem;
+                gap: 0.25rem;
+            }}
+            
+            .progress-indicator {{
+                position: fixed;
+                right: 0;
+                top: var(--header-height);
+                bottom: 0;
+                background: var(--surface-0);
+                box-shadow: var(--shadow-hover);
+                transform: translateX(100%);
+                transition: transform 0.2s;
+                z-index: 95;
+            }}
+            
+            .progress-indicator.visible {{
+                transform: translateX(0);
             }}
         }}
     </style>
 </head>
-<body>
+<body data-theme="light">
     <div class="app">
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
         
@@ -1562,12 +1376,8 @@ class DocGenerator:
             <div class="sidebar-header">
                 <div class="project-header">
                     <span class="project-name">{project_name}</span>
-                    <span class="docs-badge">
-                        <span class="material-symbols-outlined">menu_book</span>
-                        DOCS
-                    </span>
+                    <span class="docs-badge">DOCS</span>
                 </div>
-                <div class="project-version">v{version}</div>
             </div>
             <div class="sidebar-nav">
                 <div class="nav-category">
@@ -1589,11 +1399,11 @@ class DocGenerator:
         <div class="main">
             <div class="header">
                 <div class="header-left">
-                    <button class="menu-button" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <button class="menu-button" onclick="toggleSidebar()">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
                     <div class="breadcrumb" id="breadcrumb">
-                        <a onclick="showHome()" aria-label="Go to home">
+                        <a onclick="showHome()">
                             <span class="material-symbols-outlined">home</span>
                         </a>
                         <span class="material-symbols-outlined">chevron_right</span>
@@ -1601,40 +1411,40 @@ class DocGenerator:
                     </div>
                 </div>
                 <div class="header-right">
-                    <div class="stats" aria-label="Documentation statistics">
+                    <div class="stats">
                         <div class="stat">
-                            <span class="material-symbols-outlined" aria-hidden="true">category</span>
+                            <span class="material-symbols-outlined">category</span>
                             <span>{category_count}</span>
                         </div>
                         <div class="stat">
-                            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+                            <span class="material-symbols-outlined">description</span>
                             <span>{section_count}</span>
                         </div>
                     </div>
                     <div class="theme-selector">
-                        <button class="theme-button" onclick="toggleThemeDropdown()" aria-label="Select theme" aria-haspopup="true" aria-expanded="false">
-                            <span class="material-symbols-outlined" aria-hidden="true">palette</span>
+                        <button class="theme-button" onclick="toggleThemeDropdown()">
+                            <span class="material-symbols-outlined" id="themeIcon">light_mode</span>
                             <span id="current-theme-label">Light</span>
                         </button>
-                        <div class="theme-dropdown" id="themeDropdown" role="menu" aria-label="Theme options">
-                            <div class="theme-option active" onclick="setTheme('light', event)" role="menuitem">
-                                <span class="material-symbols-outlined" aria-hidden="true">light_mode</span>
+                        <div class="theme-dropdown" id="themeDropdown">
+                            <div class="theme-option" onclick="setTheme('light', event)">
+                                <span class="material-symbols-outlined">light_mode</span>
                                 Light
                             </div>
-                            <div class="theme-option" onclick="setTheme('dark', event)" role="menuitem">
-                                <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
+                            <div class="theme-option" onclick="setTheme('dark', event)">
+                                <span class="material-symbols-outlined">dark_mode</span>
                                 Dark
                             </div>
-                            <div class="theme-option" onclick="setTheme('sepia', event)" role="menuitem">
-                                <span class="material-symbols-outlined" aria-hidden="true">book</span>
+                            <div class="theme-option" onclick="setTheme('sepia', event)">
+                                <span class="material-symbols-outlined">book</span>
                                 Sepia
                             </div>
-                            <div class="theme-option" onclick="setTheme('nord', event)" role="menuitem">
-                                <span class="material-symbols-outlined" aria-hidden="true">ac_unit</span>
+                            <div class="theme-option" onclick="setTheme('nord', event)">
+                                <span class="material-symbols-outlined">ac_unit</span>
                                 Nord
                             </div>
-                            <div class="theme-option" onclick="setTheme('solarized', event)" role="menuitem">
-                                <span class="material-symbols-outlined" aria-hidden="true">wb_sunny</span>
+                            <div class="theme-option" onclick="setTheme('solarized', event)">
+                                <span class="material-symbols-outlined">wb_sunny</span>
                                 Solarized
                             </div>
                         </div>
@@ -1642,138 +1452,110 @@ class DocGenerator:
                 </div>
             </div>
 
-            <div class="content" id="content">
-                <div id="home-view">
-                    <div class="warning-banner" id="alphaWarning" role="alert">
-                        <div class="warning-content">
-                            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
-                            <div class="warning-text">
-                                <strong>Alpha Software</strong>
-                                <p>AromaUI is currently in alpha and unstable. Not recommended for critical applications.</p>
-                            </div>
-                        </div>
-                        <button class="warning-close" onclick="dismissWarning()" aria-label="Dismiss warning">
-                            <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                        </button>
-                    </div>
+            <div class="content-wrapper">
+                <div class="content" id="content">
+                    <div id="home-view">
+                        {hero_section}
 
-                    <div class="search-container">
-                        <span class="material-symbols-outlined search-icon" aria-hidden="true">search</span>
-                        <input type="text" class="search-input" id="searchInput" placeholder="Search documentation... (Press / to focus)" aria-label="Search documentation">
-                        <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search">
-                            <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                        </button>
-                        <div class="search-stats" id="searchStats" aria-live="polite"></div>
-                    </div>
-                    
-                    <div class="cards-grid-container">
-                        <div class="cards-grid" id="cardsGrid" role="grid" aria-label="Documentation sections">
+                        <div class="search-container">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input type="text" class="search-input" id="searchInput" placeholder="Search documentation (Press / to focus)">
+                            <button class="search-clear" id="searchClear" onclick="clearSearch()">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        
+                        {platform_filters}
+                        
+                        <div class="cards-grid" id="cardsGrid">
                             {cards_html}
                         </div>
+
+                        <div class="footer">
+                            <div class="footer-content">
+                                <div class="footer-copyright">
+                                    <span>© {year} {project_name}</span>
+                                </div>
+                                <div class="footer-info">
+                                    <span>Version {version}</span>
+                                    <span>Last updated {last_updated}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="footer">
-                        <div class="footer-content">
-                            <div class="footer-copyright">
-                                <span class="material-symbols-outlined">copyright</span>
-                                <span>{year} {project_name}. All rights reserved.</span>
+                    <div id="doc-view" class="doc-view">
+                        <div class="doc-header">
+                            <h1 class="doc-title" id="doc-title"></h1>
+                            <div class="doc-actions">
+                                <button class="doc-action-button" onclick="copyPageLink(event)">
+                                    <span class="material-symbols-outlined">link</span>
+                                    Copy link
+                                </button>
                             </div>
-                            <div class="footer-info">
-                                <div class="footer-info-item">
-                                    <span class="material-symbols-outlined">description</span>
-                                    <span>v{version}</span>
+                        </div>
+                        <div class="doc-content markdown-body" id="doc-content"></div>
+                        
+                        <div class="footer">
+                            <div class="footer-content">
+                                <div class="footer-copyright">
+                                    <span>© {year} {project_name}</span>
                                 </div>
-                                <div class="footer-info-item">
-                                    <span class="material-symbols-outlined">update</span>
-                                    <span>Last updated: {last_updated}</span>
+                                <div class="footer-info">
+                                    <span>Version {version}</span>
+                                    <span>Last updated {last_updated}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="doc-view" class="doc-view">
-                    <div class="doc-header">
-                        <div class="doc-title-container">
-                            <h1 class="doc-title" id="doc-title"></h1>
-                            <div class="doc-meta" id="doc-meta">
-                                <span class="doc-meta-item" id="doc-category">
-                                    <span class="material-symbols-outlined">folder</span>
-                                    <span></span>
-                                </span>
-                                <span class="doc-meta-item" id="doc-file">
-                                    <span class="material-symbols-outlined">description</span>
-                                    <span></span>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="doc-actions">
-                            <button class="doc-action-button" id="editGithubBtn" onclick="editOnGithub()">
-                                <span class="material-symbols-outlined">edit</span>
-                                Edit on GitHub
-                            </button>
-                            <button class="doc-action-button" onclick="copyPageLink()">
-                                <span class="material-symbols-outlined">link</span>
-                                Copy Link
-                            </button>
+                <div class="progress-indicator" id="progressIndicator">
+                    <div class="progress-header">
+                        <div class="progress-title">
+                            <span class="material-symbols-outlined">timeline</span>
+                            <span>On this page</span>
                         </div>
                     </div>
-                    <div class="doc-content markdown-body" id="doc-content"></div>
-             
-                    <div class="footer">
-                        <div class="footer-content">
-                            <div class="footer-copyright">
-                                <span class="material-symbols-outlined">copyright</span>
-                                <span>{year} {project_name}. All rights reserved.</span>
-                            </div>
-                            <div class="footer-info">
-                                <div class="footer-info-item">
-                                    <span class="material-symbols-outlined">description</span>
-                                    <span>v{version}</span>
-                                </div>
-                                <div class="footer-info-item">
-                                    <span class="material-symbols-outlined">update</span>
-                                    <span>Last updated: {last_updated}</span>
-                                </div>
-                            </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
                         </div>
+                        <div class="progress-percentage" id="progressPercentage">0%</div>
                     </div>
+                    <div id="sectionList" class="section-list"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Global variables
         const pages = {pages_json};
         const titles = {titles_json};
-        const markdownFiles = {markdown_files_json};
+        const cardPlatforms = {card_platforms_json};
 
         let searchTimeout;
-        let currentPageId = null;
+        let currentPlatform = 'all';
+        let currentDocId = null;
+        let observer = null;
+        let sections = [];
 
-        // Theme functions
+        (function() {{
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }})();
+
         function toggleThemeDropdown() {{
             const dropdown = document.getElementById('themeDropdown');
-            const button = document.querySelector('.theme-button');
-            const isExpanded = button.getAttribute('aria-expanded') === 'true';
-            
             dropdown.classList.toggle('show');
-            button.setAttribute('aria-expanded', (!isExpanded).toString());
             
             if (dropdown.classList.contains('show')) {{
-                document.addEventListener('click', closeThemeDropdown);
-            }}
-        }}
-
-        function closeThemeDropdown(event) {{
-            const dropdown = document.getElementById('themeDropdown');
-            const button = document.querySelector('.theme-button');
-            
-            if (!button.contains(event.target) && !dropdown.contains(event.target)) {{
-                dropdown.classList.remove('show');
-                button.setAttribute('aria-expanded', 'false');
-                document.removeEventListener('click', closeThemeDropdown);
+                document.addEventListener('click', function closeDropdown(e) {{
+                    if (!dropdown.contains(e.target) && !e.target.closest('.theme-button')) {{
+                        dropdown.classList.remove('show');
+                        document.removeEventListener('click', closeDropdown);
+                    }}
+                }});
             }}
         }}
 
@@ -1781,22 +1563,10 @@ class DocGenerator:
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
             
-            const dropdown = document.getElementById('themeDropdown');
-            const button = document.querySelector('.theme-button');
-            dropdown.classList.remove('show');
-            button.setAttribute('aria-expanded', 'false');
+            document.getElementById('themeDropdown').classList.remove('show');
             
-            const options = document.querySelectorAll('.theme-option');
-            options.forEach(opt => opt.classList.remove('active'));
-            
-            if (event) {{
-                event.target.closest('.theme-option').classList.add('active');
-            }} else {{
-                const activeOption = Array.from(options).find(opt => 
-                    opt.textContent.toLowerCase().includes(theme)
-                );
-                if (activeOption) activeOption.classList.add('active');
-            }}
+            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+            event.target.closest('.theme-option').classList.add('active');
             
             const themeNames = {{
                 'light': 'Light',
@@ -1805,108 +1575,274 @@ class DocGenerator:
                 'nord': 'Nord',
                 'solarized': 'Solarized'
             }};
+            
             document.getElementById('current-theme-label').textContent = themeNames[theme];
-
-            // Update Giscus theme
-            updateGiscusTheme(theme);
+            
+            const themeIcon = document.getElementById('themeIcon');
+            const icons = {{
+                'light': 'light_mode',
+                'dark': 'dark_mode',
+                'sepia': 'book',
+                'nord': 'ac_unit',
+                'solarized': 'wb_sunny'
+            }};
+            themeIcon.textContent = icons[theme];
         }}
 
-        // Sidebar functions
+        function filterByPlatform(platform) {{
+            currentPlatform = platform;
+            
+            document.querySelectorAll('.platform-filter').forEach(btn => {{
+                btn.classList.remove('active');
+                if (btn.dataset.platform === platform) {{
+                    btn.classList.add('active');
+                }}
+            }});
+            
+            const cards = document.querySelectorAll('.card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {{
+                const cardId = card.getAttribute('data-id');
+                const platforms = cardPlatforms[cardId] || [];
+                
+                if (platform === 'all' || platforms.includes(platform)) {{
+                    card.style.display = 'block';
+                    visibleCount++;
+                }} else {{
+                    card.style.display = 'none';
+                }}
+            }});
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (searchTerm) filterCards();
+            
+            const emptyState = document.getElementById('empty-platform-state');
+            if (visibleCount === 0) {{
+                if (!emptyState) {{
+                    const newEmptyState = document.createElement('div');
+                    newEmptyState.id = 'empty-platform-state';
+                    newEmptyState.className = 'empty-state';
+                    newEmptyState.innerHTML = `
+                        <span class="material-symbols-outlined">devices_off</span>
+                        <h3>No content for this platform</h3>
+                        <p>Try selecting a different filter</p>
+                    `;
+                    document.getElementById('cardsGrid').appendChild(newEmptyState);
+                }}
+            }} else if (emptyState) {{
+                emptyState.remove();
+            }}
+        }}
+
         function toggleSidebar() {{
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const isActive = sidebar.classList.contains('active');
-            
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-            
-            document.body.style.overflow = isActive ? '' : 'hidden';
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
         }}
 
         function toggleCategory(id) {{
             const items = document.getElementById('category-' + id);
-            if (!items) return;
-            
             const header = items.previousElementSibling;
             const icon = header.querySelector('.material-symbols-outlined');
             
             items.classList.toggle('collapsed');
-            
-            if (items.classList.contains('collapsed')) {{
-                icon.style.transform = 'rotate(0deg)';
-                icon.textContent = 'chevron_right';
-            }} else {{
-                icon.style.transform = 'rotate(90deg)';
-                icon.textContent = 'expand_more';
-            }}
+            icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
         }}
 
-        // Copy button function
         function initializeCopyButtons() {{
             document.querySelectorAll('.markdown-body pre').forEach(pre => {{
                 if (!pre.querySelector('.copy-button')) {{
                     const button = document.createElement('button');
                     button.className = 'copy-button';
                     button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-                    button.setAttribute('aria-label', 'Copy code to clipboard');
                     
                     button.addEventListener('click', async (e) => {{
                         e.stopPropagation();
                         const code = pre.querySelector('code');
                         if (code) {{
-                            try {{
-                                await navigator.clipboard.writeText(code.textContent || '');
-                                button.classList.add('copied');
-                                button.innerHTML = '<span class="material-symbols-outlined">check</span><span>Copied!</span>';
-                                
-                                setTimeout(() => {{
-                                    button.classList.remove('copied');
-                                    button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-                                }}, 2000);
-                            }} catch (err) {{
-                                console.error('Failed to copy:', err);
-                                button.innerHTML = '<span class="material-symbols-outlined">error</span><span>Failed</span>';
-                                
-                                setTimeout(() => {{
-                                    button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-                                }}, 2000);
-                            }}
+                            await navigator.clipboard.writeText(code.textContent || '');
+                            button.classList.add('copied');
+                            button.innerHTML = '<span class="material-symbols-outlined">check</span><span>Copied!</span>';
+                            
+                            setTimeout(() => {{
+                                button.classList.remove('copied');
+                                button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
+                            }}, 2000);
                         }}
                     }});
                     
-                    pre.style.position = 'relative';
                     pre.appendChild(button);
                 }}
             }});
         }}
 
-        // Search functions
+        function extractSections() {{
+            const content = document.getElementById('doc-content');
+            if (!content) return [];
+            
+            const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const sections = [];
+            
+            headings.forEach((heading, index) => {{
+                if (!heading.id) {{
+                    heading.id = 'section-' + index + '-' + heading.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                }}
+                
+                sections.push({{
+                    id: heading.id,
+                    title: heading.textContent,
+                    level: parseInt(heading.tagName[1]),
+                    element: heading
+                }});
+            }});
+            
+            return sections;
+        }}
+
+        function updateProgressIndicator() {{
+            const content = document.getElementById('doc-content');
+            if (!content) return;
+            
+            const scrollContainer = document.getElementById('content');
+            const containerHeight = scrollContainer.clientHeight;
+            const scrollTop = scrollContainer.scrollTop;
+            const contentHeight = content.scrollHeight;
+            const maxScroll = contentHeight - containerHeight;
+            
+            let percentage = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * 100) : 0;
+            if(percentage > 100) percentage = 100;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressPercentage').textContent = percentage + '%';
+            
+            let currentSection = null;
+            let minDistance = Infinity;
+            
+            sections.forEach(section => {{
+                const element = section.element;
+                const rect = element.getBoundingClientRect();
+                
+                const distance = Math.abs(rect.top - 100);
+                
+                if (distance < minDistance && rect.top < window.innerHeight * 0.7) {{
+                    minDistance = distance;
+                    currentSection = section;
+                }}
+            }});
+            
+            document.querySelectorAll('.section-item').forEach(item => {{
+                item.classList.remove('active');
+                if (currentSection && item.dataset.sectionId === currentSection.id) {{
+                    item.classList.add('active');
+                    
+                    item.scrollIntoView({{
+                        block: 'nearest',
+                        behavior: 'auto'
+                    }});
+                }}
+            }});
+        }}
+
+        function buildSectionList() {{
+            const sectionList = document.getElementById('sectionList');
+            sectionList.innerHTML = '';
+            
+            sections.forEach(section => {{
+                const item = document.createElement('div');
+                item.className = 'section-item';
+                item.dataset.sectionId = section.id;
+                item.setAttribute('onclick', 'scrollToSection(\\'' + section.id + '\\')');
+                
+                const dot = document.createElement('span');
+                dot.className = 'section-dot';
+                
+                const title = document.createElement('span');
+                title.className = 'section-title';
+                title.textContent = section.title;
+                
+                item.style.paddingLeft = ((section.level - 1) * 16 + 8) + 'px';
+                
+                item.appendChild(dot);
+                item.appendChild(title);
+                sectionList.appendChild(item);
+            }});
+        }}
+
+        function scrollToSection(sectionId) {{
+            const element = document.getElementById(sectionId);
+            if (element) {{
+                const content = document.getElementById('content');
+                const rect = element.getBoundingClientRect();
+                const contentRect = content.getBoundingClientRect();
+                
+                content.scrollTo({{
+                    top: content.scrollTop + (rect.top - contentRect.top - 20),
+                    behavior: 'smooth'
+                }});
+            }}
+        }}
+
+        function initializeProgressTracking() {{
+            if (observer) {{
+                observer.disconnect();
+            }}
+            
+            sections = extractSections();
+            
+            buildSectionList();
+            
+            const indicator = document.getElementById('progressIndicator');
+            if (sections.length > 0) {{
+                indicator.classList.add('visible');
+                
+                const content = document.getElementById('content');
+                content.addEventListener('scroll', updateProgressIndicator);
+                updateProgressIndicator();
+                
+                observer = new MutationObserver(() => {{
+                    sections = extractSections();
+                    buildSectionList();
+                    updateProgressIndicator();
+                }});
+                
+                observer.observe(document.getElementById('doc-content'), {{
+                    childList: true,
+                    subtree: true,
+                    characterData: true
+                }});
+            }} else {{
+                indicator.classList.remove('visible');
+            }}
+        }}
+
         const searchInput = document.getElementById('searchInput');
         const searchClear = document.getElementById('searchClear');
-        const searchStats = document.getElementById('searchStats');
         const cardsGrid = document.getElementById('cardsGrid');
 
         function filterCards() {{
             const term = searchInput.value.toLowerCase().trim();
             
-            if (term.length > 0) {{
-                searchClear.classList.add('visible');
-            }} else {{
-                searchClear.classList.remove('visible');
-            }}
+            searchClear.classList.toggle('visible', term.length > 0);
             
             let visible = 0;
             const cards = cardsGrid.children;
             
             for (let i = 0; i < cards.length; i++) {{
                 const card = cards[i];
-                if (card.id === 'empty-search-state') continue;
+                if (card.id === 'empty-platform-state' || card.id === 'empty-search-state') continue;
+                
+                const cardId = card.getAttribute('data-id');
+                const platforms = cardPlatforms[cardId] || [];
+                const matchesPlatform = currentPlatform === 'all' || platforms.includes(currentPlatform);
+                
+                if (!matchesPlatform) {{
+                    card.style.display = 'none';
+                    continue;
+                }}
                 
                 const title = card.querySelector('h3')?.textContent.toLowerCase() || '';
                 const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
-                const category = card.querySelector('.card-category')?.textContent.toLowerCase() || '';
                 
-                if (title.includes(term) || desc.includes(term) || category.includes(term)) {{
+                if (title.includes(term) || desc.includes(term)) {{
                     card.style.display = 'block';
                     visible++;
                 }} else {{
@@ -1914,27 +1850,19 @@ class DocGenerator:
                 }}
             }}
             
-            if (term.length > 0) {{
-                searchStats.textContent = `Found ${{visible}} section${{visible !== 1 ? 's' : ''}}`;
-            }} else {{
-                searchStats.textContent = '';
-            }}
-            
-            let emptyState = document.getElementById('empty-search-state');
-            if (visible === 0 && term.length > 0) {{
-                if (!emptyState) {{
-                    emptyState = document.createElement('div');
-                    emptyState.id = 'empty-search-state';
-                    emptyState.className = 'empty-state';
-                    emptyState.innerHTML = `
-                        <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
-                        <h3>No results found</h3>
-                        <p>Try adjusting your search terms</p>
-                    `;
-                    cardsGrid.appendChild(emptyState);
-                }}
-            }} else if (emptyState) {{
-                emptyState.remove();
+            const emptySearchState = document.getElementById('empty-search-state');
+            if (visible === 0 && term.length > 0 && !emptySearchState) {{
+                const newEmptyState = document.createElement('div');
+                newEmptyState.id = 'empty-search-state';
+                newEmptyState.className = 'empty-state';
+                newEmptyState.innerHTML = `
+                    <span class="material-symbols-outlined">search_off</span>
+                    <h3>No results found</h3>
+                    <p>Try different keywords</p>
+                `;
+                cardsGrid.appendChild(newEmptyState);
+            }} else if (emptySearchState && (visible > 0 || term.length === 0)) {{
+                emptySearchState.remove();
             }}
         }}
 
@@ -1944,32 +1872,20 @@ class DocGenerator:
             searchInput.focus();
         }}
 
-        function dismissWarning() {{
-            const warning = document.getElementById('alphaWarning');
-            warning.style.display = 'none';
-            localStorage.setItem('alphaWarningDismissed', 'true');
-        }}
-
         function showHome() {{
             document.getElementById('home-view').style.display = 'block';
             document.getElementById('doc-view').style.display = 'none';
             document.getElementById('current-section').textContent = 'Home';
             
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            const homeItem = document.querySelector('[onclick="showHome()"]');
-            if (homeItem) homeItem.classList.add('active');
+            document.querySelector('[onclick="showHome()"]').classList.add('active');
             
-            if (window.innerWidth <= 768) {{
-                toggleSidebar();
-            }}
+            if (window.innerWidth <= 768) toggleSidebar();
             
             window.location.hash = '';
-            currentPageId = null;
-            clearSearch();
+            filterByPlatform('all');
             
-            if (localStorage.getItem('alphaWarningDismissed') === 'true') {{
-                document.getElementById('alphaWarning').style.display = 'none';
-            }}
+            document.getElementById('progressIndicator').classList.remove('visible');
         }}
 
         function showPage(id) {{
@@ -1981,121 +1897,63 @@ class DocGenerator:
             document.getElementById('doc-title').textContent = titles[id];
             document.getElementById('current-section').textContent = titles[id];
             
-            // Update meta info
-            const categorySpan = document.querySelector('#doc-category span:last-child');
-            const fileSpan = document.querySelector('#doc-file span:last-child');
-            
-            // Find category from nav
-            const activeNav = document.querySelector(`[onclick="showPage('${{id}}')"]`);
-            if (activeNav) {{
-                const categoryHeader = activeNav.closest('.nav-category')?.querySelector('.category-header span:last-child');
-                if (categoryHeader && categorySpan) {{
-                    categorySpan.textContent = categoryHeader.textContent;
-                }}
-            }}
-            
-            // Set filename
-            if (markdownFiles[id] && fileSpan) {{
-                fileSpan.textContent = markdownFiles[id].split('/').pop() || 'unknown.md';
-            }}
-            
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            const activeNav = document.querySelector(`[onclick="showPage('${{id}}')"]`);
             if (activeNav) activeNav.classList.add('active');
             
-            if (window.innerWidth <= 768) {{
-                toggleSidebar();
-            }}
+            if (window.innerWidth <= 768) toggleSidebar();
             
             document.getElementById('content').scrollTop = 0;
             window.location.hash = id;
-            currentPageId = id;
+            
+            currentDocId = id;
             
             initializeCopyButtons();
-            
-            // Load Giscus for this page (shared comments)
-            if (typeof loadGiscusForPage === 'function') {{
-                loadGiscusForPage(id);
-            }}
+            initializeProgressTracking();
         }}
 
-        const github_url = 'https://github.com/BinaryInkTN/AromaUI/blob/main';
-
-        function editOnGithub() {{
-            const id = window.location.hash.substring(1);
-            if (id && markdownFiles[id]) {{
-                window.open(`${{github_url}}/docs/${{markdownFiles[id].split('/').pop()}}`, '_blank');
-            }}
-        }}
-
-        function copyPageLink() {{
+        function copyPageLink(event) {{
             navigator.clipboard.writeText(window.location.href);
-            alert('Link copied to clipboard!');
+            const button = event.target.closest('.doc-action-button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="material-symbols-outlined">check</span>Copied!';
+            setTimeout(() => {{
+                button.innerHTML = originalText;
+            }}, 2000);
         }}
 
-        function handleKeyDown(e) {{
+        document.addEventListener('keydown', (e) => {{
             if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {{
                 e.preventDefault();
                 searchInput.focus();
-            }}
-            
-            if (e.key === 'Escape' && document.activeElement === searchInput) {{
-                searchInput.blur();
             }}
             
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {{
                 e.preventDefault();
                 searchInput.focus();
             }}
-        }}
+        }});
 
-        function handleResize() {{
-            if (window.innerWidth > 768) {{
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }}
-        }}
-
-        function handleHashChange() {{
-            if (window.location.hash) {{
-                const id = window.location.hash.substring(1);
-                if (pages[id]) {{
-                    showPage(id);
-                }} else {{
-                    showHome();
-                }}
-            }} else {{
-                showHome();
-            }}
-        }}
-
-        // Initialize everything when the page loads
-        document.addEventListener('DOMContentLoaded', function() {{
-            // Set up event listeners
-            document.addEventListener('keydown', handleKeyDown);
-            window.addEventListener('resize', handleResize);
-            window.addEventListener('hashchange', handleHashChange);
-            
+        document.addEventListener('DOMContentLoaded', () => {{
             searchInput.addEventListener('input', () => {{
                 clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(filterCards, 300);
+                searchTimeout = setTimeout(filterCards, 200);
             }});
 
-            // Initialize theme
             const savedTheme = localStorage.getItem('theme') || 'light';
-            setTheme(savedTheme);
-            
-            // Handle warning banner
-            if (localStorage.getItem('alphaWarningDismissed') === 'true') {{
-                document.getElementById('alphaWarning').style.display = 'none';
+            const themeOptions = document.querySelectorAll('.theme-option');
+            for (let option of themeOptions) {{
+                if (option.textContent.toLowerCase().includes(savedTheme)) {{
+                    setTheme(savedTheme, {{ target: option }});
+                    break;
+                }}
             }}
             
-            // Handle initial hash
-            handleHashChange();
+            if (window.location.hash) {{
+                const id = window.location.hash.substring(1);
+                if (pages[id]) showPage(id);
+            }}
             
-            // Initialize copy buttons if needed
             initializeCopyButtons();
         }});
     </script>
@@ -2107,19 +1965,21 @@ class DocGenerator:
         return icon_name.lower()
     
     def _process_markdown(self, content: str) -> str:
+        extensions = [
+            'extra',
+            'codehilite',
+            'toc',
+            'tables',
+            'fenced_code',
+            'attr_list',
+            'def_list',
+            'abbr',
+            'footnotes'
+        ]
+        
         html = markdown.markdown(
             content,
-            extensions=[
-                'extra',
-                'codehilite',
-                'toc',
-                'tables',
-                'fenced_code',
-                'attr_list',
-                'def_list',
-                'abbr',
-                'footnotes'
-            ]
+            extensions=extensions
         )
         return html
     
@@ -2157,7 +2017,8 @@ class DocGenerator:
             categories = [{'name': name, 'icon': 'folder'} for name in sorted(category_names)]
         
         sidebar_sections = {}
-        markdown_files = {}
+        all_platforms = set()
+        card_platforms = {}
         
         for section in sections:
             category = section.get('category', 'General')
@@ -2165,13 +2026,16 @@ class DocGenerator:
                 sidebar_sections[category] = []
             sidebar_sections[category].append(section)
             
-            # Store markdown file path for edit on GitHub
-            markdown_file = section.get('file', '')
-            if markdown_file and not os.path.isabs(markdown_file):
-                markdown_file = os.path.join(base_dir, markdown_file)
+            platforms = section.get('platforms', [])
+            for platform in platforms:
+                all_platforms.add(platform.lower())
+            
             title = section.get('title', 'Untitled')
             section_id = title.lower().replace(' ', '-')
-            markdown_files[section_id] = markdown_file
+            card_platforms[section_id] = [p.lower() for p in platforms]
+        
+        hero_section = self._get_hero_section(config)
+        platform_filters = self._get_platform_filters(list(all_platforms))
         
         sidebar_content = []
         category_count = len(categories)
@@ -2194,7 +2058,7 @@ class DocGenerator:
                 for section in category_sections:
                     title = section.get('title', 'Untitled')
                     section_id = title.lower().replace(' ', '-')
-                    icon = self._get_icon_name(section.get('icon', 'default'))
+                    icon = self._get_icon_name(section.get('icon', 'description'))
                     
                     sidebar_content.append(f'''
                         <div class="nav-item" onclick="showPage('{section_id}')">
@@ -2212,9 +2076,10 @@ class DocGenerator:
         for section in sections:
             title = section.get('title', 'Untitled')
             description = section.get('description', '')
-            icon = self._get_icon_name(section.get('icon', 'default'))
+            icon = self._get_icon_name(section.get('icon', 'description'))
             markdown_file = section.get('file', '')
             category = section.get('category', 'General')
+            platforms = section.get('platforms', [])
             
             if markdown_file and not os.path.isabs(markdown_file):
                 markdown_file = os.path.join(base_dir, markdown_file)
@@ -2229,32 +2094,48 @@ class DocGenerator:
             pages_dict[section_id] = content
             titles_dict[section_id] = title
             
+            platform_icons = ''
+            for platform in platforms:
+                platform_lower = platform.lower()
+                icon_map = {
+                    'linux': 'terminal',
+                    'windows': 'window',
+                    'android': 'android'
+                }
+                icon_name = icon_map.get(platform_lower, 'devices')
+                platform_icons += f'''
+                    <span class="card-platform">
+                        <span class="material-symbols-outlined">{icon_name}</span>
+                        <span>{platform}</span>
+                    </span>
+                '''
+            
             cards_html.append(f'''
-                <div class="card" onclick="showPage('{section_id}')" role="gridcell" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){{showPage('{section_id}')}}">
-                    <div class="card-icon" aria-hidden="true">
+                <div class="card" onclick="showPage('{section_id}')" data-id="{section_id}">
+                    <div class="card-icon">
                         <span class="material-symbols-outlined">{icon}</span>
                     </div>
-                    <div class="card-header">
-                        <h3>{title}</h3>
-                    </div>
+                    <h3>{title}</h3>
                     <p>{description}</p>
                     <div class="card-footer">
                         <span class="card-category">
-                            <span class="material-symbols-outlined" aria-hidden="true">folder</span>
+                            <span class="material-symbols-outlined">folder</span>
                             {category}
                         </span>
-                        <span class="material-symbols-outlined card-arrow" aria-hidden="true">arrow_forward</span>
                     </div>
+                    {f'<div class="card-platforms">{platform_icons}</div>' if platform_icons else ''}
                 </div>
             ''')
         
         pygments_styles = self._get_pygments_styles()
         current_year = datetime.now().year
-        last_updated = datetime.now().strftime('%B %d, %Y')
+        last_updated = datetime.now().strftime('%b %d, %Y')
         
         html = self.template.format(
             project_name=project_name,
             version=project_version,
+            hero_section=hero_section,
+            platform_filters=platform_filters,
             category_count=category_count,
             section_count=len(sections),
             pygments_styles=pygments_styles,
@@ -2262,7 +2143,7 @@ class DocGenerator:
             cards_html='\n'.join(cards_html),
             pages_json=json.dumps(pages_dict),
             titles_json=json.dumps(titles_dict),
-            markdown_files_json=json.dumps(markdown_files),
+            card_platforms_json=json.dumps(card_platforms),
             year=current_year,
             last_updated=last_updated
         )
@@ -2275,7 +2156,7 @@ class DocGenerator:
         print(f'Documentation generated: {output_file}')
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate beautiful documentation from markdown files')
+    parser = argparse.ArgumentParser(description='Generate Google-style documentation from markdown files')
     parser.add_argument('-c', '--config', required=True, help='Configuration file (JSON or YAML)')
     parser.add_argument('-o', '--output', default='docs/index.html', help='Output HTML file path')
     
