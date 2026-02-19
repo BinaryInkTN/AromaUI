@@ -16,6 +16,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "utils/stb_image.h"
 
+#define MAX_FONT_CACHE_PER_WINDOW 16
+#define MAX_WINDOWS 256
+#define INVALID_FONT_INDEX -1
+
 typedef struct
 {
     GLuint textureID;
@@ -26,29 +30,133 @@ typedef struct
 
 typedef struct
 {
-    GLuint text_programs[256];
+    GLES3TextRenderer renderer;
+    AromaFont* font;
+    uint32_t last_used_frame;
+    uint32_t font_id;
+} CachedFontRenderer;
+
+typedef struct
+{
+    GLuint text_program;
+    GLuint text_vao;
+    GLuint shape_vao;
+    CachedFontRenderer font_cache[MAX_FONT_CACHE_PER_WINDOW];
+    int font_cache_count;
+} WindowResources;
+
+typedef struct
+{
     GLuint shape_program;
     GLuint text_vbo;
     GLuint shape_vbo;
-    GLuint text_vaos[256];
-    GLuint shape_vaos[256];
     mat4x4 projection;
     GLuint text_fragment_shader;
     GLuint text_vertex_shader;
-    unsigned int selected_color;
     bool is_running;
     size_t num_windows;
-    GLES3TextRenderer text_renderers[256];
-    AromaFont* loaded_fonts[256];
-    Glyph glyph_cache[128];
-
+    WindowResources windows[MAX_WINDOWS];
+    uint32_t current_frame;
 } AromaGLES3Context;
 
 static AromaGLES3Context ctx = {0};
 
+static int find_font_in_cache(size_t window_id, AromaFont* font)
+{
+    if (window_id >= MAX_WINDOWS) return INVALID_FONT_INDEX;
+    
+    WindowResources* win = &ctx.windows[window_id];
+    for (int i = 0; i < win->font_cache_count; i++)
+    {
+        if (win->font_cache[i].font == font)
+        {
+            win->font_cache[i].last_used_frame = ctx.current_frame;
+            return i;
+        }
+    }
+    return INVALID_FONT_INDEX;
+}
+
+static int evict_least_recently_used_font(size_t window_id)
+{
+    if (window_id >= MAX_WINDOWS) return INVALID_FONT_INDEX;
+    
+    WindowResources* win = &ctx.windows[window_id];
+    if (win->font_cache_count == 0) return INVALID_FONT_INDEX;
+    
+    int lru_idx = 0;
+    uint32_t oldest_frame = win->font_cache[0].last_used_frame;
+    
+    for (int i = 1; i < win->font_cache_count; i++)
+    {
+        if (win->font_cache[i].last_used_frame < oldest_frame)
+        {
+            oldest_frame = win->font_cache[i].last_used_frame;
+            lru_idx = i;
+        }
+    }
+    
+    gles3_text_renderer_cleanup(&win->font_cache[lru_idx].renderer);
+    
+    for (int i = lru_idx; i < win->font_cache_count - 1; i++)
+    {
+        win->font_cache[i] = win->font_cache[i + 1];
+    }
+    
+    win->font_cache_count--;
+    return lru_idx;
+}
+
+static GLES3TextRenderer* get_or_load_font_renderer(size_t window_id, AromaFont* font)
+{
+    if (window_id >= MAX_WINDOWS || !font) return NULL;
+    
+    int idx = find_font_in_cache(window_id, font);
+    if (idx != INVALID_FONT_INDEX)
+    {
+        return &ctx.windows[window_id].font_cache[idx].renderer;
+    }
+    
+    WindowResources* win = &ctx.windows[window_id];
+    
+    if (win->font_cache_count >= MAX_FONT_CACHE_PER_WINDOW)
+    {
+        evict_least_recently_used_font(window_id);
+    }
+    
+    int new_idx = win->font_cache_count;
+    CachedFontRenderer* cache = &win->font_cache[new_idx];
+    
+    if (!gles3_text_renderer_init(&cache->renderer))
+    {
+        LOG_ERROR("Failed to init text renderer for new font in window %zu", window_id);
+        return NULL;
+    }
+    
+    FT_Face face = (FT_Face)aroma_font_get_face(font);
+    if (!face)
+    {
+        LOG_ERROR("Failed to get font face for window %zu", window_id);
+        return NULL;
+    }
+    
+    gles3_text_renderer_load_font(&cache->renderer, face);
+   
+    
+    cache->font = font;
+    cache->last_used_frame = ctx.current_frame;
+    cache->font_id = (uint32_t)(uintptr_t)font;
+    
+    win->font_cache_count++;
+    
+    LOG_INFO("Loaded new font for window %zu (total: %d)", window_id, win->font_cache_count);
+    
+    return &cache->renderer;
+}
+
 int setup_shared_window_resources(void)
 {
-     glGenBuffers(1, &ctx.text_vbo);
+    glGenBuffers(1, &ctx.text_vbo);
 
     ctx.text_vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(ctx.text_vertex_shader, 1, &text_vertex_shader_source, NULL);
@@ -95,7 +203,6 @@ int setup_shared_window_resources(void)
     glAttachShader(ctx.shape_program, shape_fragment_shader);
     glLinkProgram(ctx.shape_program);
 
-    
     if(!check_shader_link(ctx.shape_program))
     {
         LOG_CRITICAL("Failed to link shape shader program");
@@ -109,43 +216,33 @@ int setup_shared_window_resources(void)
 
 int setup_separate_window_resources(size_t window_id)
 {
-    GLint prog = 0;
- 
-    if (window_id < 256) {
-        ctx.loaded_fonts[window_id] = NULL;
-    }
+    if (window_id >= MAX_WINDOWS) return 0;
     
-    if (ctx.text_programs[window_id]) {
-        glDeleteProgram(ctx.text_programs[window_id]);
-        ctx.text_programs[window_id] = 0;
+    WindowResources* win = &ctx.windows[window_id];
+    
+    if (win->text_program)
+    {
+        glDeleteProgram(win->text_program);
+        win->text_program = 0;
     }
 
-   ctx.text_programs[window_id] = glCreateProgram();
-    glAttachShader(ctx.text_programs[window_id], ctx.text_vertex_shader);
-    glAttachShader(ctx.text_programs[window_id], ctx.text_fragment_shader);
-    glLinkProgram(ctx.text_programs[window_id]);
-    check_shader_link(ctx.text_programs[window_id]);
+    win->text_program = glCreateProgram();
+    glAttachShader(win->text_program, ctx.text_vertex_shader);
+    glAttachShader(win->text_program, ctx.text_fragment_shader);
+    glLinkProgram(win->text_program);
+    check_shader_link(win->text_program);
 
-    if (!gles3_text_renderer_init(&ctx.text_renderers[window_id])) {
-        LOG_ERROR("Failed to initialize text renderer for window %zu\n", window_id);
-        return 0;
-    }
-
-    GLuint text_vao;
-    glGenVertexArrays(1, &text_vao);
-
-    glBindVertexArray(text_vao);
+    glGenVertexArrays(1, &win->text_vao);
+    glBindVertexArray(win->text_vao);
     glBindBuffer(GL_ARRAY_BUFFER, ctx.text_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    ctx.text_vaos[window_id] = text_vao;
     glBindVertexArray(0);
 
-    GLuint shape_vao;
-    glGenVertexArrays(1, &shape_vao);
-    glBindVertexArray(shape_vao);
+    glGenVertexArrays(1, &win->shape_vao);
+    glBindVertexArray(win->shape_vao);
     glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
 
     GLint position_attrib = glGetAttribLocation(ctx.shape_program, "pos");
@@ -155,14 +252,16 @@ int setup_separate_window_resources(size_t window_id)
     GLint col_attrib = glGetAttribLocation(ctx.shape_program, "col");
     glEnableVertexAttribArray(col_attrib);
     glVertexAttribPointer(col_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, col));
-    ctx.shape_vaos[window_id] = shape_vao;
+    
     glBindVertexArray(0);
+    
+    win->font_cache_count = 0;
+    
     return 1;
 }
 
 void draw_rectangle(size_t window_id, int x, int y, int width, int height)
 {
-
 }
 
 void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint32_t color, bool isRounded, float cornerRadius)
@@ -238,7 +337,11 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
     glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 0);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
 
-    glBindVertexArray(ctx.shape_vaos[window_id]);
+    if (window_id < MAX_WINDOWS)
+    {
+        glBindVertexArray(ctx.windows[window_id].shape_vao);
+    }
+    
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, pos));
 
@@ -254,10 +357,28 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
 
 static void shutdown(void)
 {
-    for (int i = 0; i < 256; i++) {
-        gles3_text_renderer_cleanup(&ctx.text_renderers[i]);
-        if (ctx.text_programs[i]) {
-            glDeleteProgram(ctx.text_programs[i]);
+    for (int w = 0; w < MAX_WINDOWS; w++)
+    {
+        WindowResources* win = &ctx.windows[w];
+        
+        for (int i = 0; i < win->font_cache_count; i++)
+        {
+            gles3_text_renderer_cleanup(&win->font_cache[i].renderer);
+        }
+        
+        if (win->text_program)
+        {
+            glDeleteProgram(win->text_program);
+        }
+        
+        if (win->text_vao)
+        {
+            glDeleteVertexArrays(1, &win->text_vao);
+        }
+        
+        if (win->shape_vao)
+        {
+            glDeleteVertexArrays(1, &win->shape_vao);
         }
     }
 
@@ -295,7 +416,7 @@ static void clear(size_t window_id, uint32_t color)
 
 static void render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color, float scale)
 {
-    if (!font || !text || window_id >= 256) {
+    if (!font || !text || window_id >= MAX_WINDOWS) {
         return;
     }
 
@@ -304,45 +425,35 @@ static void render_text(size_t window_id, AromaFont* font, const char* text, int
         platform->make_context_current(window_id);
     }
 
-    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
-    
-    
-    if (ctx.loaded_fonts[window_id] != font) {
-        FT_Face face = (FT_Face)aroma_font_get_face(font);
-        if (face) {
-            gles3_text_renderer_load_font(renderer, face);
-            ctx.loaded_fonts[window_id] = font;
-            LOG_INFO("Switched/Loaded font for window %zu", window_id);
-        }
+    GLES3TextRenderer* renderer = get_or_load_font_renderer(window_id, font);
+    if (!renderer)
+    {
+        LOG_ERROR("Failed to get renderer for font in window %zu", window_id);
+        return;
     }
 
-    gles3_text_render_text(renderer, ctx.text_programs[window_id], text,
+    WindowResources* win = &ctx.windows[window_id];
+    gles3_text_render_text(renderer, win->text_program, text,
                           (float)x, (float)y, scale, color, window_id);
+    
+    ctx.current_frame++;
 }
 
 static float measure_text(size_t window_id, AromaFont* font, const char* text, float scale)
 {
-    if (!font || !text || window_id >= 256) {
+    if (!font || !text || window_id >= MAX_WINDOWS) {
         return 0.0f;
     }
 
-    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
-
-    
-    if (ctx.loaded_fonts[window_id] != font) {
-        AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-        if (platform && platform->make_context_current) {
-            platform->make_context_current(window_id);
-        }
-        
-        FT_Face face = (FT_Face)aroma_font_get_face(font);
-        if (face) {
-             gles3_text_renderer_load_font(renderer, face);
-             ctx.loaded_fonts[window_id] = font;
-        }
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current) {
+        platform->make_context_current(window_id);
     }
 
-    if (renderer->glyph_count == 0) {
+    GLES3TextRenderer* renderer = get_or_load_font_renderer(window_id, font);
+    if (!renderer)
+    {
+        LOG_ERROR("Failed to get renderer for font in window %zu", window_id);
         return 0.0f;
     }
 
@@ -417,7 +528,11 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 1);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
 
-    glBindVertexArray(ctx.shape_vaos[window_id]);
+    if (window_id < MAX_WINDOWS)
+    {
+        glBindVertexArray(ctx.windows[window_id].shape_vao);
+    }
+    
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
 
@@ -435,30 +550,21 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
 static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle,
                      uint32_t color, int thickness)
 {
-
 }
 
 void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font)
 {
-    if (!font || window_id >= 256) {
+    if (!font || window_id >= MAX_WINDOWS) {
         return;
     }
-
-    GLES3TextRenderer* renderer = &ctx.text_renderers[window_id];
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current) {
         platform->make_context_current(window_id);
     }
 
-    FT_Face face = (FT_Face)aroma_font_get_face(font);
-
-    if (face) {
-        gles3_text_renderer_load_font(renderer, face);
-        LOG_INFO("Loaded font glyphs for window %zu\n", window_id);
-    }
+    get_or_load_font_renderer(window_id, font);
 }
-
 
 static int is_stb_supported_image_format(const char *path)
 {
@@ -502,7 +608,6 @@ unsigned int load_image(const char* image_path)
     }
     fclose(file);
 
-
     unsigned int texture = 0;
     glGenTextures(1, &texture);
 
@@ -513,7 +618,6 @@ unsigned int load_image(const char* image_path)
     }
 
     LOG_INFO("Generated OpenGL texture ID: %u for %s", texture, image_path);
-
 
     glBindTexture(GL_TEXTURE_2D, texture);
     if (glGetError() != GL_NO_ERROR) {
@@ -630,25 +734,6 @@ unsigned int load_image(const char* image_path)
         return 0;
     }
 
-    if (!data) {
-        LOG_ERROR("Image data is NULL after loading: %s", image_path);
-        glDeleteTextures(1, &texture);
-        return 0;
-    }
-
-    size_t total_pixels = img_width * img_height;
-    size_t total_bytes = total_pixels * nrChannels;
-    unsigned int zero_count = 0;
-    unsigned int max_value = 0;
-
-    for (size_t i = 0; i < total_bytes && i < 100; i++) {
-        if (data[i] == 0) zero_count++;
-        if (data[i] > max_value) max_value = data[i];
-    }
-
-    LOG_INFO("Image data: %zu bytes, first 100 bytes - zeros: %u, max value: %u",
-             total_bytes, zero_count, max_value);
-
     GLenum format;
     switch (nrChannels) {
         case 1: format = GL_RED; break;
@@ -751,13 +836,12 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
-
+    stbi_image_free(img_data);
 
     LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, Forced RGBA)",
              texture, width, height);
     return texture;
 }
-
 
 void draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
 {
@@ -777,11 +861,8 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
 
     platform->make_context_current(window_id);
 
-
-
     if (!glIsTexture(texture_id)) {
         LOG_ERROR("Texture ID %u is not a valid OpenGL texture", texture_id);
-
         
         GLenum error = glGetError();
         if (error != GL_NO_ERROR) {
@@ -798,7 +879,6 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
         LOG_WARNING("Invalid window size: %dx%d", window_width, window_height);
         return;
     }
-
 
     glViewport(0, 0, window_width, window_height);
     glEnable(GL_BLEND);
@@ -855,7 +935,10 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glBindTexture(GL_TEXTURE_2D, texture_id);
     glUniform1i(glGetUniformLocation(ctx.shape_program, "tex"), 0);
 
-    glBindVertexArray(ctx.shape_vaos[window_id]);
+    if (window_id < MAX_WINDOWS)
+    {
+        glBindVertexArray(ctx.windows[window_id].shape_vao);
+    }
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -879,7 +962,6 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-
 
     LOG_INFO("Image drawn successfully: texture %u", texture_id);
 }
