@@ -419,6 +419,7 @@ void aroma_ui_end_frame(size_t window_id) {
     if (platform && platform->swap_buffers) {
         platform->swap_buffers(window_id);
     }
+    
 #endif
 }
 

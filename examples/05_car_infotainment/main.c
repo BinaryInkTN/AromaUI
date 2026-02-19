@@ -202,6 +202,36 @@ static void build_general_ui(AromaContainer *root)
              170, DIVIDER_ORIENTATION_VERTICAL);
         
 
+        aroma_ui_label(
+            (AromaNode *)speed_card,
+            "Gear: Drive",
+            speed_rect->x + 170, speed_rect->y + 40,
+            LABEL_STYLE_LABEL_MEDIUM, ui_font);
+
+
+        AromaNode* gear_card = aroma_ui_card(
+            (AromaNode *)speed_card,
+            info_rect->x + 190, info_rect->y + info_rect->height - 120,
+            200, 50, CARD_TYPE_ELEVATED);
+
+        static const char* gears[4] = {"P", "R", "N", "D"};
+        
+        AromaRect* gear_rect = (AromaRect*)gear_card->node_widget_ptr;
+        for (int i = 0; i < 4; ++i) {
+            if(i == 3) {
+                aroma_ui_card(
+                    (AromaNode *)gear_card,
+                    gear_rect->x + (i * 40) + 20, gear_rect->y + 10,
+                    40, 30, CARD_TYPE_FILLED);
+            }
+            AromaNode* label = aroma_ui_label(
+                (AromaNode *)gear_card,
+                gears[i],
+                gear_rect->x + (i * 41) + 30, gear_rect->y  + 8 ,
+                LABEL_STYLE_LABEL_MEDIUM, font);
+            aroma_node_set_z_index(label, 99999999);
+            }
+
 
 }
 
