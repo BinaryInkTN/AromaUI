@@ -123,7 +123,7 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
 
     button->icon[0] = '\0';
     button->icon_font = NULL;
-    button->icon_padding = -80;
+    button->icon_padding = 5;
     button->active_pointer_id = -1;
     aroma_button_update_text_position(button);
 
@@ -433,7 +433,7 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
                      icon_scale = target / (float)raw_h;
                 }
                 icon_h_scaled = raw_h * icon_scale;
-                icon_w = (float)aroma_font_get_line_width(button->icon_font, button->icon) * icon_scale;
+                icon_w = (float)aroma_font_get_px_size(button->icon_font) * icon_scale;
             }
             
             float gap = (button->label[0] != '\0' && button->icon[0] != '\0') ? (float)button->icon_padding : 0;

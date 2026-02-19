@@ -79,9 +79,9 @@ static bool __iconbutton_handle_event(AromaEvent* event, void* user_data)
 static void __iconbutton_update_layout(AromaIconButton* btn)
 {
     btn->corner_radius = (float)btn->rect.height / 2.0f;
-    btn->text_x = btn->rect.x + btn->rect.width / 2 - 6;
-    int asc = btn->font ? aroma_font_get_ascender(btn->font) : 0;
-    int line = btn->font ? aroma_font_get_line_height(btn->font) : btn->rect.height;
+    btn->text_x = btn->rect.x + btn->rect.width / 2 - aroma_font_get_px_size(btn->font) / 2;
+    int asc = 0;
+    int line = btn->font ? aroma_font_get_px_size(btn->font) : btn->rect.height;
     btn->text_y = btn->rect.y + (btn->rect.height - line) / 2 + asc;
 }
 
