@@ -3,11 +3,11 @@
 #include <stdio.h>
 
 
-#define WIN_W 800
-#define WIN_H 480
+#define WIN_W 1280
+#define WIN_H 720
 #define SIDEBAR_W 200
 #define CONTENT_W (WIN_W - SIDEBAR_W)
-
+AromaFont *icon_font = NULL;
 
 #define CENTER_X (CONTENT_W / 2) + SIDEBAR_W
 
@@ -57,7 +57,150 @@ static void on_theme_change(int index, const char *option, void *user_data)
 
 static void build_general_ui(AromaContainer *root)
 {
-    aroma_ui_card((AromaNode *)root, 0, 0, 300, 100, CARD_TYPE_ELEVATED);
+
+    // Card Backgrounds
+    AromaNode* general_info = aroma_ui_card((AromaNode *)root, 0, 0, 400, 100, CARD_TYPE_FILLED);
+    aroma_node_set_flex_grow(general_info, 1);
+    // flex
+    AromaNode* applets_container = aroma_ui_container((AromaNode *)root, 0, 120, 610, 300, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
+    aroma_ui_card((AromaNode *)applets_container, 0, 0, 400, 300, CARD_TYPE_ELEVATED);
+    aroma_node_set_gap((AromaNode *)applets_container, 20);
+    AromaNode* applets_row = aroma_ui_container((AromaNode *)applets_container, 0, 130, 610, 310, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
+    AromaNode* applet1 = aroma_ui_card((AromaNode *)applets_row, 0, 0, 280, 70, CARD_TYPE_ELEVATED);
+    AromaNode* applet2 = aroma_ui_card((AromaNode *)applets_row, 0, 0, 280, 70, CARD_TYPE_ELEVATED);
+    aroma_node_set_gap((AromaNode *)applets_row, 20);
+    aroma_node_set_flex_grow(applet1, 1);
+    aroma_node_set_flex_grow(applet2, 1);
+
+
+    // Temporary workaround to add widgets on the card until we have proper support for that
+    AromaRect* info_rect = (AromaRect*)general_info->node_widget_ptr;
+    
+
+
+
+    aroma_ui_image(
+        (AromaNode *)general_info,
+        "../car.png",
+        info_rect->x + 40, info_rect->y + 20,
+        264 *1.2,126 *1.2); 
+
+    aroma_ui_label(
+        (AromaNode *)general_info,
+        "Vehicle Status: All systems normal",
+        info_rect->x + 90, info_rect->y + 200,
+        LABEL_STYLE_LABEL_MEDIUM, ui_font);
+
+    AromaNode* progress_bar = aroma_ui_progressbar(
+        (AromaNode *)general_info,
+        info_rect->x + 30, info_rect->y + 260,
+        360, 20,
+        PROGRESS_TYPE_DETERMINATE, 0.75f);
+
+        aroma_ui_icon((AromaNode*) general_info, AROMA_ICON_BATTERY_CHARGING_FULL, info_rect->x + 40, info_rect->y + 305, 48, theme.colors.primary, icon_font);
+
+        AromaFont* font = aroma_font_create("../Ubuntu-Bold.ttf", 24);
+
+        aroma_ui_label(
+            (AromaNode *)general_info,
+            "204",
+            info_rect->x + 90, info_rect->y + 310,
+            LABEL_STYLE_LABEL_MEDIUM, font);
+
+        aroma_ui_label(
+            (AromaNode *)general_info,
+            "km",
+            info_rect->x + 90 + aroma_font_get_line_width(font, "204"), info_rect->y + 320,
+            LABEL_STYLE_LABEL_SMALL, ui_font);
+
+         aroma_ui_label(
+            (AromaNode *)general_info,
+            "Remaining",
+            info_rect->x + 90 , info_rect->y + 340,
+            LABEL_STYLE_LABEL_SMALL, ui_font);
+        aroma_ui_divider(
+            (AromaNode *)general_info,
+            info_rect->x + 180, info_rect->y + 300,
+             80, DIVIDER_ORIENTATION_VERTICAL);
+
+
+        // Wh/km
+      aroma_ui_label(
+            (AromaNode *)general_info,
+            "128",
+            info_rect->x + 200, info_rect->y + 310,
+            LABEL_STYLE_LABEL_MEDIUM, font);
+
+        aroma_ui_label(
+            (AromaNode *)general_info,
+            "Wh",
+            info_rect->x + 200 + aroma_font_get_line_width(font, "128"), info_rect->y + 320,
+            LABEL_STYLE_LABEL_SMALL, ui_font);
+
+         aroma_ui_label(
+            (AromaNode *)general_info,
+            "Average",
+            info_rect->x + 200 , info_rect->y + 340,
+            LABEL_STYLE_LABEL_SMALL, ui_font);
+
+            aroma_ui_divider(
+            (AromaNode *)general_info,
+            info_rect->x + 290, info_rect->y + 300,
+             80, DIVIDER_ORIENTATION_VERTICAL);
+
+            // Full Capacity
+                  aroma_ui_label(
+            (AromaNode *)general_info,
+            "35.5",
+            info_rect->x + 310, info_rect->y + 310,
+            LABEL_STYLE_LABEL_MEDIUM, font);
+
+        aroma_ui_label(
+            (AromaNode *)general_info,
+            "kWh",
+            info_rect->x + 310 + aroma_font_get_line_width(font, "35.5"), info_rect->y + 320,
+            LABEL_STYLE_LABEL_SMALL, ui_font);
+
+         aroma_ui_label(
+            (AromaNode *)general_info,
+            "Fuel Capacity",
+            info_rect->x + 310 , info_rect->y + 340,
+            LABEL_STYLE_LABEL_SMALL, ui_font);
+
+
+        // Speed 
+        AromaNode* speed_card = aroma_ui_card(
+            (AromaNode *)general_info,
+            info_rect->x + 20, info_rect->y + info_rect->height - 220,
+            200, 200, CARD_TYPE_FILLED);
+
+
+        AromaRect* speed_rect = (AromaRect*)speed_card->node_widget_ptr;
+
+        AromaFont* speed_font = aroma_font_create("../Ubuntu-Bold.ttf", 76);
+
+        aroma_ui_label((AromaNode *)speed_card, "Speed", speed_rect->x + 20, speed_rect->y + 20, LABEL_STYLE_LABEL_MEDIUM, ui_font);
+
+        aroma_ui_label(
+            (AromaNode *)speed_card,
+            "88",
+            speed_rect->x + 20, speed_rect->y + 40,
+            LABEL_STYLE_LABEL_LARGE, speed_font);
+
+
+
+        aroma_ui_label(
+            (AromaNode *)speed_card,
+            "km/h",
+            speed_rect->x + 20 , speed_rect->y + 160,
+            LABEL_STYLE_LABEL_MEDIUM, ui_font);
+
+
+            aroma_ui_divider(
+            (AromaNode *)speed_card,
+            speed_rect->x + 150, speed_rect->y + 20,
+             170, DIVIDER_ORIENTATION_VERTICAL);
+        
 
 
 }
@@ -224,7 +367,7 @@ static void build_settings_ui(AromaContainer *root)
 int main(void)
 {
     aroma_ui_init();
-
+    aroma_splash(false);
     theme =
         aroma_theme_create_material_preset_dark(
             AROMA_THEME_MATERIAL_BLUE);
@@ -235,7 +378,11 @@ int main(void)
             aroma_ubuntu_ttf,
             aroma_ubuntu_ttf_len,
             16);
-
+    icon_font =
+        aroma_font_create_from_memory(
+            icon_ttf,
+            icon_ttf_len,
+            24);
     AromaWindow *window =
         aroma_ui_create_window(
             "Automotive HMI",
@@ -243,6 +390,28 @@ int main(void)
 
     aroma_event_set_root((AromaNode *)window);
     aroma_ui_prepare_font_for_window(0, ui_font);
+    
+    // status bar 
+
+    aroma_ui_label(
+        (AromaNode *)window,
+        "12:45 PM",
+        250, 30,
+        LABEL_STYLE_LABEL_LARGE, ui_font);
+
+    aroma_ui_label(
+        (AromaNode *)window,
+        "San Francisco, 68°F",
+        400, 30,
+        LABEL_STYLE_LABEL_MEDIUM, ui_font);
+
+     aroma_ui_icon((AromaNode*) window, AROMA_ICON_SIGNAL_CELLULAR_4_BAR, WIN_W - 120, 30, 24, theme.colors.primary, icon_font);
+     aroma_ui_icon((AromaNode*) window, AROMA_ICON_WIFI, WIN_W - 80, 30, 24, theme.colors.primary, icon_font);
+     aroma_ui_icon((AromaNode*) window, AROMA_ICON_BATTERY_FULL, WIN_W - 40, 30, 24, theme.colors.primary, icon_font);
+     aroma_ui_icon((AromaNode*) window, AROMA_ICON_GPS_FIXED, WIN_W - 160, 30, 24, theme.colors.primary, icon_font);
+     aroma_ui_icon((AromaNode*) window, AROMA_ICON_BLUETOOTH_AUDIO, WIN_W - 200, 30, 24, theme.colors.primary, icon_font);
+
+
 
     content_root =
         aroma_container_create(
@@ -250,11 +419,10 @@ int main(void)
             SIDEBAR_W, 0,
             CONTENT_W, WIN_H);
 
-    general_root    = aroma_ui_container((AromaNode *)content_root, 230, 10, CONTENT_W, WIN_H - 20, AROMA_LAYOUT_MODE_GRID, 0, 0, 0);
-    aroma_node_set_grid_cols(general_root, 2);
-    aroma_node_set_grid_rows(general_root, 1);
-    climate_root  = aroma_container_create((AromaNode *)content_root, 0, 0, CONTENT_W, WIN_H);
-    settings_root = aroma_container_create((AromaNode *)content_root, 0, 0, CONTENT_W, WIN_H);
+    general_root    = aroma_ui_container((AromaNode *)content_root, 230, 90, CONTENT_W - 30, WIN_H - 90, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
+    aroma_node_set_gap((AromaNode *)general_root, 20);
+    climate_root  = aroma_container_create((AromaNode *)content_root, 0, 80, CONTENT_W, WIN_H - 80);
+    settings_root = aroma_container_create((AromaNode *)content_root, 0, 80, CONTENT_W, WIN_H- 80);
     
     build_general_ui(general_root);
     build_climate_ui(climate_root);
@@ -277,11 +445,7 @@ int main(void)
     aroma_sidebar_set_content((AromaNode *)sidebar, 2, climate_nodes, 1);
     aroma_sidebar_set_content((AromaNode *)sidebar, 3, settings_nodes, 1);
 
-    AromaFont *icon_font =
-        aroma_font_create_from_memory(
-            icon_ttf,
-            icon_ttf_len,
-            24);
+
 
     aroma_sidebar_set_icon((AromaNode*) sidebar, 0, AROMA_ICON_DASHBOARD, icon_font);
     aroma_sidebar_set_icon((AromaNode*) sidebar, 1, AROMA_ICON_MAP, icon_font);

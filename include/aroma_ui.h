@@ -75,6 +75,7 @@ typedef struct {
     bool is_active;
     /** @brief Default font associated with the window. */
     AromaFont* default_font;
+    bool needs_redraw;
 } AromaWindowHandle;
 
 #define AROMA_MAX_WINDOWS 16
