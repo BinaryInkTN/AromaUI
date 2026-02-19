@@ -297,13 +297,6 @@ void aroma_sidebar_set_retracted(AromaNode* sidebar_node, bool retracted)
         sidebar->is_retracted = retracted;
         sidebar->rect.width = retracted ? sidebar->retracted_width : sidebar->full_width;
         aroma_node_invalidate(sidebar_node);
-        
-        // Notify parent layout if possible? 
-        // Force layout update on parent
-        if (sidebar_node->parent_node) {
-            // This assumes parent knows how to re-process based on child size change
-            // Just invalidating tree or parent might trigger layout in next pass if implemented
-        }
     }
 }
 
@@ -374,9 +367,6 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
             if (sidebar->is_retracted != should_retract) {
                 sidebar->is_retracted = should_retract;
                 sidebar->rect.width = should_retract ? sidebar->retracted_width : sidebar->full_width;
-                // Note: Changing rect width here might affect layout if parent uses flexbox, 
-                // but since layout is computed before draw, this is strictly visual for this frame
-                // and might lag one frame for layout. 
             }
         }
     }
@@ -420,7 +410,7 @@ void aroma_sidebar_draw(AromaNode* sidebar_node, size_t window_id)
                  gfx->render_text(window_id, sidebar->icon_font, sidebar->icons[i], 
                      content_x, icon_y, text_color, 1.0f);
                  
-                 icon_w = aroma_font_get_line_width(sidebar->icon_font, sidebar->icons[i]);
+                 icon_w = aroma_font_get_px_size(sidebar->icon_font);
                  content_x += icon_w + 12;
             }
 

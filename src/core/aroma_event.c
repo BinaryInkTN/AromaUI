@@ -499,6 +499,9 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
 
 
 void aroma_event_resync_hover(void) {
+    // TODO FIX 
+    #if !defined(__ANDROID__) && !defined(__linux__)
+   
     if (!g_event_system.root_node || g_event_system.shutting_down) return;
 
     if (g_mouse_state.last_x < 0 || g_mouse_state.last_y < 0) return;
@@ -531,6 +534,7 @@ void aroma_event_resync_hover(void) {
 
         g_mouse_state.hovered_node_id = current_id;
     }
+    #endif
 }
 
 AromaNode* aroma_event_hit_test(AromaNode* root, int x, int y) {

@@ -213,6 +213,8 @@ void set_window_update_callback(void (*callback)(size_t window_id, void *data), 
 void request_window_update(size_t window_id)
 {
     glps_wm_window_update(platform_ctx.wm, window_id);
+   
+ 
 }
 
 bool run_event_loop()

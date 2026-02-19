@@ -2,33 +2,33 @@
 #include <unistd.h>
 #include <stdio.h>
 
-/* ===================== WINDOW ===================== */
+
 #define WIN_W 800
 #define WIN_H 480
 #define SIDEBAR_W 200
 #define CONTENT_W (WIN_W - SIDEBAR_W)
 
-/* ===================== CONTENT LAYOUT ===================== */
+
 #define CENTER_X (CONTENT_W / 2) + SIDEBAR_W
 
-/* ===================== GLOBAL ===================== */
+
 static AromaFont *ui_font = NULL;
 static AromaSidebar *sidebar = NULL;
 static AromaContainer *content_root = NULL;
-static AromaContainer *media_root = NULL;
+static AromaContainer *general_root = NULL;
 static AromaContainer *climate_root = NULL;
 static AromaContainer *settings_root = NULL;
 static AromaTheme theme;
 
-/* ===================== SIDEBAR ===================== */
+
 static const char *sidebar_items[] = {
-    "Media",
+    "General",
     "Navigation",
     "Climate",
     "Settings"
 };
 
-/* ===================== CALLBACKS ===================== */
+
 static void on_theme_change(int index, const char *option, void *user_data)
 {
     (void)option;
@@ -52,67 +52,17 @@ static void on_theme_change(int index, const char *option, void *user_data)
     }
 
     aroma_ui_set_theme(&theme);
-    aroma_ui_request_redraw(NULL);
 }
 
-/* ===================== MEDIA ===================== */
-static void build_media_ui(AromaContainer *root)
+
+static void build_general_ui(AromaContainer *root)
 {
-    AromaLabel *header =
-        aroma_label_create(
-            (AromaNode *)root,
-            "Now playing: Kendrick Lamar - good kid, m.A.A.d city.",
-            CENTER_X - 200, 40,
-            LABEL_STYLE_LABEL_LARGE);
-    aroma_label_set_font((AromaNode *)header, ui_font);
+    aroma_ui_card((AromaNode *)root, 0, 0, 300, 100, CARD_TYPE_ELEVATED);
 
-    aroma_image_create(
-        (AromaNode *)root,
-        "../album_cover.jpg",
-        CENTER_X - 110, 80,
-        220, 220);
 
-    AromaButton *prev =
-        aroma_button_create(
-            (AromaNode *)root,
-            "PREV",
-            CENTER_X - 160, 330,
-            90, 42);
-    AromaButton *play =
-        aroma_button_create(
-            (AromaNode *)root,
-            "PLAY",
-            CENTER_X - 60, 330,
-            120, 42);
-    AromaButton *next =
-        aroma_button_create(
-            (AromaNode *)root,
-            "NEXT",
-            CENTER_X + 80, 330,
-            90, 42);
-
-    aroma_button_set_font((AromaNode *)prev, ui_font);
-    aroma_button_set_font((AromaNode *)play, ui_font);
-    aroma_button_set_font((AromaNode *)next, ui_font);
-
-    aroma_button_setup_events((AromaNode *)prev, aroma_ui_request_redraw, NULL);
-    aroma_button_setup_events((AromaNode *)play, aroma_ui_request_redraw, NULL);
-    aroma_button_setup_events((AromaNode *)next, aroma_ui_request_redraw, NULL);
-
-    AromaSlider *vol =
-        aroma_slider_create(
-            (AromaNode *)root,
-            CENTER_X - 160, 390,
-            320, 26,
-            0, 100, 45);
-
-    aroma_slider_setup_events(
-        (AromaNode *)vol,
-        aroma_ui_request_redraw,
-        NULL);
 }
 
-/* ===================== CLIMATE (VW STYLE) ===================== */
+
 static void build_climate_ui(AromaContainer *root)
 {
     AromaLabel *title =
@@ -169,7 +119,7 @@ static void build_climate_ui(AromaContainer *root)
         aroma_ui_request_redraw,
         NULL);
 
-    /* Bottom row (VW-style) */
+   
     AromaSwitch *ac =
         aroma_switch_create(
             (AromaNode *)root,
@@ -236,7 +186,7 @@ static void build_climate_ui(AromaContainer *root)
         48, 48);
 }
 
-/* ===================== SETTINGS ===================== */
+
 static void build_settings_ui(AromaContainer *root)
 {
     AromaLabel *title =
@@ -270,7 +220,7 @@ static void build_settings_ui(AromaContainer *root)
     aroma_dropdown_setup_events(themes, aroma_ui_request_redraw, NULL);
 }
 
-/* ===================== MAIN ===================== */
+
 int main(void)
 {
     aroma_ui_init();
@@ -300,11 +250,13 @@ int main(void)
             SIDEBAR_W, 0,
             CONTENT_W, WIN_H);
 
-    media_root    = aroma_container_create((AromaNode *)content_root, 0, 0, CONTENT_W, WIN_H);
+    general_root    = aroma_ui_container((AromaNode *)content_root, 230, 10, CONTENT_W, WIN_H - 20, AROMA_LAYOUT_MODE_GRID, 0, 0, 0);
+    aroma_node_set_grid_cols(general_root, 2);
+    aroma_node_set_grid_rows(general_root, 1);
     climate_root  = aroma_container_create((AromaNode *)content_root, 0, 0, CONTENT_W, WIN_H);
     settings_root = aroma_container_create((AromaNode *)content_root, 0, 0, CONTENT_W, WIN_H);
-
-    build_media_ui(media_root);
+    
+    build_general_ui(general_root);
     build_climate_ui(climate_root);
     build_settings_ui(settings_root);
 
@@ -317,14 +269,24 @@ int main(void)
 
     aroma_sidebar_set_font((AromaNode *)sidebar, ui_font);
 
-    AromaNode *media_nodes[]    = {(AromaNode *)media_root};
+    AromaNode *general_nodes[]    = {(AromaNode *)general_root};
     AromaNode *climate_nodes[]  = {(AromaNode *)climate_root};
     AromaNode *settings_nodes[] = {(AromaNode *)settings_root};
 
-    aroma_sidebar_set_content((AromaNode *)sidebar, 0, media_nodes, 1);
+    aroma_sidebar_set_content((AromaNode *)sidebar, 0, general_nodes, 1);
     aroma_sidebar_set_content((AromaNode *)sidebar, 2, climate_nodes, 1);
     aroma_sidebar_set_content((AromaNode *)sidebar, 3, settings_nodes, 1);
 
+    AromaFont *icon_font =
+        aroma_font_create_from_memory(
+            icon_ttf,
+            icon_ttf_len,
+            24);
+
+    aroma_sidebar_set_icon((AromaNode*) sidebar, 0, AROMA_ICON_DASHBOARD, icon_font);
+    aroma_sidebar_set_icon((AromaNode*) sidebar, 1, AROMA_ICON_MAP, icon_font);
+    aroma_sidebar_set_icon((AromaNode*) sidebar, 2, AROMA_ICON_AC_UNIT, icon_font);
+    aroma_sidebar_set_icon((AromaNode*) sidebar, 3, AROMA_ICON_SETTINGS, icon_font);
     aroma_sidebar_setup_events(
         (AromaNode *)sidebar,
         aroma_ui_request_redraw,
@@ -333,15 +295,13 @@ int main(void)
     aroma_sidebar_set_selected((AromaNode *)sidebar, 0);
     aroma_ui_request_redraw(NULL);
 
-//aroma_ui_debug_overlay((AromaNode *)window, 10, 10, 300, ui_font);
 
     while (aroma_ui_is_running())
     {
 
         aroma_ui_process_events();
         aroma_ui_render(window);
-      //  aroma_node_invalidate_tree((AromaNode *)window);
-        //usleep(16000);
+        usleep(16000);
     }
 
     aroma_ui_destroy_window(window);

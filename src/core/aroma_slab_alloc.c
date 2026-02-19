@@ -124,7 +124,10 @@ void* aroma_widget_alloc(size_t size) {
     void* widget_ptr = tagged_ptr + 1;
     return widget_ptr;
     #else
-    return malloc(size);
+    void* p = malloc(size);
+    if (!p) return NULL;
+    memset(p, 0, size);
+    return p;
     #endif
 }
 

@@ -107,7 +107,6 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
         return NULL;
     }
     
-    // Node geometry fields removed; card->rect contains geometry
 
     aroma_node_set_draw_cb(node, aroma_card_draw);
 
@@ -157,9 +156,12 @@ void aroma_card_draw(AromaNode* card_node, size_t window_id) {
     }
 
     if (card->type == CARD_TYPE_ELEVATED) {
-        gfx->fill_rectangle(window_id, card->rect.x + 2, card->rect.y + 4,
+        /*
+          gfx->fill_rectangle(window_id, card->rect.x + 2, card->rect.y + 4,
                           card->rect.width, card->rect.height,
                           card->shadow_color, true, card->border_radius);
+        */
+      
     }
 
     gfx->fill_rectangle(window_id, card->rect.x, card->rect.y,

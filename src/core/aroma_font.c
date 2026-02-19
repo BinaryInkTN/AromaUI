@@ -196,6 +196,10 @@ AromaFont* aroma_font_create_from_memory(
     return font;
 }
 
+int aroma_font_get_px_size(AromaFont* font) {
+    return font ? font->size_px : 0;
+}
+
 void aroma_font_destroy(AromaFont* font) {
     if (!font) return;
     if (font->face) FT_Done_Face(font->face);

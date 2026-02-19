@@ -73,6 +73,8 @@ void* aroma_font_get_face(AromaFont* font);
  * @return Width in pixels.
  */
 int aroma_font_get_line_width(AromaFont* font, const char* text);
+
+int aroma_font_get_px_size(AromaFont* font);
 #ifdef __cplusplus
 }
 #endif
