@@ -133,6 +133,15 @@
             "category": "UI",
             "file": "docs/ui_utilities.md",
             "platforms": ["android"]
+        },
+         {
+            "title": "DPI Conversion API",
+            "description": "Convert between Android density-independent pixels (dp) and actual pixels (px).",
+            "icon": "widgets",
+            "color": "#7D5260",
+            "category": "UI",
+            "file": "docs/dpi.md",
+            "platforms": ["android"]
         }
     ]
 }

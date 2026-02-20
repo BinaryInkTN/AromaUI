@@ -587,8 +587,14 @@ static void show_splash_screen(size_t window_id, int width, int height) {
         return;
     }
 
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if(!platform) {
+        LOG_WARNING("Platform interface not available for splash screen");
+        return;
+    }
+
     
-    int splash_font_size = 128;
+    int splash_font_size = platform->android_sp_to_px ? platform->android_sp_to_px(46) : 46;
     AromaFont* font = aroma_font_create_from_memory(
         aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, splash_font_size
     );
