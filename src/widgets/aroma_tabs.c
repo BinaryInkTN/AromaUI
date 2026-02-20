@@ -13,7 +13,7 @@
 #include <string.h>
 
 #define AROMA_TABS_CONTENT_MAX 8
-#define AROMA_TABS_GAP -20
+#define AROMA_TABS_GAP 8
 
 struct AromaTabs {
     AromaRect rect;
@@ -481,7 +481,7 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
                     if (target_h > w * 0.8f) target_h = w * 0.8f;
                     
                     icon_scale = (float)target_h / (float)default_icon_h;
-                    icon_w = aroma_font_get_line_width(tabs->icon_font, tabs->icons[i]) * icon_scale;
+                    icon_w = aroma_font_get_px_size(tabs->icon_font) * icon_scale;
                 }
             }
 

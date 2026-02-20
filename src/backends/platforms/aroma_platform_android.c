@@ -4,6 +4,7 @@
 #include <android/native_window.h>
 #include <android/native_activity.h>
 #include "aroma_android.h"
+
 #ifndef AWINDOW_FLAG_FULLSCREEN
 #define AWINDOW_FLAG_FULLSCREEN 0x00000400
 #endif
@@ -19,12 +20,14 @@
 #ifndef AWINDOW_FLAG_KEEP_SCREEN_ON
 #define AWINDOW_FLAG_KEEP_SCREEN_ON 0x00000080
 #endif
+
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
 #include <stdbool.h>
 #include <jni.h>
+#include <math.h>
 #include "../aroma_abi.h"
 #include "../graphics/aroma_graphics_interface.h"
 #include "core/aroma_logger.h"
@@ -51,6 +54,13 @@ static bool g_phys_cached = false;
 static bool g_window_flags_set = false;
 static void (*g_update_callback)(size_t window_id, void *data) = NULL;
 static void *g_update_callback_data = NULL;
+static int g_avail_width = 0;
+static int g_avail_height = 0;
+static float g_density = 1.0f;
+static int g_density_dpi = 160;
+static float g_scaled_density = 1.0f;  
+static float g_xdpi = 160.0f;
+static float g_ydpi = 160.0f;
 
 #define LOG_TAG "AromaUI-Android"
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__))
@@ -435,14 +445,39 @@ static void cache_physical_screen_info(struct android_app *app)
     jobject dm = (*env)->NewObject(env, dm_class, dm_ctor);
 
     jclass display_class = (*env)->FindClass(env, "android/view/Display");
+    
     jmethodID get_real_metrics = (*env)->GetMethodID(env, display_class, "getRealMetrics", "(Landroid/util/DisplayMetrics;)V");
     (*env)->CallVoidMethod(env, display_obj, get_real_metrics, dm);
 
     jfieldID w_field = (*env)->GetFieldID(env, dm_class, "widthPixels", "I");
     jfieldID h_field = (*env)->GetFieldID(env, dm_class, "heightPixels", "I");
+    jfieldID density_field = (*env)->GetFieldID(env, dm_class, "density", "F");
+    jfieldID density_dpi_field = (*env)->GetFieldID(env, dm_class, "densityDpi", "I");
+    jfieldID scaled_density_field = (*env)->GetFieldID(env, dm_class, "scaledDensity", "F");
+    jfieldID xdpi_field = (*env)->GetFieldID(env, dm_class, "xdpi", "F");
+    jfieldID ydpi_field = (*env)->GetFieldID(env, dm_class, "ydpi", "F");
 
     g_phys_width = (*env)->GetIntField(env, dm, w_field);
     g_phys_height = (*env)->GetIntField(env, dm, h_field);
+    
+    g_density = (*env)->GetFloatField(env, dm, density_field);
+    g_density_dpi = (*env)->GetIntField(env, dm, density_dpi_field);
+    g_scaled_density = (*env)->GetFloatField(env, dm, scaled_density_field);
+    g_xdpi = (*env)->GetFloatField(env, dm, xdpi_field);
+    g_ydpi = (*env)->GetFloatField(env, dm, ydpi_field);
+
+    jmethodID get_metrics = (*env)->GetMethodID(env, display_class, "getMetrics", "(Landroid/util/DisplayMetrics;)V");
+    (*env)->CallVoidMethod(env, display_obj, get_metrics, dm);
+    
+    g_avail_width = (*env)->GetIntField(env, dm, w_field);
+    g_avail_height = (*env)->GetIntField(env, dm, h_field);
+
+    LOGI("Display Metrics:");
+    LOGI("  Physical: %dx%d", g_phys_width, g_phys_height);
+    LOGI("  Available: %dx%d", g_avail_width, g_avail_height);
+    LOGI("  Density: %f (%d dpi)", g_density, g_density_dpi);
+    LOGI("  Scaled Density: %f", g_scaled_density);
+    LOGI("  Physical DPI: %f x %f", g_xdpi, g_ydpi);
 
     g_phys_cached = true;
 
@@ -455,6 +490,152 @@ static void cache_physical_screen_info(struct android_app *app)
     (*env)->DeleteLocalRef(env, activity_class);
 
     detach_jni_env(attach);
+}
+
+static int dp_to_px(int dp) {
+    return (int)(dp * g_density + 0.5f);
+}
+
+static int sp_to_px(int sp) {
+    return (int)(sp * g_scaled_density + 0.5f);
+}
+
+static int px_to_dp(int px) {
+    return (int)(px / g_density + 0.5f);
+}
+
+static int px_to_sp(int px) {
+    return (int)(px / g_scaled_density + 0.5f);
+}
+
+static void get_available_size_dp(int *width_dp, int *height_dp) {
+    *width_dp = px_to_dp(g_avail_width);
+    *height_dp = px_to_dp(g_avail_height);
+}
+
+static void get_screen_size_inches(float *width_in, float *height_in) {
+    *width_in = g_phys_width / g_xdpi;
+    *height_in = g_phys_height / g_ydpi;
+}
+
+static float get_screen_diagonal_inches(void) {
+    float width_in = g_phys_width / g_xdpi;
+    float height_in = g_phys_height / g_ydpi;
+    return sqrt(width_in * width_in + height_in * height_in);
+}
+
+static const char* get_screen_size_category(void) {
+    float diagonal_in = get_screen_diagonal_inches();
+    
+    if (diagonal_in < 3.5f) return "small";
+    if (diagonal_in < 5.0f) return "normal";
+    if (diagonal_in < 7.0f) return "large";
+    if (diagonal_in < 10.0f) return "xlarge";
+    return "xxlarge";
+}
+
+static float android_get_density(void)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return g_density;
+}
+
+static int android_get_density_dpi(void)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return g_density_dpi;
+}
+
+static float android_get_scaled_density(void)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return g_scaled_density;
+}
+
+static int android_dp_to_px(int dp)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return dp_to_px(dp);
+}
+
+static int android_px_to_dp(int px)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return px_to_dp(px);
+}
+
+static int android_sp_to_px(int sp)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return sp_to_px(sp);
+}
+
+static int android_px_to_sp(int px)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return px_to_sp(px);
+}
+
+static void android_get_available_size_dp(int *width_dp, int *height_dp)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    get_available_size_dp(width_dp, height_dp);
+}
+
+static void android_get_screen_size_inches(float *width_inches, float *height_inches)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    get_screen_size_inches(width_inches, height_inches);
+}
+
+static float android_get_screen_diagonal_inches(void)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return get_screen_diagonal_inches();
+}
+
+static const char* android_get_screen_size_category(void)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return get_screen_size_category();
+}
+
+static float android_get_xdpi(void)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return g_xdpi;
+}
+
+static float android_get_ydpi(void)
+{
+    if (!g_phys_cached && g_app) {
+        cache_physical_screen_info(g_app);
+    }
+    return g_ydpi;
 }
 
 static void android_open_url(const char *url)
@@ -908,6 +1089,8 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
         break;
     case APP_CMD_WINDOW_RESIZED:
     case APP_CMD_CONFIG_CHANGED:
+        g_phys_cached = false;
+        cache_physical_screen_info(app);
         term_display_surface_only();
         if (app->window)
             init_display(app);
@@ -2274,7 +2457,20 @@ AromaPlatformInterface aroma_platform_android = {
     .android_launch_gallery = impl_android_launch_gallery,
     .android_get_system_service = impl_android_get_system_service,
     .android_get_internal_path = impl_android_get_internal_path,
-    .android_get_external_path = impl_android_get_external_path
+    .android_get_external_path = impl_android_get_external_path,
+    .android_get_density = android_get_density,
+    .android_get_density_dpi = android_get_density_dpi,
+    .android_get_scaled_density = android_get_scaled_density,
+    .android_dp_to_px = android_dp_to_px,
+    .android_px_to_dp = android_px_to_dp,
+    .android_sp_to_px = android_sp_to_px,
+    .android_px_to_sp = android_px_to_sp,
+    .android_get_available_size_dp = android_get_available_size_dp,
+    .android_get_screen_size_inches = android_get_screen_size_inches,
+    .android_get_screen_diagonal_inches = android_get_screen_diagonal_inches,
+    .android_get_screen_size_category = android_get_screen_size_category,
+    .android_get_xdpi = android_get_xdpi,
+    .android_get_ydpi = android_get_ydpi
 };
 
 #endif

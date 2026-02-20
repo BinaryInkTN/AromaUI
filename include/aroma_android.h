@@ -1,4 +1,3 @@
-
 /**
  * @file aroma_android.h
  * @brief Android platform integration API for AromaUI.
@@ -230,7 +229,6 @@ static inline void aroma_android_bt_stop_scan(void) {
  * @param connection_cb Called when a connection attempt completes.
  * @param data_cb Called when data is received from a connected device.
  */
-
 static inline void aroma_android_bt_register_callbacks(void (*device_cb)(const char*, const char*, int, int),
                                       void (*scan_finished_cb)(void),
                                       void (*pairing_cb)(bool, const char*, const char*),
@@ -328,6 +326,7 @@ static inline bool aroma_android_bt_connect_with_mode(const char* addr, int mode
     }
     return false;
 }
+
 
 /**
  * @brief Disconnect from the currently connected Bluetooth device.
@@ -480,6 +479,190 @@ static inline const char* aroma_android_get_external_path() {
     }
     return NULL;
 }
+
+
+/** @name DPI Awareness Functions */
+/**@{*/
+
+/**
+ * @brief Get the current screen density scaling factor.
+ * @return Density scale factor (e.g., 1.0 for mdpi, 2.0 for xhdpi, 3.0 for xxhdpi)
+ */
+static inline float aroma_android_get_density(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_density) {
+        return platform->android_get_density();
+    }
+    return 1.0f;
+}
+
+
+/**
+ * @brief Get the screen density in DPI.
+ * @return Density DPI value (e.g., 160, 240, 320, 480, 640)
+ */
+static inline int aroma_android_get_density_dpi(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_density_dpi) {
+        return platform->android_get_density_dpi();
+    }
+    return 160;
+}
+
+
+/**
+ * @brief Get the scaled density factor for text (respects user font size setting).
+ * @return Scaled density factor for text sizing (SP to pixels)
+ */
+static inline float aroma_android_get_scaled_density(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_scaled_density) {
+        return platform->android_get_scaled_density();
+    }
+    return 1.0f;
+}
+
+
+/**
+ * @brief Convert Density-Independent Pixels (DP) to actual screen pixels.
+ * @param dp Value in DP units
+ * @return Value in pixels
+ */
+static inline int aroma_android_dp_to_px(int dp) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_dp_to_px) {
+        return platform->android_dp_to_px(dp);
+    }
+    return dp;
+}
+
+
+/**
+ * @brief Convert actual screen pixels to Density-Independent Pixels (DP).
+ * @param px Value in pixels
+ * @return Value in DP units
+ */
+static inline int aroma_android_px_to_dp(int px) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_px_to_dp) {
+        return platform->android_px_to_dp(px);
+    }
+    return px;
+}
+
+
+/**
+ * @brief Convert Scale-Independent Pixels (SP) to actual screen pixels (for text).
+ * @param sp Value in SP units
+ * @return Value in pixels
+ */
+static inline int aroma_android_sp_to_px(int sp) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_sp_to_px) {
+        return platform->android_sp_to_px(sp);
+    }
+    return sp;
+}
+
+
+/**
+ * @brief Convert actual screen pixels to Scale-Independent Pixels (SP).
+ * @param px Value in pixels
+ * @return Value in SP units
+ */
+static inline int aroma_android_px_to_sp(int px) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_px_to_sp) {
+        return platform->android_px_to_sp(px);
+    }
+    return px;
+}
+
+
+/**
+ * @brief Get the available window size in DP units (excluding system bars).
+ * @param width_dp Pointer to store width in DP
+ * @param height_dp Pointer to store height in DP
+ */
+static inline void aroma_android_get_available_size_dp(int *width_dp, int *height_dp) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_available_size_dp) {
+        platform->android_get_available_size_dp(width_dp, height_dp);
+    } else {
+        *width_dp = 0;
+        *height_dp = 0;
+    }
+}
+
+
+/**
+ * @brief Get the physical screen size in inches.
+ * @param width_inches Pointer to store width in inches
+ * @param height_inches Pointer to store height in inches
+ */
+static inline void aroma_android_get_screen_size_inches(float *width_inches, float *height_inches) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_screen_size_inches) {
+        platform->android_get_screen_size_inches(width_inches, height_inches);
+    } else {
+        *width_inches = 0.0f;
+        *height_inches = 0.0f;
+    }
+}
+
+
+/**
+ * @brief Get the screen diagonal size in inches.
+ * @return Diagonal screen size in inches
+ */
+static inline float aroma_android_get_screen_diagonal_inches(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_screen_diagonal_inches) {
+        return platform->android_get_screen_diagonal_inches();
+    }
+    return 0.0f;
+}
+
+
+/**
+ * @brief Get the screen size category based on physical size.
+ * @return String category: "small", "normal", "large", "xlarge", "xxlarge"
+ */
+static inline const char* aroma_android_get_screen_size_category(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_screen_size_category) {
+        return platform->android_get_screen_size_category();
+    }
+    return "normal";
+}
+
+
+/**
+ * @brief Get the physical X DPI of the screen.
+ * @return Physical dots per inch horizontally
+ */
+static inline float aroma_android_get_xdpi(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_xdpi) {
+        return platform->android_get_xdpi();
+    }
+    return 160.0f;
+}
+
+
+/**
+ * @brief Get the physical Y DPI of the screen.
+ * @return Physical dots per inch vertically
+ */
+static inline float aroma_android_get_ydpi(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_ydpi) {
+        return platform->android_get_ydpi();
+    }
+    return 160.0f;
+}
+
+/**@}*/
 
 #ifdef __cplusplus
 }
