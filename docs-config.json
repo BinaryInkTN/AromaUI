@@ -128,7 +128,7 @@
         {
             "title": "UI Utilities API",
             "description": "Android UI feedback utilities. Toasts, dialogs, and material components.",
-            "icon": "widgets",
+            "icon": "select_window",
             "color": "#7D5260",
             "category": "UI",
             "file": "docs/ui_utilities.md",
@@ -137,10 +137,19 @@
          {
             "title": "DPI Conversion API",
             "description": "Convert between Android density-independent pixels (dp) and actual pixels (px).",
-            "icon": "widgets",
+            "icon": "responsive_layout",
             "color": "#7D5260",
             "category": "UI",
             "file": "docs/dpi.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Widgets API",
+            "description": "Custom Android UI widgets and components. Pre-built material design components for faster UI development.",
+            "icon": "widgets",
+            "color": "#7D5260",
+            "category": "UI",
+            "file": "docs/widgets.md",
             "platforms": ["android"]
         }
     ]
