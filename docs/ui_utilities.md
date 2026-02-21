@@ -1,8 +1,9 @@
-# UI Utilities – `aroma_android.h`
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 Provides lightweight access to common Android UI feedback mechanisms.
 
----
 
 ## `void aroma_android_toast(const char* msg, bool long_duration);`
 
@@ -19,7 +20,6 @@ aroma_android_toast("Operation successful", false);
 * Non-blocking UI feedback.
 * Avoid excessive usage.
 
----
 
 ## `void aroma_android_open_settings();`
 
@@ -35,7 +35,6 @@ aroma_android_open_settings();
 
 * Useful when users must manually enable permissions.
 
----
 
 ## `void aroma_android_vibrate(int ms);`
 

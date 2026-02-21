@@ -1,7 +1,7 @@
-# Bluetooth Classic API
-#### Author: AHMED ALI Mohamed Yassine
+<b> Author: AHMED ALI Mohamed Yassine </b>
 
 <br/>
+
 This guide provides a structured, comprehensive explanation of the AromaUI Bluetooth Classic API for Android.
 
 The API supports:

@@ -1,8 +1,10 @@
-# Camera & Gallery – `aroma_android.h`
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
+
 
 Provides access to Android media intents for capturing and selecting images.
 
----
 
 ## `void aroma_android_launch_camera();`
 
@@ -19,7 +21,6 @@ aroma_android_launch_camera();
 * Requires camera permission.
 * Result must be handled on the Java side.
 
----
 
 ## `void aroma_android_launch_gallery();`
 

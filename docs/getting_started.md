@@ -1,4 +1,6 @@
-# Getting Started with AromaUI CLI
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 AromaUI CLI is a command-line tool for creating, building, and running cross-platform C applications using AromaUI. It supports:
 
@@ -7,7 +9,6 @@ AromaUI CLI is a command-line tool for creating, building, and running cross-pla
 
 This guide walks you through installation, project creation, building, and running your first application.
 
----
 
 # 1. Prerequisites
 
@@ -38,7 +39,6 @@ The doctor command checks:
 
 If Android SDK or NDK is missing, the tool can install it automatically.
 
----
 
 # 2. Installing Android SDK & NDK (Optional)
 
@@ -76,7 +76,6 @@ The SDK will be installed in:
 
 unless ANDROID_HOME is already defined.
 
----
 
 # 3. Creating a New Project
 
@@ -121,7 +120,6 @@ MyApp/
 
 The project is immediately ready to build.
 
----
 
 # 4. Building the Project
 
@@ -185,7 +183,6 @@ This will:
 * Locate the executable
 * Launch it automatically
 
----
 
 ## Run on Android (Connected Device)
 
@@ -201,7 +198,6 @@ This will:
 * Install it using adb
 * Launch the NativeActivity
 
----
 
 ## Run on Android Emulator
 
@@ -219,7 +215,6 @@ This will:
 * Wait for full boot completion
 * Install and launch the app
 
----
 
 # 6. Useful Commands Overview
 
@@ -256,7 +251,6 @@ aroma run android
 aroma run android --emu
 ```
 
----
 
 # 7. Environment Variables
 
@@ -268,7 +262,6 @@ JAVA_HOME
 
 If not defined, the CLI attempts to auto-detect common locations.
 
----
 
 # 8. Troubleshooting
 

@@ -1,8 +1,9 @@
-# Wi‑Fi API – `aroma_android.h`
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 Provides programmatic access to Wi‑Fi state and control.
 
----
 
 ## `bool aroma_android_is_wifi_enabled();`
 
@@ -20,7 +21,6 @@ if (!aroma_android_is_wifi_enabled()) {
 
 * Some Android versions restrict direct Wi‑Fi toggling.
 
----
 
 ## `void aroma_android_set_wifi_enabled(bool enabled);`
 

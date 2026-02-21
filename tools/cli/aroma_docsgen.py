@@ -1458,7 +1458,7 @@ class DocGenerator:
             <div class="content-wrapper">
                 <div class="content" id="content">
                     <div id="home-view">
-                        {hero_section}
+                       
 
                         <div class="search-container">
                             <span class="material-symbols-outlined search-icon">search</span>

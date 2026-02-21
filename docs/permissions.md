@@ -1,8 +1,9 @@
-# Permissions API – `aroma_android.h`
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 The Permissions API provides runtime permission management in compliance with Android's security model. It supports permission grouping, Android version–specific behavior, and asynchronous permission handling.
 
----
 
 # 1. Permission Checking
 

@@ -1,8 +1,9 @@
-# Device Information – `aroma_android.h`
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 Provides runtime access to device-level system information.
 
----
 
 ## `int aroma_android_get_battery_level();`
 

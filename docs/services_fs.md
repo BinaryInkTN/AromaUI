@@ -1,8 +1,9 @@
-# System Services & File System – `aroma_android.h`
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 Provides access to Android system services and application storage paths.
 
----
 
 ## `jobject aroma_android_get_system_service(const char* service_name);`
 
@@ -23,7 +24,6 @@ jobject service = aroma_android_get_system_service("vibrator");
 * Returned object is a JNI reference.
 * Service availability depends on device and Android version.
 
----
 
 ## `const char* aroma_android_get_internal_path();`
 
@@ -41,7 +41,6 @@ printf("Internal: %s\n", path);
 * Private to the application.
 * No special permissions required.
 
----
 
 ## `const char* aroma_android_get_external_path();`
 

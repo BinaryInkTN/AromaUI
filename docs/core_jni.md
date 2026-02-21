@@ -1,10 +1,10 @@
-# Core JNI Access – `aroma_android.h`
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 This section exposes low‑level access to the Android runtime. These APIs are intended for advanced use cases such as custom JNI bridging, third‑party SDK integration, or manual thread attachment.
 
 All functions are available only when compiling with `__ANDROID__` defined.
-
----
 
 ## `JNIEnv* aroma_android_get_env();`
 
@@ -30,7 +30,6 @@ if (!env) {
 * Each native thread must be attached to the JVM before using JNI.
 * Do not store `JNIEnv*` globally across threads.
 
----
 
 ## `jobject aroma_android_get_activity();`
 
@@ -50,7 +49,6 @@ if (activity) {
 * Managed internally by the platform layer.
 * Do not delete this reference.
 
----
 
 ## `JavaVM* aroma_android_get_jvm();`
 
