@@ -92,7 +92,6 @@ class DocGenerator:
         )
         version = config.get("version", "1.0.0")
 
-        # Hero section with pill icons from your website
         hero_html = f"""
         <section class="hero">
             <div class="container hero-grid">
