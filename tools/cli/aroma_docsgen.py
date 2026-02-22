@@ -118,6 +118,8 @@ class DocGenerator:
                     <div class="pill-icon"><span class="material-symbols-outlined">widgets</span></div>
 
                 </div>
+                                <img src="images/hero-image.png"/>
+
             </div>
         </section>
         """
@@ -720,6 +722,13 @@ class DocGenerator:
             align-items: center;
             gap: 48px;
             flex-wrap: wrap;
+            justify-content: center;
+        }}
+
+        .hero-grid img {{
+            max-width: 100%;
+            height: auto;
+
         }}
 
         .hero-content {{

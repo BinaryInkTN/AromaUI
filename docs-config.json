@@ -11,6 +11,7 @@
             { "icon": "window", "text": "Windows" },
             { "icon": "android", "text": "Android" }
         ],
+        "image": "images/hero_image.png",
         "actions": [
             {
                 "icon": "download",
