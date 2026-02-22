@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
 
-import os
-import json
 import argparse
-import markdown
-import yaml
+import json
+import os
+import re
 from datetime import datetime
 from typing import Dict, List
-import re
+
+import markdown
+import yaml
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
+from pygments.lexers import get_lexer_by_name
+
 
 class DocGenerator:
     def __init__(self):
         self.template = self._get_template()
-    
+
     def _get_pygments_styles(self) -> str:
-        light_formatter = HtmlFormatter(style='default', noclasses=False)
-        dark_formatter = HtmlFormatter(style='monokai', noclasses=False)
-        
-        light_styles = light_formatter.get_style_defs('.codehilite')
-        dark_styles = dark_formatter.get_style_defs('.codehilite')
-        
-        return f'''
+        light_formatter = HtmlFormatter(style="default", noclasses=False)
+        dark_formatter = HtmlFormatter(style="monokai", noclasses=False)
+
+        light_styles = light_formatter.get_style_defs(".codehilite")
+        dark_styles = dark_formatter.get_style_defs(".codehilite")
+
+        return f"""
         {light_styles}
         [data-theme="dark"] .codehilite {{
             {dark_styles}
@@ -31,143 +33,109 @@ class DocGenerator:
         [data-theme="nord"] .codehilite {{
             {dark_styles}
         }}
-        '''
-    
+        [data-theme="solarized"] .codehilite {{
+            {dark_styles}
+        }}
+        [data-theme="sepia"] .codehilite {{
+            {light_styles}
+        }}
+        """
+
     def _get_platform_filters(self, all_platforms: List[str]) -> str:
         platform_icons = {
-            'linux': 'terminal',
-            'windows': 'window',
-            'android': 'android',
-            'ios': 'phone_iphone',
-            'macos': 'desktop_mac',
-            'web': 'language'
+            "linux": "terminal",
+            "android": "android",
+            "embedded": "developer_board",
+            "rtos": "memory",
+            "windows": "window",
+            "ios": "phone_iphone",
+            "macos": "desktop_mac",
+            "web": "language",
+            "baremetal": "chip",
         }
-        
-        unique_platforms = sorted(set([p.lower() for p in all_platforms if p.lower() in platform_icons]))
-        
+
+        unique_platforms = sorted(
+            set([p.lower() for p in all_platforms if p.lower() in platform_icons])
+        )
+
         if not unique_platforms:
-            return ''
-        
+            return ""
+
         filters = ['<div class="platform-filters" role="tablist">']
-        filters.append('''
+        filters.append("""
             <button class="platform-filter active" data-platform="all" onclick="filterByPlatform('all')" role="tab">
                 <span class="material-symbols-outlined">apps</span>
                 <span>All</span>
             </button>
-        ''')
-        
+        """)
+
         for platform in unique_platforms:
-            icon = platform_icons.get(platform, 'devices')
+            icon = platform_icons.get(platform, "devices")
             platform_display = platform.capitalize()
-            
+
             filters.append(f'''
                 <button class="platform-filter" data-platform="{platform}" onclick="filterByPlatform('{platform}')" role="tab">
                     <span class="material-symbols-outlined">{icon}</span>
                     <span>{platform_display}</span>
                 </button>
             ''')
-        
-        filters.append('</div>')
-        return '\n'.join(filters)
-    
+
+        filters.append("</div>")
+        return "\n".join(filters)
+
     def _get_hero_section(self, config: Dict) -> str:
-        hero_config = config.get('hero', {})
-        
-        hero_title = hero_config.get('title', 'AromaSDK')
-        description = hero_config.get('description', 'The complete software development kit for building cross-platform applications.')
-        version = config.get('version', '1.0.0')
-        
-        badges = hero_config.get('badges', [])
-        badges_html = ''
-        if badges:
-            badge_items = []
-            for badge in badges:
-                icon = badge.get('icon', 'code')
-                text = badge.get('text', '')
-                badge_items.append(f'''
-                    <span class="hero-badge">
-                        <span class="material-symbols-outlined">{icon}</span>
-                        {text}
-                    </span>
-                ''')
-            badges_html = f'<div class="hero-badges">{"".join(badge_items)}</div>'
-        
-        actions = hero_config.get('actions', [])
-        actions_html = ''
-        if actions:
-            action_items = []
-            for action in actions:
-                icon = action.get('icon', 'download')
-                text = action.get('text', 'Button')
-                type_class = 'hero-button-primary' if action.get('primary', False) else 'hero-button-secondary'
-                onclick = action.get('onclick', '')
-                
-                action_items.append(f'''
-                    <button class="hero-button {type_class}" onclick="{onclick}">
-                        <span class="material-symbols-outlined">{icon}</span>
-                        {text}
-                    </button>
-                ''')
-            actions_html = f'<div class="hero-actions">{"".join(action_items)}</div>'
-        
-        stats = hero_config.get('stats', [])
-        stats_html = ''
-        if stats:
-            stat_items = []
-            for stat in stats:
-                value = stat.get('value', '0')
-                label = stat.get('label', '')
-                stat_items.append(f'''
-                    <div class="hero-stat">
-                        <span class="hero-stat-value">{value}</span>
-                        <span class="hero-stat-label">{label}</span>
+        hero_config = config.get("hero", {})
+
+        hero_title = hero_config.get("title", config.get("name", "AromaUI"))
+        description = hero_config.get(
+            "description", "Development toolkit for Linux, Android and embedded systems"
+        )
+        version = config.get("version", "1.0.0")
+
+        # Hero section with pill icons from your website
+        hero_html = f"""
+        <section class="hero">
+            <div class="container hero-grid">
+                <div class="hero-content">
+
+                    <h1 class="hero-title">
+                      {hero_title}
+                    </h1>
+                    <p class="hero-description">{description}</p>
+                    <div class="btn-row">
+                        <a href="#" class="btn hero-button-primary">
+                            <span class="material-symbols-outlined">download</span>
+                            Install SDK
+                        </a>
+
                     </div>
-                ''')
-            stats_html = f'<div class="hero-stats">{"".join(stat_items)}</div>'
-        
-        platform_icons = hero_config.get('platformIcons', [])
-        platform_icons_html = ''
-        if platform_icons:
-            icon_items = []
-            for platform in platform_icons:
-                icon = platform.get('icon', 'code')
-                title = platform.get('title', '')
-                icon_items.append(f'''
-                    <span class="hero-platform-icon" title="{title}">
-                        <span class="material-symbols-outlined">{icon}</span>
-                    </span>
-                ''')
-            platform_icons_html = f'<div class="hero-platform-icons">{"".join(icon_items)}</div>'
-        
-        hero_html = f'''
-        <div class="hero-section">
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    {hero_title} <span>v{version}</span>
-                </h1>
-                <p class="hero-description">{description}</p>
-                
-                {badges_html}
-                {actions_html}
-                {stats_html}
+                </div>
+                <div class="hero-visual">
+                    <div class="pill-icon"><span class="material-symbols-outlined">wifi</span></div>
+                    <div class="pill-icon"><span class="material-symbols-outlined">bluetooth</span></div>
+                    <div class="pill-icon"><span class="material-symbols-outlined">palette</span></div>
+                    <div class="pill-icon"><span class="material-symbols-outlined">android</span></div>
+                    <div class="pill-icon"><span class="material-symbols-outlined">developer_board</span></div>
+                    <div class="pill-icon"><span class="material-symbols-outlined">widgets</span></div>
+
+                </div>
             </div>
-            
-            {platform_icons_html}
-        </div>
-        '''
-        
+        </section>
+        """
+
         return hero_html
-    
+
     def _get_template(self) -> str:
-        template = '''<!DOCTYPE html>
+        template = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project_name} - Documentation</title>
+    <meta name="description" content="AromaUI Development Toolkit">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         * {{
@@ -178,10 +146,11 @@ class DocGenerator:
 
         :root {{
             --sidebar-width: 280px;
-            --progress-indicator-width: 300px;
+            --progress-indicator-width: 280px;
             --header-height: 64px;
         }}
 
+        /* ----- YOUR THEMES - PRESERVED EXACTLY ----- */
         :root[data-theme="light"] {{
             --primary: #1a73e8;
             --primary-light: #e8f0fe;
@@ -298,7 +267,7 @@ class DocGenerator:
         }}
 
         body {{
-            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--surface-1);
             color: var(--text-primary);
             font-size: 14px;
@@ -306,6 +275,7 @@ class DocGenerator:
             overflow: hidden;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            transition: background-color 0.2s, color 0.2s;
         }}
 
         .material-symbols-outlined {{
@@ -382,42 +352,6 @@ class DocGenerator:
         .project-version {{
             color: var(--text-tertiary);
             font-size: 0.8125rem;
-        }}
-
-        .platform-filters {{
-            display: flex;
-            gap: 0.5rem;
-            margin: 1.5rem 0 2rem;
-            padding: 0.25rem;
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 36px;
-        }}
-
-        .platform-filter {{
-            flex: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 32px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-weight: 500;
-            font-family: 'Google Sans', sans-serif;
-            cursor: pointer;
-        }}
-
-        .platform-filter:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .platform-filter.active {{
-            background: var(--primary-light);
-            color: var(--primary);
         }}
 
         .sidebar-nav {{
@@ -604,7 +538,7 @@ class DocGenerator:
             align-items: center;
             gap: 0.5rem;
             font-size: 0.875rem;
-            font-family: 'Google Sans', sans-serif;
+            font-family: 'Roboto', sans-serif;
         }}
 
         .theme-button:hover {{
@@ -768,145 +702,181 @@ class DocGenerator:
             text-overflow: ellipsis;
         }}
 
-        .hero-section {{
+        /* ----- HERO SECTION WITH PILL ICONS FROM YOUR WEBSITE ----- */
+        .hero {{
+            padding: 60px 0 40px;
             background: var(--surface-0);
-            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 2.5rem;
             margin-bottom: 2rem;
+        }}
+
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }}
+
+        .hero-grid {{
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 2rem;
+            align-items: center;
+            gap: 48px;
+            flex-wrap: wrap;
         }}
 
         .hero-content {{
-            flex: 1;
+            flex: 1 1 400px;
+        }}
+
+        .hero-chip-set {{
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }}
+
+        .chip {{
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            display: inline-flex;
+            align-items: center;
+        }}
+
+        .chip.outline {{
+            background: transparent;
+            border: 1px solid var(--border-dark);
         }}
 
         .hero-title {{
-            font-size: 2rem;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
+            font-size: 3.5rem;
+            font-weight: 300;
+            line-height: 1.1;
+            letter-spacing: -0.5px;
             color: var(--text-primary);
-            letter-spacing: -0.01em;
         }}
 
-        .hero-title span {{
-            background: var(--surface-2);
-            color: var(--text-secondary);
-            padding: 0.125rem 0.75rem;
-            border-radius: 16px;
-            font-size: 0.875rem;
-            margin-left: 0.75rem;
-            vertical-align: middle;
+        .hero-highlight {{
+            color: var(--primary);
+            font-weight: 400;
         }}
 
         .hero-description {{
-            font-size: 1rem;
+            font-size: 1.25rem;
             color: var(--text-secondary);
-            margin-bottom: 1.5rem;
+            margin: 24px 0 32px;
             max-width: 600px;
         }}
 
-        .hero-badges {{
+        .btn-row {{
             display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
+            gap: 16px;
             flex-wrap: wrap;
         }}
 
-        .hero-badge {{
-            background: var(--surface-2);
-            padding: 0.375rem 0.875rem;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-            font-size: 0.8125rem;
-            color: var(--text-secondary);
-        }}
-
-        .hero-actions {{
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }}
-
-        .hero-button {{
+        .btn {{
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1.5rem;
-            border-radius: 24px;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 40px;
             font-weight: 500;
-            font-size: 0.875rem;
-            cursor: pointer;
+            text-decoration: none;
             border: none;
-            font-family: 'Google Sans', sans-serif;
+            cursor: pointer;
+            transition: box-shadow 0.2s, background 0.2s;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1rem;
         }}
 
         .hero-button-primary {{
             background: var(--primary);
             color: var(--surface-0);
+            box-shadow: var(--shadow);
         }}
 
         .hero-button-primary:hover {{
-            background: var(--primary-dark);
-            color : var(--text-primary);
+            box-shadow: var(--shadow-hover);
+            filter: brightness(0.95);
         }}
 
         .hero-button-secondary {{
-            background: var(--surface-2);
-            color: var(--text-secondary);
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--border-dark);
+            box-shadow: none;
         }}
 
         .hero-button-secondary:hover {{
-            background: var(--surface-3);
+            background: var(--primary-light);
         }}
 
-        .hero-stats {{
+        .hero-visual {{
+            flex: 1 1 400px;
+            background-color: var(--surface-2);
+            border-radius: 64px;
+            padding: 40px 24px;
             display: flex;
-            gap: 2rem;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }}
 
-        .hero-stat {{
-            display: flex;
-            flex-direction: column;
-        }}
-
-        .hero-stat-value {{
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: var(--primary);
-            margin-bottom: 0.125rem;
-        }}
-
-        .hero-stat-label {{
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-        }}
-
-        .hero-platform-icons {{
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }}
-
-        .hero-platform-icon {{
-            width: 40px;
-            height: 40px;
-            background: var(--surface-2);
-            border-radius: 50%;
+        .pill-icon {{
+            background-color: var(--primary-light);
+            width: 90px;
+            height: 90px;
+            border-radius: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-secondary);
+            color: var(--primary);
         }}
 
-        .hero-platform-icon:hover {{
-            background: var(--surface-3);
+        .pill-icon span {{
+            font-size: 48px;
+        }}
+
+        .platform-filters {{
+            display: flex;
+            gap: 0.5rem;
+            margin: 0 0 2rem 0;
+            padding: 0.25rem;
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            flex-wrap: wrap;
+        }}
+
+        .platform-filter {{
+            flex: 0 1 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 32px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: 'Roboto', sans-serif;
+            cursor: pointer;
+        }}
+
+        .platform-filter:hover {{
+            background: var(--hover-overlay);
+        }}
+
+        .platform-filter.active {{
+            background: var(--primary-light);
+            color: var(--primary);
         }}
 
         .search-container {{
@@ -930,7 +900,7 @@ class DocGenerator:
             background: var(--surface-0);
             border: 1px solid var(--border);
             border-radius: 24px;
-            font-family: 'Google Sans', sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 0.9375rem;
             color: var(--text-primary);
             outline: none;
@@ -969,7 +939,7 @@ class DocGenerator:
         .cards-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
+            gap: 1.5rem;
             max-width: 1200px;
             margin: 0 auto;
         }}
@@ -978,18 +948,21 @@ class DocGenerator:
             background: var(--surface-0);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 1.25rem;
+            padding: 1.5rem;
             cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.1s;
         }}
 
         .card:hover {{
             background: var(--surface-1);
             border-color: var(--primary);
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
         }}
 
         .card-icon {{
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             background: var(--surface-2);
             border-radius: 8px;
             display: flex;
@@ -1037,13 +1010,14 @@ class DocGenerator:
             margin-top: 0.75rem;
             padding-top: 0.75rem;
             border-top: 1px solid var(--border);
+            flex-wrap: wrap;
         }}
 
         .card-platform {{
             display: inline-flex;
             align-items: center;
             gap: 0.25rem;
-            padding: 0.125rem 0.375rem;
+            padding: 0.125rem 0.5rem;
             border-radius: 4px;
             font-size: 0.75rem;
             color: var(--text-tertiary);
@@ -1083,7 +1057,7 @@ class DocGenerator:
             border-radius: 20px;
             color: var(--text-secondary);
             font-size: 0.875rem;
-            font-family: 'Google Sans', sans-serif;
+            font-family: 'Roboto', sans-serif;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -1118,11 +1092,14 @@ class DocGenerator:
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
         }}
 
         .footer-info {{
             display: flex;
             gap: 1.5rem;
+            flex-wrap: wrap;
         }}
 
         .markdown-body {{
@@ -1152,10 +1129,6 @@ class DocGenerator:
             font-weight: 500;
             margin: 1.25rem 0 0.5rem;
             color: var(--text-primary);
-            scroll-margin-top: 2rem;
-        }}
-
-        .markdown-body h4, .markdown-body h5, .markdown-body h6 {{
             scroll-margin-top: 2rem;
         }}
 
@@ -1192,12 +1165,13 @@ class DocGenerator:
             border-radius: 16px;
             color: var(--text-secondary);
             font-size: 0.75rem;
-            font-family: 'Google Sans', sans-serif;
+            font-family: 'Roboto', sans-serif;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.375rem;
             opacity: 0;
+            transition: opacity 0.2s;
         }}
 
         .markdown-body pre:hover .copy-button {{
@@ -1291,14 +1265,14 @@ class DocGenerator:
         .codehilite {{
             background: transparent !important;
         }}
-        
+
         {pygments_styles}
 
         @media (max-width: 768px) {{
             .menu-button {{
                 display: flex;
             }}
-            
+
             .sidebar {{
                 position: fixed;
                 left: 0;
@@ -1307,52 +1281,62 @@ class DocGenerator:
                 transform: translateX(-100%);
                 transition: transform 0.2s;
             }}
-            
+
             .sidebar.active {{
                 transform: translateX(0);
             }}
-            
+
             .stats {{
                 display: none;
             }}
-            
+
             .content {{
                 padding: 1rem;
             }}
-            
-            .hero-section {{
+
+            .hero-grid {{
                 flex-direction: column;
-                padding: 1.5rem;
+                text-align: center;
             }}
-            
-            .hero-platform-icons {{
+
+            .hero-description {{
+                margin-left: auto;
+                margin-right: auto;
+            }}
+
+            .btn-row {{
                 justify-content: center;
             }}
-            
+
+            .hero-visual {{
+                width: 100%;
+                justify-content: center;
+            }}
+
             .cards-grid {{
                 grid-template-columns: 1fr;
             }}
-            
+
             .doc-header {{
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 1rem;
             }}
-            
+
             .doc-actions {{
                 width: 100%;
             }}
-            
+
             .footer-content {{
                 flex-direction: column;
                 gap: 0.5rem;
             }}
-            
+
             .footer-info {{
                 flex-direction: column;
                 gap: 0.25rem;
             }}
-            
+
             .progress-indicator {{
                 position: fixed;
                 right: 0;
@@ -1364,7 +1348,7 @@ class DocGenerator:
                 transition: transform 0.2s;
                 z-index: 95;
             }}
-            
+
             .progress-indicator.visible {{
                 transform: translateX(0);
             }}
@@ -1374,7 +1358,7 @@ class DocGenerator:
 <body data-theme="light">
     <div class="app">
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-        
+
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="project-header">
@@ -1385,7 +1369,7 @@ class DocGenerator:
             <div class="sidebar-nav">
                 <div class="nav-category">
                     <div class="category-header" onclick="toggleCategory('home')">
-                        <span class="material-symbols-outlined">chevron_right</span>
+                        <span class="material-symbols-outlined">expand_more</span>
                         <span>Overview</span>
                     </div>
                     <div class="category-items" id="category-home">
@@ -1430,7 +1414,7 @@ class DocGenerator:
                             <span id="current-theme-label">Light</span>
                         </button>
                         <div class="theme-dropdown" id="themeDropdown">
-                            <div class="theme-option" onclick="setTheme('light', event)">
+                            <div class="theme-option active" onclick="setTheme('light', event)">
                                 <span class="material-symbols-outlined">light_mode</span>
                                 Light
                             </div>
@@ -1458,7 +1442,7 @@ class DocGenerator:
             <div class="content-wrapper">
                 <div class="content" id="content">
                     <div id="home-view">
-                       
+                        {hero_section}
 
                         <div class="search-container">
                             <span class="material-symbols-outlined search-icon">search</span>
@@ -1467,9 +1451,9 @@ class DocGenerator:
                                 <span class="material-symbols-outlined">close</span>
                             </button>
                         </div>
-                        
+
                         {platform_filters}
-                        
+
                         <div class="cards-grid" id="cardsGrid">
                             {cards_html}
                         </div>
@@ -1498,7 +1482,7 @@ class DocGenerator:
                             </div>
                         </div>
                         <div class="doc-content markdown-body" id="doc-content"></div>
-                        
+
                         <div class="footer">
                             <div class="footer-content">
                                 <div class="footer-copyright">
@@ -1543,15 +1527,52 @@ class DocGenerator:
         let observer = null;
         let sections = [];
 
+        // Initialize theme - FIXED to apply immediately
         (function() {{
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
+            // Update UI after DOM is loaded
+            document.addEventListener('DOMContentLoaded', function() {{
+                updateThemeUI(savedTheme);
+            }});
         }})();
+
+        function updateThemeUI(theme) {{
+            const themeNames = {{
+                'light': 'Light',
+                'dark': 'Dark',
+                'sepia': 'Sepia',
+                'nord': 'Nord',
+                'solarized': 'Solarized'
+            }};
+
+            const themeLabel = document.getElementById('current-theme-label');
+            if (themeLabel) themeLabel.textContent = themeNames[theme];
+
+            const themeIcon = document.getElementById('themeIcon');
+            if (themeIcon) {{
+                const icons = {{
+                    'light': 'light_mode',
+                    'dark': 'dark_mode',
+                    'sepia': 'book',
+                    'nord': 'ac_unit',
+                    'solarized': 'wb_sunny'
+                }};
+                themeIcon.textContent = icons[theme];
+            }}
+
+            document.querySelectorAll('.theme-option').forEach(opt => {{
+                opt.classList.remove('active');
+                if (opt.textContent.toLowerCase().includes(theme)) {{
+                    opt.classList.add('active');
+                }}
+            }});
+        }}
 
         function toggleThemeDropdown() {{
             const dropdown = document.getElementById('themeDropdown');
             dropdown.classList.toggle('show');
-            
+
             if (dropdown.classList.contains('show')) {{
                 document.addEventListener('click', function closeDropdown(e) {{
                     if (!dropdown.contains(e.target) && !e.target.closest('.theme-button')) {{
@@ -1565,50 +1586,29 @@ class DocGenerator:
         function setTheme(theme, event) {{
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            
+
             document.getElementById('themeDropdown').classList.remove('show');
-            
-            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
-            event.target.closest('.theme-option').classList.add('active');
-            
-            const themeNames = {{
-                'light': 'Light',
-                'dark': 'Dark',
-                'sepia': 'Sepia',
-                'nord': 'Nord',
-                'solarized': 'Solarized'
-            }};
-            
-            document.getElementById('current-theme-label').textContent = themeNames[theme];
-            
-            const themeIcon = document.getElementById('themeIcon');
-            const icons = {{
-                'light': 'light_mode',
-                'dark': 'dark_mode',
-                'sepia': 'book',
-                'nord': 'ac_unit',
-                'solarized': 'wb_sunny'
-            }};
-            themeIcon.textContent = icons[theme];
+
+            updateThemeUI(theme);
         }}
 
         function filterByPlatform(platform) {{
             currentPlatform = platform;
-            
+
             document.querySelectorAll('.platform-filter').forEach(btn => {{
                 btn.classList.remove('active');
                 if (btn.dataset.platform === platform) {{
                     btn.classList.add('active');
                 }}
             }});
-            
+
             const cards = document.querySelectorAll('.card');
             let visibleCount = 0;
-            
+
             cards.forEach(card => {{
                 const cardId = card.getAttribute('data-id');
                 const platforms = cardPlatforms[cardId] || [];
-                
+
                 if (platform === 'all' || platforms.includes(platform)) {{
                     card.style.display = 'block';
                     visibleCount++;
@@ -1616,10 +1616,10 @@ class DocGenerator:
                     card.style.display = 'none';
                 }}
             }});
-            
+
             const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             if (searchTerm) filterCards();
-            
+
             const emptyState = document.getElementById('empty-platform-state');
             if (visibleCount === 0) {{
                 if (!emptyState) {{
@@ -1647,7 +1647,7 @@ class DocGenerator:
             const items = document.getElementById('category-' + id);
             const header = items.previousElementSibling;
             const icon = header.querySelector('.material-symbols-outlined');
-            
+
             items.classList.toggle('collapsed');
             icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
         }}
@@ -1658,7 +1658,7 @@ class DocGenerator:
                     const button = document.createElement('button');
                     button.className = 'copy-button';
                     button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-                    
+
                     button.addEventListener('click', async (e) => {{
                         e.stopPropagation();
                         const code = pre.querySelector('code');
@@ -1666,14 +1666,14 @@ class DocGenerator:
                             await navigator.clipboard.writeText(code.textContent || '');
                             button.classList.add('copied');
                             button.innerHTML = '<span class="material-symbols-outlined">check</span><span>Copied!</span>';
-                            
+
                             setTimeout(() => {{
                                 button.classList.remove('copied');
                                 button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
                             }}, 2000);
                         }}
                     }});
-                    
+
                     pre.appendChild(button);
                 }}
             }});
@@ -1682,15 +1682,15 @@ class DocGenerator:
         function extractSections() {{
             const content = document.getElementById('doc-content');
             if (!content) return [];
-            
+
             const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
             const sections = [];
-            
+
             headings.forEach((heading, index) => {{
                 if (!heading.id) {{
                     heading.id = 'section-' + index + '-' + heading.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 }}
-                
+
                 sections.push({{
                     id: heading.id,
                     title: heading.textContent,
@@ -1698,45 +1698,45 @@ class DocGenerator:
                     element: heading
                 }});
             }});
-            
+
             return sections;
         }}
 
         function updateProgressIndicator() {{
             const content = document.getElementById('doc-content');
             if (!content) return;
-            
+
             const scrollContainer = document.getElementById('content');
             const containerHeight = scrollContainer.clientHeight;
             const scrollTop = scrollContainer.scrollTop;
             const contentHeight = content.scrollHeight;
             const maxScroll = contentHeight - containerHeight;
-            
+
             let percentage = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * 100) : 0;
             if(percentage > 100) percentage = 100;
             document.getElementById('progressFill').style.width = percentage + '%';
             document.getElementById('progressPercentage').textContent = percentage + '%';
-            
+
             let currentSection = null;
             let minDistance = Infinity;
-            
+
             sections.forEach(section => {{
                 const element = section.element;
                 const rect = element.getBoundingClientRect();
-                
+
                 const distance = Math.abs(rect.top - 100);
-                
+
                 if (distance < minDistance && rect.top < window.innerHeight * 0.7) {{
                     minDistance = distance;
                     currentSection = section;
                 }}
             }});
-            
+
             document.querySelectorAll('.section-item').forEach(item => {{
                 item.classList.remove('active');
                 if (currentSection && item.dataset.sectionId === currentSection.id) {{
                     item.classList.add('active');
-                    
+
                     item.scrollIntoView({{
                         block: 'nearest',
                         behavior: 'auto'
@@ -1748,22 +1748,22 @@ class DocGenerator:
         function buildSectionList() {{
             const sectionList = document.getElementById('sectionList');
             sectionList.innerHTML = '';
-            
+
             sections.forEach(section => {{
                 const item = document.createElement('div');
                 item.className = 'section-item';
                 item.dataset.sectionId = section.id;
                 item.setAttribute('onclick', 'scrollToSection(\\'' + section.id + '\\')');
-                
+
                 const dot = document.createElement('span');
                 dot.className = 'section-dot';
-                
+
                 const title = document.createElement('span');
                 title.className = 'section-title';
                 title.textContent = section.title;
-                
+
                 item.style.paddingLeft = ((section.level - 1) * 16 + 8) + 'px';
-                
+
                 item.appendChild(dot);
                 item.appendChild(title);
                 sectionList.appendChild(item);
@@ -1776,7 +1776,7 @@ class DocGenerator:
                 const content = document.getElementById('content');
                 const rect = element.getBoundingClientRect();
                 const contentRect = content.getBoundingClientRect();
-                
+
                 content.scrollTo({{
                     top: content.scrollTop + (rect.top - contentRect.top - 20),
                     behavior: 'smooth'
@@ -1788,25 +1788,25 @@ class DocGenerator:
             if (observer) {{
                 observer.disconnect();
             }}
-            
+
             sections = extractSections();
-            
+
             buildSectionList();
-            
+
             const indicator = document.getElementById('progressIndicator');
             if (sections.length > 0) {{
                 indicator.classList.add('visible');
-                
+
                 const content = document.getElementById('content');
                 content.addEventListener('scroll', updateProgressIndicator);
                 updateProgressIndicator();
-                
+
                 observer = new MutationObserver(() => {{
                     sections = extractSections();
                     buildSectionList();
                     updateProgressIndicator();
                 }});
-                
+
                 observer.observe(document.getElementById('doc-content'), {{
                     childList: true,
                     subtree: true,
@@ -1823,28 +1823,28 @@ class DocGenerator:
 
         function filterCards() {{
             const term = searchInput.value.toLowerCase().trim();
-            
+
             searchClear.classList.toggle('visible', term.length > 0);
-            
+
             let visible = 0;
             const cards = cardsGrid.children;
-            
+
             for (let i = 0; i < cards.length; i++) {{
                 const card = cards[i];
                 if (card.id === 'empty-platform-state' || card.id === 'empty-search-state') continue;
-                
+
                 const cardId = card.getAttribute('data-id');
                 const platforms = cardPlatforms[cardId] || [];
                 const matchesPlatform = currentPlatform === 'all' || platforms.includes(currentPlatform);
-                
+
                 if (!matchesPlatform) {{
                     card.style.display = 'none';
                     continue;
                 }}
-                
+
                 const title = card.querySelector('h3')?.textContent.toLowerCase() || '';
                 const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
-                
+
                 if (title.includes(term) || desc.includes(term)) {{
                     card.style.display = 'block';
                     visible++;
@@ -1852,7 +1852,7 @@ class DocGenerator:
                     card.style.display = 'none';
                 }}
             }}
-            
+
             const emptySearchState = document.getElementById('empty-search-state');
             if (visible === 0 && term.length > 0 && !emptySearchState) {{
                 const newEmptyState = document.createElement('div');
@@ -1879,38 +1879,38 @@ class DocGenerator:
             document.getElementById('home-view').style.display = 'block';
             document.getElementById('doc-view').style.display = 'none';
             document.getElementById('current-section').textContent = 'Home';
-            
+
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.querySelector('[onclick="showHome()"]').classList.add('active');
-            
+
             if (window.innerWidth <= 768) toggleSidebar();
-            
+
             window.location.hash = '';
             filterByPlatform('all');
-            
+
             document.getElementById('progressIndicator').classList.remove('visible');
         }}
 
         function showPage(id) {{
             if (!pages[id]) return;
-            
+
             document.getElementById('home-view').style.display = 'none';
             document.getElementById('doc-view').style.display = 'block';
             document.getElementById('doc-content').innerHTML = pages[id];
             document.getElementById('doc-title').textContent = titles[id];
             document.getElementById('current-section').textContent = titles[id];
-            
+
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             const activeNav = document.querySelector(`[onclick="showPage('${{id}}')"]`);
             if (activeNav) activeNav.classList.add('active');
-            
+
             if (window.innerWidth <= 768) toggleSidebar();
-            
+
             document.getElementById('content').scrollTop = 0;
             window.location.hash = id;
-            
+
             currentDocId = id;
-            
+
             initializeCopyButtons();
             initializeProgressTracking();
         }}
@@ -1930,7 +1930,7 @@ class DocGenerator:
                 e.preventDefault();
                 searchInput.focus();
             }}
-            
+
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {{
                 e.preventDefault();
                 searchInput.focus();
@@ -1951,171 +1951,189 @@ class DocGenerator:
                     break;
                 }}
             }}
-            
+
             if (window.location.hash) {{
                 const id = window.location.hash.substring(1);
                 if (pages[id]) showPage(id);
             }}
-            
+
             initializeCopyButtons();
         }});
     </script>
 </body>
-</html>'''
+</html>"""
         return template
-    
+
     def _get_icon_name(self, icon_name: str) -> str:
-        return icon_name.lower()
-    
+        # Map common icon names to Material Symbols
+        icon_map = {
+            "getting-started": "play_arrow",
+            "api": "api",
+            "guide": "menu_book",
+            "tutorial": "school",
+            "example": "code",
+            "reference": "reference",
+            "linux": "terminal",
+            "android": "android",
+            "embedded": "developer_board",
+            "rtos": "memory",
+            "baremetal": "chip",
+            "folder": "folder",
+            "description": "description",
+        }
+        return icon_map.get(icon_name.lower(), icon_name)
+
     def _process_markdown(self, content: str) -> str:
         extensions = [
-            'extra',
-            'codehilite',
-            'toc',
-            'tables',
-            'fenced_code',
-            'attr_list',
-            'def_list',
-            'abbr',
-            'footnotes'
+            "extra",
+            "codehilite",
+            "toc",
+            "tables",
+            "fenced_code",
+            "attr_list",
+            "def_list",
+            "abbr",
+            "footnotes",
         ]
-        
-        html = markdown.markdown(
-            content,
-            extensions=extensions
-        )
+
+        html = markdown.markdown(content, extensions=extensions)
         return html
-    
+
     def load_markdown(self, file_path: str) -> str:
         try:
             if not os.path.exists(file_path):
-                return f'<h1>File not found</h1><p>{file_path}</p>'
-            
-            with open(file_path, 'r', encoding='utf-8') as f:
+                return f"<h1>File not found</h1><p>{file_path}</p>"
+
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            
+
             return self._process_markdown(content)
-            
+
         except Exception as e:
-            return f'<h1>Error</h1><p>{e}</p>'
-    
+            return f"<h1>Error</h1><p>{e}</p>"
+
     def generate(self, config_file: str, output_file: str):
-        with open(config_file, 'r', encoding='utf-8') as f:
-            if config_file.endswith('.json'):
+        with open(config_file, "r", encoding="utf-8") as f:
+            if config_file.endswith(".json"):
                 config = json.load(f)
-            elif config_file.endswith(('.yml', '.yaml')):
+            elif config_file.endswith((".yml", ".yaml")):
                 config = yaml.safe_load(f)
             else:
                 raise ValueError("Config must be .json, .yml, or .yaml")
-        
-        project_name = config.get('name', 'Documentation')
-        project_version = config.get('version', '1.0.0')
+
+        project_name = config.get("name", "AromaUI")
+        project_version = config.get("version", "1.0.0")
         base_dir = os.path.dirname(os.path.abspath(config_file))
-        
-        sections = config.get('sections', [])
-        categories = config.get('categories', [])
-        
+
+        sections = config.get("sections", [])
+        categories = config.get("categories", [])
+
         if not categories:
-            category_names = set(s.get('category', 'General') for s in sections)
-            categories = [{'name': name, 'icon': 'folder'} for name in sorted(category_names)]
-        
+            category_names = set(s.get("category", "General") for s in sections)
+            categories = [
+                {"name": name, "icon": "folder"} for name in sorted(category_names)
+            ]
+
         sidebar_sections = {}
         all_platforms = set()
         card_platforms = {}
-        
+
         for section in sections:
-            category = section.get('category', 'General')
+            category = section.get("category", "General")
             if category not in sidebar_sections:
                 sidebar_sections[category] = []
             sidebar_sections[category].append(section)
-            
-            platforms = section.get('platforms', [])
+
+            platforms = section.get("platforms", [])
             for platform in platforms:
                 all_platforms.add(platform.lower())
-            
-            title = section.get('title', 'Untitled')
-            section_id = title.lower().replace(' ', '-')
+
+            title = section.get("title", "Untitled")
+            section_id = title.lower().replace(" ", "-").replace("/", "-")
             card_platforms[section_id] = [p.lower() for p in platforms]
-        
+
         hero_section = self._get_hero_section(config)
         platform_filters = self._get_platform_filters(list(all_platforms))
-        
+
         sidebar_content = []
         category_count = len(categories)
-        
+
         for category in categories:
-            category_name = category.get('name', 'General')
-            category_id = category_name.lower().replace(' ', '-')
+            category_name = category.get("name", "General")
+            category_id = category_name.lower().replace(" ", "-")
             category_sections = sidebar_sections.get(category_name, [])
-            
+
             if category_sections:
-                sidebar_content.append(f'''
+                sidebar_content.append(f"""
                 <div class="nav-category">
                     <div class="category-header" onclick="toggleCategory('{category_id}')">
                         <span class="material-symbols-outlined">expand_more</span>
                         <span>{category_name}</span>
                     </div>
                     <div class="category-items" id="category-{category_id}">
-                ''')
-                
+                """)
+
                 for section in category_sections:
-                    title = section.get('title', 'Untitled')
-                    section_id = title.lower().replace(' ', '-')
-                    icon = self._get_icon_name(section.get('icon', 'description'))
-                    
-                    sidebar_content.append(f'''
+                    title = section.get("title", "Untitled")
+                    section_id = title.lower().replace(" ", "-").replace("/", "-")
+                    icon = self._get_icon_name(section.get("icon", "description"))
+
+                    sidebar_content.append(f"""
                         <div class="nav-item" onclick="showPage('{section_id}')">
                             <span class="material-symbols-outlined">{icon}</span>
                             {title}
                         </div>
-                    ''')
-                
-                sidebar_content.append('</div></div>')
-        
+                    """)
+
+                sidebar_content.append("</div></div>")
+
         cards_html = []
         pages_dict = {}
         titles_dict = {}
-        
+
         for section in sections:
-            title = section.get('title', 'Untitled')
-            description = section.get('description', '')
-            icon = self._get_icon_name(section.get('icon', 'description'))
-            markdown_file = section.get('file', '')
-            category = section.get('category', 'General')
-            platforms = section.get('platforms', [])
-            
+            title = section.get("title", "Untitled")
+            description = section.get("description", "")
+            icon = self._get_icon_name(section.get("icon", "description"))
+            markdown_file = section.get("file", "")
+            category = section.get("category", "General")
+            platforms = section.get("platforms", [])
+
             if markdown_file and not os.path.isabs(markdown_file):
                 markdown_file = os.path.join(base_dir, markdown_file)
-            
-            section_id = title.lower().replace(' ', '-')
-            
+
+            section_id = title.lower().replace(" ", "-").replace("/", "-")
+
             if markdown_file and os.path.exists(markdown_file):
                 content = self.load_markdown(markdown_file)
             else:
-                content = f'<h1>{title}</h1><p>{description}</p>'
-            
+                content = f"<h1>{title}</h1><p>{description}</p>"
+
             pages_dict[section_id] = content
             titles_dict[section_id] = title
-            
-            platform_icons = ''
+
+            platform_icons = ""
             for platform in platforms:
                 platform_lower = platform.lower()
                 icon_map = {
-                    'linux': 'terminal',
-                    'windows': 'window',
-                    'android': 'android',
-                    'ios': 'phone_iphone',
-                    'macos': 'desktop_mac',
-                    'web': 'language'
+                    "linux": "terminal",
+                    "android": "android",
+                    "embedded": "developer_board",
+                    "rtos": "memory",
+                    "windows": "window",
+                    "ios": "phone_iphone",
+                    "macos": "desktop_mac",
+                    "web": "language",
+                    "baremetal": "chip",
                 }
-                icon_name = icon_map.get(platform_lower, 'devices')
-                platform_icons += f'''
+                icon_name = icon_map.get(platform_lower, "devices")
+                platform_icons += f"""
                     <span class="card-platform">
                         <span class="material-symbols-outlined">{icon_name}</span>
                         <span>{platform}</span>
                     </span>
-                '''
-            
+                """
+
             cards_html.append(f'''
                 <div class="card" onclick="showPage('{section_id}')" data-id="{section_id}">
                     <div class="card-icon">
@@ -2129,14 +2147,14 @@ class DocGenerator:
                             {category}
                         </span>
                     </div>
-                    {f'<div class="card-platforms">{platform_icons}</div>' if platform_icons else ''}
+                    {f'<div class="card-platforms">{platform_icons}</div>' if platform_icons else ""}
                 </div>
             ''')
-        
+
         pygments_styles = self._get_pygments_styles()
         current_year = datetime.now().year
-        last_updated = datetime.now().strftime('%b %d, %Y')
-        
+        last_updated = datetime.now().strftime("%b %d, %Y")
+
         html = self.template.format(
             project_name=project_name,
             version=project_version,
@@ -2145,40 +2163,48 @@ class DocGenerator:
             category_count=category_count,
             section_count=len(sections),
             pygments_styles=pygments_styles,
-            sidebar_content='\n'.join(sidebar_content),
-            cards_html='\n'.join(cards_html),
+            sidebar_content="\n".join(sidebar_content),
+            cards_html="\n".join(cards_html),
             pages_json=json.dumps(pages_dict),
             titles_json=json.dumps(titles_dict),
             card_platforms_json=json.dumps(card_platforms),
             year=current_year,
-            last_updated=last_updated
+            last_updated=last_updated,
         )
-        
+
         os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
-        
-        with open(output_file, 'w', encoding='utf-8') as f:
+
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(html)
-        
-        print(f'Documentation generated: {output_file}')
+
+        print(f"Documentation generated: {output_file}")
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate Google-style documentation from markdown files')
-    parser.add_argument('-c', '--config', required=True, help='Configuration file (JSON or YAML)')
-    parser.add_argument('-o', '--output', default='docs/index.html', help='Output HTML file path')
-    
+    parser = argparse.ArgumentParser(
+        description="Generate AromaUI documentation from markdown files"
+    )
+    parser.add_argument(
+        "-c", "--config", required=True, help="Configuration file (JSON or YAML)"
+    )
+    parser.add_argument(
+        "-o", "--output", default="docs/index.html", help="Output HTML file path"
+    )
+
     args = parser.parse_args()
-    
+
     if not os.path.exists(args.config):
-        print(f'Error: Config file not found: {args.config}')
+        print(f"Error: Config file not found: {args.config}")
         return 1
-    
+
     try:
         generator = DocGenerator()
         generator.generate(args.config, args.output)
         return 0
     except Exception as e:
-        print(f'Error generating documentation: {e}')
+        print(f"Error generating documentation: {e}")
         return 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     exit(main())

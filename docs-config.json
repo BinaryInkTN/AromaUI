@@ -4,25 +4,30 @@
     "description": "Browse AromaUI's APIs with detailed documentation and examples.",
 
     "hero": {
-        "title": "Don't have AromaSDK?",
-        "description": "Build beautiful cross-platform applications",
+        "title": "AromaSDK",
+        "description": "Download it now for Linux and Android.",
         "badges": [
-            {"icon": "terminal", "text": "Linux"},
-            {"icon": "window", "text": "Windows"},
-            {"icon": "android", "text": "Android"}
+            { "icon": "terminal", "text": "Linux" },
+            { "icon": "window", "text": "Windows" },
+            { "icon": "android", "text": "Android" }
         ],
         "actions": [
-            {"icon": "download", "text": "Download SDK", "primary": true, "onclick": "window.open('https://aromaui.com/download')"}
+            {
+                "icon": "download",
+                "text": "Download SDK",
+                "primary": true,
+                "onclick": "window.open('https://aromaui.com/download')"
+            }
         ],
         "stats": [
-            {"value": "50+", "label": "Components"},
-            {"value": "3", "label": "Platforms"},
-            {"value": "100%", "label": "Open Source"}
+            { "value": "50+", "label": "Components" },
+            { "value": "3", "label": "Platforms" },
+            { "value": "100%", "label": "Open Source" }
         ],
         "platformIcons": [
-            {"icon": "terminal", "title": "Linux"},
-            {"icon": "window", "title": "Windows"},
-            {"icon": "android", "title": "Android"}
+            { "icon": "terminal", "title": "Linux" },
+            { "icon": "window", "title": "Windows" },
+            { "icon": "android", "title": "Android" }
         ]
     },
     "categories": [
@@ -134,7 +139,7 @@
             "file": "docs/ui_utilities.md",
             "platforms": ["android"]
         },
-         {
+        {
             "title": "DPI Conversion API",
             "description": "Convert between Android density-independent pixels (dp) and actual pixels (px).",
             "icon": "responsive_layout",
