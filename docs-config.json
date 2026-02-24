@@ -157,6 +157,15 @@
             "category": "UI",
             "file": "docs/widgets.md",
             "platforms": ["android"]
+        }, 
+        {
+            "title": "Orientation API",
+            "description": "Control and query device orientation. Set portrait or landscape mode, lock and unlock orientation.",
+            "icon": "screen_rotation",
+            "color": "#7D5260",
+            "category": "UI",
+            "file": "docs/orientation.md",
+            "platforms": ["android"]
         }
     ]
 }
