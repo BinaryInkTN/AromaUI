@@ -246,7 +246,7 @@ void shutdown()
     size_t window_count = glps_wm_get_window_count(platform_ctx.wm);
     if (window_count == 0)
     {
-        LOG_WARNING("Window manager has no active windows; skipping GLPS destroy to avoid shutdown crash.");
+        LOG_WARNING("TODO: Window manager has no active windows; skipping GLPS destroy to avoid shutdown crash.");
         platform_ctx.wm = NULL;
         platform_ctx.primary_window_id = 0;
         return;

@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #define WIN_W 1280
-#define WIN_H 720
+#define WIN_H 800
 AromaFont *icon_font = NULL;
 
 static AromaFont *ui_font = NULL;
@@ -56,11 +56,19 @@ int main(void)
     aroma_ui_icon((AromaNode *)window, AROMA_ICON_GPS_FIXED, WIN_W - 160, 30, 24, theme.colors.primary, icon_font);
     aroma_ui_icon((AromaNode *)window, AROMA_ICON_BLUETOOTH_AUDIO, WIN_W - 200, 30, 24, theme.colors.primary, icon_font);
 
-    general_root = aroma_ui_container((AromaNode *)window, 125, 90, WIN_W - 250, WIN_H - 130, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
+    general_root = aroma_ui_container((AromaNode *)window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)general_root, 20);
 
     build_general_ui(general_root);
+    AromaFont *tab_font = aroma_font_create_from_memory(
+        icon_ttf, icon_ttf_len, 128);
+    AromaNode* tabs = aroma_ui_tabs_with_icons((AromaNode *)window, 0, WIN_H - 80, WIN_W, 80, 
+                                                (const char*[]){"Main Screen", "Navigation", "Phone", "Settings"},
+                                                (const char*[]){AROMA_ICON_DASHBOARD, AROMA_ICON_MAP, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS},
+                                                4, NULL, NULL, ui_font, tab_font);
 
+
+    aroma_tabs_set_content(tabs, 0, (AromaNode**)&general_root, 1);
     aroma_ui_request_redraw(NULL);
 
     while (aroma_ui_is_running())

@@ -703,7 +703,6 @@ class DocGenerator:
             text-overflow: ellipsis;
         }}
 
-        /* ----- HERO SECTION WITH PILL ICONS FROM YOUR WEBSITE ----- */
         .hero {{
             padding: 60px 0 40px;
             background: var(--surface-0);
@@ -907,7 +906,7 @@ class DocGenerator:
             padding: 0.75rem 1rem 0.75rem 3rem;
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 24px;
+            border-radius: 8px;
             font-family: 'Roboto', sans-serif;
             font-size: 0.9375rem;
             color: var(--text-primary);

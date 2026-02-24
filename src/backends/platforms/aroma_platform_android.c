@@ -1,4 +1,5 @@
 #ifdef __ANDROID__
+
 #include "aroma_platform_interface.h"
 #include <android_native_app_glue.h>
 #include <android/native_window.h>
@@ -791,6 +792,35 @@ static void android_send_intent(int action_enum, const char *uri, const char *ty
     detach_jni_env(attach);
 }
 
+static void android_refresh_layout()
+{
+     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
+
+    for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
+    {
+        if (g_windows[i].is_active && g_windows[i].root_node)
+        {
+            struct AromaWindow *win_widget = (struct AromaWindow *)g_windows[i].root_node->node_widget_ptr;
+            if (win_widget)
+            {
+                win_widget->rect.width = g_width;
+                win_widget->rect.height = g_height;
+            }
+
+            aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
+            aroma_node_invalidate(g_windows[i].root_node);
+
+            AromaEvent *event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
+            if (event)
+            {
+                event->data.resize.width = g_width;
+                event->data.resize.height = g_height;
+                aroma_event_queue(event);
+            }
+        }
+    }
+}
+
 static void update_surface_size(void)
 {
     if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
@@ -816,31 +846,7 @@ static void update_surface_size(void)
 
     glViewport(0, 0, g_width, g_height);
 
-    extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
-
-    for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
-    {
-        if (g_windows[i].is_active && g_windows[i].root_node)
-        {
-            struct AromaWindow *win_widget = (struct AromaWindow *)g_windows[i].root_node->node_widget_ptr;
-            if (win_widget)
-            {
-                win_widget->rect.width = g_width;
-                win_widget->rect.height = g_height;
-            }
-
-            aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
-            aroma_node_invalidate(g_windows[i].root_node);
-
-            AromaEvent *event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
-            if (event)
-            {
-                event->data.resize.width = g_width;
-                event->data.resize.height = g_height;
-                aroma_event_queue(event);
-            }
-        }
-    }
+    android_refresh_layout();
 }
 
 static int32_t handle_input(struct android_app *app, AInputEvent *event)
@@ -1091,7 +1097,7 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
     case APP_CMD_CONFIG_CHANGED:
         g_phys_cached = false;
         cache_physical_screen_info(app);
-        term_display_surface_only();
+        term_display_surface_only();        
         if (app->window)
             init_display(app);
         break;
