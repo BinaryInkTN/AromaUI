@@ -295,6 +295,45 @@ typedef struct AromaPlatformInterface {
     float (*android_get_xdpi)(void);
     float (*android_get_ydpi)(void);
 
+    /* ======================== Orientation Control ======================== */
+
+    /**
+     * @brief Lock current screen orientation.
+     */
+    void (*android_lock_orientation)(void);
+
+    /**
+     * @brief Unlock screen orientation (allow sensor rotation).
+     */
+    void (*android_unlock_orientation)(void);
+
+    /**
+     * @brief Force portrait orientation.
+     */
+    void (*android_set_orientation_portrait)(void);
+
+    /**
+     * @brief Force landscape orientation.
+     */
+    void (*android_set_orientation_landscape)(void);
+
+    /**
+     * @brief Set orientation to sensor-based (auto-rotate).
+     */
+    void (*android_set_orientation_sensor)(void);
+
+    /**
+     * @brief Get current orientation.
+     * @return 1 for portrait, 2 for landscape, -1 if unknown.
+     */
+    int (*android_get_current_orientation)(void);
+
+    /**
+     * @brief Check if orientation is currently locked.
+     * @return true if locked, false otherwise.
+     */
+    bool (*android_is_orientation_locked)(void);
+
 } AromaPlatformInterface;
 
 

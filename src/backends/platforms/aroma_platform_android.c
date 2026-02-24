@@ -424,6 +424,35 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     return true;
 }
 
+static void android_refresh_layout()
+{
+     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
+
+    for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
+    {
+        if (g_windows[i].is_active && g_windows[i].root_node)
+        {
+            struct AromaWindow *win_widget = (struct AromaWindow *)g_windows[i].root_node->node_widget_ptr;
+            if (win_widget)
+            {
+                win_widget->rect.width = g_width;
+                win_widget->rect.height = g_height;
+            }
+
+            aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
+            aroma_node_invalidate(g_windows[i].root_node);
+
+            AromaEvent *event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
+            if (event)
+            {
+                event->data.resize.width = g_width;
+                event->data.resize.height = g_height;
+                aroma_event_queue(event);
+            }
+        }
+    }
+}
+
 static void cache_physical_screen_info(struct android_app *app)
 {
     if (g_phys_cached || !app || !app->activity)
@@ -479,6 +508,7 @@ static void cache_physical_screen_info(struct android_app *app)
     LOGI("  Density: %f (%d dpi)", g_density, g_density_dpi);
     LOGI("  Scaled Density: %f", g_scaled_density);
     LOGI("  Physical DPI: %f x %f", g_xdpi, g_ydpi);
+    android_refresh_layout();
 
     g_phys_cached = true;
 
@@ -792,35 +822,6 @@ static void android_send_intent(int action_enum, const char *uri, const char *ty
     detach_jni_env(attach);
 }
 
-static void android_refresh_layout()
-{
-     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
-
-    for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
-    {
-        if (g_windows[i].is_active && g_windows[i].root_node)
-        {
-            struct AromaWindow *win_widget = (struct AromaWindow *)g_windows[i].root_node->node_widget_ptr;
-            if (win_widget)
-            {
-                win_widget->rect.width = g_width;
-                win_widget->rect.height = g_height;
-            }
-
-            aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
-            aroma_node_invalidate(g_windows[i].root_node);
-
-            AromaEvent *event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
-            if (event)
-            {
-                event->data.resize.width = g_width;
-                event->data.resize.height = g_height;
-                aroma_event_queue(event);
-            }
-        }
-    }
-}
-
 static void update_surface_size(void)
 {
     if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
@@ -836,10 +837,7 @@ static void update_surface_size(void)
     if (w == g_width && h == g_height)
         return;
 
-    if (g_width != 0 && g_height != 0)
-    {
-        LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
-    }
+    LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
 
     g_width = w;
     g_height = h;
@@ -847,6 +845,15 @@ static void update_surface_size(void)
     glViewport(0, 0, g_width, g_height);
 
     android_refresh_layout();
+
+    extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
+    for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
+    {
+        if (g_windows[i].is_active && g_windows[i].root_node)
+        {
+            aroma_node_invalidate(g_windows[i].root_node);
+        }
+    }
 }
 
 static int32_t handle_input(struct android_app *app, AInputEvent *event)
@@ -1082,6 +1089,119 @@ static void term_display(void)
     g_window_flags_set = false;
 }
 
+static void android_set_requested_orientation(int orientation)
+{
+    if (!g_app || !g_app->activity)
+        return;
+
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env) return;
+
+    jobject activity = g_app->activity->clazz;
+    jclass activityClass = (*env)->GetObjectClass(env, activity);
+    
+    jmethodID setRequestedOrientation = (*env)->GetMethodID(env, activityClass, 
+        "setRequestedOrientation", "(I)V");
+    
+    if (setRequestedOrientation)
+    {
+        (*env)->CallVoidMethod(env, activity, setRequestedOrientation, orientation);
+    }
+    
+    (*env)->DeleteLocalRef(env, activityClass);
+    detach_jni_env(attach);
+}
+
+static int android_get_current_orientation(void)
+{
+    if (!g_app || !g_app->activity)
+        return -1;
+
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env) return -1;
+
+    jobject activity = g_app->activity->clazz;
+    jclass activityClass = (*env)->GetObjectClass(env, activity);
+    
+    jmethodID getResources = (*env)->GetMethodID(env, activityClass, 
+        "getResources", "()Landroid/content/res/Resources;");
+    jobject resources = (*env)->CallObjectMethod(env, activity, getResources);
+    
+    jclass resourcesClass = (*env)->GetObjectClass(env, resources);
+    jmethodID getConfiguration = (*env)->GetMethodID(env, resourcesClass, 
+        "getConfiguration", "()Landroid/content/res/Configuration;");
+    jobject config = (*env)->CallObjectMethod(env, resources, getConfiguration);
+    
+    jclass configClass = (*env)->GetObjectClass(env, config);
+    jfieldID orientationField = (*env)->GetFieldID(env, configClass, "orientation", "I");
+    
+    int orientation = (*env)->GetIntField(env, config, orientationField);
+    
+    (*env)->DeleteLocalRef(env, configClass);
+    (*env)->DeleteLocalRef(env, config);
+    (*env)->DeleteLocalRef(env, resourcesClass);
+    (*env)->DeleteLocalRef(env, resources);
+    (*env)->DeleteLocalRef(env, activityClass);
+    
+    detach_jni_env(attach);
+    return orientation;
+}
+
+static bool android_is_orientation_locked(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env) return false;
+
+    jobject activity = g_app->activity->clazz;
+    jclass activityClass = (*env)->GetObjectClass(env, activity);
+    
+    jmethodID getRequestedOrientation = (*env)->GetMethodID(env, activityClass, 
+        "getRequestedOrientation", "()I");
+    
+    bool isLocked = false;
+    if (getRequestedOrientation)
+    {
+        jint orientation = (*env)->CallIntMethod(env, activity, getRequestedOrientation);
+        isLocked = (orientation != -1);
+    }
+    
+    (*env)->DeleteLocalRef(env, activityClass);
+    detach_jni_env(attach);
+    return isLocked;
+}
+
+static void android_lock_orientation(void)
+{
+    int currentOrientation = android_get_current_orientation();
+    if (currentOrientation > 0)
+    {
+        android_set_requested_orientation(currentOrientation);
+    }
+}
+
+static void android_unlock_orientation(void)
+{
+    android_set_requested_orientation(-1);
+}
+
+static void android_set_orientation_portrait(void)
+{
+    android_set_requested_orientation(1);
+}
+
+static void android_set_orientation_landscape(void)
+{
+    android_set_requested_orientation(0);
+}
+
+static void android_set_orientation_sensor(void)
+{
+    android_set_requested_orientation(4);
+}
+
 static void handle_cmd(struct android_app *app, int32_t cmd)
 {
     switch (cmd)
@@ -1293,8 +1413,6 @@ static void android_show_keyboard(void)
         return;
     }
 
-    LOGI("Requesting soft keyboard via JNI");
-
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
     if (!env) return;
@@ -1318,7 +1436,6 @@ static void android_show_keyboard(void)
             jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
             jmethodID showSoftInput = (*env)->GetMethodID(env, immClass, "showSoftInput", "(Landroid/view/View;I)Z");
             (*env)->CallBooleanMethod(env, imm, showSoftInput, decorView, 2);
-            LOGI("Keyboard show requested via JNI");
             (*env)->DeleteLocalRef(env, decorView);
             (*env)->DeleteLocalRef(env, windowClass);
             (*env)->DeleteLocalRef(env, immClass);
@@ -1371,7 +1488,6 @@ static void android_hide_keyboard(void)
                 jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
                 jmethodID hideSoftInput = (*env)->GetMethodID(env, immClass, "hideSoftInputFromWindow", "(Landroid/os/IBinder;I)Z");
                 (*env)->CallBooleanMethod(env, imm, hideSoftInput, token, 0);
-                LOGI("Keyboard hide requested via JNI");
                 (*env)->DeleteLocalRef(env, token);
                 (*env)->DeleteLocalRef(env, immClass);
             }
@@ -2476,7 +2592,14 @@ AromaPlatformInterface aroma_platform_android = {
     .android_get_screen_diagonal_inches = android_get_screen_diagonal_inches,
     .android_get_screen_size_category = android_get_screen_size_category,
     .android_get_xdpi = android_get_xdpi,
-    .android_get_ydpi = android_get_ydpi
+    .android_get_ydpi = android_get_ydpi,
+    .android_lock_orientation = android_lock_orientation,
+    .android_unlock_orientation = android_unlock_orientation,
+    .android_set_orientation_portrait = android_set_orientation_portrait,
+    .android_set_orientation_landscape = android_set_orientation_landscape,
+    .android_set_orientation_sensor = android_set_orientation_sensor,
+    .android_get_current_orientation = android_get_current_orientation,
+    .android_is_orientation_locked = android_is_orientation_locked
 };
 
 #endif

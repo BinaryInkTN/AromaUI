@@ -41,12 +41,6 @@ void aroma_android_set_app(struct android_app* state) {
 #define DEFAULT_WINDOW_WIDTH 800
 #define DEFAULT_WINDOW_HEIGHT 600
 
-
-
-
-
-
-
 bool g_frame_cleared = false;
 bool g_ui_initialized = false;
 struct AromaNode* g_main_window = NULL;

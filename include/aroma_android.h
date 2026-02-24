@@ -664,6 +664,92 @@ static inline float aroma_android_get_ydpi(void) {
 
 /**@}*/
 
+
+/** @name Screen Orientation Control */
+/**@{*/
+
+/**
+ * @brief Lock the current screen orientation (prevents auto-rotation).
+ */
+static inline void aroma_android_lock_orientation(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_lock_orientation) {
+        platform->android_lock_orientation();
+    }
+}
+
+
+/**
+ * @brief Unlock screen orientation (allows auto-rotation based on sensor).
+ */
+static inline void aroma_android_unlock_orientation(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_unlock_orientation) {
+        platform->android_unlock_orientation();
+    }
+}
+
+
+/**
+ * @brief Force screen orientation to portrait mode.
+ */
+static inline void aroma_android_set_orientation_portrait(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_orientation_portrait) {
+        platform->android_set_orientation_portrait();
+    }
+}
+
+
+/**
+ * @brief Force screen orientation to landscape mode.
+ */
+static inline void aroma_android_set_orientation_landscape(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_orientation_landscape) {
+        platform->android_set_orientation_landscape();
+    }
+}
+
+
+/**
+ * @brief Set screen orientation to sensor-based (auto-rotate).
+ */
+static inline void aroma_android_set_orientation_sensor(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_orientation_sensor) {
+        platform->android_set_orientation_sensor();
+    }
+}
+
+
+/**
+ * @brief Get the current screen orientation.
+ * @return 1 for portrait, 2 for landscape, -1 if unknown.
+ */
+static inline int aroma_android_get_current_orientation(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_current_orientation) {
+        return platform->android_get_current_orientation();
+    }
+    return -1;
+}
+
+
+/**
+ * @brief Check if screen orientation is currently locked.
+ * @return true if locked, false otherwise.
+ */
+static inline bool aroma_android_is_orientation_locked(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_is_orientation_locked) {
+        return platform->android_is_orientation_locked();
+    }
+    return false;
+}
+
+/**@}*/
+
 #ifdef __cplusplus
 }
 #endif
