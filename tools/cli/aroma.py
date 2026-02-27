@@ -389,7 +389,6 @@ class KeystoreManager:
             "-keypass",
             keypass,
         ]
-        print("DEBUG storepass:", storepass)
         if not run_command(cmd):
             print_error("Failed to create keystore")
             return None
@@ -1004,14 +1003,108 @@ def _start_emulator() -> bool:
     return True
 
 
+def _add_signing_config_to_gradle(project_dir: str) -> bool:
+    build_gradle = os.path.join(project_dir, "android/app/build.gradle")
+    
+    if not os.path.exists(build_gradle):
+        print_error("app/build.gradle not found")
+        return False
+    
+    with open(build_gradle, 'r') as f:
+        content = f.read()
+    
+    if 'signingConfigs {' in content and 'release {' in content:
+        print_info("Signing configuration already exists in build.gradle")
+        return True
+    
+    signing_config = '''
+    signingConfigs {
+        release {
+            def keystorePropertiesFile = rootProject.file("keystore.properties")
+            if (keystorePropertiesFile.exists()) {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+'''
+    
+    # Insert signingConfigs after android { line
+    android_start_pattern = r'(android\s*{)'
+    match = re.search(android_start_pattern, content)
+    
+    if match:
+        insert_pos = match.end()
+        new_content = content[:insert_pos] + signing_config + content[insert_pos:]
+    else:
+        print_error("Could not find android block in build.gradle")
+        return False
+    
+    # Add release buildType
+    release_block = '''
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+'''
+    
+    # Check if buildTypes exists
+    build_types_pattern = r'(buildTypes\s*{.*?})'
+    build_types_match = re.search(build_types_pattern, new_content, re.DOTALL)
+    
+    if build_types_match:
+        # buildTypes exists, add release before the closing }
+        build_types_content = build_types_match.group(1)
+        # Check if release already exists
+        if 'release {' not in build_types_content:
+            # Insert release before the last }
+            modified_build_types = build_types_content.rstrip('}') + release_block + '    }'
+            new_content = new_content.replace(build_types_content, modified_build_types)
+    else:
+        # buildTypes doesn't exist, create it after defaultConfig
+        default_config_pattern = r'(defaultConfig\s*{.*?}\s*\n)'
+        default_config_match = re.search(default_config_pattern, new_content, re.DOTALL)
+        if default_config_match:
+            insert_pos = default_config_match.end()
+            build_types_section = f'''
+    buildTypes {{
+        debug {{
+            debuggable true
+        }}{release_block}
+    }}
+'''
+            new_content = new_content[:insert_pos] + build_types_section + new_content[insert_pos:]
+        else:
+            print_error("Could not find defaultConfig block in build.gradle")
+            return False
+    
+    try:
+        with open(build_gradle, 'w') as f:
+            f.write(new_content)
+        print_success("Updated app/build.gradle with signing configuration")
+        return True
+    except Exception as e:
+        print_error(f"Failed to write build.gradle: {e}")
+        return False
+
+
 def cmd_sign(args):
     keystore = KeystoreManager(os.getcwd())
 
     if keystore.create_or_update():
-        print_success("Signing configured successfully!")
-        print_info("You can now build release APKs and AABs:")
-        print_info("  aroma build android --release")
-        print_info("  aroma build android --release --aab")
+        if _add_signing_config_to_gradle(os.getcwd()):
+            print_success("Signing configured successfully!")
+            print_info("You can now build release APKs and AABs:")
+            print_info("  aroma build android --release")
+            print_info("  aroma build android --release --aab")
+        else:
+            print_warning("Signing keystore created but couldn't update build.gradle")
     else:
         print_error("Failed to setup signing.")
 
@@ -1078,8 +1171,6 @@ Examples:
     if args.command in commands:
         commands[args.command](args)
     else:
-        parser.print_help()
-
         parser.print_help()
 
 

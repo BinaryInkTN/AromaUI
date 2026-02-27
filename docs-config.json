@@ -59,15 +59,7 @@
         }
     ],
     "sections": [
-        {
-            "title": "Building and Running",
-            "description": "Instructions for building and running AromaUI on Android devices.",
-            "icon": "build",
-            "color": "#7D5260",
-            "category": "Guides",
-            "file": "docs/getting_started.md",
-            "platforms": ["android", "linux"]
-        },
+        
         {
             "title": "Bluetooth API",
             "description": "Bluetooth device management and communication. Scan, connect, and communicate with Bluetooth devices.",
@@ -166,6 +158,15 @@
             "category": "UI",
             "file": "docs/orientation.md",
             "platforms": ["android"]
+        }, 
+        {
+            "title": "Building & Deployment",
+            "description": "Build and deploy AromaUI apps. Step-by-step guides for building and deploying on Android and Linux.",
+            "icon": "rocket_launch",
+            "color": "#7D5260",
+            "category": "Guides",
+            "file": "docs/building_deployment.md",
+            "platforms": ["android", "linux"]
         }
     ]
 }
