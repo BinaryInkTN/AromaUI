@@ -39,6 +39,25 @@ typedef struct {
     uint8_t item_types[AROMA_LIST_MAX_ITEMS];
 } AromaListViewInternal;
 
+const uint32_t AROMA_MATERIAL_COLORS[] = {
+    0xF44336, // Red
+    0xE91E63, // Pink
+    0x9C27B0, // Purple
+    0x673AB7, // Deep Purple
+    0x3F51B5, // Indigo
+    0x2196F3, // Blue
+    0x03A9F4, // Light Blue
+    0x00BCD4, // Cyan
+    0x009688, // Teal
+    0x4CAF50, // Green
+    0x8BC34A, // Light Green
+    0xCDDC39, // Lime
+    0xFFEB3B, // Yellow
+    0xFFC107, // Amber
+    0xFF9800, // Orange
+    0xFF5722, // Deep Orange
+};
+
 static inline AromaListViewInternal* get_listview_internal(AromaNode* node) {
     if (!node || !node->node_widget_ptr) return NULL;
     return (AromaListViewInternal*)node->node_widget_ptr;
@@ -690,16 +709,30 @@ void aroma_listview_draw(AromaNode *list_node, size_t window_id)
             int text_x = list->rect.x + AROMA_LIST_ITEM_PADDING;
 
             if (list->items[i].icon[0] != '\0' && list->icon_font) {
-                int icon_lh = aroma_font_get_line_height(list->icon_font);
+                int icon_lh = aroma_font_get_px_size(list->icon_font) * 0.6f;
                 int icon_y = current_y + (item_height - icon_lh) / 2;
                 
+                const size_t color_index = i % (sizeof(AROMA_MATERIAL_COLORS) / sizeof(AROMA_MATERIAL_COLORS[0]));
+                uint32_t icon_color = AROMA_MATERIAL_COLORS[color_index];
+
+                gfx->fill_rectangle(window_id,
+                                   text_x - 4,
+                                   current_y + (item_height - icon_lh) / 2 - 4,
+                                   icon_lh + 8,
+                                   icon_lh + 8,
+                                   aroma_color_blend(icon_color, theme.colors.surface, 0.4f),
+                                   true,
+                                   icon_lh / 2 + 4);
+
                 gfx->render_text(window_id,
                                  list->icon_font,
                                  list->items[i].icon,
                                  text_x,
                                  icon_y,
                                  is_header ? list->header_text_color : theme.colors.text_primary,
-                                 1.0f);
+                                 0.6f);
+
+
 
                 text_x += icon_lh + AROMA_LIST_ICON_PADDING;
             }

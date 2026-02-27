@@ -1,4 +1,6 @@
-# AromaUI Deployment Guide
+<b> Author: AHMED ALI Mohamed Yassine </b>
+
+<br/>
 
 This document describes the complete deployment workflow for AromaUI projects using the `aroma` CLI. It focuses strictly on building, signing, packaging, and distributing applications for Linux and Android.
 

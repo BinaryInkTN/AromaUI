@@ -12,6 +12,7 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include "aroma_ubuntu_font.h"
 #include <stdlib.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
@@ -97,6 +98,8 @@ void aroma_ui_android_intent_impl(int action, const char* uri, const char* type,
 }
 
 bool aroma_ui_init_impl(void) {
+    
+    
     if (g_ui_initialized) {
         LOG_WARNING("Aroma UI already initialized");
         return true;
@@ -105,7 +108,8 @@ bool aroma_ui_init_impl(void) {
     
     __node_system_init();
     aroma_event_system_init();
-
+    // random seed
+    srand((unsigned int)time(NULL));
     
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->initialize && !platform->initialize()) {
