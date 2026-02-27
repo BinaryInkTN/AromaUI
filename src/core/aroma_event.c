@@ -528,6 +528,18 @@ AromaEvent* aroma_event_create_key(AromaEventType type, uint64_t node_id, uint32
     return ev;
 }
 
+AromaEvent* aroma_event_create_resize(uint64_t node_id, int width, int height) {
+    AromaEvent* ev = aroma_event_alloc();
+    if (!ev) return NULL;
+    ev->event_type = EVENT_TYPE_WINDOW_RESIZE;
+    ev->target_node_id = node_id;
+    ev->target_node = find_node_cached(node_id);
+    ev->data.resize.width = width;
+    ev->data.resize.height = height;
+    clock_gettime(CLOCK_MONOTONIC, &ev->timestamp);
+    return ev;
+}
+
 AromaEvent* aroma_event_create_custom(uint64_t node_id, uint32_t custom_type, void* data, void (*free_func)(void*)) {
     AromaEvent* ev = aroma_event_alloc();
     if (!ev) return NULL;

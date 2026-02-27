@@ -25,6 +25,7 @@
 #include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
 #include "backends/platforms/aroma_platform_interface.h"
+#include "core/aroma_logger.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,10 +33,8 @@ static bool window_resize_handler(AromaEvent* event, void* user_data) {
     AromaNode* window_node = (AromaNode*)user_data;
     if (event->event_type == EVENT_TYPE_WINDOW_RESIZE) {
         int w = event->data.resize.width;
-        int h = event->data.resize.height;
-        
-        // Window itself fills the screen/surface provided
-        aroma_node_set_layout_fill(window_node);
+        int h = event->data.resize.height;        
+        LOG_INFO("Handling window resize event for node %lu: new size %dx%d", window_node->node_id, w, h);
         aroma_node_update_layout(window_node, 0, 0, w, h);
         return true;
     }

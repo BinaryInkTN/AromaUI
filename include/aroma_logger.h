@@ -56,6 +56,15 @@ typedef enum
     DEBUG_LEVEL_CRITICAL /**< Critical failures (likely non-recoverable). */
 } DebugLevel;
 
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOG_TAG "AromaUI"
+#define LOG_INFO(...) ((void)__android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__))
+#define LOG_WARNING(...) ((void)__android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__))
+#define LOG_ERROR(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
+#define LOG_CRITICAL(...) ((void)__android_log_print(ANDROID_LOG_FATAL, LOG_TAG, __VA_ARGS__))
+#else
 /**
  * @brief Internal macro to route log calls with context.
  * 
@@ -72,7 +81,7 @@ typedef enum
 #define LOG_ERROR(fmt, ...)    LOG_MESSAGE(DEBUG_LEVEL_ERROR, fmt, ##__VA_ARGS__)
 /** @brief Log a critical error message. */
 #define LOG_CRITICAL(fmt, ...) LOG_MESSAGE(DEBUG_LEVEL_CRITICAL, fmt, ##__VA_ARGS__)
-
+#endif
 /**
  * @brief Core logging function.
  * 

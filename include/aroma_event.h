@@ -195,7 +195,7 @@ void aroma_event_handle_touch(int id, int x, int y, int state);
  * @param button_down True if a button is currently pressed.
  */
 void aroma_event_handle_pointer_move(int x, int y, bool button_down);
-
+AromaEvent* aroma_event_create_resize(uint64_t node_id, int width, int height);
 void aroma_event_resync_hover(void);
 
 bool aroma_event_subscribe(uint64_t node_id, AromaEventType event_type,

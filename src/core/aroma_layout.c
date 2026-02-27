@@ -305,7 +305,7 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
     int new_y = parent_y;
     int new_w = parent_width;
     int new_h = parent_height;
-
+    
     
     switch (start_node->layout.type) {
         case AROMA_LAYOUT_FILL_PARENT:

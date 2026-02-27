@@ -63,10 +63,6 @@ static float g_scaled_density = 1.0f;
 static float g_xdpi = 160.0f;
 static float g_ydpi = 160.0f;
 
-#define LOG_TAG "AromaUI-Android"
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__))
-#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
-
 typedef struct
 {
     jclass helper_class;
@@ -251,7 +247,7 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     jobject activity = aroma_android_get_activity();
     if (!activity)
     {
-        LOGE("Cannot find AromaHelper: no activity");
+        LOG_ERROR("Cannot find AromaHelper: no activity");
         return false;
     }
 
@@ -262,7 +258,7 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     {
         (*env)->ExceptionClear(env);
         (*env)->DeleteLocalRef(env, activityClass);
-        LOGE("Failed to get class loader method");
+        LOG_ERROR("Failed to get class loader method");
         return false;
     }
 
@@ -271,7 +267,7 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     {
         (*env)->ExceptionClear(env);
         (*env)->DeleteLocalRef(env, activityClass);
-        LOGE("Failed to get class loader");
+        LOG_ERROR("Failed to get class loader");
         return false;
     }
 
@@ -284,7 +280,7 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         (*env)->DeleteLocalRef(env, classLoaderClass);
         (*env)->DeleteLocalRef(env, classLoader);
         (*env)->DeleteLocalRef(env, activityClass);
-        LOGE("Failed to get loadClass method");
+        LOG_ERROR("Failed to get loadClass method");
         return false;
     }
 
@@ -298,7 +294,7 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         (*env)->DeleteLocalRef(env, classLoaderClass);
         (*env)->DeleteLocalRef(env, classLoader);
         (*env)->DeleteLocalRef(env, activityClass);
-        LOGE("AromaHelper class not found");
+        LOG_ERROR("AromaHelper class not found");
         return false;
     }
 
@@ -354,7 +350,7 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     jclass nativeCallbackClass = find_class_safe(env, native_callback_class_name);
     
     if (!nativeCallbackClass) {
-        LOGE("Failed to find native callback class: %s", native_callback_class_name);
+        LOG_ERROR("Failed to find native callback class: %s", native_callback_class_name);
         (*env)->DeleteLocalRef(env, helper);
         (*env)->DeleteLocalRef(env, classLoaderClass);
         (*env)->DeleteLocalRef(env, classLoader);
@@ -375,12 +371,12 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
 
     jint register_result = (*env)->RegisterNatives(env, nativeCallbackClass, methods, 6);
     if (register_result != JNI_OK) {
-        LOGE("Failed to register native methods: %d", register_result);
+        LOG_ERROR("Failed to register native methods: %d", register_result);
     }
 
     jmethodID constructor = (*env)->GetMethodID(env, nativeCallbackClass, "<init>", "()V");
     if (!constructor) {
-        LOGE("Failed to find constructor for native callback class");
+        LOG_ERROR("Failed to find constructor for native callback class");
         (*env)->DeleteLocalRef(env, nativeCallbackClass);
         (*env)->DeleteLocalRef(env, helper);
         (*env)->DeleteLocalRef(env, classLoaderClass);
@@ -391,7 +387,7 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
 
     jobject callbackObj = (*env)->NewObject(env, nativeCallbackClass, constructor);
     if (!callbackObj) {
-        LOGE("Failed to create callback object");
+        LOG_ERROR("Failed to create callback object");
         (*env)->DeleteLocalRef(env, nativeCallbackClass);
         (*env)->DeleteLocalRef(env, helper);
         (*env)->DeleteLocalRef(env, classLoaderClass);
@@ -406,9 +402,9 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.add_callback, g_helper_cache.callback_obj);
         if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
-            LOGE("Exception while adding callback");
+            LOG_ERROR("Exception while adding callback");
         } else {
-            LOGI("Callback added successfully");
+            LOG_INFO("Callback added successfully");
         }
     }
 
@@ -420,38 +416,10 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     (*env)->DeleteLocalRef(env, activityClass);
 
     g_helper_cache.initialized = true;
-    LOGI("AromaHelper initialized successfully");
+    LOG_INFO("AromaHelper initialized successfully");
     return true;
 }
 
-static void android_refresh_layout()
-{
-     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
-
-    for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
-    {
-        if (g_windows[i].is_active && g_windows[i].root_node)
-        {
-            struct AromaWindow *win_widget = (struct AromaWindow *)g_windows[i].root_node->node_widget_ptr;
-            if (win_widget)
-            {
-                win_widget->rect.width = g_width;
-                win_widget->rect.height = g_height;
-            }
-
-            aroma_node_update_layout(g_windows[i].root_node, 0, 0, g_width, g_height);
-            aroma_node_invalidate(g_windows[i].root_node);
-
-            AromaEvent *event = aroma_event_create(EVENT_TYPE_WINDOW_RESIZE, g_windows[i].root_node->node_id);
-            if (event)
-            {
-                event->data.resize.width = g_width;
-                event->data.resize.height = g_height;
-                aroma_event_queue(event);
-            }
-        }
-    }
-}
 
 static void cache_physical_screen_info(struct android_app *app)
 {
@@ -502,13 +470,12 @@ static void cache_physical_screen_info(struct android_app *app)
     g_avail_width = (*env)->GetIntField(env, dm, w_field);
     g_avail_height = (*env)->GetIntField(env, dm, h_field);
 
-    LOGI("Display Metrics:");
-    LOGI("  Physical: %dx%d", g_phys_width, g_phys_height);
-    LOGI("  Available: %dx%d", g_avail_width, g_avail_height);
-    LOGI("  Density: %f (%d dpi)", g_density, g_density_dpi);
-    LOGI("  Scaled Density: %f", g_scaled_density);
-    LOGI("  Physical DPI: %f x %f", g_xdpi, g_ydpi);
-    android_refresh_layout();
+    LOG_INFO("Display Metrics:");
+    LOG_INFO("  Physical: %dx%d", g_phys_width, g_phys_height);
+    LOG_INFO("  Available: %dx%d", g_avail_width, g_avail_height);
+    LOG_INFO("  Density: %f (%d dpi)", g_density, g_density_dpi);
+    LOG_INFO("  Scaled Density: %f", g_scaled_density);
+    LOG_INFO("  Physical DPI: %f x %f", g_xdpi, g_ydpi);
 
     g_phys_cached = true;
 
@@ -673,7 +640,7 @@ static void android_open_url(const char *url)
 {
     if (!g_app || !g_app->activity || !url)
     {
-        LOGE("Cannot open URL: Invalid state or URL");
+        LOG_ERROR("Cannot open URL: Invalid state or URL");
         return;
     }
 
@@ -684,7 +651,7 @@ static void android_open_url(const char *url)
     jclass activity_class = (*env)->GetObjectClass(env, g_app->activity->clazz);
     if (!activity_class)
     {
-        LOGE("Failed to get activity class");
+        LOG_ERROR("Failed to get activity class");
         detach_jni_env(attach);
         return;
     }
@@ -717,7 +684,7 @@ static void android_open_url(const char *url)
     {
         (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
-        LOGE("Exception occurred while launching browser intent");
+        LOG_ERROR("Exception occurred while launching browser intent");
     }
 
     detach_jni_env(attach);
@@ -727,7 +694,7 @@ static void android_send_intent(int action_enum, const char *uri, const char *ty
 {
     if (!g_app || !g_app->activity)
     {
-        LOGE("Cannot send intent: Invalid state");
+        LOG_ERROR("Cannot send intent: Invalid state");
         return;
     }
 
@@ -763,7 +730,7 @@ static void android_send_intent(int action_enum, const char *uri, const char *ty
 
     if (!intent_class || !uri_class || !activity_class)
     {
-        LOGE("Failed to find required classes for intent");
+        LOG_ERROR("Failed to find required classes for intent");
         detach_jni_env(attach);
         return;
     }
@@ -808,7 +775,7 @@ static void android_send_intent(int action_enum, const char *uri, const char *ty
     {
         (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
-        LOGE("Exception while sending intent");
+        LOG_ERROR("Exception while sending intent");
     }
 
     if (uri_obj)
@@ -837,21 +804,24 @@ static void update_surface_size(void)
     if (w == g_width && h == g_height)
         return;
 
-    LOGI("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
+    LOG_INFO("Window surface resized: %dx%d -> %dx%d", g_width, g_height, w, h);
 
     g_width = w;
     g_height = h;
 
     glViewport(0, 0, g_width, g_height);
 
-    android_refresh_layout();
+
 
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
     {
-        if (g_windows[i].is_active && g_windows[i].root_node)
+        if (g_windows[i].root_node)
         {
-            aroma_node_invalidate(g_windows[i].root_node);
+            AromaEvent* resize_event = aroma_event_create_resize(g_windows[i].root_node->node_id, g_width, g_height);
+            LOG_INFO("Updating layout for window %d size: %dx%d", i, g_width, g_height);
+            aroma_event_dispatch(resize_event);
+            
         }
     }
 }
@@ -985,7 +955,7 @@ static int init_display(struct android_app *app)
     EGLint num;
     if (!eglChooseConfig(dpy, attribs, &config, 1, &num) || num == 0)
     {
-        LOGE("Failed to choose config with preserved swap behavior, trying fallback");
+        LOG_ERROR("Failed to choose config with preserved swap behavior, trying fallback");
         const EGLint attribs_fallback[] = {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
             EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
@@ -998,7 +968,7 @@ static int init_display(struct android_app *app)
             EGL_NONE};
         if (!eglChooseConfig(dpy, attribs_fallback, &config, 1, &num) || num == 0)
         {
-            LOGE("Failed to choose fallback config");
+            LOG_ERROR("Failed to choose fallback config");
             return -1;
         }
     }
@@ -1010,7 +980,7 @@ static int init_display(struct android_app *app)
     EGLSurface surf = eglCreateWindowSurface(dpy, config, app->window, NULL);
     if (surf == EGL_NO_SURFACE)
     {
-        LOGE("Failed to create window surface");
+        LOG_ERROR("Failed to create window surface");
         return -1;
     }
 
@@ -1023,14 +993,14 @@ static int init_display(struct android_app *app)
         ctx = eglCreateContext(dpy, config, EGL_NO_CONTEXT, ctx_attribs);
         if (ctx == EGL_NO_CONTEXT)
         {
-            LOGE("Failed to create context");
+            LOG_ERROR("Failed to create context");
             return -1;
         }
     }
 
     if (!eglMakeCurrent(dpy, surf, surf, ctx))
     {
-        LOGE("Failed to make current");
+        LOG_ERROR("Failed to make current");
         return -1;
     }
 
@@ -1042,7 +1012,6 @@ static int init_display(struct android_app *app)
     context = ctx;
     g_has_window = true;
 
-    update_surface_size();
 
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx)
@@ -1052,6 +1021,7 @@ static int init_display(struct android_app *app)
         if (gfx->setup_separate_window_resources)
             gfx->setup_separate_window_resources(0);
     }
+    update_surface_size();
 
     return 0;
 }
@@ -1216,10 +1186,12 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
     case APP_CMD_WINDOW_RESIZED:
     case APP_CMD_CONFIG_CHANGED:
         g_phys_cached = false;
+        LOG_INFO("Configuration changed, invalidating physical screen cache");
+        LOG_INFO("New config: %dx%d, orientation=%d", g_avail_width, g_avail_height, android_get_current_orientation());
         cache_physical_screen_info(app);
         term_display_surface_only();        
         if (app->window)
-            init_display(app);
+            init_display(app);       
         break;
     case APP_CMD_GAINED_FOCUS:
     case APP_CMD_RESUME:
@@ -1324,13 +1296,13 @@ void make_context_current(size_t window_id)
             if (!eglMakeCurrent(display, surface, surface, context))
             {
                 EGLint error = eglGetError();
-                LOGE("make_context_current failed: 0x%x", error);
+                LOG_ERROR("make_context_current failed: 0x%x", error);
             }
         }
     }
     else
     {
-        LOGE("Attempted to make context current but display/surface/context is invalid");
+        LOG_ERROR("Attempted to make context current but display/surface/context is invalid");
     }
 }
 
@@ -1409,7 +1381,7 @@ static void android_show_keyboard(void)
 {
     if (!g_app || !g_app->activity)
     {
-        LOGE("Cannot show keyboard: g_app is NULL");
+        LOG_ERROR("Cannot show keyboard: g_app is NULL");
         return;
     }
 
@@ -1446,7 +1418,7 @@ static void android_show_keyboard(void)
     }
     else
     {
-        LOGE("Failed to get InputMethodManager");
+        LOG_ERROR("Failed to get InputMethodManager");
     }
 
     (*env)->DeleteLocalRef(env, activityClass);
@@ -1761,7 +1733,7 @@ static void impl_android_toast(const char* msg, bool long_duration)
 
     if (!ensure_aroma_helper_initialized(env))
     {
-        LOGE("AromaHelper not available for toast");
+        LOG_ERROR("AromaHelper not available for toast");
         detach_jni_env(attach);
         return;
     }
@@ -1780,7 +1752,7 @@ static void impl_android_toast(const char* msg, bool long_duration)
     }
     else
     {
-        LOGE("showToast method not available");
+        LOG_ERROR("showToast method not available");
     }
 
     detach_jni_env(attach);
@@ -1953,7 +1925,7 @@ void impl_bt_register_callbacks(
     g_bt_callbacks.connection_result_cb = connection_cb;
     g_bt_callbacks.data_received_cb = data_cb;
     
-    LOGI("All Bluetooth callbacks registered");
+    LOG_INFO("All Bluetooth callbacks registered");
 }
 
 static int impl_android_bt_scan(int scan_mode, void (*callback)(const char* addr, const char* name, int type, int rssi))
@@ -1964,7 +1936,7 @@ static int impl_android_bt_scan(int scan_mode, void (*callback)(const char* addr
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_scan)
     {
-        LOGE("bt_scan not available");
+        LOG_ERROR("bt_scan not available");
         detach_jni_env(attach);
         return 0;
     }
@@ -1994,7 +1966,7 @@ static void impl_android_bt_stop_scan(void)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_stop_scan)
     {
-        LOGE("bt_stop_scan not available");
+        LOG_ERROR("bt_stop_scan not available");
         detach_jni_env(attach);
         return;
     }
@@ -2017,7 +1989,7 @@ static int impl_android_bt_get_paired(char out_addrs[][18], char out_names[][248
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_paired)
     {
-        LOGE("bt_get_paired not available");
+        LOG_ERROR("bt_get_paired not available");
         detach_jni_env(attach);
         return 0;
     }
@@ -2084,7 +2056,7 @@ static bool impl_android_bt_pair(const char *addr)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_pair)
     {
-        LOGE("bt_pair not available");
+        LOG_ERROR("bt_pair not available");
         detach_jni_env(attach);
         return false;
     }
@@ -2111,7 +2083,7 @@ static bool impl_android_bt_unpair(const char *addr)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_unpair)
     {
-        LOGE("bt_unpair not available");
+        LOG_ERROR("bt_unpair not available");
         detach_jni_env(attach);
         return false;
     }
@@ -2138,7 +2110,7 @@ static int impl_android_bt_get_pair_state(const char *addr)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_pair_state)
     {
-        LOGE("bt_get_pair_state not available");
+        LOG_ERROR("bt_get_pair_state not available");
         detach_jni_env(attach);
         return 0;
     }
@@ -2165,7 +2137,7 @@ static bool impl_android_bt_connect(const char *addr)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_connect)
     {
-        LOGE("bt_connect not available");
+        LOG_ERROR("bt_connect not available");
         detach_jni_env(attach);
         return false;
     }
@@ -2192,7 +2164,7 @@ static bool impl_android_bt_connect_with_mode(const char *addr, int mode)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_connect_with_mode)
     {
-        LOGE("bt_connect_with_mode not available");
+        LOG_ERROR("bt_connect_with_mode not available");
         detach_jni_env(attach);
         return false;
     }
@@ -2219,7 +2191,7 @@ static void impl_android_bt_disconnect(void)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_disconnect)
     {
-        LOGE("bt_disconnect not available");
+        LOG_ERROR("bt_disconnect not available");
         detach_jni_env(attach);
         return;
     }
@@ -2242,7 +2214,7 @@ static int impl_android_bt_send(const char *data, int len)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_send)
     {
-        LOGE("bt_send not available");
+        LOG_ERROR("bt_send not available");
         detach_jni_env(attach);
         return -1;
     }
@@ -2271,7 +2243,7 @@ static bool impl_android_bt_is_connected(void)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_is_connected)
     {
-        LOGE("bt_is_connected not available");
+        LOG_ERROR("bt_is_connected not available");
         detach_jni_env(attach);
         return false;
     }
@@ -2296,7 +2268,7 @@ static int impl_android_bt_get_device_type(void)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_device_type)
     {
-        LOGE("bt_get_device_type not available");
+        LOG_ERROR("bt_get_device_type not available");
         detach_jni_env(attach);
         return 0;
     }
@@ -2321,7 +2293,7 @@ static const char* impl_android_bt_get_device_name(void)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_device_name)
     {
-        LOGE("bt_get_device_name not available");
+        LOG_ERROR("bt_get_device_name not available");
         detach_jni_env(attach);
         return NULL;
     }
@@ -2353,7 +2325,7 @@ static int impl_android_bt_get_current_mode(void)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_current_mode)
     {
-        LOGE("bt_get_current_mode not available");
+        LOG_ERROR("bt_get_current_mode not available");
         detach_jni_env(attach);
         return 0;
     }
@@ -2378,7 +2350,7 @@ static const char* impl_android_bt_get_mode_name(void)
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_mode_name)
     {
-        LOGE("bt_get_mode_name not available");
+        LOG_ERROR("bt_get_mode_name not available");
         detach_jni_env(attach);
         return NULL;
     }
