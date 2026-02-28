@@ -24,6 +24,10 @@ Limitations:
 
 All APIs are valid only when compiling with **ANDROID** defined.
 
+```mermaid
+sequenceDiagram
+    Bob->>Alice: Hello!
+```
 
 
 # 1. Architecture Overview

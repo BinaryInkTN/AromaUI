@@ -634,7 +634,7 @@ void aroma_listview_draw(AromaNode *list_node, size_t window_id)
     gfx->fill_rectangle(window_id,
                         list->rect.x, list->rect.y,
                         width, height,
-                        theme.colors.surface,
+                        theme.colors.background,
                         true,
                         list->corner_radius);
 
@@ -665,7 +665,7 @@ void aroma_listview_draw(AromaNode *list_node, size_t window_id)
                                width - (AROMA_LIST_ITEM_PADDING * 2),
                                1,
                                aroma_color_blend(theme.colors.text_secondary, 
-                                                theme.colors.surface, 0.5f),
+                                                theme.colors.surface, 0.35f),
                                false,
                                0);
             current_y += item_height;

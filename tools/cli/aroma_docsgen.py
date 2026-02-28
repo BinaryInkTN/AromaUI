@@ -4,20 +4,65 @@ import argparse
 import json
 import os
 import re
+import hashlib
 from datetime import datetime
 from typing import Dict, List
+from pathlib import Path
 
 import markdown
+from markdown.extensions import Extension
+from markdown.preprocessors import Preprocessor
 import yaml
-from pygments import highlight
 from pygments.formatters import HtmlFormatter
-from pygments.lexers import get_lexer_by_name
 
+class MermaidPreprocessor(Preprocessor):
+    def run(self, lines):
+        new_lines = []
+        i = 0
+        
+        while i < len(lines):
+            line = lines[i]
+            
+            if line.strip() == '```mermaid':
+                mermaid_content = []
+                i += 1
+                
+                # Collect all lines until closing ```
+                while i < len(lines) and not lines[i].strip() == '```':
+                    # Preserve the exact content including indentation
+                    mermaid_content.append(lines[i])
+                    i += 1
+                
+                # Skip the closing ```
+                if i < len(lines):
+                    i += 1
+                
+                # Join the content and clean it up
+                if mermaid_content:
+                    # Remove any empty lines at the start
+                    while mermaid_content and not mermaid_content[0].strip():
+                        mermaid_content.pop(0)
+                    
+                    # Create a clean Mermaid div
+                    mermaid_html = '<div class="mermaid">\n'
+                    mermaid_html += '\n'.join(mermaid_content)
+                    mermaid_html += '\n</div>'
+                    new_lines.append(mermaid_html)
+                continue
+            
+            new_lines.append(line)
+            i += 1
+        
+        return new_lines
+
+class MermaidExtension(Extension):
+    def extendMarkdown(self, md):
+        md.preprocessors.register(MermaidPreprocessor(md), 'mermaid', 175)
 
 class DocGenerator:
     def __init__(self):
         self.template = self._get_template()
-
+    
     def _get_pygments_styles(self) -> str:
         light_formatter = HtmlFormatter(style="default", noclasses=False)
         dark_formatter = HtmlFormatter(style="monokai", noclasses=False)
@@ -96,7 +141,6 @@ class DocGenerator:
         <section class="hero">
             <div class="container hero-grid">
                 <div class="hero-content">
-
                     <h1 class="hero-title">
                       {hero_title}
                     </h1>
@@ -106,7 +150,6 @@ class DocGenerator:
                             <span class="material-symbols-outlined">download</span>
                             Install SDK
                         </a>
-
                     </div>
                 </div>
                 <div class="hero-visual">
@@ -116,18 +159,59 @@ class DocGenerator:
                     <div class="pill-icon"><span class="material-symbols-outlined">android</span></div>
                     <div class="pill-icon"><span class="material-symbols-outlined">developer_board</span></div>
                     <div class="pill-icon"><span class="material-symbols-outlined">widgets</span></div>
-
                 </div>
-                                <img src="images/hero-image.png"/>
-
             </div>
         </section>
         """
 
         return hero_html
 
+    def _process_markdown(self, content: str) -> str:
+        extensions = [
+            'extra', 'codehilite', 'toc', 'tables', 'fenced_code',
+            'attr_list', 'def_list', 'abbr', 'footnotes'
+        ]
+        
+        md = markdown.Markdown(extensions=extensions)
+        mermaid_ext = MermaidExtension()
+        md.registerExtensions([mermaid_ext], {})
+        
+        html = md.convert(content)
+        return html
+
+    def load_markdown(self, file_path: str) -> str:
+        try:
+            if not os.path.exists(file_path):
+                return f"<h1>File not found</h1><p>{file_path}</p>"
+
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            return self._process_markdown(content)
+
+        except Exception as e:
+            return f"<h1>Error</h1><p>{e}</p>"
+
+    def _get_icon_name(self, icon_name: str) -> str:
+        icon_map = {
+            "getting-started": "play_arrow",
+            "api": "api",
+            "guide": "menu_book",
+            "tutorial": "school",
+            "example": "code",
+            "reference": "reference",
+            "linux": "terminal",
+            "android": "android",
+            "embedded": "developer_board",
+            "rtos": "memory",
+            "baremetal": "chip",
+            "folder": "folder",
+            "description": "description",
+        }
+        return icon_map.get(icon_name.lower(), icon_name)
+
     def _get_template(self) -> str:
-        template = """<!DOCTYPE html>
+        return """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -151,7 +235,6 @@ class DocGenerator:
             --header-height: 64px;
         }}
 
-        /* ----- YOUR THEMES - PRESERVED EXACTLY ----- */
         :root[data-theme="light"] {{
             --primary: #1a73e8;
             --primary-light: #e8f0fe;
@@ -727,7 +810,6 @@ class DocGenerator:
         .hero-grid img {{
             max-width: 100%;
             height: auto;
-
         }}
 
         .hero-content {{
@@ -1247,6 +1329,21 @@ class DocGenerator:
             margin: 0.25rem 0;
         }}
 
+        .mermaid {{
+            background: var(--surface-0);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            text-align: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }}
+        
+        .mermaid svg {{
+            max-width: 100%;
+            height: auto;
+        }}
+
         .empty-state {{
             text-align: center;
             padding: 3rem;
@@ -1523,6 +1620,8 @@ class DocGenerator:
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
     <script>
         const pages = {pages_json};
         const titles = {titles_json};
@@ -1534,15 +1633,110 @@ class DocGenerator:
         let observer = null;
         let sections = [];
 
-        // Initialize theme - FIXED to apply immediately
-        (function() {{
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            // Update UI after DOM is loaded
-            document.addEventListener('DOMContentLoaded', function() {{
-                updateThemeUI(savedTheme);
-            }});
-        }})();
+        function getMermaidTheme(theme) {{
+            const themes = {{
+                'light': {{
+                    background: '#ffffff',
+                    primaryColor: '#1a73e8',
+                    primaryTextColor: '#202124',
+                    primaryBorderColor: '#dadce0',
+                    lineColor: '#5f6368',
+                    secondaryColor: '#f1f3f4',
+                    tertiaryColor: '#e8eaed',
+                    clusterBkg: '#f8f9fa',
+                    clusterBorder: '#dadce0',
+                    nodeBorder: '#bdc1c6',
+                    nodeTextColor: '#202124'
+                }},
+                'dark': {{
+                    background: '#202124',
+                    primaryColor: '#8ab4f8',
+                    primaryTextColor: '#e8eaed',
+                    primaryBorderColor: '#3c4043',
+                    lineColor: '#9aa0a6',
+                    secondaryColor: '#303134',
+                    tertiaryColor: '#3c4043',
+                    clusterBkg: '#292a2d',
+                    clusterBorder: '#3c4043',
+                    nodeBorder: '#5f6368',
+                    nodeTextColor: '#e8eaed'
+                }},
+                'sepia': {{
+                    background: '#f4ecd8',
+                    primaryColor: '#8b5a2b',
+                    primaryTextColor: '#3e2e23',
+                    primaryBorderColor: '#d8ccbc',
+                    lineColor: '#5e4e3e',
+                    secondaryColor: '#e8dccc',
+                    tertiaryColor: '#d8ccbc',
+                    clusterBkg: '#e8dccc',
+                    clusterBorder: '#d8ccbc',
+                    nodeBorder: '#c8bcac',
+                    nodeTextColor: '#3e2e23'
+                }},
+                'nord': {{
+                    background: '#2e3440',
+                    primaryColor: '#88c0d0',
+                    primaryTextColor: '#eceff4',
+                    primaryBorderColor: '#434c5e',
+                    lineColor: '#e5e9f0',
+                    secondaryColor: '#3b4252',
+                    tertiaryColor: '#434c5e',
+                    clusterBkg: '#3b4252',
+                    clusterBorder: '#434c5e',
+                    nodeBorder: '#4c566a',
+                    nodeTextColor: '#eceff4'
+                }},
+                'solarized': {{
+                    background: '#fdf6e3',
+                    primaryColor: '#268bd2',
+                    primaryTextColor: '#002b36',
+                    primaryBorderColor: '#93a1a1',
+                    lineColor: '#073642',
+                    secondaryColor: '#eee8d5',
+                    tertiaryColor: '#93a1a1',
+                    clusterBkg: '#eee8d5',
+                    clusterBorder: '#93a1a1',
+                    nodeBorder: '#839496',
+                    nodeTextColor: '#002b36'
+                }}
+            }};
+            
+            return themes[theme] || themes['light'];
+        }}
+
+        function initializeMermaid(theme) {{
+            if (typeof mermaid === 'undefined') {{
+                setTimeout(() => initializeMermaid(theme), 100);
+                return;
+            }}
+            
+            try {{
+                const themeVars = getMermaidTheme(theme);
+                
+                mermaid.initialize({{
+                    startOnLoad: true,
+                    theme: 'base',
+                    themeVariables: themeVars,
+                    flowchart: {{
+                        useMaxWidth: true,
+                        htmlLabels: true,
+                        curve: 'basis'
+                    }},
+                    sequence: {{
+                        useMaxWidth: true,
+                        showSequenceNumbers: true,
+                        actorMargin: 50
+                    }},
+                    securityLevel: 'loose',
+                    logLevel: 'error'
+                }});
+                
+                console.log('Mermaid initialized with theme:', theme);
+            }} catch (error) {{
+                console.error('Failed to initialize Mermaid:', error);
+            }}
+        }}
 
         function updateThemeUI(theme) {{
             const themeNames = {{
@@ -1574,6 +1768,8 @@ class DocGenerator:
                     opt.classList.add('active');
                 }}
             }});
+            
+            initializeMermaid(theme);
         }}
 
         function toggleThemeDropdown() {{
@@ -1593,9 +1789,7 @@ class DocGenerator:
         function setTheme(theme, event) {{
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-
             document.getElementById('themeDropdown').classList.remove('show');
-
             updateThemeUI(theme);
         }}
 
@@ -1743,7 +1937,6 @@ class DocGenerator:
                 item.classList.remove('active');
                 if (currentSection && item.dataset.sectionId === currentSection.id) {{
                     item.classList.add('active');
-
                     item.scrollIntoView({{
                         block: 'nearest',
                         behavior: 'auto'
@@ -1797,7 +1990,6 @@ class DocGenerator:
             }}
 
             sections = extractSections();
-
             buildSectionList();
 
             const indicator = document.getElementById('progressIndicator');
@@ -1830,7 +2022,6 @@ class DocGenerator:
 
         function filterCards() {{
             const term = searchInput.value.toLowerCase().trim();
-
             searchClear.classList.toggle('visible', term.length > 0);
 
             let visible = 0;
@@ -1918,7 +2109,10 @@ class DocGenerator:
 
             currentDocId = id;
 
-            initializeCopyButtons();
+            setTimeout(() => {{
+                initializeCopyButtons();
+            }}, 100);
+            
             initializeProgressTracking();
         }}
 
@@ -1951,13 +2145,8 @@ class DocGenerator:
             }});
 
             const savedTheme = localStorage.getItem('theme') || 'light';
-            const themeOptions = document.querySelectorAll('.theme-option');
-            for (let option of themeOptions) {{
-                if (option.textContent.toLowerCase().includes(savedTheme)) {{
-                    setTheme(savedTheme, {{ target: option }});
-                    break;
-                }}
-            }}
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeUI(savedTheme);
 
             if (window.location.hash) {{
                 const id = window.location.hash.substring(1);
@@ -1969,55 +2158,6 @@ class DocGenerator:
     </script>
 </body>
 </html>"""
-        return template
-
-    def _get_icon_name(self, icon_name: str) -> str:
-        # Map common icon names to Material Symbols
-        icon_map = {
-            "getting-started": "play_arrow",
-            "api": "api",
-            "guide": "menu_book",
-            "tutorial": "school",
-            "example": "code",
-            "reference": "reference",
-            "linux": "terminal",
-            "android": "android",
-            "embedded": "developer_board",
-            "rtos": "memory",
-            "baremetal": "chip",
-            "folder": "folder",
-            "description": "description",
-        }
-        return icon_map.get(icon_name.lower(), icon_name)
-
-    def _process_markdown(self, content: str) -> str:
-        extensions = [
-            "extra",
-            "codehilite",
-            "toc",
-            "tables",
-            "fenced_code",
-            "attr_list",
-            "def_list",
-            "abbr",
-            "footnotes",
-        ]
-
-        html = markdown.markdown(content, extensions=extensions)
-        return html
-
-    def load_markdown(self, file_path: str) -> str:
-        try:
-            if not os.path.exists(file_path):
-                return f"<h1>File not found</h1><p>{file_path}</p>"
-
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-
-            return self._process_markdown(content)
-
-        except Exception as e:
-            return f"<h1>Error</h1><p>{e}</p>"
 
     def generate(self, config_file: str, output_file: str):
         with open(config_file, "r", encoding="utf-8") as f:
@@ -2186,7 +2326,6 @@ class DocGenerator:
 
         print(f"Documentation generated: {output_file}")
 
-
 def main():
     parser = argparse.ArgumentParser(
         description="Generate AromaUI documentation from markdown files"
@@ -2211,7 +2350,6 @@ def main():
     except Exception as e:
         print(f"Error generating documentation: {e}")
         return 1
-
 
 if __name__ == "__main__":
     exit(main())
