@@ -2,6 +2,62 @@
 
 <br/>
 
+```mermaid
+
+flowchart LR
+    subgraph "API Calls"
+        direction TB
+        S[bt_scan]
+        P[bt_pair]
+        C[bt_connect]
+        D[bt_send]
+        R[bt_register_callbacks]
+    end
+    
+    subgraph "Android Implementation"
+        direction TB
+        I[impl_android_bt_*]
+        J[get_jni_env/detach_jni_env]
+        H[AromaHelper Java Class]
+    end
+    
+    subgraph "Bluetooth Stack"
+        direction TB
+        Disc[startDiscovery]
+        Bond[createBond]
+        Sock[createRfcommSocket]
+        IO[InputStream/OutputStream]
+    end
+    
+    S --> I
+    P --> I
+    C --> I
+    D --> I
+    R --> I
+    
+    I --> J
+    J --> H
+    
+    H --> Disc
+    H --> Bond
+    H --> Sock
+    H --> IO
+    
+    style S fill:#c8e6c9
+    style P fill:#c8e6c9
+    style C fill:#c8e6c9
+    style D fill:#c8e6c9
+    style R fill:#c8e6c9
+    style I fill:#bbdefb
+    style J fill:#ffe0b2
+    style H fill:#d1c4e9
+    style Disc fill:#e1b7a7
+    style Bond fill:#e1b7a7
+    style Sock fill:#e1b7a7
+    style IO fill:#e1b7a7
+
+```
+
 This guide provides a structured, comprehensive explanation of the AromaUI Bluetooth Classic API for Android.
 
 The API supports:
@@ -24,22 +80,49 @@ Limitations:
 
 All APIs are valid only when compiling with **ANDROID** defined.
 
-```mermaid
-sequenceDiagram
-    Bob->>Alice: Hello!
-```
-
 
 # 1. Architecture Overview
 
 The Bluetooth layer is exposed through inline wrappers that delegate to AromaPlatformInterface.
 
-Flow:
+The following  sequence diagram illustrates a typical Bluetooth workflow:
 
-Application Code
-aroma_android_* wrapper
-AromaPlatformInterface
-Android Java or Kotlin implementation
+* Scan for devices
+* Pair with device
+* Connect using RFCOMM
+* Send and receive data
+
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant Wrapper as aroma_android_* API
+    participant Platform as AromaPlatformInterface
+    participant Backend as Android Backend
+    participant Stack as Android Bluetooth Stack
+
+    App->>Wrapper: aroma_android_bt_scan()
+    Wrapper->>Platform: android_bt_scan()
+    Platform->>Backend: Scan Request
+    Backend->>Stack: startDiscovery()
+    Stack-->>Backend: Device Found
+    Backend-->>App: device_cb()
+
+    App->>Wrapper: aroma_android_bt_pair(addr)
+    Wrapper->>Platform: android_bt_pair(addr)
+    Platform->>Backend: createBond()
+    Backend-->>App: pairing_cb(success)
+
+    App->>Wrapper: aroma_android_bt_connect(addr)
+    Wrapper->>Platform: android_bt_connect(addr)
+    Platform->>Backend: open RFCOMM socket
+    Backend-->>App: connection_cb(success)
+
+    App->>Wrapper: aroma_android_bt_send(data)
+    Wrapper->>Platform: android_bt_send(data)
+    Platform->>Backend: write(socket)
+    Backend-->>App: data_cb(received)
+```
+
 
 Many operations are asynchronous internally. Design your application around callbacks rather than blocking logic.
 

@@ -27,23 +27,17 @@ class MermaidPreprocessor(Preprocessor):
                 mermaid_content = []
                 i += 1
                 
-                # Collect all lines until closing ```
                 while i < len(lines) and not lines[i].strip() == '```':
-                    # Preserve the exact content including indentation
                     mermaid_content.append(lines[i])
                     i += 1
                 
-                # Skip the closing ```
                 if i < len(lines):
                     i += 1
                 
-                # Join the content and clean it up
                 if mermaid_content:
-                    # Remove any empty lines at the start
                     while mermaid_content and not mermaid_content[0].strip():
                         mermaid_content.pop(0)
                     
-                    # Create a clean Mermaid div
                     mermaid_html = '<div class="mermaid">\n'
                     mermaid_html += '\n'.join(mermaid_content)
                     mermaid_html += '\n</div>'
@@ -1115,7 +1109,7 @@ class DocGenerator:
 
         .doc-view {{
             display: none;
-            max-width: 900px;
+            max-width: auto;
             margin: 0 auto;
         }}
 
@@ -1715,7 +1709,7 @@ class DocGenerator:
                 const themeVars = getMermaidTheme(theme);
                 
                 mermaid.initialize({{
-                    startOnLoad: true,
+                    startOnLoad: false,
                     theme: 'base',
                     themeVariables: themeVars,
                     flowchart: {{
@@ -1732,7 +1726,14 @@ class DocGenerator:
                     logLevel: 'error'
                 }});
                 
-                console.log('Mermaid initialized with theme:', theme);
+                // Render all mermaid diagrams
+                document.querySelectorAll('.mermaid').forEach((element) => {{
+                    try {{
+                        mermaid.init(undefined, element);
+                    }} catch (err) {{
+                        console.error('Error rendering mermaid:', err);
+                    }}
+                }});
             }} catch (error) {{
                 console.error('Failed to initialize Mermaid:', error);
             }}
@@ -1787,10 +1788,13 @@ class DocGenerator:
         }}
 
         function setTheme(theme, event) {{
+            initializeMermaid(theme);
+
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
             document.getElementById('themeDropdown').classList.remove('show');
             updateThemeUI(theme);
+
         }}
 
         function filterByPlatform(platform) {{
@@ -2111,6 +2115,9 @@ class DocGenerator:
 
             setTimeout(() => {{
                 initializeCopyButtons();
+                // Re-initialize mermaid for new content
+                const currentTheme = localStorage.getItem('theme') || 'light';
+                initializeMermaid(currentTheme);
             }}, 100);
             
             initializeProgressTracking();
@@ -2154,6 +2161,14 @@ class DocGenerator:
             }}
 
             initializeCopyButtons();
+            
+            // Handle page visibility changes
+            document.addEventListener('visibilitychange', () => {{
+                if (!document.hidden && currentDocId) {{
+                    const currentTheme = localStorage.getItem('theme') || 'light';
+                    initializeMermaid(currentTheme);
+                }}
+            }});
         }});
     </script>
 </body>

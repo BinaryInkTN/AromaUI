@@ -2,7 +2,57 @@
 
 <br/>
 
+
 The Permissions API provides runtime permission management in compliance with Android's security model. It supports permission grouping, Android version–specific behavior, and asynchronous permission handling.
+
+```mermaid
+flowchart LR
+    subgraph "API Calls"
+        direction TB
+        A[aroma_android_check_permission]
+        B[aroma_android_request_permission]
+    end
+    
+    subgraph "Android Implementation"
+        direction TB
+        C[impl_android_check_permission]
+        D[impl_android_request_permission]
+        E[get_jni_env/detach_jni_env]
+    end
+    
+    subgraph "Java Layer"
+        direction TB
+        F[Activity.checkSelfPermission]
+        G[Activity.requestPermissions]
+    end
+    
+    subgraph "Android OS"
+        direction TB
+        H[Permission Dialog]
+        I[Package Manager]
+    end
+    
+    A --> C
+    B --> D
+    C --> E
+    D --> E
+    E --> F
+    E --> G
+    F --> I
+    G --> H
+    H --> I
+    
+    style A fill:#c8e6c9
+    style B fill:#c8e6c9
+    style C fill:#bbdefb
+    style D fill:#bbdefb
+    style E fill:#ffe0b2
+    style F fill:#d1c4e9
+    style G fill:#d1c4e9
+    style H fill:#ffccbc
+    style I fill:#ffccbc
+
+```
 
 
 # 1. Permission Checking

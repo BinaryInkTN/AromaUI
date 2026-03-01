@@ -3,7 +3,73 @@
 
 This guide provides a structured, comprehensive explanation of the AromaUI Screen Orientation Control API for Android.
 
+```mermaid
+flowchart LR
+    subgraph "API Calls"
+        direction TB
+        A[lock_orientation]
+        B[unlock_orientation]
+        C[set_orientation_portrait]
+        D[set_orientation_landscape]
+        E[set_orientation_sensor]
+        F[get_current_orientation]
+        G[is_orientation_locked]
+    end
+    
+    subgraph "Android Implementation"
+        direction TB
+        H[impl_android_lock/unlock]
+        I[impl_android_set_orientation]
+        J[impl_android_get_orientation]
+        K[get_jni_env/detach_jni_env]
+        L[AromaHelper Java Class]
+    end
+    
+    subgraph "Android System"
+        direction TB
+        M[Activity.setRequestedOrientation]
+        N[Configuration.orientation]
+        O[WindowManager]
+        P[Display.getRotation]
+    end
+    
+    A --> H
+    B --> H
+    C --> I
+    D --> I
+    E --> I
+    F --> J
+    G --> H
+    
+    H --> K
+    I --> K
+    J --> K
+    
+    K --> L
+    
+    L --> M
+    L --> N
+    L --> O
+    L --> P
+    
+    style A fill:#c8e6c9
+    style B fill:#c8e6c9
+    style C fill:#c8e6c9
+    style D fill:#c8e6c9
+    style E fill:#c8e6c9
+    style F fill:#c8e6c9
+    style G fill:#c8e6c9
+    style H fill:#bbdefb
+    style I fill:#bbdefb
+    style J fill:#bbdefb
+    style K fill:#ffe0b2
+    style L fill:#d1c4e9
+    style M fill:#e1b7a7
+    style N fill:#e1b7a7
+    style O fill:#e1b7a7
+    style P fill:#e1b7a7
 
+```
 
 ## API Capabilities
 
