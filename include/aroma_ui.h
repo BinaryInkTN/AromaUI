@@ -512,6 +512,41 @@ static inline AromaNode* aroma_ui_container(
     return cont;
 }
 
+/**
+ * @brief Create a scrollable container (convenience wrapper).
+ *
+ * Content size is auto-measured from children after layout.
+ * The container scrolls only when content exceeds the viewport.
+ *
+ * @param parent Parent node.
+ * @param x X-coordinate.
+ * @param y Y-coordinate.
+ * @param width Viewport width.
+ * @param height Viewport height.
+ * @param direction Scroll direction flags.
+ * @return Pointer to the new container node, or NULL on failure.
+ */
+static inline AromaNode* aroma_ui_scrollable_container(
+    AromaNode* parent,
+    int x, int y, int width, int height,
+    AromaScrollDirection direction
+) {
+    AromaNode* c = aroma_container_create(parent, x, y, width, height);
+    if (c) {
+        aroma_container_set_scrollable(c, true);
+
+        /* Default to column flex layout so children are positioned
+           properly instead of all landing at (0,0). */
+        aroma_node_set_layout_mode(c, AROMA_LAYOUT_MODE_FLEX);
+        aroma_node_set_flex_direction(c, AROMA_FLEX_COLUMN);
+        aroma_node_set_justify_content(c, AROMA_JUSTIFY_START);
+        aroma_node_set_align_items(c, AROMA_ALIGN_CENTER);
+
+        aroma_container_set_scroll_direction(c, direction);
+    }
+    return c;
+}
+
 static inline AromaNode* aroma_ui_image(
     AromaNode* parent,
     const char* path,

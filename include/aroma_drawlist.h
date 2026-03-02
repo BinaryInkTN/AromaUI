@@ -35,12 +35,14 @@ typedef struct AromaDrawTask {
  * @brief Types of drawing commands supported by the draw list.
  */
 typedef enum AromaDrawCmdType {
-    AROMA_DRAW_CMD_CLEAR,       /**< Clear screen/area with color. */
-    AROMA_DRAW_CMD_FILL_RECT,   /**< Filled rectangle. */
-    AROMA_DRAW_CMD_HOLLOW_RECT, /**< Outlined rectangle. */
-    AROMA_DRAW_CMD_ARC,         /**< Arc or circle segment. */
-    AROMA_DRAW_CMD_TEXT,        /**< Text rendering. */
-    AROMA_DRAW_CMD_IMAGE,       /**< Image rendering. */
+    AROMA_DRAW_CMD_CLEAR,        /**< Clear screen/area with color. */
+    AROMA_DRAW_CMD_FILL_RECT,    /**< Filled rectangle. */
+    AROMA_DRAW_CMD_HOLLOW_RECT,  /**< Outlined rectangle. */
+    AROMA_DRAW_CMD_ARC,          /**< Arc or circle segment. */
+    AROMA_DRAW_CMD_TEXT,         /**< Text rendering. */
+    AROMA_DRAW_CMD_IMAGE,        /**< Image rendering. */
+    AROMA_DRAW_CMD_SCISSOR_PUSH, /**< Enable scissor clipping region. */
+    AROMA_DRAW_CMD_SCISSOR_POP,  /**< Disable scissor clipping region. */
 } AromaDrawCmdType;
 
 /**
@@ -158,6 +160,21 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
  */
 void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int height, unsigned int texture_id);
 
+/**
+ * @brief Push a scissor clipping region onto the draw list.
+ * @param list Target draw list.
+ * @param x Left edge of clip region.
+ * @param y Top edge of clip region.
+ * @param width Width of clip region.
+ * @param height Height of clip region.
+ */
+void aroma_drawlist_cmd_scissor_push(AromaDrawList* list, int x, int y, int width, int height);
+
+/**
+ * @brief Pop (disable) the scissor clipping region.
+ * @param list Target draw list.
+ */
+void aroma_drawlist_cmd_scissor_pop(AromaDrawList* list);
 
 /**
  * @brief Execute (flush) all commands in the list to the backend.

@@ -269,7 +269,11 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
         current_x += (float)g->advance * scale;
     }
 
-    glDisable(GL_BLEND);
+    /* NOTE: Do NOT call glDisable(GL_BLEND) here.
+     * Blend must stay enabled for the rest of the frame so that
+     * subsequent draws (images with alpha, rounded shapes, etc.)
+     * composite correctly.  The frame-state cache in the GLES3
+     * backend assumes blend remains on after ensure_frame_state(). */
     glBindVertexArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -80,85 +80,101 @@ class DocGenerator:
         }}
         """
 
-    def _get_platform_filters(self, all_platforms: List[str]) -> str:
-        platform_icons = {
-            "linux": "terminal",
-            "android": "android",
-            "embedded": "developer_board",
-            "rtos": "memory",
-            "windows": "window",
-            "ios": "phone_iphone",
-            "macos": "desktop_mac",
-            "web": "language",
-            "baremetal": "chip",
-        }
-
-        unique_platforms = sorted(
-            set([p.lower() for p in all_platforms if p.lower() in platform_icons])
-        )
-
-        if not unique_platforms:
-            return ""
-
-        filters = ['<div class="platform-filters" role="tablist">']
-        filters.append("""
-            <button class="platform-filter active" data-platform="all" onclick="filterByPlatform('all')" role="tab">
-                <span class="material-symbols-outlined">apps</span>
-                <span>All</span>
-            </button>
-        """)
-
-        for platform in unique_platforms:
-            icon = platform_icons.get(platform, "devices")
-            platform_display = platform.capitalize()
-
-            filters.append(f'''
-                <button class="platform-filter" data-platform="{platform}" onclick="filterByPlatform('{platform}')" role="tab">
-                    <span class="material-symbols-outlined">{icon}</span>
-                    <span>{platform_display}</span>
-                </button>
-            ''')
-
-        filters.append("</div>")
-        return "\n".join(filters)
-
     def _get_hero_section(self, config: Dict) -> str:
         hero_config = config.get("hero", {})
 
         hero_title = hero_config.get("title", config.get("name", "AromaUI"))
-        description = hero_config.get(
-            "description", "Development toolkit for Linux, Android and embedded systems"
-        )
-        version = config.get("version", "1.0.0")
+        description = hero_config.get("description", "Development toolkit for Linux, Android and embedded systems")
+        
+     
+        platform_icons_html = ""
+        for platform in hero_config.get("platformIcons", []):
+            platform_icons_html += f'<div class="pill-icon" title="{platform.get("title", "")}"><span class="material-symbols-outlined">{platform.get("icon", "devices")}</span></div>'
+        
+        actions_html = ""
+        for action in hero_config.get("actions", []):
+            btn_class = "hero-button-primary" if action.get("primary") else "hero-button-secondary"
+            onclick = action.get("onclick", "")
+            actions_html += f'''
+                <a href="#" class="btn {btn_class}" onclick="{onclick}; return false;">
+                    <span class="material-symbols-outlined">{action.get("icon", "download")}</span>
+                    {action.get("text", "")}
+                </a>
+            '''
 
         hero_html = f"""
         <section class="hero">
             <div class="container hero-grid">
                 <div class="hero-content">
+                   
                     <h1 class="hero-title">
                       {hero_title}
                     </h1>
                     <p class="hero-description">{description}</p>
+                   
                     <div class="btn-row">
-                        <a href="#" class="btn hero-button-primary">
-                            <span class="material-symbols-outlined">download</span>
-                            Install SDK
-                        </a>
+                        {actions_html}
                     </div>
+
                 </div>
+
                 <div class="hero-visual">
-                    <div class="pill-icon"><span class="material-symbols-outlined">wifi</span></div>
-                    <div class="pill-icon"><span class="material-symbols-outlined">bluetooth</span></div>
-                    <div class="pill-icon"><span class="material-symbols-outlined">palette</span></div>
-                    <div class="pill-icon"><span class="material-symbols-outlined">android</span></div>
-                    <div class="pill-icon"><span class="material-symbols-outlined">developer_board</span></div>
-                    <div class="pill-icon"><span class="material-symbols-outlined">widgets</span></div>
+                    {platform_icons_html}
                 </div>
             </div>
+
+                                                <img src="images/hero-image.png" alt="Hero Image" style="width: 80%; height: auto;  border-radius: 12px; margin: 0 auto; display: block;margin-top: 1rem;" />
+
         </section>
         """
 
         return hero_html
+
+    def _get_action_cards(self) -> str:
+        return """
+        <div class="action-cards">
+            <div class="action-card" onclick="showPage('building-and-deployment')">
+                <div class="action-card-icon">
+                    <span class="material-symbols-outlined">rocket_launch</span>
+                </div>
+                <div class="action-card-content">
+                    <h3>Get Started</h3>
+                    <p>Quick start guide and installation</p>
+                </div>
+                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
+            </div>
+            <div class="action-card" onclick="window.open('https://github.com', '_blank')">
+                <div class="action-card-icon">
+                    <span class="material-symbols-outlined">code</span>
+                </div>
+                <div class="action-card-content">
+                    <h3>GitHub</h3>
+                    <p>View source code and contribute</p>
+                </div>
+                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
+            </div>
+            <div class="action-card" onclick="window.location.href='#'">
+                <div class="action-card-icon">
+                    <span class="material-symbols-outlined">forum</span>
+                </div>
+                <div class="action-card-content">
+                    <h3>Community</h3>
+                    <p>Join discussions and get help</p>
+                </div>
+                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
+            </div>
+            <div class="action-card" onclick="window.location.href='#'">
+                <div class="action-card-icon">
+                    <span class="material-symbols-outlined">bug_report</span>
+                </div>
+                <div class="action-card-content">
+                    <h3>Report Issue</h3>
+                    <p>Found a bug? Let us know</p>
+                </div>
+                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
+            </div>
+        </div>
+        """
 
     def _process_markdown(self, content: str) -> str:
         extensions = [
@@ -201,6 +217,23 @@ class DocGenerator:
             "baremetal": "chip",
             "folder": "folder",
             "description": "description",
+            "book": "menu_book",
+            "network_check": "network_check",
+            "settings_applications": "settings_applications",
+            "camera_alt": "camera_alt",
+            "dashboard": "dashboard",
+            "bluetooth": "bluetooth",
+            "wifi": "wifi",
+            "data_object": "data_object",
+            "security": "security",
+            "folder_open": "folder_open",
+            "mobile_gear": "smartphone",
+            "photo_camera": "photo_camera",
+            "select_window": "select_window",
+            "responsive_layout": "responsive_layout",
+            "widgets": "widgets",
+            "screen_rotation": "screen_rotation",
+            "rocket_launch": "rocket_launch"
         }
         return icon_map.get(icon_name.lower(), icon_name)
 
@@ -211,7 +244,7 @@ class DocGenerator:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project_name} - Documentation</title>
-    <meta name="description" content="AromaUI Development Toolkit">
+    <meta name="description" content="{description}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -467,6 +500,36 @@ class DocGenerator:
             display: none;
         }}
 
+        .subcategory {{
+            margin-left: 1rem;
+        }}
+
+        .subcategory-header {{
+            padding: 0.25rem 1.5rem 0.25rem 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-tertiary);
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            cursor: pointer;
+            user-select: none;
+        }}
+
+        .subcategory-header:hover {{
+            background: var(--hover-overlay);
+        }}
+
+        .subcategory-header .material-symbols-outlined {{
+            font-size: 14px;
+        }}
+
+        .subcategory-items.collapsed {{
+            display: none;
+        }}
+
         .nav-item {{
             padding: 0.5rem 1.5rem 0.5rem 3.5rem;
             color: var(--text-secondary);
@@ -478,6 +541,10 @@ class DocGenerator:
             position: relative;
             margin-right: 0.5rem;
             border-radius: 0 24px 24px 0;
+        }}
+
+        .subcategory .nav-item {{
+            padding-left: 4rem;
         }}
 
         .nav-item:hover {{
@@ -526,12 +593,14 @@ class DocGenerator:
             align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
+            gap: 1rem;
         }}
 
         .header-left {{
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex-shrink: 0;
         }}
 
         .menu-button {{
@@ -578,10 +647,75 @@ class DocGenerator:
             font-weight: 500;
         }}
 
+        .header-search {{
+            flex: 1;
+            max-width: 600px;
+            margin: 0 1rem;
+        }}
+
+        .search-container {{
+            position: relative;
+            width: 100%;
+        }}
+
+        .search-icon {{
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }}
+
+        .search-input {{
+            width: 100%;
+            padding: 0.5rem 1rem 0.5rem 3rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s;
+        }}
+
+        .search-input:focus {{
+            background: var(--surface-0);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }}
+
+        .search-clear {{
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            cursor: pointer;
+            display: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface-2);
+            border: none;
+        }}
+
+        .search-clear:hover {{
+            background: var(--surface-3);
+        }}
+
+        .search-clear.visible {{
+            display: flex;
+        }}
+
         .header-right {{
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            flex-shrink: 0;
         }}
 
         .stats {{
@@ -785,7 +919,9 @@ class DocGenerator:
             background: var(--surface-0);
             border-radius: 12px;
             margin-bottom: 2rem;
+            
         }}
+        
 
         .container {{
             max-width: 1200px;
@@ -827,6 +963,7 @@ class DocGenerator:
             border: 1px solid var(--border);
             display: inline-flex;
             align-items: center;
+            gap: 8px;
         }}
 
         .chip.outline {{
@@ -852,6 +989,29 @@ class DocGenerator:
             color: var(--text-secondary);
             margin: 24px 0 32px;
             max-width: 600px;
+        }}
+
+        .stats-grid {{
+            display: flex;
+            gap: 32px;
+            margin: 24px 0 32px;
+        }}
+
+        .stat-item {{
+            display: flex;
+            flex-direction: column;
+        }}
+
+        .stat-value {{
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--primary);
+            line-height: 1.2;
+        }}
+
+        .stat-label {{
+            font-size: 0.875rem;
+            color: var(--text-secondary);
         }}
 
         .btn-row {{
@@ -925,186 +1085,73 @@ class DocGenerator:
             font-size: 48px;
         }}
 
-        .platform-filters {{
-            display: flex;
-            gap: 0.5rem;
-            margin: 0 0 2rem 0;
-            padding: 0.25rem;
+        .action-cards {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0 3rem;
+        }}
+
+        .action-card {{
             background: var(--surface-0);
             border: 1px solid var(--border);
-            border-radius: 40px;
-            flex-wrap: wrap;
-        }}
-
-        .platform-filter {{
-            flex: 0 1 auto;
-            display: inline-flex;
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 32px;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-weight: 500;
-            font-family: 'Roboto', sans-serif;
+            gap: 1rem;
             cursor: pointer;
-        }}
-
-        .platform-filter:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .platform-filter.active {{
-            background: var(--primary-light);
-            color: var(--primary);
-        }}
-
-        .search-container {{
-            max-width: 600px;
-            margin: 0 auto 1.5rem;
+            transition: all 0.2s;
             position: relative;
         }}
 
-        .search-icon {{
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            pointer-events: none;
-        }}
-
-        .search-input {{
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 3rem;
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-family: 'Roboto', sans-serif;
-            font-size: 0.9375rem;
-            color: var(--text-primary);
-            outline: none;
-        }}
-
-        .search-input:focus {{
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px var(--primary-light);
-        }}
-
-        .search-clear {{
-            position: absolute;
-            right: 0.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            cursor: pointer;
-            display: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 16px;
-            align-items: center;
-            justify-content: center;
-            background: var(--surface-0);
-            border: none;
-        }}
-
-        .search-clear:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .search-clear.visible {{
-            display: flex;
-        }}
-
-        .cards-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }}
-
-        .card {{
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: box-shadow 0.2s, transform 0.1s;
-        }}
-
-        .card:hover {{
-            background: var(--surface-1);
+        .action-card:hover {{
             border-color: var(--primary);
             box-shadow: var(--shadow-hover);
             transform: translateY(-2px);
         }}
 
-        .card-icon {{
+        .action-card-icon {{
             width: 48px;
             height: 48px;
-            background: var(--surface-2);
-            border-radius: 8px;
+            background: var(--primary-light);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1rem;
             color: var(--primary);
+            flex-shrink: 0;
         }}
 
-        .card h3 {{
-            font-weight: 500;
+        .action-card-icon .material-symbols-outlined {{
+            font-size: 24px;
+        }}
+
+        .action-card-content {{
+            flex: 1;
+        }}
+
+        .action-card-content h3 {{
             font-size: 1rem;
+            font-weight: 500;
             color: var(--text-primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }}
 
-        .card p {{
+        .action-card-content p {{
+            font-size: 0.8125rem;
             color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-            line-height: 1.4;
         }}
 
-        .card-footer {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }}
-
-        .card-category {{
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            padding: 0.25rem 0.75rem;
-            background: var(--surface-2);
-            border-radius: 12px;
-            font-size: 0.75rem;
+        .action-card-arrow {{
             color: var(--text-tertiary);
+            font-size: 20px;
+            transition: transform 0.2s;
         }}
 
-        .card-platforms {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--border);
-            flex-wrap: wrap;
-        }}
-
-        .card-platform {{
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-            background: var(--surface-2);
+        .action-card:hover .action-card-arrow {{
+            transform: translateX(4px);
+            color: var(--primary);
         }}
 
         .doc-view {{
@@ -1364,6 +1411,61 @@ class DocGenerator:
             background: transparent !important;
         }}
 
+        .search-results {{
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: var(--surface-0);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-hover);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }}
+
+        .search-results.show {{
+            display: block;
+        }}
+
+        .search-result-item {{
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }}
+
+        .search-result-item:last-child {{
+            border-bottom: none;
+        }}
+
+        .search-result-item:hover {{
+            background: var(--hover-overlay);
+        }}
+
+        .search-result-item .material-symbols-outlined {{
+            color: var(--text-tertiary);
+        }}
+
+        .search-result-content {{
+            flex: 1;
+        }}
+
+        .search-result-title {{
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }}
+
+        .search-result-category {{
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }}
+
         {pygments_styles}
 
         @media (max-width: 768px) {{
@@ -1411,7 +1513,11 @@ class DocGenerator:
                 justify-content: center;
             }}
 
-            .cards-grid {{
+            .stats-grid {{
+                justify-content: center;
+            }}
+
+            .action-cards {{
                 grid-template-columns: 1fr;
             }}
 
@@ -1450,6 +1556,10 @@ class DocGenerator:
             .progress-indicator.visible {{
                 transform: translateX(0);
             }}
+
+            .header-search {{
+                display: none;
+            }}
         }}
     </style>
 </head>
@@ -1463,6 +1573,7 @@ class DocGenerator:
                     <span class="project-name">{project_name}</span>
                     <span class="docs-badge">DOCS</span>
                 </div>
+                <div class="project-version">{version}</div>
             </div>
             <div class="sidebar-nav">
                 <div class="nav-category">
@@ -1495,6 +1606,18 @@ class DocGenerator:
                         <span id="current-section">Home</span>
                     </div>
                 </div>
+
+                <div class="header-search">
+                    <div class="search-container">
+                        <span class="material-symbols-outlined search-icon">search</span>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search documentation... (Press / to focus)">
+                        <button class="search-clear" id="searchClear" onclick="clearSearch()">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                        <div class="search-results" id="searchResults"></div>
+                    </div>
+                </div>
+
                 <div class="header-right">
                     <div class="stats">
                         <div class="stat">
@@ -1540,21 +1663,11 @@ class DocGenerator:
             <div class="content-wrapper">
                 <div class="content" id="content">
                     <div id="home-view">
+   {action_cards}
+
                         {hero_section}
 
-                        <div class="search-container">
-                            <span class="material-symbols-outlined search-icon">search</span>
-                            <input type="text" class="search-input" id="searchInput" placeholder="Search documentation (Press / to focus)">
-                            <button class="search-clear" id="searchClear" onclick="clearSearch()">
-                                <span class="material-symbols-outlined">close</span>
-                            </button>
-                        </div>
-
-                        {platform_filters}
-
-                        <div class="cards-grid" id="cardsGrid">
-                            {cards_html}
-                        </div>
+                     
 
                         <div class="footer">
                             <div class="footer-content">
@@ -1615,562 +1728,537 @@ class DocGenerator:
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    const pages = {pages_json};
+    const titles = {titles_json};
+    const categories = {categories_json};
+    const subcategories = {subcategories_json};
 
-    <script>
-        const pages = {pages_json};
-        const titles = {titles_json};
-        const cardPlatforms = {card_platforms_json};
+    let searchTimeout;
+    let currentDocId = null;
+    let observer = null;
+    let sections = [];
 
-        let searchTimeout;
-        let currentPlatform = 'all';
-        let currentDocId = null;
-        let observer = null;
-        let sections = [];
+    function getMermaidTheme(theme) {{
+        const themes = {{
+            'light': {{
+                background: '#ffffff',
+                primaryColor: '#1a73e8',
+                primaryTextColor: '#202124',
+                primaryBorderColor: '#dadce0',
+                lineColor: '#5f6368',
+                secondaryColor: '#f1f3f4',
+                tertiaryColor: '#e8eaed',
+                clusterBkg: '#f8f9fa',
+                clusterBorder: '#dadce0',
+                nodeBorder: '#bdc1c6',
+                nodeTextColor: '#202124'
+            }},
+            'dark': {{
+                background: '#202124',
+                primaryColor: '#8ab4f8',
+                primaryTextColor: '#e8eaed',
+                primaryBorderColor: '#3c4043',
+                lineColor: '#9aa0a6',
+                secondaryColor: '#303134',
+                tertiaryColor: '#3c4043',
+                clusterBkg: '#292a2d',
+                clusterBorder: '#3c4043',
+                nodeBorder: '#5f6368',
+                nodeTextColor: 'black'
+            }},
+            'sepia': {{
+                background: '#f4ecd8',
+                primaryColor: '#8b5a2b',
+                primaryTextColor: '#3e2e23',
+                primaryBorderColor: '#d8ccbc',
+                lineColor: '#5e4e3e',
+                secondaryColor: '#e8dccc',
+                tertiaryColor: '#d8ccbc',
+                clusterBkg: '#e8dccc',
+                clusterBorder: '#d8ccbc',
+                nodeBorder: '#c8bcac',
+                nodeTextColor: '#3e2e23'
+            }},
+            'nord': {{
+                background: '#2e3440',
+                primaryColor: '#88c0d0',
+                primaryTextColor: '#eceff4',
+                primaryBorderColor: '#434c5e',
+                lineColor: '#e5e9f0',
+                secondaryColor: '#3b4252',
+                tertiaryColor: '#434c5e',
+                clusterBkg: '#3b4252',
+                clusterBorder: '#434c5e',
+                nodeBorder: '#4c566a',
+                nodeTextColor: '#eceff4'
+            }},
+            'solarized': {{
+                background: '#fdf6e3',
+                primaryColor: '#268bd2',
+                primaryTextColor: '#002b36',
+                primaryBorderColor: '#93a1a1',
+                lineColor: '#073642',
+                secondaryColor: '#eee8d5',
+                tertiaryColor: '#93a1a1',
+                clusterBkg: '#eee8d5',
+                clusterBorder: '#93a1a1',
+                nodeBorder: '#839496',
+                nodeTextColor: '#002b36'
+            }}
+        }};
+        
+        return themes[theme] || themes['light'];
+    }}
 
-        function getMermaidTheme(theme) {{
-            const themes = {{
-                'light': {{
-                    background: '#ffffff',
-                    primaryColor: '#1a73e8',
-                    primaryTextColor: '#202124',
-                    primaryBorderColor: '#dadce0',
-                    lineColor: '#5f6368',
-                    secondaryColor: '#f1f3f4',
-                    tertiaryColor: '#e8eaed',
-                    clusterBkg: '#f8f9fa',
-                    clusterBorder: '#dadce0',
-                    nodeBorder: '#bdc1c6',
-                    nodeTextColor: '#202124'
-                }},
-                'dark': {{
-                    background: '#202124',
-                    primaryColor: '#8ab4f8',
-                    primaryTextColor: '#e8eaed',
-                    primaryBorderColor: '#3c4043',
-                    lineColor: '#9aa0a6',
-                    secondaryColor: '#303134',
-                    tertiaryColor: '#3c4043',
-                    clusterBkg: '#292a2d',
-                    clusterBorder: '#3c4043',
-                    nodeBorder: '#5f6368',
-                    nodeTextColor: '#e8eaed'
-                }},
-                'sepia': {{
-                    background: '#f4ecd8',
-                    primaryColor: '#8b5a2b',
-                    primaryTextColor: '#3e2e23',
-                    primaryBorderColor: '#d8ccbc',
-                    lineColor: '#5e4e3e',
-                    secondaryColor: '#e8dccc',
-                    tertiaryColor: '#d8ccbc',
-                    clusterBkg: '#e8dccc',
-                    clusterBorder: '#d8ccbc',
-                    nodeBorder: '#c8bcac',
-                    nodeTextColor: '#3e2e23'
-                }},
-                'nord': {{
-                    background: '#2e3440',
-                    primaryColor: '#88c0d0',
-                    primaryTextColor: '#eceff4',
-                    primaryBorderColor: '#434c5e',
-                    lineColor: '#e5e9f0',
-                    secondaryColor: '#3b4252',
-                    tertiaryColor: '#434c5e',
-                    clusterBkg: '#3b4252',
-                    clusterBorder: '#434c5e',
-                    nodeBorder: '#4c566a',
-                    nodeTextColor: '#eceff4'
-                }},
-                'solarized': {{
-                    background: '#fdf6e3',
-                    primaryColor: '#268bd2',
-                    primaryTextColor: '#002b36',
-                    primaryBorderColor: '#93a1a1',
-                    lineColor: '#073642',
-                    secondaryColor: '#eee8d5',
-                    tertiaryColor: '#93a1a1',
-                    clusterBkg: '#eee8d5',
-                    clusterBorder: '#93a1a1',
-                    nodeBorder: '#839496',
-                    nodeTextColor: '#002b36'
-                }}
-            }};
+    function initializeMermaid(theme) {{
+        if (typeof mermaid === 'undefined') {{
+            setTimeout(() => initializeMermaid(theme), 100);
+            return;
+        }}
+        
+        try {{
+            const themeVars = getMermaidTheme(theme);
             
-            return themes[theme] || themes['light'];
+            mermaid.initialize({{
+                startOnLoad: false,
+                theme: 'base',
+                themeVariables: themeVars,
+                flowchart: {{
+                    useMaxWidth: true,
+                    htmlLabels: true,
+                    curve: 'basis'
+                }},
+                sequence: {{
+                    useMaxWidth: true,
+                    showSequenceNumbers: true,
+                    actorMargin: 50
+                }},
+                securityLevel: 'loose',
+                logLevel: 'error'
+            }});
+            
+            document.querySelectorAll('.mermaid').forEach((element) => {{
+                try {{
+                    mermaid.init(undefined, element);
+                }} catch (err) {{
+                    console.error('Error rendering mermaid:', err);
+                }}
+            }});
+        }} catch (error) {{
+            console.error('Failed to initialize Mermaid:', error);
+        }}
+    }}
+
+    function updateThemeUI(theme) {{
+        const themeNames = {{
+            'light': 'Light',
+            'dark': 'Dark',
+            'sepia': 'Sepia',
+            'nord': 'Nord',
+            'solarized': 'Solarized'
+        }};
+
+        const themeLabel = document.getElementById('current-theme-label');
+        if (themeLabel) themeLabel.textContent = themeNames[theme];
+
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {{
+            const icons = {{
+                'light': 'light_mode',
+                'dark': 'dark_mode',
+                'sepia': 'book',
+                'nord': 'ac_unit',
+                'solarized': 'wb_sunny'
+            }};
+            themeIcon.textContent = icons[theme];
         }}
 
-        function initializeMermaid(theme) {{
-            if (typeof mermaid === 'undefined') {{
-                setTimeout(() => initializeMermaid(theme), 100);
-                return;
+        document.querySelectorAll('.theme-option').forEach(opt => {{
+            opt.classList.remove('active');
+            if (opt.textContent.toLowerCase().includes(theme)) {{
+                opt.classList.add('active');
             }}
-            
-            try {{
-                const themeVars = getMermaidTheme(theme);
-                
-                mermaid.initialize({{
-                    startOnLoad: false,
-                    theme: 'base',
-                    themeVariables: themeVars,
-                    flowchart: {{
-                        useMaxWidth: true,
-                        htmlLabels: true,
-                        curve: 'basis'
-                    }},
-                    sequence: {{
-                        useMaxWidth: true,
-                        showSequenceNumbers: true,
-                        actorMargin: 50
-                    }},
-                    securityLevel: 'loose',
-                    logLevel: 'error'
-                }});
-                
-                // Render all mermaid diagrams
-                document.querySelectorAll('.mermaid').forEach((element) => {{
-                    try {{
-                        mermaid.init(undefined, element);
-                    }} catch (err) {{
-                        console.error('Error rendering mermaid:', err);
+        }});
+        
+        initializeMermaid(theme);
+    }}
+
+    function toggleThemeDropdown() {{
+        const dropdown = document.getElementById('themeDropdown');
+        dropdown.classList.toggle('show');
+
+        if (dropdown.classList.contains('show')) {{
+            document.addEventListener('click', function closeDropdown(e) {{
+                if (!dropdown.contains(e.target) && !e.target.closest('.theme-button')) {{
+                    dropdown.classList.remove('show');
+                    document.removeEventListener('click', closeDropdown);
+                }}
+            }});
+        }}
+    }}
+
+    function setTheme(theme, event) {{
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        document.getElementById('themeDropdown').classList.remove('show');
+        updateThemeUI(theme);
+    }}
+
+    function toggleSidebar() {{
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('sidebarOverlay').classList.toggle('active');
+    }}
+
+    function toggleCategory(id) {{
+        const items = document.getElementById('category-' + id);
+        const header = items.previousElementSibling;
+        const icon = header.querySelector('.material-symbols-outlined');
+
+        items.classList.toggle('collapsed');
+        icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
+    }}
+
+    function toggleSubcategory(id) {{
+        const items = document.getElementById('subcategory-' + id);
+        const header = document.querySelector('[onclick="toggleSubcategory(\\'' + id + '\\')"]');
+        if (!header) return;
+        
+        const icon = header.querySelector('.material-symbols-outlined');
+
+        items.classList.toggle('collapsed');
+        icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
+    }}
+
+    function initializeCopyButtons() {{
+        document.querySelectorAll('.markdown-body pre').forEach(pre => {{
+            if (!pre.querySelector('.copy-button')) {{
+                const button = document.createElement('button');
+                button.className = 'copy-button';
+                button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
+
+                button.addEventListener('click', async (e) => {{
+                    e.stopPropagation();
+                    const code = pre.querySelector('code');
+                    if (code) {{
+                        await navigator.clipboard.writeText(code.textContent || '');
+                        button.classList.add('copied');
+                        button.innerHTML = '<span class="material-symbols-outlined">check</span><span>Copied!</span>';
+
+                        setTimeout(() => {{
+                            button.classList.remove('copied');
+                            button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
+                        }}, 2000);
                     }}
                 }});
-            }} catch (error) {{
-                console.error('Failed to initialize Mermaid:', error);
+
+                pre.appendChild(button);
             }}
-        }}
+        }});
+    }}
 
-        function updateThemeUI(theme) {{
-            const themeNames = {{
-                'light': 'Light',
-                'dark': 'Dark',
-                'sepia': 'Sepia',
-                'nord': 'Nord',
-                'solarized': 'Solarized'
-            }};
+    function extractSections() {{
+        const content = document.getElementById('doc-content');
+        if (!content) return [];
 
-            const themeLabel = document.getElementById('current-theme-label');
-            if (themeLabel) themeLabel.textContent = themeNames[theme];
+        const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        const sections = [];
 
-            const themeIcon = document.getElementById('themeIcon');
-            if (themeIcon) {{
-                const icons = {{
-                    'light': 'light_mode',
-                    'dark': 'dark_mode',
-                    'sepia': 'book',
-                    'nord': 'ac_unit',
-                    'solarized': 'wb_sunny'
-                }};
-                themeIcon.textContent = icons[theme];
+        headings.forEach((heading, index) => {{
+            if (!heading.id) {{
+                heading.id = 'section-' + index + '-' + heading.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             }}
 
-            document.querySelectorAll('.theme-option').forEach(opt => {{
-                opt.classList.remove('active');
-                if (opt.textContent.toLowerCase().includes(theme)) {{
-                    opt.classList.add('active');
-                }}
+            sections.push({{
+                id: heading.id,
+                title: heading.textContent,
+                level: parseInt(heading.tagName[1]),
+                element: heading
             }});
-            
-            initializeMermaid(theme);
-        }}
+        }});
 
-        function toggleThemeDropdown() {{
-            const dropdown = document.getElementById('themeDropdown');
-            dropdown.classList.toggle('show');
+        return sections;
+    }}
 
-            if (dropdown.classList.contains('show')) {{
-                document.addEventListener('click', function closeDropdown(e) {{
-                    if (!dropdown.contains(e.target) && !e.target.closest('.theme-button')) {{
-                        dropdown.classList.remove('show');
-                        document.removeEventListener('click', closeDropdown);
-                    }}
+    function updateProgressIndicator() {{
+        const content = document.getElementById('doc-content');
+        if (!content) return;
+
+        const scrollContainer = document.getElementById('content');
+        const containerHeight = scrollContainer.clientHeight;
+        const scrollTop = scrollContainer.scrollTop;
+        const contentHeight = content.scrollHeight;
+        const maxScroll = contentHeight - containerHeight;
+
+        let percentage = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * 100) : 0;
+        if(percentage > 100) percentage = 100;
+        document.getElementById('progressFill').style.width = percentage + '%';
+        document.getElementById('progressPercentage').textContent = percentage + '%';
+
+        let currentSection = null;
+        let minDistance = Infinity;
+
+        sections.forEach(section => {{
+            const element = section.element;
+            const rect = element.getBoundingClientRect();
+
+            const distance = Math.abs(rect.top - 100);
+
+            if (distance < minDistance && rect.top < window.innerHeight * 0.7) {{
+                minDistance = distance;
+                currentSection = section;
+            }}
+        }});
+
+        document.querySelectorAll('.section-item').forEach(item => {{
+            item.classList.remove('active');
+            if (currentSection && item.dataset.sectionId === currentSection.id) {{
+                item.classList.add('active');
+                item.scrollIntoView({{
+                    block: 'nearest',
+                    behavior: 'auto'
                 }});
             }}
-        }}
+        }});
+    }}
 
-        function setTheme(theme, event) {{
-            initializeMermaid(theme);
+    function buildSectionList() {{
+        const sectionList = document.getElementById('sectionList');
+        sectionList.innerHTML = '';
 
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-            document.getElementById('themeDropdown').classList.remove('show');
-            updateThemeUI(theme);
+        sections.forEach(section => {{
+            const item = document.createElement('div');
+            item.className = 'section-item';
+            item.dataset.sectionId = section.id;
+            item.setAttribute('onclick', 'scrollToSection("' + section.id + '")');
 
-        }}
+            const dot = document.createElement('span');
+            dot.className = 'section-dot';
 
-        function filterByPlatform(platform) {{
-            currentPlatform = platform;
+            const title = document.createElement('span');
+            title.className = 'section-title';
+            title.textContent = section.title;
 
-            document.querySelectorAll('.platform-filter').forEach(btn => {{
-                btn.classList.remove('active');
-                if (btn.dataset.platform === platform) {{
-                    btn.classList.add('active');
-                }}
-            }});
+            item.style.paddingLeft = ((section.level - 1) * 16 + 8) + 'px';
 
-            const cards = document.querySelectorAll('.card');
-            let visibleCount = 0;
+            item.appendChild(dot);
+            item.appendChild(title);
+            sectionList.appendChild(item);
+        }});
+    }}
 
-            cards.forEach(card => {{
-                const cardId = card.getAttribute('data-id');
-                const platforms = cardPlatforms[cardId] || [];
+    function scrollToSection(sectionId) {{
+        const element = document.getElementById(sectionId);
+        if (element) {{
+            const content = document.getElementById('content');
+            const rect = element.getBoundingClientRect();
+            const contentRect = content.getBoundingClientRect();
 
-                if (platform === 'all' || platforms.includes(platform)) {{
-                    card.style.display = 'block';
-                    visibleCount++;
-                }} else {{
-                    card.style.display = 'none';
-                }}
-            }});
-
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            if (searchTerm) filterCards();
-
-            const emptyState = document.getElementById('empty-platform-state');
-            if (visibleCount === 0) {{
-                if (!emptyState) {{
-                    const newEmptyState = document.createElement('div');
-                    newEmptyState.id = 'empty-platform-state';
-                    newEmptyState.className = 'empty-state';
-                    newEmptyState.innerHTML = `
-                        <span class="material-symbols-outlined">devices_off</span>
-                        <h3>No content for this platform</h3>
-                        <p>Try selecting a different filter</p>
-                    `;
-                    document.getElementById('cardsGrid').appendChild(newEmptyState);
-                }}
-            }} else if (emptyState) {{
-                emptyState.remove();
-            }}
-        }}
-
-        function toggleSidebar() {{
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('sidebarOverlay').classList.toggle('active');
-        }}
-
-        function toggleCategory(id) {{
-            const items = document.getElementById('category-' + id);
-            const header = items.previousElementSibling;
-            const icon = header.querySelector('.material-symbols-outlined');
-
-            items.classList.toggle('collapsed');
-            icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
-        }}
-
-        function initializeCopyButtons() {{
-            document.querySelectorAll('.markdown-body pre').forEach(pre => {{
-                if (!pre.querySelector('.copy-button')) {{
-                    const button = document.createElement('button');
-                    button.className = 'copy-button';
-                    button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-
-                    button.addEventListener('click', async (e) => {{
-                        e.stopPropagation();
-                        const code = pre.querySelector('code');
-                        if (code) {{
-                            await navigator.clipboard.writeText(code.textContent || '');
-                            button.classList.add('copied');
-                            button.innerHTML = '<span class="material-symbols-outlined">check</span><span>Copied!</span>';
-
-                            setTimeout(() => {{
-                                button.classList.remove('copied');
-                                button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-                            }}, 2000);
-                        }}
-                    }});
-
-                    pre.appendChild(button);
-                }}
+            content.scrollTo({{
+                top: content.scrollTop + (rect.top - contentRect.top - 20),
+                behavior: 'smooth'
             }});
         }}
+    }}
 
-        function extractSections() {{
-            const content = document.getElementById('doc-content');
-            if (!content) return [];
-
-            const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
-            const sections = [];
-
-            headings.forEach((heading, index) => {{
-                if (!heading.id) {{
-                    heading.id = 'section-' + index + '-' + heading.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                }}
-
-                sections.push({{
-                    id: heading.id,
-                    title: heading.textContent,
-                    level: parseInt(heading.tagName[1]),
-                    element: heading
-                }});
-            }});
-
-            return sections;
+    function initializeProgressTracking() {{
+        if (observer) {{
+            observer.disconnect();
         }}
 
-        function updateProgressIndicator() {{
-            const content = document.getElementById('doc-content');
-            if (!content) return;
+        sections = extractSections();
+        buildSectionList();
 
-            const scrollContainer = document.getElementById('content');
-            const containerHeight = scrollContainer.clientHeight;
-            const scrollTop = scrollContainer.scrollTop;
-            const contentHeight = content.scrollHeight;
-            const maxScroll = contentHeight - containerHeight;
+        const indicator = document.getElementById('progressIndicator');
+        if (sections.length > 0) {{
+            indicator.classList.add('visible');
 
-            let percentage = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * 100) : 0;
-            if(percentage > 100) percentage = 100;
-            document.getElementById('progressFill').style.width = percentage + '%';
-            document.getElementById('progressPercentage').textContent = percentage + '%';
+            const content = document.getElementById('content');
+            content.addEventListener('scroll', updateProgressIndicator);
+            updateProgressIndicator();
 
-            let currentSection = null;
-            let minDistance = Infinity;
-
-            sections.forEach(section => {{
-                const element = section.element;
-                const rect = element.getBoundingClientRect();
-
-                const distance = Math.abs(rect.top - 100);
-
-                if (distance < minDistance && rect.top < window.innerHeight * 0.7) {{
-                    minDistance = distance;
-                    currentSection = section;
-                }}
-            }});
-
-            document.querySelectorAll('.section-item').forEach(item => {{
-                item.classList.remove('active');
-                if (currentSection && item.dataset.sectionId === currentSection.id) {{
-                    item.classList.add('active');
-                    item.scrollIntoView({{
-                        block: 'nearest',
-                        behavior: 'auto'
-                    }});
-                }}
-            }});
-        }}
-
-        function buildSectionList() {{
-            const sectionList = document.getElementById('sectionList');
-            sectionList.innerHTML = '';
-
-            sections.forEach(section => {{
-                const item = document.createElement('div');
-                item.className = 'section-item';
-                item.dataset.sectionId = section.id;
-                item.setAttribute('onclick', 'scrollToSection(\\'' + section.id + '\\')');
-
-                const dot = document.createElement('span');
-                dot.className = 'section-dot';
-
-                const title = document.createElement('span');
-                title.className = 'section-title';
-                title.textContent = section.title;
-
-                item.style.paddingLeft = ((section.level - 1) * 16 + 8) + 'px';
-
-                item.appendChild(dot);
-                item.appendChild(title);
-                sectionList.appendChild(item);
-            }});
-        }}
-
-        function scrollToSection(sectionId) {{
-            const element = document.getElementById(sectionId);
-            if (element) {{
-                const content = document.getElementById('content');
-                const rect = element.getBoundingClientRect();
-                const contentRect = content.getBoundingClientRect();
-
-                content.scrollTo({{
-                    top: content.scrollTop + (rect.top - contentRect.top - 20),
-                    behavior: 'smooth'
-                }});
-            }}
-        }}
-
-        function initializeProgressTracking() {{
-            if (observer) {{
-                observer.disconnect();
-            }}
-
-            sections = extractSections();
-            buildSectionList();
-
-            const indicator = document.getElementById('progressIndicator');
-            if (sections.length > 0) {{
-                indicator.classList.add('visible');
-
-                const content = document.getElementById('content');
-                content.addEventListener('scroll', updateProgressIndicator);
+            observer = new MutationObserver(() => {{
+                sections = extractSections();
+                buildSectionList();
                 updateProgressIndicator();
+            }});
 
-                observer = new MutationObserver(() => {{
-                    sections = extractSections();
-                    buildSectionList();
-                    updateProgressIndicator();
-                }});
+            observer.observe(document.getElementById('doc-content'), {{
+                childList: true,
+                subtree: true,
+                characterData: true
+            }});
+        }} else {{
+            indicator.classList.remove('visible');
+        }}
+    }}
 
-                observer.observe(document.getElementById('doc-content'), {{
-                    childList: true,
-                    subtree: true,
-                    characterData: true
-                }});
-            }} else {{
-                indicator.classList.remove('visible');
-            }}
+    function performSearch() {{
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        const term = searchInput.value.toLowerCase().trim();
+
+        if (term.length < 2) {{
+            searchResults.classList.remove('show');
+            return;
         }}
 
+        const results = [];
+        
+        Object.keys(titles).forEach(id => {{
+            const title = titles[id].toLowerCase();
+            const category = categories[id] || 'General';
+            const subcategory = subcategories[id] || '';
+            
+            if (title.includes(term) || category.toLowerCase().includes(term) || subcategory.toLowerCase().includes(term)) {{
+                results.push({{
+                    id: id,
+                    title: titles[id],
+                    category: category,
+                    subcategory: subcategory
+                }});
+            }}
+        }});
+
+        if (results.length > 0) {{
+            searchResults.innerHTML = results.slice(0, 10).map(result => 
+                '<div class="search-result-item" onclick="showPage(\\'' + result.id + '\\'); document.getElementById(\\'searchResults\\').classList.remove(\\'show\\'); document.getElementById(\\'searchInput\\').value = \\'\\';">' +
+                    '<span class="material-symbols-outlined">description</span>' +
+                    '<div class="search-result-content">' +
+                        '<div class="search-result-title">' + result.title + '</div>' +
+                        '<div class="search-result-category">' + result.category + (result.subcategory ? ' > ' + result.subcategory : '') + '</div>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
+            searchResults.classList.add('show');
+        }} else {{
+            searchResults.innerHTML = '<div class="search-result-item" style="justify-content: center;">No results found</div>';
+            searchResults.classList.add('show');
+        }}
+    }}
+
+    function clearSearch() {{
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        searchInput.value = '';
+        searchResults.classList.remove('show');
+        searchInput.focus();
+    }}
+
+    function showHome() {{
+        document.getElementById('home-view').style.display = 'block';
+        document.getElementById('doc-view').style.display = 'none';
+        document.getElementById('current-section').textContent = 'Home';
+
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelector('[onclick="showHome()"]').classList.add('active');
+
+        if (window.innerWidth <= 768) toggleSidebar();
+
+        window.location.hash = '';
+
+        document.getElementById('progressIndicator').classList.remove('visible');
+    }}
+
+    function showPage(id) {{
+        if (!pages[id]) return;
+
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('doc-view').style.display = 'block';
+        document.getElementById('doc-content').innerHTML = pages[id];
+        document.getElementById('doc-title').textContent = titles[id];
+        document.getElementById('current-section').textContent = titles[id];
+
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        const activeNav = document.querySelector('[onclick="showPage(\\'' + id + '\\')"]');
+        if (activeNav) activeNav.classList.add('active');
+
+        if (window.innerWidth <= 768) toggleSidebar();
+
+        document.getElementById('content').scrollTop = 0;
+        window.location.hash = id;
+
+        currentDocId = id;
+
+        setTimeout(() => {{
+            initializeCopyButtons();
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            initializeMermaid(currentTheme);
+        }}, 100);
+        
+        initializeProgressTracking();
+    }}
+
+    function copyPageLink(event) {{
+        navigator.clipboard.writeText(window.location.href);
+        const button = event.target.closest('.doc-action-button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="material-symbols-outlined">check</span>Copied!';
+        setTimeout(() => {{
+            button.innerHTML = originalText;
+        }}, 2000);
+    }}
+
+    document.addEventListener('keydown', (e) => {{
+        if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {{
+            e.preventDefault();
+            document.getElementById('searchInput').focus();
+        }}
+
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {{
+            e.preventDefault();
+            document.getElementById('searchInput').focus();
+        }}
+
+        if (e.key === 'Escape') {{
+            document.getElementById('searchResults').classList.remove('show');
+        }}
+    }});
+
+    document.addEventListener('DOMContentLoaded', () => {{
         const searchInput = document.getElementById('searchInput');
         const searchClear = document.getElementById('searchClear');
-        const cardsGrid = document.getElementById('cardsGrid');
 
-        function filterCards() {{
-            const term = searchInput.value.toLowerCase().trim();
-            searchClear.classList.toggle('visible', term.length > 0);
+        searchInput.addEventListener('input', () => {{
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performSearch, 200);
+            searchClear.classList.toggle('visible', searchInput.value.length > 0);
+        }});
 
-            let visible = 0;
-            const cards = cardsGrid.children;
-
-            for (let i = 0; i < cards.length; i++) {{
-                const card = cards[i];
-                if (card.id === 'empty-platform-state' || card.id === 'empty-search-state') continue;
-
-                const cardId = card.getAttribute('data-id');
-                const platforms = cardPlatforms[cardId] || [];
-                const matchesPlatform = currentPlatform === 'all' || platforms.includes(currentPlatform);
-
-                if (!matchesPlatform) {{
-                    card.style.display = 'none';
-                    continue;
-                }}
-
-                const title = card.querySelector('h3')?.textContent.toLowerCase() || '';
-                const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
-
-                if (title.includes(term) || desc.includes(term)) {{
-                    card.style.display = 'block';
-                    visible++;
-                }} else {{
-                    card.style.display = 'none';
-                }}
+        searchInput.addEventListener('focus', () => {{
+            if (searchInput.value.length >= 2) {{
+                performSearch();
             }}
+        }});
 
-            const emptySearchState = document.getElementById('empty-search-state');
-            if (visible === 0 && term.length > 0 && !emptySearchState) {{
-                const newEmptyState = document.createElement('div');
-                newEmptyState.id = 'empty-search-state';
-                newEmptyState.className = 'empty-state';
-                newEmptyState.innerHTML = `
-                    <span class="material-symbols-outlined">search_off</span>
-                    <h3>No results found</h3>
-                    <p>Try different keywords</p>
-                `;
-                cardsGrid.appendChild(newEmptyState);
-            }} else if (emptySearchState && (visible > 0 || term.length === 0)) {{
-                emptySearchState.remove();
+        document.addEventListener('click', (e) => {{
+            const searchResults = document.getElementById('searchResults');
+            const searchContainer = document.querySelector('.search-container');
+            
+            if (!searchContainer.contains(e.target)) {{
+                searchResults.classList.remove('show');
             }}
+        }});
+
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeUI(savedTheme);
+
+        if (window.location.hash) {{
+            const id = window.location.hash.substring(1);
+            if (pages[id]) showPage(id);
         }}
 
-        function clearSearch() {{
-            searchInput.value = '';
-            filterCards();
-            searchInput.focus();
-        }}
-
-        function showHome() {{
-            document.getElementById('home-view').style.display = 'block';
-            document.getElementById('doc-view').style.display = 'none';
-            document.getElementById('current-section').textContent = 'Home';
-
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.querySelector('[onclick="showHome()"]').classList.add('active');
-
-            if (window.innerWidth <= 768) toggleSidebar();
-
-            window.location.hash = '';
-            filterByPlatform('all');
-
-            document.getElementById('progressIndicator').classList.remove('visible');
-        }}
-
-        function showPage(id) {{
-            if (!pages[id]) return;
-
-            document.getElementById('home-view').style.display = 'none';
-            document.getElementById('doc-view').style.display = 'block';
-            document.getElementById('doc-content').innerHTML = pages[id];
-            document.getElementById('doc-title').textContent = titles[id];
-            document.getElementById('current-section').textContent = titles[id];
-
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            const activeNav = document.querySelector(`[onclick="showPage('${{id}}')"]`);
-            if (activeNav) activeNav.classList.add('active');
-
-            if (window.innerWidth <= 768) toggleSidebar();
-
-            document.getElementById('content').scrollTop = 0;
-            window.location.hash = id;
-
-            currentDocId = id;
-
-            setTimeout(() => {{
-                initializeCopyButtons();
-                // Re-initialize mermaid for new content
+        initializeCopyButtons();
+        
+        document.addEventListener('visibilitychange', () => {{
+            if (!document.hidden && currentDocId) {{
                 const currentTheme = localStorage.getItem('theme') || 'light';
                 initializeMermaid(currentTheme);
-            }}, 100);
-            
-            initializeProgressTracking();
-        }}
-
-        function copyPageLink(event) {{
-            navigator.clipboard.writeText(window.location.href);
-            const button = event.target.closest('.doc-action-button');
-            const originalText = button.innerHTML;
-            button.innerHTML = '<span class="material-symbols-outlined">check</span>Copied!';
-            setTimeout(() => {{
-                button.innerHTML = originalText;
-            }}, 2000);
-        }}
-
-        document.addEventListener('keydown', (e) => {{
-            if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {{
-                e.preventDefault();
-                searchInput.focus();
-            }}
-
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {{
-                e.preventDefault();
-                searchInput.focus();
             }}
         }});
-
-        document.addEventListener('DOMContentLoaded', () => {{
-            searchInput.addEventListener('input', () => {{
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(filterCards, 200);
-            }});
-
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            updateThemeUI(savedTheme);
-
-            if (window.location.hash) {{
-                const id = window.location.hash.substring(1);
-                if (pages[id]) showPage(id);
-            }}
-
-            initializeCopyButtons();
-            
-            // Handle page visibility changes
-            document.addEventListener('visibilitychange', () => {{
-                if (!document.hidden && currentDocId) {{
-                    const currentTheme = localStorage.getItem('theme') || 'light';
-                    initializeMermaid(currentTheme);
-                }}
-            }});
-        }});
-    </script>
+    }});
+</script>
 </body>
 </html>"""
 
@@ -2185,6 +2273,7 @@ class DocGenerator:
 
         project_name = config.get("name", "AromaUI")
         project_version = config.get("version", "1.0.0")
+        description = config.get("description", "Browse AromaUI's APIs with detailed documentation and examples.")
         base_dir = os.path.dirname(os.path.abspath(config_file))
 
         sections = config.get("sections", [])
@@ -2197,25 +2286,32 @@ class DocGenerator:
             ]
 
         sidebar_sections = {}
-        all_platforms = set()
-        card_platforms = {}
+        page_categories = {}
+        page_subcategories = {}
 
         for section in sections:
             category = section.get("category", "General")
+            subcategory = section.get("subcategory", "")
+            
             if category not in sidebar_sections:
-                sidebar_sections[category] = []
-            sidebar_sections[category].append(section)
-
-            platforms = section.get("platforms", [])
-            for platform in platforms:
-                all_platforms.add(platform.lower())
+                sidebar_sections[category] = {}
+            
+            if subcategory:
+                if subcategory not in sidebar_sections[category]:
+                    sidebar_sections[category][subcategory] = []
+                sidebar_sections[category][subcategory].append(section)
+            else:
+                if "" not in sidebar_sections[category]:
+                    sidebar_sections[category][""] = []
+                sidebar_sections[category][""].append(section)
 
             title = section.get("title", "Untitled")
-            section_id = title.lower().replace(" ", "-").replace("/", "-")
-            card_platforms[section_id] = [p.lower() for p in platforms]
+            section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
+            page_categories[section_id] = category
+            page_subcategories[section_id] = subcategory
 
         hero_section = self._get_hero_section(config)
-        platform_filters = self._get_platform_filters(list(all_platforms))
+        action_cards = self._get_action_cards()
 
         sidebar_content = []
         category_count = len(categories)
@@ -2223,7 +2319,7 @@ class DocGenerator:
         for category in categories:
             category_name = category.get("name", "General")
             category_id = category_name.lower().replace(" ", "-")
-            category_sections = sidebar_sections.get(category_name, [])
+            category_sections = sidebar_sections.get(category_name, {})
 
             if category_sections:
                 sidebar_content.append(f"""
@@ -2235,36 +2331,62 @@ class DocGenerator:
                     <div class="category-items" id="category-{category_id}">
                 """)
 
-                for section in category_sections:
-                    title = section.get("title", "Untitled")
-                    section_id = title.lower().replace(" ", "-").replace("/", "-")
-                    icon = self._get_icon_name(section.get("icon", "description"))
+                # Add sections without subcategories first
+                if "" in category_sections:
+                    for section in category_sections[""]:
+                        title = section.get("title", "Untitled")
+                        section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
+                        icon = self._get_icon_name(section.get("icon", "description"))
 
-                    sidebar_content.append(f"""
-                        <div class="nav-item" onclick="showPage('{section_id}')">
-                            <span class="material-symbols-outlined">{icon}</span>
-                            {title}
-                        </div>
-                    """)
+                        sidebar_content.append(f"""
+                            <div class="nav-item" onclick="showPage('{section_id}')">
+                                <span class="material-symbols-outlined">{icon}</span>
+                                {title}
+                            </div>
+                        """)
+
+                # Add subcategories
+                for subcategory_name, sections_list in category_sections.items():
+                    if subcategory_name and subcategory_name != "":
+                        subcategory_id = subcategory_name.lower().replace(" ", "-")
+                        
+                        sidebar_content.append(f"""
+                        <div class="subcategory">
+                            <div class="subcategory-header" onclick="toggleSubcategory('{category_id}-{subcategory_id}')">
+                                <span class="material-symbols-outlined">expand_more</span>
+                                <span>{subcategory_name}</span>
+                            </div>
+                            <div class="subcategory-items" id="subcategory-{category_id}-{subcategory_id}">
+                        """)
+
+                        for section in sections_list:
+                            title = section.get("title", "Untitled")
+                            section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
+                            icon = self._get_icon_name(section.get("icon", "description"))
+
+                            sidebar_content.append(f"""
+                                <div class="nav-item" onclick="showPage('{section_id}')">
+                                    <span class="material-symbols-outlined">{icon}</span>
+                                    {title}
+                                </div>
+                            """)
+
+                        sidebar_content.append("</div></div>")
 
                 sidebar_content.append("</div></div>")
 
-        cards_html = []
         pages_dict = {}
         titles_dict = {}
 
         for section in sections:
             title = section.get("title", "Untitled")
             description = section.get("description", "")
-            icon = self._get_icon_name(section.get("icon", "description"))
             markdown_file = section.get("file", "")
-            category = section.get("category", "General")
-            platforms = section.get("platforms", [])
 
             if markdown_file and not os.path.isabs(markdown_file):
                 markdown_file = os.path.join(base_dir, markdown_file)
 
-            section_id = title.lower().replace(" ", "-").replace("/", "-")
+            section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
 
             if markdown_file and os.path.exists(markdown_file):
                 content = self.load_markdown(markdown_file)
@@ -2274,45 +2396,6 @@ class DocGenerator:
             pages_dict[section_id] = content
             titles_dict[section_id] = title
 
-            platform_icons = ""
-            for platform in platforms:
-                platform_lower = platform.lower()
-                icon_map = {
-                    "linux": "terminal",
-                    "android": "android",
-                    "embedded": "developer_board",
-                    "rtos": "memory",
-                    "windows": "window",
-                    "ios": "phone_iphone",
-                    "macos": "desktop_mac",
-                    "web": "language",
-                    "baremetal": "chip",
-                }
-                icon_name = icon_map.get(platform_lower, "devices")
-                platform_icons += f"""
-                    <span class="card-platform">
-                        <span class="material-symbols-outlined">{icon_name}</span>
-                        <span>{platform}</span>
-                    </span>
-                """
-
-            cards_html.append(f'''
-                <div class="card" onclick="showPage('{section_id}')" data-id="{section_id}">
-                    <div class="card-icon">
-                        <span class="material-symbols-outlined">{icon}</span>
-                    </div>
-                    <h3>{title}</h3>
-                    <p>{description}</p>
-                    <div class="card-footer">
-                        <span class="card-category">
-                            <span class="material-symbols-outlined">folder</span>
-                            {category}
-                        </span>
-                    </div>
-                    {f'<div class="card-platforms">{platform_icons}</div>' if platform_icons else ""}
-                </div>
-            ''')
-
         pygments_styles = self._get_pygments_styles()
         current_year = datetime.now().year
         last_updated = datetime.now().strftime("%b %d, %Y")
@@ -2320,16 +2403,17 @@ class DocGenerator:
         html = self.template.format(
             project_name=project_name,
             version=project_version,
+            description=description,
             hero_section=hero_section,
-            platform_filters=platform_filters,
+            action_cards=action_cards,
             category_count=category_count,
             section_count=len(sections),
             pygments_styles=pygments_styles,
             sidebar_content="\n".join(sidebar_content),
-            cards_html="\n".join(cards_html),
             pages_json=json.dumps(pages_dict),
             titles_json=json.dumps(titles_dict),
-            card_platforms_json=json.dumps(card_platforms),
+            categories_json=json.dumps(page_categories),
+            subcategories_json=json.dumps(page_subcategories),
             year=current_year,
             last_updated=last_updated,
         )

@@ -20,6 +20,40 @@
 #define MAX_WINDOWS 256
 #define INVALID_FONT_INDEX -1
 
+/* ── Batch constants ───────────────────────────────────────────────────── */
+#define MAX_BATCH_QUADS    256
+#define VERTS_PER_QUAD     6
+#define MAX_BATCH_VERTICES (MAX_BATCH_QUADS * VERTS_PER_QUAD)
+
+/* ── Cached shader uniform locations (avoids glGetUniformLocation per draw) */
+typedef struct {
+    GLint projection;
+    GLint useTexture;
+    GLint size;
+    GLint radius;
+    GLint borderWidth;
+    GLint isRounded;
+    GLint isHollow;
+    GLint shapeType;
+    GLint tex;
+} ShapeUniforms;
+
+/* ── Per-frame cached window/viewport state ────────────────────────────── */
+typedef struct {
+    size_t window_id;
+    int    width;
+    int    height;
+    mat4x4 projection;
+    bool   valid;
+} CachedFrameState;
+
+/* ── Shape vertex batch (non-rounded filled rects) ─────────────────────── */
+typedef struct {
+    Vertex vertices[MAX_BATCH_VERTICES];
+    int    count;        /* current vertex count */
+    size_t window_id;
+} ShapeBatch;
+
 typedef struct
 {
     GLuint textureID;
@@ -57,6 +91,11 @@ typedef struct
     size_t num_windows;
     WindowResources windows[MAX_WINDOWS];
     uint32_t current_frame;
+
+    /* ── Optimisation state ─────────────────────────────────── */
+    ShapeUniforms shape_uniforms;
+    CachedFrameState frame_cache;
+    ShapeBatch batch;
 } AromaGLES3Context;
 
 static AromaGLES3Context ctx = {0};
@@ -211,6 +250,22 @@ int setup_shared_window_resources(void)
 
     glDeleteShader(shape_vertex_shader);
     glDeleteShader(shape_fragment_shader);
+
+    /* Cache uniform locations once — avoids glGetUniformLocation per draw */
+    ctx.shape_uniforms.projection  = glGetUniformLocation(ctx.shape_program, "projection");
+    ctx.shape_uniforms.useTexture  = glGetUniformLocation(ctx.shape_program, "useTexture");
+    ctx.shape_uniforms.size        = glGetUniformLocation(ctx.shape_program, "size");
+    ctx.shape_uniforms.radius      = glGetUniformLocation(ctx.shape_program, "radius");
+    ctx.shape_uniforms.borderWidth = glGetUniformLocation(ctx.shape_program, "borderWidth");
+    ctx.shape_uniforms.isRounded   = glGetUniformLocation(ctx.shape_program, "isRounded");
+    ctx.shape_uniforms.isHollow    = glGetUniformLocation(ctx.shape_program, "isHollow");
+    ctx.shape_uniforms.shapeType   = glGetUniformLocation(ctx.shape_program, "shapeType");
+    ctx.shape_uniforms.tex         = glGetUniformLocation(ctx.shape_program, "tex");
+
+    /* Init batch */
+    ctx.batch.count = 0;
+    ctx.frame_cache.valid = false;
+
     return 1;
 }
 
@@ -260,96 +315,210 @@ int setup_separate_window_resources(size_t window_id)
     return 1;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+ *  Frame-state caching & batch helpers
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Ensure the GL context, viewport and projection are set for `window_id`.
+ * Caches the result so repeated calls within the same frame are free.
+ */
+static bool ensure_frame_state(size_t window_id)
+{
+    if (ctx.frame_cache.valid && ctx.frame_cache.window_id == window_id)
+        return true;
+
+    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+    if (!platform) return false;
+
+    if (platform->make_context_current)
+        platform->make_context_current(window_id);
+
+    int w = 0, h = 0;
+    if (platform->get_window_size)
+        platform->get_window_size(window_id, &w, &h);
+    if (w <= 0 || h <= 0) return false;
+
+    ctx.frame_cache.window_id = window_id;
+    ctx.frame_cache.width  = w;
+    ctx.frame_cache.height = h;
+    mat4x4_ortho(ctx.frame_cache.projection,
+                 0.0f, (float)w, (float)h, 0.0f, -1.0f, 1.0f);
+    ctx.frame_cache.valid = true;
+
+    glViewport(0, 0, w, h);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    return true;
+}
+
+/**
+ * Issue one batched draw call for all queued non-rounded filled rects.
+ */
+static void flush_shape_batch(void)
+{
+    if (ctx.batch.count == 0) return;
+
+    if (!ensure_frame_state(ctx.batch.window_id)) {
+        ctx.batch.count = 0;
+        return;
+    }
+
+    size_t wid = ctx.batch.window_id;
+
+    glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
+    glBufferData(GL_ARRAY_BUFFER,
+                 (GLsizeiptr)(ctx.batch.count * sizeof(Vertex)),
+                 ctx.batch.vertices, GL_DYNAMIC_DRAW);
+
+    glUseProgram(ctx.shape_program);
+    glUniformMatrix4fv(ctx.shape_uniforms.projection, 1, GL_FALSE,
+                       (const GLfloat*)ctx.frame_cache.projection);
+    glUniform1i(ctx.shape_uniforms.useTexture, 0);
+    glUniform1i(ctx.shape_uniforms.isRounded,  0);
+    glUniform1i(ctx.shape_uniforms.isHollow,   0);
+    glUniform1i(ctx.shape_uniforms.shapeType,  0);
+    glUniform2f(ctx.shape_uniforms.size, 2.0f, 2.0f);   /* not used — shader fast path */
+    glUniform1f(ctx.shape_uniforms.radius, 0.0f);
+    glUniform1f(ctx.shape_uniforms.borderWidth, 0.0f);
+
+    if (wid < MAX_WINDOWS)
+        glBindVertexArray(ctx.windows[wid].shape_vao);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, pos));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, col));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, texCoord));
+
+    glDrawArrays(GL_TRIANGLES, 0, ctx.batch.count);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    ctx.batch.count = 0;
+}
+
+/**
+ * Queue a non-rounded filled rect into the batch buffer.
+ * Automatically flushes when the buffer is full or the window changes.
+ */
+static void batch_add_rect(size_t window_id,
+                           int x, int y, int w, int h,
+                           uint32_t color)
+{
+    if (ctx.batch.count > 0 && ctx.batch.window_id != window_id)
+        flush_shape_batch();
+    if (ctx.batch.count + VERTS_PER_QUAD > MAX_BATCH_VERTICES)
+        flush_shape_batch();
+
+    ctx.batch.window_id = window_id;
+
+    vec3 rgb;
+    convert_hex_to_rgb(&rgb, color);
+
+    float x0 = (float)x,           y0 = (float)y;
+    float x1 = x0 + (float)w,      y1 = y0 + (float)h;
+
+    Vertex* v = &ctx.batch.vertices[ctx.batch.count];
+
+    /* Two triangles forming the quad */
+    v[0].pos[0] = x0; v[0].pos[1] = y0;
+    v[1].pos[0] = x1; v[1].pos[1] = y0;
+    v[2].pos[0] = x0; v[2].pos[1] = y1;
+    v[3].pos[0] = x1; v[3].pos[1] = y0;
+    v[4].pos[0] = x1; v[4].pos[1] = y1;
+    v[5].pos[0] = x0; v[5].pos[1] = y1;
+
+    for (int i = 0; i < VERTS_PER_QUAD; i++) {
+        v[i].col[0] = rgb[0];
+        v[i].col[1] = rgb[1];
+        v[i].col[2] = rgb[2];
+        v[i].texCoord[0] = 0.0f;
+        v[i].texCoord[1] = 0.0f;
+    }
+
+    ctx.batch.count += VERTS_PER_QUAD;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ *  Drawing functions
+ * ═══════════════════════════════════════════════════════════════════════ */
+
 void draw_rectangle(size_t window_id, int x, int y, int width, int height)
 {
 }
 
 void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint32_t color, bool isRounded, float cornerRadius)
 {
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (!platform || !platform->make_context_current || !platform->get_window_size) {
-        LOG_ERROR("Platform interface missing required functions for rectangle draw");
+    /* Non-rounded filled rects go into the batch buffer */
+    if (!isRounded) {
+        batch_add_rect(window_id, x, y, width, height, color);
         return;
     }
 
-    platform->make_context_current(window_id);
+    /* Rounded rects: flush the batch first, then draw individually */
+    flush_shape_batch();
 
-    int window_width = 0;
-    int window_height = 0;
-    platform->get_window_size(window_id, &window_width, &window_height);
-    if (window_width <= 0 || window_height <= 0) {
-        LOG_WARNING("Skipping rectangle draw due to invalid window size (%d x %d)", window_width, window_height);
-        return;
-    }
-
-    glViewport(0, 0, window_width, window_height);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    mat4x4 projection;
-    mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
+    if (!ensure_frame_state(window_id)) return;
 
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
 
     Vertex vertices[6];
     vec2 texCoords[6] = {
-    {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f},
+        {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+    };
 
-    for (int i = 0; i < 6; i++)
-    {
-    vertices[i].col[0] = color_rgb[0];
-    vertices[i].col[1] = color_rgb[1];
-    vertices[i].col[2] = color_rgb[2];
-    vertices[i].texCoord[0] = texCoords[i][0];
-    vertices[i].texCoord[1] = texCoords[i][1];
+    for (int i = 0; i < 6; i++) {
+        vertices[i].col[0] = color_rgb[0];
+        vertices[i].col[1] = color_rgb[1];
+        vertices[i].col[2] = color_rgb[2];
+        vertices[i].texCoord[0] = texCoords[i][0];
+        vertices[i].texCoord[1] = texCoords[i][1];
     }
 
-    float x0 = (float)x;
-    float y0 = (float)y;
-    float x1 = x0 + (float)width;
-    float y1 = y0 + (float)height;
+    float x0 = (float)x,  y0 = (float)y;
+    float x1 = x0 + (float)width, y1 = y0 + (float)height;
 
-    vertices[0].pos[0] = x0;
-    vertices[0].pos[1] = y0;
-    vertices[1].pos[0] = x1;
-    vertices[1].pos[1] = y0;
-    vertices[2].pos[0] = x0;
-    vertices[2].pos[1] = y1;
-
-    vertices[3].pos[0] = x1;
-    vertices[3].pos[1] = y0;
-    vertices[4].pos[0] = x1;
-    vertices[4].pos[1] = y1;
-    vertices[5].pos[0] = x0;
-    vertices[5].pos[1] = y1;
+    vertices[0].pos[0] = x0; vertices[0].pos[1] = y0;
+    vertices[1].pos[0] = x1; vertices[1].pos[1] = y0;
+    vertices[2].pos[0] = x0; vertices[2].pos[1] = y1;
+    vertices[3].pos[0] = x1; vertices[3].pos[1] = y0;
+    vertices[4].pos[0] = x1; vertices[4].pos[1] = y1;
+    vertices[5].pos[0] = x0; vertices[5].pos[1] = y1;
 
     glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     glUseProgram(ctx.shape_program);
-    glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"), 1, GL_FALSE, (const GLfloat*)projection);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 0);
-    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), width, height);
-    glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), cornerRadius);
-    glUniform1f(glGetUniformLocation(ctx.shape_program, "borderWidth"), 1.0f);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), isRounded ? 1 : 0);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 0);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
+    glUniformMatrix4fv(ctx.shape_uniforms.projection, 1, GL_FALSE,
+                       (const GLfloat*)ctx.frame_cache.projection);
+    glUniform1i(ctx.shape_uniforms.useTexture, 0);
+    glUniform2f(ctx.shape_uniforms.size, (float)width, (float)height);
+    glUniform1f(ctx.shape_uniforms.radius, cornerRadius);
+    glUniform1f(ctx.shape_uniforms.borderWidth, 1.0f);
+    glUniform1i(ctx.shape_uniforms.isRounded, 1);
+    glUniform1i(ctx.shape_uniforms.isHollow, 0);
+    glUniform1i(ctx.shape_uniforms.shapeType, 0);
 
     if (window_id < MAX_WINDOWS)
-    {
         glBindVertexArray(ctx.windows[window_id].shape_vao);
-    }
-    
+
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, pos));
-
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, col));
-
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, texCoord));
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -391,22 +560,13 @@ static void shutdown(void)
 
 static void clear(size_t window_id, uint32_t color)
 {
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (!platform || !platform->make_context_current || !platform->get_window_size) {
-        LOG_ERROR("Platform interface missing required functions for clear");
-        return;
-    }
+    /* Discard any queued rects — we are clearing the whole screen */
+    ctx.batch.count = 0;
 
-    platform->make_context_current(window_id);
+    /* Invalidate frame cache so it re-queries window size (handles resize) */
+    ctx.frame_cache.valid = false;
 
-    int window_width = 0;
-    int window_height = 0;
-    platform->get_window_size(window_id, &window_width, &window_height);
-    if (window_width > 0 && window_height > 0) {
-        glViewport(0, 0, window_width, window_height);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
+    if (!ensure_frame_state(window_id)) return;
 
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
@@ -419,6 +579,9 @@ static void render_text(size_t window_id, AromaFont* font, const char* text, int
     if (!font || !text || window_id >= MAX_WINDOWS) {
         return;
     }
+
+    /* Text uses a different shader — flush pending shape batch first */
+    flush_shape_batch();
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current) {
@@ -465,26 +628,10 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
 {
     if (border_width <= 0) return;
 
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (!platform || !platform->make_context_current || !platform->get_window_size) {
-        return;
-    }
+    /* Different uniform state — flush pending batch */
+    flush_shape_batch();
 
-    platform->make_context_current(window_id);
-
-    int window_width = 0;
-    int window_height = 0;
-    platform->get_window_size(window_id, &window_width, &window_height);
-    if (window_width <= 0 || window_height <= 0) {
-        return;
-    }
-
-    glViewport(0, 0, window_width, window_height);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    mat4x4 projection;
-    mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
+    if (!ensure_frame_state(window_id)) return;
 
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
@@ -503,10 +650,8 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
         vertices[i].texCoord[1] = texCoords[i][1];
     }
 
-    float x0 = (float)x;
-    float y0 = (float)y;
-    float x1 = x0 + (float)width;
-    float y1 = y0 + (float)height;
+    float x0 = (float)x,  y0 = (float)y;
+    float x1 = x0 + (float)width, y1 = y0 + (float)height;
 
     vertices[0].pos[0] = x0; vertices[0].pos[1] = y0;
     vertices[1].pos[0] = x1; vertices[1].pos[1] = y0;
@@ -519,26 +664,23 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     glUseProgram(ctx.shape_program);
-    glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"), 1, GL_FALSE, (const GLfloat*)projection);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), 0);
-    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), (float)width, (float)height);
-    glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), cornerRadius);
-    glUniform1f(glGetUniformLocation(ctx.shape_program, "borderWidth"), (float)border_width);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), isRounded ? 1 : 0);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), 1);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
+    glUniformMatrix4fv(ctx.shape_uniforms.projection, 1, GL_FALSE,
+                       (const GLfloat*)ctx.frame_cache.projection);
+    glUniform1i(ctx.shape_uniforms.useTexture, 0);
+    glUniform2f(ctx.shape_uniforms.size, (float)width, (float)height);
+    glUniform1f(ctx.shape_uniforms.radius, cornerRadius);
+    glUniform1f(ctx.shape_uniforms.borderWidth, (float)border_width);
+    glUniform1i(ctx.shape_uniforms.isRounded, isRounded ? 1 : 0);
+    glUniform1i(ctx.shape_uniforms.isHollow, 1);
+    glUniform1i(ctx.shape_uniforms.shapeType, 0);
 
     if (window_id < MAX_WINDOWS)
-    {
         glBindVertexArray(ctx.windows[window_id].shape_vao);
-    }
-    
+
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
-
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, col));
-
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
 
@@ -845,49 +987,23 @@ unsigned int load_image_from_memory(unsigned char* data, size_t binary_length)
 
 void draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
 {
-    LOG_INFO("draw_image called: window=%zu, pos=(%d,%d), size=(%dx%d), texture=%u",
-             window_id, x, y, width, height, texture_id);
-
     if (texture_id == 0) {
         LOG_ERROR("Cannot draw texture ID 0 (OpenGL reserved)");
         return;
     }
 
-    AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (!platform || !platform->make_context_current || !platform->get_window_size) {
-        LOG_ERROR("Platform interface missing required functions");
-        return;
-    }
+    /* Image uses a texture — flush pending shape batch */
+    flush_shape_batch();
 
-    platform->make_context_current(window_id);
+    if (!ensure_frame_state(window_id)) return;
 
     if (!glIsTexture(texture_id)) {
         LOG_ERROR("Texture ID %u is not a valid OpenGL texture", texture_id);
-        
-        GLenum error = glGetError();
-        if (error != GL_NO_ERROR) {
-            LOG_ERROR("OpenGL error before drawing: 0x%X", error);
-        }
         return;
     }
 
-    int window_width = 0;
-    int window_height = 0;
-    platform->get_window_size(window_id, &window_width, &window_height);
-
-    if (window_width <= 0 || window_height <= 0) {
-        LOG_WARNING("Invalid window size: %dx%d", window_width, window_height);
-        return;
-    }
-
-    glViewport(0, 0, window_width, window_height);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
-
-    mat4x4 projection;
-    mat4x4_ortho(projection, 0.0f, (float)window_width, (float)window_height, 0.0f, -1.0f, 1.0f);
 
     Vertex vertices[6];
 
@@ -896,10 +1012,9 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
         {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}
     };
 
-    float x0 = (float)x;
-    float y0 = (float)y;
-    float x1 = x0 + (float)width;
-    float y1 = y0 + (float)height;
+    float x0 = (float)x,  y0 = (float)y;
+    float x1 = x0 + (float)width, y1 = y0 + (float)height;
+
     for (int i = 0; i < 6; i++) {
         vertices[i].col[0] = 1.0f;
         vertices[i].col[1] = 1.0f;
@@ -911,7 +1026,6 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     vertices[0].pos[0] = x0; vertices[0].pos[1] = y0;
     vertices[1].pos[0] = x1; vertices[1].pos[1] = y0;
     vertices[2].pos[0] = x0; vertices[2].pos[1] = y1;
-
     vertices[3].pos[0] = x1; vertices[3].pos[1] = y0;
     vertices[4].pos[0] = x1; vertices[4].pos[1] = y1;
     vertices[5].pos[0] = x0; vertices[5].pos[1] = y1;
@@ -920,50 +1034,72 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     glUseProgram(ctx.shape_program);
-
-    glUniformMatrix4fv(glGetUniformLocation(ctx.shape_program, "projection"),
-                      1, GL_FALSE, (const GLfloat*)projection);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "useTexture"), GL_TRUE);
-    glUniform2f(glGetUniformLocation(ctx.shape_program, "size"), (float)width, (float)height);
-    glUniform1f(glGetUniformLocation(ctx.shape_program, "radius"), 0.0f);
-    glUniform1f(glGetUniformLocation(ctx.shape_program, "borderWidth"), 0.0f);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isRounded"), GL_FALSE);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "isHollow"), GL_FALSE);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "shapeType"), 0);
+    glUniformMatrix4fv(ctx.shape_uniforms.projection, 1, GL_FALSE,
+                       (const GLfloat*)ctx.frame_cache.projection);
+    glUniform1i(ctx.shape_uniforms.useTexture, GL_TRUE);
+    glUniform2f(ctx.shape_uniforms.size, (float)width, (float)height);
+    glUniform1f(ctx.shape_uniforms.radius, 0.0f);
+    glUniform1f(ctx.shape_uniforms.borderWidth, 0.0f);
+    glUniform1i(ctx.shape_uniforms.isRounded, GL_FALSE);
+    glUniform1i(ctx.shape_uniforms.isHollow, GL_FALSE);
+    glUniform1i(ctx.shape_uniforms.shapeType, 0);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
-    glUniform1i(glGetUniformLocation(ctx.shape_program, "tex"), 0);
+    glUniform1i(ctx.shape_uniforms.tex, 0);
 
     if (window_id < MAX_WINDOWS)
-    {
         glBindVertexArray(ctx.windows[window_id].shape_vao);
-    }
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, pos));
-
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, col));
-
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, texCoord));
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        LOG_ERROR("OpenGL error during image draw: 0x%X", error);
-    }
-
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
 
-    LOG_INFO("Image drawn successfully: texture %u", texture_id);
+static void gles3_set_clip(int x, int y, int w, int h)
+{
+    /* Flush pending batch before changing scissor state */
+    flush_shape_batch();
+
+    int window_height = ctx.frame_cache.height;
+    if (window_height <= 0) {
+        AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
+        int window_width = 0;
+        if (platform && platform->get_window_size) {
+            platform->get_window_size(0, &window_width, &window_height);
+        }
+    }
+
+    /* OpenGL scissor origin is bottom-left, so flip Y */
+    int gl_y = window_height - y - h;
+    if (gl_y < 0) gl_y = 0;
+
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(x, gl_y, w, h);
+}
+
+static void gles3_clear_clip(void)
+{
+    /* Flush pending batch before changing scissor state */
+    flush_shape_batch();
+    glDisable(GL_SCISSOR_TEST);
+}
+
+static void gles3_flush(void)
+{
+    flush_shape_batch();
 }
 
 AromaGraphicsInterface aroma_graphics_gles3 = {
@@ -981,5 +1117,8 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .load_image_from_memory = load_image_from_memory,
     .draw_image = draw_image,
     .shutdown = shutdown,
+    .graphics_set_clip = gles3_set_clip,
+    .graphics_clear_clip = gles3_clear_clip,
+    .graphics_flush = gles3_flush,
 };
 #endif

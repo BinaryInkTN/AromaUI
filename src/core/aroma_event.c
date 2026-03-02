@@ -3,6 +3,7 @@
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 #include "core/aroma_common.h"
+#include "widgets/aroma_container.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_logger.h"
 #include "widgets/aroma_dropdown.h"
@@ -68,6 +69,14 @@ static struct {
 } g_mouse_state = {-1, -1, false, 0, NULL};
 
 static uint64_t g_touch_captures[AROMA_MAX_TOUCHES] = {0};
+/* Parallel capture for scrollable-container ancestors (touch intercept). */
+static uint64_t g_scroll_captures[AROMA_MAX_TOUCHES] = {0};
+/* Tracks whether the scroll container has started intercepting for each pointer.
+   Once true, a synthetic TOUCH_UP was already sent to the child to cancel it. */
+static bool g_scroll_intercepting[AROMA_MAX_TOUCHES] = {false};
+
+/* Forward declarations */
+static AromaNode* find_scrollable_ancestor(AromaNode* start);
 
 #ifdef AROMA_THREAD_SAFE
 #define EVENT_LOCK() pthread_mutex_lock(&g_event_system.mutex)
@@ -331,6 +340,17 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
         target = aroma_event_hit_test(g_event_system.root_node, x, y);
         target_id = target ? target->node_id : 0;
         g_touch_captures[id] = target_id;
+
+        /* Look for a scrollable container ancestor — it will also
+           receive touch events so it can decide to intercept scrolling. */
+        AromaNode* scr = target ? find_scrollable_ancestor(target) : NULL;
+        if (!scr && target) {
+            /* target itself might be the scrollable container */
+            if (target->node_type == NODE_TYPE_CONTAINER &&
+                aroma_container_is_scrollable(target))
+                scr = target;
+        }
+        g_scroll_captures[id] = scr ? scr->node_id : 0;
     } else {
         target_id = g_touch_captures[id];
         if (target_id == 0) {
@@ -342,15 +362,59 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
     if (state == 1) type = EVENT_TYPE_TOUCH_DOWN;
     else if (state == 0) type = EVENT_TYPE_TOUCH_UP;
     else type = EVENT_TYPE_TOUCH_MOVE;
-    AromaEvent* evt = aroma_event_create(type, target_id);
-    if (evt) {
-        evt->data.touch.id = id;
-        evt->data.touch.x = x;
-        evt->data.touch.y = y;
-        aroma_event_dispatch(evt);
-        aroma_event_destroy(evt);
+
+    /* Deliver the event to the scrollable container first (touch intercept).
+       If the container decides to scroll, it consumes the event and the
+       child widget never sees TOUCH_MOVE — mimicking Android's
+       onInterceptTouchEvent pattern. */
+    uint64_t scroll_id = g_scroll_captures[id];
+    bool intercepted = false;
+    if (scroll_id != 0 && scroll_id != target_id) {
+        AromaEvent* sev = aroma_event_create(type, scroll_id);
+        if (sev) {
+            sev->data.touch.id = id;
+            sev->data.touch.x = x;
+            sev->data.touch.y = y;
+            aroma_event_dispatch(sev);
+            intercepted = sev->consumed;
+            aroma_event_destroy(sev);
+        }
     }
-    if (state == 0) g_touch_captures[id] = 0;
+
+    /* When the scroll container first intercepts a TOUCH_MOVE, send a
+       synthetic TOUCH_UP to the child to cancel any pressed/active state
+       (prevents accidental clicks while scrolling). */
+    if (intercepted && !g_scroll_intercepting[id]) {
+        g_scroll_intercepting[id] = true;
+        if (target_id != 0 && target_id != scroll_id) {
+            AromaEvent* cancel = aroma_event_create(EVENT_TYPE_TOUCH_UP, target_id);
+            if (cancel) {
+                cancel->data.touch.id = id;
+                cancel->data.touch.x = -1;  /* out-of-bounds so button sees "released outside" */
+                cancel->data.touch.y = -1;
+                aroma_event_dispatch(cancel);
+                aroma_event_destroy(cancel);
+            }
+        }
+    }
+
+    /* If the scrollable container didn't consume the event, deliver
+       it to the original target (normal dispatch + bubbling). */
+    if (!intercepted && target_id != 0) {
+        AromaEvent* evt = aroma_event_create(type, target_id);
+        if (evt) {
+            evt->data.touch.id = id;
+            evt->data.touch.x = x;
+            evt->data.touch.y = y;
+            aroma_event_dispatch(evt);
+            aroma_event_destroy(evt);
+        }
+    }
+    if (state == 0) {
+        g_touch_captures[id] = 0;
+        g_scroll_captures[id] = 0;
+        g_scroll_intercepting[id] = false;
+    }
 }
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
@@ -432,16 +496,38 @@ AromaNode* aroma_event_hit_test(AromaNode* root, int x, int y) {
             best_z = hit->z_index;
         }
     }
-    if (root->node_type == NODE_TYPE_WIDGET && root->node_widget_ptr) {
+    if ((root->node_type == NODE_TYPE_WIDGET || root->node_type == NODE_TYPE_CONTAINER)
+        && root->node_widget_ptr) {
         AromaRect* bounds = (AromaRect*)root->node_widget_ptr;
         if (x >= bounds->x && x < (bounds->x + bounds->width) && y >= bounds->y && y < (bounds->y + bounds->height)) {
-            if (root->z_index >= best_z) {
+            /* Containers are fallback targets: only win if nothing deeper was hit.
+               Widgets use the original z-index comparison so that overlapping
+               siblings at higher z still win. */
+            bool should_win = (root->node_type == NODE_TYPE_CONTAINER)
+                ? (best == NULL)
+                : (root->z_index >= best_z);
+            if (should_win) {
                 best = root;
                 best_z = root->z_index;
             }
         }
     }
     return best;
+}
+
+/**
+ * Walk from `start` up through parent_node looking for a scrollable container.
+ * Returns the first one found, or NULL.
+ */
+static AromaNode* find_scrollable_ancestor(AromaNode* start)
+{
+    AromaNode* cur = start ? start->parent_node : NULL;
+    while (cur) {
+        if (cur->node_type == NODE_TYPE_CONTAINER && aroma_container_is_scrollable(cur))
+            return cur;
+        cur = cur->parent_node;
+    }
+    return NULL;
 }
 
 bool aroma_event_subscribe(uint64_t node_id, AromaEventType type, AromaEventHandler handler, void* user_data, uint32_t priority) {

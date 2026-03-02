@@ -6,7 +6,10 @@
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_drawlist.h"
+#include "core/aroma_timer.h"
+#include "core/aroma_time.h"
 #include "widgets/aroma_window.h"
+#include "widgets/aroma_container.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
@@ -211,7 +214,7 @@ bool aroma_ui_is_running_impl(void) {
 void aroma_ui_render_impl(struct AromaWindow* window_data) {
     if (!window_data) return;
     
-    LOG_CRITICAL("Rendering window ID %zu", window_data->window_id);
+    LOG_INFO("Rendering window ID %zu", window_data->window_id);
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->request_window_update) {
         platform->request_window_update(window_data->window_id);
@@ -245,6 +248,9 @@ void aroma_ui_process_events_impl(void) {
     
     
     aroma_event_process_queue();
+
+    /* Tick timers so fling / bounce / fade animations advance each frame. */
+    aroma_timer_tick(aroma_time_now_ms());
 }
 
 AromaWindow* aroma_ui_create_window_impl(const char* title, int width, int height) {
@@ -411,8 +417,13 @@ void aroma_ui_end_frame(size_t window_id) {
     }
 #else
     aroma_drawlist_flush(list, window_id);
-    
-    
+
+    /* Flush any remaining batched draw calls before presenting */
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    if (gfx && gfx->graphics_flush) {
+        gfx->graphics_flush();
+    }
+
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->swap_buffers) {
         platform->swap_buffers(window_id);
@@ -537,6 +548,14 @@ static void collect_draw_tasks(struct AromaNode* node, AromaDrawTask* tasks,
             .draw_cb = draw_cb,
             .z_index = node->z_index
         };
+
+        /* Scrollable containers draw their own children (with scroll
+           offset and scissor clipping).  Do NOT collect children
+           separately or they will be drawn a second time at their
+           un-scrolled layout positions, causing stale "ghost" content. */
+        if (aroma_container_is_scrollable(node)) {
+            return;
+        }
     }
     
     
@@ -549,7 +568,11 @@ static void collect_draw_tasks(struct AromaNode* node, AromaDrawTask* tasks,
 
 static void window_update_callback(size_t window_id, void* data) {
     (void)data;
-    
+
+    /* Process timers before the dirty check so that fling/bounce
+       animations can mark nodes dirty for this frame. */
+    aroma_timer_tick(aroma_time_now_ms());
+
     if (!aroma_ui_consume_redraw()) {
         return;
     }

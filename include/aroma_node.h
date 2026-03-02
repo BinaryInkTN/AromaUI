@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 /** @brief Maximum number of direct children a node can have (fixed size for now). */
-#define AROMA_MAX_CHILD_NODES 16
+#define AROMA_MAX_CHILD_NODES 64
 /** @brief Sentinel value for an invalid node ID. */
 #define AROMA_NODE_ID_INVALID 0
 /** @brief Maximum number of dirty nodes tracked per frame. */

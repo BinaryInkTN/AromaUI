@@ -276,8 +276,10 @@ void aroma_node_invalidate(AromaNode* node) {
         aroma_node_invalidate(node->parent_node);
         return;
     }
-    
-    
+
+    /* Request a render pass — the main loop will pick up dirty nodes.
+       Only schedule a render, do not render synchronously here to avoid
+       redundant render passes during batch property changes. */
     aroma_ui_render_all_windows_impl();
 }
 
@@ -345,14 +347,75 @@ AromaNode** aroma_dirty_list_get(size_t* count) {
     return g_dirty_nodes;
 }
 
+/**
+ * @brief Check if a node is an ancestor of another node.
+ * Used to deduplicate the dirty list: if a parent is already marked dirty,
+ * we don't need to separately track its descendants, since the rendering
+ * pipeline will walk the tree from the dirty parent anyway.
+ */
+static bool is_ancestor_in_dirty_list(AromaNode* node)
+{
+    AromaNode* parent = node->parent_node;
+    while (parent) {
+        if (parent->is_dirty) {
+            /* An ancestor is already dirty — skip adding this node */
+            return true;
+        }
+        parent = parent->parent_node;
+    }
+    return false;
+}
+
+/**
+ * @brief Remove descendant entries from the dirty list when an ancestor
+ * is being added. This keeps the list compact and avoids redundant draws.
+ */
+static void remove_descendants_from_dirty_list(AromaNode* ancestor)
+{
+    size_t write = 0;
+    for (size_t read = 0; read < g_dirty_count; read++) {
+        AromaNode* candidate = g_dirty_nodes[read];
+        if (!candidate) continue;
+
+        /* Check if candidate is a descendant of ancestor */
+        bool is_descendant = false;
+        AromaNode* p = candidate->parent_node;
+        while (p) {
+            if (p == ancestor) {
+                is_descendant = true;
+                break;
+            }
+            p = p->parent_node;
+        }
+
+        if (!is_descendant) {
+            g_dirty_nodes[write++] = candidate;
+        }
+        /* descendants stay is_dirty=true; they'll be cleaned when the
+         * ancestor's subtree is rendered and dirty_list_clear is called */
+    }
+    g_dirty_count = write;
+}
+
 void aroma_dirty_list_add(AromaNode* node) {
     if (!node || g_dirty_count >= AROMA_MAX_DIRTY_NODES) return;
 
+    /* Skip if this exact node is already tracked */
     for (size_t i = 0; i < g_dirty_count; i++) {
         if (g_dirty_nodes[i] == node) {
             return;
         }
     }
+
+    /* If an ancestor is already dirty, this node will be redrawn as part
+     * of that subtree — no need to add it separately */
+    if (is_ancestor_in_dirty_list(node)) {
+        return;
+    }
+
+    /* When adding a higher-level node, remove any of its descendants
+     * from the list since they'll be covered by this node's redraw */
+    remove_descendants_from_dirty_list(node);
 
     g_dirty_nodes[g_dirty_count++] = node;
 }

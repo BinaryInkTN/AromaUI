@@ -1,11 +1,11 @@
 {
     "name": "AromaUI",
     "version": "0.0.1 (alpha)",
-    "description": "Browse AromaUI's APIs with detailed documentation and examples.",
+    "description": "Enterprise-grade development toolkit for cross-platform applications on Linux, Android, and embedded systems.",
 
     "hero": {
         "title": "AromaSDK",
-        "description": "Download it now for Linux and Android.",
+        "description": "Build powerful cross-platform applications with native performance and elegant APIs.",
         "badges": [
             { "icon": "terminal", "text": "Linux" },
             { "icon": "window", "text": "Windows" },
@@ -17,13 +17,20 @@
                 "icon": "download",
                 "text": "Download SDK",
                 "primary": true,
-                "onclick": "window.open('https://aromaui.com/download')"
+                "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI/releases', '_blank')"
+            },
+            {
+                "icon": "code",
+                "text": "View on GitHub",
+                "primary": false,
+                "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"
             }
         ],
         "stats": [
-            { "value": "50+", "label": "Components" },
+            { "value": "75+", "label": "API Components" },
             { "value": "3", "label": "Platforms" },
-            { "value": "100%", "label": "Open Source" }
+            { "value": "100%", "label": "Open Source" },
+            { "value": "10k+", "label": "Downloads" }
         ],
         "platformIcons": [
             { "icon": "terminal", "title": "Linux" },
@@ -31,142 +38,597 @@
             { "icon": "android", "title": "Android" }
         ]
     },
+    
     "categories": [
         {
-            "name": "Guides",
-            "icon": "book",
-            "description": "Guides and tutorials for AromaUI usage"
+            "name": "Getting Started",
+            "icon": "rocket_launch",
+            "description": "Quick start guides, installation, and basic concepts"
+        },
+        {
+            "name": "Core Systems",
+            "icon": "settings",
+            "description": "Low-level system access, JNI integration, and runtime services"
         },
         {
             "name": "Connectivity",
-            "icon": "network_check",
-            "description": "Network and device connectivity APIs"
+            "icon": "hub",
+            "description": "Network protocols, device communication, and wireless APIs"
         },
         {
-            "name": "System",
-            "icon": "settings_applications",
-            "description": "Low-level system and JNI access"
+            "name": "User Interface",
+            "icon": "palette",
+            "description": "UI components, layouts, theming, and user interaction"
         },
         {
-            "name": "Media",
-            "icon": "camera_alt",
-            "description": "Camera, gallery and media handling"
+            "name": "Media & Graphics",
+            "icon": "movie",
+            "description": "Camera, audio, video, and graphics processing"
         },
         {
-            "name": "UI",
-            "icon": "dashboard",
-            "description": "User interface utilities"
+            "name": "Data Management",
+            "icon": "database",
+            "description": "Storage, file systems, preferences, and data persistence"
+        },
+        {
+            "name": "Security & Privacy",
+            "icon": "security",
+            "description": "Permissions, encryption, authentication, and secure storage"
+        },
+        {
+            "name": "Development Tools",
+            "icon": "build",
+            "description": "Build tools, debugging, testing, and deployment utilities"
+        },
+        {
+            "name": "Advanced Topics",
+            "icon": "psychology",
+            "description": "Performance optimization, best practices, and architectural patterns"
         }
     ],
+    
     "sections": [
-        
+ {
+            "title": "SDK Installation",
+            "description": "Detailed installation instructions for all supported platforms.",
+            "icon": "download",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Installation",
+            "file": "docs/getting-started/installation.md",
+            "platforms": ["android", "linux", "windows"]
+        },
+    
+       
         {
-            "title": "Bluetooth API",
-            "description": "Bluetooth device management and communication. Scan, connect, and communicate with Bluetooth devices.",
+            "title": "Project Setup",
+            "description": "Create and configure your first AromaUI project.",
+            "icon": "folder",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Setup",
+            "file": "docs/getting-started/project.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Hello World Tutorial",
+            "description": "Build your first cross-platform app with AromaUI.",
+            "icon": "code",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Tutorials",
+            "file": "docs/getting-started/hello-world.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Architecture Overview",
+            "description": "Understand AromaUI's architecture and design philosophy.",
+            "icon": "architecture",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Concepts",
+            "file": "docs/getting-started/architecture.md",
+            "platforms": ["android", "linux", "windows"]
+        },
+
+        {
+            "title": "Core JNI API",
+            "description": "Low-level JNI and native runtime access for maximum performance.",
+            "icon": "data_object",
+            "color": "#006875",
+            "category": "Core Systems",
+            "subcategory": "Native Integration",
+            "file": "docs/core/core_jni.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "System Services",
+            "description": "Access system services, background tasks, and runtime management.",
+            "icon": "settings_applications",
+            "color": "#006875",
+            "category": "Core Systems",
+            "subcategory": "Runtime",
+            "file": "docs/core/services_fs.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Device Information",
+            "description": "Query device hardware, battery status, and system properties.",
+            "icon": "mobile_gear",
+            "color": "#386A20",
+            "category": "Core Systems",
+            "subcategory": "Hardware",
+            "file": "docs/core/device_information.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Process Management",
+            "description": "Manage processes, threads, and system resources efficiently.",
+            "icon": "memory",
+            "color": "#006875",
+            "category": "Core Systems",
+            "subcategory": "Runtime",
+            "file": "docs/core/processes.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Performance Monitoring",
+            "description": "Monitor CPU, memory, and battery performance in real-time.",
+            "icon": "speed",
+            "color": "#006875",
+            "category": "Core Systems",
+            "subcategory": "Diagnostics",
+            "file": "docs/core/performance.md",
+            "platforms": ["android", "linux"]
+        },
+
+
+        {
+            "title": "Bluetooth Classic API",
+            "description": "Full-featured Bluetooth classic support for device discovery and communication.",
             "icon": "bluetooth",
             "color": "#6750A4",
             "category": "Connectivity",
-            "file": "docs/bluetooth.md",
+            "subcategory": "Bluetooth",
+            "file": "docs/connectivity/bluetooth_classic.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Bluetooth LE API",
+            "description": "Low-energy Bluetooth for IoT devices and peripherals.",
+            "icon": "bluetooth",
+            "color": "#6750A4",
+            "category": "Connectivity",
+            "subcategory": "Bluetooth",
+            "file": "docs/connectivity/bluetooth_le.md",
             "platforms": ["android"]
         },
         {
             "title": "Wi-Fi API",
-            "description": "Wi-Fi state and control. Scan networks, manage connections, and monitor signal strength.",
+            "description": "Comprehensive Wi-Fi management: scan, connect, configure, and monitor.",
             "icon": "wifi",
             "color": "#1D192B",
             "category": "Connectivity",
-            "file": "docs/wifi.md",
+            "subcategory": "Wi-Fi",
+            "file": "docs/connectivity/wifi.md",
             "platforms": ["android"]
         },
         {
-            "title": "Core JNI API",
-            "description": "Low-level JNI and Android runtime access. Direct access to native system functions.",
-            "icon": "data_object",
-            "color": "#006875",
-            "category": "System",
-            "file": "docs/core_jni.md",
+            "title": "Wi-Fi Direct",
+            "description": "Peer-to-peer connections without an access point.",
+            "icon": "wifi",
+            "color": "#1D192B",
+            "category": "Connectivity",
+            "subcategory": "Wi-Fi",
+            "file": "docs/connectivity/wifi_direct.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Ethernet API",
+            "description": "Wired network connectivity for embedded and desktop Linux.",
+            "icon": "ethernet",
+            "color": "#1D192B",
+            "category": "Connectivity",
+            "subcategory": "Wired",
+            "file": "docs/connectivity/ethernet.md",
+            "platforms": ["linux"]
+        },
+        {
+            "title": "USB Communication",
+            "description": "USB host and device mode communication for peripherals.",
+            "icon": "usb",
+            "color": "#1D192B",
+            "category": "Connectivity",
+            "subcategory": "USB",
+            "file": "docs/connectivity/usb.md",
             "platforms": ["android", "linux"]
         },
         {
-            "title": "Permissions API",
-            "description": "Runtime permission handling. Request and manage app permissions easily.",
-            "icon": "security",
-            "color": "#B3261E",
-            "category": "System",
-            "file": "docs/permissions.md",
+            "title": "NFC API",
+            "description": "Near-field communication for contactless data exchange.",
+            "icon": "nfc",
+            "color": "#6750A4",
+            "category": "Connectivity",
+            "subcategory": "NFC",
+            "file": "docs/connectivity/nfc.md",
             "platforms": ["android"]
         },
         {
-            "title": "System Services & File System API",
-            "description": "System services and storage access. Manage files, preferences, and system settings.",
-            "icon": "folder_open",
-            "color": "#4A4458",
-            "category": "System",
-            "file": "docs/services_fs.md",
+            "title": "Network Monitoring",
+            "description": "Monitor network connectivity, bandwidth, and signal strength.",
+            "icon": "network_check",
+            "color": "#1D192B",
+            "category": "Connectivity",
+            "subcategory": "Monitoring",
+            "file": "docs/connectivity/network_monitor.md",
             "platforms": ["android", "linux"]
         },
+
         {
-            "title": "Device Information API",
-            "description": "Battery and device runtime information. Monitor device status and hardware info.",
-            "icon": "mobile_gear",
-            "color": "#386A20",
-            "category": "System",
-            "file": "docs/device_informations.md",
-            "platforms": ["android"]
-        },
-        {
-            "title": "Camera & Gallery API",
-            "description": "Media capture and selection. Take photos, record videos, and pick from gallery.",
-            "icon": "photo_camera",
-            "color": "#9A4521",
-            "category": "Media",
-            "file": "docs/camera_gallery.md",
-            "platforms": ["android"]
-        },
-        {
-            "title": "UI Utilities API",
-            "description": "Android UI feedback utilities. Toasts, dialogs, and material components.",
+            "title": "UI Utilities",
+            "description": "Essential UI helpers: toasts, dialogs, and material components.",
             "icon": "select_window",
             "color": "#7D5260",
-            "category": "UI",
-            "file": "docs/ui_utilities.md",
+            "category": "User Interface",
+            "subcategory": "Core Components",
+            "file": "docs/ui/ui_utilities.md",
             "platforms": ["android"]
         },
         {
-            "title": "DPI Conversion API",
-            "description": "Convert between Android density-independent pixels (dp) and actual pixels (px).",
-            "icon": "responsive_layout",
-            "color": "#7D5260",
-            "category": "UI",
-            "file": "docs/dpi.md",
-            "platforms": ["android"]
-        },
-        {
-            "title": "Widgets API",
-            "description": "Custom Android UI widgets and components. Pre-built material design components for faster UI development.",
+            "title": "Widgets Library",
+            "description": "Pre-built material design widgets for rapid UI development.",
             "icon": "widgets",
             "color": "#7D5260",
-            "category": "UI",
-            "file": "docs/widgets.md",
+            "category": "User Interface",
+            "subcategory": "Core Components",
+            "file": "docs/ui/widgets.md",
             "platforms": ["android"]
-        }, 
+        },
+        {
+            "title": "Layout Management",
+            "description": "Create responsive layouts that adapt to different screen sizes.",
+            "icon": "dashboard",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Layouts",
+            "file": "docs/ui/layouts.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "DPI Conversion",
+            "description": "Convert between density-independent pixels (dp) and actual pixels.",
+            "icon": "responsive_layout",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Utilities",
+            "file": "docs/ui/dpi.md",
+            "platforms": ["android"]
+        },
         {
             "title": "Orientation API",
-            "description": "Control and query device orientation. Set portrait or landscape mode, lock and unlock orientation.",
+            "description": "Control and respond to device orientation changes.",
             "icon": "screen_rotation",
             "color": "#7D5260",
-            "category": "UI",
-            "file": "docs/orientation.md",
+            "category": "User Interface",
+            "subcategory": "Utilities",
+            "file": "docs/ui/orientation.md",
             "platforms": ["android"]
-        }, 
+        },
+        {
+            "title": "Theming System",
+            "description": "Create consistent themes with light, dark, and custom color schemes.",
+            "icon": "palette",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Theming",
+            "file": "docs/ui/theming.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Animations",
+            "description": "Smooth animations and transitions for enhanced UX.",
+            "icon": "animation",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Effects",
+            "file": "docs/ui/animations.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Gestures & Touch",
+            "description": "Handle touch events, gestures, and multi-touch interactions.",
+            "icon": "touch_app",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Input",
+            "file": "docs/ui/gestures.md",
+            "platforms": ["android"]
+        },
+
+        {
+            "title": "Camera API",
+            "description": "Capture photos and videos with full camera control.",
+            "icon": "photo_camera",
+            "color": "#9A4521",
+            "category": "Media & Graphics",
+            "subcategory": "Camera",
+            "file": "docs/media/camera.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Gallery Access",
+            "description": "Browse, select, and manage media from the device gallery.",
+            "icon": "photo_library",
+            "color": "#9A4521",
+            "category": "Media & Graphics",
+            "subcategory": "Gallery",
+            "file": "docs/media/gallery.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Audio Playback",
+            "description": "Play audio files, streams, and manage audio sessions.",
+            "icon": "audio_file",
+            "color": "#9A4521",
+            "category": "Media & Graphics",
+            "subcategory": "Audio",
+            "file": "docs/media/audio.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Video Playback",
+            "description": "Play videos with custom controls and subtitle support.",
+            "icon": "video_file",
+            "color": "#9A4521",
+            "category": "Media & Graphics",
+            "subcategory": "Video",
+            "file": "docs/media/video.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Image Processing",
+            "description": "Resize, crop, filter, and manipulate images efficiently.",
+            "icon": "image",
+            "color": "#9A4521",
+            "category": "Media & Graphics",
+            "subcategory": "Graphics",
+            "file": "docs/media/image_processing.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Canvas Drawing",
+            "description": "2D drawing API for custom graphics and visualizations.",
+            "icon": "brush",
+            "color": "#9A4521",
+            "category": "Media & Graphics",
+            "subcategory": "Graphics",
+            "file": "docs/media/canvas.md",
+            "platforms": ["android"]
+        },
+
+        {
+            "title": "File System API",
+            "description": "Comprehensive file and directory operations across platforms.",
+            "icon": "folder_open",
+            "color": "#4A4458",
+            "category": "Data Management",
+            "subcategory": "File System",
+            "file": "docs/data/filesystem.md",
+            "platforms": ["android", "linux", "windows"]
+        },
+        {
+            "title": "Preferences API",
+            "description": "Simple key-value storage for user preferences and settings.",
+            "icon": "settings",
+            "color": "#4A4458",
+            "category": "Data Management",
+            "subcategory": "Storage",
+            "file": "docs/data/preferences.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "SQLite Database",
+            "description": "Embedded SQL database for structured data storage.",
+            "icon": "database",
+            "color": "#4A4458",
+            "category": "Data Management",
+            "subcategory": "Database",
+            "file": "docs/data/sqlite.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Data Serialization",
+            "description": "JSON, XML, and binary serialization utilities.",
+            "icon": "data_array",
+            "color": "#4A4458",
+            "category": "Data Management",
+            "subcategory": "Serialization",
+            "file": "docs/data/serialization.md",
+            "platforms": ["android", "linux", "windows"]
+        },
+        {
+            "title": "Caching Strategies",
+            "description": "Efficient caching mechanisms for improved performance.",
+            "icon": "cache",
+            "color": "#4A4458",
+            "category": "Data Management",
+            "subcategory": "Performance",
+            "file": "docs/data/caching.md",
+            "platforms": ["android", "linux"]
+        },
+
+
+        {
+            "title": "Permissions API",
+            "description": "Request and manage runtime permissions gracefully.",
+            "icon": "security",
+            "color": "#B3261E",
+            "category": "Security & Privacy",
+            "subcategory": "Permissions",
+            "file": "docs/security/permissions.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Encryption API",
+            "description": "AES, RSA encryption for secure data storage and transmission.",
+            "icon": "encrypted",
+            "color": "#B3261E",
+            "category": "Security & Privacy",
+            "subcategory": "Cryptography",
+            "file": "docs/security/encryption.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Secure Storage",
+            "description": "Store sensitive data securely using keystore systems.",
+            "icon": "lock",
+            "color": "#B3261E",
+            "category": "Security & Privacy",
+            "subcategory": "Storage",
+            "file": "docs/security/secure_storage.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Authentication",
+            "description": "Biometric authentication and secure user verification.",
+            "icon": "fingerprint",
+            "color": "#B3261E",
+            "category": "Security & Privacy",
+            "subcategory": "Authentication",
+            "file": "docs/security/authentication.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Network Security",
+            "description": "SSL/TLS, certificate pinning, and secure networking.",
+            "icon": "https",
+            "color": "#B3261E",
+            "category": "Security & Privacy",
+            "subcategory": "Network",
+            "file": "docs/security/network_security.md",
+            "platforms": ["android", "linux"]
+        },
+
         {
             "title": "Building & Deployment",
-            "description": "Build and deploy AromaUI apps. Step-by-step guides for building and deploying on Android and Linux.",
+            "description": "Build and deploy AromaUI apps for all platforms.",
             "icon": "rocket_launch",
-            "color": "#7D5260",
-            "category": "Guides",
-            "file": "docs/building_deployment.md",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "Build",
+            "file": "docs/tools/building_deployment.md",
+            "platforms": ["android", "linux", "windows"]
+        },
+        {
+            "title": "Debugging Guide",
+            "description": "Tools and techniques for debugging AromaUI applications.",
+            "icon": "bug_report",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "Debugging",
+            "file": "docs/tools/debugging.md",
             "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Testing Framework",
+            "description": "Unit testing, integration testing, and UI testing tools.",
+            "icon": "science",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "Testing",
+            "file": "docs/tools/testing.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Logging System",
+            "description": "Comprehensive logging with multiple verbosity levels.",
+            "icon": "terminal",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "Debugging",
+            "file": "docs/tools/logging.md",
+            "platforms": ["android", "linux", "windows"]
+        },
+        {
+            "title": "Profiling Tools",
+            "description": "Performance profiling and memory leak detection.",
+            "icon": "speed",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "Performance",
+            "file": "docs/tools/profiling.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "CLI Reference",
+            "description": "Complete reference for AromaUI command-line tools.",
+            "icon": "terminal",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "CLI",
+            "file": "docs/tools/cli.md",
+            "platforms": ["android", "linux", "windows"]
+        },
+
+        {
+            "title": "Performance Optimization",
+            "description": "Tips and techniques for optimal app performance.",
+            "icon": "bolt",
+            "color": "#9C27B0",
+            "category": "Advanced Topics",
+            "subcategory": "Performance",
+            "file": "docs/advanced/performance.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Memory Management",
+            "description": "Best practices for memory allocation and leak prevention.",
+            "icon": "memory",
+            "color": "#9C27B0",
+            "category": "Advanced Topics",
+            "subcategory": "Memory",
+            "file": "docs/advanced/memory.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Multithreading",
+            "description": "Concurrency patterns and thread-safe programming.",
+            "icon": "developer_board",
+            "color": "#9C27B0",
+            "category": "Advanced Topics",
+            "subcategory": "Concurrency",
+            "file": "docs/advanced/threading.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Custom Components",
+            "description": "Create reusable custom UI components and widgets.",
+            "icon": "extension",
+            "color": "#9C27B0",
+            "category": "Advanced Topics",
+            "subcategory": "Architecture",
+            "file": "docs/advanced/custom_components.md",
+            "platforms": ["android"]
+        },
+        {
+            "title": "Plugin Development",
+            "description": "Extend AromaUI with custom plugins and modules.",
+            "icon": "extension",
+            "color": "#9C27B0",
+            "category": "Advanced Topics",
+            "subcategory": "Extensibility",
+            "file": "docs/advanced/plugins.md",
+            "platforms": ["android", "linux"]
+        },
+        {
+            "title": "Migration Guide",
+            "description": "Upgrade from older versions and migrate existing projects.",
+            "icon": "sync",
+            "color": "#9C27B0",
+            "category": "Advanced Topics",
+            "subcategory": "Migration",
+            "file": "docs/advanced/migration.md",
+            "platforms": ["android", "linux", "windows"]
         }
     ]
 }

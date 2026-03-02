@@ -260,6 +260,27 @@ void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int 
 
 }
 
+void aroma_drawlist_cmd_scissor_push(AromaDrawList* list, int x, int y, int width, int height)
+{
+    if (!list) return;
+    aroma_drawlist_reserve(list, 1);
+    AromaDrawCmd* cmd = &list->commands[list->count++];
+    cmd->type = AROMA_DRAW_CMD_SCISSOR_PUSH;
+    cmd->data.scissor.x = x;
+    cmd->data.scissor.y = y;
+    cmd->data.scissor.width = width;
+    cmd->data.scissor.height = height;
+    cmd->is_drawn = false;
+}
+
+void aroma_drawlist_cmd_scissor_pop(AromaDrawList* list)
+{
+    if (!list) return;
+    aroma_drawlist_reserve(list, 1);
+    AromaDrawCmd* cmd = &list->commands[list->count++];
+    cmd->type = AROMA_DRAW_CMD_SCISSOR_POP;
+    cmd->is_drawn = false;
+}
 
 
 void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
@@ -354,6 +375,19 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                 
                     }
                     break;
+            case AROMA_DRAW_CMD_SCISSOR_PUSH:
+                if (gfx->graphics_set_clip) {
+                    gfx->graphics_set_clip(cmd->data.scissor.x,
+                                           cmd->data.scissor.y,
+                                           cmd->data.scissor.width,
+                                           cmd->data.scissor.height);
+                }
+                break;
+            case AROMA_DRAW_CMD_SCISSOR_POP:
+                if (gfx->graphics_clear_clip) {
+                    gfx->graphics_clear_clip();
+                }
+                break;
         }
     }
 
@@ -481,6 +515,19 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                     cmd->data.image.width,
                                     cmd->data.image.height,
                                     cmd->data.image.texture_id);
+                }
+                break;
+            case AROMA_DRAW_CMD_SCISSOR_PUSH:
+                if (gfx->graphics_set_clip) {
+                    gfx->graphics_set_clip(cmd->data.scissor.x,
+                                           cmd->data.scissor.y,
+                                           cmd->data.scissor.width,
+                                           cmd->data.scissor.height);
+                }
+                break;
+            case AROMA_DRAW_CMD_SCISSOR_POP:
+                if (gfx->graphics_clear_clip) {
+                    gfx->graphics_clear_clip();
                 }
                 break;
         }

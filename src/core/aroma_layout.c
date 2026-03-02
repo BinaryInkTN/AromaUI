@@ -3,6 +3,7 @@
 #include "core/aroma_font.h"
 #include "widgets/aroma_label.h"
 #include "widgets/aroma_listview.h"
+#include "widgets/aroma_container.h"
 #include "aroma_widgets.h"
 #include <stdio.h>
 
@@ -389,11 +390,28 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
     
     aroma_node_invalidate(start_node);
 
-    
+    /* For scrollable containers with explicit content size, expand the
+       layout area so children are positioned across the entire scrollable
+       region.  For auto-sizing containers, use the viewport dimensions
+       for layout (flex wraps / sizes relative to viewport), then measure
+       children afterwards. */
+    int layout_w = new_w;
+    int layout_h = new_h;
+    bool is_scrollable = aroma_container_is_scrollable(start_node);
+    if (is_scrollable) {
+        int cw = 0, ch = 0;
+        aroma_container_get_content_size(start_node, &cw, &ch);
+        /* Only expand if content size was explicitly set (larger than
+           viewport).  Auto-measured containers keep viewport dims so
+           flex grow/stretch use the viewport, not the content. */
+        if (cw > layout_w) layout_w = cw;
+        if (ch > layout_h) layout_h = ch;
+    }
+
     if (start_node->layout.mode == AROMA_LAYOUT_MODE_FLEX) {
-        apply_flex_layout(start_node, new_x, new_y, new_w, new_h);
+        apply_flex_layout(start_node, new_x, new_y, layout_w, layout_h);
     } else if (start_node->layout.mode == AROMA_LAYOUT_MODE_GRID) {
-        apply_grid_layout(start_node, new_x, new_y, new_w, new_h);
+        apply_grid_layout(start_node, new_x, new_y, layout_w, layout_h);
     } else {
         
         for (int i = 0; i < AROMA_MAX_CHILD_NODES; i++) {
@@ -406,5 +424,11 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
                                        child_w->width, child_w->height);
             }
         }
+    }
+
+    /* After children are laid out, auto-measure the content extent
+       for scrollable containers that don't have an explicit size. */
+    if (is_scrollable) {
+        aroma_container_update_auto_content_size(start_node);
     }
 }

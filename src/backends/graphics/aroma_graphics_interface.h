@@ -103,6 +103,7 @@ typedef struct AromaGraphicsInterface {
 
     void (*graphics_clear_clip)(void);
 
+    void (*graphics_flush)(void);
 
 } AromaGraphicsInterface;
 
