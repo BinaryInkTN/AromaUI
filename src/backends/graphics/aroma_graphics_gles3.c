@@ -390,7 +390,7 @@ static void flush_shape_batch(void)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           (void*)offsetof(Vertex, pos));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           (void*)offsetof(Vertex, col));
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -421,6 +421,9 @@ static void batch_add_rect(size_t window_id,
 
     vec3 rgb;
     convert_hex_to_rgb(&rgb, color);
+    /* Alpha: top byte of color (0 means fully opaque for backward compat) */
+    uint8_t alpha_byte = (color >> 24) & 0xFF;
+    float alpha = (alpha_byte == 0) ? 1.0f : alpha_byte / 255.0f;
 
     float x0 = (float)x,           y0 = (float)y;
     float x1 = x0 + (float)w,      y1 = y0 + (float)h;
@@ -439,6 +442,7 @@ static void batch_add_rect(size_t window_id,
         v[i].col[0] = rgb[0];
         v[i].col[1] = rgb[1];
         v[i].col[2] = rgb[2];
+        v[i].col[3] = alpha;
         v[i].texCoord[0] = 0.0f;
         v[i].texCoord[1] = 0.0f;
     }
@@ -481,6 +485,7 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
         vertices[i].col[0] = color_rgb[0];
         vertices[i].col[1] = color_rgb[1];
         vertices[i].col[2] = color_rgb[2];
+        vertices[i].col[3] = 1.0f;
         vertices[i].texCoord[0] = texCoords[i][0];
         vertices[i].texCoord[1] = texCoords[i][1];
     }
@@ -515,7 +520,7 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, pos));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, col));
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, col));
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, texCoord));
 
@@ -646,6 +651,7 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
         vertices[i].col[0] = color_rgb[0];
         vertices[i].col[1] = color_rgb[1];
         vertices[i].col[2] = color_rgb[2];
+        vertices[i].col[3] = 1.0f;
         vertices[i].texCoord[0] = texCoords[i][0];
         vertices[i].texCoord[1] = texCoords[i][1];
     }
@@ -680,7 +686,7 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, col));
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, col));
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
 
@@ -1019,6 +1025,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
         vertices[i].col[0] = 1.0f;
         vertices[i].col[1] = 1.0f;
         vertices[i].col[2] = 1.0f;
+        vertices[i].col[3] = 1.0f;
         vertices[i].texCoord[0] = texCoords[i][0];
         vertices[i].texCoord[1] = texCoords[i][1];
     }
@@ -1055,7 +1062,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, pos));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (void*)offsetof(Vertex, col));
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),

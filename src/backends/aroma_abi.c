@@ -188,6 +188,11 @@ static void drawlist_proxy_shutdown(void)
 
 
 void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_scissor_push(list, x, y, w, h);
+        return;
+    }
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->graphics_set_clip) {
         real->graphics_set_clip(x, y, w, h);
@@ -195,6 +200,11 @@ void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {
 }
 
 void drawlist_proxy_graphics_clear_clip(void) {
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_scissor_pop(list);
+        return;
+    }
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->graphics_clear_clip) {
         real->graphics_clear_clip();

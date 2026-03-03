@@ -69,13 +69,12 @@ static struct {
 } g_mouse_state = {-1, -1, false, 0, NULL};
 
 static uint64_t g_touch_captures[AROMA_MAX_TOUCHES] = {0};
-/* Parallel capture for scrollable-container ancestors (touch intercept). */
+
 static uint64_t g_scroll_captures[AROMA_MAX_TOUCHES] = {0};
-/* Tracks whether the scroll container has started intercepting for each pointer.
-   Once true, a synthetic TOUCH_UP was already sent to the child to cancel it. */
+
 static bool g_scroll_intercepting[AROMA_MAX_TOUCHES] = {false};
 
-/* Forward declarations */
+
 static AromaNode* find_scrollable_ancestor(AromaNode* start);
 
 #ifdef AROMA_THREAD_SAFE
@@ -283,17 +282,27 @@ AromaEvent* aroma_event_create(AromaEventType event_type, uint64_t target_node_i
 bool aroma_event_dispatch(AromaEvent* event) {
     if (!event || !event->target_node || g_event_system.shutting_down) return false;
     AromaNode* current = event->target_node;
+    bool found_any = false;
     while (current && !event->consumed) {
         AromaNodeEventListeners* ls = aroma_event_find_listeners(current->node_id);
         if (ls) {
             for (uint32_t i = 0; i < ls->listener_count && !event->consumed; i++) {
                 AromaEventListener* listener = &ls->listeners[i];
-                if (listener->event_type == event->event_type && listener->handler(event, listener->user_data)) {
-                    event->consumed = true;
+                if (listener->event_type == event->event_type) {
+                    found_any = true;
+                    bool result = listener->handler(event, listener->user_data);
+                    if (result) {
+                        event->consumed = true;
+                    }
                 }
             }
         }
         current = current->parent_node;
+    }
+    if (!found_any && (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
+                       event->event_type == EVENT_TYPE_TOUCH_MOVE)) {
+        LOG_INFO("EVT_NO_HANDLER: type=%d node=%llu", event->event_type,
+                 (unsigned long long)event->target_node_id);
     }
     return event->consumed;
 }
@@ -333,24 +342,43 @@ void aroma_event_process_queue(void) {
 }
 
 void aroma_event_handle_touch(int id, int x, int y, int state) {
-    if (!g_event_system.root_node || g_event_system.shutting_down || id < 0 || id >= AROMA_MAX_TOUCHES) return;
+    if (!g_event_system.root_node || g_event_system.shutting_down || id < 0 || id >= AROMA_MAX_TOUCHES) {
+        LOG_INFO("EVT_REJECT: root=%p shut=%d id=%d state=%d",
+                 (void*)g_event_system.root_node, g_event_system.shutting_down, id, state);
+        return;
+    }
+
+    LOG_INFO("EVT_TOUCH: id=%d x=%d y=%d state=%d", id, x, y, state);
+
+   
+    if (state == 1) {
+        for (int i = 0; i < AROMA_MAX_TOUCHES; i++) {
+            if (g_scroll_intercepting[i]) {
+                LOG_INFO("EVT_SUPPRESS: scroll intercepting on ptr %d", i);
+                return;
+            }
+        }
+    }
+
     uint64_t target_id = 0;
     AromaNode* target = NULL;
     if (state == 1) {
         target = aroma_event_hit_test(g_event_system.root_node, x, y);
         target_id = target ? target->node_id : 0;
         g_touch_captures[id] = target_id;
+        LOG_INFO("EVT_DOWN: hit=%llu scroll_cap will be set next",
+                 (unsigned long long)target_id);
 
-        /* Look for a scrollable container ancestor — it will also
-           receive touch events so it can decide to intercept scrolling. */
+       
         AromaNode* scr = target ? find_scrollable_ancestor(target) : NULL;
         if (!scr && target) {
-            /* target itself might be the scrollable container */
+           
             if (target->node_type == NODE_TYPE_CONTAINER &&
                 aroma_container_is_scrollable(target))
                 scr = target;
         }
         g_scroll_captures[id] = scr ? scr->node_id : 0;
+        LOG_INFO("EVT_DOWN: scroll_cap=%llu", (unsigned long long)g_scroll_captures[id]);
     } else {
         target_id = g_touch_captures[id];
         if (target_id == 0) {
@@ -363,13 +391,15 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
     else if (state == 0) type = EVENT_TYPE_TOUCH_UP;
     else type = EVENT_TYPE_TOUCH_MOVE;
 
-    /* Deliver the event to the scrollable container first (touch intercept).
-       If the container decides to scroll, it consumes the event and the
-       child widget never sees TOUCH_MOVE — mimicking Android's
-       onInterceptTouchEvent pattern. */
+   
     uint64_t scroll_id = g_scroll_captures[id];
     bool intercepted = false;
-    if (scroll_id != 0 && scroll_id != target_id) {
+
+    LOG_INFO("EVT_DISPATCH: type=%d target=%llu scroll=%llu intercepting=%d",
+             type, (unsigned long long)target_id, (unsigned long long)scroll_id, g_scroll_intercepting[id]);
+
+   
+    if (scroll_id != 0 && (scroll_id != target_id || g_scroll_intercepting[id])) {
         AromaEvent* sev = aroma_event_create(type, scroll_id);
         if (sev) {
             sev->data.touch.id = id;
@@ -377,20 +407,22 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
             sev->data.touch.y = y;
             aroma_event_dispatch(sev);
             intercepted = sev->consumed;
+            LOG_INFO("EVT_SCROLL_SENT: type=%d consumed=%d", type, intercepted);
             aroma_event_destroy(sev);
+        } else {
+            LOG_INFO("EVT_SCROLL_CREATE_FAIL: type=%d scroll_id=%llu",
+                     type, (unsigned long long)scroll_id);
         }
     }
 
-    /* When the scroll container first intercepts a TOUCH_MOVE, send a
-       synthetic TOUCH_UP to the child to cancel any pressed/active state
-       (prevents accidental clicks while scrolling). */
+   
     if (intercepted && !g_scroll_intercepting[id]) {
         g_scroll_intercepting[id] = true;
         if (target_id != 0 && target_id != scroll_id) {
             AromaEvent* cancel = aroma_event_create(EVENT_TYPE_TOUCH_UP, target_id);
             if (cancel) {
                 cancel->data.touch.id = id;
-                cancel->data.touch.x = -1;  /* out-of-bounds so button sees "released outside" */
+                cancel->data.touch.x = -1; 
                 cancel->data.touch.y = -1;
                 aroma_event_dispatch(cancel);
                 aroma_event_destroy(cancel);
@@ -398,8 +430,7 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
         }
     }
 
-    /* If the scrollable container didn't consume the event, deliver
-       it to the original target (normal dispatch + bubbling). */
+   
     if (!intercepted && target_id != 0) {
         AromaEvent* evt = aroma_event_create(type, target_id);
         if (evt) {
@@ -428,10 +459,17 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     uint64_t current_id = target ? target->node_id : 0;
 #ifdef __ANDROID__
     if(button_down) {
-        AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_CLICK, current_id, x, y, 0);
-        if (ev) {
-            aroma_event_dispatch(ev);
-            aroma_event_destroy(ev);
+       
+        bool scroll_active = false;
+        for (int i = 0; i < AROMA_MAX_TOUCHES; i++) {
+            if (g_scroll_intercepting[i]) { scroll_active = true; break; }
+        }
+        if (!scroll_active) {
+            AromaEvent* ev = aroma_event_create_mouse(EVENT_TYPE_MOUSE_CLICK, current_id, x, y, 0);
+            if (ev) {
+                aroma_event_dispatch(ev);
+                aroma_event_destroy(ev);
+            }
         }
     }
 #endif
@@ -500,9 +538,7 @@ AromaNode* aroma_event_hit_test(AromaNode* root, int x, int y) {
         && root->node_widget_ptr) {
         AromaRect* bounds = (AromaRect*)root->node_widget_ptr;
         if (x >= bounds->x && x < (bounds->x + bounds->width) && y >= bounds->y && y < (bounds->y + bounds->height)) {
-            /* Containers are fallback targets: only win if nothing deeper was hit.
-               Widgets use the original z-index comparison so that overlapping
-               siblings at higher z still win. */
+           
             bool should_win = (root->node_type == NODE_TYPE_CONTAINER)
                 ? (best == NULL)
                 : (root->z_index >= best_z);

@@ -46,6 +46,11 @@ void aroma_listview_show_headers(AromaNode* list_node, bool show);
 void aroma_listview_set_header_colors(AromaNode* list_node, uint32_t bg_color, uint32_t text_color);
 void aroma_listview_draw(AromaNode* list_node, size_t window_id);
 void aroma_listview_destroy(AromaNode* list_node);
+
+/* Scroll container association (set by aroma_ui_listview wrapper) */
+void aroma_listview_set_scroll_container(AromaNode* list_node, AromaNode* container);
+AromaNode* aroma_listview_get_scroll_container(AromaNode* list_node);
+
 #ifdef __cplusplus
 }
 #endif

@@ -20,20 +20,18 @@ typedef struct
 typedef struct Vertex
 {
     vec2 pos;
-    vec3 col;
+    vec4 col;        /* RGBA */
     vec2 texCoord;
-    float thickness;
-
 } Vertex;
 
 static const char *rectangle_vertex_shader =
     "#version 300 es\n"
     "precision mediump float;\n"
     "layout(location = 0) in vec2 pos;\n"
-    "layout(location = 1) in vec3 col;\n"
+    "layout(location = 1) in vec4 col;\n"
     "layout(location = 2) in vec2 texCoord;\n"
     "uniform mat4 projection;\n"
-    "out vec3 color;\n"
+    "out vec4 color;\n"
     "out vec2 TexCoord;\n"
     "void main() {\n"
     "    gl_Position = projection * vec4(pos, 0.0, 1.0);\n"
@@ -43,7 +41,7 @@ static const char *rectangle_vertex_shader =
 static const char *rectangle_fragment_shader =
 "#version 300 es\n"
 "precision highp float;\n"
-"in vec3 color;\n"
+"in vec4 color;\n"
 "in vec2 TexCoord;\n"
 "out vec4 fragment;\n"
 "uniform sampler2D tex;\n"
@@ -87,18 +85,18 @@ static const char *rectangle_fragment_shader =
 "void main() {\n"
 "    // Fast path: non-rounded, non-hollow, non-textured → flat color, skip SDF\n"
 "    if (!useTexture && !isRounded && !isHollow) {\n"
-"        fragment = vec4(color, 1.0);\n"
+"        fragment = color;\n"
 "        return;\n"
 "    }\n"
 "\n"
 "    // For texture-only rendering (images), skip SDF calculations\n"
 "    if (useTexture && !isRounded && !isHollow && shapeType == 0) {\n"
 "        // Simple texture rendering - no shape clipping\n"
-"        fragment = texture(tex, TexCoord) * vec4(color, 1.0);\n"
+"        fragment = texture(tex, TexCoord) * color;\n"
 "        return;\n"
 "    }\n"
 "\n"
-"    vec4 baseColor = useTexture ? texture(tex, TexCoord) * vec4(color, 1.0) : vec4(color, 1.0);\n"
+"    vec4 baseColor = useTexture ? texture(tex, TexCoord) * color : color;\n"
 "\n"
 "    if (shapeType == 0) {\n"
 "        vec2 centerPos = (TexCoord - 0.5) * size;\n"

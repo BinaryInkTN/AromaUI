@@ -163,14 +163,25 @@ static uint32_t __utf8_next(const char** p) {
     else if ((c & 0xE0) == 0xC0) len = 2;
     else if ((c & 0xF0) == 0xE0) len = 3;
     else if ((c & 0xF8) == 0xF0) len = 4;
-    else len = 1; // Invalid
+    else { *p += 1; return 0xFFFD; } /* replacement char for invalid lead byte */
 
     if (len == 1) {
         *p += 1;
         return c;
     }
     
-    // Simple decoding
+    /* Validate all continuation bytes before decoding.
+       If a continuation byte is missing or invalid (e.g. due to a
+       partially-written string from another thread), bail out instead
+       of producing a garbage codepoint. */
+    for (int i = 1; i < len; i++) {
+        if (s[i] == 0 || (s[i] & 0xC0) != 0x80) {
+            /* Broken sequence — skip only the lead byte */
+            *p += 1;
+            return 0xFFFD;
+        }
+    }
+
     uint32_t v = 0;
     if (len == 2) v = c & 0x1F;
     else if (len == 3) v = c & 0x0F;
