@@ -125,9 +125,11 @@ struct AromaNode
     void *node_widget_ptr;      /**< Pointer to specific widget data struct. */
     AromaNodeDrawFn draw_cb;    /**< Custom drawing callback. */
     uint64_t child_count;       /**< Current number of children. */
-    bool is_dirty;              /**< True if node needs redrawing. */
+    bool is_dirty;              /**< True if node itself needs redrawing. */
+    bool subtree_dirty;         /**< True if any descendant needs redrawing. */
     bool is_hidden;             /**< True if node is strictly invisible. */
-    bool propagate_dirty;       /**< True if dirty state affects children. */
+    bool propagate_dirty;       /**< True if dirty state propagates subtree_dirty up. */
+    uint64_t dirty_frame;       /**< Frame number when node was last invalidated. */
     AromaLayout layout;         /**< Layout configuration. */
 };
 
@@ -341,12 +343,19 @@ bool aroma_node_is_hidden(AromaNode* node);
 
 /** @internal Initialize dirty list tracker. */
 void aroma_dirty_list_init(void);
-/** @internal Clear dirty list. */
+/** @internal Clear dirty list and reset subtree_dirty flags. */
 void aroma_dirty_list_clear(void);
 /** @internal Get list of dirty nodes. */
 AromaNode** aroma_dirty_list_get(size_t* count);
 /** @internal Add node to dirty list. */
 void aroma_dirty_list_add(AromaNode* node);
+/** @internal Check if any node is dirty (O(1)). */
+bool aroma_dirty_list_has_entries(void);
+
+/** @brief Get the current global frame number. */
+uint64_t aroma_frame_number(void);
+/** @internal Increment the global frame counter. */
+void aroma_frame_advance(void);
 #ifdef __cplusplus
 }
 #endif

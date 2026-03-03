@@ -363,7 +363,8 @@ void aroma_listview_add_item_with_icon(AromaNode *list_node, const char *text,
 
     AromaListItem *item = &list->items[list->item_count];
     memset(item, 0, sizeof(AromaListItem));
-    strncpy(item->text, text, sizeof(item->text) - 1);
+    if(text)
+        strncpy(item->text, text, sizeof(item->text) - 1);
     if (secondary_text)
         strncpy(item->secondary_text, secondary_text, sizeof(item->secondary_text) - 1);
     if (icon_code)

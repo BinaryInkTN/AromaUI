@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 static atomic_uint_fast64_t global_node_id_counter = 1;
+static uint64_t g_frame_number = 0;
 
 static AromaNode* g_dirty_nodes[AROMA_MAX_DIRTY_NODES];
 static size_t g_dirty_count = 0;
@@ -76,9 +77,11 @@ AromaNode* __create_node(AromaNodeType node_type, AromaNode* parent_node, void* 
     new_node->parent_node = parent_node;
     new_node->node_widget_ptr = node_widget_ptr;
     new_node->child_count = 0;
-    new_node->is_dirty = false;  
+    new_node->is_dirty = false;
+    new_node->subtree_dirty = false;
     new_node->is_hidden = false;
     new_node->propagate_dirty = true;
+    new_node->dirty_frame = 0;
 
     for (uint64_t i = 0; i < AROMA_MAX_CHILD_NODES; i++) {
         new_node->child_nodes[i] = NULL;
@@ -270,16 +273,22 @@ void aroma_node_invalidate(AromaNode* node) {
     if (!node || node->is_dirty) return;
 
     node->is_dirty = true;
+    node->dirty_frame = g_frame_number;
     aroma_dirty_list_add(node);
 
-    if (node->propagate_dirty && node->parent_node) {
-        aroma_node_invalidate(node->parent_node);
-        return;
+    /* Walk ancestors and set subtree_dirty so the render pipeline
+     * can quickly detect which branches contain dirty nodes.
+     * Parents themselves are NOT marked is_dirty — only the widget
+     * that actually changed needs redrawing. */
+    AromaNode* parent = node->parent_node;
+    while (parent) {
+        if (parent->subtree_dirty)
+            break;  /* already flagged — ancestors above are too */
+        parent->subtree_dirty = true;
+        parent = parent->parent_node;
     }
 
-    /* Request a render pass — the main loop will pick up dirty nodes.
-       Only schedule a render, do not render synchronously here to avoid
-       redundant render passes during batch property changes. */
+    /* Schedule a render pass. */
     aroma_ui_render_all_windows_impl();
 }
 
@@ -330,13 +339,33 @@ bool aroma_node_is_hidden(AromaNode* node) {
 
 void aroma_dirty_list_init(void) {
     g_dirty_count = 0;
+    g_frame_number = 0;
     memset(g_dirty_nodes, 0, sizeof(g_dirty_nodes));
+}
+
+static void clear_subtree_dirty(AromaNode* node) {
+    if (!node) return;
+    node->subtree_dirty = false;
+    for (uint64_t i = 0; i < node->child_count; i++) {
+        if (node->child_nodes[i] && node->child_nodes[i]->subtree_dirty)
+            clear_subtree_dirty(node->child_nodes[i]);
+    }
 }
 
 void aroma_dirty_list_clear(void) {
     for (size_t i = 0; i < g_dirty_count; i++) {
         if (g_dirty_nodes[i]) {
             g_dirty_nodes[i]->is_dirty = false;
+
+            /* Walk up clearing subtree_dirty on ancestors that
+             * no longer have any other dirty descendants. We do
+             * this cheaply: set subtree_dirty = false and let the
+             * next invalidation re-set it as needed. */
+            AromaNode* p = g_dirty_nodes[i]->parent_node;
+            while (p && p->subtree_dirty) {
+                p->subtree_dirty = false;
+                p = p->parent_node;
+            }
         }
     }
     g_dirty_count = 0;
@@ -347,75 +376,30 @@ AromaNode** aroma_dirty_list_get(size_t* count) {
     return g_dirty_nodes;
 }
 
-/**
- * @brief Check if a node is an ancestor of another node.
- * Used to deduplicate the dirty list: if a parent is already marked dirty,
- * we don't need to separately track its descendants, since the rendering
- * pipeline will walk the tree from the dirty parent anyway.
- */
-static bool is_ancestor_in_dirty_list(AromaNode* node)
-{
-    AromaNode* parent = node->parent_node;
-    while (parent) {
-        if (parent->is_dirty) {
-            /* An ancestor is already dirty — skip adding this node */
-            return true;
-        }
-        parent = parent->parent_node;
-    }
-    return false;
-}
-
-/**
- * @brief Remove descendant entries from the dirty list when an ancestor
- * is being added. This keeps the list compact and avoids redundant draws.
- */
-static void remove_descendants_from_dirty_list(AromaNode* ancestor)
-{
-    size_t write = 0;
-    for (size_t read = 0; read < g_dirty_count; read++) {
-        AromaNode* candidate = g_dirty_nodes[read];
-        if (!candidate) continue;
-
-        /* Check if candidate is a descendant of ancestor */
-        bool is_descendant = false;
-        AromaNode* p = candidate->parent_node;
-        while (p) {
-            if (p == ancestor) {
-                is_descendant = true;
-                break;
-            }
-            p = p->parent_node;
-        }
-
-        if (!is_descendant) {
-            g_dirty_nodes[write++] = candidate;
-        }
-        /* descendants stay is_dirty=true; they'll be cleaned when the
-         * ancestor's subtree is rendered and dirty_list_clear is called */
-    }
-    g_dirty_count = write;
+bool aroma_dirty_list_has_entries(void) {
+    return g_dirty_count > 0;
 }
 
 void aroma_dirty_list_add(AromaNode* node) {
-    if (!node || g_dirty_count >= AROMA_MAX_DIRTY_NODES) return;
+    if (!node) return;
 
-    /* Skip if this exact node is already tracked */
-    for (size_t i = 0; i < g_dirty_count; i++) {
-        if (g_dirty_nodes[i] == node) {
-            return;
+    /* O(1) duplicate check — node already marked dirty */
+    if (node->dirty_frame == g_frame_number && g_dirty_count > 0) {
+        /* Double-check it's actually in the list (belt & suspenders) */
+        for (size_t i = 0; i < g_dirty_count; i++) {
+            if (g_dirty_nodes[i] == node)
+                return;
         }
     }
 
-    /* If an ancestor is already dirty, this node will be redrawn as part
-     * of that subtree — no need to add it separately */
-    if (is_ancestor_in_dirty_list(node)) {
-        return;
-    }
-
-    /* When adding a higher-level node, remove any of its descendants
-     * from the list since they'll be covered by this node's redraw */
-    remove_descendants_from_dirty_list(node);
-
+    if (g_dirty_count >= AROMA_MAX_DIRTY_NODES) return;
     g_dirty_nodes[g_dirty_count++] = node;
+}
+
+uint64_t aroma_frame_number(void) {
+    return g_frame_number;
+}
+
+void aroma_frame_advance(void) {
+    g_frame_number++;
 }

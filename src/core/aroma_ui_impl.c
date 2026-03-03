@@ -183,9 +183,7 @@ bool aroma_ui_consume_redraw(void)
     if (g_immediate_mode)
         return true;
 
-    size_t dirty_count = 0;
-    aroma_dirty_list_get(&dirty_count);
-    return dirty_count > 0;
+    return aroma_dirty_list_has_entries();
 }
 
 void aroma_ui_shutdown_impl(void)
@@ -243,10 +241,7 @@ void aroma_ui_render_impl(struct AromaWindow *window_data)
 
 void aroma_ui_render_all_windows_impl(void)
 {
-    size_t dirty_count = 0;
-    aroma_dirty_list_get(&dirty_count);
-
-    if (dirty_count == 0 && !g_immediate_mode)
+    if (!aroma_dirty_list_has_entries() && !g_immediate_mode)
         return;
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
@@ -619,6 +614,8 @@ static void window_update_callback(size_t window_id, void *data)
     {
         return;
     }
+
+    aroma_frame_advance();
 
     AromaTheme theme = aroma_theme_get_global();
 
