@@ -204,7 +204,11 @@ if (btn->use_theme_colors) {
     }
 
     if (btn->font && btn->icon_text[0] && gfx->render_text) {
-        gfx->render_text(window_id, btn->font, btn->icon_text, btn->text_x, btn->text_y, btn->icon_color, btn->text_scale);
+        /* Recompute text position from current rect (layout may have moved us) */
+        int tx = btn->rect.x + btn->rect.width / 2 - aroma_font_get_px_size(btn->font) / 2;
+        int line = aroma_font_get_px_size(btn->font);
+        int ty = btn->rect.y + (btn->rect.height - line) / 2;
+        gfx->render_text(window_id, btn->font, btn->icon_text, tx, ty, btn->icon_color, btn->text_scale);
     }
 }
 

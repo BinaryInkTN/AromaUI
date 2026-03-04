@@ -799,8 +799,10 @@ AromaNode *aroma_container_create(AromaNode *parent, int x, int y, int width, in
     }
 
     container->self_node = node;
-    node->layout._cache_x = x;
-    node->layout._cache_y = y;
+    /* _cache starts at 0 (from memset in __create_node) — children's
+       coordinates are local to the container, so the cache origin must
+       be 0 for the delta-shift arithmetic in NONE-mode layout to work
+       correctly at any nesting depth. */
     aroma_node_set_draw_cb(node, aroma_container_draw);
     aroma_node_invalidate(node);
 

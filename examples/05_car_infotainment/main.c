@@ -189,7 +189,7 @@ void build_general_ui(AromaContainer *root)
 
     AromaNode *speed_card = aroma_ui_card(
         (AromaNode *)general_info,
-        20, 200,
+        20, 380,
         200, 200, CARD_TYPE_FILLED);
 
 
@@ -222,7 +222,7 @@ void build_general_ui(AromaContainer *root)
 
     AromaNode *gear_card = aroma_ui_card(
         (AromaNode *)general_info,
-        190, 200,
+        190, 450,
         200, 50, CARD_TYPE_ELEVATED);
 
     static const char *gears[4] = {"P", "R", "N", "D"};
