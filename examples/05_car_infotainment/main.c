@@ -59,7 +59,7 @@ int main(void)
 
     general_root = aroma_ui_container((AromaNode *)window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)general_root, 20);
-
+    
     build_general_ui(general_root);
     AromaFont *tab_font = aroma_font_create_from_memory(
         icon_ttf, icon_ttf_len, 128);
@@ -75,6 +75,7 @@ int main(void)
     while (aroma_ui_is_running())
     {
 
+        
         aroma_ui_process_events();
         aroma_ui_render(window);
         usleep(16000);
@@ -90,7 +91,7 @@ void build_general_ui(AromaContainer *root)
 {
     AromaNode *general_info = aroma_ui_card((AromaNode *)root, 0, 0, 400, 100, CARD_TYPE_FILLED);
     aroma_node_set_flex_grow(general_info, 1);
-
+    
     AromaNode *applets_container = aroma_ui_container((AromaNode *)root, 0, 120, 610, 300, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     AromaNode *ac_applet = aroma_ui_card((AromaNode *)applets_container, 0, 0, 400, 300, CARD_TYPE_ELEVATED);
     aroma_node_set_gap((AromaNode *)applets_container, 20);
@@ -249,57 +250,56 @@ void build_general_ui(AromaContainer *root)
     // AC Controls
 
     AromaFont* ac_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 76);
-    AromaRect *ac_rect = (AromaRect *)ac_applet->node_widget_ptr;
 
-    aroma_ui_label((AromaNode *)ac_applet, "Adjust AC to your comfort level", ac_rect->x + 20, ac_rect->y + 20, LABEL_STYLE_LABEL_LARGE, ui_font);
-    aroma_ui_label((AromaNode *)ac_applet, "23°F", ac_rect->x + 225, ac_rect->y + 60, LABEL_STYLE_LABEL_LARGE, ac_font);
+    aroma_ui_label((AromaNode *)ac_applet, "Adjust AC to your comfort level", 20,  20, LABEL_STYLE_LABEL_LARGE, ui_font);
+    aroma_ui_label((AromaNode *)ac_applet, "23°F", 225,  60, LABEL_STYLE_LABEL_LARGE, ac_font);
 
-    aroma_ui_iconbutton((AromaNode *)ac_applet, AROMA_ICON_REMOVE, ac_rect->x + 145, ac_rect->y + 100, 48, ICON_BUTTON_FILLED, NULL, NULL, icon_font);
-    aroma_ui_iconbutton((AromaNode *)ac_applet, AROMA_ICON_ADD, ac_rect->x + 400, ac_rect->y + 100, 48, ICON_BUTTON_FILLED, NULL, NULL, icon_font);
+    aroma_ui_iconbutton((AromaNode *)ac_applet, AROMA_ICON_REMOVE, 145,  100, 48, ICON_BUTTON_FILLED, NULL, NULL, icon_font);
+    aroma_ui_iconbutton((AromaNode *)ac_applet, AROMA_ICON_ADD, 400,  100, 48, ICON_BUTTON_FILLED, NULL, NULL, icon_font);
 
-    aroma_ui_card((AromaNode *)ac_applet, ac_rect->x + 130, ac_rect->y + 200, 330, 80, CARD_TYPE_FILLED);
+    aroma_ui_card((AromaNode *)ac_applet, 130,  200, 330, 80, CARD_TYPE_FILLED);
 
     aroma_ui_image(
         (AromaNode *)ac_applet,
         "../air-conditioner.png",
-        ac_rect->x + 170, ac_rect->y + 215,
+        170,  215,
         48, 48);
 
     aroma_ui_image(
         (AromaNode *)ac_applet,
         "../under.png",
-        ac_rect->x + 270, ac_rect->y + 215,
+        270,  215,
         48, 48);
 
     aroma_ui_image(
         (AromaNode *)ac_applet,
         "../both.png",
-        ac_rect->x + 370, ac_rect->y + 215,
+        370,  215,
         48, 48);
 
     // System status
-    AromaRect *sys_rect = (AromaRect *)applet1->node_widget_ptr;
-    aroma_ui_label((AromaNode *)applet1, "System Status", sys_rect->x + 20, sys_rect->y + 20, LABEL_STYLE_LABEL_MEDIUM, ui_font);
+   
+    aroma_ui_label((AromaNode *)applet1, "System Status",  20, 20, LABEL_STYLE_LABEL_MEDIUM, ui_font);
     
     aroma_ui_image(
         (AromaNode *)applet1,
         "../brake_indicator.png",
-        sys_rect->x + 20, sys_rect->y + 60,
+         20, 60,
         32, 32);
     
     aroma_ui_image(
         (AromaNode *)applet1,
         "../abs_indicator.png",
-        sys_rect->x + 70, sys_rect->y + 60,
+         70, 60,
         32, 32);
 
         
-    aroma_ui_card((AromaNode *)applet1, sys_rect->x + 115, sys_rect->y + 55, 42, 42, CARD_TYPE_FILLED);
+    aroma_ui_card((AromaNode *)applet1,  115, 55, 42, 42, CARD_TYPE_FILLED);
     
         aroma_ui_image(
         (AromaNode *)applet1,
         "../high_beams.png",
-        sys_rect->x + 120, sys_rect->y + 60,
+         120, 60,
         32, 32);
 
     
@@ -307,25 +307,25 @@ void build_general_ui(AromaContainer *root)
     aroma_ui_image(
         (AromaNode *)applet1,
         "../low_beams.png",
-        sys_rect->x + 170, sys_rect->y + 60,
+         170, 60,
         32, 32);
     
 
     aroma_ui_image(
         (AromaNode *)applet1,
         "../seatbelt.png",
-        sys_rect->x + 220, sys_rect->y + 60,
+         220, 60,
         32, 32);
 
     aroma_ui_image(
         (AromaNode *)applet1,
         "../battery_indicator.png",
-        sys_rect->x + 20, sys_rect->y + 120,
+         20, 120,
         32, 32);
     
     aroma_ui_image(
         (AromaNode *)applet1,
         "../temperature.png",
-        sys_rect->x + 70, sys_rect->y + 120,
+         70, 120,
         32, 32);
 }
