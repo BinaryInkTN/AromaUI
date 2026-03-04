@@ -58,6 +58,8 @@ static bool g_running = true;
 static AromaDrawList *g_window_drawlists[AROMA_MAX_WINDOWS] = {0};
 static bool g_splash_enabled = true;
 static AromaTheme g_default_theme;
+char g_splash_title[64] = "AromaUI";
+char g_splash_slogan[64] = "Modern UI for Everywhere";
 
 static void window_update_callback(size_t window_id, void *data);
 static int find_window_index_by_id(size_t window_id);
@@ -68,8 +70,18 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
 static void show_splash_screen(size_t window_id, int width, int height);
 static int draw_task_compare(const void *a, const void *b);
 
-void aroma_splash(bool enabled)
+void aroma_splash(bool enabled, const char* title, const char* slogan)
 {
+    if (title)
+    {
+        strncpy(g_splash_title, title, sizeof(g_splash_title) - 1);
+        g_splash_title[sizeof(g_splash_title) - 1] = '\0';
+    }
+    if (slogan)
+    {
+        strncpy(g_splash_slogan, slogan, sizeof(g_splash_slogan) - 1);
+        g_splash_slogan[sizeof(g_splash_slogan) - 1] = '\0';
+    }
     g_splash_enabled = enabled;
 }
 
@@ -791,16 +803,13 @@ static void show_splash_screen(size_t window_id, int width, int height)
         gfx->clear(window_id, theme.colors.background);
     }
 
-    const char *title = "AromaUI";
-    const char *slogan = "Modern UI for Everywhere";
-
     float title_scale = 1.0f;
     float slogan_scale = 0.3f;
 
-    float title_width = aroma_font_get_line_width(font, title) * title_scale;
+    float title_width = aroma_font_get_line_width(font, g_splash_title) * title_scale;
     int title_height = aroma_font_get_line_height(font) * title_scale;
 
-    float slogan_width = aroma_font_get_line_width(font, slogan) * slogan_scale;
+    float slogan_width = aroma_font_get_line_width(font, g_splash_slogan) * slogan_scale;
     int slogan_height = aroma_font_get_line_height(font) * slogan_scale;
 
     int gap = 20;
@@ -815,9 +824,9 @@ static void show_splash_screen(size_t window_id, int width, int height)
 
     if (gfx->render_text)
     {
-        gfx->render_text(window_id, font, title, title_x, title_y,
+        gfx->render_text(window_id, font, g_splash_title, title_x, title_y,
                          theme.colors.primary, title_scale);
-        gfx->render_text(window_id, font, slogan, slogan_x, slogan_y,
+        gfx->render_text(window_id, font, g_splash_slogan, slogan_x, slogan_y,
                          theme.colors.text_secondary, slogan_scale);
     }
 

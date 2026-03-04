@@ -1271,7 +1271,7 @@ extern "C"
      * @brief Enable or disable the startup splash screen.
      * @param enabled True to show splash, false to disable.
      */
-    void aroma_splash(bool enabled);
+    void aroma_splash(bool enabled, const char* title, const char* slogan);
 
     /**
      * @brief Create a dropdown helper.

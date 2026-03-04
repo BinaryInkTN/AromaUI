@@ -1,21 +1,28 @@
 #include <aroma.h>
-
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
+#include <string.h>
+#include <stdbool.h>
 
 #define WIN_W 1280
 #define WIN_H 800
 AromaFont *icon_font = NULL;
-
+AromaNode *sidebar = NULL;
 static AromaFont *ui_font = NULL;
 static AromaContainer *general_root = NULL;
 static AromaNode *settings_root = NULL;
 static AromaTheme theme;
 
+void build_general_ui(AromaContainer *root);
+void build_settings_ui(AromaNode *window);
+void listview_callback(int index, void *user_data);
+static AromaNode *settings_listview(AromaNode *parent, int x, int y, int w, int h, AromaFont *font);
+
 int main(void)
 {
     aroma_ui_init();
-
+    aroma_splash(true, "AromaOS", "Automotive HMI Demo");
     theme =
         aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
     aroma_ui_set_theme(&theme);
@@ -62,6 +69,7 @@ int main(void)
 
     build_general_ui(general_root);
     build_settings_ui((AromaNode *)window);
+
     AromaFont *tab_font = aroma_font_create_from_memory(
         icon_ttf, icon_ttf_len, 128);
     AromaNode *tabs = aroma_ui_tabs_with_icons((AromaNode *)window, 0, WIN_H - 80, WIN_W, 80,
@@ -74,7 +82,6 @@ int main(void)
 
     while (aroma_ui_is_running())
     {
-
         aroma_ui_process_events();
         aroma_ui_render(window);
         usleep(16000);
@@ -86,9 +93,71 @@ int main(void)
     return 0;
 }
 
+void listview_callback(int index, void *user_data)
+{
+    if (aroma_sidebar_get_selected(sidebar) == 0)
+    {
+        printf("Network item %d clicked\n", index);
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 1)
+    {
+        if (index == 2)
+        {
+            printf("Toggling dark theme\n");
+            static bool dark_theme = true;
+            if (dark_theme)
+            {
+                theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
+                aroma_ui_set_theme(&theme);
+            }
+            else
+            {
+                theme = aroma_theme_create_high_contrast();
+                theme.colors.primary = 0xFF2196F3; // Material Blue 500
+                theme.colors.primary_dark = 0xFF1976D2; // Material Blue 700
+                theme.colors.primary_light = 0xFFBBDEFB; // Material Blue 200
+                aroma_ui_set_theme(&theme);
+            }
+            dark_theme = !dark_theme;
+        }
+        else
+        {
+            printf("Display item %d clicked\n", index);
+        }
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 2)
+    {
+        printf("Sound item %d clicked\n", index);
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 3)
+    {
+        printf("Navigation item %d clicked\n", index);
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 4)
+    {
+        printf("Security item %d clicked\n", index);
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 5)
+    {
+        printf("Apps item %d clicked\n", index);
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 6)
+    {
+        printf("Storage item %d clicked\n", index);
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 7)
+    {
+        printf("System item %d clicked\n", index);
+    }
+    else if (aroma_sidebar_get_selected(sidebar) == 8)
+    {
+        printf("About item %d clicked\n", index);
+    }
+}
+
 static AromaNode *settings_listview(AromaNode *parent, int x, int y, int w, int h, AromaFont *font)
 {
-    AromaNode *lv = aroma_ui_listview(parent, x, y, w, h, NULL, NULL, font);
+    AromaNode *lv = aroma_ui_listview(parent, x, y, w, h, listview_callback, NULL, font);
     if (lv)
     {
         aroma_listview_set_icon_font(lv, icon_font);
@@ -127,17 +196,16 @@ void build_settings_ui(AromaNode *window)
         AROMA_ICON_SETTINGS,
         AROMA_ICON_INFO};
     int num_sections = 9;
-    AromaFont* settings_font = aroma_font_create_from_memory(
+    AromaFont *settings_font = aroma_font_create_from_memory(
         aroma_ubuntu_ttf,
         aroma_ubuntu_ttf_len,
         18);
 
-    AromaNode *sidebar = aroma_ui_sidebar_with_icons(
+    sidebar = aroma_ui_sidebar_with_icons(
         settings_root, 0, 0, sidebar_w, area_h,
         labels, icons, num_sections,
         NULL, NULL, settings_font, icon_font);
 
-    
     AromaNode *lv_net = settings_listview(settings_root, panel_x, 0, panel_w, area_h, settings_font);
     aroma_listview_add_item_with_icon(lv_net, "Wi-Fi", "HomeNetwork_5G", AROMA_ICON_WIFI, NULL);
     aroma_listview_add_item_with_icon(lv_net, "Bluetooth", "3 devices paired", AROMA_ICON_BLUETOOTH, NULL);
@@ -211,20 +279,129 @@ void build_settings_ui(AromaNode *window)
     AromaNode *p_sys = aroma_listview_get_scroll_container(lv_sys);
 
     AromaNode *lv_abt = settings_listview(settings_root, panel_x, 0, panel_w, area_h, settings_font);
-    aroma_listview_add_header(lv_abt, "Device Information");
-    aroma_listview_add_item_with_icon(lv_abt, "Processor", "NaN", AROMA_ICON_MEMORY, NULL);
-    aroma_listview_add_item_with_icon(lv_abt, "RAM", "NaN", AROMA_ICON_STORAGE, NULL);
-    aroma_listview_add_header(lv_abt, "Software Information");
+
+    char processor_name[256] = "Unknown";
+    FILE *cpuinfo = fopen("/proc/cpuinfo", "r");
+    if (cpuinfo)
+    {
+        char line[256];
+        while (fgets(line, sizeof(line), cpuinfo))
+        {
+            if (strncmp(line, "model name", 10) == 0)
+            {
+                char *colon = strchr(line, ':');
+                if (colon)
+                {
+                    strcpy(processor_name, colon + 2);
+                    char *newline = strchr(processor_name, '\n');
+                    if (newline)
+                        *newline = '\0';
+                }
+                break;
+            }
+        }
+        fclose(cpuinfo);
+    }
+
+    long total_ram_mb = 0;
+    FILE *meminfo = fopen("/proc/meminfo", "r");
+    if (meminfo)
+    {
+        char line[256];
+        while (fgets(line, sizeof(line), meminfo))
+        {
+            if (strncmp(line, "MemTotal", 8) == 0)
+            {
+                long total_ram_kb;
+                sscanf(line, "MemTotal: %ld kB", &total_ram_kb);
+                total_ram_mb = total_ram_kb / 1024;
+                break;
+            }
+        }
+        fclose(meminfo);
+    }
+
+    char ram_str[64];
+    if (total_ram_mb > 0)
+    {
+        if (total_ram_mb > 1024)
+        {
+            snprintf(ram_str, sizeof(ram_str), "%.1f GB", total_ram_mb / 1024.0);
+        }
+        else
+        {
+            snprintf(ram_str, sizeof(ram_str), "%ld MB", total_ram_mb);
+        }
+    }
+    else
+    {
+        strcpy(ram_str, "NaN");
+    }
+
+    char uptime_str[64] = "Unknown";
+    FILE *uptime_file = fopen("/proc/uptime", "r");
+    if (uptime_file)
+    {
+        double uptime_seconds;
+        if (fscanf(uptime_file, "%lf", &uptime_seconds) == 1)
+        {
+            int days = (int)(uptime_seconds / 86400);
+            int hours = (int)((uptime_seconds - (days * 86400)) / 3600);
+            int minutes = (int)((uptime_seconds - (days * 86400) - (hours * 3600)) / 60);
+
+            if (days > 0)
+            {
+                snprintf(uptime_str, sizeof(uptime_str), "%d days, %d hrs", days, hours);
+            }
+            else if (hours > 0)
+            {
+                snprintf(uptime_str, sizeof(uptime_str), "%d hrs, %d min", hours, minutes);
+            }
+            else
+            {
+                snprintf(uptime_str, sizeof(uptime_str), "%d min", minutes);
+            }
+        }
+        fclose(uptime_file);
+    }
+
+    char load_str[64] = "Unknown";
+    FILE *loadavg = fopen("/proc/loadavg", "r");
+    if (loadavg)
+    {
+        double load1, load5, load15;
+        if (fscanf(loadavg, "%lf %lf %lf", &load1, &load5, &load15) == 3)
+        {
+            snprintf(load_str, sizeof(load_str), "%.2f, %.2f, %.2f", load1, load5, load15);
+        }
+        fclose(loadavg);
+    }
+
+    time_t rawtime;
+    struct tm *timeinfo;
+    char time_str[64];
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", timeinfo);
+
+   // aroma_listview_add_header(lv_abt, "Device Information");
+    aroma_listview_add_item_with_icon(lv_abt, "Processor", processor_name, AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "RAM", ram_str, AROMA_ICON_STORAGE, NULL);
+
+  //  aroma_listview_add_header(lv_abt, "Software Information");
     aroma_listview_add_item_with_icon(lv_abt, "Vehicle name", "Aroma Automotive", AROMA_ICON_DIRECTIONS_CAR, NULL);
     aroma_listview_add_item_with_icon(lv_abt, "Software", "AromaHMI v0.0.1 Built with AromaSDK", AROMA_ICON_INFO, NULL);
-    aroma_listview_add_item_with_icon(lv_abt, "Build number", "AA04032026", AROMA_ICON_BUILD, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Build date", __DATE__ " " __TIME__, AROMA_ICON_BUILD, NULL);
     aroma_listview_add_item_with_icon(lv_abt, "Security patch", "March 1, 2026", AROMA_ICON_SECURITY, NULL);
-    aroma_listview_add_header(lv_abt, "Active Backends");
+
+   // aroma_listview_add_header(lv_abt, "System Status");
+    aroma_listview_add_item_with_icon(lv_abt, "Uptime", uptime_str, AROMA_ICON_ACCESS_TIME, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Load average", load_str, AROMA_ICON_COMPUTER, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Current time", time_str, AROMA_ICON_ACCESS_TIME, NULL);
+
+ //   aroma_listview_add_header(lv_abt, "Active Backends");
     aroma_listview_add_item_with_icon(lv_abt, "Platform Backend", "GLPS (X11)", AROMA_ICON_VERIFIED_USER, NULL);
     aroma_listview_add_item_with_icon(lv_abt, "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
-    aroma_listview_add_header(lv_abt, "Legal");
-    aroma_listview_add_item_with_icon(lv_abt, "License", "MIT License", AROMA_ICON_DESCRIPTION, NULL);
-    aroma_listview_add_item_with_icon(lv_abt, "Source code", "github.com/BinaryInk/AromaUI", AROMA_ICON_LINK, NULL);
 
     AromaNode *p_abt = aroma_listview_get_scroll_container(lv_abt);
 
@@ -426,8 +603,6 @@ void build_general_ui(AromaContainer *root)
         "../both.png",
         370, 215,
         48, 48);
-
-    // System status
 
     aroma_ui_label((AromaNode *)applet1, "System Status", 20, 20, LABEL_STYLE_LABEL_MEDIUM, ui_font);
 
