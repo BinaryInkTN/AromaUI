@@ -101,153 +101,150 @@ void build_general_ui(AromaContainer *root)
     aroma_node_set_gap((AromaNode *)applets_row, 20);
     aroma_node_set_flex_grow(applet1, 1);
     aroma_node_set_flex_grow(applet2, 1);
-    AromaRect *info_rect = (AromaRect *)general_info->node_widget_ptr;
 
     aroma_ui_image(
         (AromaNode *)general_info,
         "../car.png",
-        info_rect->x + 40, info_rect->y + 20,
+        40, 20,
         264 * 1.2, 126 * 1.2);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "Vehicle Status: All systems normal",
-        info_rect->x + 90, info_rect->y + 200,
+        90, 200,
         LABEL_STYLE_LABEL_MEDIUM, ui_font);
 
     AromaNode *progress_bar = aroma_ui_progressbar(
         (AromaNode *)general_info,
-        info_rect->x + 30, info_rect->y + 260,
+        30, 260,
         360, 20,
         PROGRESS_TYPE_DETERMINATE, 0.75f);
 
-    aroma_ui_icon((AromaNode *)general_info, AROMA_ICON_BATTERY_CHARGING_FULL, info_rect->x + 40, info_rect->y + 305, 48, theme.colors.primary, icon_font);
+    aroma_ui_icon((AromaNode *)general_info, AROMA_ICON_BATTERY_CHARGING_FULL, 40, 305, 48, theme.colors.primary, icon_font);
 
     AromaFont *font = aroma_font_create("../Ubuntu-Bold.ttf", 24);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "204",
-        info_rect->x + 90, info_rect->y + 310,
+        90, 310,
         LABEL_STYLE_LABEL_MEDIUM, font);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "km",
-        info_rect->x + 90 + aroma_font_get_line_width(font, "204"), info_rect->y + 320,
+        90 + aroma_font_get_line_width(font, "204"), 320,
         LABEL_STYLE_LABEL_SMALL, ui_font);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "Remaining",
-        info_rect->x + 90, info_rect->y + 340,
+        90, 340,
         LABEL_STYLE_LABEL_SMALL, ui_font);
     aroma_ui_divider(
         (AromaNode *)general_info,
-        info_rect->x + 180, info_rect->y + 300,
+        180, 300,
         80, DIVIDER_ORIENTATION_VERTICAL);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "128",
-        info_rect->x + 200, info_rect->y + 310,
+        200, 310,
         LABEL_STYLE_LABEL_MEDIUM, font);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "Wh",
-        info_rect->x + 200 + aroma_font_get_line_width(font, "128"), info_rect->y + 320,
+        200 + aroma_font_get_line_width(font, "128"), 320,
         LABEL_STYLE_LABEL_SMALL, ui_font);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "Average",
-        info_rect->x + 200, info_rect->y + 340,
+        200, 340,
         LABEL_STYLE_LABEL_SMALL, ui_font);
 
     aroma_ui_divider(
         (AromaNode *)general_info,
-        info_rect->x + 290, info_rect->y + 300,
+        290, 300,
         80, DIVIDER_ORIENTATION_VERTICAL);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "35.5",
-        info_rect->x + 310, info_rect->y + 310,
+        310, 310,
         LABEL_STYLE_LABEL_MEDIUM, font);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "kWh",
-        info_rect->x + 310 + aroma_font_get_line_width(font, "35.5"), info_rect->y + 320,
+        310 + aroma_font_get_line_width(font, "35.5"), 320,
         LABEL_STYLE_LABEL_SMALL, ui_font);
 
     aroma_ui_label(
         (AromaNode *)general_info,
         "Fuel Capacity",
-        info_rect->x + 310, info_rect->y + 340,
+        310, 340,
         LABEL_STYLE_LABEL_SMALL, ui_font);
 
     AromaNode *speed_card = aroma_ui_card(
         (AromaNode *)general_info,
-        info_rect->x + 20, info_rect->y + info_rect->height - 220,
+        20, 200,
         200, 200, CARD_TYPE_FILLED);
 
-    AromaRect *speed_rect = (AromaRect *)speed_card->node_widget_ptr;
 
     AromaFont *speed_font = aroma_font_create("../Ubuntu-Bold.ttf", 76);
 
-    aroma_ui_label((AromaNode *)speed_card, "Speed", speed_rect->x + 20, speed_rect->y + 20, LABEL_STYLE_LABEL_MEDIUM, ui_font);
+    aroma_ui_label((AromaNode *)speed_card, "Speed", 20,  20, LABEL_STYLE_LABEL_MEDIUM, ui_font);
 
     aroma_ui_label(
         (AromaNode *)speed_card,
         "88",
-        speed_rect->x + 20, speed_rect->y + 40,
+        20,  40,
         LABEL_STYLE_LABEL_LARGE, speed_font);
 
     aroma_ui_label(
         (AromaNode *)speed_card,
         "km/h",
-        speed_rect->x + 20, speed_rect->y + 160,
+        20,  160,
         LABEL_STYLE_LABEL_MEDIUM, ui_font);
 
     aroma_ui_divider(
         (AromaNode *)speed_card,
-        speed_rect->x + 150, speed_rect->y + 20,
+        150,  20,
         170, DIVIDER_ORIENTATION_VERTICAL);
 
     aroma_ui_label(
         (AromaNode *)speed_card,
         "Gear: Drive",
-        speed_rect->x + 170, speed_rect->y + 40,
+        170,  40,
         LABEL_STYLE_LABEL_MEDIUM, ui_font);
 
     AromaNode *gear_card = aroma_ui_card(
-        (AromaNode *)speed_card,
-        info_rect->x + 190, info_rect->y + info_rect->height - 120,
+        (AromaNode *)general_info,
+        190, 200,
         200, 50, CARD_TYPE_ELEVATED);
 
     static const char *gears[4] = {"P", "R", "N", "D"};
 
-    AromaRect *gear_rect = (AromaRect *)gear_card->node_widget_ptr;
     for (int i = 0; i < 4; ++i)
     {
         if (i == 3)
         {
             aroma_ui_card(
                 (AromaNode *)gear_card,
-                gear_rect->x + (i * 40) + 20, gear_rect->y + 10,
+                (i * 40) + 20,  10,
                 40, 30, CARD_TYPE_FILLED);
         }
         AromaNode *label = aroma_ui_label(
             (AromaNode *)gear_card,
             gears[i],
-            gear_rect->x + (i * 41) + 30, gear_rect->y + 8,
+            (i * 41) + 30, 8,
             LABEL_STYLE_LABEL_MEDIUM, font);
         aroma_node_set_z_index(label, 99999999);
     }
 
-    // AC Controls
+
 
     AromaFont* ac_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 76);
 
