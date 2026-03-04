@@ -110,6 +110,10 @@ typedef struct {
     int grid_rows;         /**< Number of grid rows. */
     int grid_row_gap;      /**< Vertical gap in grid. */
     int grid_col_gap;      /**< Horizontal gap in grid. */
+
+    // Internal: cached position for NONE-mode child offset tracking
+    int _cache_x;          /**< @internal Last layout x for delta computation. */
+    int _cache_y;          /**< @internal Last layout y for delta computation. */
 } AromaLayout;
 
 /**

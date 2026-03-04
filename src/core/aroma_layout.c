@@ -413,13 +413,22 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
     } else if (start_node->layout.mode == AROMA_LAYOUT_MODE_GRID) {
         apply_grid_layout(start_node, new_x, new_y, layout_w, layout_h);
     } else {
-        
+        /* NONE layout mode: children keep their relative positions.
+           When the container moves (e.g. repositioned by a parent flex layout),
+           shift all children by the same delta so they follow. */
+        int delta_x = new_x - start_node->layout._cache_x;
+        int delta_y = new_y - start_node->layout._cache_y;
+        start_node->layout._cache_x = new_x;
+        start_node->layout._cache_y = new_y;
+
         for (int i = 0; i < AROMA_MAX_CHILD_NODES; i++) {
             AromaNode* child = start_node->child_nodes[i];
             if (!child || child->is_hidden) continue;
             
             if (child->node_widget_ptr) {
                 AromaRect* child_w = (AromaRect*)child->node_widget_ptr;
+                child_w->x += delta_x;
+                child_w->y += delta_y;
                 aroma_node_update_layout(child, child_w->x, child_w->y, 
                                        child_w->width, child_w->height);
             }

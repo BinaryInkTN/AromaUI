@@ -799,6 +799,8 @@ AromaNode *aroma_container_create(AromaNode *parent, int x, int y, int width, in
     }
 
     container->self_node = node;
+    node->layout._cache_x = x;
+    node->layout._cache_y = y;
     aroma_node_set_draw_cb(node, aroma_container_draw);
     aroma_node_invalidate(node);
 
