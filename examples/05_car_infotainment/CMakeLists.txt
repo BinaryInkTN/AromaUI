@@ -17,6 +17,8 @@ link_directories(
 
 add_executable(infotainment main.c)
 
+find_package(Vulkan QUIET)
+
 target_link_libraries(infotainment
     aroma
     GLPS
@@ -26,4 +28,5 @@ target_link_libraries(infotainment
     freetype
     m
     pthread
+    $<$<BOOL:${Vulkan_FOUND}>:Vulkan::Vulkan>
 )

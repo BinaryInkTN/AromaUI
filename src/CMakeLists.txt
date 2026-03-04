@@ -49,6 +49,9 @@ add_library(aroma
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
     backends/graphics/utils/aroma_gles3_text.c
+    backends/graphics/aroma_graphics_vulkan.c
+    backends/graphics/utils/helpers_vulkan.c
+    backends/graphics/utils/aroma_vulkan_text.c
     backends/aroma_abi.c
 
     widgets/aroma_window.c
@@ -88,11 +91,33 @@ target_include_directories(aroma
     PRIVATE ${FREETYPE_INCLUDE_DIRS}
 )
 
+find_package(Vulkan QUIET)
+
+# On Android, Vulkan is a system library that may not be found by find_package.
+# The NDK provides headers and the device provides libvulkan.so.
+if(ANDROID AND NOT Vulkan_FOUND)
+    find_library(ANDROID_VULKAN_LIB vulkan)
+    if(ANDROID_VULKAN_LIB)
+        set(Vulkan_FOUND TRUE)
+        set(ANDROID_VULKAN_NATIVE TRUE)
+    endif()
+endif()
+
 target_link_libraries(aroma
     PUBLIC GLESv2
     PRIVATE freetype
     PRIVATE m
 )
+
+if(Vulkan_FOUND)
+    if(ANDROID_VULKAN_NATIVE)
+        target_link_libraries(aroma PUBLIC ${ANDROID_VULKAN_LIB})
+    else()
+        target_include_directories(aroma PUBLIC ${Vulkan_INCLUDE_DIRS})
+        target_link_libraries(aroma PUBLIC Vulkan::Vulkan)
+    endif()
+    target_compile_definitions(aroma PRIVATE AROMA_HAS_VULKAN=1)
+endif()
 
 if(ANDROID)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_android.c)

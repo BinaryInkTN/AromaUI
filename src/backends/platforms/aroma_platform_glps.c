@@ -20,6 +20,12 @@
  */
 #ifndef ESP32
 #include "aroma_platform_interface.h"
+#ifdef AROMA_HAS_VULKAN
+#include <vulkan/vulkan.h>
+#ifndef GLPS_USE_VULKAN
+#define GLPS_USE_VULKAN
+#endif
+#endif
 #include "glps_window_manager.h"
 #include <stdbool.h>
 #include <ctype.h>
@@ -224,7 +230,10 @@ bool run_event_loop()
         LOG_ERROR("Window manager not initialized. Cannot run event loop.");
         return false;
     }
-    if (platform_ctx.primary_window_id != 0) {
+    /* Only request a frame update when there are dirty nodes to render.
+     * This avoids burning CPU on X11 (frame-limiter sleep) and avoids
+     * redundant surface damage/commit on Wayland when nothing changed. */
+    if (platform_ctx.primary_window_id != 0 && aroma_dirty_list_has_entries()) {
         glps_wm_window_update(platform_ctx.wm, platform_ctx.primary_window_id);
     }
     return !glps_wm_should_close(platform_ctx.wm);
@@ -257,6 +266,32 @@ void shutdown()
     platform_ctx.primary_window_id = 0;
 }
 
+#ifdef AROMA_HAS_VULKAN
+static bool glps_create_vulkan_surface(size_t window_id, void* vk_instance, void* vk_surface_out)
+{
+    if (!platform_ctx.wm || !vk_instance || !vk_surface_out) return false;
+    glps_wm_vk_create_surface(platform_ctx.wm, window_id,
+                              (VkInstance*)vk_instance, (VkSurfaceKHR*)vk_surface_out);
+    VkSurfaceKHR surface = *(VkSurfaceKHR*)vk_surface_out;
+    return surface != VK_NULL_HANDLE;
+}
+
+static const char* glps_vulkan_extensions[] = {
+    "VK_KHR_surface",
+#if defined(GLPS_USE_WAYLAND)
+    "VK_KHR_wayland_surface",
+#elif defined(GLPS_USE_X11)
+    "VK_KHR_xlib_surface",
+#endif
+};
+
+static const char** glps_get_vulkan_instance_extensions(uint32_t* count_out)
+{
+    *count_out = sizeof(glps_vulkan_extensions) / sizeof(glps_vulkan_extensions[0]);
+    return glps_vulkan_extensions;
+}
+#endif
+
 AromaPlatformInterface aroma_platform_glps = {
     .initialize = initialize,
     .create_window = create_window,
@@ -267,7 +302,14 @@ AromaPlatformInterface aroma_platform_glps = {
     .run_event_loop = run_event_loop,
     .swap_buffers = swap_buffers,
     .shutdown = shutdown,
-    .set_android_app = NULL
+    .set_android_app = NULL,
+#ifdef AROMA_HAS_VULKAN
+    .create_vulkan_surface = glps_create_vulkan_surface,
+    .get_vulkan_instance_extensions = glps_get_vulkan_instance_extensions,
+#else
+    .create_vulkan_surface = NULL,
+    .get_vulkan_instance_extensions = NULL,
+#endif
 };
 
 #endif

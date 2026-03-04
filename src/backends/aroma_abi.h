@@ -12,6 +12,7 @@ typedef enum AromaPlatformBackendType {
 
 typedef enum AromaGraphicsBackendType {
     GRAPHICS_BACKEND_GLES3,
+    GRAPHICS_BACKEND_VULKAN,
     GRAPHICS_BACKEND_SOFTWARE,
     GRAPHICS_BACKEND_TFT_ESPI,
     GRAPHICS_BACKEND_STM_SPI
@@ -37,5 +38,6 @@ AromaGraphicsBackendType aroma_get_graphics_backend_type(void);
 extern AromaBackendABI aroma_backend_abi;
 
 void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font);
+void aroma_vulkan_load_font_for_window(size_t window_id, AromaFont* font);
 
 #endif

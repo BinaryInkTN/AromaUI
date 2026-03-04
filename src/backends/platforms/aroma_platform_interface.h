@@ -334,6 +334,26 @@ typedef struct AromaPlatformInterface {
      */
     bool (*android_is_orientation_locked)(void);
 
+    /* ======================== Vulkan Support ======================== */
+
+    /**
+     * @brief Create a Vulkan surface for the given window.
+     *
+     * @param window_id Window identifier.
+     * @param vk_instance Pointer to a VkInstance.
+     * @param vk_surface_out Pointer to a VkSurfaceKHR to receive the surface.
+     * @return true on success.
+     */
+    bool (*create_vulkan_surface)(size_t window_id, void* vk_instance, void* vk_surface_out);
+
+    /**
+     * @brief Get the required Vulkan instance extensions for this platform.
+     *
+     * @param count_out Receives the number of extension strings.
+     * @return Array of extension name strings (owned by platform, do not free).
+     */
+    const char** (*get_vulkan_instance_extensions)(uint32_t* count_out);
+
 } AromaPlatformInterface;
 
 

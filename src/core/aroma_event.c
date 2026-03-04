@@ -450,6 +450,7 @@ void aroma_event_handle_touch(int id, int x, int y, int state) {
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     if (!g_event_system.root_node || g_event_system.shutting_down) return;
+    bool was_down = g_mouse_state.button_down;
     g_mouse_state.button_down = button_down;
     int delta_x = (g_mouse_state.last_x >= 0) ? x - g_mouse_state.last_x : 0;
     int delta_y = (g_mouse_state.last_y >= 0) ? y - g_mouse_state.last_y : 0;
@@ -458,8 +459,10 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down) {
     AromaNode* target = aroma_event_hit_test(g_event_system.root_node, x, y);
     uint64_t current_id = target ? target->node_id : 0;
 #ifdef __ANDROID__
-    if(button_down) {
-       
+    /* Synthesise a MOUSE_CLICK only on the initial press (rising edge).
+     * Previous code dispatched a click on every MOVE while the finger
+     * was down, causing continuous invalidation & unnecessary redraws. */
+    if (button_down && !was_down) {
         bool scroll_active = false;
         for (int i = 0; i < AROMA_MAX_TOUCHES; i++) {
             if (g_scroll_intercepting[i]) { scroll_active = true; break; }

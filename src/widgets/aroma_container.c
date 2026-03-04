@@ -1095,6 +1095,10 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
 
     if (c->scrollable)
     {
+        /* Scrollable containers draw their own children because
+         * collect_draw_tasks() stops recursion at scrollable nodes.
+         * The container applies scroll offsets and a clip rect before
+         * invoking each child's draw callback. */
         if (gfx && gfx->graphics_set_clip)
         {
             gfx->graphics_set_clip(c->rect.x, c->rect.y,
@@ -1110,25 +1114,19 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
                 shift_subtree(container_node->child_nodes[i],
                               -eff_sx, -eff_sy);
         }
-    }
 
-    for (uint64_t i = 0; i < container_node->child_count; i++)
-    {
-        AromaNode *child = container_node->child_nodes[i];
-        if (!child || child->is_hidden)
-            continue;
-
-        AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(child);
-        if (draw_cb)
+        for (uint64_t i = 0; i < container_node->child_count; i++)
         {
-            draw_cb(child, window_id);
-        }
-    }
+            AromaNode *child = container_node->child_nodes[i];
+            if (!child || child->is_hidden)
+                continue;
 
-    if (c->scrollable)
-    {
-        int eff_sx = effective_scroll_x(c);
-        int eff_sy = effective_scroll_y(c);
+            AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(child);
+            if (draw_cb)
+            {
+                draw_cb(child, window_id);
+            }
+        }
 
         for (uint64_t i = 0; i < container_node->child_count; i++)
         {
@@ -1140,17 +1138,17 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
         {
             gfx->graphics_clear_clip();
         }
-    }
 
-    if (c->scrollable && c->show_scrollbar)
-    {
-        draw_scrollbar_indicators(c, window_id);
-    }
+        if (c->show_scrollbar)
+        {
+            draw_scrollbar_indicators(c, window_id);
+        }
 
-    if (c->scrollable)
-    {
         c->prev_scroll_x = scroll_x_int(c);
         c->prev_scroll_y = scroll_y_int(c);
         c->content_dirty = false;
     }
+    /* Non-scrollable containers: children are drawn by the flat task
+     * list built in collect_draw_tasks(), which recurses into them.
+     * Drawing children here as well would cause a double draw. */
 }

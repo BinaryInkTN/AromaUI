@@ -20,7 +20,7 @@ extern "C" {
 /** @brief Sentinel value for an invalid node ID. */
 #define AROMA_NODE_ID_INVALID 0
 /** @brief Maximum number of dirty nodes tracked per frame. */
-#define AROMA_MAX_DIRTY_NODES 256
+#define AROMA_MAX_DIRTY_NODES 1024
 
 typedef struct AromaNode AromaNode;
 

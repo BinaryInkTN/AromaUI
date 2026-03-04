@@ -31,6 +31,11 @@
 #include <math.h>
 #include "../aroma_abi.h"
 #include "../graphics/aroma_graphics_interface.h"
+
+#ifdef AROMA_HAS_VULKAN
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_android.h>
+#endif
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
 #include "core/aroma_node.h"
@@ -49,6 +54,26 @@ static EGLConfig config;
 static int g_width = 0;
 static int g_height = 0;
 static bool g_has_window = false;
+static bool g_using_vulkan = false;
+
+static bool is_vulkan_backend(void)
+{
+#ifdef AROMA_HAS_VULKAN
+    /* On Android with Vulkan support, Vulkan is the default backend.
+     * We can't rely on get_graphics_backend_type() here because the
+     * auto-detection in get_real_graphics_interface() may not have
+     * fired yet (it only triggers when a drawlist proxy function is called).
+     * Mirror the same logic: Android + AROMA_HAS_VULKAN = Vulkan. */
+    if (!aroma_backend_abi.get_graphics_backend_type)
+        return true;
+    AromaGraphicsBackendType type = aroma_backend_abi.get_graphics_backend_type();
+    /* TFT_ESPI is the initial default — means auto-detect hasn't run yet.
+     * On Android with Vulkan, auto-detect would pick Vulkan. */
+    return (type == GRAPHICS_BACKEND_VULKAN || type == GRAPHICS_BACKEND_TFT_ESPI);
+#else
+    return false;
+#endif
+}
 static int g_phys_width = 0;
 static int g_phys_height = 0;
 static bool g_phys_cached = false;
@@ -791,12 +816,23 @@ static void android_send_intent(int action_enum, const char *uri, const char *ty
 
 static void update_surface_size(void)
 {
-    if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
-        return;
+    int w = 0, h = 0;
 
-    EGLint w = 0, h = 0;
-    eglQuerySurface(display, surface, EGL_WIDTH, &w);
-    eglQuerySurface(display, surface, EGL_HEIGHT, &h);
+    if (g_using_vulkan) {
+        /* For Vulkan, query the ANativeWindow directly */
+        if (!g_app || !g_app->window)
+            return;
+        w = ANativeWindow_getWidth(g_app->window);
+        h = ANativeWindow_getHeight(g_app->window);
+    } else {
+        if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
+            return;
+        EGLint ew = 0, eh = 0;
+        eglQuerySurface(display, surface, EGL_WIDTH, &ew);
+        eglQuerySurface(display, surface, EGL_HEIGHT, &eh);
+        w = (int)ew;
+        h = (int)eh;
+    }
 
     if (w <= 0 || h <= 0)
         return;
@@ -809,7 +845,8 @@ static void update_surface_size(void)
     g_width = w;
     g_height = h;
 
-    glViewport(0, 0, g_width, g_height);
+    if (!g_using_vulkan)
+        glViewport(0, 0, g_width, g_height);
 
 
 
@@ -933,6 +970,35 @@ static int init_display(struct android_app *app)
     }
 
     cache_physical_screen_info(app);
+
+    /* Check if we should use Vulkan instead of EGL */
+    g_using_vulkan = is_vulkan_backend();
+
+    if (g_using_vulkan) {
+        /* For Vulkan: skip EGL entirely, just query window size and init graphics */
+        g_width = ANativeWindow_getWidth(app->window);
+        g_height = ANativeWindow_getHeight(app->window);
+        g_has_window = true;
+        context = (EGLContext)1;  /* Sentinel so initialize() doesn't block */
+
+        /* Only set up Vulkan resources on first init.
+         * On config changes the render loop handles swapchain recreation
+         * via ensure_frame_state() when it detects a size mismatch. */
+        static bool vk_resources_initialized = false;
+        if (!vk_resources_initialized) {
+            AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+            if (gfx) {
+                if (gfx->setup_shared_window_resources)
+                    gfx->setup_shared_window_resources();
+                if (gfx->setup_separate_window_resources)
+                    gfx->setup_separate_window_resources(0);
+            }
+            vk_resources_initialized = true;
+        }
+
+        LOG_INFO("Vulkan: init_display complete (%dx%d)", g_width, g_height);
+        return 0;
+    }
 
     EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (dpy == EGL_NO_DISPLAY)
@@ -1289,6 +1355,9 @@ size_t create_window(const char *title, int x, int y, int width, int height)
 
 void make_context_current(size_t window_id)
 {
+    if (g_using_vulkan)
+        return;  /* Vulkan manages its own context */
+
     if (display != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE && context != EGL_NO_CONTEXT)
     {
         if (eglGetCurrentContext() != context || eglGetCurrentSurface(EGL_DRAW) != surface)
@@ -1339,7 +1408,14 @@ void set_fullscreen(size_t window_id, bool enabled)
     }
 }
 
-void request_window_update(size_t window_id) {}
+void request_window_update(size_t window_id)
+{
+    if (g_has_window && g_update_callback)
+    {
+        update_surface_size();
+        g_update_callback(window_id, g_update_callback_data);
+    }
+}
 
 bool run_event_loop(void)
 {
@@ -1357,10 +1433,6 @@ bool run_event_loop(void)
     if (g_has_window)
     {
         update_surface_size();
-        if (g_update_callback)
-        {
-            g_update_callback(0, g_update_callback_data);
-        }
     }
 
     return true;
@@ -1368,8 +1440,41 @@ bool run_event_loop(void)
 
 void swap_buffers(size_t window_id)
 {
-    if (display != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE)
-        eglSwapBuffers(display, surface);
+    if (g_using_vulkan)
+    {
+        /* For Vulkan, flush the graphics pipeline to submit and present.
+         * This is needed for code paths that call swap_buffers directly
+         * (e.g. the splash screen) outside the normal drawlist flow. */
+        AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+        if (gfx && gfx->graphics_flush)
+            gfx->graphics_flush();
+        return;
+    }
+
+    if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE || context == EGL_NO_CONTEXT)
+        return;
+
+    if (eglGetCurrentContext() != context)
+    {
+        if (!eglMakeCurrent(display, surface, surface, context))
+        {
+            LOG_ERROR("swap_buffers: failed to make context current: 0x%x", eglGetError());
+            return;
+        }
+    }
+
+    if (!eglSwapBuffers(display, surface))
+    {
+        EGLint err = eglGetError();
+        if (err == EGL_BAD_SURFACE)
+        {
+            LOG_WARNING("swap_buffers: EGL_BAD_SURFACE, surface may have been lost");
+        }
+        else
+        {
+            LOG_ERROR("swap_buffers: eglSwapBuffers failed: 0x%x", err);
+        }
+    }
 }
 
 void *get_tft_context(void) { return NULL; }
@@ -2502,6 +2607,52 @@ static void impl_android_launch_gallery(void)
     detach_jni_env(attach);
 }
 
+/* ======================== Vulkan Support ======================== */
+#ifdef AROMA_HAS_VULKAN
+
+static bool android_create_vulkan_surface(size_t window_id, void* vk_instance, void* vk_surface_out)
+{
+    (void)window_id;
+    if (!vk_instance || !vk_surface_out) return false;
+    if (!g_app || !g_app->window) {
+        LOG_ERROR("Vulkan: ANativeWindow not available for surface creation");
+        return false;
+    }
+
+    VkInstance instance = *(VkInstance*)vk_instance;
+
+    VkAndroidSurfaceCreateInfoKHR createInfo = {
+        .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
+        .pNext = NULL,
+        .flags = 0,
+        .window = g_app->window,
+    };
+
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkResult result = vkCreateAndroidSurfaceKHR(instance, &createInfo, NULL, &surface);
+    if (result != VK_SUCCESS) {
+        LOG_ERROR("Vulkan: vkCreateAndroidSurfaceKHR failed (%d)", (int)result);
+        return false;
+    }
+
+    *(VkSurfaceKHR*)vk_surface_out = surface;
+    LOG_INFO("Vulkan: Android surface created successfully");
+    return true;
+}
+
+static const char* android_vulkan_extensions[] = {
+    "VK_KHR_surface",
+    "VK_KHR_android_surface",
+};
+
+static const char** android_get_vulkan_instance_extensions(uint32_t* count_out)
+{
+    *count_out = sizeof(android_vulkan_extensions) / sizeof(android_vulkan_extensions[0]);
+    return android_vulkan_extensions;
+}
+
+#endif /* AROMA_HAS_VULKAN */
+
 AromaPlatformInterface aroma_platform_android = {
     .initialize = initialize,
     .shutdown = shutdown,
@@ -2571,7 +2722,14 @@ AromaPlatformInterface aroma_platform_android = {
     .android_set_orientation_landscape = android_set_orientation_landscape,
     .android_set_orientation_sensor = android_set_orientation_sensor,
     .android_get_current_orientation = android_get_current_orientation,
-    .android_is_orientation_locked = android_is_orientation_locked
+    .android_is_orientation_locked = android_is_orientation_locked,
+#ifdef AROMA_HAS_VULKAN
+    .create_vulkan_surface = android_create_vulkan_surface,
+    .get_vulkan_instance_extensions = android_get_vulkan_instance_extensions,
+#else
+    .create_vulkan_surface = NULL,
+    .get_vulkan_instance_extensions = NULL,
+#endif
 };
 
 #endif

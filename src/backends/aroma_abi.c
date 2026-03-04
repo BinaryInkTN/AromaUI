@@ -14,9 +14,20 @@ static AromaGraphicsInterface* get_real_graphics_interface(void) {
 #ifdef ESP32
     current_graphics_backend = GRAPHICS_BACKEND_TFT_ESPI;
     return &aroma_graphics_tft;
-#else 
-    current_graphics_backend = GRAPHICS_BACKEND_GLES3;
+#else
+    AromaGraphicsBackendType type = atomic_load(&current_graphics_backend);
+    if (type == GRAPHICS_BACKEND_VULKAN)
+        return &aroma_graphics_vulkan;
+    if (type == GRAPHICS_BACKEND_GLES3)
+        return &aroma_graphics_gles3;
+
+#if defined(__ANDROID__) && defined(AROMA_HAS_VULKAN)
+    atomic_store(&current_graphics_backend, GRAPHICS_BACKEND_VULKAN);
+    return &aroma_graphics_vulkan;
+#else
+    atomic_store(&current_graphics_backend, GRAPHICS_BACKEND_GLES3);
     return &aroma_graphics_gles3;
+#endif
 #endif
 }
 
@@ -211,6 +222,30 @@ void drawlist_proxy_graphics_clear_clip(void) {
     }
 }
 
+static void drawlist_proxy_graphics_flush(void) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_flush) {
+        real->graphics_flush();
+    }
+}
+
+/* notify_dirty_region goes directly to the real backend — NOT through
+ * the drawlist — because it must be called before the render pass begins. */
+static void drawlist_proxy_notify_dirty_region(int x, int y, int w, int h) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->notify_dirty_region) {
+        real->notify_dirty_region(x, y, w, h);
+    }
+}
+
+static bool drawlist_proxy_get_pending_dirty_rect(int *x, int *y, int *w, int *h) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->get_pending_dirty_rect) {
+        return real->get_pending_dirty_rect(x, y, w, h);
+    }
+    return false;
+}
+
 static AromaGraphicsInterface drawlist_proxy = {
     .setup_shared_window_resources = drawlist_proxy_setup_shared_window_resources,
     .setup_separate_window_resources = drawlist_proxy_setup_separate_window_resources,
@@ -229,6 +264,9 @@ static AromaGraphicsInterface drawlist_proxy = {
     .graphics_set_tft_context = drawlist_proxy_graphics_set_tft_context,
     .graphics_set_clip = drawlist_proxy_graphics_set_clip,
     .graphics_clear_clip = drawlist_proxy_graphics_clear_clip,
+    .graphics_flush = drawlist_proxy_graphics_flush,
+    .notify_dirty_region = drawlist_proxy_notify_dirty_region,
+    .get_pending_dirty_rect = drawlist_proxy_get_pending_dirty_rect,
 };
 
 void set_graphics_backend_type(AromaGraphicsBackendType type) {
