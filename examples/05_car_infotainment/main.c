@@ -74,14 +74,24 @@ int main(void)
     aroma_tabs_set_content(tabs, 0, (AromaNode**)&general_root, 1);
     aroma_tabs_set_content(tabs, 3, &settings_root, 1);
 
-    /* ── Test dialog ── */
+    /* ── Test dialog with content area ── */
     AromaNode *dlg = aroma_dialog_create(
         (AromaNode *)window,
         "Welcome",
         "Automotive HMI is ready. Enjoy the ride!",
-        380, 160, DIALOG_TYPE_BASIC);
+        420, 260, DIALOG_TYPE_BASIC);
     aroma_dialog_set_font(dlg, ui_font);
-    aroma_dialog_add_action(dlg, "Dismiss", NULL, NULL);
+    aroma_dialog_add_action(dlg, "Let's Go", NULL, NULL);
+    aroma_dialog_add_action(dlg, "Cancel", NULL, NULL);
+
+    /* Add widgets into the dialog's content area */
+    AromaNode *content = aroma_dialog_get_content_area(dlg);
+    if (content) {
+        aroma_ui_label(content, "Driver: Yassine", 0, 4, LABEL_STYLE_LABEL_MEDIUM, ui_font);
+        aroma_ui_label(content, "Vehicle: Pixel Automotive 2026", 0, 28, LABEL_STYLE_LABEL_SMALL, ui_font);
+        aroma_ui_progressbar(content, 0, 56, 300, 16, PROGRESS_TYPE_DETERMINATE, 0.85f);
+        aroma_ui_label(content, "Battery: 85%", 0, 80, LABEL_STYLE_LABEL_SMALL, ui_font);
+    }
     aroma_dialog_show(dlg);
 
     /* ── Test snackbar ── */

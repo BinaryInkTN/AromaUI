@@ -167,6 +167,7 @@ static void __snackbar_dismiss_cb(void* user_data) {
     bar->visible = false;
     bar->dismiss_timer = NULL;
     if (bar->self_node) {
+        aroma_node_set_hidden(bar->self_node, true); // <--- fix: hide snackbar node itself
         aroma_node_invalidate(bar->self_node);
     }
     aroma_ui_request_redraw(NULL);

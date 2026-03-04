@@ -29,6 +29,9 @@ void aroma_dialog_hide(AromaNode* dialog_node);
 // Set font
 void aroma_dialog_set_font(AromaNode* dialog_node, AromaFont* font);
 
+// Get the content area container where user widgets can be added
+AromaNode* aroma_dialog_get_content_area(AromaNode* dialog_node);
+
 // Draw
 void aroma_dialog_draw(AromaNode* dialog_node, size_t window_id);
 
