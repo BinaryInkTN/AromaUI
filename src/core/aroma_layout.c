@@ -429,20 +429,24 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
 
         for (int i = 0; i < AROMA_MAX_CHILD_NODES; i++) {
             AromaNode* child = start_node->child_nodes[i];
-            if (!child || child->is_hidden) continue;
+            if (!child) continue;
             
             if (child->node_widget_ptr) {
                 AromaRect* child_w = (AromaRect*)child->node_widget_ptr;
 
-                /* Only delta-shift children that use absolute positioning
-                   (AROMA_LAYOUT_NONE). Other types (ANCHOR, CENTER, FILL)
-                   will recompute from parent_x/y in the recursive call. */
+                /* Delta-shift ALL children (including hidden) that use
+                   absolute positioning — they must track parent movement
+                   even while hidden so their positions are correct when
+                   they become visible again. */
                 if (child->layout.type == AROMA_LAYOUT_NONE && (delta_x || delta_y)) {
                     child_w->x += delta_x;
                     child_w->y += delta_y;
                 }
 
-                aroma_node_update_layout(child, new_x, new_y, new_w, new_h);
+                /* Only recurse into visible children for full layout. */
+                if (!child->is_hidden) {
+                    aroma_node_update_layout(child, new_x, new_y, new_w, new_h);
+                }
             }
         }
     }

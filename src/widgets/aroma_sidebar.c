@@ -97,7 +97,10 @@ static void __sidebar_update_content_visibility(AromaSidebar* sidebar)
         for (int j = 0; j < sidebar->content_counts[i]; j++) {
             AromaNode* content = sidebar->content_nodes[i][j];
             if (!content) continue;
-            __sidebar_set_hidden_recursive(content, hide);
+            /* Only toggle the root — hiding it prevents the render
+             * pipeline from traversing its subtree. No recursion
+             * needed, and avoids clobbering child visibility state. */
+            aroma_node_set_hidden(content, hide);
         }
     }
 }

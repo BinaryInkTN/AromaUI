@@ -97,7 +97,11 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
             AromaNode* content = tabs->content_nodes[i][j];
             if (!content) continue;
             
-            __tabs_set_hidden_recursive(content, hide);
+            /* Only toggle the root node — hiding a parent is enough
+             * to prevent collect_draw_tasks from traversing it.
+             * Do NOT recurse, because children may have their own
+             * visibility managed by other widgets (e.g. sidebar). */
+            aroma_node_set_hidden(content, hide);
             
             
             if (!hide) {
@@ -310,7 +314,7 @@ void aroma_tabs_set_content(AromaNode* tabs_node, int index, AromaNode** content
     for (int j = 0; j < tabs->content_counts[index]; j++) {
         AromaNode* old_content = tabs->content_nodes[index][j];
         if (old_content) {
-            __tabs_set_hidden_recursive(old_content, true);
+            aroma_node_set_hidden(old_content, true);
         }
     }
     
@@ -337,7 +341,7 @@ void aroma_tabs_set_content(AromaNode* tabs_node, int index, AromaNode** content
             AromaNode* content = tabs->content_nodes[i][j];
             if (!content) continue;
             
-            __tabs_set_hidden_recursive(content, hide);
+            aroma_node_set_hidden(content, hide);
             aroma_node_invalidate(content);
         }
     }

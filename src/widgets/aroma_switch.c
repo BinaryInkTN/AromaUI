@@ -103,6 +103,11 @@ void aroma_switch_draw(AromaNode* node, size_t window_id)
         data->color_off = theme.colors.border;
     }
 
+    /* Recompute thumb position from current rect (layout may have moved it) */
+    data->toggle_x = data->state
+        ? (data->rect.x + data->rect.width - data->toggle_size - 2)
+        : (data->rect.x + 2);
+
     uint32_t bg_color = data->state ? data->color_on : data->color_off;
     if (data->is_hovered) {
         bg_color = data->state ? aroma_color_adjust(data->color_on, 0.08f)

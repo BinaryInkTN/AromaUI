@@ -9,6 +9,7 @@ AromaFont *icon_font = NULL;
 
 static AromaFont *ui_font = NULL;
 static AromaContainer *general_root = NULL;
+static AromaNode *settings_root = NULL;
 static AromaTheme theme;
 
 int main(void)
@@ -61,6 +62,7 @@ int main(void)
     aroma_node_set_gap((AromaNode *)general_root, 20);
     
     build_general_ui(general_root);
+    build_settings_ui((AromaNode *)window);
     AromaFont *tab_font = aroma_font_create_from_memory(
         icon_ttf, icon_ttf_len, 128);
     AromaNode* tabs = aroma_ui_tabs_with_icons((AromaNode *)window, 0, WIN_H - 80, WIN_W, 80, 
@@ -70,6 +72,7 @@ int main(void)
 
 
     aroma_tabs_set_content(tabs, 0, (AromaNode**)&general_root, 1);
+    aroma_tabs_set_content(tabs, 3, &settings_root, 1);
     aroma_ui_request_redraw(NULL);
 
     while (aroma_ui_is_running())
@@ -85,6 +88,167 @@ int main(void)
     aroma_ui_unload_font(ui_font);
     aroma_ui_shutdown();
     return 0;
+}
+
+/* ─── Helper: create a listview panel for one sidebar section ─────────── */
+static AromaNode* settings_listview(AromaNode *parent, int x, int y, int w, int h)
+{
+    AromaNode *lv = aroma_ui_listview(parent, x, y, w, h, NULL, NULL, ui_font);
+    if (lv) {
+        aroma_listview_set_icon_font(lv, icon_font);
+    }
+    return lv;
+}
+
+/* ─── Build the Pixel‑style Settings page with sidebar ───────────────── */
+void build_settings_ui(AromaNode *window)
+{
+    int area_w = WIN_W - 250;
+    int area_h = WIN_H - 210;
+    int sidebar_w = 220;
+    int panel_x = sidebar_w + 8;
+    int panel_w = area_w - sidebar_w - 8;
+
+    /* Outer container that holds sidebar + content */
+    settings_root = aroma_container_create(window, 125, 90, area_w, area_h);
+
+    /* ── Sidebar ── */
+    const char *labels[] = {
+        "Network",
+        "Display",
+        "Sound",
+        "Navigation",
+        "Security",
+        "Apps",
+        "Storage",
+        "System",
+        "About"
+    };
+    const char *icons[] = {
+        AROMA_ICON_WIFI,
+        AROMA_ICON_BRIGHTNESS_HIGH,
+        AROMA_ICON_VOLUME_UP,
+        AROMA_ICON_MAP,
+        AROMA_ICON_LOCK,
+        AROMA_ICON_APPS,
+        AROMA_ICON_STORAGE,
+        AROMA_ICON_SETTINGS,
+        AROMA_ICON_INFO
+    };
+    int num_sections = 9;
+
+    AromaNode *sidebar = aroma_ui_sidebar_with_icons(
+        settings_root, 0, 0, sidebar_w, area_h,
+        labels, icons, num_sections,
+        NULL, NULL, ui_font, icon_font);
+
+    /* ── 0: Network & Internet ── */
+    AromaNode *lv_net = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_net, "Wi-Fi",               "HomeNetwork_5G",    AROMA_ICON_WIFI, NULL);
+    aroma_listview_add_item_with_icon(lv_net, "Bluetooth",           "3 devices paired",  AROMA_ICON_BLUETOOTH, NULL);
+    aroma_listview_add_item_with_icon(lv_net, "Hotspot & tethering", "Off",               AROMA_ICON_WIFI, NULL);
+    aroma_listview_add_item_with_icon(lv_net, "Mobile data",         "1.2 GB used",       AROMA_ICON_DATA_USAGE, NULL);
+    aroma_listview_add_item_with_icon(lv_net, "Mobile network",      "T-Mobile LTE",      AROMA_ICON_NETWORK_CELL, NULL);
+    AromaNode *p_net = aroma_listview_get_scroll_container(lv_net);
+
+    /* ── 1: Display ── */
+    AromaNode *lv_disp = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_disp, "Brightness level",    "75%",               AROMA_ICON_BRIGHTNESS_HIGH, NULL);
+    aroma_listview_add_item_with_icon(lv_disp, "Adaptive brightness", "On",                AROMA_ICON_BRIGHTNESS_AUTO, NULL);
+    aroma_listview_add_item_with_icon(lv_disp, "Dark theme",          "On",                AROMA_ICON_INVERT_COLORS, NULL);
+    aroma_listview_add_item_with_icon(lv_disp, "Auto-rotate screen",  "On",                AROMA_ICON_SCREEN_ROTATION, NULL);
+    aroma_listview_add_item_with_icon(lv_disp, "Font size",           "Medium",            AROMA_ICON_VISIBILITY, NULL);
+    aroma_listview_add_item_with_icon(lv_disp, "Screen timeout",      "5 minutes",         AROMA_ICON_ACCESS_TIME, NULL);
+    AromaNode *p_disp = aroma_listview_get_scroll_container(lv_disp);
+
+    /* ── 2: Sound & Vibration ── */
+    AromaNode *lv_snd = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_snd, "Media volume",        "60%",               AROMA_ICON_VOLUME_UP, NULL);
+    aroma_listview_add_item_with_icon(lv_snd, "Navigation volume",   "80%",               AROMA_ICON_NAVIGATION, NULL);
+    aroma_listview_add_item_with_icon(lv_snd, "Call volume",          "90%",               AROMA_ICON_NOTIFICATIONS, NULL);
+    aroma_listview_add_item_with_icon(lv_snd, "Notification sound",  "Pixie Dust",        AROMA_ICON_NOTIFICATIONS, NULL);
+    aroma_listview_add_item_with_icon(lv_snd, "Do Not Disturb",      "Off",               AROMA_ICON_DO_NOT_DISTURB, NULL);
+    aroma_listview_add_item_with_icon(lv_snd, "Touch feedback",      "On",                AROMA_ICON_TUNE, NULL);
+    AromaNode *p_snd = aroma_listview_get_scroll_container(lv_snd);
+
+    /* ── 3: Navigation & Maps ── */
+    AromaNode *lv_nav = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_nav, "Default navigation",  "Built-in Maps",     AROMA_ICON_MAP, NULL);
+    aroma_listview_add_item_with_icon(lv_nav, "Location services",   "On",                AROMA_ICON_GPS_FIXED, NULL);
+    aroma_listview_add_item_with_icon(lv_nav, "Live traffic",        "On",                AROMA_ICON_DIRECTIONS_CAR, NULL);
+    aroma_listview_add_item_with_icon(lv_nav, "Satellite view",      "Off",               AROMA_ICON_LOCATION_ON, NULL);
+    aroma_listview_add_item_with_icon(lv_nav, "Voice guidance",      "On",                AROMA_ICON_VOLUME_UP, NULL);
+    aroma_listview_add_separator(lv_nav);
+    aroma_listview_add_item_with_icon(lv_nav, "Avoid toll roads",    NULL,                AROMA_ICON_DIRECTIONS_CAR, NULL);
+    aroma_listview_add_item_with_icon(lv_nav, "Avoid highways",      NULL,                AROMA_ICON_DIRECTIONS_CAR, NULL);
+    aroma_listview_add_item_with_icon(lv_nav, "Avoid ferries",       NULL,                AROMA_ICON_DIRECTIONS_CAR, NULL);
+    AromaNode *p_nav = aroma_listview_get_scroll_container(lv_nav);
+
+    /* ── 4: Security & Privacy ── */
+    AromaNode *lv_sec = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_sec, "Screen lock",         "PIN",               AROMA_ICON_LOCK, NULL);
+    aroma_listview_add_item_with_icon(lv_sec, "Camera access",       "Allowed",           AROMA_ICON_VISIBILITY, NULL);
+    aroma_listview_add_item_with_icon(lv_sec, "Microphone access",   "Allowed",           AROMA_ICON_VOLUME_UP, NULL);
+    aroma_listview_add_item_with_icon(lv_sec, "Location access",     "Allowed",           AROMA_ICON_LOCATION_ON, NULL);
+    aroma_listview_add_item_with_icon(lv_sec, "Security scan",       "Last scan: today",  AROMA_ICON_SECURITY, NULL);
+    aroma_listview_add_item_with_icon(lv_sec, "Permission manager",  NULL,                AROMA_ICON_VERIFIED_USER, NULL);
+    AromaNode *p_sec = aroma_listview_get_scroll_container(lv_sec);
+
+    /* ── 5: Apps & Notifications ── */
+    AromaNode *lv_app = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_app, "See all apps",        "24 apps installed", AROMA_ICON_APPS, NULL);
+    aroma_listview_add_item_with_icon(lv_app, "Notifications",       "On",                AROMA_ICON_NOTIFICATIONS, NULL);
+    aroma_listview_add_item_with_icon(lv_app, "Default browser",     "Chrome",            AROMA_ICON_LINK, NULL);
+    aroma_listview_add_item_with_icon(lv_app, "Special app access",  NULL,                AROMA_ICON_ACCESSIBILITY, NULL);
+    AromaNode *p_app = aroma_listview_get_scroll_container(lv_app);
+
+    /* ── 6: Storage ── */
+    AromaNode *lv_sto = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_sto, "Internal storage",    "32 GB / 64 GB used", AROMA_ICON_STORAGE, NULL);
+    aroma_listview_add_separator(lv_sto);
+    aroma_listview_add_item_with_icon(lv_sto, "Apps",                "18.2 GB",           AROMA_ICON_APPS, NULL);
+    aroma_listview_add_item_with_icon(lv_sto, "Images & videos",     "8.4 GB",            AROMA_ICON_VISIBILITY, NULL);
+    aroma_listview_add_item_with_icon(lv_sto, "Audio",               "3.1 GB",            AROMA_ICON_VOLUME_UP, NULL);
+    aroma_listview_add_item_with_icon(lv_sto, "System",              "2.3 GB",            AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(lv_sto, "SD card",             "Not inserted",      AROMA_ICON_SD_STORAGE, NULL);
+    AromaNode *p_sto = aroma_listview_get_scroll_container(lv_sto);
+
+    /* ── 7: System ── */
+    AromaNode *lv_sys = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_sys, "Language",            "English (US)",      AROMA_ICON_LANGUAGE, NULL);
+    aroma_listview_add_item_with_icon(lv_sys, "System update",       "Up to date",        AROMA_ICON_SYSTEM_UPDATE, NULL);
+    aroma_listview_add_item_with_icon(lv_sys, "Backup",              "Last: Mar 3, 2026", AROMA_ICON_BACKUP, NULL);
+    aroma_listview_add_item_with_icon(lv_sys, "Reset options",       NULL,                AROMA_ICON_RESTORE, NULL);
+    aroma_listview_add_item_with_icon(lv_sys, "Developer options",   "Off",               AROMA_ICON_DEVELOPER_MODE, NULL);
+    AromaNode *p_sys = aroma_listview_get_scroll_container(lv_sys);
+
+    /* ── 8: About ── */
+    AromaNode *lv_abt = settings_listview(settings_root, panel_x, 0, panel_w, area_h);
+    aroma_listview_add_item_with_icon(lv_abt, "Vehicle name",        "Pixel Automotive",  AROMA_ICON_DIRECTIONS_CAR, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Software",            "AromaHMI v2.1.0",   AROMA_ICON_INFO, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Processor",           "Snapdragon 8295",   AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "RAM",                 "16 GB LPDDR5",      AROMA_ICON_STORAGE, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Build number",        "AP2A.260305.001",   AROMA_ICON_BUILD, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Android version",     "14 (Automotive)",   AROMA_ICON_VERIFIED_USER, NULL);
+    aroma_listview_add_item_with_icon(lv_abt, "Security patch",      "March 1, 2026",     AROMA_ICON_SECURITY, NULL);
+    AromaNode *p_abt = aroma_listview_get_scroll_container(lv_abt);
+
+    /* ── Wire sidebar content ── */
+    aroma_sidebar_set_content(sidebar, 0, &p_net,  1);
+    aroma_sidebar_set_content(sidebar, 1, &p_disp, 1);
+    aroma_sidebar_set_content(sidebar, 2, &p_snd,  1);
+    aroma_sidebar_set_content(sidebar, 3, &p_nav,  1);
+    aroma_sidebar_set_content(sidebar, 4, &p_sec,  1);
+    aroma_sidebar_set_content(sidebar, 5, &p_app,  1);
+    aroma_sidebar_set_content(sidebar, 6, &p_sto,  1);
+    aroma_sidebar_set_content(sidebar, 7, &p_sys,  1);
+    aroma_sidebar_set_content(sidebar, 8, &p_abt,  1);
+
+    /* First section visible, rest hidden by sidebar */
+    aroma_sidebar_set_selected(sidebar, 0);
+
+    /* Start hidden — tabs will show it when "Settings" is selected */
+    aroma_node_set_hidden(settings_root, true);
 }
 
 void build_general_ui(AromaContainer *root)

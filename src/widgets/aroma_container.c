@@ -1081,6 +1081,34 @@ static void shift_subtree(AromaNode *node, int dx, int dy)
     }
 }
 
+/**
+ * @brief Recursively draw a node and all of its non-scrollable descendants.
+ *
+ * Scrollable children are skipped because their own draw callbacks
+ * already handle their subtree (with clip + scroll offsets).
+ */
+static void draw_subtree_recursive(AromaNode *node, size_t window_id)
+{
+    if (!node || node->is_hidden)
+        return;
+
+    AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
+    if (draw_cb)
+    {
+        draw_cb(node, window_id);
+    }
+
+    /* If this child is itself a scrollable container its draw callback
+       already rendered its own descendants — don't recurse further. */
+    if (aroma_container_is_scrollable(node))
+        return;
+
+    for (uint64_t i = 0; i < node->child_count; i++)
+    {
+        draw_subtree_recursive(node->child_nodes[i], window_id);
+    }
+}
+
 void aroma_container_draw(AromaNode *container_node, size_t window_id)
 {
     AromaContainer *c = aroma_container_get(container_node);
@@ -1102,7 +1130,7 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
         /* Scrollable containers draw their own children because
          * collect_draw_tasks() stops recursion at scrollable nodes.
          * The container applies scroll offsets and a clip rect before
-         * invoking each child's draw callback. */
+         * recursively drawing each child subtree. */
         if (gfx && gfx->graphics_set_clip)
         {
             gfx->graphics_set_clip(c->rect.x, c->rect.y,
@@ -1121,15 +1149,7 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
 
         for (uint64_t i = 0; i < container_node->child_count; i++)
         {
-            AromaNode *child = container_node->child_nodes[i];
-            if (!child || child->is_hidden)
-                continue;
-
-            AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(child);
-            if (draw_cb)
-            {
-                draw_cb(child, window_id);
-            }
+            draw_subtree_recursive(container_node->child_nodes[i], window_id);
         }
 
         for (uint64_t i = 0; i < container_node->child_count; i++)
