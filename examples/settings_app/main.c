@@ -39,7 +39,7 @@ static AromaRadioButton* band_radio_24 = NULL;
 static AromaRadioButton* band_radio_5 = NULL;
 static AromaListView* devices_list = NULL;
 static AromaChip* security_chip = NULL;
-static AromaCard* security_card = NULL;
+static AromaNode* security_card = NULL;
 static AromaFAB* security_fab = NULL;
 static AromaSnackbar* security_snackbar = NULL;
 static AromaDialog* power_dialog = NULL;
@@ -260,7 +260,7 @@ int main(void)
         aroma_chip_set_font((AromaNode*)security_chip, font);
     }
 
-    security_card = (AromaCard*)aroma_card_create(tab_security_node, 230, 210, 260, 110, CARD_TYPE_OUTLINED);
+    security_card = aroma_card_create(tab_security_node, 230, 210, 260, 110, CARD_TYPE_OUTLINED);
     security_fab = (AromaFAB*)aroma_fab_create(tab_security_node, 520, 210, FAB_SIZE_NORMAL, "+");
     if (security_fab) {
         aroma_fab_set_font((AromaNode*)security_fab, font);
