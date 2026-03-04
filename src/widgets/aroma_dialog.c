@@ -107,6 +107,12 @@ static bool __dialog_handle_event(AromaEvent* event, void* user_data) {
     if (!dlg || !dlg->visible) return false;
     if (event->event_type != EVENT_TYPE_MOUSE_RELEASE) return false;
 
+    /* Recompute absolute position — the layout engine may have
+       delta-shifted rect.x/y away from the intended center. */
+    __dialog_update_rect(dlg);
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    __dialog_recompute_action_layout(dlg, gfx, 0);
+
     const int mx = event->data.mouse.x;
     const int my = event->data.mouse.y;
 
@@ -176,7 +182,7 @@ AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char*
         return NULL;
     }
     aroma_node_set_draw_cb(node, aroma_dialog_draw);
-    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __dialog_handle_event, aroma_ui_request_redraw, 100);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __dialog_handle_event, aroma_ui_request_redraw, 100);
 
 #ifdef ESP32
     aroma_node_invalidate(node);
@@ -241,6 +247,11 @@ void aroma_dialog_draw(AromaNode* dialog_node, size_t window_id) {
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return;
+
+    /* Recompute absolute position — the layout engine may have
+       delta-shifted rect.x/y away from the intended center. */
+    __dialog_update_rect(dlg);
+    __dialog_recompute_action_layout(dlg, gfx, window_id);
 
     AromaTheme theme = aroma_theme_get_global();
     int x = dlg->rect.x, y = dlg->rect.y;

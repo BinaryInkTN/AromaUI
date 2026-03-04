@@ -73,6 +73,25 @@ int main(void)
 
     aroma_tabs_set_content(tabs, 0, (AromaNode**)&general_root, 1);
     aroma_tabs_set_content(tabs, 3, &settings_root, 1);
+
+    /* ── Test dialog ── */
+    AromaNode *dlg = aroma_dialog_create(
+        (AromaNode *)window,
+        "Welcome",
+        "Automotive HMI is ready. Enjoy the ride!",
+        380, 160, DIALOG_TYPE_BASIC);
+    aroma_dialog_set_font(dlg, ui_font);
+    aroma_dialog_add_action(dlg, "Dismiss", NULL, NULL);
+    aroma_dialog_show(dlg);
+
+    /* ── Test snackbar ── */
+    AromaNode *snack = aroma_snackbar_create(
+        (AromaNode *)window,
+        "All vehicle systems operational", 3000);
+    aroma_snackbar_set_font(snack, ui_font);
+    aroma_snackbar_set_action(snack, "OK", NULL, NULL);
+    aroma_snackbar_show(snack);
+
     aroma_ui_request_redraw(NULL);
 
     while (aroma_ui_is_running())
