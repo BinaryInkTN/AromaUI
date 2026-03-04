@@ -15,7 +15,7 @@ static AromaTheme theme;
 int main(void)
 {
     aroma_ui_init();
-    aroma_splash(false);
+
     theme =
         aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
     aroma_ui_set_theme(&theme);
