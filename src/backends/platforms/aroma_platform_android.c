@@ -41,6 +41,7 @@
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 #include "widgets/aroma_window.h"
+#define AROMA_MAX_TOUCHES 10
 
 #ifndef EGL_SWAP_BEHAVIOR_PRESERVED_BIT
 #define EGL_SWAP_BEHAVIOR_PRESERVED_BIT 0x0400
@@ -59,16 +60,11 @@ static bool g_using_vulkan = false;
 static bool is_vulkan_backend(void)
 {
 #ifdef AROMA_HAS_VULKAN
-    /* On Android with Vulkan support, Vulkan is the default backend.
-     * We can't rely on get_graphics_backend_type() here because the
-     * auto-detection in get_real_graphics_interface() may not have
-     * fired yet (it only triggers when a drawlist proxy function is called).
-     * Mirror the same logic: Android + AROMA_HAS_VULKAN = Vulkan. */
+
     if (!aroma_backend_abi.get_graphics_backend_type)
         return true;
     AromaGraphicsBackendType type = aroma_backend_abi.get_graphics_backend_type();
-    /* TFT_ESPI is the initial default — means auto-detect hasn't run yet.
-     * On Android with Vulkan, auto-detect would pick Vulkan. */
+
     return (type == GRAPHICS_BACKEND_VULKAN || type == GRAPHICS_BACKEND_TFT_ESPI);
 #else
     return false;
@@ -80,11 +76,57 @@ static bool g_phys_cached = false;
 static bool g_window_flags_set = false;
 static void (*g_update_callback)(size_t window_id, void *data) = NULL;
 static void *g_update_callback_data = NULL;
+
+#include <android/choreographer.h>
+static void update_surface_size(void);
+static AChoreographer *g_choreographer = NULL;
+static bool g_frame_requested = false;
+static bool g_frame_needed = false;
+
+static void choreographer_callback(long frameTimeNanos, void *data)
+{
+    (void)data;
+    g_frame_requested = false;
+
+    if (!g_has_window || !g_update_callback)
+        return;
+
+    update_surface_size();
+
+    extern AromaWindowHandle g_windows[];
+    extern int g_window_count;
+    for (int i = 0; i < g_window_count; ++i)
+    {
+        if (g_windows[i].is_active && g_windows[i].window)
+            g_update_callback(g_windows[i].window_id, g_update_callback_data);
+    }
+
+    if (g_frame_needed)
+    {
+        g_frame_needed = false;
+        if (g_choreographer && !g_frame_requested)
+        {
+            AChoreographer_postFrameCallback(g_choreographer,
+                                             choreographer_callback, NULL);
+            g_frame_requested = true;
+        }
+    }
+}
+
+static void request_frame(void)
+{
+    if (g_choreographer && !g_frame_requested && g_has_window)
+    {
+        AChoreographer_postFrameCallback(g_choreographer,
+                                         choreographer_callback, NULL);
+        g_frame_requested = true;
+    }
+}
 static int g_avail_width = 0;
 static int g_avail_height = 0;
 static float g_density = 1.0f;
 static int g_density_dpi = 160;
-static float g_scaled_density = 1.0f;  
+static float g_scaled_density = 1.0f;
 static float g_xdpi = 160.0f;
 static float g_ydpi = 160.0f;
 
@@ -117,66 +159,85 @@ typedef struct
 
 static AromaHelperCache g_helper_cache = {0};
 
-typedef struct {
-    void (*device_discovered_cb)(const char* addr, const char* name, int type, int rssi);
+typedef struct
+{
+    void (*device_discovered_cb)(const char *addr, const char *name, int type, int rssi);
     void (*scan_finished_cb)(void);
-    void (*connection_result_cb)(bool success, const char* name, int type, int mode);
-    void (*data_received_cb)(const char* data, int len);
-    void (*pairing_result_cb)(bool success, const char* addr, const char* name);
+    void (*connection_result_cb)(bool success, const char *name, int type, int mode);
+    void (*data_received_cb)(const char *data, int len);
+    void (*pairing_result_cb)(bool success, const char *addr, const char *name);
 } AromaBluetoothCallbacks;
 
 static AromaBluetoothCallbacks g_bt_callbacks = {0};
 
-static JNIEnv* get_jni_env(int *attach) {
-    if (!g_app || !g_app->activity || !g_app->activity->vm) return NULL;
+static JNIEnv *get_jni_env(int *attach)
+{
+    if (!g_app || !g_app->activity || !g_app->activity->vm)
+        return NULL;
     JNIEnv *env = NULL;
     int status = (*g_app->activity->vm)->GetEnv(g_app->activity->vm, (void **)&env, JNI_VERSION_1_6);
     *attach = 0;
-    if (status < 0) {
-        if ((*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL) == JNI_OK) {
+    if (status < 0)
+    {
+        if ((*g_app->activity->vm)->AttachCurrentThread(g_app->activity->vm, &env, NULL) == JNI_OK)
+        {
             *attach = 1;
-        } else {
+        }
+        else
+        {
             return NULL;
         }
     }
     return env;
 }
 
-static void detach_jni_env(int attach) {
-    if (attach && g_app && g_app->activity && g_app->activity->vm) {
+static void detach_jni_env(int attach)
+{
+    if (attach && g_app && g_app->activity && g_app->activity->vm)
+    {
         (*g_app->activity->vm)->DetachCurrentThread(g_app->activity->vm);
     }
 }
 
-static jstring str_to_jstring(JNIEnv *env, const char *str) {
+static jstring str_to_jstring(JNIEnv *env, const char *str)
+{
     return (*env)->NewStringUTF(env, str);
 }
 
-static jclass find_class_safe(JNIEnv *env, const char *name) {
+static jclass find_class_safe(JNIEnv *env, const char *name)
+{
     jclass cls = (*env)->FindClass(env, name);
-    if (!cls || (*env)->ExceptionCheck(env)) {
+    if (!cls || (*env)->ExceptionCheck(env))
+    {
         (*env)->ExceptionClear(env);
         jobject activity = aroma_android_get_activity();
-        if (activity) {
+        if (activity)
+        {
             jclass activityClass = (*env)->GetObjectClass(env, activity);
             jmethodID getClassLoader = (*env)->GetMethodID(env, activityClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
-            if (getClassLoader) {
+            if (getClassLoader)
+            {
                 jobject classLoader = (*env)->CallObjectMethod(env, activity, getClassLoader);
-                if (classLoader) {
+                if (classLoader)
+                {
                     jclass classLoaderClass = (*env)->GetObjectClass(env, classLoader);
                     jmethodID loadClass = (*env)->GetMethodID(env, classLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
-                    if (loadClass) {
+                    if (loadClass)
+                    {
                         size_t len = strlen(name);
                         char *dotted_name = (char *)malloc(len + 1);
-                        if (dotted_name) {
+                        if (dotted_name)
+                        {
                             strcpy(dotted_name, name);
-                            for (size_t i = 0; i < len; i++) {
+                            for (size_t i = 0; i < len; i++)
+                            {
                                 if (dotted_name[i] == '/')
                                     dotted_name[i] = '.';
                             }
                             jstring jname = (*env)->NewStringUTF(env, dotted_name);
                             cls = (jclass)(*env)->CallObjectMethod(env, classLoader, loadClass, jname);
-                            if ((*env)->ExceptionCheck(env)) {
+                            if ((*env)->ExceptionCheck(env))
+                            {
                                 (*env)->ExceptionClear(env);
                                 cls = NULL;
                             }
@@ -194,70 +255,85 @@ static jclass find_class_safe(JNIEnv *env, const char *name) {
     return cls;
 }
 
-static void JNICALL native_on_device_discovered(JNIEnv *env, jobject thiz, 
-                                                jstring address, jstring name, 
-                                                jint type, jint rssi) {
+static void JNICALL native_on_device_discovered(JNIEnv *env, jobject thiz,
+                                                jstring address, jstring name,
+                                                jint type, jint rssi)
+{
     const char *addr_str = address ? (*env)->GetStringUTFChars(env, address, NULL) : "";
     const char *name_str = name ? (*env)->GetStringUTFChars(env, name, NULL) : "";
-    
+
     __android_log_print(ANDROID_LOG_DEBUG, "AromaHelper-Native", "Device discovered: %s - %s", addr_str, name_str);
-    
-    if (g_bt_callbacks.device_discovered_cb) {
+
+    if (g_bt_callbacks.device_discovered_cb)
+    {
         g_bt_callbacks.device_discovered_cb(addr_str, name_str, (int)type, (int)rssi);
     }
-    
-    if (address) (*env)->ReleaseStringUTFChars(env, address, addr_str);
-    if (name) (*env)->ReleaseStringUTFChars(env, name, name_str);
+
+    if (address)
+        (*env)->ReleaseStringUTFChars(env, address, addr_str);
+    if (name)
+        (*env)->ReleaseStringUTFChars(env, name, name_str);
 }
 
-static void JNICALL native_on_scan_finished(JNIEnv *env, jobject thiz) {
+static void JNICALL native_on_scan_finished(JNIEnv *env, jobject thiz)
+{
     __android_log_print(ANDROID_LOG_DEBUG, "AromaHelper-Native", "Scan finished");
-    if (g_bt_callbacks.scan_finished_cb) {
+    if (g_bt_callbacks.scan_finished_cb)
+    {
         g_bt_callbacks.scan_finished_cb();
     }
 }
 
-static void JNICALL native_on_pairing_result(JNIEnv *env, jobject thiz, 
-                                             jboolean success, 
-                                             jstring address, jstring name) {
+static void JNICALL native_on_pairing_result(JNIEnv *env, jobject thiz,
+                                             jboolean success,
+                                             jstring address, jstring name)
+{
     const char *addr_str = address ? (*env)->GetStringUTFChars(env, address, NULL) : "";
     const char *name_str = name ? (*env)->GetStringUTFChars(env, name, NULL) : "";
-    
+
     __android_log_print(ANDROID_LOG_DEBUG, "AromaHelper-Native", "Pairing result: %d %s", success, addr_str);
-    
-    if (g_bt_callbacks.pairing_result_cb) {
+
+    if (g_bt_callbacks.pairing_result_cb)
+    {
         g_bt_callbacks.pairing_result_cb(success == JNI_TRUE, addr_str, name_str);
     }
-    
-    if (address) (*env)->ReleaseStringUTFChars(env, address, addr_str);
-    if (name) (*env)->ReleaseStringUTFChars(env, name, name_str);
+
+    if (address)
+        (*env)->ReleaseStringUTFChars(env, address, addr_str);
+    if (name)
+        (*env)->ReleaseStringUTFChars(env, name, name_str);
 }
 
-static void JNICALL native_on_connection_result(JNIEnv *env, jobject thiz, 
-                                                jboolean success, jstring deviceName, 
-                                                jint deviceType, jint mode) {
+static void JNICALL native_on_connection_result(JNIEnv *env, jobject thiz,
+                                                jboolean success, jstring deviceName,
+                                                jint deviceType, jint mode)
+{
     const char *name_str = deviceName ? (*env)->GetStringUTFChars(env, deviceName, NULL) : "";
-    
+
     __android_log_print(ANDROID_LOG_DEBUG, "AromaHelper-Native", "Connection result: %d %s", success, name_str);
-    
-    if (g_bt_callbacks.connection_result_cb) {
+
+    if (g_bt_callbacks.connection_result_cb)
+    {
         g_bt_callbacks.connection_result_cb(success == JNI_TRUE, name_str, (int)deviceType, (int)mode);
     }
-    
-    if (deviceName) (*env)->ReleaseStringUTFChars(env, deviceName, name_str);
+
+    if (deviceName)
+        (*env)->ReleaseStringUTFChars(env, deviceName, name_str);
 }
 
-static void JNICALL native_on_data_received(JNIEnv *env, jobject thiz, 
-                                            jbyteArray data, jint length) {
-    if (g_bt_callbacks.data_received_cb && data) {
+static void JNICALL native_on_data_received(JNIEnv *env, jobject thiz,
+                                            jbyteArray data, jint length)
+{
+    if (g_bt_callbacks.data_received_cb && data)
+    {
         jbyte *bytes = (*env)->GetByteArrayElements(env, data, NULL);
-        g_bt_callbacks.data_received_cb((const char*)bytes, (int)length);
+        g_bt_callbacks.data_received_cb((const char *)bytes, (int)length);
         (*env)->ReleaseByteArrayElements(env, data, bytes, JNI_ABORT);
     }
 }
 
-static void JNICALL native_on_connection_state_changed(JNIEnv *env, jobject thiz, jint state) {
-    
+static void JNICALL native_on_connection_state_changed(JNIEnv *env, jobject thiz, jint state)
+{
 }
 
 static bool ensure_aroma_helper_initialized(JNIEnv *env)
@@ -347,34 +423,53 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     g_helper_cache.bt_get_current_mode = (*env)->GetStaticMethodID(env, helper, "btGetCurrentMode", "()I");
     g_helper_cache.bt_get_mode_name = (*env)->GetStaticMethodID(env, helper, "btGetModeName", "()Ljava/lang/String;");
 
-    if (!g_helper_cache.show_toast) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_scan) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_stop_scan) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_get_paired) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_pair) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_unpair) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_get_pair_state) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_connect) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_connect_with_mode) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_disconnect) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_send) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_is_connected) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_get_device_type) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_get_device_name) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_get_current_mode) (*env)->ExceptionClear(env);
-    if (!g_helper_cache.bt_get_mode_name) (*env)->ExceptionClear(env);
+    if (!g_helper_cache.show_toast)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_scan)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_stop_scan)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_get_paired)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_pair)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_unpair)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_get_pair_state)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_connect)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_connect_with_mode)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_disconnect)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_send)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_is_connected)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_get_device_type)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_get_device_name)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_get_current_mode)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bt_get_mode_name)
+        (*env)->ExceptionClear(env);
 
-    if (g_helper_cache.init && activity) {
+    if (g_helper_cache.init && activity)
+    {
         (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.init, activity);
-        if ((*env)->ExceptionCheck(env)) {
+        if ((*env)->ExceptionCheck(env))
+        {
             (*env)->ExceptionClear(env);
         }
     }
 
-    const char* native_callback_class_name = "AromaHelper$NativeCallback";
+    const char *native_callback_class_name = "AromaHelper$NativeCallback";
     jclass nativeCallbackClass = find_class_safe(env, native_callback_class_name);
-    
-    if (!nativeCallbackClass) {
+
+    if (!nativeCallbackClass)
+    {
         LOG_ERROR("Failed to find native callback class: %s", native_callback_class_name);
         (*env)->DeleteLocalRef(env, helper);
         (*env)->DeleteLocalRef(env, classLoaderClass);
@@ -386,21 +481,22 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     g_helper_cache.native_callback_class = (jclass)(*env)->NewGlobalRef(env, nativeCallbackClass);
 
     JNINativeMethod methods[] = {
-        {"onDeviceDiscovered", "(Ljava/lang/String;Ljava/lang/String;II)V", (void*)native_on_device_discovered},
-        {"onScanFinished", "()V", (void*)native_on_scan_finished},
-        {"onPairingResult", "(ZLjava/lang/String;Ljava/lang/String;)V", (void*)native_on_pairing_result},
-        {"onConnectionResult", "(ZLjava/lang/String;II)V", (void*)native_on_connection_result},
-        {"onDataReceived", "([BI)V", (void*)native_on_data_received},
-        {"onConnectionStateChanged", "(I)V", (void*)native_on_connection_state_changed}
-    };
+        {"onDeviceDiscovered", "(Ljava/lang/String;Ljava/lang/String;II)V", (void *)native_on_device_discovered},
+        {"onScanFinished", "()V", (void *)native_on_scan_finished},
+        {"onPairingResult", "(ZLjava/lang/String;Ljava/lang/String;)V", (void *)native_on_pairing_result},
+        {"onConnectionResult", "(ZLjava/lang/String;II)V", (void *)native_on_connection_result},
+        {"onDataReceived", "([BI)V", (void *)native_on_data_received},
+        {"onConnectionStateChanged", "(I)V", (void *)native_on_connection_state_changed}};
 
     jint register_result = (*env)->RegisterNatives(env, nativeCallbackClass, methods, 6);
-    if (register_result != JNI_OK) {
+    if (register_result != JNI_OK)
+    {
         LOG_ERROR("Failed to register native methods: %d", register_result);
     }
 
     jmethodID constructor = (*env)->GetMethodID(env, nativeCallbackClass, "<init>", "()V");
-    if (!constructor) {
+    if (!constructor)
+    {
         LOG_ERROR("Failed to find constructor for native callback class");
         (*env)->DeleteLocalRef(env, nativeCallbackClass);
         (*env)->DeleteLocalRef(env, helper);
@@ -411,7 +507,8 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     }
 
     jobject callbackObj = (*env)->NewObject(env, nativeCallbackClass, constructor);
-    if (!callbackObj) {
+    if (!callbackObj)
+    {
         LOG_ERROR("Failed to create callback object");
         (*env)->DeleteLocalRef(env, nativeCallbackClass);
         (*env)->DeleteLocalRef(env, helper);
@@ -422,13 +519,17 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     }
 
     g_helper_cache.callback_obj = (*env)->NewGlobalRef(env, callbackObj);
-    
-    if (g_helper_cache.add_callback && g_helper_cache.callback_obj) {
+
+    if (g_helper_cache.add_callback && g_helper_cache.callback_obj)
+    {
         (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.add_callback, g_helper_cache.callback_obj);
-        if ((*env)->ExceptionCheck(env)) {
+        if ((*env)->ExceptionCheck(env))
+        {
             (*env)->ExceptionClear(env);
             LOG_ERROR("Exception while adding callback");
-        } else {
+        }
+        else
+        {
             LOG_INFO("Callback added successfully");
         }
     }
@@ -445,7 +546,6 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     return true;
 }
 
-
 static void cache_physical_screen_info(struct android_app *app)
 {
     if (g_phys_cached || !app || !app->activity)
@@ -453,7 +553,8 @@ static void cache_physical_screen_info(struct android_app *app)
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass activity_class = (*env)->GetObjectClass(env, app->activity->clazz);
     jmethodID get_wm = (*env)->GetMethodID(env, activity_class, "getWindowManager", "()Landroid/view/WindowManager;");
@@ -468,7 +569,7 @@ static void cache_physical_screen_info(struct android_app *app)
     jobject dm = (*env)->NewObject(env, dm_class, dm_ctor);
 
     jclass display_class = (*env)->FindClass(env, "android/view/Display");
-    
+
     jmethodID get_real_metrics = (*env)->GetMethodID(env, display_class, "getRealMetrics", "(Landroid/util/DisplayMetrics;)V");
     (*env)->CallVoidMethod(env, display_obj, get_real_metrics, dm);
 
@@ -482,7 +583,7 @@ static void cache_physical_screen_info(struct android_app *app)
 
     g_phys_width = (*env)->GetIntField(env, dm, w_field);
     g_phys_height = (*env)->GetIntField(env, dm, h_field);
-    
+
     g_density = (*env)->GetFloatField(env, dm, density_field);
     g_density_dpi = (*env)->GetIntField(env, dm, density_dpi_field);
     g_scaled_density = (*env)->GetFloatField(env, dm, scaled_density_field);
@@ -491,7 +592,7 @@ static void cache_physical_screen_info(struct android_app *app)
 
     jmethodID get_metrics = (*env)->GetMethodID(env, display_class, "getMetrics", "(Landroid/util/DisplayMetrics;)V");
     (*env)->CallVoidMethod(env, display_obj, get_metrics, dm);
-    
+
     g_avail_width = (*env)->GetIntField(env, dm, w_field);
     g_avail_height = (*env)->GetIntField(env, dm, h_field);
 
@@ -515,51 +616,64 @@ static void cache_physical_screen_info(struct android_app *app)
     detach_jni_env(attach);
 }
 
-static int dp_to_px(int dp) {
+static int dp_to_px(int dp)
+{
     return (int)(dp * g_density + 0.5f);
 }
 
-static int sp_to_px(int sp) {
+static int sp_to_px(int sp)
+{
     return (int)(sp * g_scaled_density + 0.5f);
 }
 
-static int px_to_dp(int px) {
+static int px_to_dp(int px)
+{
     return (int)(px / g_density + 0.5f);
 }
 
-static int px_to_sp(int px) {
+static int px_to_sp(int px)
+{
     return (int)(px / g_scaled_density + 0.5f);
 }
 
-static void get_available_size_dp(int *width_dp, int *height_dp) {
+static void get_available_size_dp(int *width_dp, int *height_dp)
+{
     *width_dp = px_to_dp(g_avail_width);
     *height_dp = px_to_dp(g_avail_height);
 }
 
-static void get_screen_size_inches(float *width_in, float *height_in) {
+static void get_screen_size_inches(float *width_in, float *height_in)
+{
     *width_in = g_phys_width / g_xdpi;
     *height_in = g_phys_height / g_ydpi;
 }
 
-static float get_screen_diagonal_inches(void) {
+static float get_screen_diagonal_inches(void)
+{
     float width_in = g_phys_width / g_xdpi;
     float height_in = g_phys_height / g_ydpi;
     return sqrt(width_in * width_in + height_in * height_in);
 }
 
-static const char* get_screen_size_category(void) {
+static const char *get_screen_size_category(void)
+{
     float diagonal_in = get_screen_diagonal_inches();
-    
-    if (diagonal_in < 3.5f) return "small";
-    if (diagonal_in < 5.0f) return "normal";
-    if (diagonal_in < 7.0f) return "large";
-    if (diagonal_in < 10.0f) return "xlarge";
+
+    if (diagonal_in < 3.5f)
+        return "small";
+    if (diagonal_in < 5.0f)
+        return "normal";
+    if (diagonal_in < 7.0f)
+        return "large";
+    if (diagonal_in < 10.0f)
+        return "xlarge";
     return "xxlarge";
 }
 
 static float android_get_density(void)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return g_density;
@@ -567,7 +681,8 @@ static float android_get_density(void)
 
 static int android_get_density_dpi(void)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return g_density_dpi;
@@ -575,7 +690,8 @@ static int android_get_density_dpi(void)
 
 static float android_get_scaled_density(void)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return g_scaled_density;
@@ -583,7 +699,8 @@ static float android_get_scaled_density(void)
 
 static int android_dp_to_px(int dp)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return dp_to_px(dp);
@@ -591,7 +708,8 @@ static int android_dp_to_px(int dp)
 
 static int android_px_to_dp(int px)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return px_to_dp(px);
@@ -599,7 +717,8 @@ static int android_px_to_dp(int px)
 
 static int android_sp_to_px(int sp)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return sp_to_px(sp);
@@ -607,7 +726,8 @@ static int android_sp_to_px(int sp)
 
 static int android_px_to_sp(int px)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return px_to_sp(px);
@@ -615,7 +735,8 @@ static int android_px_to_sp(int px)
 
 static void android_get_available_size_dp(int *width_dp, int *height_dp)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     get_available_size_dp(width_dp, height_dp);
@@ -623,7 +744,8 @@ static void android_get_available_size_dp(int *width_dp, int *height_dp)
 
 static void android_get_screen_size_inches(float *width_inches, float *height_inches)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     get_screen_size_inches(width_inches, height_inches);
@@ -631,15 +753,17 @@ static void android_get_screen_size_inches(float *width_inches, float *height_in
 
 static float android_get_screen_diagonal_inches(void)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return get_screen_diagonal_inches();
 }
 
-static const char* android_get_screen_size_category(void)
+static const char *android_get_screen_size_category(void)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return get_screen_size_category();
@@ -647,7 +771,8 @@ static const char* android_get_screen_size_category(void)
 
 static float android_get_xdpi(void)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return g_xdpi;
@@ -655,7 +780,8 @@ static float android_get_xdpi(void)
 
 static float android_get_ydpi(void)
 {
-    if (!g_phys_cached && g_app) {
+    if (!g_phys_cached && g_app)
+    {
         cache_physical_screen_info(g_app);
     }
     return g_ydpi;
@@ -671,7 +797,8 @@ static void android_open_url(const char *url)
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass activity_class = (*env)->GetObjectClass(env, g_app->activity->clazz);
     if (!activity_class)
@@ -747,7 +874,8 @@ static void android_send_intent(int action_enum, const char *uri, const char *ty
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass intent_class = (*env)->FindClass(env, "android/content/Intent");
     jclass uri_class = (*env)->FindClass(env, "android/net/Uri");
@@ -818,13 +946,16 @@ static void update_surface_size(void)
 {
     int w = 0, h = 0;
 
-    if (g_using_vulkan) {
-        /* For Vulkan, query the ANativeWindow directly */
+    if (g_using_vulkan)
+    {
+
         if (!g_app || !g_app->window)
             return;
         w = ANativeWindow_getWidth(g_app->window);
         h = ANativeWindow_getHeight(g_app->window);
-    } else {
+    }
+    else
+    {
         if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
             return;
         EGLint ew = 0, eh = 0;
@@ -848,17 +979,14 @@ static void update_surface_size(void)
     if (!g_using_vulkan)
         glViewport(0, 0, g_width, g_height);
 
-
-
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
     {
         if (g_windows[i].root_node)
         {
-            AromaEvent* resize_event = aroma_event_create_resize(g_windows[i].root_node->node_id, g_width, g_height);
+            AromaEvent *resize_event = aroma_event_create_resize(g_windows[i].root_node->node_id, g_width, g_height);
             LOG_INFO("Updating layout for window %d size: %dx%d", i, g_width, g_height);
             aroma_event_dispatch(resize_event);
-            
         }
     }
 }
@@ -935,6 +1063,12 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event)
         aroma_event_handle_touch(AMotionEvent_getPointerId(event, index), (int)x, (int)y, 0);
         aroma_event_handle_pointer_move((int)x, (int)y, false);
         break;
+    case AMOTION_EVENT_ACTION_CANCEL:
+
+        for (int i = 0; i < AROMA_MAX_TOUCHES; i++)
+            aroma_event_handle_touch(i, (int)x, (int)y, 0);
+        aroma_event_handle_pointer_move((int)x, (int)y, false);
+        break;
     case AMOTION_EVENT_ACTION_MOVE:
     {
         size_t ptr_count = AMotionEvent_getPointerCount(event);
@@ -953,6 +1087,8 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event)
         break;
     }
     }
+
+    request_frame();
     return 1;
 }
 
@@ -971,23 +1107,22 @@ static int init_display(struct android_app *app)
 
     cache_physical_screen_info(app);
 
-    /* Check if we should use Vulkan instead of EGL */
     g_using_vulkan = is_vulkan_backend();
 
-    if (g_using_vulkan) {
-        /* For Vulkan: skip EGL entirely, just query window size and init graphics */
+    if (g_using_vulkan)
+    {
+
         g_width = ANativeWindow_getWidth(app->window);
         g_height = ANativeWindow_getHeight(app->window);
         g_has_window = true;
-        context = (EGLContext)1;  /* Sentinel so initialize() doesn't block */
+        context = (EGLContext)1;
 
-        /* Only set up Vulkan resources on first init.
-         * On config changes the render loop handles swapchain recreation
-         * via ensure_frame_state() when it detects a size mismatch. */
         static bool vk_resources_initialized = false;
-        if (!vk_resources_initialized) {
+        if (!vk_resources_initialized)
+        {
             AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
-            if (gfx) {
+            if (gfx)
+            {
                 if (gfx->setup_shared_window_resources)
                     gfx->setup_shared_window_resources();
                 if (gfx->setup_separate_window_resources)
@@ -1078,7 +1213,6 @@ static int init_display(struct android_app *app)
     context = ctx;
     g_has_window = true;
 
-
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx)
     {
@@ -1132,19 +1266,20 @@ static void android_set_requested_orientation(int orientation)
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jobject activity = g_app->activity->clazz;
     jclass activityClass = (*env)->GetObjectClass(env, activity);
-    
-    jmethodID setRequestedOrientation = (*env)->GetMethodID(env, activityClass, 
-        "setRequestedOrientation", "(I)V");
-    
+
+    jmethodID setRequestedOrientation = (*env)->GetMethodID(env, activityClass,
+                                                            "setRequestedOrientation", "(I)V");
+
     if (setRequestedOrientation)
     {
         (*env)->CallVoidMethod(env, activity, setRequestedOrientation, orientation);
     }
-    
+
     (*env)->DeleteLocalRef(env, activityClass);
     detach_jni_env(attach);
 }
@@ -1156,31 +1291,32 @@ static int android_get_current_orientation(void)
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return -1;
+    if (!env)
+        return -1;
 
     jobject activity = g_app->activity->clazz;
     jclass activityClass = (*env)->GetObjectClass(env, activity);
-    
-    jmethodID getResources = (*env)->GetMethodID(env, activityClass, 
-        "getResources", "()Landroid/content/res/Resources;");
+
+    jmethodID getResources = (*env)->GetMethodID(env, activityClass,
+                                                 "getResources", "()Landroid/content/res/Resources;");
     jobject resources = (*env)->CallObjectMethod(env, activity, getResources);
-    
+
     jclass resourcesClass = (*env)->GetObjectClass(env, resources);
-    jmethodID getConfiguration = (*env)->GetMethodID(env, resourcesClass, 
-        "getConfiguration", "()Landroid/content/res/Configuration;");
+    jmethodID getConfiguration = (*env)->GetMethodID(env, resourcesClass,
+                                                     "getConfiguration", "()Landroid/content/res/Configuration;");
     jobject config = (*env)->CallObjectMethod(env, resources, getConfiguration);
-    
+
     jclass configClass = (*env)->GetObjectClass(env, config);
     jfieldID orientationField = (*env)->GetFieldID(env, configClass, "orientation", "I");
-    
+
     int orientation = (*env)->GetIntField(env, config, orientationField);
-    
+
     (*env)->DeleteLocalRef(env, configClass);
     (*env)->DeleteLocalRef(env, config);
     (*env)->DeleteLocalRef(env, resourcesClass);
     (*env)->DeleteLocalRef(env, resources);
     (*env)->DeleteLocalRef(env, activityClass);
-    
+
     detach_jni_env(attach);
     return orientation;
 }
@@ -1189,21 +1325,22 @@ static bool android_is_orientation_locked(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return false;
+    if (!env)
+        return false;
 
     jobject activity = g_app->activity->clazz;
     jclass activityClass = (*env)->GetObjectClass(env, activity);
-    
-    jmethodID getRequestedOrientation = (*env)->GetMethodID(env, activityClass, 
-        "getRequestedOrientation", "()I");
-    
+
+    jmethodID getRequestedOrientation = (*env)->GetMethodID(env, activityClass,
+                                                            "getRequestedOrientation", "()I");
+
     bool isLocked = false;
     if (getRequestedOrientation)
     {
         jint orientation = (*env)->CallIntMethod(env, activity, getRequestedOrientation);
         isLocked = (orientation != -1);
     }
-    
+
     (*env)->DeleteLocalRef(env, activityClass);
     detach_jni_env(attach);
     return isLocked;
@@ -1247,6 +1384,7 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
         {
             term_display_surface_only();
             init_display(app);
+            request_frame();
         }
         break;
     case APP_CMD_WINDOW_RESIZED:
@@ -1255,9 +1393,19 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
         LOG_INFO("Configuration changed, invalidating physical screen cache");
         LOG_INFO("New config: %dx%d, orientation=%d", g_avail_width, g_avail_height, android_get_current_orientation());
         cache_physical_screen_info(app);
-        term_display_surface_only();        
+        term_display_surface_only();
         if (app->window)
-            init_display(app);       
+            init_display(app);
+
+        {
+            extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
+            for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
+            {
+                if (g_windows[i].root_node)
+                    aroma_node_invalidate(g_windows[i].root_node);
+            }
+        }
+        request_frame();
         break;
     case APP_CMD_GAINED_FOCUS:
     case APP_CMD_RESUME:
@@ -1278,6 +1426,7 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
                 }
             }
         }
+        request_frame();
         break;
     case APP_CMD_TERM_WINDOW:
         term_display_surface_only();
@@ -1318,28 +1467,37 @@ int initialize(void)
         return 0;
     }
 
+    g_choreographer = AChoreographer_getInstance();
+    if (!g_choreographer)
+        LOG_WARNING("AChoreographer not available — falling back to polled rendering");
+
     return 1;
 }
 
 void shutdown(void)
 {
     term_display();
-    
+
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (env && g_helper_cache.initialized) {
-        if (g_helper_cache.remove_callback && g_helper_cache.callback_obj) {
+    if (env && g_helper_cache.initialized)
+    {
+        if (g_helper_cache.remove_callback && g_helper_cache.callback_obj)
+        {
             (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.remove_callback, g_helper_cache.callback_obj);
         }
-        if (g_helper_cache.callback_obj) {
+        if (g_helper_cache.callback_obj)
+        {
             (*env)->DeleteGlobalRef(env, g_helper_cache.callback_obj);
             g_helper_cache.callback_obj = NULL;
         }
-        if (g_helper_cache.native_callback_class) {
+        if (g_helper_cache.native_callback_class)
+        {
             (*env)->DeleteGlobalRef(env, g_helper_cache.native_callback_class);
             g_helper_cache.native_callback_class = NULL;
         }
-        if (g_helper_cache.helper_class) {
+        if (g_helper_cache.helper_class)
+        {
             (*env)->DeleteGlobalRef(env, g_helper_cache.helper_class);
             g_helper_cache.helper_class = NULL;
         }
@@ -1356,7 +1514,7 @@ size_t create_window(const char *title, int x, int y, int width, int height)
 void make_context_current(size_t window_id)
 {
     if (g_using_vulkan)
-        return;  /* Vulkan manages its own context */
+        return;
 
     if (display != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE && context != EGL_NO_CONTEXT)
     {
@@ -1410,11 +1568,10 @@ void set_fullscreen(size_t window_id, bool enabled)
 
 void request_window_update(size_t window_id)
 {
-    if (g_has_window && g_update_callback)
-    {
-        update_surface_size();
-        g_update_callback(window_id, g_update_callback_data);
-    }
+    (void)window_id;
+
+    g_frame_needed = true;
+    request_frame();
 }
 
 bool run_event_loop(void)
@@ -1422,17 +1579,12 @@ bool run_event_loop(void)
     int events;
     struct android_poll_source *source;
 
-    while (ALooper_pollAll(0, NULL, &events, (void **)&source) >= 0)
+    while (ALooper_pollAll(g_frame_needed ? 0 : 4, NULL, &events, (void **)&source) >= 0)
     {
         if (source)
             source->process(g_app, source);
         if (g_app->destroyRequested)
             return false;
-    }
-
-    if (g_has_window)
-    {
-        update_surface_size();
     }
 
     return true;
@@ -1442,9 +1594,7 @@ void swap_buffers(size_t window_id)
 {
     if (g_using_vulkan)
     {
-        /* For Vulkan, flush the graphics pipeline to submit and present.
-         * This is needed for code paths that call swap_buffers directly
-         * (e.g. the splash screen) outside the normal drawlist flow. */
+
         AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
         if (gfx && gfx->graphics_flush)
             gfx->graphics_flush();
@@ -1492,7 +1642,8 @@ static void android_show_keyboard(void)
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
     jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
@@ -1538,7 +1689,8 @@ static void android_hide_keyboard(void)
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
     jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
@@ -1640,11 +1792,13 @@ static bool impl_android_check_permission(const char *permission_name)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return false;
+    if (!env)
+        return false;
 
     jobject activity = aroma_android_get_activity();
     jclass contextClass = GetContextClass(env);
-    if (!contextClass) {
+    if (!contextClass)
+    {
         detach_jni_env(attach);
         return false;
     }
@@ -1676,16 +1830,19 @@ static void impl_android_request_permission(const char **permissions, int permCo
 
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jobject activity = aroma_android_get_activity();
-    if (!activity) {
+    if (!activity)
+    {
         detach_jni_env(attach);
         return;
     }
 
     jclass activityClass = (*env)->GetObjectClass(env, activity);
-    if (!activityClass) {
+    if (!activityClass)
+    {
         detach_jni_env(attach);
         return;
     }
@@ -1759,10 +1916,12 @@ static void *impl_android_get_system_service(const char *service_name)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return NULL;
+    if (!env)
+        return NULL;
 
     jobject activity = aroma_android_get_activity();
-    if (!activity) {
+    if (!activity)
+    {
         detach_jni_env(attach);
         return NULL;
     }
@@ -1800,7 +1959,8 @@ static void impl_android_vibrate(int ms)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jobject vibrator = (jobject)impl_android_get_system_service("vibrator");
     if (!vibrator)
@@ -1830,11 +1990,12 @@ static void impl_android_vibrate(int ms)
     detach_jni_env(attach);
 }
 
-static void impl_android_toast(const char* msg, bool long_duration)
+static void impl_android_toast(const char *msg, bool long_duration)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     if (!ensure_aroma_helper_initialized(env))
     {
@@ -1844,7 +2005,8 @@ static void impl_android_toast(const char* msg, bool long_duration)
     }
 
     jobject activity = aroma_android_get_activity();
-    if (!activity) {
+    if (!activity)
+    {
         detach_jni_env(attach);
         return;
     }
@@ -1867,7 +2029,8 @@ static void impl_android_launch_camera(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass intentClass = (*env)->FindClass(env, "android/content/Intent");
     if (!intentClass)
@@ -1908,7 +2071,8 @@ static bool impl_android_is_wifi_enabled(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return false;
+    if (!env)
+        return false;
 
     jobject wifiMgr = (jobject)impl_android_get_system_service("wifi");
     if (!wifiMgr)
@@ -1939,7 +2103,8 @@ static void impl_android_set_wifi_enabled(bool enabled)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jobject wifiMgr = (jobject)impl_android_get_system_service("wifi");
     if (!wifiMgr)
@@ -1972,7 +2137,8 @@ static bool impl_android_is_bluetooth_enabled(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return false;
+    if (!env)
+        return false;
 
     jclass adapterClass = (*env)->FindClass(env, "android/bluetooth/BluetoothAdapter");
     if (!adapterClass)
@@ -2018,26 +2184,27 @@ static bool impl_android_is_bluetooth_enabled(void)
 }
 
 void impl_bt_register_callbacks(
-    void (*device_cb)(const char*, const char*, int, int),
+    void (*device_cb)(const char *, const char *, int, int),
     void (*scan_finished_cb)(void),
-    void (*pairing_cb)(bool, const char*, const char*),
-    void (*connection_cb)(bool, const char*, int, int),
-    void (*data_cb)(const char*, int))
+    void (*pairing_cb)(bool, const char *, const char *),
+    void (*connection_cb)(bool, const char *, int, int),
+    void (*data_cb)(const char *, int))
 {
     g_bt_callbacks.device_discovered_cb = device_cb;
     g_bt_callbacks.scan_finished_cb = scan_finished_cb;
     g_bt_callbacks.pairing_result_cb = pairing_cb;
     g_bt_callbacks.connection_result_cb = connection_cb;
     g_bt_callbacks.data_received_cb = data_cb;
-    
+
     LOG_INFO("All Bluetooth callbacks registered");
 }
 
-static int impl_android_bt_scan(int scan_mode, void (*callback)(const char* addr, const char* name, int type, int rssi))
+static int impl_android_bt_scan(int scan_mode, void (*callback)(const char *addr, const char *name, int type, int rssi))
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return 0;
+    if (!env)
+        return 0;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_scan)
     {
@@ -2046,7 +2213,8 @@ static int impl_android_bt_scan(int scan_mode, void (*callback)(const char* addr
         return 0;
     }
 
-    if (callback) {
+    if (callback)
+    {
         g_bt_callbacks.device_discovered_cb = callback;
     }
 
@@ -2067,7 +2235,8 @@ static void impl_android_bt_stop_scan(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_stop_scan)
     {
@@ -2090,7 +2259,8 @@ static int impl_android_bt_get_paired(char out_addrs[][18], char out_names[][248
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return 0;
+    if (!env)
+        return 0;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_paired)
     {
@@ -2157,7 +2327,8 @@ static bool impl_android_bt_pair(const char *addr)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env || !addr) return false;
+    if (!env || !addr)
+        return false;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_pair)
     {
@@ -2184,7 +2355,8 @@ static bool impl_android_bt_unpair(const char *addr)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env || !addr) return false;
+    if (!env || !addr)
+        return false;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_unpair)
     {
@@ -2211,7 +2383,8 @@ static int impl_android_bt_get_pair_state(const char *addr)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env || !addr) return 0;
+    if (!env || !addr)
+        return 0;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_pair_state)
     {
@@ -2238,7 +2411,8 @@ static bool impl_android_bt_connect(const char *addr)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env || !addr) return false;
+    if (!env || !addr)
+        return false;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_connect)
     {
@@ -2265,7 +2439,8 @@ static bool impl_android_bt_connect_with_mode(const char *addr, int mode)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env || !addr) return false;
+    if (!env || !addr)
+        return false;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_connect_with_mode)
     {
@@ -2292,7 +2467,8 @@ static void impl_android_bt_disconnect(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_disconnect)
     {
@@ -2315,7 +2491,8 @@ static int impl_android_bt_send(const char *data, int len)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env || !data || len <= 0) return -1;
+    if (!env || !data || len <= 0)
+        return -1;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_send)
     {
@@ -2344,7 +2521,8 @@ static bool impl_android_bt_is_connected(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return false;
+    if (!env)
+        return false;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_is_connected)
     {
@@ -2369,7 +2547,8 @@ static int impl_android_bt_get_device_type(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return 0;
+    if (!env)
+        return 0;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_device_type)
     {
@@ -2390,11 +2569,12 @@ static int impl_android_bt_get_device_type(void)
     return (int)res;
 }
 
-static const char* impl_android_bt_get_device_name(void)
+static const char *impl_android_bt_get_device_name(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return NULL;
+    if (!env)
+        return NULL;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_device_name)
     {
@@ -2426,7 +2606,8 @@ static int impl_android_bt_get_current_mode(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return 0;
+    if (!env)
+        return 0;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_current_mode)
     {
@@ -2447,11 +2628,12 @@ static int impl_android_bt_get_current_mode(void)
     return (int)res;
 }
 
-static const char* impl_android_bt_get_mode_name(void)
+static const char *impl_android_bt_get_mode_name(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return NULL;
+    if (!env)
+        return NULL;
 
     if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bt_get_mode_name)
     {
@@ -2483,7 +2665,8 @@ static int impl_android_get_battery_level(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return -1;
+    if (!env)
+        return -1;
 
     jobject batteryManager = (jobject)impl_android_get_system_service("batterymanager");
     if (!batteryManager)
@@ -2514,7 +2697,8 @@ static void impl_android_open_settings(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass intentClass = (*env)->FindClass(env, "android/content/Intent");
     if (!intentClass)
@@ -2555,7 +2739,8 @@ static void impl_android_launch_gallery(void)
 {
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env) return;
+    if (!env)
+        return;
 
     jclass intentClass = (*env)->FindClass(env, "android/content/Intent");
     if (!intentClass)
@@ -2607,19 +2792,20 @@ static void impl_android_launch_gallery(void)
     detach_jni_env(attach);
 }
 
-/* ======================== Vulkan Support ======================== */
 #ifdef AROMA_HAS_VULKAN
 
-static bool android_create_vulkan_surface(size_t window_id, void* vk_instance, void* vk_surface_out)
+static bool android_create_vulkan_surface(size_t window_id, void *vk_instance, void *vk_surface_out)
 {
     (void)window_id;
-    if (!vk_instance || !vk_surface_out) return false;
-    if (!g_app || !g_app->window) {
+    if (!vk_instance || !vk_surface_out)
+        return false;
+    if (!g_app || !g_app->window)
+    {
         LOG_ERROR("Vulkan: ANativeWindow not available for surface creation");
         return false;
     }
 
-    VkInstance instance = *(VkInstance*)vk_instance;
+    VkInstance instance = *(VkInstance *)vk_instance;
 
     VkAndroidSurfaceCreateInfoKHR createInfo = {
         .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
@@ -2630,28 +2816,29 @@ static bool android_create_vulkan_surface(size_t window_id, void* vk_instance, v
 
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkResult result = vkCreateAndroidSurfaceKHR(instance, &createInfo, NULL, &surface);
-    if (result != VK_SUCCESS) {
+    if (result != VK_SUCCESS)
+    {
         LOG_ERROR("Vulkan: vkCreateAndroidSurfaceKHR failed (%d)", (int)result);
         return false;
     }
 
-    *(VkSurfaceKHR*)vk_surface_out = surface;
+    *(VkSurfaceKHR *)vk_surface_out = surface;
     LOG_INFO("Vulkan: Android surface created successfully");
     return true;
 }
 
-static const char* android_vulkan_extensions[] = {
+static const char *android_vulkan_extensions[] = {
     "VK_KHR_surface",
     "VK_KHR_android_surface",
 };
 
-static const char** android_get_vulkan_instance_extensions(uint32_t* count_out)
+static const char **android_get_vulkan_instance_extensions(uint32_t *count_out)
 {
     *count_out = sizeof(android_vulkan_extensions) / sizeof(android_vulkan_extensions[0]);
     return android_vulkan_extensions;
 }
 
-#endif /* AROMA_HAS_VULKAN */
+#endif
 
 AromaPlatformInterface aroma_platform_android = {
     .initialize = initialize,

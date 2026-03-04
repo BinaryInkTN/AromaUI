@@ -288,8 +288,13 @@ void aroma_node_invalidate(AromaNode* node) {
         parent = parent->parent_node;
     }
 
-    /* Schedule a render pass. */
-    aroma_ui_render_all_windows_impl();
+    /* NOTE: We intentionally do NOT call aroma_ui_render_all_windows_impl()
+     * here.  Rendering is driven by the platform's vsync / frame-pacing
+     * mechanism.  Calling render from invalidate causes:
+     *  1) Multiple full renders per frame when several nodes are dirtied.
+     *  2) Renders at arbitrary points instead of vsync boundaries.
+     * The platform (e.g. Android Choreographer) will pick up dirty state
+     * on the next frame callback. */
 }
 
 void aroma_node_invalidate_tree(AromaNode* root) {

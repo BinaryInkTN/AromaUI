@@ -126,6 +126,18 @@ if(ANDROID)
 else()
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_glps.c)
     target_link_libraries(aroma PRIVATE GLPS freetype)
+
+    # aroma_platform_glps.c needs the same windowing-system defines that GLPS
+    # was compiled with (GLPS_USE_X11 / GLPS_USE_WAYLAND) so that the Vulkan
+    # instance extensions list includes the correct platform surface extension.
+    get_target_property(_glps_defs GLPS COMPILE_DEFINITIONS)
+    if(_glps_defs)
+        foreach(_def IN LISTS _glps_defs)
+            if(_def MATCHES "^GLPS_USE_")
+                target_compile_definitions(aroma PRIVATE ${_def})
+            endif()
+        endforeach()
+    endif()
 endif()
 
 

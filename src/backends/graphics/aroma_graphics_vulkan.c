@@ -391,6 +391,12 @@ static bool create_swapchain(int width, int height)
         }
     }
 
+       VkSurfaceTransformFlagBitsKHR preTransform;
+    if (capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+        preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    else
+        preTransform = capabilities.currentTransform;
+
     VkSwapchainCreateInfoKHR createInfo = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = vk_ctx.surface,
@@ -400,7 +406,7 @@ static bool create_swapchain(int width, int height)
         .imageExtent = extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        .preTransform = capabilities.currentTransform,
+        .preTransform = preTransform,
         .compositeAlpha = compositeAlpha,
         .presentMode = presentMode,
         .clipped = VK_TRUE,

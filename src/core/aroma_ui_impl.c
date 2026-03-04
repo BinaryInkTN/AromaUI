@@ -460,10 +460,17 @@ void aroma_ui_end_frame(size_t window_id)
 #else
     aroma_drawlist_flush(list, window_id);
 
-    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
-    if (gfx && gfx->graphics_flush)
+       int backend_type = aroma_backend_abi.get_graphics_backend_type
+                           ? aroma_backend_abi.get_graphics_backend_type()
+                           : -1;
+
+    if (backend_type != GRAPHICS_BACKEND_VULKAN)
     {
-        gfx->graphics_flush();
+        AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+        if (gfx && gfx->graphics_flush)
+        {
+            gfx->graphics_flush();
+        }
     }
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();

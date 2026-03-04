@@ -1,23 +1,4 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 #ifndef ESP32
 #include "aroma_platform_interface.h"
 #ifdef AROMA_HAS_VULKAN
@@ -46,27 +27,28 @@ typedef struct
     bool capslock_active;
 } AromaGLPSContext;
 
-static AromaGLPSContext platform_ctx = (AromaGLPSContext) {
+static AromaGLPSContext platform_ctx = (AromaGLPSContext){
     .wm = NULL,
     .primary_window_id = 0,
     .last_mouse_x = 0.0,
     .last_mouse_y = 0.0,
     .mouse_button_down = false,
-    .capslock_active = false
-};
+    .capslock_active = false};
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
-    AromaNode* root = aroma_event_get_root();
-    if (!root) {
+    AromaNode *root = aroma_event_get_root();
+    if (!root)
+    {
         return false;
     }
 
-    AromaNode* target = aroma_event_hit_test(root, (int)mouse_x, (int)mouse_y);
+    AromaNode *target = aroma_event_hit_test(root, (int)mouse_x, (int)mouse_y);
     uint64_t target_id = target ? target->node_id : root->node_id;
 
-    AromaEvent* event = aroma_event_create_mouse(type, target_id, (int)mouse_x, (int)mouse_y, button);
-    if (!event) {
+    AromaEvent *event = aroma_event_create_mouse(type, target_id, (int)mouse_x, (int)mouse_y, button);
+    if (!event)
+    {
         return false;
     }
 
@@ -78,18 +60,21 @@ static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_
 
 static bool queue_key_event(AromaEventType type, uint32_t key_value, uint16_t modifiers)
 {
-    AromaNode* root = aroma_event_get_root();
-    if (!root) {
+    AromaNode *root = aroma_event_get_root();
+    if (!root)
+    {
         return false;
     }
 
-    AromaNode* target = aroma_ui_get_focused_node();
-    if (!target) {
+    AromaNode *target = aroma_ui_get_focused_node();
+    if (!target)
+    {
         target = root;
     }
 
-    AromaEvent* event = aroma_event_create_key(type, target->node_id, key_value, modifiers);
-    if (!event) {
+    AromaEvent *event = aroma_event_create_key(type, target->node_id, key_value, modifiers);
+    if (!event)
+    {
         return false;
     }
 
@@ -103,12 +88,6 @@ static void glps_mouse_move_callback(size_t window_id, double mouse_x, double mo
     bool moved = (mouse_x != platform_ctx.last_mouse_x) || (mouse_y != platform_ctx.last_mouse_y);
 
     aroma_event_handle_pointer_move((int)mouse_x, (int)mouse_y, platform_ctx.mouse_button_down);
-    /*    if (moved) {
-        queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, mouse_x, mouse_y, 0);
-    }
-    
-    */
-
 
     platform_ctx.last_mouse_x = mouse_x;
     platform_ctx.last_mouse_y = mouse_y;
@@ -123,7 +102,8 @@ static void glps_mouse_click_callback(size_t window_id, bool state, void *data)
     AromaEventType type = state ? EVENT_TYPE_MOUSE_CLICK : EVENT_TYPE_MOUSE_RELEASE;
     queue_mouse_event(type, platform_ctx.last_mouse_x, platform_ctx.last_mouse_y, 0);
 
-    if (!state) {
+    if (!state)
+    {
         aroma_event_handle_pointer_move((int)platform_ctx.last_mouse_x, (int)platform_ctx.last_mouse_y, false);
     }
 }
@@ -136,31 +116,40 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
 
     (void)data;
 
-    if (state && keycode == 0xFFE5) {
+    if (state && keycode == 0xFFE5)
+    {
         platform_ctx.capslock_active = !platform_ctx.capslock_active;
     }
 
     uint32_t key_value = 0;
     bool has_char = false;
-    if (value && value[0] != '\0') {
+    if (value && value[0] != '\0')
+    {
 
         key_value = (unsigned char)value[0];
         has_char = true;
-    } else {
+    }
+    else
+    {
 
         key_value = (uint32_t)keycode;
     }
 
     uint16_t modifiers = 0;
-    if (platform_ctx.capslock_active) {
+    if (platform_ctx.capslock_active)
+    {
         modifiers |= AROMA_KEY_MOD_CAPSLOCK;
     }
 
-    if (has_char && (modifiers & AROMA_KEY_MOD_CAPSLOCK)) {
-        if (key_value >= 'a' && key_value <= 'z') {
+    if (has_char && (modifiers & AROMA_KEY_MOD_CAPSLOCK))
+    {
+        if (key_value >= 'a' && key_value <= 'z')
+        {
             key_value = (uint32_t)toupper((int)key_value);
         }
-    } else {
+    }
+    else
+    {
     }
 
     AromaEventType type = state ? EVENT_TYPE_KEY_PRESS : EVENT_TYPE_KEY_RELEASE;
@@ -183,7 +172,7 @@ int initialize()
     return 1;
 }
 
-size_t create_window(const char* title, int x, int y, int width, int height)
+size_t create_window(const char *title, int x, int y, int width, int height)
 {
     size_t window_id = glps_wm_window_create(platform_ctx.wm, title, x, y, width, height);
 
@@ -194,7 +183,8 @@ size_t create_window(const char* title, int x, int y, int width, int height)
 
     aroma_backend_abi.get_graphics_interface()->setup_separate_window_resources(window_id);
 
-    if (platform_ctx.primary_window_id == 0) {
+    if (platform_ctx.primary_window_id == 0)
+    {
         platform_ctx.primary_window_id = window_id;
     }
 
@@ -211,7 +201,7 @@ void get_window_size(size_t window_id, int *window_width, int *window_height)
     glps_wm_window_get_dimensions(platform_ctx.wm, window_id, window_width, window_height);
 }
 
-void set_window_update_callback(void (*callback)(size_t window_id, void *data), void* data)
+void set_window_update_callback(void (*callback)(size_t window_id, void *data), void *data)
 {
     glps_wm_window_set_frame_update_callback(platform_ctx.wm, callback, data);
 }
@@ -219,8 +209,6 @@ void set_window_update_callback(void (*callback)(size_t window_id, void *data), 
 void request_window_update(size_t window_id)
 {
     glps_wm_window_update(platform_ctx.wm, window_id);
-   
- 
 }
 
 bool run_event_loop()
@@ -230,10 +218,9 @@ bool run_event_loop()
         LOG_ERROR("Window manager not initialized. Cannot run event loop.");
         return false;
     }
-    /* Only request a frame update when there are dirty nodes to render.
-     * This avoids burning CPU on X11 (frame-limiter sleep) and avoids
-     * redundant surface damage/commit on Wayland when nothing changed. */
-    if (platform_ctx.primary_window_id != 0 && aroma_dirty_list_has_entries()) {
+
+    if (platform_ctx.primary_window_id != 0 && aroma_dirty_list_has_entries())
+    {
         glps_wm_window_update(platform_ctx.wm, platform_ctx.primary_window_id);
     }
     return !glps_wm_should_close(platform_ctx.wm);
@@ -241,6 +228,19 @@ bool run_event_loop()
 
 void swap_buffers(size_t window_id)
 {
+#ifdef AROMA_HAS_VULKAN
+
+    AromaGraphicsBackendType type = aroma_backend_abi.get_graphics_backend_type
+                                        ? aroma_backend_abi.get_graphics_backend_type()
+                                        : GRAPHICS_BACKEND_GLES3;
+    if (type == GRAPHICS_BACKEND_VULKAN)
+    {
+        AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+        if (gfx && gfx->graphics_flush)
+            gfx->graphics_flush();
+        return;
+    }
+#endif
     glps_wm_swap_buffers(platform_ctx.wm, window_id);
 }
 
@@ -267,16 +267,17 @@ void shutdown()
 }
 
 #ifdef AROMA_HAS_VULKAN
-static bool glps_create_vulkan_surface(size_t window_id, void* vk_instance, void* vk_surface_out)
+static bool glps_create_vulkan_surface(size_t window_id, void *vk_instance, void *vk_surface_out)
 {
-    if (!platform_ctx.wm || !vk_instance || !vk_surface_out) return false;
+    if (!platform_ctx.wm || !vk_instance || !vk_surface_out)
+        return false;
     glps_wm_vk_create_surface(platform_ctx.wm, window_id,
-                              (VkInstance*)vk_instance, (VkSurfaceKHR*)vk_surface_out);
-    VkSurfaceKHR surface = *(VkSurfaceKHR*)vk_surface_out;
+                              (VkInstance *)vk_instance, (VkSurfaceKHR *)vk_surface_out);
+    VkSurfaceKHR surface = *(VkSurfaceKHR *)vk_surface_out;
     return surface != VK_NULL_HANDLE;
 }
 
-static const char* glps_vulkan_extensions[] = {
+static const char *glps_vulkan_extensions[] = {
     "VK_KHR_surface",
 #if defined(GLPS_USE_WAYLAND)
     "VK_KHR_wayland_surface",
@@ -285,7 +286,7 @@ static const char* glps_vulkan_extensions[] = {
 #endif
 };
 
-static const char** glps_get_vulkan_instance_extensions(uint32_t* count_out)
+static const char **glps_get_vulkan_instance_extensions(uint32_t *count_out)
 {
     *count_out = sizeof(glps_vulkan_extensions) / sizeof(glps_vulkan_extensions[0]);
     return glps_vulkan_extensions;
