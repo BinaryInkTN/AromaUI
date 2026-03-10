@@ -4,60 +4,68 @@ import argparse
 import json
 import os
 import re
-import hashlib
 from datetime import datetime
 from typing import Dict, List
-from pathlib import Path
 
 import markdown
+import yaml
 from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
-import yaml
 from pygments.formatters import HtmlFormatter
+
 
 class MermaidPreprocessor(Preprocessor):
     def run(self, lines):
         new_lines = []
         i = 0
-        
+
         while i < len(lines):
             line = lines[i]
-            
-            if line.strip() == '```mermaid':
+
+            if line.strip() == "```mermaid":
                 mermaid_content = []
                 i += 1
-                
-                while i < len(lines) and not lines[i].strip() == '```':
+
+                while i < len(lines) and not lines[i].strip() == "```":
                     mermaid_content.append(lines[i])
                     i += 1
-                
+
                 if i < len(lines):
                     i += 1
-                
+
                 if mermaid_content:
                     while mermaid_content and not mermaid_content[0].strip():
                         mermaid_content.pop(0)
-                    
-                    mermaid_html = '<div class="mermaid">\n'
-                    mermaid_html += '\n'.join(mermaid_content)
-                    mermaid_html += '\n</div>'
+
+                    mermaid_html = '<div class="mermaid-wrapper">\n'
+                    mermaid_html += '<div class="mermaid-controls">\n'
+                    mermaid_html += '<button class="mermaid-resize" onclick="toggleMermaidSize(this)"><i data-lucide="maximize-2"></i></button>\n'
+                    mermaid_html += '<button class="mermaid-fullscreen" onclick="fullscreenMermaid(this)"><i data-lucide="fullscreen"></i></button>\n'
+                    mermaid_html += "</div>\n"
+                    mermaid_html += '<div class="mermaid">\n'
+                    mermaid_html += "\n".join(mermaid_content)
+                    mermaid_html += "\n</div>\n"
+                    mermaid_html += "</div>"
                     new_lines.append(mermaid_html)
                 continue
-            
+
             new_lines.append(line)
             i += 1
-        
+
         return new_lines
+
 
 class MermaidExtension(Extension):
     def extendMarkdown(self, md):
-        md.preprocessors.register(MermaidPreprocessor(md), 'mermaid', 175)
+        md.preprocessors.register(MermaidPreprocessor(md), "mermaid", 175)
+
 
 class DocGenerator:
     def __init__(self):
         self.template = self._get_template()
-    
+
     def _get_pygments_styles(self) -> str:
+        # Use built-in Pygments styles
         light_formatter = HtmlFormatter(style="default", noclasses=False)
         dark_formatter = HtmlFormatter(style="monokai", noclasses=False)
 
@@ -66,126 +74,88 @@ class DocGenerator:
 
         return f"""
         {light_styles}
-        [data-theme="dark"] .codehilite {{
-            {dark_styles}
-        }}
-        [data-theme="nord"] .codehilite {{
-            {dark_styles}
-        }}
-        [data-theme="solarized"] .codehilite {{
-            {dark_styles}
-        }}
-        [data-theme="sepia"] .codehilite {{
-            {light_styles}
-        }}
+        [data-theme="dark"] .codehilite {{ {dark_styles} }}
+        [data-theme="sepia"] .codehilite {{ {light_styles} }}
         """
 
     def _get_hero_section(self, config: Dict) -> str:
         hero_config = config.get("hero", {})
+        hero_title = hero_config.get("title", config.get("name", "Docs"))
+        description = hero_config.get("description", "Comprehensive documentation")
 
-        hero_title = hero_config.get("title", config.get("name", "AromaUI"))
-        description = hero_config.get("description", "Development toolkit for Linux, Android and embedded systems")
-        
-     
         platform_icons_html = ""
         for platform in hero_config.get("platformIcons", []):
-            platform_icons_html += f'<div class="pill-icon" title="{platform.get("title", "")}"><span class="material-symbols-outlined">{platform.get("icon", "devices")}</span></div>'
-        
+            platform_icons_html += f'<div class="hero-badge" title="{platform.get("title", "")}">{platform.get("title", "")}</div>'
+
         actions_html = ""
         for action in hero_config.get("actions", []):
-            btn_class = "hero-button-primary" if action.get("primary") else "hero-button-secondary"
+            btn_class = "btn-primary" if action.get("primary") else "btn-outline"
             onclick = action.get("onclick", "")
-            actions_html += f'''
-                <a href="#" class="btn {btn_class}" onclick="{onclick}; return false;">
-                    <span class="material-symbols-outlined">{action.get("icon", "download")}</span>
-                    {action.get("text", "")}
-                </a>
-            '''
+            actions_html += f'<a href="#" class="hero-btn {btn_class}" onclick="{onclick}; return false;">{action.get("text", "")}</a>'
 
-        hero_html = f"""
+        return f"""
         <section class="hero">
-            <div class="container hero-grid">
-                <div class="hero-content">
-                   
-                    <h1 class="hero-title">
-                      {hero_title}
-                    </h1>
-                    <p class="hero-description">{description}</p>
-                   
-                    <div class="btn-row">
-                        {actions_html}
-                    </div>
-
-                </div>
-
-                <div class="hero-visual">
-                    {platform_icons_html}
-                </div>
-            </div>
-
-                                                <img src="images/hero-image.png" alt="Hero Image" style="width: 80%; height: auto;  border-radius: 12px; margin: 0 auto; display: block;margin-top: 1rem;" />
-
+            <div class="hero-eyebrow">Documentation</div>
+            <h1 class="hero-title">{hero_title}</h1>
+            <p class="hero-desc">{description}</p>
+            <div class="hero-actions">{actions_html}</div>
+            <div class="hero-badges">{platform_icons_html}</div>
         </section>
         """
 
-        return hero_html
-
     def _get_action_cards(self) -> str:
         return """
-        <div class="action-cards">
-            <div class="action-card" onclick="showPage('building-and-deployment')">
-                <div class="action-card-icon">
-                    <span class="material-symbols-outlined">rocket_launch</span>
+        <div class="quick-links">
+            <div class="quick-link" onclick="showPage('getting-started')">
+                <div class="ql-icon">
+                    <i data-lucide="play"></i>
                 </div>
-                <div class="action-card-content">
-                    <h3>Get Started</h3>
-                    <p>Quick start guide and installation</p>
+                <div class="ql-body">
+                    <div class="ql-title">Get Started</div>
+                    <div class="ql-desc">Quick start &amp; installation</div>
                 </div>
-                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
+                <i data-lucide="arrow-right" class="ql-arrow"></i>
             </div>
-            <div class="action-card" onclick="window.open('https://github.com', '_blank')">
-                <div class="action-card-icon">
-                    <span class="material-symbols-outlined">code</span>
+            <div class="quick-link" onclick="window.open('https://github.com', '_blank')">
+                <div class="ql-icon">
+                    <i data-lucide="github"></i>
                 </div>
-                <div class="action-card-content">
-                    <h3>GitHub</h3>
-                    <p>View source code and contribute</p>
+                <div class="ql-body">
+                    <div class="ql-title">GitHub</div>
+                    <div class="ql-desc">Source code &amp; contributions</div>
                 </div>
-                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
+                <i data-lucide="arrow-right" class="ql-arrow"></i>
             </div>
-            <div class="action-card" onclick="window.location.href='#'">
-                <div class="action-card-icon">
-                    <span class="material-symbols-outlined">forum</span>
+            <div class="quick-link" onclick="window.location.href='#'">
+                <div class="ql-icon">
+                    <i data-lucide="alert-circle"></i>
                 </div>
-                <div class="action-card-content">
-                    <h3>Community</h3>
-                    <p>Join discussions and get help</p>
+                <div class="ql-body">
+                    <div class="ql-title">Report Issue</div>
+                    <div class="ql-desc">Bug reports &amp; feedback</div>
                 </div>
-                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
-            </div>
-            <div class="action-card" onclick="window.location.href='#'">
-                <div class="action-card-icon">
-                    <span class="material-symbols-outlined">bug_report</span>
-                </div>
-                <div class="action-card-content">
-                    <h3>Report Issue</h3>
-                    <p>Found a bug? Let us know</p>
-                </div>
-                <span class="material-symbols-outlined action-card-arrow">arrow_forward</span>
+                <i data-lucide="arrow-right" class="ql-arrow"></i>
             </div>
         </div>
         """
 
     def _process_markdown(self, content: str) -> str:
         extensions = [
-            'extra', 'codehilite', 'toc', 'tables', 'fenced_code',
-            'attr_list', 'def_list', 'abbr', 'footnotes'
+            "extra",
+            "codehilite",
+            "toc",
+            "tables",
+            "fenced_code",
+            "attr_list",
+            "def_list",
+            "abbr",
+            "footnotes",
         ]
-        
+
         md = markdown.Markdown(extensions=extensions)
         mermaid_ext = MermaidExtension()
         md.registerExtensions([mermaid_ext], {})
-        
+
         html = md.convert(content)
         return html
 
@@ -193,2071 +163,1960 @@ class DocGenerator:
         try:
             if not os.path.exists(file_path):
                 return f"<h1>File not found</h1><p>{file_path}</p>"
-
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
-
             return self._process_markdown(content)
-
         except Exception as e:
             return f"<h1>Error</h1><p>{e}</p>"
 
     def _get_icon_name(self, icon_name: str) -> str:
+        # Map icon names to Lucide icon names
         icon_map = {
-            "getting-started": "play_arrow",
-            "api": "api",
-            "guide": "menu_book",
-            "tutorial": "school",
-            "example": "code",
-            "reference": "reference",
+            "getting-started": "play",
+            "api": "code-2",
+            "guide": "book-open",
+            "tutorial": "graduation-cap",
+            "example": "file-code",
+            "reference": "book-marked",
             "linux": "terminal",
-            "android": "android",
-            "embedded": "developer_board",
-            "rtos": "memory",
+            "android": "smartphone",
+            "embedded": "cpu",
+            "rtos": "timer",
             "baremetal": "chip",
             "folder": "folder",
-            "description": "description",
-            "book": "menu_book",
-            "network_check": "network_check",
-            "settings_applications": "settings_applications",
-            "camera_alt": "camera_alt",
-            "dashboard": "dashboard",
+            "description": "file-text",
+            "book": "book",
+            "network_check": "wifi",
+            "settings_applications": "settings",
+            "camera_alt": "camera",
+            "dashboard": "layout-dashboard",
             "bluetooth": "bluetooth",
             "wifi": "wifi",
-            "data_object": "data_object",
-            "security": "security",
-            "folder_open": "folder_open",
+            "data_object": "database",
+            "security": "shield",
             "mobile_gear": "smartphone",
-            "photo_camera": "photo_camera",
-            "select_window": "select_window",
-            "responsive_layout": "responsive_layout",
-            "widgets": "widgets",
-            "screen_rotation": "screen_rotation",
-            "rocket_launch": "rocket_launch"
+            "photo_camera": "camera",
+            "responsive_layout": "layout",
+            "widgets": "blocks",
+            "screen_rotation": "rotate-cw",
+            "rocket_launch": "rocket",
         }
-        return icon_map.get(icon_name.lower(), icon_name)
+        lucide_name = icon_map.get(icon_name.lower(), "file-text")
+        return f'<i data-lucide="{lucide_name}"></i>'
 
     def _get_template(self) -> str:
-        return """<!DOCTYPE html>
-<html lang="en">
+        return r"""<!DOCTYPE html>
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{project_name} - Documentation</title>
+    <title>{project_name} – Documentation</title>
     <meta name="description" content="{description}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;1,14..32,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-
-        :root {{
-            --sidebar-width: 280px;
-            --progress-indicator-width: 280px;
-            --header-height: 64px;
-        }}
-
-        :root[data-theme="light"] {{
-            --primary: #1a73e8;
-            --primary-light: #e8f0fe;
-            --surface-0: #ffffff;
-            --surface-1: #f8f9fa;
-            --surface-2: #f1f3f4;
-            --surface-3: #e8eaed;
-            --text-primary: #202124;
-            --text-secondary: #5f6368;
-            --text-tertiary: #80868b;
-            --border: #dadce0;
-            --border-dark: #bdc1c6;
-            --shadow: 0 1px 2px 0 rgba(60,64,67,0.1);
-            --shadow-hover: 0 1px 3px 0 rgba(60,64,67,0.2);
-            --code-bg: #f8f9fa;
-            --code-text: #202124;
-            --hover-overlay: rgba(0,0,0,0.04);
-            --footer-bg: #f8f9fa;
-            --progress-bar-bg: #e8eaed;
-            --progress-dot: #9aa0a6;
-            --progress-dot-active: #1a73e8;
-        }}
-
-        :root[data-theme="dark"] {{
-            --primary: #8ab4f8;
-            --primary-light: #1e2a3a;
-            --surface-0: #202124;
-            --surface-1: #292a2d;
-            --surface-2: #303134;
-            --surface-3: #3c4043;
-            --text-primary: #e8eaed;
-            --text-secondary: #9aa0a6;
-            --text-tertiary: #80868b;
-            --border: #3c4043;
-            --border-dark: #5f6368;
-            --shadow: 0 1px 2px 0 rgba(0,0,0,0.3);
-            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.4);
-            --code-bg: #303134;
-            --code-text: #e8eaed;
-            --hover-overlay: rgba(255,255,255,0.04);
-            --footer-bg: #292a2d;
-            --progress-bar-bg: #3c4043;
-            --progress-dot: #5f6368;
-            --progress-dot-active: #8ab4f8;
-        }}
-
-        :root[data-theme="sepia"] {{
-            --primary: #8b5a2b;
-            --primary-light: #f4ecd8;
-            --surface-0: #f4ecd8;
-            --surface-1: #e8dccc;
-            --surface-2: #d8ccbc;
-            --surface-3: #c8bcac;
-            --text-primary: #3e2e23;
-            --text-secondary: #5e4e3e;
-            --text-tertiary: #7e6e5e;
-            --border: #d8ccbc;
-            --border-dark: #c8bcac;
-            --shadow: 0 1px 2px 0 rgba(0,0,0,0.1);
-            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.15);
-            --code-bg: #e8dccc;
-            --code-text: #3e2e23;
-            --hover-overlay: rgba(0,0,0,0.04);
-            --footer-bg: #e8dccc;
-            --progress-bar-bg: #d8ccbc;
-            --progress-dot: #8b7b6b;
-            --progress-dot-active: #8b5a2b;
-        }}
-
-        :root[data-theme="nord"] {{
-            --primary: #88c0d0;
-            --primary-light: #eceff4;
-            --surface-0: #2e3440;
-            --surface-1: #3b4252;
-            --surface-2: #434c5e;
-            --surface-3: #4c566a;
-            --text-primary: #eceff4;
-            --text-secondary: #e5e9f0;
-            --text-tertiary: #d8dee9;
-            --border: #434c5e;
-            --border-dark: #4c566a;
-            --shadow: 0 1px 2px 0 rgba(0,0,0,0.3);
-            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.4);
-            --code-bg: #3b4252;
-            --code-text: #eceff4;
-            --hover-overlay: rgba(255,255,255,0.04);
-            --footer-bg: #3b4252;
-            --progress-bar-bg: #434c5e;
-            --progress-dot: #4c566a;
-            --progress-dot-active: #88c0d0;
-        }}
-
-        :root[data-theme="solarized"] {{
-            --primary: #268bd2;
-            --primary-light: #eee8d5;
-            --surface-0: #fdf6e3;
-            --surface-1: #eee8d5;
-            --surface-2: #93a1a1;
-            --surface-3: #839496;
-            --text-primary: #002b36;
-            --text-secondary: #073642;
-            --text-tertiary: #586e75;
-            --border: #93a1a1;
-            --border-dark: #839496;
-            --shadow: 0 1px 2px 0 rgba(0,0,0,0.1);
-            --shadow-hover: 0 1px 3px 0 rgba(0,0,0,0.15);
-            --code-bg: #eee8d5;
-            --code-text: #002b36;
-            --hover-overlay: rgba(0,0,0,0.04);
-            --footer-bg: #eee8d5;
-            --progress-bar-bg: #93a1a1;
-            --progress-dot: #586e75;
-            --progress-dot-active: #268bd2;
-        }}
-
-        body {{
-            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--surface-1);
-            color: var(--text-primary);
-            font-size: 14px;
-            height: 100vh;
-            overflow: hidden;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            transition: background-color 0.2s, color 0.2s;
-        }}
-
-        .material-symbols-outlined {{
-            font-size: 20px;
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
-        }}
-
-        .app {{
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }}
-
-        .sidebar-overlay {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 90;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s;
-        }}
-
-        .sidebar-overlay.active {{
-            opacity: 1;
-            visibility: visible;
-        }}
-
-        .sidebar {{
-            width: var(--sidebar-width);
-            background: var(--surface-0);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            flex-shrink: 0;
-            z-index: 100;
-        }}
-
-        .sidebar-header {{
-            padding: 1.5rem 1.5rem 1rem;
-            border-bottom: 1px solid var(--border);
-        }}
-
-        .project-header {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.25rem;
-        }}
-
-        .project-name {{
-            font-weight: 500;
-            font-size: 1.25rem;
-            color: var(--text-primary);
-        }}
-
-        .docs-badge {{
-            display: inline-flex;
-            align-items: center;
-            padding: 0.125rem 0.5rem;
-            background: var(--primary-light);
-            color: var(--primary);
-            font-size: 0.75rem;
-            font-weight: 500;
-            border-radius: 4px;
-            text-transform: uppercase;
-        }}
-
-        .project-version {{
-            color: var(--text-tertiary);
-            font-size: 0.8125rem;
-        }}
-
-        .sidebar-nav {{
-            padding: 1rem 0;
-            flex: 1;
-        }}
-
-        .nav-category {{
-            margin-bottom: 1rem;
-        }}
-
-        .category-header {{
-            padding: 0.5rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: var(--text-tertiary);
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            cursor: pointer;
-            user-select: none;
-        }}
-
-        .category-header:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .category-header .material-symbols-outlined {{
-            font-size: 16px;
-        }}
-
-        .category-items.collapsed {{
-            display: none;
-        }}
-
-        .subcategory {{
-            margin-left: 1rem;
-        }}
-
-        .subcategory-header {{
-            padding: 0.25rem 1.5rem 0.25rem 2.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-tertiary);
-            font-size: 0.7rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            cursor: pointer;
-            user-select: none;
-        }}
-
-        .subcategory-header:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .subcategory-header .material-symbols-outlined {{
-            font-size: 14px;
-        }}
-
-        .subcategory-items.collapsed {{
-            display: none;
-        }}
-
-        .nav-item {{
-            padding: 0.5rem 1.5rem 0.5rem 3.5rem;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            position: relative;
-            margin-right: 0.5rem;
-            border-radius: 0 24px 24px 0;
-        }}
-
-        .subcategory .nav-item {{
-            padding-left: 4rem;
-        }}
-
-        .nav-item:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .nav-item.active {{
-            background: var(--primary-light);
-            color: var(--primary);
-        }}
-
-        .nav-item.active::before {{
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: var(--primary);
-            border-radius: 0 4px 4px 0;
-        }}
-
-        .nav-item .material-symbols-outlined {{
-            font-size: 18px;
-            color: var(--text-tertiary);
-        }}
-
-        .nav-item.active .material-symbols-outlined {{
-            color: var(--primary);
-        }}
-
-        .main {{
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }}
-
-        .header {{
-            height: var(--header-height);
-            background: var(--surface-0);
-            border-bottom: 1px solid var(--border);
-            padding: 0 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-            gap: 1rem;
-        }}
-
-        .header-left {{
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-shrink: 0;
-        }}
-
-        .menu-button {{
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            border-radius: 20px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }}
-
-        .menu-button:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .breadcrumb {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-tertiary);
-            font-size: 0.875rem;
-        }}
-
-        .breadcrumb a {{
-            color: var(--text-secondary);
-            text-decoration: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            padding: 0.5rem;
-            border-radius: 20px;
-        }}
-
-        .breadcrumb a:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .breadcrumb span:last-child {{
-            color: var(--text-primary);
-            font-weight: 500;
-        }}
-
-        .header-search {{
-            flex: 1;
-            max-width: 600px;
-            margin: 0 1rem;
-        }}
-
-        .search-container {{
-            position: relative;
-            width: 100%;
-        }}
-
-        .search-icon {{
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            pointer-events: none;
-        }}
-
-        .search-input {{
-            width: 100%;
-            padding: 0.5rem 1rem 0.5rem 3rem;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            font-family: 'Roboto', sans-serif;
-            font-size: 0.875rem;
-            color: var(--text-primary);
-            outline: none;
-            transition: all 0.2s;
-        }}
-
-        .search-input:focus {{
-            background: var(--surface-0);
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px var(--primary-light);
-        }}
-
-        .search-clear {{
-            position: absolute;
-            right: 0.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            cursor: pointer;
-            display: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 16px;
-            align-items: center;
-            justify-content: center;
-            background: var(--surface-2);
-            border: none;
-        }}
-
-        .search-clear:hover {{
-            background: var(--surface-3);
-        }}
-
-        .search-clear.visible {{
-            display: flex;
-        }}
-
-        .header-right {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-shrink: 0;
-        }}
-
-        .stats {{
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.375rem 0.75rem;
-            background: var(--surface-2);
-            border-radius: 100px;
-            font-size: 0.8125rem;
-        }}
-
-        .stat {{
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-            color: var(--text-secondary);
-        }}
-
-        .theme-selector {{
-            position: relative;
-        }}
-
-        .theme-button {{
-            padding: 0.5rem 1rem;
-            background: var(--surface-2);
-            border: none;
-            border-radius: 20px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            font-family: 'Roboto', sans-serif;
-        }}
-
-        .theme-button:hover {{
-            background: var(--surface-3);
-        }}
-
-        .theme-dropdown {{
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 0.5rem;
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: var(--shadow-hover);
-            display: none;
-            z-index: 1000;
-            min-width: 180px;
-            overflow: hidden;
-        }}
-
-        .theme-dropdown.show {{
-            display: block;
-        }}
-
-        .theme-option {{
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }}
-
-        .theme-option:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .theme-option.active {{
-            background: var(--primary-light);
-            color: var(--primary);
-        }}
-
-        .content-wrapper {{
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }}
-
-        .content {{
-            flex: 1;
-            overflow-y: auto;
-            padding: 2rem;
-            scroll-behavior: smooth;
-        }}
-
-        .progress-indicator {{
-            width: var(--progress-indicator-width);
-            background: var(--surface-0);
-            border-left: 1px solid var(--border);
-            padding: 1.5rem 0;
-            overflow-y: auto;
-            display: none;
-            flex-shrink: 0;
-        }}
-
-        .progress-indicator.visible {{
-            display: block;
-        }}
-
-        .progress-header {{
-            padding: 0 1rem 1rem 1rem;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 1rem;
-        }}
-
-        .progress-title {{
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            color: var(--text-tertiary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }}
-
-        .progress-bar-container {{
-            padding: 0 1rem 1rem 1rem;
-        }}
-
-        .progress-bar {{
-            height: 4px;
-            background: var(--progress-bar-bg);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 0.5rem;
-        }}
-
-        .progress-fill {{
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.1s ease;
-        }}
-
-        .progress-percentage {{
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-align: right;
-        }}
-
-        .section-list {{
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }}
-
-        .section-item {{
-            padding: 0.5rem 1rem;
-            margin: 0.125rem 0;
-            cursor: pointer;
-            font-size: 0.8125rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-left: 2px solid transparent;
-            transition: all 0.2s ease;
-        }}
-
-        .section-item:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .section-item.active {{
-            color: var(--primary);
-            border-left-color: var(--primary);
-            background: var(--primary-light);
-        }}
-
-        .section-dot {{
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--progress-dot);
-            flex-shrink: 0;
-        }}
-
-        .section-item.active .section-dot {{
-            background: var(--progress-dot-active);
-            transform: scale(1.2);
-        }}
-
-        .section-title {{
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }}
-
-        .hero {{
-            padding: 60px 0 40px;
-            background: var(--surface-0);
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            
-        }}
-        
-
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }}
-
-        .hero-grid {{
-            display: flex;
-            align-items: center;
-            gap: 48px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }}
-
-        .hero-grid img {{
-            max-width: 100%;
-            height: auto;
-        }}
-
-        .hero-content {{
-            flex: 1 1 400px;
-        }}
-
-        .hero-chip-set {{
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }}
-
-        .chip {{
-            background: var(--surface-2);
-            color: var(--text-secondary);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: 1px solid var(--border);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }}
-
-        .chip.outline {{
-            background: transparent;
-            border: 1px solid var(--border-dark);
-        }}
-
-        .hero-title {{
-            font-size: 3.5rem;
-            font-weight: 300;
-            line-height: 1.1;
-            letter-spacing: -0.5px;
-            color: var(--text-primary);
-        }}
-
-        .hero-highlight {{
-            color: var(--primary);
-            font-weight: 400;
-        }}
-
-        .hero-description {{
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            margin: 24px 0 32px;
-            max-width: 600px;
-        }}
-
-        .stats-grid {{
-            display: flex;
-            gap: 32px;
-            margin: 24px 0 32px;
-        }}
-
-        .stat-item {{
-            display: flex;
-            flex-direction: column;
-        }}
-
-        .stat-value {{
-            font-size: 2rem;
-            font-weight: 500;
-            color: var(--primary);
-            line-height: 1.2;
-        }}
-
-        .stat-label {{
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }}
-
-        .btn-row {{
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }}
-
-        .btn {{
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 28px;
-            border-radius: 40px;
-            font-weight: 500;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: box-shadow 0.2s, background 0.2s;
-            font-family: 'Roboto', sans-serif;
-            font-size: 1rem;
-        }}
-
-        .hero-button-primary {{
-            background: var(--primary);
-            color: var(--surface-0);
-            box-shadow: var(--shadow);
-        }}
-
-        .hero-button-primary:hover {{
-            box-shadow: var(--shadow-hover);
-            filter: brightness(0.95);
-        }}
-
-        .hero-button-secondary {{
-            background: transparent;
-            color: var(--primary);
-            border: 1px solid var(--border-dark);
-            box-shadow: none;
-        }}
-
-        .hero-button-secondary:hover {{
-            background: var(--primary-light);
-        }}
-
-        .hero-visual {{
-            flex: 1 1 400px;
-            background-color: var(--surface-2);
-            border-radius: 64px;
-            padding: 40px 24px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }}
-
-        .pill-icon {{
-            background-color: var(--primary-light);
-            width: 90px;
-            height: 90px;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-        }}
-
-        .pill-icon span {{
-            font-size: 48px;
-        }}
-
-        .action-cards {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1rem;
-            margin: 2rem 0 3rem;
-        }}
-
-        .action-card {{
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }}
-
-        .action-card:hover {{
-            border-color: var(--primary);
-            box-shadow: var(--shadow-hover);
-            transform: translateY(-2px);
-        }}
-
-        .action-card-icon {{
-            width: 48px;
-            height: 48px;
-            background: var(--primary-light);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            flex-shrink: 0;
-        }}
-
-        .action-card-icon .material-symbols-outlined {{
-            font-size: 24px;
-        }}
-
-        .action-card-content {{
-            flex: 1;
-        }}
-
-        .action-card-content h3 {{
-            font-size: 1rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            margin-bottom: 0.25rem;
-        }}
-
-        .action-card-content p {{
-            font-size: 0.8125rem;
-            color: var(--text-secondary);
-        }}
-
-        .action-card-arrow {{
-            color: var(--text-tertiary);
-            font-size: 20px;
-            transition: transform 0.2s;
-        }}
-
-        .action-card:hover .action-card-arrow {{
-            transform: translateX(4px);
-            color: var(--primary);
-        }}
-
-        .doc-view {{
-            display: none;
-            max-width: auto;
-            margin: 0 auto;
-        }}
-
-        .doc-header {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }}
-
-        .doc-title {{
-            font-size: 1.75rem;
-            font-weight: 500;
-            color: var(--text-primary);
-        }}
-
-        .doc-actions {{
-            display: flex;
-            gap: 0.5rem;
-        }}
-
-        .doc-action-button {{
-            padding: 0.5rem 1rem;
-            background: var(--surface-2);
-            border: none;
-            border-radius: 20px;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-family: 'Roboto', sans-serif;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }}
-
-        .doc-action-button:hover {{
-            background: var(--surface-3);
-        }}
-
-        .doc-content {{
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 2rem;
-        }}
-
-        .footer {{
-            background: var(--footer-bg);
-            border-top: 1px solid var(--border);
-            padding: 1rem 1.5rem;
-            margin-top: 2rem;
-            text-align: center;
-            color: var(--text-tertiary);
-            font-size: 0.8125rem;
-            border-radius: 8px;
-        }}
-
-        .footer-content {{
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }}
-
-        .footer-info {{
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }}
-
-        .markdown-body {{
-            color: var(--text-primary);
-        }}
-
-        .markdown-body h1 {{
-            font-size: 1.75rem;
-            font-weight: 500;
-            margin: 0 0 1rem;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
-            scroll-margin-top: 2rem;
-        }}
-
-        .markdown-body h2 {{
-            font-size: 1.5rem;
-            font-weight: 500;
-            margin: 1.5rem 0 0.75rem;
-            color: var(--text-primary);
-            scroll-margin-top: 2rem;
-        }}
-
-        .markdown-body h3 {{
-            font-size: 1.25rem;
-            font-weight: 500;
-            margin: 1.25rem 0 0.5rem;
-            color: var(--text-primary);
-            scroll-margin-top: 2rem;
-        }}
-
-        .markdown-body p {{
-            margin: 0.75rem 0;
-            color: var(--text-secondary);
-        }}
-
-        .markdown-body a {{
-            color: var(--primary);
-            text-decoration: none;
-        }}
-
-        .markdown-body a:hover {{
-            text-decoration: underline;
-        }}
-
-        .markdown-body pre {{
-            margin: 1rem 0;
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
-            background: var(--code-bg);
-            border: 1px solid var(--border);
-        }}
-
-        .markdown-body pre .copy-button {{
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            padding: 0.25rem 0.75rem;
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-            font-family: 'Roboto', sans-serif;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }}
-
-        .markdown-body pre:hover .copy-button {{
-            opacity: 1;
-        }}
-
-        .markdown-body pre .copy-button:hover {{
-            background: var(--surface-2);
-        }}
-
-        .markdown-body pre .copy-button.copied {{
-            background: var(--primary);
-            color: white;
-        }}
-
-        .markdown-body code {{
-            font-family: 'Google Sans Mono', monospace;
-            font-size: 0.875em;
-            padding: 0.2em 0.4em;
-            background: var(--code-bg);
-            border-radius: 4px;
-            color: var(--code-text);
-        }}
-
-        .markdown-body pre code {{
-            padding: 1rem;
-            background: transparent;
-            font-size: 0.8125rem;
-            line-height: 1.5;
-            display: block;
-            overflow-x: auto;
-        }}
-
-        .markdown-body table {{
-            width: 100%;
-            margin: 1rem 0;
-            border-collapse: collapse;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            overflow: hidden;
-        }}
-
-        .markdown-body th {{
-            padding: 0.5rem 1rem;
-            background: var(--surface-2);
-            font-weight: 500;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }}
-
-        .markdown-body td {{
-            padding: 0.5rem 1rem;
-            border-bottom: 1px solid var(--border);
-        }}
-
-        .markdown-body tr:last-child td {{
-            border-bottom: none;
-        }}
-
-        .markdown-body ul, .markdown-body ol {{
-            margin: 0.75rem 0;
-            padding-left: 1.5rem;
-        }}
-
-        .markdown-body li {{
-            margin: 0.25rem 0;
-        }}
-
-        .mermaid {{
-            background: var(--surface-0);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            margin: 1.5rem 0;
-            text-align: center;
-            transition: background-color 0.2s, border-color 0.2s;
-        }}
-        
-        .mermaid svg {{
-            max-width: 100%;
-            height: auto;
-        }}
-
-        .empty-state {{
-            text-align: center;
-            padding: 3rem;
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            grid-column: 1 / -1;
-        }}
-
-        .empty-state .material-symbols-outlined {{
-            font-size: 48px;
-            color: var(--text-tertiary);
-            margin-bottom: 1rem;
-        }}
-
-        .empty-state h3 {{
-            font-size: 1.25rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: var(--text-primary);
-        }}
-
-        .codehilite {{
-            background: transparent !important;
-        }}
-
-        .search-results {{
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
-            right: 0;
-            background: var(--surface-0);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: var(--shadow-hover);
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }}
-
-        .search-results.show {{
-            display: block;
-        }}
-
-        .search-result-item {{
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            border-bottom: 1px solid var(--border);
-        }}
-
-        .search-result-item:last-child {{
-            border-bottom: none;
-        }}
-
-        .search-result-item:hover {{
-            background: var(--hover-overlay);
-        }}
-
-        .search-result-item .material-symbols-outlined {{
-            color: var(--text-tertiary);
-        }}
-
-        .search-result-content {{
-            flex: 1;
-        }}
-
-        .search-result-title {{
-            font-weight: 500;
-            color: var(--text-primary);
-            margin-bottom: 0.25rem;
-        }}
-
-        .search-result-category {{
-            font-size: 0.75rem;
-            color: var(--text-tertiary);
-        }}
-
-        {pygments_styles}
-
-        @media (max-width: 768px) {{
-            .menu-button {{
-                display: flex;
-            }}
-
-            .sidebar {{
-                position: fixed;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                transform: translateX(-100%);
-                transition: transform 0.2s;
-            }}
-
-            .sidebar.active {{
-                transform: translateX(0);
-            }}
-
-            .stats {{
-                display: none;
-            }}
-
-            .content {{
-                padding: 1rem;
-            }}
-
-            .hero-grid {{
-                flex-direction: column;
-                text-align: center;
-            }}
-
-            .hero-description {{
-                margin-left: auto;
-                margin-right: auto;
-            }}
-
-            .btn-row {{
-                justify-content: center;
-            }}
-
-            .hero-visual {{
-                width: 100%;
-                justify-content: center;
-            }}
-
-            .stats-grid {{
-                justify-content: center;
-            }}
-
-            .action-cards {{
-                grid-template-columns: 1fr;
-            }}
-
-            .doc-header {{
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }}
-
-            .doc-actions {{
-                width: 100%;
-            }}
-
-            .footer-content {{
-                flex-direction: column;
-                gap: 0.5rem;
-            }}
-
-            .footer-info {{
-                flex-direction: column;
-                gap: 0.25rem;
-            }}
-
-            .progress-indicator {{
-                position: fixed;
-                right: 0;
-                top: var(--header-height);
-                bottom: 0;
-                background: var(--surface-0);
-                box-shadow: var(--shadow-hover);
-                transform: translateX(100%);
-                transition: transform 0.2s;
-                z-index: 95;
-            }}
-
-            .progress-indicator.visible {{
-                transform: translateX(0);
-            }}
-
-            .header-search {{
-                display: none;
-            }}
-        }}
+/* ─── Material You Design Tokens ────────────────── */
+:root {{
+  --md-ref-palette-primary0: #000000;
+  --md-ref-palette-primary10: #001b3f;
+  --md-ref-palette-primary20: #002f66;
+  --md-ref-palette-primary30: #1f4480;
+  --md-ref-palette-primary40: #3b5c9a;
+  --md-ref-palette-primary50: #5575b5;
+  --md-ref-palette-primary60: #6f8fd1;
+  --md-ref-palette-primary70: #8aa9ed;
+  --md-ref-palette-primary80: #abc4ff;
+  --md-ref-palette-primary90: #d6e2ff;
+  --md-ref-palette-primary95: #ecf0ff;
+  --md-ref-palette-primary99: #fefbff;
+  --md-ref-palette-primary100: #ffffff;
+
+  --md-sys-color-primary: var(--md-ref-palette-primary40);
+  --md-sys-color-on-primary: var(--md-ref-palette-primary100);
+  --md-sys-color-primary-container: var(--md-ref-palette-primary90);
+  --md-sys-color-on-primary-container: var(--md-ref-palette-primary10);
+  --md-sys-color-secondary: #526070;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #d6e4f7;
+  --md-sys-color-on-secondary-container: #0f1d2b;
+  --md-sys-color-surface: #fdfcff;
+  --md-sys-color-on-surface: #1a1c1e;
+  --md-sys-color-surface-variant: #dfe3eb;
+  --md-sys-color-on-surface-variant: #43474e;
+  --md-sys-color-outline: #73778f;
+  --md-sys-color-outline-variant: #c3c7cf;
+  --md-sys-color-background: #fdfcff;
+  --md-sys-color-on-background: #1a1c1e;
+  --md-sys-color-surface-container: #f0f0f4;
+  --md-sys-color-surface-container-high: #e6eaf0;
+  --md-sys-color-surface-container-highest: #dde1e8;
+  --md-elevation-1: 0 1px 3px 1px rgba(0,0,0,0.15), 0 1px 2px 0 rgba(0,0,0,0.30);
+  --md-elevation-2: 0 2px 6px 2px rgba(0,0,0,0.15), 0 1px 2px 0 rgba(0,0,0,0.30);
+  --md-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px 0 rgba(0,0,0,0.30);
+  --md-elevation-4: 0 6px 12px 4px rgba(0,0,0,0.15), 0 2px 4px 0 rgba(0,0,0,0.30);
+  --md-radius-extra-small: 4px;
+  --md-radius-small: 8px;
+  --md-radius-medium: 12px;
+  --md-radius-large: 16px;
+  --md-radius-extra-large: 28px;
+  --md-transition: 200ms cubic-bezier(0.2, 0, 0, 1);
+}}
+
+[data-theme="dark"] {{
+  --md-sys-color-primary: #abc4ff;
+  --md-sys-color-on-primary: #002f66;
+  --md-sys-color-primary-container: #1f4480;
+  --md-sys-color-on-primary-container: #d6e2ff;
+  --md-sys-color-secondary: #bac8db;
+  --md-sys-color-on-secondary: #243240;
+  --md-sys-color-secondary-container: #3a4858;
+  --md-sys-color-on-secondary-container: #d6e4f7;
+  --md-sys-color-surface: #111315;
+  --md-sys-color-on-surface: #e1e2e5;
+  --md-sys-color-surface-variant: #43474e;
+  --md-sys-color-on-surface-variant: #c3c7cf;
+  --md-sys-color-outline: #8d919c;
+  --md-sys-color-outline-variant: #43474e;
+  --md-sys-color-background: #111315;
+  --md-sys-color-on-background: #e1e2e5;
+  --md-sys-color-surface-container: #1e2024;
+  --md-sys-color-surface-container-high: #292b30;
+  --md-sys-color-surface-container-highest: #34363c;
+  --md-elevation-1: 0 1px 3px 1px rgba(0,0,0,0.5), 0 1px 2px 0 rgba(0,0,0,0.3);
+  --md-elevation-2: 0 2px 6px 2px rgba(0,0,0,0.5), 0 1px 2px 0 rgba(0,0,0,0.3);
+  --md-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.5), 0 1px 3px 0 rgba(0,0,0,0.3);
+  --md-elevation-4: 0 6px 12px 4px rgba(0,0,0,0.5), 0 2px 4px 0 rgba(0,0,0,0.3);
+}}
+
+[data-theme="sepia"] {{
+  --md-sys-color-primary: #8b5e2a;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #ffe2cc;
+  --md-sys-color-on-primary-container: #2f1a08;
+  --md-sys-color-secondary: #6f5c4b;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #fbdfcd;
+  --md-sys-color-on-secondary-container: #281a0e;
+  --md-sys-color-surface: #faf1e4;
+  --md-sys-color-on-surface: #2c2416;
+  --md-sys-color-surface-variant: #f2e0cf;
+  --md-sys-color-on-surface-variant: #504538;
+  --md-sys-color-outline: #837568;
+  --md-sys-color-outline-variant: #d5c4b4;
+  --md-sys-color-background: #faf1e4;
+  --md-sys-color-on-background: #2c2416;
+  --md-sys-color-surface-container: #f0e4d6;
+  --md-sys-color-surface-container-high: #e8daca;
+  --md-sys-color-surface-container-highest: #e0d0be;
+  --md-elevation-1: 0 1px 3px 1px rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+  --md-elevation-2: 0 2px 6px 2px rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+  --md-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.1), 0 1px 3px 0 rgba(0,0,0,0.06);
+  --md-elevation-4: 0 6px 12px 4px rgba(0,0,0,0.1), 0 2px 4px 0 rgba(0,0,0,0.06);
+}}
+
+/* ─── Reset ──────────────────────────────────────── */
+*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+html {{ font-size: 16px; }}
+
+/* ─── Base ───────────────────────────────────────── */
+body {{
+  font-family: 'Inter', sans-serif;
+  background: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--md-transition), color var(--md-transition);
+  font-size: 1rem;
+  line-height: 1.6;
+}}
+
+/* ─── Layout ─────────────────────────────────────── */
+.layout {{
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}}
+
+/* ─── Sidebar ────────────────────────────────────── */
+.sidebar {{
+  width: 320px;
+  background: var(--md-sys-color-surface-container);
+  border-right: 1px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  z-index: 50;
+  transition: background var(--md-transition), border-color var(--md-transition);
+}}
+
+.sidebar-top {{
+  padding: 0;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  flex-shrink: 0;
+}}
+
+.sidebar-logo {{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 24px 16px;
+  text-decoration: none;
+  cursor: pointer;
+}}
+
+.logo-name {{
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  letter-spacing: -0.01em;
+}}
+
+.logo-version {{
+  font-size: 0.875rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: auto;
+  background: var(--md-sys-color-surface-variant);
+  padding: 4px 10px;
+  border-radius: var(--md-radius-extra-large);
+}}
+
+.sidebar-search {{
+  padding: 12px 24px 24px;
+}}
+
+.sb-search-wrap {{
+  position: relative;
+}}
+
+.sb-search-icon {{
+  position: absolute; left: 16px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--md-sys-color-on-surface-variant);
+  pointer-events: none;
+  display: flex;
+}}
+
+.sb-search-input {{
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-extra-large);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface);
+  outline: none;
+  transition: all var(--md-transition);
+}}
+
+.sb-search-input::placeholder {{ color: var(--md-sys-color-on-surface-variant); }}
+.sb-search-input:focus {{
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 4px var(--md-sys-color-primary-container);
+}}
+
+.sidebar-nav {{
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-sys-color-outline-variant) transparent;
+}}
+
+.sidebar-nav::-webkit-scrollbar {{ width: 4px; }}
+.sidebar-nav::-webkit-scrollbar-track {{ background: transparent; }}
+.sidebar-nav::-webkit-scrollbar-thumb {{ background: var(--md-sys-color-outline-variant); border-radius: 4px; }}
+
+/* Category label */
+.nav-group {{ margin-bottom: 4px; }}
+
+.nav-group-header {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  user-select: none;
+}}
+
+.nav-group-header:hover {{ color: var(--md-sys-color-on-surface); }}
+
+.nav-chevron {{
+  margin-left: auto;
+  transition: transform 0.15s;
+  color: var(--md-sys-color-on-surface-variant);
+  width: 18px;
+  height: 18px;
+}}
+
+.nav-chevron.collapsed {{ transform: rotate(-90deg); }}
+
+.nav-group-items {{ overflow: hidden; }}
+.nav-group-items.collapsed {{ display: none; }}
+
+.nav-item {{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 24px 12px 32px;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  border-radius: 0 28px 28px 0;
+  margin-right: 12px;
+  transition: all var(--md-transition);
+  line-height: 1.5;
+}}
+
+.nav-item:hover {{
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+}}
+
+.nav-item.active {{
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 500;
+}}
+
+.nav-item i {{
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}}
+
+/* Subcategory */
+.nav-subgroup {{ margin-left: 12px; }}
+
+.nav-subgroup-header {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px 10px 32px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  user-select: none;
+}}
+
+.nav-subgroup-header:hover {{ color: var(--md-sys-color-on-surface); }}
+
+.nav-subgroup-items {{ overflow: hidden; }}
+.nav-subgroup-items.collapsed {{ display: none; }}
+
+.nav-item.sub {{ padding-left: 58px; }}
+
+/* ─── Main area ──────────────────────────────────── */
+.main {{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}}
+
+/* ─── Header ─────────────────────────────────────── */
+.header {{
+  height: 80px;
+  background: var(--md-sys-color-surface);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 20px;
+  flex-shrink: 0;
+  transition: background var(--md-transition), border-color var(--md-transition);
+}}
+
+.breadcrumb {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+  flex: 1;
+  min-width: 0;
+}}
+
+.breadcrumb-home {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--md-radius-large);
+  transition: background var(--md-transition);
+  white-space: nowrap;
+}}
+
+.breadcrumb-home:hover {{ background: var(--md-sys-color-surface-container-high); }}
+
+.breadcrumb-sep {{ opacity: 0.4; }}
+
+.breadcrumb-current {{
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}}
+
+.header-right {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}}
+
+.header-btn {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-extra-large);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  transition: all var(--md-transition);
+  white-space: nowrap;
+}}
+
+.header-btn:hover {{
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-outline);
+}}
+
+.header-btn kbd {{
+  background: var(--md-sys-color-surface-container);
+  padding: 4px 10px;
+  border-radius: var(--md-radius-small);
+  font-size: 0.875rem;
+  font-family: 'JetBrains Mono', monospace;
+}}
+
+/* Theme picker */
+.theme-wrap {{ position: relative; }}
+
+.theme-menu {{
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-large);
+  box-shadow: var(--md-elevation-2);
+  min-width: 200px;
+  overflow: hidden;
+  display: none;
+  z-index: 200;
+}}
+
+.theme-menu.open {{ display: block; }}
+
+.theme-opt {{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 24px;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  transition: background var(--md-transition);
+}}
+
+.theme-opt:hover {{ background: var(--md-sys-color-surface-container-high); }}
+.theme-opt.active {{
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}}
+
+.theme-swatch {{
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--md-sys-color-outline-variant);
+  flex-shrink: 0;
+}}
+
+/* ─── Content ────────────────────────────────────── */
+.content-wrap {{
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}}
+
+.content {{
+  flex: 1;
+  overflow-y: auto;
+  padding: 56px 72px;
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--md-sys-color-outline-variant) transparent;
+}}
+
+.content::-webkit-scrollbar {{ width: 8px; }}
+.content::-webkit-scrollbar-track {{ background: transparent; }}
+.content::-webkit-scrollbar-thumb {{ background: var(--md-sys-color-outline-variant); border-radius: 4px; }}
+
+/* ─── TOC / Progress ─────────────────────────────── */
+.toc {{
+  width: 280px;
+  border-left: 1px solid var(--md-sys-color-outline-variant);
+  padding: 48px 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+  display: none;
+}}
+
+.toc.visible {{ display: block; }}
+
+.toc-label {{
+  padding: 0 24px 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+}}
+
+.toc-progress {{
+  margin: 0 24px 16px;
+  height: 4px;
+  background: var(--md-sys-color-surface-variant);
+  border-radius: var(--md-radius-extra-small);
+  overflow: hidden;
+}}
+
+.toc-progress-fill {{
+  height: 100%;
+  background: var(--md-sys-color-primary);
+  border-radius: var(--md-radius-extra-small);
+  width: 0%;
+  transition: width 0.1s;
+}}
+
+.toc-pct {{
+  padding: 0 24px;
+  font-size: 0.875rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 16px;
+}}
+
+.toc-item {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  font-size: 0.9375rem;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  transition: all var(--md-transition);
+  border-left: 3px solid transparent;
+}}
+
+.toc-item:hover {{
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-high);
+}}
+.toc-item.active {{
+  color: var(--md-sys-color-primary);
+  border-left-color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary-container);
+}}
+
+.toc-dot {{
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  opacity: 0.6;
+}}
+
+.toc-text {{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}}
+
+/* ─── Home page ──────────────────────────────────── */
+.hero {{
+  padding: 48px 0 56px;
+  max-width: 1000px;
+}}
+
+.hero-eyebrow {{
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 20px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-radius: var(--md-radius-extra-large);
+  margin-bottom: 28px;
+}}
+
+.hero-title {{
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--md-sys-color-on-background);
+  margin-bottom: 24px;
+}}
+
+.hero-desc {{
+  font-size: 1.5rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.6;
+  max-width: 800px;
+  margin-bottom: 48px;
+}}
+
+.hero-actions {{
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+}}
+
+.hero-btn {{
+  display: inline-flex;
+  align-items: center;
+  padding: 16px 36px;
+  border-radius: var(--md-radius-extra-large);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  transition: all var(--md-transition);
+}}
+
+.btn-primary {{
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  box-shadow: var(--md-elevation-1);
+}}
+
+.btn-primary:hover {{
+  filter: brightness(1.05);
+  box-shadow: var(--md-elevation-2);
+  transform: translateY(-2px);
+}}
+
+.btn-outline {{
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  color: var(--md-sys-color-on-surface);
+}}
+
+.btn-outline:hover {{
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-on-surface);
+}}
+
+.hero-badges {{
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}}
+
+.hero-badge {{
+  padding: 8px 20px;
+  background: var(--md-sys-color-surface-variant);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-extra-large);
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+}}
+
+/* Quick links */
+.quick-links {{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin-bottom: 56px;
+}}
+
+.quick-link {{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 28px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-large);
+  cursor: pointer;
+  transition: all var(--md-transition);
+  box-shadow: var(--md-elevation-1);
+}}
+
+.quick-link:hover {{
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--md-elevation-2);
+}}
+
+.ql-icon {{
+  width: 56px; height: 56px;
+  border-radius: var(--md-radius-medium);
+  background: var(--md-sys-color-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}}
+
+.ql-icon i {{
+  width: 28px;
+  height: 28px;
+}}
+
+.ql-body {{ flex: 1; min-width: 0; }}
+
+.ql-title {{
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 6px;
+}}
+
+.ql-desc {{
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+}}
+
+.ql-arrow {{
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  transition: transform var(--md-transition);
+}}
+.quick-link:hover .ql-arrow {{
+  transform: translateX(8px);
+  color: var(--md-sys-color-primary);
+}}
+
+/* ─── Doc view ───────────────────────────────────── */
+.doc-header {{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 48px;
+  padding-bottom: 28px;
+  border-bottom: 2px solid var(--md-sys-color-outline-variant);
+}}
+
+.doc-title {{
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--md-sys-color-on-background);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}}
+
+.doc-actions {{
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+}}
+
+.doc-action-btn {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-extra-large);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  transition: all var(--md-transition);
+}}
+
+.doc-action-btn:hover {{
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-outline);
+}}
+.doc-action-btn.copied {{
+  background: var(--md-sys-color-primary-container);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+}}
+
+/* ─── Markdown ───────────────────────────────────── */
+.md {{
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.7;
+  max-width: 1100px;
+  font-size: 1.125rem;
+}}
+
+.md h1, .md h2, .md h3, .md h4 {{
+  color: var(--md-sys-color-on-background);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  scroll-margin-top: 40px;
+}}
+
+.md h1 {{
+  font-size: 2.5rem;
+  margin: 0 0 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--md-sys-color-outline-variant);
+}}
+.md h2 {{
+  font-size: 2rem;
+  margin: 64px 0 28px;
+}}
+.md h3 {{
+  font-size: 1.75rem;
+  margin: 48px 0 20px;
+}}
+.md h4 {{
+  font-size: 1.375rem;
+  margin: 36px 0 16px;
+}}
+
+.md p {{ margin: 0 0 28px; }}
+.md p:last-child {{ margin-bottom: 0; }}
+
+.md a {{
+  color: var(--md-sys-color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--md-transition);
+}}
+.md a:hover {{
+  border-bottom-color: var(--md-sys-color-primary);
+}}
+
+.md code {{
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  padding: 4px 8px;
+  background: var(--md-sys-color-surface-variant);
+  border-radius: var(--md-radius-extra-small);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}}
+
+.md pre {{
+  margin: 36px 0;
+  border-radius: var(--md-radius-large);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  overflow: hidden;
+  background: var(--md-sys-color-surface-container);
+  position: relative;
+  font-size: 1rem;
+  box-shadow: var(--md-elevation-1);
+}}
+
+.md pre code {{
+  display: block;
+  padding: 28px 32px;
+  overflow-x: auto;
+  line-height: 1.6;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--md-sys-color-on-surface);
+  font-size: 1rem;
+}}
+
+.copy-btn {{
+  position: absolute;
+  top: 20px; right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-extra-large);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--md-transition), background var(--md-transition), color var(--md-transition);
+  box-shadow: var(--md-elevation-1);
+}}
+
+.md pre:hover .copy-btn {{ opacity: 1; }}
+.copy-btn:hover {{
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-outline);
+}}
+.copy-btn.ok {{
+  background: var(--md-sys-color-primary-container);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+  opacity: 1;
+}}
+
+.md table {{
+  width: 100%;
+  margin: 36px 0;
+  border-collapse: collapse;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-large);
+  overflow: hidden;
+  font-size: 1rem;
+  box-shadow: var(--md-elevation-1);
+}}
+
+.md th {{
+  padding: 18px 24px;
+  background: var(--md-sys-color-surface-container);
+  font-weight: 600;
+  text-align: left;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}}
+
+.md td {{
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface);
+}}
+
+.md tr:last-child td {{ border-bottom: none; }}
+.md tr:hover td {{ background: var(--md-sys-color-surface-container-high); }}
+
+.md ul, .md ol {{ margin: 0 0 28px 36px; }}
+.md li {{ margin: 10px 0; }}
+
+.md blockquote {{
+  margin: 36px 0;
+  padding: 28px 36px;
+  border-left: 4px solid var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary-container);
+  border-radius: 0 var(--md-radius-large) var(--md-radius-large) 0;
+  font-style: italic;
+}}
+
+.md blockquote p {{
+  color: var(--md-sys-color-on-primary-container);
+  margin: 0;
+  font-size: 1.25rem;
+}}
+
+.md hr {{
+  border: none;
+  border-top: 2px solid var(--md-sys-color-outline-variant);
+  margin: 56px 0;
+}}
+
+.md img {{
+  max-width: 100%;
+  border-radius: var(--md-radius-large);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow: var(--md-elevation-1);
+}}
+
+/* ─── Mermaid Diagrams ───────────────────────────── */
+.mermaid-wrapper {{
+  background: var(--md-sys-color-surface-container);
+  padding: 0;
+  border-radius: var(--md-radius-large);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  margin: 36px 0;
+  overflow: hidden;
+  box-shadow: var(--md-elevation-1);
+  transition: all var(--md-transition);
+}}
+
+.mermaid-wrapper.resized {{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  height: 90vh;
+  z-index: 1000;
+  box-shadow: var(--md-elevation-4);
+  background: var(--md-sys-color-surface);
+}}
+
+.mermaid-wrapper.resized .mermaid {{
+  height: calc(100% - 70px);
+  overflow: auto;
+  padding: 32px;
+}}
+
+.mermaid-wrapper.fullscreen {{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  border-radius: 0;
+  box-shadow: none;
+}}
+
+.mermaid-wrapper.fullscreen .mermaid {{
+  height: calc(100% - 70px);
+  overflow: auto;
+  padding: 40px;
+  background: var(--md-sys-color-surface);
+}}
+
+.mermaid-controls {{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--md-sys-color-surface-variant);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}}
+
+.mermaid-resize,
+.mermaid-fullscreen {{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-small);
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface);
+  transition: all var(--md-transition);
+}}
+
+.mermaid-resize:hover,
+.mermaid-fullscreen:hover {{
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+}}
+
+.mermaid {{
+  padding: 28px;
+  text-align: center;
+  transition: all var(--md-transition);
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}}
+
+.mermaid svg {{
+  max-width: 100%;
+  height: auto;
+}}
+
+/* Fullscreen overlay */
+.mermaid-overlay {{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 999;
+  display: none;
+}}
+
+.mermaid-overlay.active {{
+  display: block;
+}}
+
+.codehilite {{ background: transparent !important; }}
+
+/* ─── Search results overlay ─────────────────────── */
+.search-overlay {{
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  z-index: 300;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 140px;
+}}
+
+.search-overlay.open {{ display: flex; }}
+
+.search-modal {{
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-extra-large);
+  width: 100%;
+  max-width: 700px;
+  overflow: hidden;
+  box-shadow: var(--md-elevation-3);
+}}
+
+.search-modal-input-wrap {{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}}
+
+.search-modal-input {{
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.25rem;
+  color: var(--md-sys-color-on-surface);
+}}
+
+.search-modal-input::placeholder {{ color: var(--md-sys-color-on-surface-variant); }}
+
+.search-results-list {{ max-height: 500px; overflow-y: auto; }}
+
+.search-result {{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 28px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  transition: background var(--md-transition);
+}}
+
+.search-result:last-child {{ border-bottom: none; }}
+.search-result:hover {{ background: var(--md-sys-color-surface-container-high); }}
+
+.search-result-icon {{
+  width: 52px; height: 52px;
+  border-radius: var(--md-radius-medium);
+  background: var(--md-sys-color-primary-container);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}}
+
+.search-result-body {{ flex: 1; min-width: 0; }}
+
+.search-result-title {{
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: 6px;
+}}
+
+.search-result-cat {{
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+}}
+
+.search-no-results {{
+  padding: 56px;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 1.25rem;
+}}
+
+.search-hint {{
+  padding: 20px 28px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  gap: 28px;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface-container);
+}}
+
+.hint-key {{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}}
+
+kbd {{
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-small);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  box-shadow: var(--md-elevation-1);
+}}
+
+/* ─── Footer ─────────────────────────────────────── */
+.footer {{
+  margin-top: 72px;
+  padding: 28px 0;
+  border-top: 2px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+}}
+
+/* ─── Mobile overlay ─────────────────────────────── */
+.sidebar-overlay {{
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+}}
+
+/* ─── Responsive ─────────────────────────────────── */
+@media (max-width: 900px) {{
+  .toc {{ display: none !important; }}
+  .content {{ padding: 40px; }}
+}}
+
+@media (max-width: 640px) {{
+  .sidebar {{
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 50;
+  }}
+  .sidebar.open {{ transform: translateX(0); }}
+  .sidebar-overlay.open {{ display: block; }}
+  .mobile-menu-btn {{ display: flex !important; }}
+  .content {{ padding: 28px; }}
+  .hero-title {{ font-size: 2.75rem; }}
+  .hero-desc {{ font-size: 1.25rem; }}
+  .quick-links {{ grid-template-columns: 1fr; }}
+}}
+
+.mobile-menu-btn {{
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px; height: 48px;
+  background: none;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-radius-extra-large);
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface);
+  margin-right: 12px;
+}}
+
+/* doc-view hidden by default */
+.doc-view {{ display: none; }}
+
+{pygments_styles}
     </style>
 </head>
-<body data-theme="light">
-    <div class="app">
-        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<body>
 
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="project-header">
-                    <span class="project-name">{project_name}</span>
-                    <span class="docs-badge">DOCS</span>
-                </div>
-                <div class="project-version">{version}</div>
-            </div>
-            <div class="sidebar-nav">
-                <div class="nav-category">
-                    <div class="category-header" onclick="toggleCategory('home')">
-                        <span class="material-symbols-outlined">expand_more</span>
-                        <span>Overview</span>
-                    </div>
-                    <div class="category-items" id="category-home">
-                        <div class="nav-item active" onclick="showHome()">
-                            <span class="material-symbols-outlined">home</span>
-                            Home
-                        </div>
-                    </div>
-                </div>
-                {sidebar_content}
-            </div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="mermaid-overlay" id="mermaidOverlay" onclick="closeMermaidFullscreen()"></div>
+
+<div class="layout">
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo" onclick="showHome()">
+        <div class="logo-name">{project_name}</div>
+        <div class="logo-version">v{version}</div>
+      </div>
+      <div class="sidebar-search">
+        <div class="sb-search-wrap">
+          <span class="sb-search-icon">
+            <i data-lucide="search" width="20" height="20"></i>
+          </span>
+          <input class="sb-search-input" id="sidebarSearch" type="text" placeholder="Search docs" onclick="openSearch()" readonly>
         </div>
-
-        <div class="main">
-            <div class="header">
-                <div class="header-left">
-                    <button class="menu-button" onclick="toggleSidebar()">
-                        <span class="material-symbols-outlined">menu</span>
-                    </button>
-                    <div class="breadcrumb" id="breadcrumb">
-                        <a onclick="showHome()">
-                            <span class="material-symbols-outlined">home</span>
-                        </a>
-                        <span class="material-symbols-outlined">chevron_right</span>
-                        <span id="current-section">Home</span>
-                    </div>
-                </div>
-
-                <div class="header-search">
-                    <div class="search-container">
-                        <span class="material-symbols-outlined search-icon">search</span>
-                        <input type="text" class="search-input" id="searchInput" placeholder="Search documentation... (Press / to focus)">
-                        <button class="search-clear" id="searchClear" onclick="clearSearch()">
-                            <span class="material-symbols-outlined">close</span>
-                        </button>
-                        <div class="search-results" id="searchResults"></div>
-                    </div>
-                </div>
-
-                <div class="header-right">
-                    <div class="stats">
-                        <div class="stat">
-                            <span class="material-symbols-outlined">category</span>
-                            <span>{category_count}</span>
-                        </div>
-                        <div class="stat">
-                            <span class="material-symbols-outlined">description</span>
-                            <span>{section_count}</span>
-                        </div>
-                    </div>
-                    <div class="theme-selector">
-                        <button class="theme-button" onclick="toggleThemeDropdown()">
-                            <span class="material-symbols-outlined" id="themeIcon">light_mode</span>
-                            <span id="current-theme-label">Light</span>
-                        </button>
-                        <div class="theme-dropdown" id="themeDropdown">
-                            <div class="theme-option active" onclick="setTheme('light', event)">
-                                <span class="material-symbols-outlined">light_mode</span>
-                                Light
-                            </div>
-                            <div class="theme-option" onclick="setTheme('dark', event)">
-                                <span class="material-symbols-outlined">dark_mode</span>
-                                Dark
-                            </div>
-                            <div class="theme-option" onclick="setTheme('sepia', event)">
-                                <span class="material-symbols-outlined">book</span>
-                                Sepia
-                            </div>
-                            <div class="theme-option" onclick="setTheme('nord', event)">
-                                <span class="material-symbols-outlined">ac_unit</span>
-                                Nord
-                            </div>
-                            <div class="theme-option" onclick="setTheme('solarized', event)">
-                                <span class="material-symbols-outlined">wb_sunny</span>
-                                Solarized
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="content-wrapper">
-                <div class="content" id="content">
-                    <div id="home-view">
-   {action_cards}
-
-                        {hero_section}
-
-                     
-
-                        <div class="footer">
-                            <div class="footer-content">
-                                <div class="footer-copyright">
-                                    <span>© {year} {project_name}</span>
-                                </div>
-                                <div class="footer-info">
-                                    <span>Version {version}</span>
-                                    <span>Last updated {last_updated}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="doc-view" class="doc-view">
-                        <div class="doc-header">
-                            <h1 class="doc-title" id="doc-title"></h1>
-                            <div class="doc-actions">
-                                <button class="doc-action-button" onclick="copyPageLink(event)">
-                                    <span class="material-symbols-outlined">link</span>
-                                    Copy link
-                                </button>
-                            </div>
-                        </div>
-                        <div class="doc-content markdown-body" id="doc-content"></div>
-
-                        <div class="footer">
-                            <div class="footer-content">
-                                <div class="footer-copyright">
-                                    <span>© {year} {project_name}</span>
-                                </div>
-                                <div class="footer-info">
-                                    <span>Version {version}</span>
-                                    <span>Last updated {last_updated}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="progress-indicator" id="progressIndicator">
-                    <div class="progress-header">
-                        <div class="progress-title">
-                            <span class="material-symbols-outlined">timeline</span>
-                            <span>On this page</span>
-                        </div>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
-                        </div>
-                        <div class="progress-percentage" id="progressPercentage">0%</div>
-                    </div>
-                    <div id="sectionList" class="section-list"></div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <div class="sidebar-nav" id="sidebarNav">
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleGroup('home')">
+          <i data-lucide="home" width="20" height="20"></i>
+          Overview
+          <i data-lucide="chevron-down" class="nav-chevron" width="20" height="20"></i>
+        </div>
+        <div class="nav-group-items" id="ng-home">
+          <div class="nav-item active" onclick="showHome()">
+            <i data-lucide="home" width="22" height="22"></i>
+            Home
+          </div>
+        </div>
+      </div>
+      {sidebar_content}
+    </div>
+  </nav>
+
+  <!-- ── Main ── -->
+  <div class="main">
+    <header class="header">
+      <button class="mobile-menu-btn" onclick="openSidebar()">
+        <i data-lucide="menu" width="24" height="24"></i>
+      </button>
+
+      <div class="breadcrumb">
+        <span class="breadcrumb-home" onclick="showHome()">
+          <i data-lucide="home" width="18" height="18"></i>
+          {project_name}
+        </span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current" id="breadcrumbCurrent">Home</span>
+      </div>
+
+      <div class="header-right">
+        <button class="header-btn" onclick="openSearch()">
+          <i data-lucide="search" width="18" height="18"></i>
+          Search
+          <kbd>⌘K</kbd>
+        </button>
+
+        <div class="theme-wrap">
+          <button class="header-btn" id="themeBtn" onclick="toggleThemeMenu()">
+            <i data-lucide="sun" id="themeIcon" width="18" height="18"></i>
+            <span id="themeName">Light</span>
+          </button>
+          <div class="theme-menu" id="themeMenu">
+            <div class="theme-opt" data-theme="light" onclick="setTheme('light')">
+              <span class="theme-swatch" style="background:#ffffff;"></span> Light
+            </div>
+            <div class="theme-opt" data-theme="dark" onclick="setTheme('dark')">
+              <span class="theme-swatch" style="background:#111315;"></span> Dark
+            </div>
+            <div class="theme-opt" data-theme="sepia" onclick="setTheme('sepia')">
+              <span class="theme-swatch" style="background:#faf1e4;"></span> Sepia
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-wrap">
+      <!-- Content area -->
+      <div class="content" id="contentArea">
+
+        <!-- Home view -->
+        <div id="homeView">
+          {hero_section}
+          {action_cards}
+          <div class="footer">
+            <span>© {year} {project_name}</span>
+            <span>v{version} · Updated {last_updated}</span>
+          </div>
+        </div>
+
+        <!-- Doc view -->
+        <div id="docView" class="doc-view">
+          <div class="doc-header">
+            <h1 class="doc-title" id="docTitle"></h1>
+            <div class="doc-actions">
+              <button class="doc-action-btn" id="copyLinkBtn" onclick="copyLink(this)">
+                <i data-lucide="link" width="18" height="18"></i>
+                Copy link
+              </button>
+            </div>
+          </div>
+          <div class="md" id="docContent"></div>
+          <div class="footer">
+            <span>© {year} {project_name}</span>
+            <span>v{version} · Updated {last_updated}</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TOC -->
+      <div class="toc" id="tocPanel">
+        <div class="toc-label">On this page</div>
+        <div class="toc-progress"><div class="toc-progress-fill" id="tocFill"></div></div>
+        <div class="toc-pct" id="tocPct">0%</div>
+        <div id="tocList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search overlay -->
+<div class="search-overlay" id="searchOverlay" onclick="closeSearchOnOverlay(event)">
+  <div class="search-modal">
+    <div class="search-modal-input-wrap">
+      <i data-lucide="search" width="24" height="24"></i>
+      <input class="search-modal-input" id="searchModalInput" type="text" placeholder="Search documentation…" oninput="doSearch(this.value)" onkeydown="searchKeydown(event)" autocomplete="off">
+    </div>
+    <div class="search-results-list" id="searchResultsList"></div>
+    <div class="search-hint">
+      <span class="hint-key"><kbd>↑</kbd> <kbd>↓</kbd> navigate</span>
+      <span class="hint-key"><kbd>↵</kbd> open</span>
+      <span class="hint-key"><kbd>Esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>
-    const pages = {pages_json};
-    const titles = {titles_json};
-    const categories = {categories_json};
-    const subcategories = {subcategories_json};
+const PAGES = {pages_json};
+const TITLES = {titles_json};
+const CATS = {categories_json};
+const SUBCATS = {subcategories_json};
 
-    let searchTimeout;
-    let currentDocId = null;
-    let observer = null;
-    let sections = [];
+let tocSections = [];
+let currentId = null;
+let searchIdx = -1;
 
-    function getMermaidTheme(theme) {{
-        const themes = {{
-            'light': {{
-                background: '#ffffff',
-                primaryColor: '#1a73e8',
-                primaryTextColor: '#202124',
-                primaryBorderColor: '#dadce0',
-                lineColor: '#5f6368',
-                secondaryColor: '#f1f3f4',
-                tertiaryColor: '#e8eaed',
-                clusterBkg: '#f8f9fa',
-                clusterBorder: '#dadce0',
-                nodeBorder: '#bdc1c6',
-                nodeTextColor: '#202124'
-            }},
-            'dark': {{
-                background: '#202124',
-                primaryColor: '#8ab4f8',
-                primaryTextColor: '#e8eaed',
-                primaryBorderColor: '#3c4043',
-                lineColor: '#9aa0a6',
-                secondaryColor: '#303134',
-                tertiaryColor: '#3c4043',
-                clusterBkg: '#292a2d',
-                clusterBorder: '#3c4043',
-                nodeBorder: '#5f6368',
-                nodeTextColor: 'black'
-            }},
-            'sepia': {{
-                background: '#f4ecd8',
-                primaryColor: '#8b5a2b',
-                primaryTextColor: '#3e2e23',
-                primaryBorderColor: '#d8ccbc',
-                lineColor: '#5e4e3e',
-                secondaryColor: '#e8dccc',
-                tertiaryColor: '#d8ccbc',
-                clusterBkg: '#e8dccc',
-                clusterBorder: '#d8ccbc',
-                nodeBorder: '#c8bcac',
-                nodeTextColor: '#3e2e23'
-            }},
-            'nord': {{
-                background: '#2e3440',
-                primaryColor: '#88c0d0',
-                primaryTextColor: '#eceff4',
-                primaryBorderColor: '#434c5e',
-                lineColor: '#e5e9f0',
-                secondaryColor: '#3b4252',
-                tertiaryColor: '#434c5e',
-                clusterBkg: '#3b4252',
-                clusterBorder: '#434c5e',
-                nodeBorder: '#4c566a',
-                nodeTextColor: '#eceff4'
-            }},
-            'solarized': {{
-                background: '#fdf6e3',
-                primaryColor: '#268bd2',
-                primaryTextColor: '#002b36',
-                primaryBorderColor: '#93a1a1',
-                lineColor: '#073642',
-                secondaryColor: '#eee8d5',
-                tertiaryColor: '#93a1a1',
-                clusterBkg: '#eee8d5',
-                clusterBorder: '#93a1a1',
-                nodeBorder: '#839496',
-                nodeTextColor: '#002b36'
-            }}
-        }};
-        
-        return themes[theme] || themes['light'];
+// ── Initialize Lucide icons ────────────────────────
+function initIcons() {{
+  if (typeof lucide !== 'undefined') {{
+    lucide.createIcons();
+  }}
+}}
+
+// ── Theme ──────────────────────────────────────────
+const THEMES = {{ light:'Light', dark:'Dark', sepia:'Sepia' }};
+
+function setTheme(t) {{
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('docs-theme', t);
+  document.getElementById('themeName').textContent = THEMES[t];
+
+  const themeIcon = document.getElementById('themeIcon');
+  if (themeIcon) {{
+    const iconName = t === 'dark' ? 'moon' : (t === 'sepia' ? 'book' : 'sun');
+    themeIcon.setAttribute('data-lucide', iconName);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }}
+
+  document.querySelectorAll('.theme-opt').forEach(o => {{
+    o.classList.toggle('active', o.dataset.theme === t);
+  }});
+  document.getElementById('themeMenu').classList.remove('open');
+
+  setTimeout(() => rerenderMermaid(t), 100);
+}}
+
+function toggleThemeMenu() {{
+  document.getElementById('themeMenu').classList.toggle('open');
+}}
+
+document.addEventListener('click', e => {{
+  const wrap = document.querySelector('.theme-wrap');
+  if (wrap && !wrap.contains(e.target)) {{
+    document.getElementById('themeMenu').classList.remove('open');
+  }}
+}});
+
+// ── Mermaid ────────────────────────────────────────
+function getMermaidTheme(theme) {{
+  const themes = {{
+    light: {{
+      theme: 'base',
+      themeVariables: {{
+        background: '#ffffff',
+        primaryColor: '#3b5c9a',
+        primaryTextColor: '#1a1c1e',
+        primaryBorderColor: '#c3c7cf',
+        lineColor: '#526070',
+        secondaryColor: '#f0f0f4',
+        tertiaryColor: '#ffffff',
+        clusterBkg: '#f0f0f4',
+        clusterBorder: '#c3c7cf',
+        nodeBorder: '#c3c7cf',
+        nodeTextColor: '#1a1c1e',
+        edgeLabelBackground: '#ffffff',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px'
+      }}
+    }},
+    dark: {{
+      theme: 'base',
+      themeVariables: {{
+        background: '#111315',
+        primaryColor: '#abc4ff',
+        primaryTextColor: '#e1e2e5',
+        primaryBorderColor: '#43474e',
+        lineColor: '#bac8db',
+        secondaryColor: '#1e2024',
+        tertiaryColor: '#111315',
+        clusterBkg: '#1e2024',
+        clusterBorder: '#43474e',
+        nodeBorder: '#43474e',
+        nodeTextColor: '#e1e2e5',
+        edgeLabelBackground: '#292b30',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px'
+      }}
+    }},
+    sepia: {{
+      theme: 'base',
+      themeVariables: {{
+        background: '#faf1e4',
+        primaryColor: '#8b5e2a',
+        primaryTextColor: '#2c2416',
+        primaryBorderColor: '#d5c4b4',
+        lineColor: '#6f5c4b',
+        secondaryColor: '#f0e4d6',
+        tertiaryColor: '#faf1e4',
+        clusterBkg: '#f0e4d6',
+        clusterBorder: '#d5c4b4',
+        nodeBorder: '#d5c4b4',
+        nodeTextColor: '#2c2416',
+        edgeLabelBackground: '#e8daca',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px'
+      }}
     }}
-
-    function initializeMermaid(theme) {{
-        if (typeof mermaid === 'undefined') {{
-            setTimeout(() => initializeMermaid(theme), 100);
-            return;
-        }}
-        
-        try {{
-            const themeVars = getMermaidTheme(theme);
-            
-            mermaid.initialize({{
-                startOnLoad: false,
-                theme: 'base',
-                themeVariables: themeVars,
-                flowchart: {{
-                    useMaxWidth: true,
-                    htmlLabels: true,
-                    curve: 'basis'
-                }},
-                sequence: {{
-                    useMaxWidth: true,
-                    showSequenceNumbers: true,
-                    actorMargin: 50
-                }},
-                securityLevel: 'loose',
-                logLevel: 'error'
-            }});
-            
-            document.querySelectorAll('.mermaid').forEach((element) => {{
-                try {{
-                    mermaid.init(undefined, element);
-                }} catch (err) {{
-                    console.error('Error rendering mermaid:', err);
-                }}
-            }});
-        }} catch (error) {{
-            console.error('Failed to initialize Mermaid:', error);
-        }}
-    }}
-
-    function updateThemeUI(theme) {{
-        const themeNames = {{
-            'light': 'Light',
-            'dark': 'Dark',
-            'sepia': 'Sepia',
-            'nord': 'Nord',
-            'solarized': 'Solarized'
-        }};
-
-        const themeLabel = document.getElementById('current-theme-label');
-        if (themeLabel) themeLabel.textContent = themeNames[theme];
-
-        const themeIcon = document.getElementById('themeIcon');
-        if (themeIcon) {{
-            const icons = {{
-                'light': 'light_mode',
-                'dark': 'dark_mode',
-                'sepia': 'book',
-                'nord': 'ac_unit',
-                'solarized': 'wb_sunny'
-            }};
-            themeIcon.textContent = icons[theme];
-        }}
-
-        document.querySelectorAll('.theme-option').forEach(opt => {{
-            opt.classList.remove('active');
-            if (opt.textContent.toLowerCase().includes(theme)) {{
-                opt.classList.add('active');
-            }}
-        }});
-        
-        initializeMermaid(theme);
-    }}
-
-    function toggleThemeDropdown() {{
-        const dropdown = document.getElementById('themeDropdown');
-        dropdown.classList.toggle('show');
-
-        if (dropdown.classList.contains('show')) {{
-            document.addEventListener('click', function closeDropdown(e) {{
-                if (!dropdown.contains(e.target) && !e.target.closest('.theme-button')) {{
-                    dropdown.classList.remove('show');
-                    document.removeEventListener('click', closeDropdown);
-                }}
-            }});
-        }}
-    }}
-
-    function setTheme(theme, event) {{
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-        document.getElementById('themeDropdown').classList.remove('show');
-        updateThemeUI(theme);
-    }}
-
-    function toggleSidebar() {{
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('sidebarOverlay').classList.toggle('active');
-    }}
-
-    function toggleCategory(id) {{
-        const items = document.getElementById('category-' + id);
-        const header = items.previousElementSibling;
-        const icon = header.querySelector('.material-symbols-outlined');
-
-        items.classList.toggle('collapsed');
-        icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
-    }}
-
-    function toggleSubcategory(id) {{
-        const items = document.getElementById('subcategory-' + id);
-        const header = document.querySelector('[onclick="toggleSubcategory(\\'' + id + '\\')"]');
-        if (!header) return;
-        
-        const icon = header.querySelector('.material-symbols-outlined');
-
-        items.classList.toggle('collapsed');
-        icon.textContent = items.classList.contains('collapsed') ? 'chevron_right' : 'expand_more';
-    }}
-
-    function initializeCopyButtons() {{
-        document.querySelectorAll('.markdown-body pre').forEach(pre => {{
-            if (!pre.querySelector('.copy-button')) {{
-                const button = document.createElement('button');
-                button.className = 'copy-button';
-                button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-
-                button.addEventListener('click', async (e) => {{
-                    e.stopPropagation();
-                    const code = pre.querySelector('code');
-                    if (code) {{
-                        await navigator.clipboard.writeText(code.textContent || '');
-                        button.classList.add('copied');
-                        button.innerHTML = '<span class="material-symbols-outlined">check</span><span>Copied!</span>';
-
-                        setTimeout(() => {{
-                            button.classList.remove('copied');
-                            button.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>Copy</span>';
-                        }}, 2000);
-                    }}
-                }});
-
-                pre.appendChild(button);
-            }}
-        }});
-    }}
-
-    function extractSections() {{
-        const content = document.getElementById('doc-content');
-        if (!content) return [];
-
-        const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
-        const sections = [];
-
-        headings.forEach((heading, index) => {{
-            if (!heading.id) {{
-                heading.id = 'section-' + index + '-' + heading.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            }}
-
-            sections.push({{
-                id: heading.id,
-                title: heading.textContent,
-                level: parseInt(heading.tagName[1]),
-                element: heading
-            }});
-        }});
-
-        return sections;
-    }}
-
-    function updateProgressIndicator() {{
-        const content = document.getElementById('doc-content');
-        if (!content) return;
-
-        const scrollContainer = document.getElementById('content');
-        const containerHeight = scrollContainer.clientHeight;
-        const scrollTop = scrollContainer.scrollTop;
-        const contentHeight = content.scrollHeight;
-        const maxScroll = contentHeight - containerHeight;
-
-        let percentage = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * 100) : 0;
-        if(percentage > 100) percentage = 100;
-        document.getElementById('progressFill').style.width = percentage + '%';
-        document.getElementById('progressPercentage').textContent = percentage + '%';
-
-        let currentSection = null;
-        let minDistance = Infinity;
-
-        sections.forEach(section => {{
-            const element = section.element;
-            const rect = element.getBoundingClientRect();
-
-            const distance = Math.abs(rect.top - 100);
-
-            if (distance < minDistance && rect.top < window.innerHeight * 0.7) {{
-                minDistance = distance;
-                currentSection = section;
-            }}
-        }});
-
-        document.querySelectorAll('.section-item').forEach(item => {{
-            item.classList.remove('active');
-            if (currentSection && item.dataset.sectionId === currentSection.id) {{
-                item.classList.add('active');
-                item.scrollIntoView({{
-                    block: 'nearest',
-                    behavior: 'auto'
-                }});
-            }}
-        }});
-    }}
-
-    function buildSectionList() {{
-        const sectionList = document.getElementById('sectionList');
-        sectionList.innerHTML = '';
-
-        sections.forEach(section => {{
-            const item = document.createElement('div');
-            item.className = 'section-item';
-            item.dataset.sectionId = section.id;
-            item.setAttribute('onclick', 'scrollToSection("' + section.id + '")');
-
-            const dot = document.createElement('span');
-            dot.className = 'section-dot';
-
-            const title = document.createElement('span');
-            title.className = 'section-title';
-            title.textContent = section.title;
-
-            item.style.paddingLeft = ((section.level - 1) * 16 + 8) + 'px';
-
-            item.appendChild(dot);
-            item.appendChild(title);
-            sectionList.appendChild(item);
-        }});
-    }}
-
-    function scrollToSection(sectionId) {{
-        const element = document.getElementById(sectionId);
-        if (element) {{
-            const content = document.getElementById('content');
-            const rect = element.getBoundingClientRect();
-            const contentRect = content.getBoundingClientRect();
-
-            content.scrollTo({{
-                top: content.scrollTop + (rect.top - contentRect.top - 20),
-                behavior: 'smooth'
-            }});
-        }}
-    }}
-
-    function initializeProgressTracking() {{
-        if (observer) {{
-            observer.disconnect();
-        }}
-
-        sections = extractSections();
-        buildSectionList();
-
-        const indicator = document.getElementById('progressIndicator');
-        if (sections.length > 0) {{
-            indicator.classList.add('visible');
-
-            const content = document.getElementById('content');
-            content.addEventListener('scroll', updateProgressIndicator);
-            updateProgressIndicator();
-
-            observer = new MutationObserver(() => {{
-                sections = extractSections();
-                buildSectionList();
-                updateProgressIndicator();
-            }});
-
-            observer.observe(document.getElementById('doc-content'), {{
-                childList: true,
-                subtree: true,
-                characterData: true
-            }});
-        }} else {{
-            indicator.classList.remove('visible');
-        }}
-    }}
-
-    function performSearch() {{
-        const searchInput = document.getElementById('searchInput');
-        const searchResults = document.getElementById('searchResults');
-        const term = searchInput.value.toLowerCase().trim();
-
-        if (term.length < 2) {{
-            searchResults.classList.remove('show');
-            return;
-        }}
-
-        const results = [];
-        
-        Object.keys(titles).forEach(id => {{
-            const title = titles[id].toLowerCase();
-            const category = categories[id] || 'General';
-            const subcategory = subcategories[id] || '';
-            
-            if (title.includes(term) || category.toLowerCase().includes(term) || subcategory.toLowerCase().includes(term)) {{
-                results.push({{
-                    id: id,
-                    title: titles[id],
-                    category: category,
-                    subcategory: subcategory
-                }});
-            }}
-        }});
-
-        if (results.length > 0) {{
-            searchResults.innerHTML = results.slice(0, 10).map(result => 
-                '<div class="search-result-item" onclick="showPage(\\'' + result.id + '\\'); document.getElementById(\\'searchResults\\').classList.remove(\\'show\\'); document.getElementById(\\'searchInput\\').value = \\'\\';">' +
-                    '<span class="material-symbols-outlined">description</span>' +
-                    '<div class="search-result-content">' +
-                        '<div class="search-result-title">' + result.title + '</div>' +
-                        '<div class="search-result-category">' + result.category + (result.subcategory ? ' > ' + result.subcategory : '') + '</div>' +
-                    '</div>' +
-                '</div>'
-            ).join('');
-            searchResults.classList.add('show');
-        }} else {{
-            searchResults.innerHTML = '<div class="search-result-item" style="justify-content: center;">No results found</div>';
-            searchResults.classList.add('show');
-        }}
-    }}
-
-    function clearSearch() {{
-        const searchInput = document.getElementById('searchInput');
-        const searchResults = document.getElementById('searchResults');
-        searchInput.value = '';
-        searchResults.classList.remove('show');
-        searchInput.focus();
-    }}
-
-    function showHome() {{
-        document.getElementById('home-view').style.display = 'block';
-        document.getElementById('doc-view').style.display = 'none';
-        document.getElementById('current-section').textContent = 'Home';
-
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        document.querySelector('[onclick="showHome()"]').classList.add('active');
-
-        if (window.innerWidth <= 768) toggleSidebar();
-
-        window.location.hash = '';
-
-        document.getElementById('progressIndicator').classList.remove('visible');
-    }}
-
-    function showPage(id) {{
-        if (!pages[id]) return;
-
-        document.getElementById('home-view').style.display = 'none';
-        document.getElementById('doc-view').style.display = 'block';
-        document.getElementById('doc-content').innerHTML = pages[id];
-        document.getElementById('doc-title').textContent = titles[id];
-        document.getElementById('current-section').textContent = titles[id];
-
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        const activeNav = document.querySelector('[onclick="showPage(\\'' + id + '\\')"]');
-        if (activeNav) activeNav.classList.add('active');
-
-        if (window.innerWidth <= 768) toggleSidebar();
-
-        document.getElementById('content').scrollTop = 0;
-        window.location.hash = id;
-
-        currentDocId = id;
-
-        setTimeout(() => {{
-            initializeCopyButtons();
-            const currentTheme = localStorage.getItem('theme') || 'light';
-            initializeMermaid(currentTheme);
-        }}, 100);
-        
-        initializeProgressTracking();
-    }}
-
-    function copyPageLink(event) {{
-        navigator.clipboard.writeText(window.location.href);
-        const button = event.target.closest('.doc-action-button');
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="material-symbols-outlined">check</span>Copied!';
-        setTimeout(() => {{
-            button.innerHTML = originalText;
-        }}, 2000);
-    }}
-
-    document.addEventListener('keydown', (e) => {{
-        if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {{
-            e.preventDefault();
-            document.getElementById('searchInput').focus();
-        }}
-
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {{
-            e.preventDefault();
-            document.getElementById('searchInput').focus();
-        }}
-
-        if (e.key === 'Escape') {{
-            document.getElementById('searchResults').classList.remove('show');
-        }}
+  }};
+  return themes[theme] || themes.light;
+}}
+
+function rerenderMermaid(theme) {{
+  if (typeof mermaid === 'undefined') return;
+
+  try {{
+    const config = getMermaidTheme(theme);
+    mermaid.initialize({{
+      ...config,
+      startOnLoad: false,
+      securityLevel: 'loose',
+      logLevel: 'error',
+      flowchart: {{ useMaxWidth: true, htmlLabels: true, curve: 'basis' }},
+      sequence: {{ useMaxWidth: true, showSequenceNumbers: true }},
+      gantt: {{ useMaxWidth: true }},
+      class: {{ useMaxWidth: true }},
+      state: {{ useMaxWidth: true }},
+      er: {{ useMaxWidth: true }},
+      journey: {{ useMaxWidth: true }}
     }});
 
-    document.addEventListener('DOMContentLoaded', () => {{
-        const searchInput = document.getElementById('searchInput');
-        const searchClear = document.getElementById('searchClear');
-
-        searchInput.addEventListener('input', () => {{
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(performSearch, 200);
-            searchClear.classList.toggle('visible', searchInput.value.length > 0);
-        }});
-
-        searchInput.addEventListener('focus', () => {{
-            if (searchInput.value.length >= 2) {{
-                performSearch();
-            }}
-        }});
-
-        document.addEventListener('click', (e) => {{
-            const searchResults = document.getElementById('searchResults');
-            const searchContainer = document.querySelector('.search-container');
-            
-            if (!searchContainer.contains(e.target)) {{
-                searchResults.classList.remove('show');
-            }}
-        }});
-
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        updateThemeUI(savedTheme);
-
-        if (window.location.hash) {{
-            const id = window.location.hash.substring(1);
-            if (pages[id]) showPage(id);
-        }}
-
-        initializeCopyButtons();
-        
-        document.addEventListener('visibilitychange', () => {{
-            if (!document.hidden && currentDocId) {{
-                const currentTheme = localStorage.getItem('theme') || 'light';
-                initializeMermaid(currentTheme);
-            }}
-        }});
+    document.querySelectorAll('.mermaid').forEach(el => {{
+      const originalContent = el.getAttribute('data-src') || el.innerHTML;
+      el.innerHTML = originalContent;
+      el.removeAttribute('data-processed');
     }});
+
+    mermaid.run();
+  }} catch(e) {{
+    console.warn('Mermaid render error:', e);
+  }}
+}}
+
+function initMermaid(theme) {{
+  if (typeof mermaid === 'undefined') {{
+    setTimeout(() => initMermaid(theme), 150);
+    return;
+  }}
+
+  const config = getMermaidTheme(theme);
+  mermaid.initialize({{
+    ...config,
+    startOnLoad: true,
+    securityLevel: 'loose',
+    logLevel: 'error',
+    flowchart: {{ useMaxWidth: true, htmlLabels: true, curve: 'basis' }},
+    sequence: {{ useMaxWidth: true, showSequenceNumbers: true }},
+    gantt: {{ useMaxWidth: true }},
+    class: {{ useMaxWidth: true }},
+    state: {{ useMaxWidth: true }},
+    er: {{ useMaxWidth: true }},
+    journey: {{ useMaxWidth: true }}
+  }});
+
+  document.querySelectorAll('.mermaid').forEach(el => {{
+    el.setAttribute('data-src', el.innerHTML);
+  }});
+
+  mermaid.run();
+}}
+
+// ── Mermaid Controls ───────────────────────────────
+function toggleMermaidSize(btn) {{
+  const wrapper = btn.closest('.mermaid-wrapper');
+  if (!wrapper) return;
+
+  wrapper.classList.toggle('resized');
+  const icon = btn.querySelector('i');
+  if (wrapper.classList.contains('resized')) {{
+    icon.setAttribute('data-lucide', 'minimize-2');
+  }} else {{
+    icon.setAttribute('data-lucide', 'maximize-2');
+  }}
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  // Re-render mermaid to fit new size
+  setTimeout(() => {{
+    const mermaidEl = wrapper.querySelector('.mermaid');
+    if (mermaidEl) {{
+      const content = mermaidEl.getAttribute('data-src') || mermaidEl.innerHTML;
+      mermaidEl.innerHTML = content;
+      mermaidEl.removeAttribute('data-processed');
+      const theme = localStorage.getItem('docs-theme') || 'light';
+      rerenderMermaid(theme);
+    }}
+  }}, 50);
+}}
+
+function fullscreenMermaid(btn) {{
+  const wrapper = btn.closest('.mermaid-wrapper');
+  if (!wrapper) return;
+
+  const overlay = document.getElementById('mermaidOverlay');
+  wrapper.classList.toggle('fullscreen');
+  overlay.classList.toggle('active');
+
+  const icon = btn.querySelector('i');
+  if (wrapper.classList.contains('fullscreen')) {{
+    icon.setAttribute('data-lucide', 'minimize');
+    document.body.style.overflow = 'hidden';
+  }} else {{
+    icon.setAttribute('data-lucide', 'fullscreen');
+    document.body.style.overflow = '';
+  }}
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  // Re-render mermaid to fit new size
+  setTimeout(() => {{
+    const mermaidEl = wrapper.querySelector('.mermaid');
+    if (mermaidEl) {{
+      const content = mermaidEl.getAttribute('data-src') || mermaidEl.innerHTML;
+      mermaidEl.innerHTML = content;
+      mermaidEl.removeAttribute('data-processed');
+      const theme = localStorage.getItem('docs-theme') || 'light';
+      rerenderMermaid(theme);
+    }}
+  }}, 50);
+}}
+
+function closeMermaidFullscreen() {{
+  const wrapper = document.querySelector('.mermaid-wrapper.fullscreen');
+  if (!wrapper) return;
+
+  wrapper.classList.remove('fullscreen');
+  document.getElementById('mermaidOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+
+  const btn = wrapper.querySelector('.mermaid-fullscreen i');
+  if (btn) {{
+    btn.setAttribute('data-lucide', 'fullscreen');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }}
+}}
+
+// ── Sidebar toggle ─────────────────────────────────
+function openSidebar() {{
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+}}
+function closeSidebar() {{
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}}
+
+// ── Nav groups ─────────────────────────────────────
+function toggleGroup(id) {{
+  const items = document.getElementById('ng-' + id);
+  if (!items) return;
+  const btn = items.previousElementSibling;
+  const chev = btn.querySelector('.nav-chevron');
+  const c = items.classList.toggle('collapsed');
+  if (chev) {{
+    chev.classList.toggle('collapsed', c);
+    chev.setAttribute('data-lucide', c ? 'chevron-right' : 'chevron-down');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }}
+}}
+
+function toggleSub(id) {{
+  const items = document.getElementById('ns-' + id);
+  if (!items) return;
+  const btn = document.querySelector(`[data-sub="${{id}}"]`);
+  const chev = btn && btn.querySelector('.nav-chevron');
+  const c = items.classList.toggle('collapsed');
+  if (chev) {{
+    chev.classList.toggle('collapsed', c);
+    chev.setAttribute('data-lucide', c ? 'chevron-right' : 'chevron-down');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }}
+}}
+
+// ── Navigation ─────────────────────────────────────
+function showHome() {{
+  document.getElementById('homeView').style.display = '';
+  document.getElementById('docView').style.display = 'none';
+  document.getElementById('breadcrumbCurrent').textContent = 'Home';
+  setActiveNav(null);
+  window.location.hash = '';
+  document.getElementById('tocPanel').classList.remove('visible');
+  closeSidebar();
+  closeMermaidFullscreen();
+  document.getElementById('contentArea').scrollTop = 0;
+}}
+
+function showPage(id) {{
+  if (!PAGES[id]) return;
+  document.getElementById('homeView').style.display = 'none';
+  const dv = document.getElementById('docView');
+  dv.style.display = '';
+  document.getElementById('docView').style.display = 'block';
+  document.getElementById('docContent').innerHTML = PAGES[id];
+  document.getElementById('docTitle').textContent = TITLES[id] || id;
+  document.getElementById('breadcrumbCurrent').textContent = TITLES[id] || id;
+  setActiveNav(id);
+  document.getElementById('contentArea').scrollTop = 0;
+  window.location.hash = id;
+  currentId = id;
+  closeSidebar();
+  closeMermaidFullscreen();
+  setTimeout(() => {{
+    addCopyButtons();
+    const t = localStorage.getItem('docs-theme') || 'light';
+    initMermaid(t);
+    initIcons();
+  }}, 80);
+  buildToc();
+}}
+
+function setActiveNav(id) {{
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if (id) {{
+    const el = document.querySelector(`[data-page="${{id}}"]`);
+    if (el) el.classList.add('active');
+  }} else {{
+    const home = document.querySelector('[onclick="showHome()"]');
+    if (home) home.classList.add('active');
+  }}
+}}
+
+// ── TOC ────────────────────────────────────────────
+function buildToc() {{
+  const content = document.getElementById('docContent');
+  const headings = content.querySelectorAll('h1,h2,h3');
+  const list = document.getElementById('tocList');
+  list.innerHTML = '';
+  tocSections = [];
+
+  headings.forEach((h, i) => {{
+    if (!h.id) h.id = 'sec-' + i + '-' + h.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    tocSections.push({{ id: h.id, el: h, level: +h.tagName[1] }});
+    const item = document.createElement('div');
+    item.className = 'toc-item';
+    item.dataset.id = h.id;
+    item.style.paddingLeft = ((h.tagName[1] - 1) * 16 + 24) + 'px';
+    item.innerHTML = `<span class="toc-dot"></span><span class="toc-text">${{h.textContent}}</span>`;
+    item.onclick = () => scrollToId(h.id);
+    list.appendChild(item);
+  }});
+
+  const toc = document.getElementById('tocPanel');
+  toc.classList.toggle('visible', tocSections.length > 0);
+}}
+
+function scrollToId(id) {{
+  const el = document.getElementById(id);
+  if (!el) return;
+  const ca = document.getElementById('contentArea');
+  ca.scrollTo({{ top: el.offsetTop - 56, behavior: 'smooth' }});
+}}
+
+document.getElementById('contentArea').addEventListener('scroll', updateToc);
+
+function updateToc() {{
+  const ca = document.getElementById('contentArea');
+  const total = ca.scrollHeight - ca.clientHeight;
+  const pct = total > 0 ? Math.min(100, Math.round((ca.scrollTop / total) * 100)) : 0;
+  document.getElementById('tocFill').style.width = pct + '%';
+  document.getElementById('tocPct').textContent = pct + '%';
+
+  let active = null;
+  tocSections.forEach(s => {{
+    if (s.el.getBoundingClientRect().top < ca.getBoundingClientRect().top + 180) active = s.id;
+  }});
+
+  document.querySelectorAll('.toc-item').forEach(el => {{
+    el.classList.toggle('active', el.dataset.id === active);
+  }});
+}}
+
+// ── Copy buttons ───────────────────────────────────
+function addCopyButtons() {{
+  document.querySelectorAll('.md pre').forEach(pre => {{
+    if (pre.querySelector('.copy-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.innerHTML = `<i data-lucide="copy" width="16" height="16"></i> Copy`;
+    btn.onclick = async () => {{
+      const code = pre.querySelector('code');
+      if (!code) return;
+      await navigator.clipboard.writeText(code.textContent);
+      btn.classList.add('ok');
+      btn.innerHTML = `<i data-lucide="check" width="16" height="16"></i> Copied!`;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      setTimeout(() => {{
+        btn.classList.remove('ok');
+        btn.innerHTML = `<i data-lucide="copy" width="16" height="16"></i> Copy`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }}, 2000);
+    }};
+    pre.appendChild(btn);
+  }});
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}}
+
+function copyLink(btn) {{
+  navigator.clipboard.writeText(window.location.href);
+  btn.classList.add('copied');
+  btn.innerHTML = `<i data-lucide="check" width="18" height="18"></i> Copied!`;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  setTimeout(() => {{
+    btn.classList.remove('copied');
+    btn.innerHTML = `<i data-lucide="link" width="18" height="18"></i> Copy link`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }}, 2000);
+}}
+
+// ── Search ─────────────────────────────────────────
+function openSearch() {{
+  document.getElementById('searchOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('searchModalInput').focus(), 50);
+  doSearch('');
+}}
+
+function closeSearch() {{
+  document.getElementById('searchOverlay').classList.remove('open');
+  document.getElementById('searchModalInput').value = '';
+  searchIdx = -1;
+}}
+
+function closeSearchOnOverlay(e) {{
+  if (e.target === document.getElementById('searchOverlay')) closeSearch();
+}}
+
+function doSearch(term) {{
+  const list = document.getElementById('searchResultsList');
+  const q = term.toLowerCase().trim();
+  const results = Object.keys(TITLES).filter(id => {{
+    if (!q) return true;
+    return TITLES[id].toLowerCase().includes(q) ||
+      (CATS[id] || '').toLowerCase().includes(q) ||
+      (SUBCATS[id] || '').toLowerCase().includes(q);
+  }}).slice(0, 12);
+
+  if (!results.length) {{
+    list.innerHTML = `<div class="search-no-results">No results for "<strong>${{term}}</strong>"</div>`;
+    return;
+  }}
+
+  list.innerHTML = results.map((id, i) => `
+    <div class="search-result" data-idx="${{i}}" data-id="${{id}}" onclick="pickResult('${{id}}')">
+      <div class="search-result-icon">
+        <i data-lucide="file-text" width="24" height="24"></i>
+      </div>
+      <div class="search-result-body">
+        <div class="search-result-title">${{TITLES[id]}}</div>
+        <div class="search-result-cat">${{CATS[id] || ''}}${{SUBCATS[id] ? ' › ' + SUBCATS[id] : ''}}</div>
+      </div>
+    </div>
+  `).join('');
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  searchIdx = -1;
+}}
+
+function pickResult(id) {{
+  closeSearch();
+  showPage(id);
+}}
+
+function searchKeydown(e) {{
+  const items = document.querySelectorAll('.search-result');
+  if (e.key === 'ArrowDown') {{
+    e.preventDefault();
+    searchIdx = Math.min(searchIdx + 1, items.length - 1);
+    highlightSearch(items);
+  }}
+  else if (e.key === 'ArrowUp') {{
+    e.preventDefault();
+    searchIdx = Math.max(searchIdx - 1, 0);
+    highlightSearch(items);
+  }}
+  else if (e.key === 'Enter' && searchIdx >= 0) {{
+    items[searchIdx]?.click();
+  }}
+  else if (e.key === 'Escape') {{
+    closeSearch();
+  }}
+}}
+
+function highlightSearch(items) {{
+  items.forEach((el, i) => {{
+    if (i === searchIdx) {{
+      el.style.background = 'var(--md-sys-color-surface-container-high)';
+      el.scrollIntoView({{ block: 'nearest' }});
+    }} else {{
+      el.style.background = '';
+    }}
+  }});
+}}
+
+// ── Keyboard shortcuts ─────────────────────────────
+document.addEventListener('keydown', e => {{
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {{
+    e.preventDefault();
+    openSearch();
+  }}
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {{
+    e.preventDefault();
+    openSearch();
+  }}
+  if (e.key === 'Escape' && document.getElementById('searchOverlay').classList.contains('open')) {{
+    closeSearch();
+  }}
+  if (e.key === 'Escape' && document.querySelector('.mermaid-wrapper.fullscreen')) {{
+    closeMermaidFullscreen();
+  }}
+}});
+
+// ── Init ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {{
+  const t = localStorage.getItem('docs-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeName').textContent = THEMES[t] || 'Light';
+  document.querySelectorAll('.theme-opt').forEach(o => o.classList.toggle('active', o.dataset.theme === t));
+
+  if (window.location.hash) {{
+    const id = window.location.hash.slice(1);
+    if (PAGES[id]) showPage(id);
+  }}
+
+  addCopyButtons();
+  initMermaid(t);
+  initIcons();
+}});
 </script>
 </body>
 </html>"""
@@ -2271,9 +2130,9 @@ class DocGenerator:
             else:
                 raise ValueError("Config must be .json, .yml, or .yaml")
 
-        project_name = config.get("name", "AromaUI")
+        project_name = config.get("name", "Docs")
         project_version = config.get("version", "1.0.0")
-        description = config.get("description", "Browse AromaUI's APIs with detailed documentation and examples.")
+        description = config.get("description", "Documentation")
         base_dir = os.path.dirname(os.path.abspath(config_file))
 
         sections = config.get("sections", [])
@@ -2292,109 +2151,107 @@ class DocGenerator:
         for section in sections:
             category = section.get("category", "General")
             subcategory = section.get("subcategory", "")
-            
+
             if category not in sidebar_sections:
                 sidebar_sections[category] = {}
-            
-            if subcategory:
-                if subcategory not in sidebar_sections[category]:
-                    sidebar_sections[category][subcategory] = []
-                sidebar_sections[category][subcategory].append(section)
-            else:
-                if "" not in sidebar_sections[category]:
-                    sidebar_sections[category][""] = []
-                sidebar_sections[category][""].append(section)
+            if subcategory not in sidebar_sections[category]:
+                sidebar_sections[category][subcategory] = []
+            sidebar_sections[category][subcategory].append(section)
 
             title = section.get("title", "Untitled")
-            section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
+            section_id = (
+                title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
+            )
             page_categories[section_id] = category
             page_subcategories[section_id] = subcategory
 
         hero_section = self._get_hero_section(config)
         action_cards = self._get_action_cards()
 
-        sidebar_content = []
-        category_count = len(categories)
+        sidebar_html = []
 
         for category in categories:
-            category_name = category.get("name", "General")
-            category_id = category_name.lower().replace(" ", "-")
-            category_sections = sidebar_sections.get(category_name, {})
+            cat_name = category.get("name", "General")
+            cat_id = re.sub(r"[^a-z0-9]+", "-", cat_name.lower())
+            cat_sections = sidebar_sections.get(cat_name, {})
 
-            if category_sections:
-                sidebar_content.append(f"""
-                <div class="nav-category">
-                    <div class="category-header" onclick="toggleCategory('{category_id}')">
-                        <span class="material-symbols-outlined">expand_more</span>
-                        <span>{category_name}</span>
-                    </div>
-                    <div class="category-items" id="category-{category_id}">
-                """)
+            if not cat_sections:
+                continue
 
-                # Add sections without subcategories first
-                if "" in category_sections:
-                    for section in category_sections[""]:
-                        title = section.get("title", "Untitled")
-                        section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
-                        icon = self._get_icon_name(section.get("icon", "description"))
+            sidebar_html.append(f"""
+<div class="nav-group">
+  <div class="nav-group-header" onclick="toggleGroup('{cat_id}')">
+    <i data-lucide="folder" width="20" height="20"></i>
+    {cat_name}
+    <i data-lucide="chevron-down" class="nav-chevron" width="20" height="20"></i>
+  </div>
+  <div class="nav-group-items" id="ng-{cat_id}">
+""")
+            # Top-level items (no subcategory)
+            for section in cat_sections.get("", []):
+                title = section.get("title", "Untitled")
+                sid = (
+                    title.lower()
+                    .replace(" ", "-")
+                    .replace("/", "-")
+                    .replace("&", "and")
+                )
+                icon = self._get_icon_name(section.get("icon", "description"))
+                sidebar_html.append(
+                    f'    <div class="nav-item" data-page="{sid}" onclick="showPage(\'{sid}\')">{icon}{title}</div>'
+                )
 
-                        sidebar_content.append(f"""
-                            <div class="nav-item" onclick="showPage('{section_id}')">
-                                <span class="material-symbols-outlined">{icon}</span>
-                                {title}
-                            </div>
-                        """)
+            # Subcategories
+            for sub_name, sub_items in cat_sections.items():
+                if not sub_name:
+                    continue
+                sub_id = f"{cat_id}-{re.sub(r'[^a-z0-9]+', '-', sub_name.lower())}"
+                sidebar_html.append(f"""
+    <div class="nav-subgroup">
+      <div class="nav-subgroup-header" data-sub="{sub_id}" onclick="toggleSub('{sub_id}')">
+        <i data-lucide="chevron-down" width="18" height="18"></i>
+        {sub_name}
+        <i data-lucide="chevron-down" class="nav-chevron" width="18" height="18"></i>
+      </div>
+      <div class="nav-subgroup-items" id="ns-{sub_id}">
+""")
+                for section in sub_items:
+                    title = section.get("title", "Untitled")
+                    sid = (
+                        title.lower()
+                        .replace(" ", "-")
+                        .replace("/", "-")
+                        .replace("&", "and")
+                    )
+                    icon = self._get_icon_name(section.get("icon", "description"))
+                    sidebar_html.append(
+                        f'        <div class="nav-item sub" data-page="{sid}" onclick="showPage(\'{sid}\')">{icon}{title}</div>'
+                    )
+                sidebar_html.append("      </div>\n    </div>")
 
-                # Add subcategories
-                for subcategory_name, sections_list in category_sections.items():
-                    if subcategory_name and subcategory_name != "":
-                        subcategory_id = subcategory_name.lower().replace(" ", "-")
-                        
-                        sidebar_content.append(f"""
-                        <div class="subcategory">
-                            <div class="subcategory-header" onclick="toggleSubcategory('{category_id}-{subcategory_id}')">
-                                <span class="material-symbols-outlined">expand_more</span>
-                                <span>{subcategory_name}</span>
-                            </div>
-                            <div class="subcategory-items" id="subcategory-{category_id}-{subcategory_id}">
-                        """)
+            sidebar_html.append("  </div>\n</div>")
 
-                        for section in sections_list:
-                            title = section.get("title", "Untitled")
-                            section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
-                            icon = self._get_icon_name(section.get("icon", "description"))
-
-                            sidebar_content.append(f"""
-                                <div class="nav-item" onclick="showPage('{section_id}')">
-                                    <span class="material-symbols-outlined">{icon}</span>
-                                    {title}
-                                </div>
-                            """)
-
-                        sidebar_content.append("</div></div>")
-
-                sidebar_content.append("</div></div>")
-
+        # Build pages
         pages_dict = {}
         titles_dict = {}
 
         for section in sections:
             title = section.get("title", "Untitled")
-            description = section.get("description", "")
+            description_sec = section.get("description", "")
             markdown_file = section.get("file", "")
 
             if markdown_file and not os.path.isabs(markdown_file):
                 markdown_file = os.path.join(base_dir, markdown_file)
 
-            section_id = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
+            sid = title.lower().replace(" ", "-").replace("/", "-").replace("&", "and")
 
             if markdown_file and os.path.exists(markdown_file):
                 content = self.load_markdown(markdown_file)
             else:
-                content = f"<h1>{title}</h1><p>{description}</p>"
+                content = f"<h1>{title}</h1><p>{description_sec}</p>"
 
-            pages_dict[section_id] = content
-            titles_dict[section_id] = title
+            pages_dict[sid] = content
+            titles_dict[sid] = title
 
         pygments_styles = self._get_pygments_styles()
         current_year = datetime.now().year
@@ -2406,10 +2263,8 @@ class DocGenerator:
             description=description,
             hero_section=hero_section,
             action_cards=action_cards,
-            category_count=category_count,
-            section_count=len(sections),
             pygments_styles=pygments_styles,
-            sidebar_content="\n".join(sidebar_content),
+            sidebar_content="\n".join(sidebar_html),
             pages_json=json.dumps(pages_dict),
             titles_json=json.dumps(titles_dict),
             categories_json=json.dumps(page_categories),
@@ -2419,23 +2274,22 @@ class DocGenerator:
         )
 
         os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
-
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(html)
 
-        print(f"Documentation generated: {output_file}")
+        print(f"✓ Documentation generated: {output_file}")
+
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate AromaUI documentation from markdown files"
+        description="Generate documentation from markdown files"
     )
     parser.add_argument(
-        "-c", "--config", required=True, help="Configuration file (JSON or YAML)"
+        "-c", "--config", required=True, help="Config file (.json or .yaml)"
     )
     parser.add_argument(
-        "-o", "--output", default="docs/index.html", help="Output HTML file path"
+        "-o", "--output", default="docs/index.html", help="Output HTML file"
     )
-
     args = parser.parse_args()
 
     if not os.path.exists(args.config):
@@ -2447,8 +2301,9 @@ def main():
         generator.generate(args.config, args.output)
         return 0
     except Exception as e:
-        print(f"Error generating documentation: {e}")
-        return 1
+        print(f"Error: {e}")
+        raise
+
 
 if __name__ == "__main__":
     exit(main())
