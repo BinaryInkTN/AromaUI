@@ -95,11 +95,11 @@ class DocGenerator:
 
         return f"""
         <section class="hero">
-            <div class="hero-eyebrow">Documentation</div>
             <h1 class="hero-title">{hero_title}</h1>
             <p class="hero-desc">{description}</p>
             <div class="hero-actions">{actions_html}</div>
             <div class="hero-badges">{platform_icons_html}</div>
+            <img src="images/hero-image.png" alt="Hero Image" class="hero-image" style="max-width: 90rem; width: auto;">
         </section>
         """
 
@@ -1629,7 +1629,7 @@ function getMermaidTheme(theme) {{
       theme: 'base',
       themeVariables: {{
         background: '#111315',
-        primaryColor: '#abc4ff',
+        primaryColor: '#3b5c9a',
         primaryTextColor: '#e1e2e5',
         primaryBorderColor: '#43474e',
         lineColor: '#bac8db',
