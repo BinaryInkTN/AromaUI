@@ -162,6 +162,12 @@ A retained tree of UI nodes.
 * Layout Engine - computes size and position
 * Dirty Region Tracking - tracks areas requiring redraw
 
+```mermaid
+flowchart LR
+NODE["AromaNode Tree"] --> LAYOUT["Layout Engine"]
+NODE --> DIRTY["Dirty Region Tracking"]
+```
+
 #### Event Subsystem
 
 Handles input and dispatch.
@@ -171,6 +177,13 @@ Handles input and dispatch.
 * Hit Testing - resolves target node
 * Listener Registry - efficient listener lookup
 
+```mermaid
+flowchart LR
+QUEUE["Event Queue"] --> DISPATCH["Event Dispatch"]
+DISPATCH --> HIT["Hit Testing"]
+DISPATCH --> LISTENERS["Listener Registry"]
+```
+
 #### Rendering Subsystem
 
 Command-buffer-based rendering pipeline.
@@ -179,7 +192,18 @@ Command-buffer-based rendering pipeline.
 * Batching & State Grouping - minimizes backend calls
 * Region-Based Flush - partial screen updates
 
+```mermaid
+flowchart LR
+LOOP --> DRAWLIST
+NODE --> DRAWLIST
+DRAWLIST --> BATCH
+BATCH --> FLUSH
+FLUSH --> GFX_IF
+```
+
 ### 3. Backend Abstraction Layer
+
+> Want to learn more about the backend abstraction layer? Check out the <a onclick="showPage('aromaabi-interface')">Backend Abstraction Layer</a> documentation for details on how to use it in your code.
 
 Provides strict decoupling between the core engine and platform-specific implementations.
 
@@ -210,20 +234,29 @@ Rendering backends implement the Graphics Interface.
 Supported targets:
 
 * OpenGL ES 3
-* Software rasterizer
-* SPI/STM display renderer
+* Vulkan 
+* TFT/SPI renderer for embedded systems
 
 Each backend receives pre-batched draw commands from the DrawList.
 
 ## Data Flow Summary
 
-1. Application triggers state changes.
-2. Runtime processes input events.
-3. Events are dispatched through the scene graph.
-4. Dirty regions are marked.
-5. Draw commands are recorded.
-6. Commands are batched.
-7. Dirty regions are flushed to the active graphics backend.
+```mermaid
+flowchart LR
+LOOP --> QUEUE
+QUEUE --> DISPATCH
+DISPATCH --> HIT
+DISPATCH --> LISTENERS
+DISPATCH --> NODE
+NODE --> LAYOUT
+NODE --> DIRTY
+LOOP --> DRAWLIST
+NODE --> DRAWLIST
+DRAWLIST --> BATCH
+BATCH --> FLUSH
+FLUSH --> GFX_IF
+
+```
 
 ## Architectural Principles
 

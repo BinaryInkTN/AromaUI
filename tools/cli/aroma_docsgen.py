@@ -105,8 +105,10 @@ class DocGenerator:
 
     def _get_action_cards(self) -> str:
         return """
+                <h1>Some links you might like:</h1>
+<br>
         <div class="quick-links">
-            <div class="quick-link" onclick="showPage('getting-started')">
+            <div class="quick-link" onclick="showPage('sdk-installation')">
                 <div class="ql-icon">
                     <i data-lucide="play"></i>
                 </div>
@@ -116,26 +118,27 @@ class DocGenerator:
                 </div>
                 <i data-lucide="arrow-right" class="ql-arrow"></i>
             </div>
-            <div class="quick-link" onclick="window.open('https://github.com', '_blank')">
+            <div class="quick-link" onclick="showPage('architecture-overview')">
                 <div class="ql-icon">
-                    <i data-lucide="github"></i>
+                    <i data-lucide="layers"></i>
                 </div>
                 <div class="ql-body">
-                    <div class="ql-title">GitHub</div>
-                    <div class="ql-desc">Source code &amp; contributions</div>
+                    <div class="ql-title">Architecture Overview</div>
+                    <div class="ql-desc">Learn about AromaUI's architecture</div>
                 </div>
                 <i data-lucide="arrow-right" class="ql-arrow"></i>
             </div>
-            <div class="quick-link" onclick="window.location.href='#'">
+            <div class="quick-link" onclick="showPage('theming-system')">
                 <div class="ql-icon">
-                    <i data-lucide="alert-circle"></i>
+                    <i data-lucide="droplet"></i>
                 </div>
                 <div class="ql-body">
-                    <div class="ql-title">Report Issue</div>
-                    <div class="ql-desc">Bug reports &amp; feedback</div>
+                    <div class="ql-title">Theming Guide</div>
+                    <div class="ql-desc">Customize the look and feel</div>
                 </div>
                 <i data-lucide="arrow-right" class="ql-arrow"></i>
-            </div>
+                </div>
+            
         </div>
         """
 
@@ -170,38 +173,7 @@ class DocGenerator:
             return f"<h1>Error</h1><p>{e}</p>"
 
     def _get_icon_name(self, icon_name: str) -> str:
-        # Map icon names to Lucide icon names
-        icon_map = {
-            "getting-started": "play",
-            "api": "code-2",
-            "guide": "book-open",
-            "tutorial": "graduation-cap",
-            "example": "file-code",
-            "reference": "book-marked",
-            "linux": "terminal",
-            "android": "smartphone",
-            "embedded": "cpu",
-            "rtos": "timer",
-            "baremetal": "chip",
-            "folder": "folder",
-            "description": "file-text",
-            "book": "book",
-            "network_check": "wifi",
-            "settings_applications": "settings",
-            "camera_alt": "camera",
-            "dashboard": "layout-dashboard",
-            "bluetooth": "bluetooth",
-            "wifi": "wifi",
-            "data_object": "database",
-            "security": "shield",
-            "mobile_gear": "smartphone",
-            "photo_camera": "camera",
-            "responsive_layout": "layout",
-            "widgets": "blocks",
-            "screen_rotation": "rotate-cw",
-            "rocket_launch": "rocket",
-        }
-        lucide_name = icon_map.get(icon_name.lower(), "file-text")
+        lucide_name = icon_name
         return f'<i data-lucide="{lucide_name}"></i>'
 
     def _get_template(self) -> str:

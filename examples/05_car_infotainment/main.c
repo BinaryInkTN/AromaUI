@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #define WIN_W 1280
-#define WIN_H 800
+#define WIN_H 860
 AromaFont *icon_font = NULL;
 AromaNode *sidebar = NULL;
 static AromaFont *ui_font = NULL;
