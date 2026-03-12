@@ -531,7 +531,9 @@ class DocGenerator:
             + stats_html
             + (f'<div class="hero-actions">{actions_html}</div>' if actions_html else "")
             + (f'<div class="platform-badges">{badges_html}</div>' if badges_html else "")
-            + "</section>"
+            + '</section>'
+            + (f'<div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>')
+
         )
 
     def _quick_links_html(self, config: Dict) -> str:
@@ -539,7 +541,7 @@ class DocGenerator:
         if not cards:
             return ""
         items = "".join(
-            f'<div class="quick-link" onclick="showPage(\'{c.get("page_id","")}\''  + ')">'
+            f'<div class="quick-link" onclick="showPage(\'{c.get("page_id","")}\')">'
             f'<div class="ql-icon"><i data-lucide="{c.get("icon","link")}"></i></div>'
             f'<div class="ql-body">'
             f'<div class="ql-title">{c.get("title","")}</div>'
@@ -555,6 +557,109 @@ class DocGenerator:
             f'<div class="quick-links">{items}</div>'
             '</div>'
         )
+
+    def _category_page_html(self, category: Dict, subcategories: Dict[str, List], pages_dict: Dict, titles_dict: Dict) -> str:
+        """Generate an Apple-like category page with subcategory cards"""
+        cat_name = category.get("name", "Category")
+        cat_icon = category.get("icon", "folder")
+        cat_desc = category.get("description", f"Documentation for {cat_name}")
+        
+        cards = []
+        for sub_name, pages in subcategories.items():
+            if not sub_name:  # Skip uncategorized pages in category view
+                continue
+                
+            # Get first few pages as preview
+            preview_pages = pages[:3]
+            page_count = len(pages)
+            
+            # Create card for subcategory
+            card = f'''
+            <div class="subcategory-card" onclick="showSubcategory('{cat_name}', '{sub_name}')">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i data-lucide="folder-open"></i>
+                    </div>
+                    <div class="card-count">{page_count} document{"s" if page_count != 1 else ""}</div>
+                </div>
+                <h3 class="card-title">{sub_name}</h3>
+                <p class="card-desc">Documentation for {sub_name}</p>
+                <div class="card-preview">
+                    {"".join(f'<span class="preview-tag">{titles_dict.get(p.get("id", ""), "Untitled")}</span>' for p in preview_pages)}
+                    {f'<span class="preview-more">+{page_count - len(preview_pages)} more</span>' if page_count > len(preview_pages) else ''}
+                </div>
+                <div class="card-arrow">
+                    <i data-lucide="arrow-right-circle"></i>
+                </div>
+            </div>
+            '''
+            cards.append(card)
+        
+        return f'''
+        <div class="category-page" data-category="{cat_name}">
+            <div class="category-header">
+                <div class="category-header-icon">
+                    <i data-lucide="{cat_icon}"></i>
+                </div>
+                <h1 class="category-title">{cat_name}</h1>
+                <p class="category-description">{cat_desc}</p>
+            </div>
+            <div class="subcategories-grid">
+                {"".join(cards)}
+            </div>
+        </div>
+        '''
+
+    def _subcategory_page_html(self, category: str, subcategory: str, pages: List[Dict], titles_dict: Dict, pages_dict: Dict) -> str:
+      """Generate a subcategory page with document cards"""
+      cards = []
+      for page in pages:
+          page_id = page.get("id", "")
+          title = page.get("title", "Untitled")  # Use page dict first
+          if not title or title == "Untitled":
+              title = titles_dict.get(page_id, "Untitled")  # Fallback to titles_dict
+          
+          desc = page.get("description", f"Documentation for {title}")
+          icon = page.get("icon", "file-text")
+          platforms = page.get("platforms", [])
+          
+          platform_badges = ""
+          for p in platforms[:3]:  # Show max 3 platform badges
+              norm = self._normalize_platform(p)
+              if norm:
+                  platform_badges += f'<span class="platform-tag" style="--tag-color:{norm["color"]}">{norm["name"]}</span>'
+          
+          card = f'''
+          <div class="doc-card" onclick="showPage(\'{page_id}\')">
+              <div class="doc-card-icon">
+                  <i data-lucide="{icon}"></i>
+              </div>
+              <div class="doc-card-content">
+                  <h4 class="doc-card-title">{title}</h4>
+                  <p class="doc-card-desc">{desc}</p>
+                  <div class="doc-card-platforms">
+                      {platform_badges}
+                  </div>
+              </div>
+              <i data-lucide="chevron-right" class="doc-card-arrow"></i>
+          </div>
+          '''
+          cards.append(card)
+      
+      return f'''
+      <div class="subcategory-page" data-category="{category}" data-subcategory="{subcategory}">
+          <div class="subcategory-header">
+              <button class="back-button" onclick="showCategory(\'{category}\')">
+                  <i data-lucide="arrow-left"></i> Back to {category}
+              </button>
+              <h1 class="subcategory-title">{subcategory}</h1>
+              <p class="subcategory-description">Documentation for {subcategory}</p>
+          </div>
+          <div class="documents-grid">
+              {"".join(cards)}
+          </div>
+      </div>
+      '''
 
     def _process_markdown(self, content: str) -> str:
         exts = ["extra","codehilite","toc","tables","fenced_code",
@@ -1033,7 +1138,16 @@ body{{
   position:relative;
   z-index:10;
 }}
-.bc{{display:flex;align-items:center;gap:4px;font-size:.8125rem;color:var(--t2);flex:1;min-width:0}}
+.bc{{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  font-size:.8125rem;
+  color:var(--t2);
+  flex:1;
+  min-width:0;
+  flex-wrap:wrap;
+}}
 .bc-home{{
   display:flex;
   align-items:center;
@@ -1047,8 +1161,28 @@ body{{
 }}
 .bc-home:hover{{color:var(--acc)}}
 .bc-home i{{width:12px;height:12px}}
-.bc-sep{{color:var(--t3);font-size:.6875rem}}
-.bc-cur{{color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+.bc-sep{{color:var(--t3);font-size:.6875rem;margin:0 2px}}
+.bc-category{{
+  color:var(--t2);
+  cursor:pointer;
+  transition:color var(--tr);
+  white-space:nowrap;
+}}
+.bc-category:hover{{color:var(--acc)}}
+.bc-subcategory{{
+  color:var(--t2);
+  cursor:pointer;
+  transition:color var(--tr);
+  white-space:nowrap;
+}}
+.bc-subcategory:hover{{color:var(--acc)}}
+.bc-cur{{
+  color:var(--t2);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:200px;
+}}
 .hdr-r{{display:flex;align-items:center;gap:6px;flex-shrink:0}}
 .hbtn{{
   display:flex;
@@ -1080,39 +1214,68 @@ body{{
 }}
 .hbtn.acc{{background:var(--acc);border-color:var(--acc);color:#fff}}
 .hbtn.acc:hover{{background:var(--acc2);border-color:var(--acc2)}}
-.theme-wrap{{position:relative}}
-.theme-dd{{
-  position:absolute;
-  top:calc(100% + 5px);
-  right:0;
-  background:var(--surf2);
-  border:1px solid var(--bdr);
-  border-radius:var(--r3);
-  box-shadow:var(--sh3);
-  width:140px;
-  overflow:hidden;
-  display:none;
-  z-index:200;
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+.theme-toggle{{
+  position:relative;
+  display:inline-block;
+  width:48px;
+  height:24px;
 }}
-.theme-dd.open{{display:block}}
-.t-opt{{
+.theme-toggle input{{
+  opacity:0;
+  width:0;
+  height:0;
+}}
+.theme-slider{{
+  position:absolute;
+  cursor:pointer;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background-color:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:34px;
+  transition:.15s;
   display:flex;
   align-items:center;
-  gap:8px;
-  padding:8px 12px;
-  font-size:.8125rem;
-  color:var(--t1);
-  cursor:pointer;
-  transition:background var(--tr);
+  padding:2px;
 }}
-.t-opt:hover{{background:var(--bdr)}}
-.t-opt.active{{color:var(--acc)}}
-.t-opt .chk{{margin-left:auto;opacity:0;width:12px;height:12px;color:var(--acc)}}
-.t-opt.active .chk{{opacity:1}}
-.t-sw{{width:14px;height:14px;border-radius:50%;border:1px solid var(--bdr2);flex-shrink:0}}
-
+.theme-slider:before{{
+  position:absolute;
+  content:"";
+  height:18px;
+  width:18px;
+  left:2px;
+  bottom:2px;
+  background-color:var(--acc);
+  border-radius:50%;
+  transition:.15s;
+  z-index:2;
+}}
+.theme-slider .sun-icon,
+.theme-slider .moon-icon{{
+  position:absolute;
+  width:14px;
+  height:14px;
+  z-index:1;
+}}
+.theme-slider .sun-icon{{
+  left:6px;
+  color:var(--t2);
+}}
+.theme-slider .moon-icon{{
+  right:6px;
+  color:var(--t2);
+}}
+input:checked + .theme-slider:before{{
+  transform:translateX(24px);
+}}
+input:checked + .theme-slider .sun-icon{{
+  color:var(--t2);
+}}
+input:checked + .theme-slider .moon-icon{{
+  color:var(--acc);
+}}
 .c-layout{{flex:1;display:flex;overflow:hidden}}
 .c-scroll{{
   flex:1;
@@ -1122,7 +1285,7 @@ body{{
 }}
 .c-scroll::-webkit-scrollbar{{width:4px}}
 .c-scroll::-webkit-scrollbar-thumb{{background:var(--bdr2);border-radius:3px}}
-.c-inner{{max-width:720px;margin:0 auto;padding:40px 32px 72px}}
+.c-inner{{max-width:900px;margin:0 auto;padding:40px 32px 72px}}
 
 .toc-p{{
   width:200px;
@@ -1156,8 +1319,8 @@ body{{
 .toc-item:hover{{color:var(--t1)}}
 .toc-item.active{{color:var(--acc);border-left-color:var(--acc);background:var(--accl);font-weight:500}}
 
-.hero{{padding:8px 0 44px}}
-.hero-eyebrow{{margin-bottom:16px}}
+.hero{{text-align:center;padding:8px 0 44px;max-width:600px;margin:0 auto;}}
+.hero-eyebrow{{margin-bottom:16px;display:flex;justify-content:center;}}
 .hero-eyebrow span{{
   display:inline-flex;
   align-items:center;
@@ -1190,7 +1353,7 @@ body{{
   color:var(--t2);
   line-height:1.65;
   max-width:560px;
-  margin-bottom:28px;
+  margin:0 auto 28px auto;
 }}
 .hero-stats{{
   display:flex;
@@ -1198,6 +1361,7 @@ body{{
   margin-bottom:28px;
   padding-bottom:28px;
   border-bottom:1px solid var(--bdr);
+  justify-content:center;
 }}
 .stat-value{{
   font-size:1.625rem;
@@ -1214,7 +1378,7 @@ body{{
   letter-spacing:.05em;
   font-weight:500;
 }}
-.hero-actions{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}}
+.hero-actions{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;justify-content:center;}}
 .hero-btn{{
   display:inline-flex;
   align-items:center;
@@ -1247,7 +1411,7 @@ body{{
   border:1px solid var(--bdr2);
 }}
 .btn-ghost:hover{{background:var(--bg);border-color:var(--acc);color:var(--acc)}}
-.platform-badges{{display:flex;gap:5px;flex-wrap:wrap}}
+.platform-badges{{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;}}
 .platform-badge{{
   display:inline-flex;
   align-items:center;
@@ -1263,6 +1427,286 @@ body{{
   letter-spacing:.04em;
 }}
 .platform-badge i{{width:10px;height:10px}}
+
+.hero-image-container{{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:32px 0 16px 0;
+  overflow:hidden;
+}}
+.hero-image{{
+  max-width:100%;
+  height:auto;
+  display:block;
+  border-radius:var(--r4);
+  box-shadow:var(--sh3);
+  transition:transform var(--tr);
+}}
+@media (max-width: 768px) {{
+  .hero-image{{
+    max-width:95%;
+  }}
+}}
+
+/* Category Page Styles */
+.category-page{{
+  padding:20px 0;
+}}
+.category-header{{
+  text-align:center;
+  margin-bottom:48px;
+}}
+.category-header-icon{{
+  width:64px;
+  height:64px;
+  border-radius:20px;
+  background:var(--accl);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 16px;
+}}
+.category-header-icon i{{
+  width:32px;
+  height:32px;
+  color:var(--acc);
+}}
+.category-title{{
+  font-size:2.5rem;
+  font-weight:700;
+  color:var(--t1);
+  margin-bottom:8px;
+  letter-spacing:-.02em;
+}}
+.category-description{{
+  font-size:1.125rem;
+  color:var(--t2);
+  max-width:600px;
+  margin:0 auto;
+}}
+
+/* Subcategory Cards - Apple Style */
+.subcategories-grid{{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:20px;
+  margin-top:32px;
+}}
+.subcategory-card{{
+  background:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:20px;
+  padding:24px;
+  cursor:pointer;
+  transition:all var(--tr);
+  position:relative;
+  overflow:hidden;
+}}
+.subcategory-card:hover{{
+  transform:translateY(-4px);
+  border-color:var(--acc);
+  box-shadow:var(--sh3);
+  background:var(--bg);
+}}
+.subcategory-card:hover .card-arrow{{
+  transform:translateX(4px);
+  color:var(--acc);
+}}
+.card-header{{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px;
+}}
+.card-icon{{
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  background:var(--accl);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}}
+.card-icon i{{
+  width:20px;
+  height:20px;
+  color:var(--acc);
+}}
+.card-count{{
+  font-size:.75rem;
+  font-weight:500;
+  color:var(--t3);
+  background:var(--bg3);
+  padding:4px 8px;
+  border-radius:20px;
+}}
+.card-title{{
+  font-size:1.25rem;
+  font-weight:600;
+  color:var(--t1);
+  margin-bottom:8px;
+  letter-spacing:-.01em;
+}}
+.card-desc{{
+  font-size:.875rem;
+  color:var(--t2);
+  margin-bottom:16px;
+  line-height:1.5;
+}}
+.card-preview{{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin-bottom:16px;
+}}
+.preview-tag{{
+  font-size:.6875rem;
+  padding:2px 8px;
+  background:var(--bg3);
+  border:1px solid var(--bdr);
+  border-radius:12px;
+  color:var(--t2);
+}}
+.preview-more{{
+  font-size:.6875rem;
+  color:var(--t3);
+  padding:2px 4px;
+}}
+.card-arrow{{
+  position:absolute;
+  bottom:24px;
+  right:24px;
+  transition:transform var(--tr),color var(--tr);
+}}
+.card-arrow i{{
+  width:20px;
+  height:20px;
+  color:var(--t3);
+}}
+
+/* Subcategory Page Styles */
+.subcategory-page{{
+  padding:20px 0;
+}}
+.subcategory-header{{
+  margin-bottom:32px;
+}}
+.back-button{{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  background:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:100px;
+  font-size:.875rem;
+  color:var(--t2);
+  cursor:pointer;
+  transition:all var(--tr);
+  margin-bottom:16px;
+}}
+.back-button:hover{{
+  background:var(--bg);
+  border-color:var(--acc);
+  color:var(--acc);
+}}
+.back-button i{{
+  width:16px;
+  height:16px;
+}}
+.subcategory-title{{
+  font-size:2rem;
+  font-weight:700;
+  color:var(--t1);
+  margin-bottom:8px;
+  letter-spacing:-.02em;
+}}
+.subcategory-description{{
+  font-size:1rem;
+  color:var(--t2);
+}}
+
+/* Document Cards */
+.documents-grid{{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(350px,1fr));
+  gap:16px;
+}}
+.doc-card{{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:16px;
+  background:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:16px;
+  cursor:pointer;
+  transition:all var(--tr);
+}}
+.doc-card:hover{{
+  transform:translateY(-2px);
+  border-color:var(--acc);
+  box-shadow:var(--sh2);
+  background:var(--bg);
+}}
+.doc-card:hover .doc-card-arrow{{
+  transform:translateX(4px);
+  color:var(--acc);
+}}
+.doc-card-icon{{
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  background:var(--accl);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}}
+.doc-card-icon i{{
+  width:20px;
+  height:20px;
+  color:var(--acc);
+}}
+.doc-card-content{{
+  flex:1;
+  min-width:0;
+}}
+.doc-card-title{{
+  font-size:1rem;
+  font-weight:600;
+  color:var(--t1);
+  margin-bottom:4px;
+}}
+.doc-card-desc{{
+  font-size:.8125rem;
+  color:var(--t2);
+  margin-bottom:6px;
+  line-height:1.4;
+}}
+.doc-card-platforms{{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}}
+.platform-tag{{
+  font-size:.625rem;
+  padding:2px 6px;
+  background:color-mix(in srgb,var(--tag-color) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--tag-color) 22%,transparent);
+  border-radius:12px;
+  color:var(--tag-color);
+  font-weight:500;
+}}
+.doc-card-arrow{{
+  flex-shrink:0;
+  color:var(--t3);
+  width:16px;
+  height:16px;
+  transition:transform var(--tr),color var(--tr);
+}}
 
 .quick-links-section{{margin-top:6px}}
 .section-heading{{
@@ -1690,7 +2134,6 @@ body{{
   <nav class="sidebar" id="sidebar">
     <div class="sb-hdr">
       <div class="logo-row" onclick="showHome()">
-      
         <span class="logo-name">{project_name}</span>
         <span class="logo-version">v{version}</span>
       </div>
@@ -1719,11 +2162,15 @@ body{{
       <button class="mob-btn" onclick="openSidebar()">
         <i data-lucide="menu" style="width:16px;height:16px"></i>
       </button>
-      <div class="bc">
+      <div class="bc" id="breadcrumbs">
         <span class="bc-home" onclick="showHome()">
-        {project_name}
+          <i data-lucide="home"></i> {project_name}
         </span>
         <span class="bc-sep">/</span>
+        <span class="bc-category" id="bcCategory" style="display:none" onclick="showCategoryFromBc()"></span>
+        <span class="bc-sep" id="bcCatSep" style="display:none">/</span>
+        <span class="bc-subcategory" id="bcSubcategory" style="display:none" onclick="showSubcategoryFromBc()"></span>
+        <span class="bc-sep" id="bcSubSep" style="display:none">/</span>
         <span class="bc-cur" id="bcCur">Home</span>
       </div>
       <div class="hdr-r">
@@ -1733,22 +2180,13 @@ body{{
         <button class="hbtn acc" onclick="downloadPDF()">
           <i data-lucide="file-text"></i> PDF
         </button>
-        <div class="theme-wrap">
-          <button class="hbtn" id="themeBtn" onclick="toggleThemeMenu()">
-            <i data-lucide="sun" id="themeIcon"></i>
-            <span id="themeName">Light</span>
-          </button>
-          <div class="theme-dd" id="themeDd">
-            <div class="t-opt active" data-theme="light" onclick="setTheme('light')">
-              <span class="t-sw" style="background:#fff"></span> Light
-              <i data-lucide="check" class="chk"></i>
-            </div>
-            <div class="t-opt" data-theme="dark" onclick="setTheme('dark')">
-              <span class="t-sw" style="background:#000"></span> Dark
-              <i data-lucide="check" class="chk"></i>
-            </div>
-          </div>
-        </div>
+        <label class="theme-toggle">
+          <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+          <span class="theme-slider">
+            <i data-lucide="sun" class="sun-icon"></i>
+            <i data-lucide="moon" class="moon-icon"></i>
+          </span>
+        </label>
       </div>
     </header>
     <div class="c-layout">
@@ -1762,6 +2200,8 @@ body{{
               <span>v{version} · Updated {last_updated}</span>
             </div>
           </div>
+          <div id="categoryView" style="display:none"></div>
+          <div id="subcategoryView" style="display:none"></div>
           <div id="docView" style="display:none">
             <div class="doc-hdr">
               <div class="doc-meta" id="docMeta"></div>
@@ -1811,41 +2251,138 @@ const TITLES = {titles_json};
 const CATS = {categories_json};
 const SUBCATS = {subcategories_json};
 const PAGE_PLATFORMS = {platforms_json};
+const CATEGORY_PAGES = {category_pages_json};
+const SUBCATEGORY_PAGES = {subcategory_pages_json};
 const PDF_URL = '{pdf_url}';
 
-let currentId = null, tocSections = [], srchIdx = -1, activePF = 'all';
+let currentId = null, currentCategory = null, currentSubcategory = null, tocSections = [], srchIdx = -1, activePF = 'all';
 
 const ic = () => typeof lucide !== 'undefined' && lucide.createIcons();
-
-const TL = {{light:'Light', dark:'Dark'}};
-const TI = {{light:'sun', dark:'moon'}};
 
 function setTheme(t) {{
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('docs-theme', t);
-  document.getElementById('themeName').textContent = TL[t] || 'Light';
-  const ti = document.getElementById('themeIcon');
-  if (ti) {{
-    ti.setAttribute('data-lucide', TI[t] || 'sun');
-    ic();
-  }}
-  if (t == "Light")
-  {{
-    document.querySelectorAll('t-sw').forEach(o => o.style.color = '#000');
-  }}
-  document.querySelectorAll('.t-opt').forEach(o => o.classList.toggle('active', o.dataset.theme === t));
-  document.getElementById('themeDd').classList.remove('open');
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) toggle.checked = t === 'dark';
   setTimeout(() => rerenderMermaid(t), 100);
 }}
 
-function toggleThemeMenu() {{
-  document.getElementById('themeDd').classList.toggle('open');
+function toggleTheme() {{
+  const toggle = document.getElementById('themeToggle');
+  const newTheme = toggle.checked ? 'dark' : 'light';
+  setTheme(newTheme);
+  ic();
 }}
 
-document.addEventListener('click', e => {{
-  if (!document.querySelector('.theme-wrap')?.contains(e.target))
-    document.getElementById('themeDd').classList.remove('open');
-}});
+function initTheme() {{
+  const saved = localStorage.getItem('docs-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) toggle.checked = saved === 'dark';
+  ic();
+}}
+
+function updateBreadcrumbs() {{
+  const bcCategory = document.getElementById('bcCategory');
+  const bcSubcategory = document.getElementById('bcSubcategory');
+  const bcCatSep = document.getElementById('bcCatSep');
+  const bcSubSep = document.getElementById('bcSubSep');
+  const bcCur = document.getElementById('bcCur');
+
+  if (currentId) {{
+    // Document view
+    bcCategory.style.display = 'none';
+    bcSubcategory.style.display = 'none';
+    bcCatSep.style.display = 'none';
+    bcSubSep.style.display = 'none';
+    bcCur.textContent = TITLES[currentId] || 'Document';
+  }} else if (currentSubcategory) {{
+    // Subcategory view
+    bcCategory.style.display = 'inline-block';
+    bcCategory.textContent = currentCategory;
+    bcSubcategory.style.display = 'inline-block';
+    bcSubcategory.textContent = currentSubcategory;
+    bcCatSep.style.display = 'inline-block';
+    bcSubSep.style.display = 'inline-block';
+    bcCur.style.display = 'none';
+  }} else if (currentCategory) {{
+    // Category view
+    bcCategory.style.display = 'inline-block';
+    bcCategory.textContent = currentCategory;
+    bcSubcategory.style.display = 'none';
+    bcCatSep.style.display = 'inline-block';
+    bcSubSep.style.display = 'none';
+    bcCur.style.display = 'none';
+  }} else {{
+    // Home view
+    bcCategory.style.display = 'none';
+    bcSubcategory.style.display = 'none';
+    bcCatSep.style.display = 'none';
+    bcSubSep.style.display = 'none';
+    bcCur.textContent = 'Home';
+  }}
+}}
+
+function showCategoryFromBc() {{
+  if (currentCategory) showCategory(currentCategory);
+}}
+
+function showSubcategoryFromBc() {{
+  if (currentCategory && currentSubcategory) showSubcategory(currentCategory, currentSubcategory);
+}}
+
+function showCategory(category) {{
+  if (!CATEGORY_PAGES[category]) return;
+  
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('categoryView').style.display = '';
+  document.getElementById('subcategoryView').style.display = 'none';
+  document.getElementById('docView').style.display = 'none';
+  
+  document.getElementById('categoryView').innerHTML = CATEGORY_PAGES[category];
+  document.getElementById('tocPanel').classList.remove('vis');
+  
+  currentCategory = category;
+  currentSubcategory = null;
+  currentId = null;
+  updateBreadcrumbs();
+  
+  setActiveNav(null);
+  history.replaceState(null, '', '#' + category);
+  document.getElementById('cScroll').scrollTop = 0;
+  closeSidebar();
+  
+  setTimeout(() => {{
+    ic();
+  }}, 50);
+}}
+
+function showSubcategory(category, subcategory) {{
+  const key = category + '||' + subcategory;
+  if (!SUBCATEGORY_PAGES[key]) return;
+  
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = '';
+  document.getElementById('docView').style.display = 'none';
+  
+  document.getElementById('subcategoryView').innerHTML = SUBCATEGORY_PAGES[key];
+  document.getElementById('tocPanel').classList.remove('vis');
+  
+  currentCategory = category;
+  currentSubcategory = subcategory;
+  currentId = null;
+  updateBreadcrumbs();
+  
+  setActiveNav(null);
+  history.replaceState(null, '', '#' + category + '/' + subcategory);
+  document.getElementById('cScroll').scrollTop = 0;
+  closeSidebar();
+  
+  setTimeout(() => {{
+    ic();
+  }}, 50);
+}}
 
 const PICONS = {{
   ios:'smartphone', android:'smartphone', web:'globe', windows:'monitor',
@@ -1888,7 +2425,6 @@ function initPF() {{
     opt.className = 'pf-opt';
     opt.dataset.p = p.name;
     opt.innerHTML = `
-    
       <span class="pf-opt-name">${{p.name}}</span>
       <span class="pf-opt-count">${{count}}</span>
       <i data-lucide="check" class="pf-opt-chk"></i>`;
@@ -2095,24 +2631,34 @@ function toggleSub(id) {{
 
 function showHome() {{
   document.getElementById('homeView').style.display = '';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = 'none';
   document.getElementById('docView').style.display = 'none';
   document.getElementById('bcCur').textContent = 'Home';
+  
+  currentCategory = null;
+  currentSubcategory = null;
+  currentId = null;
+  updateBreadcrumbs();
+  
   setActiveNav(null);
   history.replaceState(null, '', location.pathname);
   document.getElementById('tocPanel').classList.remove('vis');
   closeSidebar();
   document.getElementById('cScroll').scrollTop = 0;
-  currentId = null;
 }}
 
 function showPage(id) {{
   if (!PAGES[id]) return;
+  
   document.getElementById('homeView').style.display = 'none';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = 'none';
   document.getElementById('docView').style.display = '';
+  
   document.getElementById('docContent').innerHTML = PAGES[id];
   document.getElementById('docTitle').textContent = TITLES[id] || id;
-  document.getElementById('bcCur').textContent = TITLES[id] || id;
-
+  
   const meta = document.getElementById('docMeta');
   meta.innerHTML = '';
   (PAGE_PLATFORMS[id] || []).forEach(p => {{
@@ -2125,7 +2671,12 @@ function showPage(id) {{
 
   setActiveNav(id);
   history.replaceState(null, '', '#' + id);
+  
   currentId = id;
+  currentCategory = CATS[id] || null;
+  currentSubcategory = SUBCATS[id] || null;
+  updateBreadcrumbs();
+  
   document.getElementById('cScroll').scrollTop = 0;
   closeSidebar();
   setTimeout(() => {{
@@ -2282,19 +2833,29 @@ document.addEventListener('keydown', e => {{
 }});
 
 document.addEventListener('DOMContentLoaded', () => {{
-  const t = localStorage.getItem('docs-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', t);
-  document.getElementById('themeName').textContent = TL[t] || 'Light';
-  const ti = document.getElementById('themeIcon');
-  if (ti) ti.setAttribute('data-lucide', TI[t] || 'sun');
-  document.querySelectorAll('.t-opt').forEach(o => o.classList.toggle('active', o.dataset.theme === t));
+  initTheme();
   initPF();
-  if (window.location.hash) {{
-    const id = window.location.hash.slice(1);
-    if (PAGES[id]) {{ showPage(id); return; }}
+  
+  // Check hash for navigation
+  const hash = window.location.hash.slice(1);
+  if (hash) {{
+    if (hash.includes('/')) {{
+      const [category, subcategory] = hash.split('/');
+      if (SUBCATEGORY_PAGES[category + '||' + subcategory]) {{
+        showSubcategory(category, subcategory);
+        return;
+      }}
+    }} else if (CATEGORY_PAGES[hash]) {{
+      showCategory(hash);
+      return;
+    }} else if (PAGES[hash]) {{
+      showPage(hash);
+      return;
+    }}
   }}
+  
   addCopyBtns();
-  initMermaid(t);
+  initMermaid(localStorage.getItem('docs-theme') || 'light');
   ic();
 }});
 </script>
@@ -2337,139 +2898,185 @@ document.addEventListener('DOMContentLoaded', () => {{
             os.unlink(tmp)
 
     def generate(self, config_file: str, output_file: str, pdf_output: Optional[str] = None):
-        with open(config_file, "r", encoding="utf-8") as f:
-            if config_file.endswith(".json"):
-                config = json.load(f)
-            elif config_file.endswith((".yml", ".yaml")):
-                config = yaml.safe_load(f)
-            else:
-                raise ValueError("Config must be .json, .yml, or .yaml")
+      with open(config_file, "r", encoding="utf-8") as f:
+          if config_file.endswith(".json"):
+              config = json.load(f)
+          elif config_file.endswith((".yml", ".yaml")):
+              config = yaml.safe_load(f)
+          else:
+              raise ValueError("Config must be .json, .yml, or .yaml")
 
-        project_name    = config.get("name", "Docs")
-        project_version = config.get("version", "1.0.0")
-        description     = config.get("description", "Documentation")
-        base_dir        = os.path.dirname(os.path.abspath(config_file))
-        sections        = config.get("sections", [])
-        categories      = config.get("categories", [])
+      project_name    = config.get("name", "Docs")
+      project_version = config.get("version", "1.0.0")
+      description     = config.get("description", "Documentation")
+      base_dir        = os.path.dirname(os.path.abspath(config_file))
+      sections        = config.get("sections", [])
+      categories      = config.get("categories", [])
 
-        if not categories:
-            cat_names = sorted(set(s.get("category", "General") for s in sections))
-            categories = [{"name": n, "icon": "folder"} for n in cat_names]
+      if not categories:
+          cat_names = sorted(set(s.get("category", "General") for s in sections))
+          categories = [{"name": n, "icon": "folder", "description": f"Documentation for {n}"} for n in cat_names]
 
-        sidebar_sections: Dict[str, Dict[str, List]] = {}
-        page_categories:  Dict[str, str]  = {}
-        page_subcats:     Dict[str, str]  = {}
-        page_platforms:   Dict[str, List] = {}
+      # First, generate all page IDs and load content
+      pages_dict: Dict[str, str] = {}
+      titles_dict: Dict[str, str] = {}
+      page_objects: Dict[str, Dict] = {}  # Store full page objects with metadata
+      
+      for s in sections:
+          title = s.get("title", "Untitled")
+          # Create a stable ID based on title
+          sid = hashlib.md5(title.encode()).hexdigest()[:8]
+          
+          # Load markdown content
+          mdf = s.get("file", "")
+          if mdf and not os.path.isabs(mdf):
+              mdf = os.path.join(base_dir, mdf)
+          
+          pages_dict[sid] = self.load_markdown(mdf) if mdf and os.path.exists(mdf) else f"<h1>{title}</h1><p>{s.get('description','')}</p>"
+          titles_dict[sid] = title
+          
+          # Store full page object with all metadata
+          page_objects[sid] = {
+              "id": sid,
+              "title": title,
+              "description": s.get("description", f"Documentation for {title}"),
+              "icon": s.get("icon", "file-text"),
+              "category": s.get("category", "General"),
+              "subcategory": s.get("subcategory", ""),
+              "platforms": s.get("platforms", [])
+          }
 
-        for s in sections:
-            cat  = s.get("category", "General")
-            sub  = s.get("subcategory", "")
-            sid  = hashlib.md5(s.get("title", "Untitled").encode()).hexdigest()[:8]
-            sidebar_sections.setdefault(cat, {}).setdefault(sub, []).append(s)
-            page_categories[sid]  = cat
-            page_subcats[sid]     = sub
-            raw_platforms = s.get("platforms", [])
-            page_platforms[sid] = [
-                n for n in (self._normalize_platform(p) for p in raw_platforms) if n
-            ]
+      # Organize sections by category and subcategory using the page objects
+      sidebar_sections: Dict[str, Dict[str, List]] = {}
+      page_categories: Dict[str, str] = {}
+      page_subcats: Dict[str, str] = {}
+      page_platforms: Dict[str, List] = {}
 
-        hero_html        = self._hero_html(config)
-        quick_links_html = self._quick_links_html(config)
+      for sid, page in page_objects.items():
+          cat = page["category"]
+          sub = page["subcategory"]
+          
+          sidebar_sections.setdefault(cat, {}).setdefault(sub, []).append(page)
+          page_categories[sid] = cat
+          page_subcats[sid] = sub
+          
+          # Normalize platforms
+          raw_platforms = page.get("platforms", [])
+          page_platforms[sid] = [
+              n for n in (self._normalize_platform(p) for p in raw_platforms) if n
+          ]
 
-        sb = []
-        for cat in categories:
-            cname  = cat.get("name", "General")
-            cid    = re.sub(r"[^a-z0-9]+", "-", cname.lower())
-            csects = sidebar_sections.get(cname, {})
-            if not csects:
-                continue
+      hero_html = self._hero_html(config)
+      quick_links_html = self._quick_links_html(config)
 
-            sb.append(
-                f'<div>'
-                f'<div class="sec-label" onclick="toggleSec(\'{cid}\')">'
-                f'<i data-lucide="{cat.get("icon","folder")}" style="width:11px;height:11px"></i>'
-                f'{cname}'
-                f'<i data-lucide="chevron-down" class="sec-chev"></i>'
-                f'</div>'
-                f'<div class="sec-items" id="si-{cid}">'
-            )
+      # Build sidebar navigation
+      sb = []
+      for cat in categories:
+          cname = cat.get("name", "General")
+          cid = re.sub(r"[^a-z0-9]+", "-", cname.lower())
+          csects = sidebar_sections.get(cname, {})
+          if not csects:
+              continue
 
-            for s in csects.get("", []):
-                title = s.get("title", "Untitled")
-                sid   = hashlib.md5(title.encode()).hexdigest()[:8]
-                icon  = s.get("icon", "file-text")
-                sb.append(
-                    f'<div class="nav-item" data-page="{sid}" onclick="showPage(\'{sid}\')">'
-                    f'<i data-lucide="{icon}"></i>{title}</div>'
-                )
+          sb.append(
+              f'<div>'
+              f'<div class="sec-label" onclick="toggleSec(\'{cid}\')">'
+              f'<i data-lucide="{cat.get("icon","folder")}" style="width:11px;height:11px"></i>'
+              f'{cname}'
+              f'<i data-lucide="chevron-down" class="sec-chev"></i>'
+              f'</div>'
+              f'<div class="sec-items" id="si-{cid}">'
+          )
 
-            for sub_name, sub_items in csects.items():
-                if not sub_name:
-                    continue
-                sub_id = f"{cid}--{re.sub(r'[^a-z0-9]+', '-', sub_name.lower())}"
-                sb.append(
-                    f'<div class="sub-label" data-sg="{sub_id}" onclick="toggleSub(\'{sub_id}\')">'
-                    f'{sub_name}'
-                    f'<i data-lucide="chevron-down" class="sub-chev"></i>'
-                    f'</div>'
-                    f'<div class="sub-items" id="ssi-{sub_id}">'
-                )
-                for s in sub_items:
-                    title = s.get("title", "Untitled")
-                    sid   = hashlib.md5(title.encode()).hexdigest()[:8]
-                    icon  = s.get("icon", "file-text")
-                    sb.append(
-                        f'<div class="nav-item sub" data-page="{sid}" onclick="showPage(\'{sid}\')">'
-                        f'<i data-lucide="{icon}"></i>{title}</div>'
-                    )
-                sb.append('</div>')
+          # Add category link to show category page
+          sb.append(
+              f'<div class="nav-item" onclick="showCategory(\'{cname}\')">'
+              f'<i data-lucide="layout-grid"></i>All {cname}</div>'
+          )
 
-            sb.append('</div></div>')
+          # Uncategorized pages in this category
+          for page in csects.get("", []):
+              sb.append(
+                  f'<div class="nav-item" data-page="{page["id"]}" onclick="showPage(\'{page["id"]}\')">'
+                  f'<i data-lucide="{page["icon"]}"></i>{page["title"]}</div>'
+              )
 
-        pages_dict:  Dict[str, str] = {}
-        titles_dict: Dict[str, str] = {}
+          # Subcategories
+          for sub_name, sub_items in csects.items():
+              if not sub_name:
+                  continue
+              sub_id = f"{cid}--{re.sub(r'[^a-z0-9]+', '-', sub_name.lower())}"
+              sb.append(
+                  f'<div class="sub-label" data-sg="{sub_id}" onclick="toggleSub(\'{sub_id}\')">'
+                  f'{sub_name}'
+                  f'<i data-lucide="chevron-down" class="sub-chev"></i>'
+                  f'</div>'
+                  f'<div class="sub-items" id="ssi-{sub_id}">'
+              )
+              
+              # Add subcategory link
+              sb.append(
+                  f'<div class="nav-item sub" onclick="showSubcategory(\'{cname}\', \'{sub_name}\')">'
+                  f'<i data-lucide="layers"></i>All {sub_name}</div>'
+              )
+              
+              # Individual pages in subcategory
+              for page in sub_items:
+                  sb.append(
+                      f'<div class="nav-item sub" data-page="{page["id"]}" onclick="showPage(\'{page["id"]}\')">'
+                      f'<i data-lucide="{page["icon"]}"></i>{page["title"]}</div>'
+                  )
+              sb.append('</div>')
 
-        for s in sections:
-            title = s.get("title", "Untitled")
-            mdf   = s.get("file", "")
-            if mdf and not os.path.isabs(mdf):
-                mdf = os.path.join(base_dir, mdf)
-            sid = hashlib.md5(title.encode()).hexdigest()[:8]
-            pages_dict[sid]  = self.load_markdown(mdf) if mdf and os.path.exists(mdf) \
-                               else f"<h1>{title}</h1><p>{s.get('description','')}</p>"
-            titles_dict[sid] = title
+          sb.append('</div></div>')
 
-        pdf_url = os.path.basename(pdf_output) if pdf_output else ""
+      # Generate category pages
+      category_pages: Dict[str, str] = {}
+      for cat in categories:
+          cname = cat.get("name", "General")
+          if cname in sidebar_sections:
+              category_pages[cname] = self._category_page_html(cat, sidebar_sections[cname], page_objects, titles_dict)
 
-        html = self._build_template().format(
-            project_name       = project_name,
-            version            = project_version,
-            description        = description,
-            hero_section       = hero_html,
-            action_cards       = quick_links_html,
-            pygments_styles    = self._pygments_css(),
-            sidebar_content    = "\n".join(sb),
-            pages_json         = json.dumps(pages_dict),
-            titles_json        = json.dumps(titles_dict),
-            categories_json    = json.dumps(page_categories),
-            subcategories_json = json.dumps(page_subcats),
-            platforms_json     = json.dumps(page_platforms),
-            year               = datetime.now().year,
-            last_updated       = datetime.now().strftime("%b %d, %Y"),
-            pdf_url            = pdf_url,
-        )
+      # Generate subcategory pages
+      subcategory_pages: Dict[str, str] = {}
+      for cat_name, subcats in sidebar_sections.items():
+          for sub_name, pages in subcats.items():
+              if sub_name:  # Skip empty subcategory (uncategorized)
+                  key = f"{cat_name}||{sub_name}"
+                  subcategory_pages[key] = self._subcategory_page_html(cat_name, sub_name, pages, titles_dict, pages_dict)
 
-        os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(html)
-        print(f"✓ HTML generated: {output_file}")
+      pdf_url = os.path.basename(pdf_output) if pdf_output else ""
 
-        if pdf_output:
-            try:
-                self.generate_pdf(config, pages_dict, titles_dict, page_platforms, pdf_output)
-            except Exception as e:
-                print(f"✗ PDF failed: {e}\n  Install weasyprint: pip install weasyprint")
+      html = self._build_template().format(
+          project_name       = project_name,
+          version            = project_version,
+          description        = description,
+          hero_section       = hero_html,
+          action_cards       = quick_links_html,
+          pygments_styles    = self._pygments_css(),
+          sidebar_content    = "\n".join(sb),
+          pages_json         = json.dumps(pages_dict),
+          titles_json        = json.dumps(titles_dict),
+          categories_json    = json.dumps(page_categories),
+          subcategories_json = json.dumps(page_subcats),
+          platforms_json     = json.dumps(page_platforms),
+          category_pages_json = json.dumps(category_pages),
+          subcategory_pages_json = json.dumps(subcategory_pages),
+          year               = datetime.now().year,
+          last_updated       = datetime.now().strftime("%b %d, %Y"),
+          pdf_url            = pdf_url,
+      )
 
+      os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
+      with open(output_file, "w", encoding="utf-8") as f:
+          f.write(html)
+      print(f"✓ HTML generated: {output_file}")
+
+      if pdf_output:
+          try:
+              self.generate_pdf(config, pages_dict, titles_dict, page_platforms, pdf_output)
+          except Exception as e:
+              print(f"✗ PDF failed: {e}\n  Install weasyprint: pip install weasyprint")
 
 def main():
     parser = argparse.ArgumentParser(

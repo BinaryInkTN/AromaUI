@@ -1,7 +1,7 @@
 {
-  "name": "AromaUI",
+  "name": "AromaSDK",
   "version": "0.0.1 (alpha)",
-  "description": "Enterprise-grade development toolkit for cross-platform applications on Linux, Android, and embedded systems.",
+  "description": "Lightweight development toolkit for cross-platform applications on Linux, Android, and embedded systems.",
 
   "hero": {
     "title": "AromaSDK",

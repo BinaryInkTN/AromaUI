@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AromaUI – Docs</title>
-<meta name="description" content="Enterprise-grade development toolkit for cross-platform applications on Linux, Android, and embedded systems.">
+<title>AromaSDK – Docs</title>
+<meta name="description" content="Lightweight development toolkit for cross-platform applications on Linux, Android, and embedded systems.">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -316,7 +316,16 @@ body{
   position:relative;
   z-index:10;
 }
-.bc{display:flex;align-items:center;gap:4px;font-size:.8125rem;color:var(--t2);flex:1;min-width:0}
+.bc{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  font-size:.8125rem;
+  color:var(--t2);
+  flex:1;
+  min-width:0;
+  flex-wrap:wrap;
+}
 .bc-home{
   display:flex;
   align-items:center;
@@ -330,8 +339,28 @@ body{
 }
 .bc-home:hover{color:var(--acc)}
 .bc-home i{width:12px;height:12px}
-.bc-sep{color:var(--t3);font-size:.6875rem}
-.bc-cur{color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc-sep{color:var(--t3);font-size:.6875rem;margin:0 2px}
+.bc-category{
+  color:var(--t2);
+  cursor:pointer;
+  transition:color var(--tr);
+  white-space:nowrap;
+}
+.bc-category:hover{color:var(--acc)}
+.bc-subcategory{
+  color:var(--t2);
+  cursor:pointer;
+  transition:color var(--tr);
+  white-space:nowrap;
+}
+.bc-subcategory:hover{color:var(--acc)}
+.bc-cur{
+  color:var(--t2);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:200px;
+}
 .hdr-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .hbtn{
   display:flex;
@@ -363,39 +392,68 @@ body{
 }
 .hbtn.acc{background:var(--acc);border-color:var(--acc);color:#fff}
 .hbtn.acc:hover{background:var(--acc2);border-color:var(--acc2)}
-.theme-wrap{position:relative}
-.theme-dd{
-  position:absolute;
-  top:calc(100% + 5px);
-  right:0;
-  background:var(--surf2);
-  border:1px solid var(--bdr);
-  border-radius:var(--r3);
-  box-shadow:var(--sh3);
-  width:140px;
-  overflow:hidden;
-  display:none;
-  z-index:200;
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+.theme-toggle{
+  position:relative;
+  display:inline-block;
+  width:48px;
+  height:24px;
 }
-.theme-dd.open{display:block}
-.t-opt{
+.theme-toggle input{
+  opacity:0;
+  width:0;
+  height:0;
+}
+.theme-slider{
+  position:absolute;
+  cursor:pointer;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background-color:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:34px;
+  transition:.15s;
   display:flex;
   align-items:center;
-  gap:8px;
-  padding:8px 12px;
-  font-size:.8125rem;
-  color:var(--t1);
-  cursor:pointer;
-  transition:background var(--tr);
+  padding:2px;
 }
-.t-opt:hover{background:var(--bdr)}
-.t-opt.active{color:var(--acc)}
-.t-opt .chk{margin-left:auto;opacity:0;width:12px;height:12px;color:var(--acc)}
-.t-opt.active .chk{opacity:1}
-.t-sw{width:14px;height:14px;border-radius:50%;border:1px solid var(--bdr2);flex-shrink:0}
-
+.theme-slider:before{
+  position:absolute;
+  content:"";
+  height:18px;
+  width:18px;
+  left:2px;
+  bottom:2px;
+  background-color:var(--acc);
+  border-radius:50%;
+  transition:.15s;
+  z-index:2;
+}
+.theme-slider .sun-icon,
+.theme-slider .moon-icon{
+  position:absolute;
+  width:14px;
+  height:14px;
+  z-index:1;
+}
+.theme-slider .sun-icon{
+  left:6px;
+  color:var(--t2);
+}
+.theme-slider .moon-icon{
+  right:6px;
+  color:var(--t2);
+}
+input:checked + .theme-slider:before{
+  transform:translateX(24px);
+}
+input:checked + .theme-slider .sun-icon{
+  color:var(--t2);
+}
+input:checked + .theme-slider .moon-icon{
+  color:var(--acc);
+}
 .c-layout{flex:1;display:flex;overflow:hidden}
 .c-scroll{
   flex:1;
@@ -405,7 +463,7 @@ body{
 }
 .c-scroll::-webkit-scrollbar{width:4px}
 .c-scroll::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
-.c-inner{max-width:720px;margin:0 auto;padding:40px 32px 72px}
+.c-inner{max-width:900px;margin:0 auto;padding:40px 32px 72px}
 
 .toc-p{
   width:200px;
@@ -439,8 +497,8 @@ body{
 .toc-item:hover{color:var(--t1)}
 .toc-item.active{color:var(--acc);border-left-color:var(--acc);background:var(--accl);font-weight:500}
 
-.hero{padding:8px 0 44px}
-.hero-eyebrow{margin-bottom:16px}
+.hero{text-align:center;padding:8px 0 44px;max-width:600px;margin:0 auto;}
+.hero-eyebrow{margin-bottom:16px;display:flex;justify-content:center;}
 .hero-eyebrow span{
   display:inline-flex;
   align-items:center;
@@ -473,7 +531,7 @@ body{
   color:var(--t2);
   line-height:1.65;
   max-width:560px;
-  margin-bottom:28px;
+  margin:0 auto 28px auto;
 }
 .hero-stats{
   display:flex;
@@ -481,6 +539,7 @@ body{
   margin-bottom:28px;
   padding-bottom:28px;
   border-bottom:1px solid var(--bdr);
+  justify-content:center;
 }
 .stat-value{
   font-size:1.625rem;
@@ -497,7 +556,7 @@ body{
   letter-spacing:.05em;
   font-weight:500;
 }
-.hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;justify-content:center;}
 .hero-btn{
   display:inline-flex;
   align-items:center;
@@ -530,7 +589,7 @@ body{
   border:1px solid var(--bdr2);
 }
 .btn-ghost:hover{background:var(--bg);border-color:var(--acc);color:var(--acc)}
-.platform-badges{display:flex;gap:5px;flex-wrap:wrap}
+.platform-badges{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;}
 .platform-badge{
   display:inline-flex;
   align-items:center;
@@ -546,6 +605,286 @@ body{
   letter-spacing:.04em;
 }
 .platform-badge i{width:10px;height:10px}
+
+.hero-image-container{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin:32px 0 16px 0;
+  overflow:hidden;
+}
+.hero-image{
+  max-width:100%;
+  height:auto;
+  display:block;
+  border-radius:var(--r4);
+  box-shadow:var(--sh3);
+  transition:transform var(--tr);
+}
+@media (max-width: 768px) {
+  .hero-image{
+    max-width:95%;
+  }
+}
+
+/* Category Page Styles */
+.category-page{
+  padding:20px 0;
+}
+.category-header{
+  text-align:center;
+  margin-bottom:48px;
+}
+.category-header-icon{
+  width:64px;
+  height:64px;
+  border-radius:20px;
+  background:var(--accl);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 16px;
+}
+.category-header-icon i{
+  width:32px;
+  height:32px;
+  color:var(--acc);
+}
+.category-title{
+  font-size:2.5rem;
+  font-weight:700;
+  color:var(--t1);
+  margin-bottom:8px;
+  letter-spacing:-.02em;
+}
+.category-description{
+  font-size:1.125rem;
+  color:var(--t2);
+  max-width:600px;
+  margin:0 auto;
+}
+
+/* Subcategory Cards - Apple Style */
+.subcategories-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:20px;
+  margin-top:32px;
+}
+.subcategory-card{
+  background:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:20px;
+  padding:24px;
+  cursor:pointer;
+  transition:all var(--tr);
+  position:relative;
+  overflow:hidden;
+}
+.subcategory-card:hover{
+  transform:translateY(-4px);
+  border-color:var(--acc);
+  box-shadow:var(--sh3);
+  background:var(--bg);
+}
+.subcategory-card:hover .card-arrow{
+  transform:translateX(4px);
+  color:var(--acc);
+}
+.card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px;
+}
+.card-icon{
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  background:var(--accl);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.card-icon i{
+  width:20px;
+  height:20px;
+  color:var(--acc);
+}
+.card-count{
+  font-size:.75rem;
+  font-weight:500;
+  color:var(--t3);
+  background:var(--bg3);
+  padding:4px 8px;
+  border-radius:20px;
+}
+.card-title{
+  font-size:1.25rem;
+  font-weight:600;
+  color:var(--t1);
+  margin-bottom:8px;
+  letter-spacing:-.01em;
+}
+.card-desc{
+  font-size:.875rem;
+  color:var(--t2);
+  margin-bottom:16px;
+  line-height:1.5;
+}
+.card-preview{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin-bottom:16px;
+}
+.preview-tag{
+  font-size:.6875rem;
+  padding:2px 8px;
+  background:var(--bg3);
+  border:1px solid var(--bdr);
+  border-radius:12px;
+  color:var(--t2);
+}
+.preview-more{
+  font-size:.6875rem;
+  color:var(--t3);
+  padding:2px 4px;
+}
+.card-arrow{
+  position:absolute;
+  bottom:24px;
+  right:24px;
+  transition:transform var(--tr),color var(--tr);
+}
+.card-arrow i{
+  width:20px;
+  height:20px;
+  color:var(--t3);
+}
+
+/* Subcategory Page Styles */
+.subcategory-page{
+  padding:20px 0;
+}
+.subcategory-header{
+  margin-bottom:32px;
+}
+.back-button{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  background:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:100px;
+  font-size:.875rem;
+  color:var(--t2);
+  cursor:pointer;
+  transition:all var(--tr);
+  margin-bottom:16px;
+}
+.back-button:hover{
+  background:var(--bg);
+  border-color:var(--acc);
+  color:var(--acc);
+}
+.back-button i{
+  width:16px;
+  height:16px;
+}
+.subcategory-title{
+  font-size:2rem;
+  font-weight:700;
+  color:var(--t1);
+  margin-bottom:8px;
+  letter-spacing:-.02em;
+}
+.subcategory-description{
+  font-size:1rem;
+  color:var(--t2);
+}
+
+/* Document Cards */
+.documents-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(350px,1fr));
+  gap:16px;
+}
+.doc-card{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:16px;
+  background:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:16px;
+  cursor:pointer;
+  transition:all var(--tr);
+}
+.doc-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--acc);
+  box-shadow:var(--sh2);
+  background:var(--bg);
+}
+.doc-card:hover .doc-card-arrow{
+  transform:translateX(4px);
+  color:var(--acc);
+}
+.doc-card-icon{
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  background:var(--accl);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.doc-card-icon i{
+  width:20px;
+  height:20px;
+  color:var(--acc);
+}
+.doc-card-content{
+  flex:1;
+  min-width:0;
+}
+.doc-card-title{
+  font-size:1rem;
+  font-weight:600;
+  color:var(--t1);
+  margin-bottom:4px;
+}
+.doc-card-desc{
+  font-size:.8125rem;
+  color:var(--t2);
+  margin-bottom:6px;
+  line-height:1.4;
+}
+.doc-card-platforms{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}
+.platform-tag{
+  font-size:.625rem;
+  padding:2px 6px;
+  background:color-mix(in srgb,var(--tag-color) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--tag-color) 22%,transparent);
+  border-radius:12px;
+  color:var(--tag-color);
+  font-weight:500;
+}
+.doc-card-arrow{
+  flex-shrink:0;
+  color:var(--t3);
+  width:16px;
+  height:16px;
+  transition:transform var(--tr),color var(--tr);
+}
 
 .quick-links-section{margin-top:6px}
 .section-heading{
@@ -1126,8 +1465,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   <nav class="sidebar" id="sidebar">
     <div class="sb-hdr">
       <div class="logo-row" onclick="showHome()">
-      
-        <span class="logo-name">AromaUI</span>
+        <span class="logo-name">AromaSDK</span>
         <span class="logo-version">v0.0.1 (alpha)</span>
       </div>
       <div class="sb-search" onclick="openSearch()">
@@ -1148,83 +1486,112 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
         <i data-lucide="home"></i> Home
       </div>
       <div><div class="sec-label" onclick="toggleSec('getting-started')"><i data-lucide="rocket" style="width:11px;height:11px"></i>Getting Started<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-getting-started">
+<div class="nav-item" onclick="showCategory('Getting Started')"><i data-lucide="layout-grid"></i>All Getting Started</div>
 <div class="sub-label" data-sg="getting-started--installation" onclick="toggleSub('getting-started--installation')">Installation<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-getting-started--installation">
+<div class="nav-item sub" onclick="showSubcategory('Getting Started', 'Installation')"><i data-lucide="layers"></i>All Installation</div>
 <div class="nav-item sub" data-page="b820e107" onclick="showPage('b820e107')"><i data-lucide="download"></i>SDK Installation</div>
 </div>
 <div class="sub-label" data-sg="getting-started--setup" onclick="toggleSub('getting-started--setup')">Setup<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-getting-started--setup">
+<div class="nav-item sub" onclick="showSubcategory('Getting Started', 'Setup')"><i data-lucide="layers"></i>All Setup</div>
 <div class="nav-item sub" data-page="2876afc7" onclick="showPage('2876afc7')"><i data-lucide="folder"></i>Project Setup</div>
 </div>
 <div class="sub-label" data-sg="getting-started--tutorials" onclick="toggleSub('getting-started--tutorials')">Tutorials<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-getting-started--tutorials">
+<div class="nav-item sub" onclick="showSubcategory('Getting Started', 'Tutorials')"><i data-lucide="layers"></i>All Tutorials</div>
 <div class="nav-item sub" data-page="6aab2335" onclick="showPage('6aab2335')"><i data-lucide="code"></i>Hello World Tutorial</div>
 </div>
 <div class="sub-label" data-sg="getting-started--concepts" onclick="toggleSub('getting-started--concepts')">Concepts<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-getting-started--concepts">
+<div class="nav-item sub" onclick="showSubcategory('Getting Started', 'Concepts')"><i data-lucide="layers"></i>All Concepts</div>
 <div class="nav-item sub" data-page="b1fcf769" onclick="showPage('b1fcf769')"><i data-lucide="boxes"></i>Architecture Overview</div>
 </div>
 </div></div>
 <div><div class="sec-label" onclick="toggleSec('core-systems')"><i data-lucide="settings" style="width:11px;height:11px"></i>Core Systems<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-core-systems">
+<div class="nav-item" onclick="showCategory('Core Systems')"><i data-lucide="layout-grid"></i>All Core Systems</div>
 <div class="sub-label" data-sg="core-systems--native-integration" onclick="toggleSub('core-systems--native-integration')">Native Integration<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-core-systems--native-integration">
+<div class="nav-item sub" onclick="showSubcategory('Core Systems', 'Native Integration')"><i data-lucide="layers"></i>All Native Integration</div>
 <div class="nav-item sub" data-page="245e1d81" onclick="showPage('245e1d81')"><i data-lucide="braces"></i>Core JNI API</div>
 </div>
 <div class="sub-label" data-sg="core-systems--platform-graphics" onclick="toggleSub('core-systems--platform-graphics')">Platform & Graphics<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-core-systems--platform-graphics">
+<div class="nav-item sub" onclick="showSubcategory('Core Systems', 'Platform & Graphics')"><i data-lucide="layers"></i>All Platform & Graphics</div>
 <div class="nav-item sub" data-page="8a88b632" onclick="showPage('8a88b632')"><i data-lucide="cpu"></i>AromaABI Interface</div>
 </div>
 <div class="sub-label" data-sg="core-systems--runtime" onclick="toggleSub('core-systems--runtime')">Runtime<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-core-systems--runtime">
+<div class="nav-item sub" onclick="showSubcategory('Core Systems', 'Runtime')"><i data-lucide="layers"></i>All Runtime</div>
 <div class="nav-item sub" data-page="9792d2ee" onclick="showPage('9792d2ee')"><i data-lucide="settings"></i>System Services</div>
 </div>
 <div class="sub-label" data-sg="core-systems--hardware" onclick="toggleSub('core-systems--hardware')">Hardware<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-core-systems--hardware">
+<div class="nav-item sub" onclick="showSubcategory('Core Systems', 'Hardware')"><i data-lucide="layers"></i>All Hardware</div>
 <div class="nav-item sub" data-page="3eb209d4" onclick="showPage('3eb209d4')"><i data-lucide="smartphone"></i>Device Information</div>
 </div>
 </div></div>
 <div><div class="sec-label" onclick="toggleSec('connectivity')"><i data-lucide="share-2" style="width:11px;height:11px"></i>Connectivity<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-connectivity">
+<div class="nav-item" onclick="showCategory('Connectivity')"><i data-lucide="layout-grid"></i>All Connectivity</div>
 <div class="sub-label" data-sg="connectivity--bluetooth" onclick="toggleSub('connectivity--bluetooth')">Bluetooth<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-connectivity--bluetooth">
+<div class="nav-item sub" onclick="showSubcategory('Connectivity', 'Bluetooth')"><i data-lucide="layers"></i>All Bluetooth</div>
 <div class="nav-item sub" data-page="2735656b" onclick="showPage('2735656b')"><i data-lucide="bluetooth"></i>Bluetooth Classic API</div>
 </div>
 <div class="sub-label" data-sg="connectivity--wi-fi" onclick="toggleSub('connectivity--wi-fi')">Wi-Fi<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-connectivity--wi-fi">
+<div class="nav-item sub" onclick="showSubcategory('Connectivity', 'Wi-Fi')"><i data-lucide="layers"></i>All Wi-Fi</div>
 <div class="nav-item sub" data-page="0f0e5063" onclick="showPage('0f0e5063')"><i data-lucide="wifi"></i>Wi-Fi API</div>
 </div>
 </div></div>
 <div><div class="sec-label" onclick="toggleSec('user-interface')"><i data-lucide="palette" style="width:11px;height:11px"></i>User Interface<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-user-interface">
+<div class="nav-item" onclick="showCategory('User Interface')"><i data-lucide="layout-grid"></i>All User Interface</div>
 <div class="sub-label" data-sg="user-interface--core-components" onclick="toggleSub('user-interface--core-components')">Core Components<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-user-interface--core-components">
+<div class="nav-item sub" onclick="showSubcategory('User Interface', 'Core Components')"><i data-lucide="layers"></i>All Core Components</div>
 <div class="nav-item sub" data-page="0ed0b7f9" onclick="showPage('0ed0b7f9')"><i data-lucide="component"></i>UI Utilities</div>
 <div class="nav-item sub" data-page="244b656c" onclick="showPage('244b656c')"><i data-lucide="component"></i>Widgets Library</div>
 </div>
 <div class="sub-label" data-sg="user-interface--layouts" onclick="toggleSub('user-interface--layouts')">Layouts<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-user-interface--layouts">
+<div class="nav-item sub" onclick="showSubcategory('User Interface', 'Layouts')"><i data-lucide="layers"></i>All Layouts</div>
 <div class="nav-item sub" data-page="dfe7bc96" onclick="showPage('dfe7bc96')"><i data-lucide="layout-dashboard"></i>Layout Management</div>
 </div>
 <div class="sub-label" data-sg="user-interface--utilities" onclick="toggleSub('user-interface--utilities')">Utilities<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-user-interface--utilities">
+<div class="nav-item sub" onclick="showSubcategory('User Interface', 'Utilities')"><i data-lucide="layers"></i>All Utilities</div>
 <div class="nav-item sub" data-page="c8e37735" onclick="showPage('c8e37735')"><i data-lucide="layout"></i>DPI Conversion</div>
 <div class="nav-item sub" data-page="1f79b541" onclick="showPage('1f79b541')"><i data-lucide="rotate-cw"></i>Orientation API</div>
 </div>
 <div class="sub-label" data-sg="user-interface--theming" onclick="toggleSub('user-interface--theming')">Theming<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-user-interface--theming">
+<div class="nav-item sub" onclick="showSubcategory('User Interface', 'Theming')"><i data-lucide="layers"></i>All Theming</div>
 <div class="nav-item sub" data-page="4e35d7e2" onclick="showPage('4e35d7e2')"><i data-lucide="palette"></i>Theming System</div>
 </div>
 <div class="sub-label" data-sg="user-interface--input" onclick="toggleSub('user-interface--input')">Input<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-user-interface--input">
+<div class="nav-item sub" onclick="showSubcategory('User Interface', 'Input')"><i data-lucide="layers"></i>All Input</div>
 <div class="nav-item sub" data-page="b7261d55" onclick="showPage('b7261d55')"><i data-lucide="hand"></i>Gestures & Touch</div>
 </div>
 </div></div>
 <div><div class="sec-label" onclick="toggleSec('media-graphics')"><i data-lucide="film" style="width:11px;height:11px"></i>Media & Graphics<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-media-graphics">
+<div class="nav-item" onclick="showCategory('Media & Graphics')"><i data-lucide="layout-grid"></i>All Media & Graphics</div>
 <div class="sub-label" data-sg="media-graphics--camera" onclick="toggleSub('media-graphics--camera')">Camera<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-media-graphics--camera">
+<div class="nav-item sub" onclick="showSubcategory('Media & Graphics', 'Camera')"><i data-lucide="layers"></i>All Camera</div>
 <div class="nav-item sub" data-page="689a81d9" onclick="showPage('689a81d9')"><i data-lucide="camera"></i>Camera API</div>
 </div>
 </div></div>
 <div><div class="sec-label" onclick="toggleSec('data-management')"><i data-lucide="database" style="width:11px;height:11px"></i>Data Management<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-data-management">
+<div class="nav-item" onclick="showCategory('Data Management')"><i data-lucide="layout-grid"></i>All Data Management</div>
 <div class="sub-label" data-sg="data-management--file-system" onclick="toggleSub('data-management--file-system')">File System<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-data-management--file-system">
+<div class="nav-item sub" onclick="showSubcategory('Data Management', 'File System')"><i data-lucide="layers"></i>All File System</div>
 <div class="nav-item sub" data-page="5ab3f318" onclick="showPage('5ab3f318')"><i data-lucide="folder-open"></i>File System API</div>
 </div>
 <div class="sub-label" data-sg="data-management--storage" onclick="toggleSub('data-management--storage')">Storage<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-data-management--storage">
+<div class="nav-item sub" onclick="showSubcategory('Data Management', 'Storage')"><i data-lucide="layers"></i>All Storage</div>
 <div class="nav-item sub" data-page="ada39c66" onclick="showPage('ada39c66')"><i data-lucide="settings"></i>Preferences API</div>
 </div>
 </div></div>
 <div><div class="sec-label" onclick="toggleSec('security-privacy')"><i data-lucide="shield" style="width:11px;height:11px"></i>Security & Privacy<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-security-privacy">
+<div class="nav-item" onclick="showCategory('Security & Privacy')"><i data-lucide="layout-grid"></i>All Security & Privacy</div>
 <div class="sub-label" data-sg="security-privacy--permissions" onclick="toggleSub('security-privacy--permissions')">Permissions<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-security-privacy--permissions">
+<div class="nav-item sub" onclick="showSubcategory('Security & Privacy', 'Permissions')"><i data-lucide="layers"></i>All Permissions</div>
 <div class="nav-item sub" data-page="34f4bdd6" onclick="showPage('34f4bdd6')"><i data-lucide="shield"></i>Permissions API</div>
 </div>
 </div></div>
 <div><div class="sec-label" onclick="toggleSec('development-tools')"><i data-lucide="wrench" style="width:11px;height:11px"></i>Development Tools<i data-lucide="chevron-down" class="sec-chev"></i></div><div class="sec-items" id="si-development-tools">
+<div class="nav-item" onclick="showCategory('Development Tools')"><i data-lucide="layout-grid"></i>All Development Tools</div>
 <div class="sub-label" data-sg="development-tools--build" onclick="toggleSub('development-tools--build')">Build<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-development-tools--build">
+<div class="nav-item sub" onclick="showSubcategory('Development Tools', 'Build')"><i data-lucide="layers"></i>All Build</div>
 <div class="nav-item sub" data-page="de21d9f8" onclick="showPage('de21d9f8')"><i data-lucide="rocket"></i>Building & Deployment</div>
 </div>
 <div class="sub-label" data-sg="development-tools--debugging" onclick="toggleSub('development-tools--debugging')">Debugging<i data-lucide="chevron-down" class="sub-chev"></i></div><div class="sub-items" id="ssi-development-tools--debugging">
+<div class="nav-item sub" onclick="showSubcategory('Development Tools', 'Debugging')"><i data-lucide="layers"></i>All Debugging</div>
 <div class="nav-item sub" data-page="3558c76d" onclick="showPage('3558c76d')"><i data-lucide="terminal"></i>Logging System</div>
 </div>
 </div></div>
@@ -1235,11 +1602,15 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       <button class="mob-btn" onclick="openSidebar()">
         <i data-lucide="menu" style="width:16px;height:16px"></i>
       </button>
-      <div class="bc">
+      <div class="bc" id="breadcrumbs">
         <span class="bc-home" onclick="showHome()">
-        AromaUI
+          <i data-lucide="home"></i> AromaSDK
         </span>
         <span class="bc-sep">/</span>
+        <span class="bc-category" id="bcCategory" style="display:none" onclick="showCategoryFromBc()"></span>
+        <span class="bc-sep" id="bcCatSep" style="display:none">/</span>
+        <span class="bc-subcategory" id="bcSubcategory" style="display:none" onclick="showSubcategoryFromBc()"></span>
+        <span class="bc-sep" id="bcSubSep" style="display:none">/</span>
         <span class="bc-cur" id="bcCur">Home</span>
       </div>
       <div class="hdr-r">
@@ -1249,35 +1620,28 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
         <button class="hbtn acc" onclick="downloadPDF()">
           <i data-lucide="file-text"></i> PDF
         </button>
-        <div class="theme-wrap">
-          <button class="hbtn" id="themeBtn" onclick="toggleThemeMenu()">
-            <i data-lucide="sun" id="themeIcon"></i>
-            <span id="themeName">Light</span>
-          </button>
-          <div class="theme-dd" id="themeDd">
-            <div class="t-opt active" data-theme="light" onclick="setTheme('light')">
-              <span class="t-sw" style="background:#fff"></span> Light
-              <i data-lucide="check" class="chk"></i>
-            </div>
-            <div class="t-opt" data-theme="dark" onclick="setTheme('dark')">
-              <span class="t-sw" style="background:#000"></span> Dark
-              <i data-lucide="check" class="chk"></i>
-            </div>
-          </div>
-        </div>
+        <label class="theme-toggle">
+          <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+          <span class="theme-slider">
+            <i data-lucide="sun" class="sun-icon"></i>
+            <i data-lucide="moon" class="moon-icon"></i>
+          </span>
+        </label>
       </div>
     </header>
     <div class="c-layout">
       <div class="c-scroll" id="cScroll">
         <div class="c-inner">
           <div id="homeView">
-            <section class="hero"><img src="./images/aroma.png" width="64" height="64" style="margin-bottom: 2rem;"/><h1 class="hero-title">AromaSDK</h1><p class="hero-desc">Vulkan, OpenGL, and Embedded Graphics APIs with native performance and elegant C interfaces.</p><div class="hero-stats"><div class="stat-item"><div class="stat-value">5</div><div class="stat-label">Platforms</div></div><div class="stat-item"><div class="stat-value">100%</div><div class="stat-label">Open Source</div></div><div class="stat-item"><div class="stat-value">MIT</div><div class="stat-label">License</div></div></div><div class="hero-actions"><a href="#" class="hero-btn btn-primary" onclick="window.open('https://github.com/BinaryInkTN/AromaUI/releases', '_blank')"><i data-lucide="download"></i>Download SDK</a><a href="#" class="hero-btn btn-ghost" onclick="window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"><i data-lucide="github"></i>View on GitHub</a></div><div class="platform-badges"><span class="platform-badge" style="--badge-color:#1f6fad" title="X11"><span>X11</span></span><span class="platform-badge" style="--badge-color:#ffb347" title="Wayland"><span>Wayland</span></span><span class="platform-badge" style="--badge-color:#e7352c" title="Espressif"><span>Espressif</span></span><span class="platform-badge" style="--badge-color:#0078d4" title="Windows"><span>Windows</span></span><span class="platform-badge" style="--badge-color:#3ddc84" title="Android"><span>Android</span></span></div></section>
+            <section class="hero"><img src="./images/aroma.png" width="64" height="64" style="margin-bottom: 2rem;"/><h1 class="hero-title">AromaSDK</h1><p class="hero-desc">Vulkan, OpenGL, and Embedded Graphics APIs with native performance and elegant C interfaces.</p><div class="hero-stats"><div class="stat-item"><div class="stat-value">5</div><div class="stat-label">Platforms</div></div><div class="stat-item"><div class="stat-value">100%</div><div class="stat-label">Open Source</div></div><div class="stat-item"><div class="stat-value">MIT</div><div class="stat-label">License</div></div></div><div class="hero-actions"><a href="#" class="hero-btn btn-primary" onclick="window.open('https://github.com/BinaryInkTN/AromaUI/releases', '_blank')"><i data-lucide="download"></i>Download SDK</a><a href="#" class="hero-btn btn-ghost" onclick="window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"><i data-lucide="github"></i>View on GitHub</a></div><div class="platform-badges"><span class="platform-badge" style="--badge-color:#1f6fad" title="X11"><span>X11</span></span><span class="platform-badge" style="--badge-color:#ffb347" title="Wayland"><span>Wayland</span></span><span class="platform-badge" style="--badge-color:#e7352c" title="Espressif"><span>Espressif</span></span><span class="platform-badge" style="--badge-color:#0078d4" title="Windows"><span>Windows</span></span><span class="platform-badge" style="--badge-color:#3ddc84" title="Android"><span>Android</span></span></div></section><div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>
             
             <div class="pg-footer">
-              <span>© 2026 AromaUI</span>
+              <span>© 2026 AromaSDK</span>
               <span>v0.0.1 (alpha) · Updated Mar 12, 2026</span>
             </div>
           </div>
+          <div id="categoryView" style="display:none"></div>
+          <div id="subcategoryView" style="display:none"></div>
           <div id="docView" style="display:none">
             <div class="doc-hdr">
               <div class="doc-meta" id="docMeta"></div>
@@ -1290,7 +1654,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             </div>
             <div class="md" id="docContent"></div>
             <div class="pg-footer">
-              <span>© 2026 AromaUI</span>
+              <span>© 2026 AromaSDK</span>
               <span>v0.0.1 (alpha) · Updated Mar 12, 2026</span>
             </div>
           </div>
@@ -1327,41 +1691,138 @@ const TITLES = {"b820e107": "SDK Installation", "2876afc7": "Project Setup", "6a
 const CATS = {"b820e107": "Getting Started", "2876afc7": "Getting Started", "6aab2335": "Getting Started", "b1fcf769": "Getting Started", "245e1d81": "Core Systems", "8a88b632": "Core Systems", "9792d2ee": "Core Systems", "3eb209d4": "Core Systems", "2735656b": "Connectivity", "0f0e5063": "Connectivity", "0ed0b7f9": "User Interface", "244b656c": "User Interface", "dfe7bc96": "User Interface", "c8e37735": "User Interface", "1f79b541": "User Interface", "4e35d7e2": "User Interface", "b7261d55": "User Interface", "689a81d9": "Media & Graphics", "5ab3f318": "Data Management", "ada39c66": "Data Management", "34f4bdd6": "Security & Privacy", "de21d9f8": "Development Tools", "3558c76d": "Development Tools"};
 const SUBCATS = {"b820e107": "Installation", "2876afc7": "Setup", "6aab2335": "Tutorials", "b1fcf769": "Concepts", "245e1d81": "Native Integration", "8a88b632": "Platform & Graphics", "9792d2ee": "Runtime", "3eb209d4": "Hardware", "2735656b": "Bluetooth", "0f0e5063": "Wi-Fi", "0ed0b7f9": "Core Components", "244b656c": "Core Components", "dfe7bc96": "Layouts", "c8e37735": "Utilities", "1f79b541": "Utilities", "4e35d7e2": "Theming", "b7261d55": "Input", "689a81d9": "Camera", "5ab3f318": "File System", "ada39c66": "Storage", "34f4bdd6": "Permissions", "de21d9f8": "Build", "3558c76d": "Debugging"};
 const PAGE_PLATFORMS = {"b820e107": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}, {"name": "windows", "icon": "monitor", "color": "#0078d4"}], "2876afc7": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}], "6aab2335": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}], "b1fcf769": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}, {"name": "windows", "icon": "monitor", "color": "#0078d4"}], "245e1d81": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}], "8a88b632": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}], "9792d2ee": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}], "3eb209d4": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "2735656b": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "0f0e5063": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "0ed0b7f9": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "244b656c": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "dfe7bc96": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "c8e37735": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "1f79b541": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "4e35d7e2": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "b7261d55": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "689a81d9": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "5ab3f318": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}, {"name": "windows", "icon": "monitor", "color": "#0078d4"}], "ada39c66": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}], "34f4bdd6": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}], "de21d9f8": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}, {"name": "windows", "icon": "monitor", "color": "#0078d4"}], "3558c76d": [{"name": "android", "icon": "smartphone", "color": "#3ddc84"}, {"name": "linux", "icon": "terminal", "color": "#e95420"}, {"name": "windows", "icon": "monitor", "color": "#0078d4"}]};
+const CATEGORY_PAGES = {"Getting Started": "\n        <div class=\"category-page\" data-category=\"Getting Started\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"rocket\"></i>\n                </div>\n                <h1 class=\"category-title\">Getting Started</h1>\n                <p class=\"category-description\">Quick start guides, installation, and basic concepts</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Getting Started', 'Installation')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Installation</h3>\n                <p class=\"card-desc\">Documentation for Installation</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">SDK Installation</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Getting Started', 'Setup')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Setup</h3>\n                <p class=\"card-desc\">Documentation for Setup</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Project Setup</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Getting Started', 'Tutorials')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Tutorials</h3>\n                <p class=\"card-desc\">Documentation for Tutorials</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Hello World Tutorial</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Getting Started', 'Concepts')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Concepts</h3>\n                <p class=\"card-desc\">Documentation for Concepts</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Architecture Overview</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        ", "Core Systems": "\n        <div class=\"category-page\" data-category=\"Core Systems\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"settings\"></i>\n                </div>\n                <h1 class=\"category-title\">Core Systems</h1>\n                <p class=\"category-description\">Low-level system access, JNI integration, and runtime services</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Core Systems', 'Native Integration')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Native Integration</h3>\n                <p class=\"card-desc\">Documentation for Native Integration</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Core JNI API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Core Systems', 'Platform & Graphics')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Platform & Graphics</h3>\n                <p class=\"card-desc\">Documentation for Platform & Graphics</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">AromaABI Interface</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Core Systems', 'Runtime')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Runtime</h3>\n                <p class=\"card-desc\">Documentation for Runtime</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">System Services</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Core Systems', 'Hardware')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Hardware</h3>\n                <p class=\"card-desc\">Documentation for Hardware</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Device Information</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        ", "Connectivity": "\n        <div class=\"category-page\" data-category=\"Connectivity\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"share-2\"></i>\n                </div>\n                <h1 class=\"category-title\">Connectivity</h1>\n                <p class=\"category-description\">Network protocols, device communication, and wireless APIs</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Connectivity', 'Bluetooth')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Bluetooth</h3>\n                <p class=\"card-desc\">Documentation for Bluetooth</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Bluetooth Classic API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Connectivity', 'Wi-Fi')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Wi-Fi</h3>\n                <p class=\"card-desc\">Documentation for Wi-Fi</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Wi-Fi API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        ", "User Interface": "\n        <div class=\"category-page\" data-category=\"User Interface\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"palette\"></i>\n                </div>\n                <h1 class=\"category-title\">User Interface</h1>\n                <p class=\"category-description\">UI components, layouts, theming, and user interaction</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('User Interface', 'Core Components')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">2 documents</div>\n                </div>\n                <h3 class=\"card-title\">Core Components</h3>\n                <p class=\"card-desc\">Documentation for Core Components</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">UI Utilities</span><span class=\"preview-tag\">Widgets Library</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('User Interface', 'Layouts')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Layouts</h3>\n                <p class=\"card-desc\">Documentation for Layouts</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Layout Management</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('User Interface', 'Utilities')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">2 documents</div>\n                </div>\n                <h3 class=\"card-title\">Utilities</h3>\n                <p class=\"card-desc\">Documentation for Utilities</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">DPI Conversion</span><span class=\"preview-tag\">Orientation API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('User Interface', 'Theming')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Theming</h3>\n                <p class=\"card-desc\">Documentation for Theming</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Theming System</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('User Interface', 'Input')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Input</h3>\n                <p class=\"card-desc\">Documentation for Input</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Gestures & Touch</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        ", "Media & Graphics": "\n        <div class=\"category-page\" data-category=\"Media & Graphics\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"film\"></i>\n                </div>\n                <h1 class=\"category-title\">Media & Graphics</h1>\n                <p class=\"category-description\">Camera, audio, video, and graphics processing</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Media & Graphics', 'Camera')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Camera</h3>\n                <p class=\"card-desc\">Documentation for Camera</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Camera API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        ", "Data Management": "\n        <div class=\"category-page\" data-category=\"Data Management\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"database\"></i>\n                </div>\n                <h1 class=\"category-title\">Data Management</h1>\n                <p class=\"category-description\">Storage, file systems, preferences, and data persistence</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Data Management', 'File System')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">File System</h3>\n                <p class=\"card-desc\">Documentation for File System</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">File System API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Data Management', 'Storage')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Storage</h3>\n                <p class=\"card-desc\">Documentation for Storage</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Preferences API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        ", "Security & Privacy": "\n        <div class=\"category-page\" data-category=\"Security & Privacy\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"shield\"></i>\n                </div>\n                <h1 class=\"category-title\">Security & Privacy</h1>\n                <p class=\"category-description\">Permissions, encryption, authentication, and secure storage</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Security & Privacy', 'Permissions')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Permissions</h3>\n                <p class=\"card-desc\">Documentation for Permissions</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Permissions API</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        ", "Development Tools": "\n        <div class=\"category-page\" data-category=\"Development Tools\">\n            <div class=\"category-header\">\n                <div class=\"category-header-icon\">\n                    <i data-lucide=\"wrench\"></i>\n                </div>\n                <h1 class=\"category-title\">Development Tools</h1>\n                <p class=\"category-description\">Build tools, debugging, testing, and deployment utilities</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Development Tools', 'Build')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Build</h3>\n                <p class=\"card-desc\">Documentation for Build</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Building & Deployment</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            <div class=\"subcategory-card\" onclick=\"showSubcategory('Development Tools', 'Debugging')\">\n                <div class=\"card-header\">\n                    <div class=\"card-icon\">\n                        <i data-lucide=\"folder-open\"></i>\n                    </div>\n                    <div class=\"card-count\">1 document</div>\n                </div>\n                <h3 class=\"card-title\">Debugging</h3>\n                <p class=\"card-desc\">Documentation for Debugging</p>\n                <div class=\"card-preview\">\n                    <span class=\"preview-tag\">Logging System</span>\n                    \n                </div>\n                <div class=\"card-arrow\">\n                    <i data-lucide=\"arrow-right-circle\"></i>\n                </div>\n            </div>\n            \n            </div>\n        </div>\n        "};
+const SUBCATEGORY_PAGES = {"Getting Started||Installation": "\n      <div class=\"subcategory-page\" data-category=\"Getting Started\" data-subcategory=\"Installation\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Getting Started')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Getting Started\n              </button>\n              <h1 class=\"subcategory-title\">Installation</h1>\n              <p class=\"subcategory-description\">Documentation for Installation</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('b820e107')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"download\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">SDK Installation</h4>\n                  <p class=\"doc-card-desc\">Detailed installation instructions for all supported platforms.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span><span class=\"platform-tag\" style=\"--tag-color:#0078d4\">windows</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Getting Started||Setup": "\n      <div class=\"subcategory-page\" data-category=\"Getting Started\" data-subcategory=\"Setup\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Getting Started')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Getting Started\n              </button>\n              <h1 class=\"subcategory-title\">Setup</h1>\n              <p class=\"subcategory-description\">Documentation for Setup</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('2876afc7')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"folder\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Project Setup</h4>\n                  <p class=\"doc-card-desc\">Create and configure your first AromaUI project.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Getting Started||Tutorials": "\n      <div class=\"subcategory-page\" data-category=\"Getting Started\" data-subcategory=\"Tutorials\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Getting Started')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Getting Started\n              </button>\n              <h1 class=\"subcategory-title\">Tutorials</h1>\n              <p class=\"subcategory-description\">Documentation for Tutorials</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('6aab2335')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"code\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Hello World Tutorial</h4>\n                  <p class=\"doc-card-desc\">Build your first cross-platform app with AromaUI.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Getting Started||Concepts": "\n      <div class=\"subcategory-page\" data-category=\"Getting Started\" data-subcategory=\"Concepts\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Getting Started')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Getting Started\n              </button>\n              <h1 class=\"subcategory-title\">Concepts</h1>\n              <p class=\"subcategory-description\">Documentation for Concepts</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('b1fcf769')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"boxes\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Architecture Overview</h4>\n                  <p class=\"doc-card-desc\">Understand AromaUI's architecture and design philosophy.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span><span class=\"platform-tag\" style=\"--tag-color:#0078d4\">windows</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Core Systems||Native Integration": "\n      <div class=\"subcategory-page\" data-category=\"Core Systems\" data-subcategory=\"Native Integration\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Core Systems')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Core Systems\n              </button>\n              <h1 class=\"subcategory-title\">Native Integration</h1>\n              <p class=\"subcategory-description\">Documentation for Native Integration</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('245e1d81')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"braces\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Core JNI API</h4>\n                  <p class=\"doc-card-desc\">Low-level JNI and native runtime access for maximum performance.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Core Systems||Platform & Graphics": "\n      <div class=\"subcategory-page\" data-category=\"Core Systems\" data-subcategory=\"Platform & Graphics\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Core Systems')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Core Systems\n              </button>\n              <h1 class=\"subcategory-title\">Platform & Graphics</h1>\n              <p class=\"subcategory-description\">Documentation for Platform & Graphics</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('8a88b632')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"cpu\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">AromaABI Interface</h4>\n                  <p class=\"doc-card-desc\">Direct access to AromaABI for advanced system interactions.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Core Systems||Runtime": "\n      <div class=\"subcategory-page\" data-category=\"Core Systems\" data-subcategory=\"Runtime\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Core Systems')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Core Systems\n              </button>\n              <h1 class=\"subcategory-title\">Runtime</h1>\n              <p class=\"subcategory-description\">Documentation for Runtime</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('9792d2ee')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"settings\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">System Services</h4>\n                  <p class=\"doc-card-desc\">Access system services, background tasks, and runtime management.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Core Systems||Hardware": "\n      <div class=\"subcategory-page\" data-category=\"Core Systems\" data-subcategory=\"Hardware\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Core Systems')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Core Systems\n              </button>\n              <h1 class=\"subcategory-title\">Hardware</h1>\n              <p class=\"subcategory-description\">Documentation for Hardware</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('3eb209d4')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"smartphone\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Device Information</h4>\n                  <p class=\"doc-card-desc\">Query device hardware, battery status, and system properties.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Connectivity||Bluetooth": "\n      <div class=\"subcategory-page\" data-category=\"Connectivity\" data-subcategory=\"Bluetooth\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Connectivity')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Connectivity\n              </button>\n              <h1 class=\"subcategory-title\">Bluetooth</h1>\n              <p class=\"subcategory-description\">Documentation for Bluetooth</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('2735656b')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"bluetooth\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Bluetooth Classic API</h4>\n                  <p class=\"doc-card-desc\">Full-featured Bluetooth classic support for device discovery and communication.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Connectivity||Wi-Fi": "\n      <div class=\"subcategory-page\" data-category=\"Connectivity\" data-subcategory=\"Wi-Fi\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Connectivity')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Connectivity\n              </button>\n              <h1 class=\"subcategory-title\">Wi-Fi</h1>\n              <p class=\"subcategory-description\">Documentation for Wi-Fi</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('0f0e5063')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"wifi\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Wi-Fi API</h4>\n                  <p class=\"doc-card-desc\">Comprehensive Wi-Fi management: scan, connect, configure, and monitor.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "User Interface||Core Components": "\n      <div class=\"subcategory-page\" data-category=\"User Interface\" data-subcategory=\"Core Components\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('User Interface')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to User Interface\n              </button>\n              <h1 class=\"subcategory-title\">Core Components</h1>\n              <p class=\"subcategory-description\">Documentation for Core Components</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('0ed0b7f9')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"component\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">UI Utilities</h4>\n                  <p class=\"doc-card-desc\">Essential UI helpers: toasts, dialogs, and material components.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          <div class=\"doc-card\" onclick=\"showPage('244b656c')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"component\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Widgets Library</h4>\n                  <p class=\"doc-card-desc\">Pre-built material design widgets for rapid UI development.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "User Interface||Layouts": "\n      <div class=\"subcategory-page\" data-category=\"User Interface\" data-subcategory=\"Layouts\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('User Interface')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to User Interface\n              </button>\n              <h1 class=\"subcategory-title\">Layouts</h1>\n              <p class=\"subcategory-description\">Documentation for Layouts</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('dfe7bc96')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"layout-dashboard\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Layout Management</h4>\n                  <p class=\"doc-card-desc\">Create responsive layouts that adapt to different screen sizes.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "User Interface||Utilities": "\n      <div class=\"subcategory-page\" data-category=\"User Interface\" data-subcategory=\"Utilities\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('User Interface')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to User Interface\n              </button>\n              <h1 class=\"subcategory-title\">Utilities</h1>\n              <p class=\"subcategory-description\">Documentation for Utilities</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('c8e37735')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"layout\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">DPI Conversion</h4>\n                  <p class=\"doc-card-desc\">Convert between density-independent pixels (dp) and actual pixels.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          <div class=\"doc-card\" onclick=\"showPage('1f79b541')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"rotate-cw\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Orientation API</h4>\n                  <p class=\"doc-card-desc\">Control and respond to device orientation changes.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "User Interface||Theming": "\n      <div class=\"subcategory-page\" data-category=\"User Interface\" data-subcategory=\"Theming\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('User Interface')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to User Interface\n              </button>\n              <h1 class=\"subcategory-title\">Theming</h1>\n              <p class=\"subcategory-description\">Documentation for Theming</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('4e35d7e2')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"palette\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Theming System</h4>\n                  <p class=\"doc-card-desc\">Create consistent themes with light, dark, and custom color schemes.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "User Interface||Input": "\n      <div class=\"subcategory-page\" data-category=\"User Interface\" data-subcategory=\"Input\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('User Interface')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to User Interface\n              </button>\n              <h1 class=\"subcategory-title\">Input</h1>\n              <p class=\"subcategory-description\">Documentation for Input</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('b7261d55')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"hand\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Gestures & Touch</h4>\n                  <p class=\"doc-card-desc\">Handle touch events, gestures, and multi-touch interactions.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Media & Graphics||Camera": "\n      <div class=\"subcategory-page\" data-category=\"Media & Graphics\" data-subcategory=\"Camera\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Media & Graphics')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Media & Graphics\n              </button>\n              <h1 class=\"subcategory-title\">Camera</h1>\n              <p class=\"subcategory-description\">Documentation for Camera</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('689a81d9')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"camera\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Camera API</h4>\n                  <p class=\"doc-card-desc\">Capture photos and videos with full camera control.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Data Management||File System": "\n      <div class=\"subcategory-page\" data-category=\"Data Management\" data-subcategory=\"File System\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Data Management')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Data Management\n              </button>\n              <h1 class=\"subcategory-title\">File System</h1>\n              <p class=\"subcategory-description\">Documentation for File System</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('5ab3f318')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"folder-open\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">File System API</h4>\n                  <p class=\"doc-card-desc\">Comprehensive file and directory operations across platforms.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span><span class=\"platform-tag\" style=\"--tag-color:#0078d4\">windows</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Data Management||Storage": "\n      <div class=\"subcategory-page\" data-category=\"Data Management\" data-subcategory=\"Storage\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Data Management')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Data Management\n              </button>\n              <h1 class=\"subcategory-title\">Storage</h1>\n              <p class=\"subcategory-description\">Documentation for Storage</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('ada39c66')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"settings\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Preferences API</h4>\n                  <p class=\"doc-card-desc\">Simple key-value storage for user preferences and settings.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Security & Privacy||Permissions": "\n      <div class=\"subcategory-page\" data-category=\"Security & Privacy\" data-subcategory=\"Permissions\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Security & Privacy')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Security & Privacy\n              </button>\n              <h1 class=\"subcategory-title\">Permissions</h1>\n              <p class=\"subcategory-description\">Documentation for Permissions</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('34f4bdd6')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"shield\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Permissions API</h4>\n                  <p class=\"doc-card-desc\">Request and manage runtime permissions gracefully.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Development Tools||Build": "\n      <div class=\"subcategory-page\" data-category=\"Development Tools\" data-subcategory=\"Build\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Development Tools')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Development Tools\n              </button>\n              <h1 class=\"subcategory-title\">Build</h1>\n              <p class=\"subcategory-description\">Documentation for Build</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('de21d9f8')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"rocket\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Building & Deployment</h4>\n                  <p class=\"doc-card-desc\">Build and deploy AromaUI apps for all platforms.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span><span class=\"platform-tag\" style=\"--tag-color:#0078d4\">windows</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      ", "Development Tools||Debugging": "\n      <div class=\"subcategory-page\" data-category=\"Development Tools\" data-subcategory=\"Debugging\">\n          <div class=\"subcategory-header\">\n              <button class=\"back-button\" onclick=\"showCategory('Development Tools')\">\n                  <i data-lucide=\"arrow-left\"></i> Back to Development Tools\n              </button>\n              <h1 class=\"subcategory-title\">Debugging</h1>\n              <p class=\"subcategory-description\">Documentation for Debugging</p>\n          </div>\n          <div class=\"documents-grid\">\n              \n          <div class=\"doc-card\" onclick=\"showPage('3558c76d')\">\n              <div class=\"doc-card-icon\">\n                  <i data-lucide=\"terminal\"></i>\n              </div>\n              <div class=\"doc-card-content\">\n                  <h4 class=\"doc-card-title\">Logging System</h4>\n                  <p class=\"doc-card-desc\">Comprehensive logging with multiple verbosity levels.</p>\n                  <div class=\"doc-card-platforms\">\n                      <span class=\"platform-tag\" style=\"--tag-color:#3ddc84\">android</span><span class=\"platform-tag\" style=\"--tag-color:#e95420\">linux</span><span class=\"platform-tag\" style=\"--tag-color:#0078d4\">windows</span>\n                  </div>\n              </div>\n              <i data-lucide=\"chevron-right\" class=\"doc-card-arrow\"></i>\n          </div>\n          \n          </div>\n      </div>\n      "};
 const PDF_URL = 'docs.pdf';
 
-let currentId = null, tocSections = [], srchIdx = -1, activePF = 'all';
+let currentId = null, currentCategory = null, currentSubcategory = null, tocSections = [], srchIdx = -1, activePF = 'all';
 
 const ic = () => typeof lucide !== 'undefined' && lucide.createIcons();
-
-const TL = {light:'Light', dark:'Dark'};
-const TI = {light:'sun', dark:'moon'};
 
 function setTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('docs-theme', t);
-  document.getElementById('themeName').textContent = TL[t] || 'Light';
-  const ti = document.getElementById('themeIcon');
-  if (ti) {
-    ti.setAttribute('data-lucide', TI[t] || 'sun');
-    ic();
-  }
-  if (t == "Light")
-  {
-    document.querySelectorAll('t-sw').forEach(o => o.style.color = '#000');
-  }
-  document.querySelectorAll('.t-opt').forEach(o => o.classList.toggle('active', o.dataset.theme === t));
-  document.getElementById('themeDd').classList.remove('open');
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) toggle.checked = t === 'dark';
   setTimeout(() => rerenderMermaid(t), 100);
 }
 
-function toggleThemeMenu() {
-  document.getElementById('themeDd').classList.toggle('open');
+function toggleTheme() {
+  const toggle = document.getElementById('themeToggle');
+  const newTheme = toggle.checked ? 'dark' : 'light';
+  setTheme(newTheme);
+  ic();
 }
 
-document.addEventListener('click', e => {
-  if (!document.querySelector('.theme-wrap')?.contains(e.target))
-    document.getElementById('themeDd').classList.remove('open');
-});
+function initTheme() {
+  const saved = localStorage.getItem('docs-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) toggle.checked = saved === 'dark';
+  ic();
+}
+
+function updateBreadcrumbs() {
+  const bcCategory = document.getElementById('bcCategory');
+  const bcSubcategory = document.getElementById('bcSubcategory');
+  const bcCatSep = document.getElementById('bcCatSep');
+  const bcSubSep = document.getElementById('bcSubSep');
+  const bcCur = document.getElementById('bcCur');
+
+  if (currentId) {
+    // Document view
+    bcCategory.style.display = 'none';
+    bcSubcategory.style.display = 'none';
+    bcCatSep.style.display = 'none';
+    bcSubSep.style.display = 'none';
+    bcCur.textContent = TITLES[currentId] || 'Document';
+  } else if (currentSubcategory) {
+    // Subcategory view
+    bcCategory.style.display = 'inline-block';
+    bcCategory.textContent = currentCategory;
+    bcSubcategory.style.display = 'inline-block';
+    bcSubcategory.textContent = currentSubcategory;
+    bcCatSep.style.display = 'inline-block';
+    bcSubSep.style.display = 'inline-block';
+    bcCur.style.display = 'none';
+  } else if (currentCategory) {
+    // Category view
+    bcCategory.style.display = 'inline-block';
+    bcCategory.textContent = currentCategory;
+    bcSubcategory.style.display = 'none';
+    bcCatSep.style.display = 'inline-block';
+    bcSubSep.style.display = 'none';
+    bcCur.style.display = 'none';
+  } else {
+    // Home view
+    bcCategory.style.display = 'none';
+    bcSubcategory.style.display = 'none';
+    bcCatSep.style.display = 'none';
+    bcSubSep.style.display = 'none';
+    bcCur.textContent = 'Home';
+  }
+}
+
+function showCategoryFromBc() {
+  if (currentCategory) showCategory(currentCategory);
+}
+
+function showSubcategoryFromBc() {
+  if (currentCategory && currentSubcategory) showSubcategory(currentCategory, currentSubcategory);
+}
+
+function showCategory(category) {
+  if (!CATEGORY_PAGES[category]) return;
+  
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('categoryView').style.display = '';
+  document.getElementById('subcategoryView').style.display = 'none';
+  document.getElementById('docView').style.display = 'none';
+  
+  document.getElementById('categoryView').innerHTML = CATEGORY_PAGES[category];
+  document.getElementById('tocPanel').classList.remove('vis');
+  
+  currentCategory = category;
+  currentSubcategory = null;
+  currentId = null;
+  updateBreadcrumbs();
+  
+  setActiveNav(null);
+  history.replaceState(null, '', '#' + category);
+  document.getElementById('cScroll').scrollTop = 0;
+  closeSidebar();
+  
+  setTimeout(() => {
+    ic();
+  }, 50);
+}
+
+function showSubcategory(category, subcategory) {
+  const key = category + '||' + subcategory;
+  if (!SUBCATEGORY_PAGES[key]) return;
+  
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = '';
+  document.getElementById('docView').style.display = 'none';
+  
+  document.getElementById('subcategoryView').innerHTML = SUBCATEGORY_PAGES[key];
+  document.getElementById('tocPanel').classList.remove('vis');
+  
+  currentCategory = category;
+  currentSubcategory = subcategory;
+  currentId = null;
+  updateBreadcrumbs();
+  
+  setActiveNav(null);
+  history.replaceState(null, '', '#' + category + '/' + subcategory);
+  document.getElementById('cScroll').scrollTop = 0;
+  closeSidebar();
+  
+  setTimeout(() => {
+    ic();
+  }, 50);
+}
 
 const PICONS = {
   ios:'smartphone', android:'smartphone', web:'globe', windows:'monitor',
@@ -1404,7 +1865,6 @@ function initPF() {
     opt.className = 'pf-opt';
     opt.dataset.p = p.name;
     opt.innerHTML = `
-    
       <span class="pf-opt-name">${p.name}</span>
       <span class="pf-opt-count">${count}</span>
       <i data-lucide="check" class="pf-opt-chk"></i>`;
@@ -1611,24 +2071,34 @@ function toggleSub(id) {
 
 function showHome() {
   document.getElementById('homeView').style.display = '';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = 'none';
   document.getElementById('docView').style.display = 'none';
   document.getElementById('bcCur').textContent = 'Home';
+  
+  currentCategory = null;
+  currentSubcategory = null;
+  currentId = null;
+  updateBreadcrumbs();
+  
   setActiveNav(null);
   history.replaceState(null, '', location.pathname);
   document.getElementById('tocPanel').classList.remove('vis');
   closeSidebar();
   document.getElementById('cScroll').scrollTop = 0;
-  currentId = null;
 }
 
 function showPage(id) {
   if (!PAGES[id]) return;
+  
   document.getElementById('homeView').style.display = 'none';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = 'none';
   document.getElementById('docView').style.display = '';
+  
   document.getElementById('docContent').innerHTML = PAGES[id];
   document.getElementById('docTitle').textContent = TITLES[id] || id;
-  document.getElementById('bcCur').textContent = TITLES[id] || id;
-
+  
   const meta = document.getElementById('docMeta');
   meta.innerHTML = '';
   (PAGE_PLATFORMS[id] || []).forEach(p => {
@@ -1641,7 +2111,12 @@ function showPage(id) {
 
   setActiveNav(id);
   history.replaceState(null, '', '#' + id);
+  
   currentId = id;
+  currentCategory = CATS[id] || null;
+  currentSubcategory = SUBCATS[id] || null;
+  updateBreadcrumbs();
+  
   document.getElementById('cScroll').scrollTop = 0;
   closeSidebar();
   setTimeout(() => {
@@ -1798,19 +2273,29 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  const t = localStorage.getItem('docs-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', t);
-  document.getElementById('themeName').textContent = TL[t] || 'Light';
-  const ti = document.getElementById('themeIcon');
-  if (ti) ti.setAttribute('data-lucide', TI[t] || 'sun');
-  document.querySelectorAll('.t-opt').forEach(o => o.classList.toggle('active', o.dataset.theme === t));
+  initTheme();
   initPF();
-  if (window.location.hash) {
-    const id = window.location.hash.slice(1);
-    if (PAGES[id]) { showPage(id); return; }
+  
+  // Check hash for navigation
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    if (hash.includes('/')) {
+      const [category, subcategory] = hash.split('/');
+      if (SUBCATEGORY_PAGES[category + '||' + subcategory]) {
+        showSubcategory(category, subcategory);
+        return;
+      }
+    } else if (CATEGORY_PAGES[hash]) {
+      showCategory(hash);
+      return;
+    } else if (PAGES[hash]) {
+      showPage(hash);
+      return;
+    }
   }
+  
   addCopyBtns();
-  initMermaid(t);
+  initMermaid(localStorage.getItem('docs-theme') || 'light');
   ic();
 });
 </script>
