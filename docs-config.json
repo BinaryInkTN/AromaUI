@@ -23,10 +23,9 @@
       }
     ],
     "stats": [
-      { "value": "75+", "label": "API Components" },
-      { "value": "3", "label": "Platforms" },
+      { "value": "5", "label": "Platforms" },
       { "value": "100%", "label": "Open Source" },
-      { "value": "10k+", "label": "Downloads" }
+      { "value": "MIT", "label": "License" }
     ],
     "platformIcons": [
       { "icon": "terminal", "title": "X11" },
