@@ -14,6 +14,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
 
 public class AromaHelper {
     private static final String TAG = "AromaHelper";
@@ -105,7 +108,7 @@ public class AromaHelper {
     private static String pendingAudioConnectionAddress = null;
     private static Runnable audioConnectionTimeoutRunnable = null;
     private static boolean audioConnectionVerified = false;
-    
+    /* BLUETOOTH */
     public interface BluetoothCallback {
         void onConnectionResult(boolean success, String deviceName, int deviceType, int mode);
         void onDataReceived(byte[] data, int length);
@@ -165,6 +168,7 @@ public class AromaHelper {
         Log.d(TAG, "setConnectionMode: " + mode);
         connectionMode = mode;
     }
+
     
     private static void registerAudioProfileListeners() {
         Log.d(TAG, "registerAudioProfileListeners");
@@ -1403,5 +1407,61 @@ public class AromaHelper {
         
         callbacks.clear();
         Log.d(TAG, "Cleanup complete");
+    }
+
+    /* Prefs */
+    public static void setPref(String key, String value) {
+        if (appContext == null) return;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        prefs.edit().putString(key, value).apply();
+    }
+
+    public static String getPref(String key, String default_value) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        return prefs.getString(key, default_value);
+    }
+
+    public static void setPrefBoolean(String key, boolean value) {
+        if (appContext == null) return;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        prefs.edit().putBoolean(key, value).apply();
+    }
+
+    public static boolean getPrefBoolean(String key, boolean default_value) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        return prefs.getBoolean(key, default_value);
+    }
+
+    public static void setPrefLong(String key, long value) {
+        if (appContext == null) return;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        prefs.edit().putLong(key, value).apply();
+    }
+
+    public static long getPrefLong(String key, long default_value) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        return prefs.getLong(key, default_value);
+    }
+
+    public static void setPrefInt(String key, int value) {
+        if (appContext == null) return;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        prefs.edit().putInt(key, value).apply();
+    }
+
+    public static int getPrefInt(String key, int default_value) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        return prefs.getInt(key, default_value);
+    }
+
+    public static void setPrefFloat(String key, float value) {
+        if (appContext == null) return;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        prefs.edit().putFloat(key, value).apply();
+    }
+
+    public static float getPrefFloat(String key, float default_value) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        return prefs.getFloat(key, default_value);
     }
 }

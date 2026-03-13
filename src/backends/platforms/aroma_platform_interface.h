@@ -354,6 +354,101 @@ typedef struct AromaPlatformInterface {
      */
     const char** (*get_vulkan_instance_extensions)(uint32_t* count_out);
 
+
+    /* ======================== Shared Preferences =================== */
+
+    /**
+     * @brief Get a string value from shared preferences.
+     *
+     * @param key Preference key.
+     * @param default_value Value to return if key is not found.
+     * @return Preference value (owned by platform, do not free).
+     */
+    const char* (*android_get_preference_string)(const char* key, const char* default_value);
+
+    /**
+     * @brief Set a string value in shared preferences.
+     *
+     * @param key Preference key.
+     * @param value Value to set.
+     */
+
+    void (*android_set_preference_string)(const char* key, const char* value);
+
+    /** 
+     * @brief Get a boolean value from shared preferences.
+     * 
+     * @param key Preference key.
+     * @param default_value Value to return if key is not found.
+     * @return Preference value.
+     */
+    bool (*android_get_preference_bool)(const char* key, bool default_value);
+
+    /**
+     * @brief Set a boolean value in shared preferences.
+     *
+     * @param key Preference key.
+     * @param value Value to set.
+     */
+    void (*android_set_preference_bool)(const char* key, bool value);
+
+    /**
+     * @ brief Get an integer value from shared preferences.
+     * 
+     * @param key Preference key.
+     * @param default_value Value to return if key is not found.
+     * @return Preference value.
+     * 
+     */
+
+    int (*android_get_preference_int)(const char* key, int default_value);
+
+    /**
+     * @brief Set an integer value in shared preferences.
+     *
+     * @param key Preference key.
+     * @param value Value to set.
+     */
+
+    void (*android_set_preference_int)(const char* key, int value);
+
+    /**
+     * @brief Get a float value from shared preferences.
+     * 
+     * @param key Preference key.
+     * @param default_value Value to return if key is not found.
+     * @return Preference value.
+     */
+    float (*android_get_preference_float)(const char* key, float default_value);
+
+    /**
+     * @brief Set a float value in shared preferences.
+     *
+     * @param key Preference key.
+     * @param value Value to set.
+     *
+     */
+    void (*android_set_preference_float)(const char* key, float value);
+
+    /**
+     * @brief Set a long value in shared preferences.
+     * 
+     * @param key Preference key.
+     * @param value Value to set.
+     * 
+     */
+    void (*android_set_preference_long)(const char* key, long value);
+
+    /**
+     * @brief Get a long value from shared preferences.
+     * 
+     * @param key Preference key.
+     * @param default_value Value to return if key is not found.
+     * @return Preference value.
+     */
+
+    long (*android_get_preference_long)(const char* key, long default_value);
+
 } AromaPlatformInterface;
 
 

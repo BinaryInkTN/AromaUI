@@ -747,8 +747,84 @@ static inline bool aroma_android_is_orientation_locked(void) {
     }
     return false;
 }
+/* ============================ Shared Preferences ====================== */
+static inline const char* aroma_android_get_preference_string(const char* key, const char* default_value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_preference_string) {
+        return platform->android_get_preference_string(key, default_value);
+    }
+    return default_value;
+}
+
+static inline void aroma_android_set_preference_string(const char* key, const char* value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_preference_string) {
+        platform->android_set_preference_string(key, value);
+    }
+}
+
+static inline int aroma_android_get_preference_int(const char* key, int default_value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_preference_int) {
+        return platform->android_get_preference_int(key, default_value);
+    }
+    return default_value;
+}
+
+static inline void aroma_android_set_preference_int(const char* key, int value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_preference_int) {
+        platform->android_set_preference_int(key, value);
+    }
+}
+
+static inline float aroma_android_get_preference_float(const char* key, float default_value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_preference_float) {
+        return platform->android_get_preference_float(key, default_value);
+    }
+    return default_value;
+}
+
+static inline void aroma_android_set_preference_float(const char* key, float value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_preference_float) {
+        platform->android_set_preference_float(key, value);
+    }
+}
+
+static inline bool aroma_android_get_preference_bool(const char* key, bool default_value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_preference_bool) {
+        return platform->android_get_preference_bool(key, default_value);
+    }
+    return default_value;
+}
+
+static inline void aroma_android_set_preference_bool(const char* key, bool value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_preference_bool) {
+        platform->android_set_preference_bool(key, value);
+    }
+}
+
+static inline long aroma_android_get_preference_long(const char* key, long default_value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_get_preference_long) {
+        return platform->android_get_preference_long(key, default_value);
+    }
+    return default_value;
+}
+
+static inline void aroma_android_set_preference_long(const char* key, long value) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_set_preference_long) {
+        platform->android_set_preference_long(key, value);
+    }
+}
 
 /**@}*/
+
 
 #ifdef __cplusplus
 }

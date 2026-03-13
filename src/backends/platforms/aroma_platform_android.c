@@ -155,6 +155,17 @@ typedef struct
     jmethodID bt_get_mode_name;
     bool initialized;
     jobject callback_obj;
+    jmethodID get_preference;
+    jmethodID set_preference;
+    jmethodID get_preference_bool;
+    jmethodID set_preference_bool;
+    jmethodID get_preference_int;
+    jmethodID set_preference_int;
+    jmethodID get_preference_float;
+    jmethodID set_preference_float;
+    jmethodID get_preference_long;
+    jmethodID set_preference_long;
+
 } AromaHelperCache;
 
 static AromaHelperCache g_helper_cache = {0};
@@ -422,6 +433,16 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
     g_helper_cache.bt_get_device_name = (*env)->GetStaticMethodID(env, helper, "btGetDeviceName", "()Ljava/lang/String;");
     g_helper_cache.bt_get_current_mode = (*env)->GetStaticMethodID(env, helper, "btGetCurrentMode", "()I");
     g_helper_cache.bt_get_mode_name = (*env)->GetStaticMethodID(env, helper, "btGetModeName", "()Ljava/lang/String;");
+    g_helper_cache.get_preference = (*env)->GetStaticMethodID(env, helper, "getPref", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+    g_helper_cache.set_preference = (*env)->GetStaticMethodID(env, helper, "setPref", "(Ljava/lang/String;Ljava/lang/String;)V");
+    g_helper_cache.get_preference_bool = (*env)->GetStaticMethodID(env, helper, "getPrefBoolean", "(Ljava/lang/String;Z)Z");
+    g_helper_cache.set_preference_bool = (*env)->GetStaticMethodID(env, helper, "setPrefBoolean", "(Ljava/lang/String;Z)V");
+    g_helper_cache.get_preference_int = (*env)->GetStaticMethodID(env, helper, "getPrefInt", "(Ljava/lang/String;I)I");
+    g_helper_cache.set_preference_int = (*env)->GetStaticMethodID(env, helper, "setPrefInt", "(Ljava/lang/String;I)V");
+    g_helper_cache.get_preference_float = (*env)->GetStaticMethodID(env, helper, "getPrefFloat", "(Ljava/lang/String;F)F");
+    g_helper_cache.set_preference_float = (*env)->GetStaticMethodID(env, helper, "setPrefFloat", "(Ljava/lang/String;F)V");
+    g_helper_cache.get_preference_long = (*env)->GetStaticMethodID(env, helper, "getPrefLong", "(Ljava/lang/String;J)J");
+    g_helper_cache.set_preference_long = (*env)->GetStaticMethodID(env, helper, "setPrefLong", "(Ljava/lang/String;J)V");
 
     if (!g_helper_cache.show_toast)
         (*env)->ExceptionClear(env);
@@ -455,6 +476,27 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         (*env)->ExceptionClear(env);
     if (!g_helper_cache.bt_get_mode_name)
         (*env)->ExceptionClear(env);
+    if(!g_helper_cache.get_preference)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.set_preference)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.get_preference_bool)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.set_preference_bool)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.get_preference_int)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.set_preference_int)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.get_preference_float)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.set_preference_float)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.get_preference_long)
+        (*env)->ExceptionClear(env);
+    if(!g_helper_cache.set_preference_long)
+        (*env)->ExceptionClear(env);
+    
 
     if (g_helper_cache.init && activity)
     {
@@ -2840,6 +2882,291 @@ static const char **android_get_vulkan_instance_extensions(uint32_t *count_out)
 
 #endif
 
+void impl_android_setPref(const char *key, const char *value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.set_preference)
+    {
+        LOG_ERROR("set_preference not available");
+        detach_jni_env(attach);
+        return;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    jstring jvalue = (*env)->NewStringUTF(env, value);
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.set_preference, jkey, jvalue);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    (*env)->DeleteLocalRef(env, jvalue);
+    detach_jni_env(attach);
+}
+
+const char* impl_android_getPref(const char *key, const char* default_value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return NULL;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.get_preference)
+    {
+        LOG_ERROR("get_preference not available");
+        detach_jni_env(attach);
+        return NULL;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    jstring jdefault_val = (*env)->NewStringUTF(env, default_value);
+    jstring jvalue = (jstring)(*env)->CallStaticObjectMethod(env, g_helper_cache.helper_class, g_helper_cache.get_preference, jkey, jdefault_val);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, jkey);
+        (*env)->DeleteLocalRef(env, jdefault_val);
+
+        detach_jni_env(attach);
+        return NULL;
+    }
+
+    const char *value = NULL;
+    if (jvalue)
+    {
+        value = (*env)->GetStringUTFChars(env, jvalue, NULL);
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    if (jvalue)
+        (*env)->DeleteLocalRef(env, jvalue);
+    detach_jni_env(attach);
+    return value;
+}
+
+void impl_android_setPrefInt(const char *key, int value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.set_preference_int)
+    {
+        LOG_ERROR("set_preference_int not available");
+        detach_jni_env(attach);
+        return;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.set_preference_int, jkey, (jint)value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+}
+
+int impl_android_getPrefInt(const char *key, int default_value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return default_value;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.get_preference_int)
+    {
+        LOG_ERROR("get_preference_int not available");
+        detach_jni_env(attach);
+        return default_value;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    jint value = (*env)->CallStaticIntMethod(env, g_helper_cache.helper_class, g_helper_cache.get_preference_int, jkey, (jint)default_value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        value = (jint)default_value;
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+    return (int)value;
+}
+
+void impl_android_setPrefFloat(const char* key, float value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.set_preference_float)
+    {
+        LOG_ERROR("set_preference_float not available");
+        detach_jni_env(attach);
+        return;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.set_preference_float, jkey, (jfloat)value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+}
+
+float impl_android_getPrefFloat(const char* key, float default_value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return default_value;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.get_preference_float)
+    {
+        LOG_ERROR("get_preference_float not available");
+        detach_jni_env(attach);
+        return default_value;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    jfloat value = (*env)->CallStaticFloatMethod(env, g_helper_cache.helper_class, g_helper_cache.get_preference_float, jkey, (jfloat)default_value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        value = (jfloat)default_value;
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+    return (float)value;
+}
+
+void impl_android_setPrefBool(const char* key, bool value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.set_preference_bool)
+    {
+        LOG_ERROR("set_preference_bool not available");
+        detach_jni_env(attach);
+        return;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.set_preference_bool, jkey, (jboolean)value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+}
+
+bool impl_android_getPrefBool(const char* key, bool default_value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return default_value;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.get_preference_bool)
+    {
+        LOG_ERROR("get_preference_bool not available");
+        detach_jni_env(attach);
+        return default_value;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    jboolean value = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.get_preference_bool, jkey, (jboolean)default_value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        value = (jboolean)default_value;
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+    return value == JNI_TRUE;
+}
+
+void impl_android_setPrefLong(const char* key, long value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.set_preference_long)
+    {
+        LOG_ERROR("set_preference_long not available");
+        detach_jni_env(attach);
+        return;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.set_preference_long, jkey, (jlong)value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+}
+
+long impl_android_getPrefLong(const char* key, long default_value)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+        return default_value;
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.get_preference_long)
+    {
+        LOG_ERROR("get_preference_long not available");
+        detach_jni_env(attach);
+        return default_value;
+    }
+
+    jstring jkey = (*env)->NewStringUTF(env, key);
+    jlong value = (*env)->CallStaticLongMethod(env, g_helper_cache.helper_class, g_helper_cache.get_preference_long, jkey, (jlong)default_value);
+
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        value = (jlong)default_value;
+    }
+
+    (*env)->DeleteLocalRef(env, jkey);
+    detach_jni_env(attach);
+    return (long)value;
+}
+
 AromaPlatformInterface aroma_platform_android = {
     .initialize = initialize,
     .shutdown = shutdown,
@@ -2917,6 +3244,16 @@ AromaPlatformInterface aroma_platform_android = {
     .create_vulkan_surface = NULL,
     .get_vulkan_instance_extensions = NULL,
 #endif
+    .android_get_preference_string = impl_android_getPref,
+    .android_set_preference_string = impl_android_setPref,
+    .android_get_preference_int = impl_android_getPrefInt,
+    .android_set_preference_int = impl_android_setPrefInt,
+    .android_get_preference_float = impl_android_getPrefFloat,
+    .android_set_preference_float = impl_android_setPrefFloat,
+    .android_get_preference_bool = impl_android_getPrefBool,
+    .android_set_preference_bool = impl_android_setPrefBool,
+    .android_get_preference_long = impl_android_getPrefLong,
+    .android_set_preference_long = impl_android_setPrefLong,
 };
 
 #endif
