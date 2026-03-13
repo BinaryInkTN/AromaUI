@@ -1,4 +1,3 @@
-# Preferences API
 
 The **Preferences API** provides persistent key–value storage for user settings and application configuration. It offers a lightweight abstraction over platform-specific storage systems.
 
