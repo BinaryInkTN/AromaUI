@@ -11,7 +11,7 @@ Returns a system service object.
 
 ### Parameters
 
-* `service_name` – e.g. "vibrator", "wifi", "bluetooth"
+* `service_name` - e.g. "vibrator", "wifi", "bluetooth"
 
 ### Example
 

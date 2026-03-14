@@ -1,5 +1,5 @@
 
-The **Preferences API** provides persistent key–value storage for user settings and application configuration. It offers a lightweight abstraction over platform-specific storage systems.
+The **Preferences API** provides persistent key-value storage for user settings and application configuration. It offers a lightweight abstraction over platform-specific storage systems.
 
 On Android, the implementation maps directly to **SharedPreferences**, while the public API remains consistent through the **AromaPlatformInterface**.
 
@@ -7,7 +7,7 @@ On Android, the implementation maps directly to **SharedPreferences**, while the
 
 ## Features
 
-* Persistent key–value storage
+* Persistent key-value storage
 * Lightweight and fast access
 * Platform abstraction layer
 * Type-safe preference access

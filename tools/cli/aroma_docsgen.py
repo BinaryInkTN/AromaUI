@@ -209,7 +209,7 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
     while len(sections) > 1:
         finished = sections.pop()
         finished.append('}')
-        indent = '  ' * len(sections)
+        indent = '  ' * (len(sections))
         for sub_line in finished:
             sections[-1].append(indent + sub_line)
 
@@ -559,21 +559,18 @@ class DocGenerator:
         )
 
     def _category_page_html(self, category: Dict, subcategories: Dict[str, List], pages_dict: Dict, titles_dict: Dict) -> str:
-        """Generate an Apple-like category page with subcategory cards"""
         cat_name = category.get("name", "Category")
         cat_icon = category.get("icon", "folder")
         cat_desc = category.get("description", f"Documentation for {cat_name}")
         
         cards = []
         for sub_name, pages in subcategories.items():
-            if not sub_name:  # Skip uncategorized pages in category view
+            if not sub_name:
                 continue
                 
-            # Get first few pages as preview
             preview_pages = pages[:3]
             page_count = len(pages)
             
-            # Create card for subcategory
             card = f'''
             <div class="subcategory-card" onclick="showSubcategory('{cat_name}', '{sub_name}')">
                 <div class="card-header">
@@ -611,55 +608,54 @@ class DocGenerator:
         '''
 
     def _subcategory_page_html(self, category: str, subcategory: str, pages: List[Dict], titles_dict: Dict, pages_dict: Dict) -> str:
-      """Generate a subcategory page with document cards"""
-      cards = []
-      for page in pages:
-          page_id = page.get("id", "")
-          title = page.get("title", "Untitled")  # Use page dict first
-          if not title or title == "Untitled":
-              title = titles_dict.get(page_id, "Untitled")  # Fallback to titles_dict
-          
-          desc = page.get("description", f"Documentation for {title}")
-          icon = page.get("icon", "file-text")
-          platforms = page.get("platforms", [])
-          
-          platform_badges = ""
-          for p in platforms[:3]:  # Show max 3 platform badges
-              norm = self._normalize_platform(p)
-              if norm:
-                  platform_badges += f'<span class="platform-tag" style="--tag-color:{norm["color"]}">{norm["name"]}</span>'
-          
-          card = f'''
-          <div class="doc-card" onclick="showPage(\'{page_id}\')">
-              <div class="doc-card-icon">
-                  <i data-lucide="{icon}"></i>
-              </div>
-              <div class="doc-card-content">
-                  <h4 class="doc-card-title">{title}</h4>
-                  <p class="doc-card-desc">{desc}</p>
-                  <div class="doc-card-platforms">
-                      {platform_badges}
-                  </div>
-              </div>
-              <i data-lucide="chevron-right" class="doc-card-arrow"></i>
-          </div>
-          '''
-          cards.append(card)
-      
-      return f'''
-      <div class="subcategory-page" data-category="{category}" data-subcategory="{subcategory}">
-          <div class="subcategory-header">
-              <button class="back-button" onclick="showCategory(\'{category}\')">
-                  <i data-lucide="arrow-left"></i> Back to {category}
-              </button>
-              <h1 class="subcategory-title">{subcategory}</h1>
-              <p class="subcategory-description">Documentation for {subcategory}</p>
-          </div>
-          <div class="documents-grid">
-              {"".join(cards)}
-          </div>
-      </div>
-      '''
+        cards = []
+        for page in pages:
+            page_id = page.get("id", "")
+            title = page.get("title", "Untitled")
+            if not title or title == "Untitled":
+                title = titles_dict.get(page_id, "Untitled")
+            
+            desc = page.get("description", f"Documentation for {title}")
+            icon = page.get("icon", "file-text")
+            platforms = page.get("platforms", [])
+            
+            platform_badges = ""
+            for p in platforms[:3]:
+                norm = self._normalize_platform(p)
+                if norm:
+                    platform_badges += f'<span class="platform-tag" style="--tag-color:{norm["color"]}">{norm["name"]}</span>'
+            
+            card = f'''
+            <div class="doc-card" onclick="showPage(\'{page_id}\', \'{category}\', \'{subcategory}\')">
+                <div class="doc-card-icon">
+                    <i data-lucide="{icon}"></i>
+                </div>
+                <div class="doc-card-content">
+                    <h4 class="doc-card-title">{title}</h4>
+                    <p class="doc-card-desc">{desc}</p>
+                    <div class="doc-card-platforms">
+                        {platform_badges}
+                    </div>
+                </div>
+                <i data-lucide="chevron-right" class="doc-card-arrow"></i>
+            </div>
+            '''
+            cards.append(card)
+        
+        return f'''
+        <div class="subcategory-page" data-category="{category}" data-subcategory="{subcategory}">
+            <div class="subcategory-header">
+                <button class="back-button" onclick="showCategory(\'{category}\')">
+                    <i data-lucide="arrow-left"></i> Back to {category}
+                </button>
+                <h1 class="subcategory-title">{subcategory}</h1>
+                <p class="subcategory-description">Documentation for {subcategory}</p>
+            </div>
+            <div class="documents-grid">
+                {"".join(cards)}
+            </div>
+        </div>
+        '''
 
     def _process_markdown(self, content: str) -> str:
         exts = ["extra","codehilite","toc","tables","fenced_code",
@@ -825,7 +821,7 @@ hr { border: none; border-top: 1pt solid #e5e5ea; margin: 24pt 0; }
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{project_name} – Docs</title>
+<title>{project_name} - Docs</title>
 <meta name="description" content="{description}">
 <style>
 *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
@@ -1450,7 +1446,6 @@ input:checked + .theme-slider .moon-icon{{
   }}
 }}
 
-/* Category Page Styles */
 .category-page{{
   padding:20px 0;
 }}
@@ -1487,7 +1482,6 @@ input:checked + .theme-slider .moon-icon{{
   margin:0 auto;
 }}
 
-/* Subcategory Cards - Apple Style */
 .subcategories-grid{{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
@@ -1586,7 +1580,6 @@ input:checked + .theme-slider .moon-icon{{
   color:var(--t3);
 }}
 
-/* Subcategory Page Styles */
 .subcategory-page{{
   padding:20px 0;
 }}
@@ -1628,7 +1621,6 @@ input:checked + .theme-slider .moon-icon{{
   color:var(--t2);
 }}
 
-/* Document Cards */
 .documents-grid{{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(350px,1fr));
@@ -1774,6 +1766,33 @@ input:checked + .theme-slider .moon-icon{{
   margin-bottom:8px;
 }}
 .doc-acts{{display:flex;gap:6px;margin-top:10px}}
+.doc-nav-buttons{{
+  display:flex;
+  gap:8px;
+  margin-bottom:16px;
+}}
+.doc-back-btn{{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 12px;
+  background:var(--bg2);
+  border:1px solid var(--bdr);
+  border-radius:100px;
+  font-size:.8125rem;
+  color:var(--t2);
+  cursor:pointer;
+  transition:all var(--tr);
+}}
+.doc-back-btn:hover{{
+  background:var(--bg);
+  border-color:var(--acc);
+  color:var(--acc);
+}}
+.doc-back-btn i{{
+  width:14px;
+  height:14px;
+}}
 .dbtn{{
   display:flex;
   align-items:center;
@@ -2166,7 +2185,7 @@ input:checked + .theme-slider .moon-icon{{
         <span class="bc-home" onclick="showHome()">
          {project_name}
         </span>
-        <span class="bc-sep">/</span>
+        <span class="bc-sep" id="bcHomeSep">/</span>
         <span class="bc-category" id="bcCategory" style="display:none" onclick="showCategoryFromBc()"></span>
         <span class="bc-sep" id="bcCatSep" style="display:none">/</span>
         <span class="bc-subcategory" id="bcSubcategory" style="display:none" onclick="showSubcategoryFromBc()"></span>
@@ -2203,6 +2222,11 @@ input:checked + .theme-slider .moon-icon{{
           <div id="categoryView" style="display:none"></div>
           <div id="subcategoryView" style="display:none"></div>
           <div id="docView" style="display:none">
+            <div class="doc-nav-buttons">
+              <button class="doc-back-btn" id="docBackBtn" onclick="goBackFromDoc()">
+                <i data-lucide="arrow-left"></i> Back
+              </button>
+            </div>
             <div class="doc-hdr">
               <div class="doc-meta" id="docMeta"></div>
               <h1 class="doc-title" id="docTitle"></h1>
@@ -2256,6 +2280,7 @@ const SUBCATEGORY_PAGES = {subcategory_pages_json};
 const PDF_URL = '{pdf_url}';
 
 let currentId = null, currentCategory = null, currentSubcategory = null, tocSections = [], srchIdx = -1, activePF = 'all';
+let previousView = {{ type: 'home', category: null, subcategory: null, id: null }};
 
 const ic = () => typeof lucide !== 'undefined' && lucide.createIcons();
 
@@ -2290,14 +2315,15 @@ function updateBreadcrumbs() {{
   const bcCur = document.getElementById('bcCur');
 
   if (currentId) {{
-    // Document view
-    bcCategory.style.display = 'none';
-    bcSubcategory.style.display = 'none';
-    bcCatSep.style.display = 'none';
-    bcSubSep.style.display = 'none';
+    bcCategory.style.display = currentCategory ? 'inline-block' : 'none';
+    bcCategory.textContent = currentCategory || '';
+    bcSubcategory.style.display = currentSubcategory ? 'inline-block' : 'none';
+    bcSubcategory.textContent = currentSubcategory || '';
+    bcCatSep.style.display = currentCategory ? 'inline-block' : 'none';
+    bcSubSep.style.display = currentSubcategory ? 'inline-block' : 'none';
+    bcCur.style.display = 'inline-block';
     bcCur.textContent = TITLES[currentId] || 'Document';
   }} else if (currentSubcategory) {{
-    // Subcategory view
     bcCategory.style.display = 'inline-block';
     bcCategory.textContent = currentCategory;
     bcSubcategory.style.display = 'inline-block';
@@ -2306,7 +2332,6 @@ function updateBreadcrumbs() {{
     bcSubSep.style.display = 'inline-block';
     bcCur.style.display = 'none';
   }} else if (currentCategory) {{
-    // Category view
     bcCategory.style.display = 'inline-block';
     bcCategory.textContent = currentCategory;
     bcSubcategory.style.display = 'none';
@@ -2314,11 +2339,11 @@ function updateBreadcrumbs() {{
     bcSubSep.style.display = 'none';
     bcCur.style.display = 'none';
   }} else {{
-    // Home view
     bcCategory.style.display = 'none';
     bcSubcategory.style.display = 'none';
     bcCatSep.style.display = 'none';
     bcSubSep.style.display = 'none';
+    bcCur.style.display = 'inline-block';
     bcCur.textContent = 'Home';
   }}
 }}
@@ -2333,6 +2358,8 @@ function showSubcategoryFromBc() {{
 
 function showCategory(category) {{
   if (!CATEGORY_PAGES[category]) return;
+  
+  previousView = {{ type: 'category', category: category, subcategory: null, id: null }};
   
   document.getElementById('homeView').style.display = 'none';
   document.getElementById('categoryView').style.display = '';
@@ -2361,6 +2388,8 @@ function showSubcategory(category, subcategory) {{
   const key = category + '||' + subcategory;
   if (!SUBCATEGORY_PAGES[key]) return;
   
+  previousView = {{ type: 'subcategory', category: category, subcategory: subcategory, id: null }};
+  
   document.getElementById('homeView').style.display = 'none';
   document.getElementById('categoryView').style.display = 'none';
   document.getElementById('subcategoryView').style.display = '';
@@ -2382,6 +2411,234 @@ function showSubcategory(category, subcategory) {{
   setTimeout(() => {{
     ic();
   }}, 50);
+}}
+
+function showHome() {{
+  previousView = {{ type: 'home', category: null, subcategory: null, id: null }};
+  
+  document.getElementById('homeView').style.display = '';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = 'none';
+  document.getElementById('docView').style.display = 'none';
+  
+  currentCategory = null;
+  currentSubcategory = null;
+  currentId = null;
+  updateBreadcrumbs();
+  
+  setActiveNav(null);
+  history.replaceState(null, '', location.pathname);
+  document.getElementById('tocPanel').classList.remove('vis');
+  closeSidebar();
+  document.getElementById('cScroll').scrollTop = 0;
+}}
+
+function showPage(id, category = null, subcategory = null) {{
+  if (!PAGES[id]) return;
+  
+  if (category && subcategory) {{
+    previousView = {{
+      type: 'subcategory',
+      category: category,
+      subcategory: subcategory,
+      id: null
+    }};
+  }} else if (category) {{
+    previousView = {{
+      type: 'category',
+      category: category,
+      subcategory: null,
+      id: null
+    }};
+  }} else {{
+    previousView = {{
+      type: 'home',
+      category: null,
+      subcategory: null,
+      id: null
+    }};
+  }}
+  
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('categoryView').style.display = 'none';
+  document.getElementById('subcategoryView').style.display = 'none';
+  document.getElementById('docView').style.display = '';
+  
+  document.getElementById('docContent').innerHTML = PAGES[id];
+  document.getElementById('docTitle').textContent = TITLES[id] || id;
+  
+  const meta = document.getElementById('docMeta');
+  meta.innerHTML = '';
+  (PAGE_PLATFORMS[id] || []).forEach(p => {{
+    const b = document.createElement('span');
+    b.className = 'platform-badge';
+    b.style.setProperty('--badge-color', p.color || '#636366');
+    b.innerHTML = `<span>${{p.name}}</span>`;
+    meta.appendChild(b);
+  }});
+
+  setActiveNav(id);
+  history.replaceState(null, '', '#' + id);
+  
+  currentId = id;
+  currentCategory = CATS[id] || null;
+  currentSubcategory = SUBCATS[id] || null;
+  updateBreadcrumbs();
+  
+  document.getElementById('cScroll').scrollTop = 0;
+  closeSidebar();
+  setTimeout(() => {{
+    addCopyBtns();
+    initMermaid(localStorage.getItem('docs-theme') || 'light');
+    ic();
+    buildToc();
+  }}, 60);
+}}
+
+function goBackFromDoc() {{
+  if (previousView.type === 'subcategory' && previousView.category && previousView.subcategory) {{
+    showSubcategory(previousView.category, previousView.subcategory);
+  }} else if (previousView.type === 'category' && previousView.category) {{
+    showCategory(previousView.category);
+  }} else {{
+    showHome();
+  }}
+}}
+
+function setActiveNav(id) {{
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const t = id
+    ? document.querySelector(`.nav-item[data-page="${{id}}"]`)
+    : document.querySelector('.nav-item[data-page="__home__"]');
+  if (t) t.classList.add('active');
+}}
+
+function buildToc() {{
+  const headings = document.getElementById('docContent').querySelectorAll('h1,h2,h3');
+  const list = document.getElementById('tocList');
+  list.innerHTML = '';
+  tocSections = [];
+  headings.forEach((h, i) => {{
+    if (!h.id) h.id = 'h-' + i + '-' + h.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    tocSections.push({{ id: h.id, el: h, level: +h.tagName[1] }});
+    const item = document.createElement('div');
+    item.className = 'toc-item';
+    item.style.paddingLeft = ((+h.tagName[1] - 1) * 9 + 12) + 'px';
+    item.textContent = h.textContent;
+    item.dataset.id = h.id;
+    item.onclick = () => {{
+      document.getElementById('cScroll').scrollTo({{ top: h.offsetTop - 64, behavior: 'smooth' }});
+    }};
+    list.appendChild(item);
+  }});
+  document.getElementById('tocPanel').classList.toggle('vis', tocSections.length > 0);
+}}
+
+document.getElementById('cScroll').addEventListener('scroll', function() {{
+  const tot = this.scrollHeight - this.clientHeight;
+  const pct = tot > 0 ? Math.min(100, Math.round((this.scrollTop / tot) * 100)) : 0;
+  document.getElementById('tocFill').style.width = pct + '%';
+  let active = null;
+  const top = this.scrollTop + 100;
+  tocSections.forEach(s => {{ if (s.el.offsetTop <= top) active = s.id; }});
+  document.querySelectorAll('.toc-item').forEach(el => el.classList.toggle('active', el.dataset.id === active));
+}});
+
+function addCopyBtns() {{
+  document.querySelectorAll('.md pre').forEach(pre => {{
+    if (pre.querySelector('.copy-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.innerHTML = `<i data-lucide="copy"></i> Copy`;
+    btn.onclick = async () => {{
+      const code = pre.querySelector('code');
+      if (!code) return;
+      await navigator.clipboard.writeText(code.textContent);
+      btn.classList.add('ok');
+      btn.innerHTML = `<i data-lucide="check"></i> Copied`;
+      ic();
+      setTimeout(() => {{
+        btn.classList.remove('ok');
+        btn.innerHTML = `<i data-lucide="copy"></i> Copy`;
+        ic();
+      }}, 2000);
+    }};
+    pre.appendChild(btn);
+  }});
+  ic();
+}}
+
+function copyPageLink(btn) {{
+  navigator.clipboard.writeText(location.href);
+  btn.classList.add('ok');
+  btn.innerHTML = `<i data-lucide="check"></i> Copied`;
+  ic();
+  setTimeout(() => {{
+    btn.classList.remove('ok');
+    btn.innerHTML = `<i data-lucide="link"></i> Copy link`;
+    ic();
+  }}, 2000);
+}}
+
+function downloadPDF() {{
+  if (PDF_URL) window.open(PDF_URL, '_blank');
+  else alert('PDF available only when built with --pdf option');
+}}
+
+function openSearch() {{
+  document.getElementById('srchOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('srchInp').focus(), 40);
+  doSearch('');
+}}
+function closeSearch() {{
+  document.getElementById('srchOverlay').classList.remove('open');
+  document.getElementById('srchInp').value = '';
+  srchIdx = -1;
+}}
+function onSrchBg(e) {{
+  if (e.target === document.getElementById('srchOverlay')) closeSearch();
+}}
+
+function doSearch(term) {{
+  const q = term.toLowerCase().trim();
+  const res = Object.keys(TITLES).filter(id =>
+    !q || TITLES[id].toLowerCase().includes(q)
+    || (CATS[id] || '').toLowerCase().includes(q)
+    || (SUBCATS[id] || '').toLowerCase().includes(q)
+  ).slice(0, 10);
+  const c = document.getElementById('srchRes');
+  if (!res.length) {{
+    c.innerHTML = `<div class="srch-empty">No results for "<strong>${{term}}</strong>"</div>`;
+    return;
+  }}
+  c.innerHTML = res.map((id, i) => `
+    <div class="srch-item" data-i="${{i}}" data-id="${{id}}" onclick="pickRes('${{id}}')">
+      <div class="srch-ico"><i data-lucide="file-text"></i></div>
+      <div class="srch-body">
+        <div class="srch-ttl">${{TITLES[id]}}</div>
+        <div class="srch-cat">${{[CATS[id], SUBCATS[id]].filter(Boolean).join(' › ')}}</div>
+      </div>
+    </div>
+  `).join('');
+  ic();
+  srchIdx = -1;
+}}
+
+function pickRes(id) {{ closeSearch(); showPage(id); }}
+
+function srchKey(e) {{
+  const items = document.querySelectorAll('.srch-item');
+  if (e.key === 'ArrowDown') {{ e.preventDefault(); srchIdx = Math.min(srchIdx + 1, items.length - 1); hlSearch(items); }}
+  else if (e.key === 'ArrowUp') {{ e.preventDefault(); srchIdx = Math.max(srchIdx - 1, 0); hlSearch(items); }}
+  else if (e.key === 'Enter' && srchIdx >= 0) items[srchIdx]?.click();
+  else if (e.key === 'Escape') closeSearch();
+}}
+
+function hlSearch(items) {{
+  items.forEach((el, i) => {{
+    el.classList.toggle('sel', i === srchIdx);
+    if (i === srchIdx) el.scrollIntoView({{ block: 'nearest' }});
+  }});
 }}
 
 const PICONS = {{
@@ -2429,11 +2686,6 @@ function initPF() {{
       <span class="pf-opt-count">${{count}}</span>
       <i data-lucide="check" class="pf-opt-chk"></i>`;
     dd.appendChild(opt);
-  }});
-
-  dd.addEventListener('click', e => {{
-    const opt = e.target.closest('.pf-opt');
-    if (opt) filterPlatform(opt.dataset.p);
   }});
 
   ic();
@@ -2629,200 +2881,6 @@ function toggleSub(id) {{
   }}
 }}
 
-function showHome() {{
-  document.getElementById('homeView').style.display = '';
-  document.getElementById('categoryView').style.display = 'none';
-  document.getElementById('subcategoryView').style.display = 'none';
-  document.getElementById('docView').style.display = 'none';
-  document.getElementById('bcCur').textContent = 'Home';
-  
-  currentCategory = null;
-  currentSubcategory = null;
-  currentId = null;
-  updateBreadcrumbs();
-  
-  setActiveNav(null);
-  history.replaceState(null, '', location.pathname);
-  document.getElementById('tocPanel').classList.remove('vis');
-  closeSidebar();
-  document.getElementById('cScroll').scrollTop = 0;
-}}
-
-function showPage(id) {{
-  if (!PAGES[id]) return;
-  
-  document.getElementById('homeView').style.display = 'none';
-  document.getElementById('categoryView').style.display = 'none';
-  document.getElementById('subcategoryView').style.display = 'none';
-  document.getElementById('docView').style.display = '';
-  
-  document.getElementById('docContent').innerHTML = PAGES[id];
-  document.getElementById('docTitle').textContent = TITLES[id] || id;
-  
-  const meta = document.getElementById('docMeta');
-  meta.innerHTML = '';
-  (PAGE_PLATFORMS[id] || []).forEach(p => {{
-    const b = document.createElement('span');
-    b.className = 'platform-badge';
-    b.style.setProperty('--badge-color', p.color || '#636366');
-    b.innerHTML = `<span>${{p.name}}</span>`;
-    meta.appendChild(b);
-  }});
-
-  setActiveNav(id);
-  history.replaceState(null, '', '#' + id);
-  
-  currentId = id;
-  currentCategory = CATS[id] || null;
-  currentSubcategory = SUBCATS[id] || null;
-  updateBreadcrumbs();
-  
-  document.getElementById('cScroll').scrollTop = 0;
-  closeSidebar();
-  setTimeout(() => {{
-    addCopyBtns();
-    initMermaid(localStorage.getItem('docs-theme') || 'light');
-    ic();
-    buildToc();
-  }}, 60);
-}}
-
-function setActiveNav(id) {{
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const t = id
-    ? document.querySelector(`.nav-item[data-page="${{id}}"]`)
-    : document.querySelector('.nav-item[data-page="__home__"]');
-  if (t) t.classList.add('active');
-}}
-
-function buildToc() {{
-  const headings = document.getElementById('docContent').querySelectorAll('h1,h2,h3');
-  const list = document.getElementById('tocList');
-  list.innerHTML = '';
-  tocSections = [];
-  headings.forEach((h, i) => {{
-    if (!h.id) h.id = 'h-' + i + '-' + h.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    tocSections.push({{ id: h.id, el: h, level: +h.tagName[1] }});
-    const item = document.createElement('div');
-    item.className = 'toc-item';
-    item.style.paddingLeft = ((+h.tagName[1] - 1) * 9 + 12) + 'px';
-    item.textContent = h.textContent;
-    item.dataset.id = h.id;
-    item.onclick = () => {{
-      document.getElementById('cScroll').scrollTo({{ top: h.offsetTop - 64, behavior: 'smooth' }});
-    }};
-    list.appendChild(item);
-  }});
-  document.getElementById('tocPanel').classList.toggle('vis', tocSections.length > 0);
-}}
-
-document.getElementById('cScroll').addEventListener('scroll', function() {{
-  const tot = this.scrollHeight - this.clientHeight;
-  const pct = tot > 0 ? Math.min(100, Math.round((this.scrollTop / tot) * 100)) : 0;
-  document.getElementById('tocFill').style.width = pct + '%';
-  let active = null;
-  const top = this.scrollTop + 100;
-  tocSections.forEach(s => {{ if (s.el.offsetTop <= top) active = s.id; }});
-  document.querySelectorAll('.toc-item').forEach(el => el.classList.toggle('active', el.dataset.id === active));
-}});
-
-function addCopyBtns() {{
-  document.querySelectorAll('.md pre').forEach(pre => {{
-    if (pre.querySelector('.copy-btn')) return;
-    const btn = document.createElement('button');
-    btn.className = 'copy-btn';
-    btn.innerHTML = `<i data-lucide="copy"></i> Copy`;
-    btn.onclick = async () => {{
-      const code = pre.querySelector('code');
-      if (!code) return;
-      await navigator.clipboard.writeText(code.textContent);
-      btn.classList.add('ok');
-      btn.innerHTML = `<i data-lucide="check"></i> Copied`;
-      ic();
-      setTimeout(() => {{
-        btn.classList.remove('ok');
-        btn.innerHTML = `<i data-lucide="copy"></i> Copy`;
-        ic();
-      }}, 2000);
-    }};
-    pre.appendChild(btn);
-  }});
-  ic();
-}}
-
-function copyPageLink(btn) {{
-  navigator.clipboard.writeText(location.href);
-  btn.classList.add('ok');
-  btn.innerHTML = `<i data-lucide="check"></i> Copied`;
-  ic();
-  setTimeout(() => {{
-    btn.classList.remove('ok');
-    btn.innerHTML = `<i data-lucide="link"></i> Copy link`;
-    ic();
-  }}, 2000);
-}}
-
-function downloadPDF() {{
-  if (PDF_URL) window.open(PDF_URL, '_blank');
-  else alert('PDF available only when built with --pdf option');
-}}
-
-function openSearch() {{
-  document.getElementById('srchOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('srchInp').focus(), 40);
-  doSearch('');
-}}
-function closeSearch() {{
-  document.getElementById('srchOverlay').classList.remove('open');
-  document.getElementById('srchInp').value = '';
-  srchIdx = -1;
-}}
-function onSrchBg(e) {{
-  if (e.target === document.getElementById('srchOverlay')) closeSearch();
-}}
-
-function doSearch(term) {{
-  const q = term.toLowerCase().trim();
-  const res = Object.keys(TITLES).filter(id =>
-    !q || TITLES[id].toLowerCase().includes(q)
-    || (CATS[id] || '').toLowerCase().includes(q)
-    || (SUBCATS[id] || '').toLowerCase().includes(q)
-  ).slice(0, 10);
-  const c = document.getElementById('srchRes');
-  if (!res.length) {{
-    c.innerHTML = `<div class="srch-empty">No results for "<strong>${{term}}</strong>"</div>`;
-    return;
-  }}
-  c.innerHTML = res.map((id, i) => `
-    <div class="srch-item" data-i="${{i}}" data-id="${{id}}" onclick="pickRes('${{id}}')">
-      <div class="srch-ico"><i data-lucide="file-text"></i></div>
-      <div class="srch-body">
-        <div class="srch-ttl">${{TITLES[id]}}</div>
-        <div class="srch-cat">${{[CATS[id], SUBCATS[id]].filter(Boolean).join(' › ')}}</div>
-      </div>
-    </div>
-  `).join('');
-  ic();
-  srchIdx = -1;
-}}
-
-function pickRes(id) {{ closeSearch(); showPage(id); }}
-
-function srchKey(e) {{
-  const items = document.querySelectorAll('.srch-item');
-  if (e.key === 'ArrowDown') {{ e.preventDefault(); srchIdx = Math.min(srchIdx + 1, items.length - 1); hlSearch(items); }}
-  else if (e.key === 'ArrowUp') {{ e.preventDefault(); srchIdx = Math.max(srchIdx - 1, 0); hlSearch(items); }}
-  else if (e.key === 'Enter' && srchIdx >= 0) items[srchIdx]?.click();
-  else if (e.key === 'Escape') closeSearch();
-}}
-
-function hlSearch(items) {{
-  items.forEach((el, i) => {{
-    el.classList.toggle('sel', i === srchIdx);
-    if (i === srchIdx) el.scrollIntoView({{ block: 'nearest' }});
-  }});
-}}
-
 document.addEventListener('keydown', e => {{
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {{ e.preventDefault(); openSearch(); }}
   if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {{ e.preventDefault(); openSearch(); }}
@@ -2836,7 +2894,6 @@ document.addEventListener('DOMContentLoaded', () => {{
   initTheme();
   initPF();
   
-  // Check hash for navigation
   const hash = window.location.hash.slice(1);
   if (hash) {{
     if (hash.includes('/')) {{
@@ -2917,17 +2974,14 @@ document.addEventListener('DOMContentLoaded', () => {{
           cat_names = sorted(set(s.get("category", "General") for s in sections))
           categories = [{"name": n, "icon": "folder", "description": f"Documentation for {n}"} for n in cat_names]
 
-      # First, generate all page IDs and load content
       pages_dict: Dict[str, str] = {}
       titles_dict: Dict[str, str] = {}
-      page_objects: Dict[str, Dict] = {}  # Store full page objects with metadata
+      page_objects: Dict[str, Dict] = {}
       
       for s in sections:
           title = s.get("title", "Untitled")
-          # Create a stable ID based on title
           sid = hashlib.md5(title.encode()).hexdigest()[:8]
           
-          # Load markdown content
           mdf = s.get("file", "")
           if mdf and not os.path.isabs(mdf):
               mdf = os.path.join(base_dir, mdf)
@@ -2935,7 +2989,6 @@ document.addEventListener('DOMContentLoaded', () => {{
           pages_dict[sid] = self.load_markdown(mdf) if mdf and os.path.exists(mdf) else f"<h1>{title}</h1><p>{s.get('description','')}</p>"
           titles_dict[sid] = title
           
-          # Store full page object with all metadata
           page_objects[sid] = {
               "id": sid,
               "title": title,
@@ -2946,7 +2999,6 @@ document.addEventListener('DOMContentLoaded', () => {{
               "platforms": s.get("platforms", [])
           }
 
-      # Organize sections by category and subcategory using the page objects
       sidebar_sections: Dict[str, Dict[str, List]] = {}
       page_categories: Dict[str, str] = {}
       page_subcats: Dict[str, str] = {}
@@ -2960,7 +3012,6 @@ document.addEventListener('DOMContentLoaded', () => {{
           page_categories[sid] = cat
           page_subcats[sid] = sub
           
-          # Normalize platforms
           raw_platforms = page.get("platforms", [])
           page_platforms[sid] = [
               n for n in (self._normalize_platform(p) for p in raw_platforms) if n
@@ -2969,7 +3020,6 @@ document.addEventListener('DOMContentLoaded', () => {{
       hero_html = self._hero_html(config)
       quick_links_html = self._quick_links_html(config)
 
-      # Build sidebar navigation
       sb = []
       for cat in categories:
           cname = cat.get("name", "General")
@@ -2988,20 +3038,17 @@ document.addEventListener('DOMContentLoaded', () => {{
               f'<div class="sec-items" id="si-{cid}">'
           )
 
-          # Add category link to show category page
           sb.append(
               f'<div class="nav-item" onclick="showCategory(\'{cname}\')">'
               f'<i data-lucide="layout-grid"></i>All {cname}</div>'
           )
 
-          # Uncategorized pages in this category
           for page in csects.get("", []):
               sb.append(
-                  f'<div class="nav-item" data-page="{page["id"]}" onclick="showPage(\'{page["id"]}\')">'
+                  f'<div class="nav-item" data-page="{page["id"]}" onclick="showPage(\'{page["id"]}\', \'{cname}\', null)">'
                   f'<i data-lucide="{page["icon"]}"></i>{page["title"]}</div>'
               )
 
-          # Subcategories
           for sub_name, sub_items in csects.items():
               if not sub_name:
                   continue
@@ -3014,34 +3061,30 @@ document.addEventListener('DOMContentLoaded', () => {{
                   f'<div class="sub-items" id="ssi-{sub_id}">'
               )
               
-              # Add subcategory link
               sb.append(
                   f'<div class="nav-item sub" onclick="showSubcategory(\'{cname}\', \'{sub_name}\')">'
                   f'<i data-lucide="layers"></i>All {sub_name}</div>'
               )
               
-              # Individual pages in subcategory
               for page in sub_items:
                   sb.append(
-                      f'<div class="nav-item sub" data-page="{page["id"]}" onclick="showPage(\'{page["id"]}\')">'
+                      f'<div class="nav-item sub" data-page="{page["id"]}" onclick="showPage(\'{page["id"]}\', \'{cname}\', \'{sub_name}\')">'
                       f'<i data-lucide="{page["icon"]}"></i>{page["title"]}</div>'
                   )
               sb.append('</div>')
 
           sb.append('</div></div>')
 
-      # Generate category pages
       category_pages: Dict[str, str] = {}
       for cat in categories:
           cname = cat.get("name", "General")
           if cname in sidebar_sections:
               category_pages[cname] = self._category_page_html(cat, sidebar_sections[cname], page_objects, titles_dict)
 
-      # Generate subcategory pages
       subcategory_pages: Dict[str, str] = {}
       for cat_name, subcats in sidebar_sections.items():
           for sub_name, pages in subcats.items():
-              if sub_name:  # Skip empty subcategory (uncategorized)
+              if sub_name:
                   key = f"{cat_name}||{sub_name}"
                   subcategory_pages[key] = self._subcategory_page_html(cat_name, sub_name, pages, titles_dict, pages_dict)
 

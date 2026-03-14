@@ -93,7 +93,7 @@
       "category": "Getting Started",
       "subcategory": "Installation",
       "file": "docs/getting-started/installation.md",
-      "platforms": ["android", "linux", "windows"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "Project Setup",
@@ -103,7 +103,7 @@
       "category": "Getting Started",
       "subcategory": "Setup",
       "file": "docs/getting-started/project.md",
-      "platforms": ["android", "linux"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "Hello World Tutorial",
@@ -113,7 +113,7 @@
       "category": "Getting Started",
       "subcategory": "Tutorials",
       "file": "docs/getting-started/hello-world.md",
-      "platforms": ["android", "linux"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "Architecture Overview",
@@ -123,7 +123,7 @@
       "category": "Getting Started",
       "subcategory": "Concepts",
       "file": "docs/getting-started/architecture.md",
-      "platforms": ["android", "linux", "windows"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "Core JNI API",
@@ -133,7 +133,7 @@
       "category": "Core Systems",
       "subcategory": "Native Integration",
       "file": "docs/core/core_jni.md",
-      "platforms": ["android", "linux"]
+      "platforms": ["android"]
     },
     {
       "title": "AromaABI Interface",
@@ -143,7 +143,7 @@
       "category": "Core Systems",
       "subcategory": "Platform & Graphics",
       "file": "docs/core/core_abi.md",
-      "platforms": ["android", "linux"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "System Services",
@@ -153,7 +153,7 @@
       "category": "Core Systems",
       "subcategory": "Runtime",
       "file": "docs/core/services_fs.md",
-      "platforms": ["android", "linux"]
+      "platforms": ["android"]
     },
     {
       "title": "Device Information",
@@ -203,7 +203,7 @@
       "category": "User Interface",
       "subcategory": "Core Components",
       "file": "docs/ui/widgets.md",
-      "platforms": ["android"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "Layout Management",
@@ -213,7 +213,7 @@
       "category": "User Interface",
       "subcategory": "Layouts",
       "file": "docs/ui/layouts.md",
-      "platforms": ["android", "linux", "windows"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "DPI Conversion",
@@ -243,18 +243,9 @@
       "category": "User Interface",
       "subcategory": "Theming",
       "file": "docs/ui/theming.md",
-      "platforms": ["android"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
-    {
-      "title": "Gestures & Touch",
-      "description": "Handle touch events, gestures, and multi-touch interactions.",
-      "icon": "hand",
-      "color": "#7D5260",
-      "category": "User Interface",
-      "subcategory": "Input",
-      "file": "docs/ui/gestures.md",
-      "platforms": ["android"]
-    },
+  
     {
       "title": "Camera API",
       "description": "Capture photos and videos with full camera control.",
@@ -266,16 +257,7 @@
       "platforms": ["android"]
     },
    
-    {
-      "title": "File System API",
-      "description": "Comprehensive file and directory operations across platforms.",
-      "icon": "folder-open",
-      "color": "#4A4458",
-      "category": "Data Management",
-      "subcategory": "File System",
-      "file": "docs/data/filesystem.md",
-      "platforms": ["android", "linux", "windows"]
-    },
+   
     {
       "title": "Preferences API",
       "description": "Simple key-value storage for user preferences and settings.",
@@ -304,7 +286,7 @@
       "category": "Development Tools",
       "subcategory": "Build",
       "file": "docs/tools/building_deployment.md",
-      "platforms": ["android", "linux", "windows"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
       "title": "Logging System",
@@ -314,7 +296,7 @@
       "category": "Development Tools",
       "subcategory": "Debugging",
       "file": "docs/tools/logging.md",
-      "platforms": ["android", "linux", "windows"]
+      "platforms": ["android", "linux", "windows", "espressif"]
     }
   ]
 }

@@ -206,7 +206,7 @@ typedef struct AromaPlatformInterface {
     void (*android_vibrate)(int ms);
 
     /**
-     * @brief Get battery level (0–100).
+     * @brief Get battery level (0-100).
      */
     int (*android_get_battery_level)(void);
 

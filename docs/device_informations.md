@@ -11,7 +11,7 @@ Returns the current battery percentage.
 
 ### Returns
 
-* 0–100
+* 0-100
 * `-1` if unavailable
 
 ### Example

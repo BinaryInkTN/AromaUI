@@ -3,7 +3,7 @@
 <br/>
 
 
-The Permissions API provides runtime permission management in compliance with Android's security model. It supports permission grouping, Android version–specific behavior, and asynchronous permission handling.
+The Permissions API provides runtime permission management in compliance with Android's security model. It supports permission grouping, Android version-specific behavior, and asynchronous permission handling.
 
 ```mermaid
 flowchart LR
@@ -117,7 +117,7 @@ aroma_android_request_permissions(permissions, 2);
 | --------------- | ------------------------------------------------------------------ |
 | API < 23        | Permissions granted at install time. Function returns immediately. |
 | API 23+         | Runtime permission dialog(s) shown to user.                        |
-| API 31+         | Automatically handles Bluetooth–Location dependency.               |
+| API 31+         | Automatically handles Bluetooth-Location dependency.               |
 
 # 4. Automatic Permission Grouping
 
