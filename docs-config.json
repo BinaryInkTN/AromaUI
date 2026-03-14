@@ -10,10 +10,10 @@
     "image": "images/hero_image.png",
     "actions": [
       {
-        "icon": "download",
-        "text": "Download SDK",
+        "icon": "code",
+        "text": "Get Started",
         "primary": true,
-        "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI/releases', '_blank')"
+        "onclick": "showCategory('Getting Started')"
       },
       {
         "icon": "github",

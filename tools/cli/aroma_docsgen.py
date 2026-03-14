@@ -2164,7 +2164,7 @@ input:checked + .theme-slider .moon-icon{{
       </button>
       <div class="bc" id="breadcrumbs">
         <span class="bc-home" onclick="showHome()">
-          <i data-lucide="home"></i> {project_name}
+         {project_name}
         </span>
         <span class="bc-sep">/</span>
         <span class="bc-category" id="bcCategory" style="display:none" onclick="showCategoryFromBc()"></span>
