@@ -213,7 +213,7 @@
       "category": "User Interface",
       "subcategory": "Layouts",
       "file": "docs/ui/layouts.md",
-      "platforms": ["android"]
+      "platforms": ["android", "linux", "windows"]
     },
     {
       "title": "DPI Conversion",
