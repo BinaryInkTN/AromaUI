@@ -405,6 +405,7 @@ class DocGenerator:
         self.template      = self._build_template()
         self.pdf_template  = self._build_pdf_template()
         self._mermaid      = MermaidRenderer()
+        self.search_index = []  # Will store searchable content
 
     def _pygments_css(self) -> str:
         light = HtmlFormatter(style="xcode",   noclasses=False).get_style_defs(".codehilite")
@@ -531,7 +532,8 @@ class DocGenerator:
             + (f'<div class="hero-actions">{actions_html}</div>' if actions_html else "")
             + (f'<div class="platform-badges">{badges_html}</div>' if badges_html else "")
             + '</section>'
-            + (f'<div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>')
+            + (f'<div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>'
+               if os.path.exists("./images/hero-image.png") else "")
         )
 
     def _quick_links_html(self, config: Dict) -> str:
@@ -670,6 +672,14 @@ class DocGenerator:
                 return self._process_markdown(f.read())
         except Exception as e:
             return f"<h1>Error loading file</h1><p>{e}</p>"
+
+    def _extract_text_from_html(self, html: str) -> str:
+        """Extract plain text from HTML for search indexing"""
+        soup = BeautifulSoup(html, "html.parser")
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+        return soup.get_text()
 
     def _build_pdf_template(self) -> str:
         return """<!DOCTYPE html><html><head><meta charset="UTF-8"><title>{{ title }}</title>
@@ -1309,8 +1319,30 @@ body{{
   color:var(--t3);
   transition:all var(--tr);
 }}
-.hbtn.acc{{background:var(--acc);border-color:var(--acc);color:#fff}}
-.hbtn.acc:hover{{background:var(--acc2);border-color:var(--acc2)}}
+/* PDF download as icon button instead of full button */
+.pdf-download-btn {{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg2);
+  border: 1px solid var(--bdr);
+  border-radius: var(--r2);
+  color: var(--t2);
+  cursor: pointer;
+  transition: all var(--tr);
+}}
+.pdf-download-btn:hover {{
+  background: var(--bg);
+  border-color: var(--acc);
+  color: var(--acc);
+  transform: translateY(-1px);
+}}
+.pdf-download-btn i {{
+  width: 16px;
+  height: 16px;
+}}
 .theme-toggle{{
   position:relative;
   display:inline-block;
@@ -2470,8 +2502,8 @@ input:checked + .theme-slider .moon-icon{{
         <button class="hbtn" onclick="openSearch()">
           <i data-lucide="search"></i> Search <kbd>⌘K</kbd>
         </button>
-        <button class="hbtn acc" onclick="downloadPDF()">
-          <i data-lucide="file-text"></i> PDF
+        <button class="pdf-download-btn" onclick="downloadPDF()" title="Download PDF">
+          <i data-lucide="file-text"></i>
         </button>
         <label class="theme-toggle">
           <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
@@ -2552,6 +2584,7 @@ const PAGE_PLATFORMS = {platforms_json};
 const CATEGORY_PAGES = {category_pages_json};
 const SUBCATEGORY_PAGES = {subcategory_pages_json};
 const PDF_URL = '{pdf_url}';
+const SEARCH_INDEX = {search_index_json};  // Add this new index
 
 let currentId = null, currentCategory = null, currentSubcategory = null, tocSections = [], srchIdx = -1, activePF = 'all';
 let previousView = {{ type: 'home', category: null, subcategory: null, id: null }};
@@ -2885,22 +2918,50 @@ function onSrchBg(e) {{
 
 function doSearch(term) {{
   const q = term.toLowerCase().trim();
-  const res = Object.keys(TITLES).filter(id =>
-    !q || TITLES[id].toLowerCase().includes(q)
-    || (CATS[id] || '').toLowerCase().includes(q)
-    || (SUBCATS[id] || '').toLowerCase().includes(q)
-  ).slice(0, 10);
-  const c = document.getElementById('srchRes');
-  if (!res.length) {{
-    c.innerHTML = `<div class="srch-empty">No results for "<strong>${{term}}</strong>"</div>`;
+  
+  // Use the pre-built search index for better results
+  let results = [];
+  if (!q) {{
+    // If empty search, show all pages (limited to 10)
+    results = Object.keys(TITLES).slice(0, 10).map(id => ({{
+      id: id,
+      title: TITLES[id],
+      category: CATS[id] || '',
+      subcategory: SUBCATS[id] || '',
+      matches: []
+    }}));
+  }} else {{
+    // Search in title, category, subcategory, and content
+    results = SEARCH_INDEX
+      .filter(item => 
+        item.title.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        (item.subcategory && item.subcategory.toLowerCase().includes(q)) ||
+        item.content.toLowerCase().includes(q)
+      )
+      .slice(0, 10)
+      .map(item => ({{
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        subcategory: item.subcategory,
+        matches: item.content.toLowerCase().includes(q) ? ['content'] : []
+      }}));
+  }}
+  
+  const container = document.getElementById('srchRes');
+  
+  if (!results.length) {{
+    container.innerHTML = `<div class="srch-empty">No results for "<strong>${{term}}</strong>"</div>`;
     return;
   }}
-  c.innerHTML = res.map((id, i) => `
-    <div class="srch-item" data-i="${{i}}" data-id="${{id}}" onclick="pickRes('${{id}}')">
+  
+  container.innerHTML = results.map((item, i) => `
+    <div class="srch-item" data-i="${{i}}" data-id="${{item.id}}" onclick="pickRes('${{item.id}}')">
       <div class="srch-ico"><i data-lucide="file-text"></i></div>
       <div class="srch-body">
-        <div class="srch-ttl">${{TITLES[id]}}</div>
-        <div class="srch-cat">${{[CATS[id], SUBCATS[id]].filter(Boolean).join(' › ')}}</div>
+        <div class="srch-ttl">${{item.title}}</div>
+        <div class="srch-cat">${{[item.category, item.subcategory].filter(Boolean).join(' › ')}}</div>
       </div>
     </div>
   `).join('');
@@ -3310,6 +3371,18 @@ document.addEventListener('DOMContentLoaded', () => {{
                 n for n in (self._normalize_platform(p) for p in raw_platforms) if n
             ]
 
+        # Build search index with content for full-text search
+        search_index = []
+        for sid, page in page_objects.items():
+            content_text = self._extract_text_from_html(pages_dict.get(sid, ""))
+            search_index.append({
+                "id": sid,
+                "title": page["title"],
+                "category": page["category"],
+                "subcategory": page["subcategory"],
+                "content": content_text[:1000]  # Limit to first 1000 chars for performance
+            })
+
         hero_html = self._hero_html(config)
         quick_links_html = self._quick_links_html(config)
 
@@ -3398,6 +3471,7 @@ document.addEventListener('DOMContentLoaded', () => {{
             platforms_json     = json.dumps(page_platforms),
             category_pages_json = json.dumps(category_pages),
             subcategory_pages_json = json.dumps(subcategory_pages),
+            search_index_json  = json.dumps(search_index),  # Add search index
             year               = datetime.now().year,
             last_updated       = datetime.now().strftime("%b %d, %Y"),
             pdf_url            = pdf_url,
