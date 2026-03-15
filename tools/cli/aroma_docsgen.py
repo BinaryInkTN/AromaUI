@@ -532,8 +532,7 @@ class DocGenerator:
             + (f'<div class="hero-actions">{actions_html}</div>' if actions_html else "")
             + (f'<div class="platform-badges">{badges_html}</div>' if badges_html else "")
             + '</section>'
-            + (f'<div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>'
-               if os.path.exists("./images/hero-image.png") else "")
+            + (f'<div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>')
         )
 
     def _quick_links_html(self, config: Dict) -> str:
