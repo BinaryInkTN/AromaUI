@@ -38,6 +38,7 @@ typedef struct WidgetBase {
 #include "widgets/aroma_sidebar.h"
 #include "widgets/aroma_debug_overlay.h"
 #include "widgets/aroma_image.h"
+#include "widgets/aroma_canvas.h"
 
 #endif
 

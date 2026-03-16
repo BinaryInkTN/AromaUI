@@ -80,6 +80,7 @@ add_library(aroma
     widgets/aroma_debug_overlay.c
     widgets/aroma_image.c
     widgets/aroma_icon.c
+    widgets/aroma_canvas.c
 )
 
 target_include_directories(aroma

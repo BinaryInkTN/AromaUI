@@ -7,7 +7,7 @@
  *
  * This header includes all necessary components of the AromaUI framework.
  * Users should typically include this file to access the library's functionality.
- * See docs/API.md for module-level documentation.
+ * See docs/core/modules.md for module-level documentation.
  */
 
 #include "aroma_common.h"
