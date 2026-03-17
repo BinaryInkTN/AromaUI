@@ -2952,34 +2952,17 @@ function openMermaidInNewPage(btn) {{
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f5f5f7;
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     }}
-    .container {{
-      background: white;
-      padding: 32px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-      max-width: 95vw;
-      max-height: 95vh;
-      overflow: auto;
-    }}
-    svg {{
-      display: block;
-      margin: 0 auto;
-      max-width: 100%;
-      height: auto;
-    }}
+
     @media (prefers-color-scheme: dark) {{
       body {{ background: #1c1c1e; }}
-      .container {{ background: #2c2c2e; }}
     }}
   </style>
 </head>
 <body>
-  <div class="container">
     ${{new XMLSerializer().serializeToString(svgClone)}}
-  </div>
+
 </body>
 </html>`;
   const win = window.open('', '_blank');
