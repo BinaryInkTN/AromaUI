@@ -2545,9 +2545,7 @@ input:checked + .theme-slider .moon-icon{{
         <span class="bc-cur" id="bcCur">Home</span>
       </div>
       <div class="hdr-r">
-        <button class="hbtn" onclick="toggleSearchDropdown()">
-          <i data-lucide="search"></i> Search <kbd>⌘K</kbd>
-        </button>
+     
         <button class="pdf-download-btn" onclick="downloadPDF()" title="Download PDF">
           <i data-lucide="file-text"></i>
         </button>
