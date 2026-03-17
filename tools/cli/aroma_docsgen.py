@@ -379,14 +379,14 @@ class MermaidPreprocessor(Preprocessor):
                     html = (
                         '<div class="mermaid-wrapper">\n'
                         '<div class="mermaid-controls">\n'
-                        '<button class="mermaid-resize" onclick="toggleMermaidSize(this)">'
-                        '<i data-lucide="maximize-2"></i></button>\n'
-                        '<button class="mermaid-fullscreen" onclick="fullscreenMermaid(this)">'
-                        '<i data-lucide="fullscreen"></i></button>\n'
+                        '<button class="mermaid-export" onclick="exportMermaidAsSVG(this)" title="Export as SVG">'
+                        '<i data-lucide="download"></i></button>\n'
+                        '<button class="mermaid-open" onclick="openMermaidInNewPage(this)" title="Open in new tab">'
+                        '<i data-lucide="external-link"></i></button>\n'
                         '</div>\n'
                         '<div class="mermaid">\n'
                         + "\n".join(mermaid_content)
-                        + "\n</div>\n</div>"
+                        + '\n</div>\n</div>'
                     )
                     new_lines.append(html)
                 continue
@@ -405,7 +405,7 @@ class DocGenerator:
         self.template      = self._build_template()
         self.pdf_template  = self._build_pdf_template()
         self._mermaid      = MermaidRenderer()
-        self.search_index = []  # Will store searchable content
+        self.search_index = []
 
     def _pygments_css(self) -> str:
         light = HtmlFormatter(style="xcode",   noclasses=False).get_style_defs(".codehilite")
@@ -673,9 +673,7 @@ class DocGenerator:
             return f"<h1>Error loading file</h1><p>{e}</p>"
 
     def _extract_text_from_html(self, html: str) -> str:
-        """Extract plain text from HTML for search indexing"""
         soup = BeautifulSoup(html, "html.parser")
-        # Remove script and style elements
         for script in soup(["script", "style"]):
             script.decompose()
         return soup.get_text()
@@ -823,7 +821,7 @@ hr { border: none; border-top: 1pt solid #e5e5ea; margin: 24pt 0; }
 </body></html>"""
 
     def _build_template(self) -> str:
-        return r"""<!DOCTYPE html>
+      return r"""<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -1043,31 +1041,171 @@ body{{
   letter-spacing:.02em;
   transition:color var(--tr);
 }}
-.sb-search{{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  background:var(--bg);
-  border:1px solid var(--bdr);
-  border-radius:var(--r2);
-  padding:6px 9px;
-  cursor:pointer;
-  transition:all var(--tr);
-  margin-bottom:8px;
+.search-container {{
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  margin: 8px auto;
 }}
-.sb-search:hover{{border-color:var(--bdr2); transform: translateY(-1px); box-shadow: var(--sh1);}}
-.sb-search i{{color:var(--t3);width:13px;height:13px;flex-shrink:0; transition:color var(--tr);}}
-.sb-search-ph{{flex:1;font-size:.75rem;color:var(--t3);user-select:none; transition:color var(--tr);}}
+.sb-search{{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--bdr);
+  border-radius: 24px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all var(--tr);
+  width: 100%;
+}}
+.sb-search:hover{{
+  border-color: var(--bdr2);
+  transform: translateY(-1px);
+  box-shadow: var(--sh1);
+}}
+.sb-search i{{color:var(--t3);width:16px;height:16px;flex-shrink:0; transition:color var(--tr);}}
+.sb-search-ph{{flex:1;font-size:.875rem;color:var(--t3);user-select:none; transition:color var(--tr); text-align:left;}}
 .sb-search-kbd{{
-  font-size:.625rem;
+  font-size:.6875rem;
   color:var(--t3);
   background:var(--bg2);
   border:1px solid var(--bdr);
   border-radius:4px;
-  padding:1px 5px;
+  padding:2px 6px;
   font-family:var(--fm);
   flex-shrink:0;
   transition:all var(--tr);
+}}
+.search-dropdown {{
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surf2);
+  border: 1px solid var(--bdr);
+  border-radius: 16px;
+  box-shadow: var(--sh3);
+  z-index: 200;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity var(--tr), transform var(--tr);
+}}
+.search-dropdown.open {{
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}}
+.search-header {{
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bdr);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}}
+.search-header i {{
+  width: 16px;
+  height: 16px;
+  color: var(--t3);
+}}
+.search-header input {{
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--fb);
+  font-size: .9375rem;
+  color: var(--t1);
+}}
+.search-header input::placeholder {{
+  color: var(--t3);
+}}
+.search-results {{
+  max-height: 360px;
+  overflow-y: auto;
+}}
+.search-item {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bdr);
+  transition: all var(--tr);
+}}
+.search-item:last-child {{
+  border-bottom: none;
+}}
+.search-item:hover,
+.search-item.selected {{
+  background: var(--bg2);
+  transform: translateX(2px);
+}}
+.search-item-icon {{
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--accl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--acc);
+  flex-shrink: 0;
+  transition: all var(--tr);
+}}
+.search-item:hover .search-item-icon {{
+  background: var(--acc);
+  color: white;
+  transform: scale(1.05);
+}}
+.search-item-icon i {{
+  width: 14px;
+  height: 14px;
+}}
+.search-item-content {{
+  flex: 1;
+  min-width: 0;
+}}
+.search-item-title {{
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--t1);
+  margin-bottom: 1px;
+}}
+.search-item-path {{
+  font-size: .75rem;
+  color: var(--t3);
+}}
+.search-empty {{
+  padding: 24px;
+  text-align: center;
+  color: var(--t3);
+  font-size: .875rem;
+}}
+.search-footer {{
+  padding: 8px 16px;
+  border-top: 1px solid var(--bdr);
+  display: flex;
+  gap: 16px;
+  font-size: .6875rem;
+  color: var(--t3);
+  background: var(--bg2);
+}}
+.search-footer kbd {{
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 5px;
+  background: var(--bg);
+  border: 1px solid var(--bdr);
+  border-radius: 3px;
+  font-family: var(--fm);
+  font-size: .5625rem;
+  margin-right: 2px;
 }}
 .pf-wrap{{margin-bottom:4px;position:relative}}
 .pf-btn{{
@@ -1318,7 +1456,6 @@ body{{
   color:var(--t3);
   transition:all var(--tr);
 }}
-/* PDF download as icon button instead of full button */
 .pdf-download-btn {{
   display: flex;
   align-items: center;
@@ -2237,7 +2374,7 @@ input:checked + .theme-slider .moon-icon{{
   border-bottom:1px solid var(--bdr);
   transition:all var(--tr);
 }}
-.mermaid-resize,.mermaid-fullscreen{{
+.mermaid-export,.mermaid-open{{
   display:flex;
   align-items:center;
   justify-content:center;
@@ -2251,14 +2388,14 @@ input:checked + .theme-slider .moon-icon{{
   color:var(--t2);
   transition:all var(--tr);
 }}
-.mermaid-resize:hover,.mermaid-fullscreen:hover{{
+.mermaid-export:hover,.mermaid-open:hover{{
   background:var(--accl);
   border-color:var(--acc);
   color:var(--acc);
   transform: scale(1.05);
 }}
-.mermaid-resize i,.mermaid-fullscreen i{{width:11px;height:11px; transition:transform var(--tr);}}
-.mermaid-resize:hover i,.mermaid-fullscreen:hover i{{transform: rotate(90deg);}}
+.mermaid-export i,.mermaid-open i{{width:11px;height:11px; transition:transform var(--tr);}}
+.mermaid-export:hover i,.mermaid-open:hover i{{transform: scale(1.1);}}
 .mermaid{{
   padding:18px;
   text-align:center;
@@ -2279,111 +2416,6 @@ input:checked + .theme-slider .moon-icon{{
 }}
 .mermaid-overlay.active{{display:block}}
 
-.srch-overlay{{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.35);
-  backdrop-filter:blur(16px);
-  z-index:300;
-  display:none;
-  align-items:flex-start;
-  justify-content:center;
-  padding-top:64px;
-}}
-.srch-overlay.open{{display:flex; animation: fadeIn 0.2s var(--ease);}}
-.srch-modal{{
-  background:var(--surf2);
-  border:1px solid var(--bdr);
-  border-radius:var(--r4);
-  width:100%;
-  max-width:560px;
-  overflow:hidden;
-  box-shadow:var(--sh4);
-  backdrop-filter:blur(40px);
-  -webkit-backdrop-filter:blur(40px);
-  animation: slideDown 0.2s var(--ease);
-}}
-@keyframes slideDown {{
-  from {{ opacity: 0; transform: translateY(-20px); }}
-  to {{ opacity: 1; transform: translateY(0); }}
-}}
-.srch-top{{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:12px 16px;
-  border-bottom:1px solid var(--bdr);
-  transition:border-color var(--tr);
-}}
-.srch-top i{{width:15px;height:15px;color:var(--t3);flex-shrink:0}}
-.srch-inp{{
-  flex:1;
-  background:none;
-  border:none;
-  outline:none;
-  font-family:var(--fb);
-  font-size:.9375rem;
-  color:var(--t1);
-  -webkit-font-smoothing:antialiased;
-}}
-.srch-inp::placeholder{{color:var(--t3)}}
-.srch-res{{max-height:380px;overflow-y:auto}}
-.srch-item{{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 16px;
-  cursor:pointer;
-  border-bottom:1px solid var(--bdr);
-  transition:all var(--tr);
-}}
-.srch-item:last-child{{border-bottom:none}}
-.srch-item:hover,.srch-item.sel{{background:var(--bg2); transform: translateX(2px);}}
-.srch-ico{{
-  width:30px;
-  height:30px;
-  border-radius:var(--r2);
-  background:var(--accl);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:var(--acc);
-  flex-shrink:0;
-  transition:all var(--tr);
-}}
-.srch-item:hover .srch-ico{{
-  background:var(--acc);
-  color:white;
-  transform: scale(1.05);
-}}
-.srch-ico i{{width:13px;height:13px; transition:transform var(--tr);}}
-.srch-item:hover .srch-ico i{{transform: rotate(360deg);}}
-.srch-body{{flex:1;min-width:0}}
-.srch-ttl{{font-size:.875rem;font-weight:500;color:var(--t1);margin-bottom:1px}}
-.srch-cat{{font-size:.75rem;color:var(--t3)}}
-.srch-empty{{padding:32px;text-align:center;color:var(--t3);font-size:.875rem}}
-.srch-hints{{
-  padding:8px 16px;
-  border-top:1px solid var(--bdr);
-  display:flex;
-  gap:16px;
-  font-size:.6875rem;
-  color:var(--t3);
-  background:var(--bg2);
-  transition:all var(--tr);
-}}
-.srch-hints kbd{{
-  display:inline-flex;
-  align-items:center;
-  padding:1px 4px;
-  background:var(--bg);
-  border:1px solid var(--bdr);
-  border-radius:3px;
-  font-family:var(--fm);
-  font-size:.5625rem;
-  margin-right:2px;
-  transition:all var(--tr);
-}}
 .pg-footer{{
   margin-top:48px;
   padding-top:18px;
@@ -2461,10 +2493,25 @@ input:checked + .theme-slider .moon-icon{{
         <span class="logo-name">{project_name}</span>
         <span class="logo-version">v{version}</span>
       </div>
-      <div class="sb-search" onclick="openSearch()">
-        <i data-lucide="search"></i>
-        <span class="sb-search-ph">Search docs…</span>
-        <span class="sb-search-kbd">⌘K</span>
+      <div class="search-container" id="searchContainer">
+        <div class="sb-search" onclick="toggleSearchDropdown()">
+          <i data-lucide="search"></i>
+          <span class="sb-search-ph">Search docs…</span>
+          <span class="sb-search-kbd">⌘K</span>
+        </div>
+        <div class="search-dropdown" id="searchDropdown">
+          <div class="search-header">
+            <i data-lucide="search"></i>
+            <input type="text" id="searchInput" placeholder="Search documentation..."
+                   oninput="handleSearch(this.value)" onkeydown="handleSearchKey(event)" autocomplete="off">
+          </div>
+          <div class="search-results" id="searchResults"></div>
+          <div class="search-footer">
+            <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+            <span><kbd>↵</kbd> open</span>
+            <span><kbd>Esc</kbd> close</span>
+          </div>
+        </div>
       </div>
       <div class="pf-wrap" id="pfWrap">
         <div class="pf-btn" id="pfBtn" onclick="togglePfDd()">
@@ -2498,7 +2545,7 @@ input:checked + .theme-slider .moon-icon{{
         <span class="bc-cur" id="bcCur">Home</span>
       </div>
       <div class="hdr-r">
-        <button class="hbtn" onclick="openSearch()">
+        <button class="hbtn" onclick="toggleSearchDropdown()">
           <i data-lucide="search"></i> Search <kbd>⌘K</kbd>
         </button>
         <button class="pdf-download-btn" onclick="downloadPDF()" title="Download PDF">
@@ -2557,21 +2604,6 @@ input:checked + .theme-slider .moon-icon{{
     </div>
   </div>
 </div>
-<div class="srch-overlay" id="srchOverlay" onclick="onSrchBg(event)">
-  <div class="srch-modal">
-    <div class="srch-top">
-      <i data-lucide="search"></i>
-      <input class="srch-inp" id="srchInp" type="text" placeholder="Search documentation…"
-             oninput="doSearch(this.value)" onkeydown="srchKey(event)" autocomplete="off">
-    </div>
-    <div class="srch-res" id="srchRes"></div>
-    <div class="srch-hints">
-      <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-      <span><kbd>↵</kbd> open</span>
-      <span><kbd>Esc</kbd> close</span>
-    </div>
-  </div>
-</div>
 <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <script>
@@ -2583,10 +2615,12 @@ const PAGE_PLATFORMS = {platforms_json};
 const CATEGORY_PAGES = {category_pages_json};
 const SUBCATEGORY_PAGES = {subcategory_pages_json};
 const PDF_URL = '{pdf_url}';
-const SEARCH_INDEX = {search_index_json};  // Add this new index
+const SEARCH_INDEX = {search_index_json};
 
 let currentId = null, currentCategory = null, currentSubcategory = null, tocSections = [], srchIdx = -1, activePF = 'all';
 let previousView = {{ type: 'home', category: null, subcategory: null, id: null }};
+let searchSelectedIndex = -1;
+let searchResults = [];
 
 const ic = () => typeof lucide !== 'undefined' && lucide.createIcons();
 
@@ -2594,7 +2628,6 @@ function dismissAnnouncement() {{
   const bar = document.getElementById('announcementBar');
   bar.classList.add('hidden');
   localStorage.setItem('announcement-dismissed', 'true');
-  
   setTimeout(() => {{
     window.dispatchEvent(new Event('resize'));
   }}, 300);
@@ -2674,27 +2707,21 @@ function showSubcategoryFromBc() {{
 
 function showCategory(category) {{
   if (!CATEGORY_PAGES[category]) return;
-  
   previousView = {{ type: 'category', category: category, subcategory: null, id: null }};
-  
   document.getElementById('homeView').style.display = 'none';
   document.getElementById('categoryView').style.display = '';
   document.getElementById('subcategoryView').style.display = 'none';
   document.getElementById('docView').style.display = 'none';
-  
   document.getElementById('categoryView').innerHTML = CATEGORY_PAGES[category];
   document.getElementById('tocPanel').classList.remove('vis');
-  
   currentCategory = category;
   currentSubcategory = null;
   currentId = null;
   updateBreadcrumbs();
-  
   setActiveNav(null);
   history.replaceState(null, '', '#' + category);
   document.getElementById('cScroll').scrollTop = 0;
   closeSidebar();
-  
   setTimeout(() => {{
     ic();
   }}, 50);
@@ -2703,27 +2730,21 @@ function showCategory(category) {{
 function showSubcategory(category, subcategory) {{
   const key = category + '||' + subcategory;
   if (!SUBCATEGORY_PAGES[key]) return;
-  
   previousView = {{ type: 'subcategory', category: category, subcategory: subcategory, id: null }};
-  
   document.getElementById('homeView').style.display = 'none';
   document.getElementById('categoryView').style.display = 'none';
   document.getElementById('subcategoryView').style.display = '';
   document.getElementById('docView').style.display = 'none';
-  
   document.getElementById('subcategoryView').innerHTML = SUBCATEGORY_PAGES[key];
   document.getElementById('tocPanel').classList.remove('vis');
-  
   currentCategory = category;
   currentSubcategory = subcategory;
   currentId = null;
   updateBreadcrumbs();
-  
   setActiveNav(null);
   history.replaceState(null, '', '#' + category + '/' + subcategory);
   document.getElementById('cScroll').scrollTop = 0;
   closeSidebar();
-  
   setTimeout(() => {{
     ic();
   }}, 50);
@@ -2731,17 +2752,14 @@ function showSubcategory(category, subcategory) {{
 
 function showHome() {{
   previousView = {{ type: 'home', category: null, subcategory: null, id: null }};
-  
   document.getElementById('homeView').style.display = '';
   document.getElementById('categoryView').style.display = 'none';
   document.getElementById('subcategoryView').style.display = 'none';
   document.getElementById('docView').style.display = 'none';
-  
   currentCategory = null;
   currentSubcategory = null;
   currentId = null;
   updateBreadcrumbs();
-  
   setActiveNav(null);
   history.replaceState(null, '', location.pathname);
   document.getElementById('tocPanel').classList.remove('vis');
@@ -2751,7 +2769,6 @@ function showHome() {{
 
 function showPage(id, category = null, subcategory = null) {{
   if (!PAGES[id]) return;
-  
   if (category && subcategory) {{
     previousView = {{
       type: 'subcategory',
@@ -2774,15 +2791,12 @@ function showPage(id, category = null, subcategory = null) {{
       id: null
     }};
   }}
-  
   document.getElementById('homeView').style.display = 'none';
   document.getElementById('categoryView').style.display = 'none';
   document.getElementById('subcategoryView').style.display = 'none';
   document.getElementById('docView').style.display = '';
-  
   document.getElementById('docContent').innerHTML = PAGES[id];
   document.getElementById('docTitle').textContent = TITLES[id] || id;
-  
   const meta = document.getElementById('docMeta');
   meta.innerHTML = '';
   (PAGE_PLATFORMS[id] || []).forEach(p => {{
@@ -2792,15 +2806,12 @@ function showPage(id, category = null, subcategory = null) {{
     b.innerHTML = `<span>${{p.name}}</span>`;
     meta.appendChild(b);
   }});
-
   setActiveNav(id);
   history.replaceState(null, '', '#' + id);
-  
   currentId = id;
   currentCategory = CATS[id] || null;
   currentSubcategory = SUBCATS[id] || null;
   updateBreadcrumbs();
-  
   document.getElementById('cScroll').scrollTop = 0;
   closeSidebar();
   setTimeout(() => {{
@@ -2901,89 +2912,204 @@ function downloadPDF() {{
   else alert('PDF available only when built with --pdf option');
 }}
 
-function openSearch() {{
-  document.getElementById('srchOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('srchInp').focus(), 40);
-  doSearch('');
-}}
-function closeSearch() {{
-  document.getElementById('srchOverlay').classList.remove('open');
-  document.getElementById('srchInp').value = '';
-  srchIdx = -1;
-}}
-function onSrchBg(e) {{
-  if (e.target === document.getElementById('srchOverlay')) closeSearch();
+function exportMermaidAsSVG(btn) {{
+  const wrapper = btn.closest('.mermaid-wrapper');
+  const mermaidEl = wrapper.querySelector('.mermaid');
+  const svg = mermaidEl.querySelector('svg');
+  if (!svg) return;
+  const svgClone = svg.cloneNode(true);
+  svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  const svgString = new XMLSerializer().serializeToString(svgClone);
+  const blob = new Blob([svgString], {{ type: 'image/svg+xml' }});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'diagram.svg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }}
 
-function doSearch(term) {{
-  const q = term.toLowerCase().trim();
-  
-  // Use the pre-built search index for better results
-  let results = [];
+function openMermaidInNewPage(btn) {{
+  const wrapper = btn.closest('.mermaid-wrapper');
+  const mermaidEl = wrapper.querySelector('.mermaid');
+  const svg = mermaidEl.querySelector('svg');
+  if (!svg) return;
+  const svgClone = svg.cloneNode(true);
+  svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mermaid Diagram</title>
+  <style>
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    }}
+    .container {{
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      max-width: 95vw;
+      max-height: 95vh;
+      overflow: auto;
+    }}
+    svg {{
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }}
+    @media (prefers-color-scheme: dark) {{
+      body {{ background: #1c1c1e; }}
+      .container {{ background: #2c2c2e; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    ${{new XMLSerializer().serializeToString(svgClone)}}
+  </div>
+</body>
+</html>`;
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}}
+
+function toggleSearchDropdown() {{
+  const dropdown = document.getElementById('searchDropdown');
+  const isOpen = dropdown.classList.contains('open');
+  if (isOpen) {{
+    closeSearchDropdown();
+  }} else {{
+    openSearchDropdown();
+  }}
+}}
+
+function openSearchDropdown() {{
+  const dropdown = document.getElementById('searchDropdown');
+  dropdown.classList.add('open');
+  setTimeout(() => {{
+    document.getElementById('searchInput').focus();
+  }}, 50);
+  handleSearch('');
+}}
+
+function closeSearchDropdown() {{
+  const dropdown = document.getElementById('searchDropdown');
+  dropdown.classList.remove('open');
+  document.getElementById('searchInput').value = '';
+  searchSelectedIndex = -1;
+}}
+
+function handleSearch(query) {{
+  const q = query.toLowerCase().trim();
   if (!q) {{
-    // If empty search, show all pages (limited to 10)
-    results = Object.keys(TITLES).slice(0, 10).map(id => ({{
+    searchResults = Object.keys(TITLES).slice(0, 8).map(id => ({{
       id: id,
       title: TITLES[id],
       category: CATS[id] || '',
-      subcategory: SUBCATS[id] || '',
-      matches: []
+      subcategory: SUBCATS[id] || ''
     }}));
   }} else {{
-    // Search in title, category, subcategory, and content
-    results = SEARCH_INDEX
+    searchResults = SEARCH_INDEX
       .filter(item => 
         item.title.toLowerCase().includes(q) ||
         item.category.toLowerCase().includes(q) ||
-        (item.subcategory && item.subcategory.toLowerCase().includes(q)) ||
-        item.content.toLowerCase().includes(q)
+        (item.subcategory && item.subcategory.toLowerCase().includes(q))
       )
-      .slice(0, 10)
-      .map(item => ({{
-        id: item.id,
-        title: item.title,
-        category: item.category,
-        subcategory: item.subcategory,
-        matches: item.content.toLowerCase().includes(q) ? ['content'] : []
-      }}));
+      .slice(0, 8);
   }}
-  
-  const container = document.getElementById('srchRes');
-  
-  if (!results.length) {{
-    container.innerHTML = `<div class="srch-empty">No results for "<strong>${{term}}</strong>"</div>`;
+  renderSearchResults();
+}}
+
+function renderSearchResults() {{
+  const container = document.getElementById('searchResults');
+  if (!searchResults.length) {{
+    container.innerHTML = '<div class="search-empty">No results found</div>';
     return;
   }}
-  
-  container.innerHTML = results.map((item, i) => `
-    <div class="srch-item" data-i="${{i}}" data-id="${{item.id}}" onclick="pickRes('${{item.id}}')">
-      <div class="srch-ico"><i data-lucide="file-text"></i></div>
-      <div class="srch-body">
-        <div class="srch-ttl">${{item.title}}</div>
-        <div class="srch-cat">${{[item.category, item.subcategory].filter(Boolean).join(' › ')}}</div>
+  container.innerHTML = searchResults.map((item, index) => `
+    <div class="search-item" data-index="${{index}}" data-id="${{item.id}}"
+         onclick="selectSearchResult('${{item.id}}')">
+      <div class="search-item-icon">
+        <i data-lucide="file-text"></i>
+      </div>
+      <div class="search-item-content">
+        <div class="search-item-title">${{item.title}}</div>
+        <div class="search-item-path">
+          ${{[item.category, item.subcategory].filter(Boolean).join(' › ')}}
+        </div>
       </div>
     </div>
   `).join('');
-  ic();
-  srchIdx = -1;
+  lucide.createIcons();
+  searchSelectedIndex = -1;
 }}
 
-function pickRes(id) {{ closeSearch(); showPage(id); }}
-
-function srchKey(e) {{
-  const items = document.querySelectorAll('.srch-item');
-  if (e.key === 'ArrowDown') {{ e.preventDefault(); srchIdx = Math.min(srchIdx + 1, items.length - 1); hlSearch(items); }}
-  else if (e.key === 'ArrowUp') {{ e.preventDefault(); srchIdx = Math.max(srchIdx - 1, 0); hlSearch(items); }}
-  else if (e.key === 'Enter' && srchIdx >= 0) items[srchIdx]?.click();
-  else if (e.key === 'Escape') closeSearch();
+function selectSearchResult(id) {{
+  closeSearchDropdown();
+  showPage(id);
 }}
 
-function hlSearch(items) {{
+function handleSearchKey(e) {{
+  const items = document.querySelectorAll('.search-item');
+  switch(e.key) {{
+    case 'ArrowDown':
+      e.preventDefault();
+      if (items.length) {{
+        searchSelectedIndex = Math.min(searchSelectedIndex + 1, items.length - 1);
+        updateSearchSelection(items);
+      }}
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      if (items.length) {{
+        searchSelectedIndex = Math.max(searchSelectedIndex - 1, 0);
+        updateSearchSelection(items);
+      }}
+      break;
+    case 'Enter':
+      e.preventDefault();
+      if (searchSelectedIndex >= 0 && items[searchSelectedIndex]) {{
+        const id = items[searchSelectedIndex].dataset.id;
+        selectSearchResult(id);
+      }}
+      break;
+    case 'Escape':
+      e.preventDefault();
+      closeSearchDropdown();
+      break;
+  }}
+}}
+
+function updateSearchSelection(items) {{
   items.forEach((el, i) => {{
-    el.classList.toggle('sel', i === srchIdx);
-    if (i === srchIdx) el.scrollIntoView({{ block: 'nearest' }});
+    el.classList.toggle('selected', i === searchSelectedIndex);
+    if (i === searchSelectedIndex) {{
+      el.scrollIntoView({{ block: 'nearest' }});
+    }}
   }});
 }}
+
+document.addEventListener('click', function(e) {{
+  const container = document.getElementById('searchContainer');
+  const dropdown = document.getElementById('searchDropdown');
+  if (!container.contains(e.target) && dropdown.classList.contains('open')) {{
+    closeSearchDropdown();
+  }}
+}});
 
 const PICONS = {{
   ios:'smartphone', android:'smartphone', web:'globe', windows:'monitor',
@@ -3003,7 +3129,6 @@ function initPF() {{
   }});
   const entries = Object.values(all).sort((a, b) => a.name.localeCompare(b.name));
   if (!entries.length) return;
-  
   const dd = document.getElementById('pfDd');
   const allOpt = document.createElement('div');
   allOpt.className = 'pf-opt active';
@@ -3013,11 +3138,9 @@ function initPF() {{
     <span class="pf-opt-name">All platforms</span>
     <i data-lucide="check" class="pf-opt-chk"></i>`;
   dd.appendChild(allOpt);
-
   const divider = document.createElement('div');
   divider.className = 'pf-divider';
   dd.appendChild(divider);
-
   entries.forEach(p => {{
     const opt = document.createElement('div');
     opt.className = 'pf-opt';
@@ -3028,9 +3151,7 @@ function initPF() {{
       <i data-lucide="check" class="pf-opt-chk"></i>`;
     dd.appendChild(opt);
   }});
-
   ic();
-
   document.addEventListener('click', function(e) {{
     const pfWrap = document.getElementById('pfWrap');
     const pfDd = document.getElementById('pfDd');
@@ -3050,18 +3171,15 @@ function togglePfDd() {{
 
 function filterPlatform(p) {{
   activePF = p;
-  
   document.querySelectorAll('.pf-opt').forEach(o => {{
     o.classList.toggle('active', o.dataset.p === p);
   }});
-  
   const txtEl = document.getElementById('pfBtnTxt');
   if (p === 'all') {{
     txtEl.textContent = 'All platforms';
   }} else {{
     txtEl.textContent = p;
   }}
-  
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {{
     if (el.dataset.page === '__home__') return;
     if (p === 'all') {{
@@ -3071,7 +3189,6 @@ function filterPlatform(p) {{
       el.classList.toggle('ph', pp.length > 0 && !pp.includes(p));
     }}
   }});
-  
   document.querySelectorAll('.sec-items,.sub-items').forEach(grp => {{
     const vis = [...grp.querySelectorAll('.nav-item[data-page]')].some(e => !e.classList.contains('ph'));
     const label = grp.previousElementSibling;
@@ -3079,7 +3196,6 @@ function filterPlatform(p) {{
       label.classList.toggle('sec-empty', !vis);
     }}
   }});
-  
   closePfDd();
   ic();
 }}
@@ -3153,25 +3269,6 @@ function rerenderMermaid(t) {{
   }}
 }}
 
-function toggleMermaidSize(btn) {{
-  const w = btn.closest('.mermaid-wrapper');
-  w.classList.toggle('resized');
-  const icon = w.classList.contains('resized') ? 'minimize-2' : 'maximize-2';
-  btn.querySelector('i').setAttribute('data-lucide', icon);
-  ic();
-  rerunMermaidIn(w);
-}}
-
-function fullscreenMermaid(btn) {{
-  const w = btn.closest('.mermaid-wrapper');
-  w.classList.toggle('fullscreen');
-  document.getElementById('mermaidOverlay').classList.toggle('active');
-  const icon = w.classList.contains('fullscreen') ? 'minimize' : 'fullscreen';
-  btn.querySelector('i').setAttribute('data-lucide', icon);
-  ic();
-  rerunMermaidIn(w);
-}}
-
 function closeMermaidFullscreen() {{
   const w = document.querySelector('.mermaid-wrapper.fullscreen');
   if (!w) return;
@@ -3179,19 +3276,6 @@ function closeMermaidFullscreen() {{
   document.getElementById('mermaidOverlay').classList.remove('active');
   const b = w.querySelector('.mermaid-fullscreen i');
   if (b) {{ b.setAttribute('data-lucide', 'fullscreen'); ic(); }}
-}}
-
-function rerunMermaidIn(wrapper) {{
-  setTimeout(() => {{
-    const el = wrapper.querySelector('.mermaid');
-    if (!el) return;
-    const src = el.getAttribute('data-src');
-    if (src) {{
-      el.innerHTML = src;
-      el.removeAttribute('data-processed');
-    }}
-    rerenderMermaid(localStorage.getItem('docs-theme') || 'light');
-  }}, 50);
 }}
 
 function openSidebar() {{
@@ -3230,23 +3314,31 @@ function toggleSub(id) {{
 }}
 
 document.addEventListener('keydown', e => {{
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {{ e.preventDefault(); openSearch(); }}
-  if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {{ e.preventDefault(); openSearch(); }}
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {{
+    e.preventDefault();
+    openSearchDropdown();
+  }}
+  if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {{
+    e.preventDefault();
+    openSearchDropdown();
+  }}
   if (e.key === 'Escape') {{
-    if (document.getElementById('srchOverlay').classList.contains('open')) closeSearch();
-    if (document.querySelector('.mermaid-wrapper.fullscreen')) closeMermaidFullscreen();
+    if (document.getElementById('searchDropdown').classList.contains('open')) {{
+      closeSearchDropdown();
+    }}
+    if (document.querySelector('.mermaid-wrapper.fullscreen')) {{
+      closeMermaidFullscreen();
+    }}
   }}
 }});
 
 document.addEventListener('DOMContentLoaded', () => {{
   initTheme();
   initPF();
-  
   const dismissed = localStorage.getItem('announcement-dismissed');
   if (dismissed === 'true') {{
     document.getElementById('announcementBar').classList.add('hidden');
   }}
-  
   const hash = window.location.hash.slice(1);
   if (hash) {{
     if (hash.includes('/')) {{
@@ -3263,7 +3355,6 @@ document.addEventListener('DOMContentLoaded', () => {{
       return;
     }}
   }}
-  
   addCopyBtns();
   initMermaid(localStorage.getItem('docs-theme') || 'light');
   ic();
@@ -3271,7 +3362,6 @@ document.addEventListener('DOMContentLoaded', () => {{
 </script>
 </body>
 </html>"""
-
     def generate_pdf(self, config, pages_dict, titles_dict, page_platforms, output_file):
         from jinja2 import Template
         template = Template(self.pdf_template)
@@ -3370,7 +3460,6 @@ document.addEventListener('DOMContentLoaded', () => {{
                 n for n in (self._normalize_platform(p) for p in raw_platforms) if n
             ]
 
-        # Build search index with content for full-text search
         search_index = []
         for sid, page in page_objects.items():
             content_text = self._extract_text_from_html(pages_dict.get(sid, ""))
@@ -3379,7 +3468,7 @@ document.addEventListener('DOMContentLoaded', () => {{
                 "title": page["title"],
                 "category": page["category"],
                 "subcategory": page["subcategory"],
-                "content": content_text[:1000]  # Limit to first 1000 chars for performance
+                "content": content_text[:1000]
             })
 
         hero_html = self._hero_html(config)
@@ -3470,7 +3559,7 @@ document.addEventListener('DOMContentLoaded', () => {{
             platforms_json     = json.dumps(page_platforms),
             category_pages_json = json.dumps(category_pages),
             subcategory_pages_json = json.dumps(subcategory_pages),
-            search_index_json  = json.dumps(search_index),  # Add search index
+            search_index_json  = json.dumps(search_index),
             year               = datetime.now().year,
             last_updated       = datetime.now().strftime("%b %d, %Y"),
             pdf_url            = pdf_url,
