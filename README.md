@@ -4,7 +4,7 @@
 <br/>
 
 <div style="text-align:center;">
-  <img src="docs/images/aroma.png" style="max-width:128px;"/>
+  <img src="docs/images/aroma.png" width="64"/>
 </div>
 
 <br/>
