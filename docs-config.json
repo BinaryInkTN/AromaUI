@@ -40,7 +40,7 @@
     {
       "name": "Getting Started",
       "icon": "rocket",
-      "description": "Quick start guides, installation, and basic concepts"
+      "description": "Quick start guides, examples, installation, and basic concepts"
     },
     {
       "name": "Core Systems",
@@ -103,6 +103,16 @@
       "category": "Getting Started",
       "subcategory": "Setup",
       "file": "docs/getting-started/project.md",
+      "platforms": ["android", "linux", "windows", "espressif"]
+    },
+    {
+      "title": "Infotainment Example",
+      "description": "Industrial-grade infotainment system example showcasing core features and best practices.",
+      "icon": "play",
+      "color": "#4285F4",
+      "category": "Getting Started",
+      "subcategory": "Examples",
+      "file": "docs/getting-started/infotainment_example.md",
       "platforms": ["android", "linux", "windows", "espressif"]
     },
     {
