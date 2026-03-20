@@ -2907,7 +2907,6 @@ function copyPageLink(btn) {{
 
 function downloadPDF() {{
   if (PDF_URL) window.open(PDF_URL, '_blank');
-  else alert('PDF available only when built with --pdf option');
 }}
 
 function exportMermaidAsSVG(btn) {{
