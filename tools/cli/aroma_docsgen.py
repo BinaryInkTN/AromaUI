@@ -1,67 +1,75 @@
 #!/usr/bin/env python3
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import tempfile
 from datetime import datetime
 from typing import Dict, List, Optional
-import hashlib
 
-from bs4 import BeautifulSoup
 import markdown
 import yaml
+from bs4 import BeautifulSoup
 from markdown.extensions import Extension
 from markdown.preprocessors import Preprocessor
 from pygments.formatters import HtmlFormatter
 from weasyprint import HTML
 
-
-_DOT_RESERVED = frozenset({
-    'node', 'edge', 'graph', 'digraph', 'subgraph', 'strict',
-    'true', 'false', 'null',
-})
+_DOT_RESERVED = frozenset(
+    {
+        "node",
+        "edge",
+        "graph",
+        "digraph",
+        "subgraph",
+        "strict",
+        "true",
+        "false",
+        "null",
+    }
+)
 
 
 def _dot_id(raw: str) -> str:
-    s = re.sub(r'[^A-Za-z0-9_]', '_', raw.strip())
-    s = re.sub(r'_+', '_', s).strip('_') or 'n'
+    s = re.sub(r"[^A-Za-z0-9_]", "_", raw.strip())
+    s = re.sub(r"_+", "_", s).strip("_") or "n"
     if s[0].isdigit():
-        s = 'n_' + s
+        s = "n_" + s
     if s.lower() in _DOT_RESERVED:
-        s = 'n_' + s
+        s = "n_" + s
     return s
 
 
 def _dot_label(text: str) -> str:
-    text = text.replace('\\', '\\\\')
-    text = text.replace('"',  '\\"')
-    text = text.replace('\n', '\\n')
-    text = text.replace('\r', '')
+    text = text.replace("\\", "\\\\")
+    text = text.replace('"', '\\"')
+    text = text.replace("\n", "\\n")
+    text = text.replace("\r", "")
     return text
 
 
 def _parse_node_decl(raw: str):
     raw = raw.strip()
     patterns = [
-        (r'([A-Za-z0-9_]+)\(\[(.+?)\]\)',  'shape=rectangle style="rounded,filled"'),
-        (r'([A-Za-z0-9_]+)\[\[(.+?)\]\]',  'shape=rectangle'),
-        (r'([A-Za-z0-9_]+)\[(.+?)\]',      'shape=rectangle'),
-        (r'([A-Za-z0-9_]+)\(\((.+?)\)\)',   'shape=ellipse'),
-        (r'([A-Za-z0-9_]+)\((.+?)\)',       'shape=rectangle style=rounded'),
-        (r'([A-Za-z0-9_]+)\{(.+?)\}',      'shape=diamond'),
-        (r'([A-Za-z0-9_]+)>(.+?)\]',       'shape=trapezium'),
+        (r"([A-Za-z0-9_]+)\(\[(.+?)\]\)", 'shape=rectangle style="rounded,filled"'),
+        (r"([A-Za-z0-9_]+)\[\[(.+?)\]\]", "shape=rectangle"),
+        (r"([A-Za-z0-9_]+)\[(.+?)\]", "shape=rectangle"),
+        (r"([A-Za-z0-9_]+)\(\((.+?)\)\)", "shape=ellipse"),
+        (r"([A-Za-z0-9_]+)\((.+?)\)", "shape=rectangle style=rounded"),
+        (r"([A-Za-z0-9_]+)\{(.+?)\}", "shape=diamond"),
+        (r"([A-Za-z0-9_]+)>(.+?)\]", "shape=trapezium"),
     ]
     for pattern, shape in patterns:
         m = re.match(pattern, raw)
         if m:
             return _dot_id(m.group(1)), m.group(2).strip(), shape
-    m = re.match(r'^([A-Za-z0-9_]+)$', raw)
+    m = re.match(r"^([A-Za-z0-9_]+)$", raw)
     if m:
-        return _dot_id(m.group(1)), '', ''
+        return _dot_id(m.group(1)), "", ""
     nid = _dot_id(raw)
-    return nid, raw, ''
+    return nid, raw, ""
 
 
 def _node_attr_str(label: str, shape: str, base: str) -> str:
@@ -69,32 +77,36 @@ def _node_attr_str(label: str, shape: str, base: str) -> str:
     if shape:
         parts.append(shape)
     parts.append(base)
-    return ' '.join(p for p in parts if p)
+    return " ".join(p for p in parts if p)
 
 
 def _parse_subgraph_header(line: str):
-    rest = re.match(r'subgraph\s*(.*)', line, re.I).group(1).strip()
+    rest = re.match(r"subgraph\s*(.*)", line, re.I).group(1).strip()
     m = re.match(r'^([A-Za-z0-9_]+)\["?([^"\]]+)"?\]\s*$', rest)
     if m:
         return _dot_id(m.group(1)), m.group(2).strip()
-    m = re.match(r'^([A-Za-z0-9_]+)\[([^\]]+)\]\s*$', rest)
+    m = re.match(r"^([A-Za-z0-9_]+)\[([^\]]+)\]\s*$", rest)
     if m:
         return _dot_id(m.group(1)), m.group(2).strip()
     if rest:
         return _dot_id(rest), rest.strip('"')
-    return 'sg', 'subgraph'
+    return "sg", "subgraph"
 
 
 def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
     first = lines[0].strip()
-    m = re.match(r'(?:graph|flowchart)\s+(\w+)', first, re.I)
-    direction = 'TB'
+    m = re.match(r"(?:graph|flowchart)\s+(\w+)", first, re.I)
+    direction = "TB"
     if m:
         d = m.group(1).upper()
-        direction = {'TD': 'TB', 'TB': 'TB', 'LR': 'LR', 'RL': 'RL', 'BT': 'BT'}.get(d, 'TB')
+        direction = {"TD": "TB", "TB": "TB", "LR": "LR", "RL": "RL", "BT": "BT"}.get(
+            d, "TB"
+        )
 
-    base_node = ('fontname="Helvetica" fontsize=12 style=filled '
-                 'fillcolor="#f0f4ff" color="#4a6fa5"')
+    base_node = (
+        'fontname="Helvetica" fontsize=12 style=filled '
+        'fillcolor="#f0f4ff" color="#4a6fa5"'
+    )
     base_edge = 'fontname="Helvetica" fontsize=10 color="#555555"'
 
     id_map: Dict[str, str] = {}
@@ -107,8 +119,8 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
         return sections[-1]
 
     def resolve_id(raw_token: str) -> str:
-        bare = re.match(r'^([A-Za-z0-9_]+)', raw_token.strip())
-        key  = bare.group(1) if bare else raw_token.strip()
+        bare = re.match(r"^([A-Za-z0-9_]+)", raw_token.strip())
+        key = bare.group(1) if bare else raw_token.strip()
         if key not in id_map:
             id_map[key] = _dot_id(key)
         return id_map[key]
@@ -120,18 +132,18 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
             node_attrs[dot_id] = _node_attr_str(lbl, shape, base_node)
         return dot_id
 
-    def make_edge(sid: str, did: str, label: str = '', directed: bool = True) -> str:
+    def make_edge(sid: str, did: str, label: str = "", directed: bool = True) -> str:
         attrs = base_edge
         if label:
             attrs += f' label="{_dot_label(label)}"'
         if not directed:
-            attrs += ' dir=none'
-        return f'    {sid} -> {did} [{attrs}]'
+            attrs += " dir=none"
+        return f"    {sid} -> {did} [{attrs}]"
 
     def handle_node_token(raw_token: str) -> str:
         nid, nlbl, nshp = _parse_node_decl(raw_token)
-        bare = re.match(r'^([A-Za-z0-9_]+)', raw_token.strip())
-        key  = bare.group(1) if bare else raw_token.strip()
+        bare = re.match(r"^([A-Za-z0-9_]+)", raw_token.strip())
+        key = bare.group(1) if bare else raw_token.strip()
         if key not in id_map:
             id_map[key] = nid
         dot_id = id_map[key]
@@ -142,50 +154,52 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
 
     for raw_line in lines[1:]:
         line = raw_line.strip()
-        if not line or line.startswith('%%') or line.startswith('%{'):
+        if not line or line.startswith("%%") or line.startswith("%{"):
             continue
         lo = line.lower()
-        if lo.startswith(('classdef ', 'class ', 'style ', 'linkstyle ')):
+        if lo.startswith(("classdef ", "class ", "style ", "linkstyle ")):
             continue
-        if lo.startswith('subgraph'):
+        if lo.startswith("subgraph"):
             sg_depth += 1
             sg_id, sg_label = _parse_subgraph_header(line)
-            cluster_id = f'cluster_{sg_id}_{sg_depth}'
-            sections.append([
-                f'subgraph {cluster_id} {{',
-                f'  label="{_dot_label(sg_label)}"',
-                f'  style=filled fillcolor="#f8f9ff" color="#aab4cc"',
-            ])
+            cluster_id = f"cluster_{sg_id}_{sg_depth}"
+            sections.append(
+                [
+                    f"subgraph {cluster_id} {{",
+                    f'  label="{_dot_label(sg_label)}"',
+                    f'  style=filled fillcolor="#f8f9ff" color="#aab4cc"',
+                ]
+            )
             continue
-        if lo == 'end' and len(sections) > 1:
+        if lo == "end" and len(sections) > 1:
             finished = sections.pop()
-            finished.append('}')
-            indent = '  ' * (len(sections))
+            finished.append("}")
+            indent = "  " * (len(sections))
             for sub_line in finished:
                 sections[-1].append(indent + sub_line)
             continue
 
-        m = re.match(r'(.+?)\s*-+>+\s*\|([^|]*)\|\s*(.+)', line)
+        m = re.match(r"(.+?)\s*-+>+\s*\|([^|]*)\|\s*(.+)", line)
         if m:
             sid = handle_node_token(m.group(1).strip())
             lbl = m.group(2).strip()
             did = handle_node_token(m.group(3).strip())
             edges.append(make_edge(sid, did, lbl))
             continue
-        m = re.match(r'(.+?)\s*--([^->|]+?)-->\s*(.+)', line)
+        m = re.match(r"(.+?)\s*--([^->|]+?)-->\s*(.+)", line)
         if m:
             sid = handle_node_token(m.group(1).strip())
             lbl = m.group(2).strip()
             did = handle_node_token(m.group(3).strip())
             edges.append(make_edge(sid, did, lbl))
             continue
-        m = re.match(r'(.+?)\s*-{2,}>+\s*(.+)', line)
+        m = re.match(r"(.+?)\s*-{2,}>+\s*(.+)", line)
         if m:
             sid = handle_node_token(m.group(1).strip())
             did = handle_node_token(m.group(2).strip())
             edges.append(make_edge(sid, did))
             continue
-        m = re.match(r'(.+?)\s*-{3,}\s*(.+)', line)
+        m = re.match(r"(.+?)\s*-{3,}\s*(.+)", line)
         if m:
             sid = handle_node_token(m.group(1).strip())
             did = handle_node_token(m.group(2).strip())
@@ -194,8 +208,8 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
 
         nid, nlbl, nshp = _parse_node_decl(line)
         if nlbl or (nid and len(sections) > 1):
-            bare = re.match(r'^([A-Za-z0-9_]+)', line.strip())
-            key  = bare.group(1) if bare else line.strip()
+            bare = re.match(r"^([A-Za-z0-9_]+)", line.strip())
+            key = bare.group(1) if bare else line.strip()
             if key not in id_map:
                 id_map[key] = nid
             dot_id = id_map[key]
@@ -203,29 +217,29 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
                 lbl = nlbl if nlbl else dot_id
                 node_attrs[dot_id] = _node_attr_str(lbl, nshp, base_node)
             if len(sections) > 1:
-                current().append(f'  {dot_id}')
+                current().append(f"  {dot_id}")
 
     while len(sections) > 1:
         finished = sections.pop()
-        finished.append('}')
-        indent = '  ' * (len(sections))
+        finished.append("}")
+        indent = "  " * (len(sections))
         for sub_line in finished:
             sections[-1].append(indent + sub_line)
 
     parts = [
-        'digraph G {',
-        f'  rankdir={direction}',
+        "digraph G {",
+        f"  rankdir={direction}",
         '  graph [fontname="Helvetica" bgcolor=white]',
         '  node  [fontname="Helvetica" fontsize=12 style=filled '
         'fillcolor="#f0f4ff" color="#4a6fa5"]',
         '  edge  [fontname="Helvetica" fontsize=10 color="#555555"]',
     ]
     for dot_id, attrs in node_attrs.items():
-        parts.append(f'  {dot_id} [{attrs}]')
-    parts.extend(f'  {l}' for l in sections[0])
+        parts.append(f"  {dot_id} [{attrs}]")
+    parts.extend(f"  {l}" for l in sections[0])
     parts.extend(edges)
-    parts.append('}')
-    return '\n'.join(parts)
+    parts.append("}")
+    return "\n".join(parts)
 
 
 def _mermaid_sequence_to_dot(lines: List[str]) -> str:
@@ -235,28 +249,42 @@ def _mermaid_sequence_to_dot(lines: List[str]) -> str:
 
     for line in lines[1:]:
         line = line.strip()
-        if not line or line.startswith('%%'):
+        if not line or line.startswith("%%"):
             continue
         lo = line.lower()
-        if lo.startswith(('note ', 'loop', 'alt', 'opt', 'else', 'end',
-                           'activate', 'deactivate', 'rect', 'par', 'critical',
-                           'break', 'autonumber')):
+        if lo.startswith(
+            (
+                "note ",
+                "loop",
+                "alt",
+                "opt",
+                "else",
+                "end",
+                "activate",
+                "deactivate",
+                "rect",
+                "par",
+                "critical",
+                "break",
+                "autonumber",
+            )
+        ):
             continue
-        if lo.startswith(('participant', 'actor')):
-            m = re.match(r'(?:participant|actor)\s+(\S+)(?:\s+as\s+(.+))?', line, re.I)
+        if lo.startswith(("participant", "actor")):
+            m = re.match(r"(?:participant|actor)\s+(\S+)(?:\s+as\s+(.+))?", line, re.I)
             if m:
-                raw     = m.group(1)
+                raw = m.group(1)
                 display = (m.group(2) or raw).strip()
-                nid     = _dot_id(raw)
+                nid = _dot_id(raw)
                 if raw not in actor_ids:
                     actor_ids[raw] = nid
                     actors.append((nid, display))
             continue
-        m = re.match(r'(\S+)\s*[-=]+[->xX)]+[+-]?\s*(\S+)\s*:\s*(.+)', line)
+        m = re.match(r"(\S+)\s*[-=]+[->xX)]+[+-]?\s*(\S+)\s*:\s*(.+)", line)
         if m:
-            src_raw = m.group(1).rstrip(':')
-            dst_raw = m.group(2).rstrip(':')
-            msg     = m.group(3).strip()
+            src_raw = m.group(1).rstrip(":")
+            dst_raw = m.group(2).rstrip(":")
+            msg = m.group(3).strip()
             for raw in (src_raw, dst_raw):
                 if raw not in actor_ids:
                     nid = _dot_id(raw)
@@ -265,8 +293,8 @@ def _mermaid_sequence_to_dot(lines: List[str]) -> str:
             messages.append((actor_ids[src_raw], actor_ids[dst_raw], msg))
 
     parts = [
-        'digraph G {',
-        '  rankdir=LR',
+        "digraph G {",
+        "  rankdir=LR",
         '  node [shape=box fontname="Helvetica" fontsize=12 style=filled '
         'fillcolor="#dce8f5" color="#3a6fa5"]',
         '  edge [fontname="Helvetica" fontsize=10 color="#3a6fa5"]',
@@ -275,8 +303,8 @@ def _mermaid_sequence_to_dot(lines: List[str]) -> str:
         parts.append(f'  {nid} [label="{_dot_label(display)}"]')
     for src, dst, msg in messages:
         parts.append(f'  {src} -> {dst} [label="{_dot_label(msg)}"]')
-    parts.append('}')
-    return '\n'.join(parts)
+    parts.append("}")
+    return "\n".join(parts)
 
 
 def _mermaid_to_dot(source: str) -> Optional[str]:
@@ -284,9 +312,9 @@ def _mermaid_to_dot(source: str) -> Optional[str]:
     if not lines:
         return None
     first = lines[0].strip().lower()
-    if re.match(r'(?:graph|flowchart)\b', first, re.I):
+    if re.match(r"(?:graph|flowchart)\b", first, re.I):
         return _mermaid_flowchart_to_dot(lines)
-    if first.startswith('sequencediagram'):
+    if first.startswith("sequencediagram"):
         return _mermaid_sequence_to_dot(lines)
     return None
 
@@ -295,7 +323,8 @@ class MermaidRenderer:
     def __init__(self):
         try:
             import graphviz as _gv
-            _gv.Source('digraph G {}').pipe(format='svg')
+
+            _gv.Source("digraph G {}").pipe(format="svg")
             self._gv = _gv
             self._available = True
         except Exception as e:
@@ -310,10 +339,10 @@ class MermaidRenderer:
         if dot is None:
             return None
         try:
-            svg_bytes = self._gv.Source(dot).pipe(format='svg')
-            svg = svg_bytes.decode('utf-8')
-            svg = re.sub(r'<\?xml[^?]*\?>', '', svg)
-            svg = re.sub(r'<!DOCTYPE[^>]*>', '', svg)
+            svg_bytes = self._gv.Source(dot).pipe(format="svg")
+            svg = svg_bytes.decode("utf-8")
+            svg = re.sub(r"<\?xml[^?]*\?>", "", svg)
+            svg = re.sub(r"<!DOCTYPE[^>]*>", "", svg)
             return svg.strip()
         except Exception as e:
             print(f"  ⚠ diagram render failed: {e}")
@@ -336,7 +365,7 @@ def _replace_mermaid_with_svg(html_content: str, renderer: MermaidRenderer) -> s
         return html_content
 
     sources = [slot.get_text() for slot in slots]
-    svgs    = renderer.render_all(sources)
+    svgs = renderer.render_all(sources)
 
     for slot, svg in zip(slots, svgs):
         target = slot.find_parent("div", class_="mermaid-wrapper") or slot
@@ -350,9 +379,9 @@ def _replace_mermaid_with_svg(html_content: str, renderer: MermaidRenderer) -> s
             replacement = BeautifulSoup(
                 f'<div class="mermaid-fallback">'
                 f'<p class="mermaid-fallback-label">⬡ {diagram_type}</p>'
-                f'<pre><code>{src}</code></pre>'
-                f'</div>',
-                "html.parser"
+                f"<pre><code>{src}</code></pre>"
+                f"</div>",
+                "html.parser",
             ).find("div")
         target.replace_with(replacement)
 
@@ -383,10 +412,10 @@ class MermaidPreprocessor(Preprocessor):
                         '<i data-lucide="download"></i></button>\n'
                         '<button class="mermaid-open" onclick="openMermaidInNewPage(this)" title="Open in new tab">'
                         '<i data-lucide="external-link"></i></button>\n'
-                        '</div>\n'
+                        "</div>\n"
                         '<div class="mermaid">\n'
                         + "\n".join(mermaid_content)
-                        + '\n</div>\n</div>'
+                        + "\n</div>\n</div>"
                     )
                     new_lines.append(html)
                 continue
@@ -402,60 +431,85 @@ class MermaidExtension(Extension):
 
 class DocGenerator:
     def __init__(self):
-        self.template      = self._build_template()
-        self.pdf_template  = self._build_pdf_template()
-        self._mermaid      = MermaidRenderer()
+        self.template = self._build_template()
+        self.pdf_template = self._build_pdf_template()
+        self._mermaid = MermaidRenderer()
         self.search_index = []
 
     def _pygments_css(self) -> str:
-        light = HtmlFormatter(style="xcode",   noclasses=False).get_style_defs(".codehilite")
-        dark  = HtmlFormatter(style="monokai", noclasses=False).get_style_defs(".codehilite")
+        light = HtmlFormatter(style="xcode", noclasses=False).get_style_defs(
+            ".codehilite"
+        )
+        dark = HtmlFormatter(style="monokai", noclasses=False).get_style_defs(
+            ".codehilite"
+        )
         dark_prefixed = "\n".join(
-            f"[data-theme='dark'] {line}" if line.strip() and not line.strip().startswith("/*") else line
+            f"[data-theme='dark'] {line}"
+            if line.strip() and not line.strip().startswith("/*")
+            else line
             for line in dark.splitlines()
         )
         return f"{light}\n{dark_prefixed}\n"
 
     PLATFORM_ICONS = {
-        "ios": "smartphone", "android": "smartphone", "web": "globe",
-        "windows": "monitor", "macos": "monitor", "linux": "terminal",
-        "docker": "box", "kubernetes": "layers",
-        "aws": "cloud", "azure": "cloud", "gcp": "cloud",
-        "python": "terminal", "javascript": "code-2", "typescript": "code-2",
-        "react": "code-2", "vue": "code-2", "angular": "code-2",
-        "node": "server", "go": "terminal", "rust": "terminal",
-        "java": "coffee", "kotlin": "code-2", "swift": "smartphone",
-        "flutter": "smartphone", "x11": "terminal", "wayland": "terminal",
-        "espressif": "cpu", "embedded": "cpu", "esp32": "cpu",
+        "ios": "smartphone",
+        "android": "smartphone",
+        "web": "globe",
+        "windows": "monitor",
+        "macos": "monitor",
+        "linux": "terminal",
+        "docker": "box",
+        "kubernetes": "layers",
+        "aws": "cloud",
+        "azure": "cloud",
+        "gcp": "cloud",
+        "python": "terminal",
+        "javascript": "code-2",
+        "typescript": "code-2",
+        "react": "code-2",
+        "vue": "code-2",
+        "angular": "code-2",
+        "node": "server",
+        "go": "terminal",
+        "rust": "terminal",
+        "java": "coffee",
+        "kotlin": "code-2",
+        "swift": "smartphone",
+        "flutter": "smartphone",
+        "x11": "terminal",
+        "wayland": "terminal",
+        "espressif": "cpu",
+        "embedded": "cpu",
+        "esp32": "cpu",
     }
 
     PLATFORM_COLORS = {
-        "android":    "#3ddc84",
-        "ios":        "#007aff",
-        "linux":      "#e95420",
-        "windows":    "#0078d4",
-        "macos":      "#636366",
-        "web":        "#0071e3",
-        "docker":     "#2496ed",
+        "android": "#3ddc84",
+        "ios": "#007aff",
+        "linux": "#e95420",
+        "windows": "#0078d4",
+        "macos": "#636366",
+        "web": "#0071e3",
+        "docker": "#2496ed",
         "kubernetes": "#326ce5",
-        "aws":        "#ff9900",
-        "azure":      "#0089d6",
-        "gcp":        "#4285f4",
-        "python":     "#3776ab",
+        "aws": "#ff9900",
+        "azure": "#0089d6",
+        "gcp": "#4285f4",
+        "python": "#3776ab",
         "javascript": "#f7df1e",
         "typescript": "#3178c6",
-        "react":      "#61dafb",
-        "node":       "#339933",
-        "rust":       "#ce422b",
-        "go":         "#00add8",
-        "java":       "#f89820",
-        "kotlin":     "#7f52ff",
-        "swift":      "#fa7343",
-        "flutter":    "#54c5f8",
-        "x11":        "#1f6fad",
-        "wayland":    "#ffb347",
-        "espressif":  "#e7352c",
-        "embedded":   "#6d6d6d",
+        "react": "#61dafb",
+        "node": "#339933",
+        "rust": "#ce422b",
+        "go": "#00add8",
+        "java": "#f89820",
+        "kotlin": "#7f52ff",
+        "swift": "#fa7343",
+        "flutter": "#54c5f8",
+        "x11": "#1f6fad",
+        "wayland": "#ffb347",
+        "espressif": "#e7352c",
+        "embedded": "#6d6d6d",
     }
 
     def _normalize_platform(self, p) -> Optional[Dict]:
@@ -464,8 +518,8 @@ class DocGenerator:
             if not name:
                 return None
             return {
-                "name":  name,
-                "icon":  self.PLATFORM_ICONS.get(name.lower(), "cpu"),
+                "name": name,
+                "icon": self.PLATFORM_ICONS.get(name.lower(), "cpu"),
                 "color": self.PLATFORM_COLORS.get(name.lower(), "#636366"),
             }
         if isinstance(p, dict):
@@ -473,9 +527,10 @@ class DocGenerator:
             if not name:
                 return None
             return {
-                "name":  name,
-                "icon":  p.get("icon") or self.PLATFORM_ICONS.get(name.lower(), "cpu"),
-                "color": p.get("color") or self.PLATFORM_COLORS.get(name.lower(), "#636366"),
+                "name": name,
+                "icon": p.get("icon") or self.PLATFORM_ICONS.get(name.lower(), "cpu"),
+                "color": p.get("color")
+                or self.PLATFORM_COLORS.get(name.lower(), "#636366"),
             }
         return None
 
@@ -485,15 +540,15 @@ class DocGenerator:
             return ""
         return (
             f'<span class="platform-badge" style="--badge-color:{p["color"]}" title="{p["name"]}">'
-            f'<span>{p["name"]}</span></span>'
+            f"<span>{p['name']}</span></span>"
         )
 
     def _hero_html(self, config: Dict) -> str:
         h = config.get("hero", {})
-        title       = h.get("title", config.get("name", "Docs"))
-        subtitle    = h.get("subtitle", "")
+        title = h.get("title", config.get("name", "Docs"))
+        subtitle = h.get("subtitle", "")
         description = h.get("description", "")
-        eyebrow     = h.get("eyebrow", "")
+        eyebrow = h.get("eyebrow", "")
 
         badges_html = "".join(
             self._platform_badge_html(p)
@@ -502,37 +557,55 @@ class DocGenerator:
 
         actions_html = ""
         for a in h.get("actions", []):
-            cls    = "btn-primary" if a.get("primary") else "btn-ghost"
-            icon   = f'<i data-lucide="{a["icon"]}"></i>' if a.get("icon") else ""
-            href   = a.get("url", "#")
+            cls = "btn-primary" if a.get("primary") else "btn-ghost"
+            icon = f'<i data-lucide="{a["icon"]}"></i>' if a.get("icon") else ""
+            href = a.get("url", "#")
             onclick = f' onclick="{a["onclick"]}"' if a.get("onclick") else ""
             actions_html += (
                 f'<a href="{href}" class="hero-btn {cls}"{onclick}>'
-                f'{icon}{a.get("text","")}</a>'
+                f"{icon}{a.get('text', '')}</a>"
             )
 
         stats_html = ""
         if h.get("stats"):
-            stats_html = '<div class="hero-stats">' + "".join(
-                f'<div class="stat-item">'
-                f'<div class="stat-value">{s.get("value","")}</div>'
-                f'<div class="stat-label">{s.get("label","")}</div>'
-                f'</div>'
-                for s in h["stats"]
-            ) + '</div>'
+            stats_html = (
+                '<div class="hero-stats">'
+                + "".join(
+                    f'<div class="stat-item">'
+                    f'<div class="stat-value">{s.get("value", "")}</div>'
+                    f'<div class="stat-label">{s.get("label", "")}</div>'
+                    f"</div>"
+                    for s in h["stats"]
+                )
+                + "</div>"
+            )
 
         return (
             '<section class="hero">'
-            + (f'<div class="hero-eyebrow"><span>{eyebrow}</span></div>' if eyebrow else "")
+            + (
+                f'<div class="hero-eyebrow"><span>{eyebrow}</span></div>'
+                if eyebrow
+                else ""
+            )
             + f'<img src="./images/aroma.png" width="64" height="64" style="margin-bottom: 2rem;"/>'
             + f'<h1 class="hero-title">{title}</h1>'
             + (f'<p class="hero-subtitle">{subtitle}</p>' if subtitle else "")
             + (f'<p class="hero-desc">{description}</p>' if description else "")
             + stats_html
-            + (f'<div class="hero-actions">{actions_html}</div>' if actions_html else "")
-            + (f'<div class="platform-badges">{badges_html}</div>' if badges_html else "")
-            + '</section>'
-            + (f'<div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>')
+            + (
+                f'<div class="hero-actions">{actions_html}</div>'
+                if actions_html
+                else ""
+            )
+            + (
+                f'<div class="platform-badges">{badges_html}</div>'
+                if badges_html
+                else ""
+            )
+            + "</section>"
+            + (
+                f'<div class="hero-image-container"><img src="./images/hero-image.png" class="hero-image"/></div>'
+            )
         )
 
     def _quick_links_html(self, config: Dict) -> str:
@@ -540,37 +613,43 @@ class DocGenerator:
         if not cards:
             return ""
         items = "".join(
-            f'<div class="quick-link" onclick="showPage(\'{c.get("page_id","")}\')">'
-            f'<div class="ql-icon"><i data-lucide="{c.get("icon","link")}"></i></div>'
+            f'<div class="quick-link" onclick="showPage(\'{c.get("page_id", "")}\')">'
+            f'<div class="ql-icon"><i data-lucide="{c.get("icon", "link")}"></i></div>'
             f'<div class="ql-body">'
-            f'<div class="ql-title">{c.get("title","")}</div>'
-            f'<div class="ql-desc">{c.get("description","")}</div>'
-            f'</div>'
+            f'<div class="ql-title">{c.get("title", "")}</div>'
+            f'<div class="ql-desc">{c.get("description", "")}</div>'
+            f"</div>"
             f'<i data-lucide="chevron-right" class="ql-arrow"></i>'
-            f'</div>'
+            f"</div>"
             for c in cards
         )
         return (
             '<div class="quick-links-section">'
             '<h2 class="section-heading">Quick Links</h2>'
             f'<div class="quick-links">{items}</div>'
-            '</div>'
+            "</div>"
         )
 
-    def _category_page_html(self, category: Dict, subcategories: Dict[str, List], pages_dict: Dict, titles_dict: Dict) -> str:
+    def _category_page_html(
+        self,
+        category: Dict,
+        subcategories: Dict[str, List],
+        pages_dict: Dict,
+        titles_dict: Dict,
+    ) -> str:
         cat_name = category.get("name", "Category")
         cat_icon = category.get("icon", "folder")
         cat_desc = category.get("description", f"Documentation for {cat_name}")
-        
+
         cards = []
         for sub_name, pages in subcategories.items():
             if not sub_name:
                 continue
-                
+
             preview_pages = pages[:3]
             page_count = len(pages)
-            
-            card = f'''
+
+            card = f"""
             <div class="subcategory-card" onclick="showSubcategory('{cat_name}', '{sub_name}')">
                 <div class="card-header">
                     <div class="card-icon">
@@ -582,15 +661,15 @@ class DocGenerator:
                 <p class="card-desc">Documentation for {sub_name}</p>
                 <div class="card-preview">
                     {"".join(f'<span class="preview-tag">{titles_dict.get(p.get("id", ""), "Untitled")}</span>' for p in preview_pages)}
-                    {f'<span class="preview-more">+{page_count - len(preview_pages)} more</span>' if page_count > len(preview_pages) else ''}
+                    {f'<span class="preview-more">+{page_count - len(preview_pages)} more</span>' if page_count > len(preview_pages) else ""}
                 </div>
                 <div class="card-arrow">
                     <i data-lucide="arrow-right-circle"></i>
                 </div>
             </div>
-            '''
+            """
             cards.append(card)
-        
+
         return f'''
         <div class="category-page" data-category="{cat_name}">
             <div class="category-header">
@@ -606,24 +685,31 @@ class DocGenerator:
         </div>
         '''
 
-    def _subcategory_page_html(self, category: str, subcategory: str, pages: List[Dict], titles_dict: Dict, pages_dict: Dict) -> str:
+    def _subcategory_page_html(
+        self,
+        category: str,
+        subcategory: str,
+        pages: List[Dict],
+        titles_dict: Dict,
+        pages_dict: Dict,
+    ) -> str:
         cards = []
         for page in pages:
             page_id = page.get("id", "")
             title = page.get("title", "Untitled")
             if not title or title == "Untitled":
                 title = titles_dict.get(page_id, "Untitled")
-            
+
             desc = page.get("description", f"Documentation for {title}")
             icon = page.get("icon", "file-text")
             platforms = page.get("platforms", [])
-            
+
             platform_badges = ""
             for p in platforms[:3]:
                 norm = self._normalize_platform(p)
                 if norm:
                     platform_badges += f'<span class="platform-tag" style="--tag-color:{norm["color"]}">{norm["name"]}</span>'
-            
+
             card = f'''
             <div class="doc-card" onclick="showPage(\'{page_id}\', \'{category}\', \'{subcategory}\')">
                 <div class="doc-card-icon">
@@ -640,7 +726,7 @@ class DocGenerator:
             </div>
             '''
             cards.append(card)
-        
+
         return f'''
         <div class="subcategory-page" data-category="{category}" data-subcategory="{subcategory}">
             <div class="subcategory-header">
@@ -657,8 +743,18 @@ class DocGenerator:
         '''
 
     def _process_markdown(self, content: str) -> str:
-        exts = ["extra","codehilite","toc","tables","fenced_code",
-                "attr_list","def_list","abbr","footnotes","md_in_html"]
+        exts = [
+            "extra",
+            "codehilite",
+            "toc",
+            "tables",
+            "fenced_code",
+            "attr_list",
+            "def_list",
+            "abbr",
+            "footnotes",
+            "md_in_html",
+        ]
         md = markdown.Markdown(extensions=exts)
         md.registerExtensions([MermaidExtension()], {})
         return md.convert(content)
@@ -821,7 +917,7 @@ hr { border: none; border-top: 1pt solid #e5e5ea; margin: 24pt 0; }
 </body></html>"""
 
     def _build_template(self) -> str:
-      return r"""<!DOCTYPE html>
+        return r"""<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -2545,7 +2641,7 @@ input:checked + .theme-slider .moon-icon{{
         <span class="bc-cur" id="bcCur">Home</span>
       </div>
       <div class="hdr-r">
-     
+
         <button class="pdf-download-btn" onclick="downloadPDF()" title="Download PDF">
           <i data-lucide="file-text"></i>
         </button>
@@ -3004,7 +3100,7 @@ function handleSearch(query) {{
     }}));
   }} else {{
     searchResults = SEARCH_INDEX
-      .filter(item => 
+      .filter(item =>
         item.title.toLowerCase().includes(q) ||
         item.category.toLowerCase().includes(q) ||
         (item.subcategory && item.subcategory.toLowerCase().includes(q))
@@ -3342,29 +3438,35 @@ document.addEventListener('DOMContentLoaded', () => {{
 </script>
 </body>
 </html>"""
-    def generate_pdf(self, config, pages_dict, titles_dict, page_platforms, output_file):
+
+    def generate_pdf(
+        self, config, pages_dict, titles_dict, page_platforms, output_file
+    ):
         from jinja2 import Template
+
         template = Template(self.pdf_template)
         sections, toc, pn = [], [], 3
 
         print("  Pre-rendering Mermaid diagrams for PDF…")
         for sid, raw_content in pages_dict.items():
             content = _replace_mermaid_with_svg(raw_content, self._mermaid)
-            sections.append({'title': titles_dict.get(sid, sid), 'content': content})
-            toc.append({'title': titles_dict.get(sid, sid), 'page': pn})
+            sections.append({"title": titles_dict.get(sid, sid), "content": content})
+            toc.append({"title": titles_dict.get(sid, sid), "page": pn})
             pn += 1
 
         html = template.render(
-            title    = config.get('name', 'Documentation'),
-            subtitle = config.get('description', ''),
-            version  = config.get('version', '1.0.0'),
-            date     = datetime.now().strftime('%B %d, %Y'),
-            year     = datetime.now().year,
-            company  = config.get('company', ''),
-            toc      = toc,
-            sections = sections,
+            title=config.get("name", "Documentation"),
+            subtitle=config.get("description", ""),
+            version=config.get("version", "1.0.0"),
+            date=datetime.now().strftime("%B %d, %Y"),
+            year=datetime.now().year,
+            company=config.get("company", ""),
+            toc=toc,
+            sections=sections,
         )
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', encoding='utf-8', delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".html", encoding="utf-8", delete=False
+        ) as f:
             f.write(html)
             tmp = f.name
         try:
@@ -3377,7 +3479,9 @@ document.addEventListener('DOMContentLoaded', () => {{
         finally:
             os.unlink(tmp)
 
-    def generate(self, config_file: str, output_file: str, pdf_output: Optional[str] = None):
+    def generate(
+        self, config_file: str, output_file: str, pdf_output: Optional[str] = None
+    ):
         with open(config_file, "r", encoding="utf-8") as f:
             if config_file.endswith(".json"):
                 config = json.load(f)
@@ -3386,32 +3490,39 @@ document.addEventListener('DOMContentLoaded', () => {{
             else:
                 raise ValueError("Config must be .json, .yml, or .yaml")
 
-        project_name    = config.get("name", "Docs")
+        project_name = config.get("name", "Docs")
         project_version = config.get("version", "1.0.0")
-        description     = config.get("description", "Documentation")
-        base_dir        = os.path.dirname(os.path.abspath(config_file))
-        sections        = config.get("sections", [])
-        categories      = config.get("categories", [])
+        description = config.get("description", "Documentation")
+        base_dir = os.path.dirname(os.path.abspath(config_file))
+        sections = config.get("sections", [])
+        categories = config.get("categories", [])
 
         if not categories:
             cat_names = sorted(set(s.get("category", "General") for s in sections))
-            categories = [{"name": n, "icon": "folder", "description": f"Documentation for {n}"} for n in cat_names]
+            categories = [
+                {"name": n, "icon": "folder", "description": f"Documentation for {n}"}
+                for n in cat_names
+            ]
 
         pages_dict: Dict[str, str] = {}
         titles_dict: Dict[str, str] = {}
         page_objects: Dict[str, Dict] = {}
-        
+
         for s in sections:
             title = s.get("title", "Untitled")
             sid = hashlib.md5(title.encode()).hexdigest()[:8]
-            
+
             mdf = s.get("file", "")
             if mdf and not os.path.isabs(mdf):
                 mdf = os.path.join(base_dir, mdf)
-            
-            pages_dict[sid] = self.load_markdown(mdf) if mdf and os.path.exists(mdf) else f"<h1>{title}</h1><p>{s.get('description','')}</p>"
+
+            pages_dict[sid] = (
+                self.load_markdown(mdf)
+                if mdf and os.path.exists(mdf)
+                else f"<h1>{title}</h1><p>{s.get('description', '')}</p>"
+            )
             titles_dict[sid] = title
-            
+
             page_objects[sid] = {
                 "id": sid,
                 "title": title,
@@ -3419,7 +3530,7 @@ document.addEventListener('DOMContentLoaded', () => {{
                 "icon": s.get("icon", "file-text"),
                 "category": s.get("category", "General"),
                 "subcategory": s.get("subcategory", ""),
-                "platforms": s.get("platforms", [])
+                "platforms": s.get("platforms", []),
             }
 
         sidebar_sections: Dict[str, Dict[str, List]] = {}
@@ -3430,11 +3541,11 @@ document.addEventListener('DOMContentLoaded', () => {{
         for sid, page in page_objects.items():
             cat = page["category"]
             sub = page["subcategory"]
-            
+
             sidebar_sections.setdefault(cat, {}).setdefault(sub, []).append(page)
             page_categories[sid] = cat
             page_subcats[sid] = sub
-            
+
             raw_platforms = page.get("platforms", [])
             page_platforms[sid] = [
                 n for n in (self._normalize_platform(p) for p in raw_platforms) if n
@@ -3443,13 +3554,15 @@ document.addEventListener('DOMContentLoaded', () => {{
         search_index = []
         for sid, page in page_objects.items():
             content_text = self._extract_text_from_html(pages_dict.get(sid, ""))
-            search_index.append({
-                "id": sid,
-                "title": page["title"],
-                "category": page["category"],
-                "subcategory": page["subcategory"],
-                "content": content_text[:1000]
-            })
+            search_index.append(
+                {
+                    "id": sid,
+                    "title": page["title"],
+                    "category": page["category"],
+                    "subcategory": page["subcategory"],
+                    "content": content_text[:1000],
+                }
+            )
 
         hero_html = self._hero_html(config)
         quick_links_html = self._quick_links_html(config)
@@ -3463,12 +3576,12 @@ document.addEventListener('DOMContentLoaded', () => {{
                 continue
 
             sb.append(
-                f'<div>'
+                f"<div>"
                 f'<div class="sec-label" onclick="toggleSec(\'{cid}\')">'
-                f'<i data-lucide="{cat.get("icon","folder")}" style="width:11px;height:11px"></i>'
-                f'{cname}'
+                f'<i data-lucide="{cat.get("icon", "folder")}" style="width:11px;height:11px"></i>'
+                f"{cname}"
                 f'<i data-lucide="chevron-down" class="sec-chev"></i>'
-                f'</div>'
+                f"</div>"
                 f'<div class="sec-items" id="si-{cid}">'
             )
 
@@ -3489,60 +3602,64 @@ document.addEventListener('DOMContentLoaded', () => {{
                 sub_id = f"{cid}--{re.sub(r'[^a-z0-9]+', '-', sub_name.lower())}"
                 sb.append(
                     f'<div class="sub-label" data-sg="{sub_id}" onclick="toggleSub(\'{sub_id}\')">'
-                    f'{sub_name}'
+                    f"{sub_name}"
                     f'<i data-lucide="chevron-down" class="sub-chev"></i>'
-                    f'</div>'
+                    f"</div>"
                     f'<div class="sub-items" id="ssi-{sub_id}">'
                 )
-                
+
                 sb.append(
-                    f'<div class="nav-item sub" onclick="showSubcategory(\'{cname}\', \'{sub_name}\')">'
+                    f"<div class=\"nav-item sub\" onclick=\"showSubcategory('{cname}', '{sub_name}')\">"
                     f'<i data-lucide="layers"></i>All {sub_name}</div>'
                 )
-                
+
                 for page in sub_items:
                     sb.append(
-                        f'<div class="nav-item sub" data-page="{page["id"]}" onclick="showPage(\'{page["id"]}\', \'{cname}\', \'{sub_name}\')">'
+                        f"<div class=\"nav-item sub\" data-page=\"{page['id']}\" onclick=\"showPage('{page['id']}', '{cname}', '{sub_name}')\">"
                         f'<i data-lucide="{page["icon"]}"></i>{page["title"]}</div>'
                     )
-                sb.append('</div>')
+                sb.append("</div>")
 
-            sb.append('</div></div>')
+            sb.append("</div></div>")
 
         category_pages: Dict[str, str] = {}
         for cat in categories:
             cname = cat.get("name", "General")
             if cname in sidebar_sections:
-                category_pages[cname] = self._category_page_html(cat, sidebar_sections[cname], page_objects, titles_dict)
+                category_pages[cname] = self._category_page_html(
+                    cat, sidebar_sections[cname], page_objects, titles_dict
+                )
 
         subcategory_pages: Dict[str, str] = {}
         for cat_name, subcats in sidebar_sections.items():
             for sub_name, pages in subcats.items():
                 if sub_name:
                     key = f"{cat_name}||{sub_name}"
-                    subcategory_pages[key] = self._subcategory_page_html(cat_name, sub_name, pages, titles_dict, pages_dict)
+                    subcategory_pages[key] = self._subcategory_page_html(
+                        cat_name, sub_name, pages, titles_dict, pages_dict
+                    )
 
         pdf_url = os.path.basename(pdf_output) if pdf_output else ""
 
         html = self._build_template().format(
-            project_name       = project_name,
-            version            = project_version,
-            description        = description,
-            hero_section       = hero_html,
-            action_cards       = quick_links_html,
-            pygments_styles    = self._pygments_css(),
-            sidebar_content    = "\n".join(sb),
-            pages_json         = json.dumps(pages_dict),
-            titles_json        = json.dumps(titles_dict),
-            categories_json    = json.dumps(page_categories),
-            subcategories_json = json.dumps(page_subcats),
-            platforms_json     = json.dumps(page_platforms),
-            category_pages_json = json.dumps(category_pages),
-            subcategory_pages_json = json.dumps(subcategory_pages),
-            search_index_json  = json.dumps(search_index),
-            year               = datetime.now().year,
-            last_updated       = datetime.now().strftime("%b %d, %Y"),
-            pdf_url            = pdf_url,
+            project_name=project_name,
+            version=project_version,
+            description=description,
+            hero_section=hero_html,
+            action_cards=quick_links_html,
+            pygments_styles=self._pygments_css(),
+            sidebar_content="\n".join(sb),
+            pages_json=json.dumps(pages_dict),
+            titles_json=json.dumps(titles_dict),
+            categories_json=json.dumps(page_categories),
+            subcategories_json=json.dumps(page_subcats),
+            platforms_json=json.dumps(page_platforms),
+            category_pages_json=json.dumps(category_pages),
+            subcategory_pages_json=json.dumps(subcategory_pages),
+            search_index_json=json.dumps(search_index),
+            year=datetime.now().year,
+            last_updated=datetime.now().strftime("%b %d, %Y"),
+            pdf_url=pdf_url,
         )
 
         os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
@@ -3552,20 +3669,28 @@ document.addEventListener('DOMContentLoaded', () => {{
 
         if pdf_output:
             try:
-                self.generate_pdf(config, pages_dict, titles_dict, page_platforms, pdf_output)
+                self.generate_pdf(
+                    config, pages_dict, titles_dict, page_platforms, pdf_output
+                )
             except Exception as e:
-                print(f"✗ PDF failed: {e}\n  Install weasyprint: pip install weasyprint")
+                print(
+                    f"✗ PDF failed: {e}\n  Install weasyprint: pip install weasyprint"
+                )
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="Aroma Documentation Generator",
-        epilog="Example:\n  %(prog)s -c docs.yaml -o output/index.html --pdf output/docs.pdf"
+        epilog="Example:\n  %(prog)s -c docs.yaml -o output/index.html --pdf output/docs.pdf",
     )
-    parser.add_argument("-c", "--config",  required=True, help="Config file (.json/.yml/.yaml)")
-    parser.add_argument("-o", "--output",  default="docs/index.html", help="Output HTML file")
-    parser.add_argument("--pdf",           help="Generate PDF (requires weasyprint)")
-    parser.add_argument("--version",       action="version", version="v2.0")
+    parser.add_argument(
+        "-c", "--config", required=True, help="Config file (.json/.yml/.yaml)"
+    )
+    parser.add_argument(
+        "-o", "--output", default="docs/index.html", help="Output HTML file"
+    )
+    parser.add_argument("--pdf", help="Generate PDF (requires weasyprint)")
+    parser.add_argument("--version", action="version", version="v2.0")
     args = parser.parse_args()
 
     if not os.path.exists(args.config):
@@ -3578,6 +3703,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

@@ -1,4 +1,3 @@
-
 #ifndef ESP32
 
 #include "aroma_vulkan_text.h"
@@ -114,15 +113,15 @@ static bool create_glyph_texture(VulkanGlyph *glyph, const unsigned char *bitmap
     }
 
     VkSamplerCreateInfo samplerInfo = {
-        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-        .magFilter = VK_FILTER_LINEAR,
-        .minFilter = VK_FILTER_LINEAR,
-        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+        .sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter               = VK_FILTER_LINEAR,
+        .minFilter               = VK_FILTER_LINEAR,
+        .addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
         .unnormalizedCoordinates = VK_FALSE,
-        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR,
     };
     if (vkCreateSampler(ctx->device, &samplerInfo, NULL, &glyph->sampler) != VK_SUCCESS)
     {
@@ -133,10 +132,10 @@ static bool create_glyph_texture(VulkanGlyph *glyph, const unsigned char *bitmap
     }
 
     VkDescriptorSetAllocateInfo allocInfo = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = ctx->descriptorPool,
+        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool     = ctx->descriptorPool,
         .descriptorSetCount = 1,
-        .pSetLayouts = &ctx->textureDescriptorLayout,
+        .pSetLayouts        = &ctx->textureDescriptorLayout,
     };
     if (vkAllocateDescriptorSets(ctx->device, &allocInfo, &glyph->descriptorSet) != VK_SUCCESS)
     {
@@ -149,17 +148,17 @@ static bool create_glyph_texture(VulkanGlyph *glyph, const unsigned char *bitmap
 
     VkDescriptorImageInfo imageInfo = {
         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        .imageView = glyph->imageView,
-        .sampler = glyph->sampler,
+        .imageView   = glyph->imageView,
+        .sampler     = glyph->sampler,
     };
     VkWriteDescriptorSet descriptorWrite = {
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = glyph->descriptorSet,
-        .dstBinding = 0,
-        .dstArrayElement = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount = 1,
-        .pImageInfo = &imageInfo,
+        .sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet           = glyph->descriptorSet,
+        .dstBinding       = 0,
+        .dstArrayElement  = 0,
+        .descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount  = 1,
+        .pImageInfo       = &imageInfo,
     };
     vkUpdateDescriptorSets(ctx->device, 1, &descriptorWrite, 0, NULL);
 
@@ -173,72 +172,49 @@ static void destroy_glyph_texture(VulkanGlyph *glyph)
     if (!ctx || !ctx->initialized)
         return;
 
+    if (glyph->descriptorSet != VK_NULL_HANDLE)
+    {
+        vkFreeDescriptorSets(ctx->device, ctx->descriptorPool, 1, &glyph->descriptorSet);
+        glyph->descriptorSet = VK_NULL_HANDLE;
+    }
     if (glyph->sampler != VK_NULL_HANDLE)
+    {
         vkDestroySampler(ctx->device, glyph->sampler, NULL);
+        glyph->sampler = VK_NULL_HANDLE;
+    }
     if (glyph->imageView != VK_NULL_HANDLE)
+    {
         vkDestroyImageView(ctx->device, glyph->imageView, NULL);
+        glyph->imageView = VK_NULL_HANDLE;
+    }
     if (glyph->image != VK_NULL_HANDLE)
+    {
         vkDestroyImage(ctx->device, glyph->image, NULL);
+        glyph->image = VK_NULL_HANDLE;
+    }
     if (glyph->memory != VK_NULL_HANDLE)
+    {
         vkFreeMemory(ctx->device, glyph->memory, NULL);
+        glyph->memory = VK_NULL_HANDLE;
+    }
 
-    glyph->sampler = VK_NULL_HANDLE;
-    glyph->imageView = VK_NULL_HANDLE;
-    glyph->image = VK_NULL_HANDLE;
-    glyph->memory = VK_NULL_HANDLE;
-    glyph->descriptorSet = VK_NULL_HANDLE;
     glyph->valid = false;
 }
 
-int vulkan_text_renderer_init(VulkanTextRenderer *renderer)
+static void __init_glyph_from_slot(VulkanGlyph *glyph, uint32_t codepoint, FT_GlyphSlot g)
 {
-    if (!renderer)
-        return 0;
-    memset(renderer, 0, sizeof(VulkanTextRenderer));
-    return 1;
-}
+    memset(glyph, 0, sizeof(VulkanGlyph));
+    glyph->codepoint = codepoint;
+    glyph->width     = (int)g->bitmap.width;
+    glyph->height    = (int)g->bitmap.rows;
+    glyph->bearingX  = g->bitmap_left;
+    glyph->bearingY  = g->bitmap_top;
+    glyph->advance   = (int)(g->advance.x >> 6);
+    glyph->valid     = false;
 
-void vulkan_text_renderer_load_font(VulkanTextRenderer *renderer, FT_Face face)
-{
-    if (!renderer || !face)
-        return;
-
-    renderer->face = face;
-    renderer->fontHeight = (int)(face->size->metrics.height >> 6);
-    renderer->glyphCount = 0;
-
-    for (uint32_t c = 32; c < 127; c++)
-    {
-        FT_Error error = FT_Load_Char(face, c, FT_LOAD_RENDER);
-        if (error)
-            continue;
-
-        FT_GlyphSlot g = face->glyph;
-        if (!g)
-            continue;
-        if (renderer->glyphCount >= VK_TEXT_MAX_GLYPHS)
-            break;
-
-        VulkanGlyph *glyph = &renderer->glyphs[renderer->glyphCount];
-        memset(glyph, 0, sizeof(VulkanGlyph));
-        glyph->codepoint = c;
-        glyph->width = (int)g->bitmap.width;
-        glyph->height = (int)g->bitmap.rows;
-        glyph->bearingX = g->bitmap_left;
-        glyph->bearingY = g->bitmap_top;
-        glyph->advance = (int)(g->advance.x >> 6);
-        glyph->valid = false;
-
-        if (g->bitmap.width > 0 && g->bitmap.rows > 0 && g->bitmap.buffer)
-        {
-            create_glyph_texture(glyph, g->bitmap.buffer,
-                                 (int)g->bitmap.width, (int)g->bitmap.rows);
-        }
-
-        renderer->glyphCount++;
-    }
-
-    LOG_INFO("Vulkan text: Loaded %d initial glyphs", renderer->glyphCount);
+    if (g->bitmap.width > 0 && g->bitmap.rows > 0 && g->bitmap.buffer)
+        create_glyph_texture(glyph, g->bitmap.buffer,
+                             (int)g->bitmap.width, (int)g->bitmap.rows);
 }
 
 static VulkanGlyph *vk_get_glyph(VulkanTextRenderer *renderer, uint32_t codepoint)
@@ -261,30 +237,53 @@ static VulkanGlyph *vk_get_glyph(VulkanTextRenderer *renderer, uint32_t codepoin
         return NULL;
 
     VulkanGlyph *glyph = &renderer->glyphs[renderer->glyphCount];
-    memset(glyph, 0, sizeof(VulkanGlyph));
-    glyph->codepoint = codepoint;
-    glyph->width = (int)g->bitmap.width;
-    glyph->height = (int)g->bitmap.rows;
-    glyph->bearingX = g->bitmap_left;
-    glyph->bearingY = g->bitmap_top;
-    glyph->advance = (int)(g->advance.x >> 6);
-    glyph->valid = false;
-
-    if (g->bitmap.width > 0 && g->bitmap.rows > 0 && g->bitmap.buffer)
-    {
-        create_glyph_texture(glyph, g->bitmap.buffer,
-                             (int)g->bitmap.width, (int)g->bitmap.rows);
-    }
-
+    __init_glyph_from_slot(glyph, codepoint, g);
     renderer->glyphCount++;
     return glyph;
+}
+
+int vulkan_text_renderer_init(VulkanTextRenderer *renderer)
+{
+    if (!renderer)
+        return 0;
+    memset(renderer, 0, sizeof(VulkanTextRenderer));
+    return 1;
+}
+
+void vulkan_text_renderer_load_font(VulkanTextRenderer *renderer, FT_Face face)
+{
+    if (!renderer || !face)
+        return;
+
+    renderer->face       = face;
+    renderer->fontHeight = (int)(face->size->metrics.height >> 6);
+    renderer->glyphCount = 0;
+
+    for (uint32_t c = 32; c < 127; c++)
+    {
+        FT_Error error = FT_Load_Char(face, c, FT_LOAD_RENDER);
+        if (error)
+            continue;
+
+        FT_GlyphSlot g = face->glyph;
+        if (!g)
+            continue;
+        if (renderer->glyphCount >= VK_TEXT_MAX_GLYPHS)
+            break;
+
+        VulkanGlyph *glyph = &renderer->glyphs[renderer->glyphCount];
+        __init_glyph_from_slot(glyph, c, g);
+        renderer->glyphCount++;
+    }
+
+    LOG_INFO("Vulkan text: Loaded %d initial glyphs", renderer->glyphCount);
 }
 
 void vulkan_text_render_text(VulkanTextRenderer *renderer, const char *text,
                              float x, float y, float scale, uint32_t color,
                              size_t window_id)
 {
-    if (!renderer || !text)
+    if (!renderer || !text || scale <= 0.0f)
         return;
 
     AromaVulkanContext *ctx = vk_get_context();
@@ -297,8 +296,8 @@ void vulkan_text_render_text(VulkanTextRenderer *renderer, const char *text,
     float rgba[4];
     vk_convert_hex_to_rgba(rgba, color);
 
-    static VkVertex s_textVerts[VK_MAX_TEXT_GLYPHS_PER_FRAME * 6];
-    static VulkanGlyph *s_textGlyphs[VK_MAX_TEXT_GLYPHS_PER_FRAME];
+    VkVertex     textVerts[VK_MAX_TEXT_GLYPHS_PER_FRAME * 6];
+    VulkanGlyph *textGlyphs[VK_MAX_TEXT_GLYPHS_PER_FRAME];
     int drawCount = 0;
 
     float currentX = x;
@@ -319,22 +318,22 @@ void vulkan_text_render_text(VulkanTextRenderer *renderer, const char *text,
             continue;
         }
 
-        if (frame->textGlyphOffset + drawCount >= VK_MAX_TEXT_GLYPHS_PER_FRAME)
+        if (frame->textGlyphOffset + (uint32_t)drawCount >= VK_MAX_TEXT_GLYPHS_PER_FRAME)
             break;
 
         float xpos = currentX + (float)g->bearingX * scale;
         float ypos = y + (float)(renderer->fontHeight - g->bearingY) * scale;
-        float w = (float)g->width * scale;
-        float h = (float)g->height * scale;
+        float w    = (float)g->width  * scale;
+        float h    = (float)g->height * scale;
 
-        s_textGlyphs[drawCount] = g;
+        textGlyphs[drawCount] = g;
         int vo = drawCount * 6;
-        s_textVerts[vo + 0] = (VkVertex){.pos = {xpos, ypos}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {0.0f, 0.0f}};
-        s_textVerts[vo + 1] = (VkVertex){.pos = {xpos, ypos + h}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {0.0f, 1.0f}};
-        s_textVerts[vo + 2] = (VkVertex){.pos = {xpos + w, ypos + h}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {1.0f, 1.0f}};
-        s_textVerts[vo + 3] = (VkVertex){.pos = {xpos, ypos}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {0.0f, 0.0f}};
-        s_textVerts[vo + 4] = (VkVertex){.pos = {xpos + w, ypos + h}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {1.0f, 1.0f}};
-        s_textVerts[vo + 5] = (VkVertex){.pos = {xpos + w, ypos}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {1.0f, 0.0f}};
+        textVerts[vo + 0] = (VkVertex){.pos = {xpos,     ypos    }, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {0.0f, 0.0f}};
+        textVerts[vo + 1] = (VkVertex){.pos = {xpos,     ypos + h}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {0.0f, 1.0f}};
+        textVerts[vo + 2] = (VkVertex){.pos = {xpos + w, ypos + h}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {1.0f, 1.0f}};
+        textVerts[vo + 3] = (VkVertex){.pos = {xpos,     ypos    }, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {0.0f, 0.0f}};
+        textVerts[vo + 4] = (VkVertex){.pos = {xpos + w, ypos + h}, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {1.0f, 1.0f}};
+        textVerts[vo + 5] = (VkVertex){.pos = {xpos + w, ypos    }, .col = {rgba[0], rgba[1], rgba[2], rgba[3]}, .texCoord = {1.0f, 0.0f}};
         drawCount++;
 
         currentX += (float)g->advance * scale;
@@ -344,16 +343,14 @@ void vulkan_text_render_text(VulkanTextRenderer *renderer, const char *text,
         return;
 
     VkDeviceSize baseOffset = (VkDeviceSize)frame->textGlyphOffset * 6 * sizeof(VkVertex);
-    VkDeviceSize totalSize = (VkDeviceSize)drawCount * 6 * sizeof(VkVertex);
-
-    memcpy((char *)frame->textVertexMapped + baseOffset, s_textVerts, (size_t)totalSize);
+    VkDeviceSize totalSize  = (VkDeviceSize)drawCount * 6 * sizeof(VkVertex);
+    memcpy((char *)frame->textVertexMapped + baseOffset, textVerts, (size_t)totalSize);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, ctx->textPipeline);
 
-    struct
-    {
+    struct {
         mat4x4 projection;
-        float textColor[4];
+        float  textColor[4];
     } textPC;
     memcpy(textPC.projection, ctx->pushConstants.projection, sizeof(mat4x4));
     textPC.textColor[0] = rgba[0];
@@ -364,16 +361,15 @@ void vulkan_text_render_text(VulkanTextRenderer *renderer, const char *text,
                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                        0, sizeof(textPC), &textPC);
 
-    VkDeviceSize vbOffset = 0;
+    VkDeviceSize vbOffset = baseOffset;
     vkCmdBindVertexBuffers(cmd, 0, 1, &frame->textVertexBuffer, &vbOffset);
 
     for (int i = 0; i < drawCount; i++)
     {
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 ctx->textPipelineLayout, 0, 1,
-                                &s_textGlyphs[i]->descriptorSet, 0, NULL);
-        uint32_t firstVertex = (frame->textGlyphOffset + (uint32_t)i) * 6;
-        vkCmdDraw(cmd, 6, 1, firstVertex, 0);
+                                &textGlyphs[i]->descriptorSet, 0, NULL);
+        vkCmdDraw(cmd, 6, 1, (uint32_t)i * 6, 0);
     }
 
     frame->textGlyphOffset += (uint32_t)drawCount;
@@ -394,9 +390,7 @@ float vulkan_text_measure_text(VulkanTextRenderer *renderer, const char *text, f
 
         VulkanGlyph *g = vk_get_glyph(renderer, codepoint);
         if (g)
-        {
             width += (float)g->advance * scale;
-        }
     }
     return width;
 }
@@ -407,9 +401,7 @@ void vulkan_text_renderer_cleanup(VulkanTextRenderer *renderer)
         return;
 
     for (int i = 0; i < renderer->glyphCount; i++)
-    {
         destroy_glyph_texture(&renderer->glyphs[i]);
-    }
 
     memset(renderer, 0, sizeof(VulkanTextRenderer));
 }

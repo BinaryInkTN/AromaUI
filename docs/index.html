@@ -1980,7 +1980,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
         <span class="bc-cur" id="bcCur">Home</span>
       </div>
       <div class="hdr-r">
-     
+
         <button class="pdf-download-btn" onclick="downloadPDF()" title="Download PDF">
           <i data-lucide="file-text"></i>
         </button>
@@ -2001,7 +2001,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             
             <div class="pg-footer">
               <span>© 2026 AromaSDK</span>
-              <span>v0.0.1 (alpha) · Updated Mar 20, 2026</span>
+              <span>v0.0.1 (alpha) · Updated Mar 26, 2026</span>
             </div>
           </div>
           <div id="categoryView" style="display:none"></div>
@@ -2024,7 +2024,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             <div class="md" id="docContent"></div>
             <div class="pg-footer">
               <span>© 2026 AromaSDK</span>
-              <span>v0.0.1 (alpha) · Updated Mar 20, 2026</span>
+              <span>v0.0.1 (alpha) · Updated Mar 26, 2026</span>
             </div>
           </div>
         </div>
@@ -2439,7 +2439,7 @@ function handleSearch(query) {
     }));
   } else {
     searchResults = SEARCH_INDEX
-      .filter(item => 
+      .filter(item =>
         item.title.toLowerCase().includes(q) ||
         item.category.toLowerCase().includes(q) ||
         (item.subcategory && item.subcategory.toLowerCase().includes(q))

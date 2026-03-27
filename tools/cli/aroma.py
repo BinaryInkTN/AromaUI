@@ -510,9 +510,7 @@ class ProjectCreator:
             self._copy_template(
                 "app/main.c.tpl", os.path.join(target_dir, "src/main.c"), replacements
             )
-            self._copy_template(
-                "app/logo.h.tpl", os.path.join(target_dir, "src/logo.h"), replacements
-            )
+         
             self._copy_template(
                 "app/CMakeLists.txt.tpl",
                 os.path.join(target_dir, "CMakeLists.txt"),

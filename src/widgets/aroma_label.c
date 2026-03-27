@@ -31,12 +31,13 @@
 
 typedef struct AromaLabel {
     AromaRect rect;
-    char text[AROMA_LABEL_TEXT_MAX];
     AromaLabelStyle style;
     uint32_t color;
     bool use_theme_color;
     AromaFont* font;
     float text_scale;
+    char text[AROMA_LABEL_TEXT_MAX];
+
 } AromaLabel;
 
 static const float LABEL_SCALES[] = {
@@ -85,6 +86,7 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
     label->use_theme_color = true;
     label->font = NULL;
     strncpy(label->text, text, AROMA_LABEL_TEXT_MAX - 1);
+    label->text[AROMA_LABEL_TEXT_MAX - 1] = '\0';
     
     if (style >= 0 && style < (int)(sizeof(LABEL_SCALES) / sizeof(float))) {
         label->text_scale = LABEL_SCALES[style];
@@ -114,6 +116,8 @@ void aroma_label_set_text(AromaNode* label_node, const char* text)
     if (!label_node || !label_node->node_widget_ptr || !text) return;
     AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
     strncpy(label->text, text, AROMA_LABEL_TEXT_MAX - 1);
+        label->text[AROMA_LABEL_TEXT_MAX - 1] = '\0';
+
     __update_label_geometry(label_node);
     aroma_node_invalidate(label_node);
 }
