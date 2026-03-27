@@ -19,7 +19,6 @@
 typedef struct
 {
     AromaRect rect;
-    AromaListItem items[AROMA_LIST_MAX_ITEMS];
     size_t item_count;
     int selected_index;
     int pressed_index;
@@ -38,6 +37,7 @@ typedef struct
     uint32_t header_bg_color;
     uint32_t header_text_color;
     uint8_t item_types[AROMA_LIST_MAX_ITEMS];
+    AromaListItem items[AROMA_LIST_MAX_ITEMS];
 
     AromaNode *self_node;
     AromaNode *scroll_container;

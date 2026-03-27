@@ -367,7 +367,7 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
         }
 
         aroma_node_invalidate(window);
-        //show_splash_screen(g_windows[idx].window_id, w, h);
+        show_splash_screen(g_windows[idx].window_id, w, h);
     }
 
     aroma_node_invalidate(window);
@@ -794,7 +794,6 @@ static void show_splash_screen(size_t window_id, int width, int height)
         return;
     }
 
-    aroma_ui_prepare_font_for_window(window_id, font);
 
     AromaTheme theme = aroma_theme_get_global();
 
@@ -829,6 +828,7 @@ static void show_splash_screen(size_t window_id, int width, int height)
         gfx->render_text(window_id, font, g_splash_slogan, slogan_x, slogan_y,
                          theme.colors.text_secondary, slogan_scale);
     }
+    aroma_font_destroy(font);
 
 
 #ifndef ESP32
@@ -837,5 +837,4 @@ static void show_splash_screen(size_t window_id, int width, int height)
 
     SLEEP_MS(5000);
 
-    aroma_font_destroy(font);
 }

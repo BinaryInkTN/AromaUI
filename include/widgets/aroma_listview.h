@@ -11,10 +11,11 @@ extern "C" {
 #endif
 
 typedef struct AromaListItem {
+
+    void* user_data;
     char text[64];
     char secondary_text[64];
     char icon[32];
-    void* user_data;
 } AromaListItem;
 
 typedef struct AromaListView AromaListView;
