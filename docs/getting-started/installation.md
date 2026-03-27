@@ -31,5 +31,5 @@ OS: Linux 6.6.87.2-microsoft-standard-WSL2
 > If you don't have the SDK or NDK installed run the following command to install them:
 
 ```bash
-python3 aroma.py install android-sdk
+python3 aroma.py install-sdk
 ```
