@@ -1,25 +1,24 @@
-## 1. Download the latest release
+## 1. Clone the Repo 
 
-You can download the latest release of the software from our [GitHub releases page](https://github.com/BinaryInkTN/AromaUI/releases). Look for the most recent version and click on the download link to get the installer.
-
-## 2. Run the installer
-Once the download is complete, locate the installer file (usually in your Downloads folder) and double-click on it to run the installer. Follow the on-screen instructions to complete the installation process. You may be prompted to choose an installation location and agree to the terms and conditions. Make sure to read through the terms before accepting.
-
-## 3. Start Developing
-Check out the <b>Project Setup</b> documentation to learn how to create your first project with AromaUI and start building amazing user interfaces!
-
-## 4. Verify Installation
-
-To verify that the installation was successful, you can run the following command in your terminal or command prompt:
+To get started with AromaUI, you need to clone the repository from GitHub. Open your terminal or command prompt and run the following command:
 
 ```bash
-aroma doctor
+git clone https://github.com/BinaryInkTN/AromaUI.git --recursive
 ```
 
-This command will check if AromaUI is properly installed and configured on your system. If everything is set up correctly, you should see a message confirming that the installation is successful. If there are any issues, the command will provide details on what needs to be fixed.
+## 2. Add aroma.py to PATH
+Once the download is complete, locate the `aroma.py` file (usually in the tools/cli folder) and add its location to your system's PATH environment variable. This will allow you to run the `aroma.py` command from any location in your terminal or command prompt.
+
+## 3. Verify Installation
+
+To verify that you have the correct dependencies installed and that AromaUI is properly set up, you can run the following command:
+
+```bash
+python3 aroma.py doctor
+```
 
 ```shell
-yassine@DESKTOP-4SJS544:~/AromaUI$ aroma doctor
+yassine@DESKTOP-4SJS544:~/AromaUI$ python3 aroma.py doctor
 ==> Running Aroma Doctor...
 OS: Linux 6.6.87.2-microsoft-standard-WSL2
 ✓ CMake installed
@@ -31,4 +30,10 @@ OS: Linux 6.6.87.2-microsoft-standard-WSL2
 ✓ Android NDK: /home/yassine/Android/Sdk/ndk/25.1.8937393
 ==> Doctor summary complete.
 
+```
+
+> If you don't have the SDK or NDK installed run the following command to install them:
+
+```bash
+python3 aroma.py install android-sdk
 ```
