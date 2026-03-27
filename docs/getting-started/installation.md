@@ -13,10 +13,6 @@ Once the download is complete, locate the `aroma.py` file (usually in the tools/
 
 To verify that you have the correct dependencies installed and that AromaUI is properly set up, you can run the following command:
 
-```bash
-python3 aroma.py doctor
-```
-
 ```shell
 yassine@DESKTOP-4SJS544:~/AromaUI$ python3 aroma.py doctor
 ==> Running Aroma Doctor...
