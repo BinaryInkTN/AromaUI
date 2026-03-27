@@ -6,15 +6,15 @@ To get started with AromaUI, you need to clone the repository from GitHub. Open 
 git clone https://github.com/BinaryInkTN/AromaUI.git --recursive
 ```
 
-## 2. Add aroma.py to PATH
-Once the download is complete, locate the `aroma.py` file (usually in the tools/cli folder) and add its location to your system's PATH environment variable. This will allow you to run the `aroma.py` command from any location in your terminal or command prompt.
+## 2. Add aroma to PATH
+Once the download is complete, locate the `aroma` file (usually in the bin folder) and add its location to your system's PATH environment variable. This will allow you to run the `aroma` command from any location in your terminal or command prompt.
 
 ## 3. Verify Installation
 
 To verify that you have the correct dependencies installed and that AromaUI is properly set up, you can run the following command:
 
 ```shell
-yassine@DESKTOP-4SJS544:~/AromaUI$ python3 aroma.py doctor
+yassine@DESKTOP-4SJS544:~/AromaUI$ aroma doctor
 ==> Running Aroma Doctor...
 OS: Linux 6.6.87.2-microsoft-standard-WSL2
 ✓ CMake installed
@@ -31,5 +31,5 @@ OS: Linux 6.6.87.2-microsoft-standard-WSL2
 > If you don't have the SDK or NDK installed run the following command to install them:
 
 ```bash
-python3 aroma.py install-sdk
+aroma install-sdk
 ```
