@@ -1,1 +1,0 @@
-/home/yassine/AromaUI/hello_world/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86
