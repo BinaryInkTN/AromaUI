@@ -1,3 +1,5 @@
+<img src="getting-started/installation.png"/>
+
 ## 1. Clone the Repo 
 
 To get started with AromaUI, you need to clone the repository from GitHub. Open your terminal or command prompt and run the following command:

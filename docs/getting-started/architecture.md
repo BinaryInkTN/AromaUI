@@ -1,4 +1,6 @@
 
+<img src="getting-started/architecture.png">
+
 ## Overview
 
 AromaUI is a modular, cross-platform retained-mode UI framework designed for embedded systems, Android environments, desktop platforms, and software-rendered targets.

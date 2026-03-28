@@ -1,0 +1,52 @@
+{
+  "buildFiles": [
+    "/home/yassine/AromaUI/hello_world/android/app/src/main/cpp/CMakeLists.txt",
+    "/home/yassine/AromaUI/src/CMakeLists.txt",
+    "/home/yassine/AromaUI/vendors/freetype/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/yassine/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/yassine/AromaUI/hello_world/android/app/.cxx/Debug/2z35731k/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/yassine/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/yassine/AromaUI/hello_world/android/app/.cxx/Debug/2z35731k/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "aroma::@9df0d65908e3390db40e": {
+      "toolchain": "toolchain",
+      "abi": "armeabi-v7a",
+      "artifactName": "aroma",
+      "output": "/home/yassine/AromaUI/hello_world/android/app/.cxx/Debug/2z35731k/armeabi-v7a/aroma_lib/libaroma.a"
+    },
+    "aroma_app::@6890427a1f51a3e7e1df": {
+      "toolchain": "toolchain",
+      "abi": "armeabi-v7a",
+      "artifactName": "aroma_app",
+      "output": "/home/yassine/AromaUI/hello_world/android/app/build/intermediates/cxx/Debug/2z35731k/obj/armeabi-v7a/libaroma_app.so",
+      "runtimeFiles": []
+    },
+    "freetype::@bdc1e324bbc9e3c81525": {
+      "toolchain": "toolchain",
+      "abi": "armeabi-v7a",
+      "artifactName": "freetype",
+      "output": "/home/yassine/AromaUI/hello_world/android/app/.cxx/Debug/2z35731k/armeabi-v7a/freetype_build/libfreetyped.a"
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/home/yassine/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/home/yassine/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": []
+}

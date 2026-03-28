@@ -1,4 +1,7 @@
 
+<img src="getting-started/project_creation.png"/>
+
+
 ## 1. Project Creation via Command Line Tool
 
 To create a new AromaUI project, you can use the `aroma` command-line tool. Open your terminal and run the following command:
