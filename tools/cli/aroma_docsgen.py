@@ -1870,6 +1870,16 @@ function showFirstPage() {{
   showCategory(CATS[FIRST_PAGE_ID]||'');
 }}
 
+function getBasePath() {{
+  if (window.location.hostname.includes('github.io')) {{
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    if (parts.length > 0) {{
+      return '/' + parts[0];
+    }}
+  }}
+  return '';
+}}
+
 function showCategory(category){{
   if (!CATEGORY_PAGES[category]) return;
   _hideAll();
@@ -1879,8 +1889,9 @@ function showCategory(category){{
   currentCategory=category; currentSubcategory=null; currentId=null;
   previousView={{type:'category',category,subcategory:null,id:null}};
   updateBreadcrumbs(); setActiveNav(null);
-  const slug = encodeURIComponent(category);
-  history.replaceState({{type:'category',category:category}}, '', './' + slug);
+  const basePath = getBasePath();
+  const newUrl = basePath + '/' + encodeURIComponent(category);
+  history.replaceState({{type:'category',category:category}}, '', newUrl);
   document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
 }}
 
@@ -1894,8 +1905,9 @@ function showSubcategory(category,subcategory){{
   currentCategory=category; currentSubcategory=subcategory; currentId=null;
   previousView={{type:'subcategory',category,subcategory,id:null}};
   updateBreadcrumbs(); setActiveNav(null);
-  const slug = encodeURIComponent(category) + '/' + encodeURIComponent(subcategory);
-  history.replaceState({{type:'subcategory',category:category,subcategory:subcategory}}, '', './' + slug);
+  const basePath = getBasePath();
+  const newUrl = basePath + '/' + encodeURIComponent(category) + '/' + encodeURIComponent(subcategory);
+  history.replaceState({{type:'subcategory',category:category,subcategory:subcategory}}, '', newUrl);
   document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
 }}
 
@@ -1938,13 +1950,16 @@ function showPage(id, category=null, subcategory=null){{
   setActiveNav(id);
   
   const slug = ID_TO_SLUG[id] || id;
-  let newUrl = './' + slug;
+  const basePath = getBasePath();
+  let newUrl = basePath;
   
   if (currentCategory && currentSubcategory) {{
-    newUrl = './' + encodeURIComponent(currentCategory) + '/' + 
+    newUrl += '/' + encodeURIComponent(currentCategory) + '/' + 
              encodeURIComponent(currentSubcategory) + '/' + slug;
   }} else if (currentCategory) {{
-    newUrl = './' + encodeURIComponent(currentCategory) + '/' + slug;
+    newUrl += '/' + encodeURIComponent(currentCategory) + '/' + slug;
+  }} else {{
+    newUrl += '/' + slug;
   }}
   
   history.replaceState({{type:'page',id:id,category:currentCategory,subcategory:currentSubcategory}}, '', newUrl);
