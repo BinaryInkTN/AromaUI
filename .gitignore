@@ -2,6 +2,3 @@ build/
 cmake-build-*/
 CMakeCache.txt
 CMakeFiles/
-aziz/
-bt_test/
-testing/
