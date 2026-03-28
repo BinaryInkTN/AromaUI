@@ -1880,6 +1880,34 @@ function getBasePath() {{
   return '';
 }}
 
+function updateURL() {{
+  const basePath = getBasePath();
+  let hash = '';
+  
+  if (currentId) {{
+    const slug = ID_TO_SLUG[currentId] || currentId;
+    if (currentCategory && currentSubcategory) {{
+      hash = '#/category/' + encodeURIComponent(currentCategory) + 
+             '/subcategory/' + encodeURIComponent(currentSubcategory) + 
+             '/page/' + slug;
+    }} else if (currentCategory) {{
+      hash = '#/category/' + encodeURIComponent(currentCategory) + '/page/' + slug;
+    }} else {{
+      hash = '#/page/' + slug;
+    }}
+  }} else if (currentSubcategory) {{
+    hash = '#/category/' + encodeURIComponent(currentCategory) + 
+           '/subcategory/' + encodeURIComponent(currentSubcategory);
+  }} else if (currentCategory) {{
+    hash = '#/category/' + encodeURIComponent(currentCategory);
+  }} else {{
+    hash = '#/';
+  }}
+  
+  const newUrl = basePath + '/index.html' + hash;
+  history.replaceState(null, '', newUrl);
+}}
+
 function showCategory(category){{
   if (!CATEGORY_PAGES[category]) return;
   _hideAll();
@@ -1889,9 +1917,7 @@ function showCategory(category){{
   currentCategory=category; currentSubcategory=null; currentId=null;
   previousView={{type:'category',category,subcategory:null,id:null}};
   updateBreadcrumbs(); setActiveNav(null);
-  const basePath = getBasePath();
-  const newUrl = basePath + '/' + encodeURIComponent(category);
-  history.replaceState({{type:'category',category:category}}, '', newUrl);
+  updateURL();
   document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
 }}
 
@@ -1905,9 +1931,7 @@ function showSubcategory(category,subcategory){{
   currentCategory=category; currentSubcategory=subcategory; currentId=null;
   previousView={{type:'subcategory',category,subcategory,id:null}};
   updateBreadcrumbs(); setActiveNav(null);
-  const basePath = getBasePath();
-  const newUrl = basePath + '/' + encodeURIComponent(category) + '/' + encodeURIComponent(subcategory);
-  history.replaceState({{type:'subcategory',category:category,subcategory:subcategory}}, '', newUrl);
+  updateURL();
   document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
 }}
 
@@ -1948,21 +1972,7 @@ function showPage(id, category=null, subcategory=null){{
   currentSubcategory = subcategory || SUBCATS[id] || null;
 
   setActiveNav(id);
-  
-  const slug = ID_TO_SLUG[id] || id;
-  const basePath = getBasePath();
-  let newUrl = basePath;
-  
-  if (currentCategory && currentSubcategory) {{
-    newUrl += '/' + encodeURIComponent(currentCategory) + '/' + 
-             encodeURIComponent(currentSubcategory) + '/' + slug;
-  }} else if (currentCategory) {{
-    newUrl += '/' + encodeURIComponent(currentCategory) + '/' + slug;
-  }} else {{
-    newUrl += '/' + slug;
-  }}
-  
-  history.replaceState({{type:'page',id:id,category:currentCategory,subcategory:currentSubcategory}}, '', newUrl);
+  updateURL();
   
   updateBreadcrumbs();
   document.getElementById('cScroll').scrollTop=0;
@@ -1970,6 +1980,62 @@ function showPage(id, category=null, subcategory=null){{
   setTimeout(()=>{{addCopyBtns();initMermaid(localStorage.getItem('docs-theme')||'light');ic();buildToc();}},60);
 }}
 
+function parseHash() {{
+  const hash = window.location.hash.substring(1);
+  const parts = hash.split('/').filter(Boolean);
+  
+  if (parts.length === 0 || parts[0] === '') {{
+    showFirstPage();
+    return;
+  }}
+  
+  if (parts[0] === 'category') {{
+    if (parts.length >= 2) {{
+      const category = decodeURIComponent(parts[1]);
+      if (parts.length >= 4 && parts[2] === 'subcategory') {{
+        const subcategory = decodeURIComponent(parts[3]);
+        if (parts.length >= 6 && parts[4] === 'page') {{
+          const slug = decodeURIComponent(parts[5]);
+          if (SLUG_TO_ID[slug] && PAGES[SLUG_TO_ID[slug]]) {{
+            showPage(SLUG_TO_ID[slug], category, subcategory);
+            return;
+          }}
+        }}
+        showSubcategory(category, subcategory);
+        return;
+      }} else if (parts.length >= 4 && parts[2] === 'page') {{
+        const slug = decodeURIComponent(parts[3]);
+        if (SLUG_TO_ID[slug] && PAGES[SLUG_TO_ID[slug]]) {{
+          showPage(SLUG_TO_ID[slug], category, null);
+          return;
+        }}
+      }}
+      showCategory(category);
+      return;
+    }}
+  }} else if (parts[0] === 'page') {{
+    if (parts.length >= 2) {{
+      const slug = decodeURIComponent(parts[1]);
+      if (SLUG_TO_ID[slug] && PAGES[SLUG_TO_ID[slug]]) {{
+        showPage(SLUG_TO_ID[slug], null, null);
+        return;
+      }}
+    }}
+  }}
+  
+  showFirstPage();
+}}
+
+document.addEventListener('DOMContentLoaded',()=>{{
+  initTheme();
+  initPF();
+  parseHash();
+  setTimeout(ic, 100);
+}});
+
+window.addEventListener('hashchange', () => {{
+  parseHash();
+}});
 function goBackFromDoc(){{
   if(previousView.type==='subcategory'&&previousView.category&&previousView.subcategory)
     showSubcategory(previousView.category,previousView.subcategory);
