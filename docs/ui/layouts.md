@@ -1,3 +1,5 @@
+<img src="ui/layouts.png"/>
+
 
 ## 1  Introduction
 

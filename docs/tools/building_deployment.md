@@ -1,4 +1,4 @@
-<b> Author: AHMED ALI Mohamed Yassine </b>
+<img src="tools/building_deployment.png"/>
 
 <br/>
 

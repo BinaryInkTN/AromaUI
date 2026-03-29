@@ -1,3 +1,5 @@
+<img src="getting-started/hello-world.png"/>
+
 This document explains a minimal AromaUI application written in C. It demonstrates initialization, layout creation, event handling, rendering, and cleanup, along with Android support.
 
 ---

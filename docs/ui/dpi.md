@@ -1,4 +1,4 @@
-<b> Author: AHMED ALI Mohamed Yassine </b>
+<img src="ui/dpi.png"/>
 
 ## 1. Overview
 
@@ -13,8 +13,6 @@ This subsystem allows you to:
 - Retrieve available window dimensions
 - Respect user font scaling
 - Access true hardware DPI values
-
-All APIs are valid **only when compiled with `__ANDROID__` defined**.
 
 ## 2. Core Density Concepts
 

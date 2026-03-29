@@ -266,8 +266,16 @@
       "file": "docs/media/camera.md",
       "platforms": ["android"]
     },
-   
-   
+    {
+      "title": "Font Module",
+      "description": "Load and manage fonts for high-quality text rendering.",
+      "icon": "custom_typography",
+      "color": "#9A4521",
+      "category": "User Interface",
+      "subcategory": "Typography",
+      "file": "docs/ui/font_system.md",
+      "platforms": ["android", "linux", "windows", "espressif"]
+    },
     {
       "title": "Preferences API",
       "description": "Simple key-value storage for user preferences and settings.",

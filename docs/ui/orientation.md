@@ -1,5 +1,4 @@
-<b>Author: AHMED ALI Mohamed Yassine</b>
-
+<img src="ui/orientation.png"/>
 
 This guide provides a structured, comprehensive explanation of the AromaUI Screen Orientation Control API for Android.
 

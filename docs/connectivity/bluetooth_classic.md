@@ -1,4 +1,4 @@
-<b> Author: AHMED ALI Mohamed Yassine </b>
+<img src="connectivity/bluetooth_classic.png"/>
 
 <br/>
 

@@ -1,3 +1,5 @@
+<img src="ui/theming.png"/>
+
 A Baked-In set of themes is included in AromaUI, which can be used as-is or customized to fit the needs of your application. The available themes include:
 
 
