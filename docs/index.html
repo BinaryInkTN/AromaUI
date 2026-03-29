@@ -1187,7 +1187,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             <div class="md" id="docContent"></div>
             <div class="pg-footer">
               <span>© 2026 AromaSDK</span>
-              <span>v0.0.1 (alpha) · Mar 28, 2026</span>
+              <span>v0.0.1 (alpha) · Mar 29, 2026</span>
             </div>
           </div>
         </div>
@@ -1315,78 +1315,6 @@ function updateURL() {
   history.replaceState(null, '', newUrl);
 }
 
-function showCategory(category){
-  if (!CATEGORY_PAGES[category]) return;
-  _hideAll();
-  document.getElementById('categoryView').style.display='';
-  document.getElementById('categoryView').innerHTML=CATEGORY_PAGES[category];
-  document.getElementById('tocPanel').classList.remove('vis');
-  currentCategory=category; currentSubcategory=null; currentId=null;
-  previousView={type:'category',category,subcategory:null,id:null};
-  updateBreadcrumbs(); setActiveNav(null);
-  updateURL();
-  document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
-}
-
-function showSubcategory(category,subcategory){
-  const key=category+'||'+subcategory;
-  if (!SUBCATEGORY_PAGES[key]) return;
-  _hideAll();
-  document.getElementById('subcategoryView').style.display='';
-  document.getElementById('subcategoryView').innerHTML=SUBCATEGORY_PAGES[key];
-  document.getElementById('tocPanel').classList.remove('vis');
-  currentCategory=category; currentSubcategory=subcategory; currentId=null;
-  previousView={type:'subcategory',category,subcategory,id:null};
-  updateBreadcrumbs(); setActiveNav(null);
-  updateURL();
-  document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
-}
-
-function showPage(id, category=null, subcategory=null){
-  if (!PAGES[id]) return;
-
-  if (category && subcategory) {
-    previousView = {type:'subcategory', category, subcategory, id:null};
-  } else if (category) {
-    previousView = {type:'category', category, subcategory:null, id:null};
-  } else if (currentId !== id) {
-    if (!previousView || previousView.type === 'first') {
-      previousView = {type:'first', category:null, subcategory:null, id:null};
-    }
-  }
-
-  _hideAll();
-  document.getElementById('docContent').innerHTML = PAGES[id];
-  document.getElementById('docTitle').textContent = TITLES[id] || id;
-
-  const iconEl = document.getElementById('docTitleIconInner');
-  if (iconEl) iconEl.setAttribute('data-lucide', PAGE_ICONS[id] || 'file-text');
-
-  const meta = document.getElementById('docMeta');
-  meta.innerHTML = '';
-  (PAGE_PLATFORMS[id]||[]).forEach(p=>{
-    const b=document.createElement('span');
-    b.className='platform-badge';
-    b.style.setProperty('--badge-color', p.color||'#636366');
-    b.innerHTML=`<span>${p.name}</span>`;
-    meta.appendChild(b);
-  });
-
-  document.getElementById('docView').style.display='';
-
-  currentId = id;
-  currentCategory = category || CATS[id] || null;
-  currentSubcategory = subcategory || SUBCATS[id] || null;
-
-  setActiveNav(id);
-  updateURL();
-  
-  updateBreadcrumbs();
-  document.getElementById('cScroll').scrollTop=0;
-  closeDrawer();
-  setTimeout(()=>{addCopyBtns();initMermaid(localStorage.getItem('docs-theme')||'light');ic();buildToc();},60);
-}
-
 function parseHash() {
   const hash = window.location.hash.substring(1);
   const parts = hash.split('/').filter(Boolean);
@@ -1424,25 +1352,146 @@ function parseHash() {
     if (parts.length >= 2) {
       const slug = decodeURIComponent(parts[1]);
       if (SLUG_TO_ID[slug] && PAGES[SLUG_TO_ID[slug]]) {
-        showPage(SLUG_TO_ID[slug], null, null);
+        const pageId = SLUG_TO_ID[slug];
+        const category = CATS[pageId] || null;
+        const subcategory = SUBCATS[pageId] || null;
+        showPage(pageId, category, subcategory);
         return;
       }
+    }
+  } else {
+    const slug = decodeURIComponent(parts[0]);
+    if (SLUG_TO_ID[slug] && PAGES[SLUG_TO_ID[slug]]) {
+      const pageId = SLUG_TO_ID[slug];
+      const category = CATS[pageId] || null;
+      const subcategory = SUBCATS[pageId] || null;
+      showPage(pageId, category, subcategory);
+      return;
     }
   }
   
   showFirstPage();
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  initTheme();
-  initPF();
-  parseHash();
-  setTimeout(ic, 100);
-});
+function loadFromURL() {
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const hash = window.location.hash.substring(1);
+  
+  if (hash) {
+    parseHash();
+    return;
+  }
+  
+  const lastPart = pathParts[pathParts.length - 1] || '';
+  const secondLastPart = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
+  const thirdLastPart = pathParts.length >= 3 ? pathParts[pathParts.length - 3] : '';
+  
+  if (lastPart && SLUG_TO_ID[lastPart]) {
+    const pageId = SLUG_TO_ID[lastPart];
+    if (PAGES[pageId]) {
+      let category = null;
+      let subcategory = null;
+      
+      if (secondLastPart && CATS[pageId] === secondLastPart) {
+        category = secondLastPart;
+        if (thirdLastPart && SUBCATS[pageId] === thirdLastPart) {
+          subcategory = thirdLastPart;
+        }
+      } else {
+        category = CATS[pageId] || null;
+        subcategory = SUBCATS[pageId] || null;
+      }
+      
+      showPage(pageId, category, subcategory);
+      return;
+    }
+  }
+  
+  if (lastPart && CATEGORY_PAGES[lastPart]) {
+    showCategory(lastPart);
+    return;
+  }
+  
+  if (secondLastPart && SUBCATEGORY_PAGES[secondLastPart + '||' + lastPart]) {
+    showSubcategory(secondLastPart, lastPart);
+    return;
+  }
+  
+  showFirstPage();
+}
 
-window.addEventListener('hashchange', () => {
-  parseHash();
-});
+function showCategory(category){
+  if (!CATEGORY_PAGES[category]) return;
+  _hideAll();
+  document.getElementById('categoryView').style.display='';
+  document.getElementById('categoryView').innerHTML=CATEGORY_PAGES[category];
+  document.getElementById('tocPanel').classList.remove('vis');
+  currentCategory=category; currentSubcategory=null; currentId=null;
+  previousView={type:'category',category,subcategory:null,id:null};
+  updateBreadcrumbs(); setActiveNav(null);
+  updateURL();
+  document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
+}
+
+function showSubcategory(category,subcategory){
+  const key=category+'||'+subcategory;
+  if (!SUBCATEGORY_PAGES[key]) return;
+  _hideAll();
+  document.getElementById('subcategoryView').style.display='';
+  document.getElementById('subcategoryView').innerHTML=SUBCATEGORY_PAGES[key];
+  document.getElementById('tocPanel').classList.remove('vis');
+  currentCategory=category; currentSubcategory=subcategory; currentId=null;
+  previousView={type:'subcategory',category,subcategory,id:null};
+  updateBreadcrumbs(); setActiveNav(null);
+  updateURL();
+  document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
+}
+
+function showPage(id, category=null, subcategory=null){
+  if (!PAGES[id]) return;
+
+  if (category && subcategory) {
+    previousView = {type:'subcategory', category, subcategory, id:null};
+  } else if (category) {
+    previousView = {type:'category', category, subcategory:null, id:null};
+  } else if (!currentId || currentId !== id) {
+    if (!previousView || previousView.type === 'first') {
+      previousView = {type:'first', category:null, subcategory:null, id:null};
+    }
+  }
+
+  _hideAll();
+  document.getElementById('docContent').innerHTML = PAGES[id];
+  document.getElementById('docTitle').textContent = TITLES[id] || id;
+
+  const iconEl = document.getElementById('docTitleIconInner');
+  if (iconEl) iconEl.setAttribute('data-lucide', PAGE_ICONS[id] || 'file-text');
+
+  const meta = document.getElementById('docMeta');
+  meta.innerHTML = '';
+  (PAGE_PLATFORMS[id]||[]).forEach(p=>{
+    const b=document.createElement('span');
+    b.className='platform-badge';
+    b.style.setProperty('--badge-color', p.color||'#636366');
+    b.innerHTML=`<span>${p.name}</span>`;
+    meta.appendChild(b);
+  });
+
+  document.getElementById('docView').style.display='';
+
+  currentId = id;
+  currentCategory = category || CATS[id] || null;
+  currentSubcategory = subcategory || SUBCATS[id] || null;
+
+  setActiveNav(id);
+  updateURL();
+  
+  updateBreadcrumbs();
+  document.getElementById('cScroll').scrollTop=0;
+  closeDrawer();
+  setTimeout(()=>{addCopyBtns();initMermaid(localStorage.getItem('docs-theme')||'light');ic();buildToc();},60);
+}
+
 function goBackFromDoc(){
   if(previousView.type==='subcategory'&&previousView.category&&previousView.subcategory)
     showSubcategory(previousView.category,previousView.subcategory);
@@ -1723,36 +1772,12 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('DOMContentLoaded',()=>{
   initTheme();
   initPF();
-
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const lastPart = pathParts[pathParts.length - 1] || '';
-  
-  if (lastPart && SLUG_TO_ID[lastPart] && PAGES[SLUG_TO_ID[lastPart]]) {
-    const pageId = SLUG_TO_ID[lastPart];
-    let category = null;
-    let subcategory = null;
-    
-    if (pathParts.length >= 2) {
-      const possibleCategory = pathParts[pathParts.length - 2];
-      const possibleSubcategory = pathParts[pathParts.length - 3];
-      
-      if (possibleCategory && CATS[pageId] === possibleCategory) {
-        category = possibleCategory;
-        if (possibleSubcategory && SUBCATS[pageId] === possibleSubcategory) {
-          subcategory = possibleSubcategory;
-        }
-      }
-    }
-    
-    showPage(pageId, category, subcategory);
-  } else if (lastPart && CATEGORY_PAGES[lastPart]) {
-    showCategory(lastPart);
-  } else if (pathParts.length >= 2 && SUBCATEGORY_PAGES[pathParts[0] + '||' + pathParts[1]]) {
-    showSubcategory(pathParts[0], pathParts[1]);
-  } else {
-    showFirstPage();
-  }
+  loadFromURL();
   setTimeout(ic, 100);
+});
+
+window.addEventListener('hashchange', () => {
+  parseHash();
 });
 </script>
 </body>
