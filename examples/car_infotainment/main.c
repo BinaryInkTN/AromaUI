@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdbool.h>
+#include "voice_control.h"
 
 #define WIN_W 1280
 #define WIN_H 800
@@ -97,6 +98,10 @@ typedef struct {
     AromaNode *music_control_next;
     AromaNode *music_control_volume;
     AromaNode *available_devices_list;
+    
+    AromaNode *voice_button;
+    AromaNode *voice_status_label;
+
     AromaTheme theme;
     bool dark_theme_enabled;
     char current_number[20];
@@ -155,6 +160,22 @@ void music_play_callback(AromaNode* node, void *user_data) {
 
 }
 
+void navigate_to_tab(int index) {
+    if (state.tabs) {
+        aroma_tabs_set_selected(state.tabs, index);
+    }
+}
+
+void set_voice_status(const char* status) {
+    if (state.voice_status_label) {
+        aroma_label_set_text(state.voice_status_label, status);
+    }
+}
+
+void voice_button_callback(AromaNode* node, void *user_data) {
+    set_voice_status("Listening...");
+}
+
 int main(void)
 {
     aroma_ui_init();
@@ -207,6 +228,9 @@ int main(void)
     state.gps_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_GPS_FIXED, WIN_W - 160, 30, 24, state.theme.colors.primary, state.icon_font);
     state.bluetooth_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO, WIN_W - 200, 30, 24, state.theme.colors.primary, state.icon_font);
 
+    state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
+    state.voice_status_label = aroma_ui_label((AromaNode *)state.window, "", WIN_W - 450, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+
     state.general_root = aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)state.general_root, 20);
 
@@ -226,6 +250,8 @@ int main(void)
     aroma_tabs_set_content(state.tabs, 1, &state.music_root, 1);
     aroma_tabs_set_content(state.tabs, 2, &state.phone_root, 1);
     aroma_tabs_set_content(state.tabs, 3, &state.settings_root, 1);
+
+    start_voice_control_thread();
 
     while (aroma_ui_is_running())
     {
