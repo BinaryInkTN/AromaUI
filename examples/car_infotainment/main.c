@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdbool.h>
+#include <pthread.h>
 #include "voice_control.h"
 
 #define WIN_W 1280
@@ -172,7 +173,23 @@ void set_voice_status(const char* status) {
     }
 }
 
+static pthread_mutex_t voice_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int voice_target_tab = -1;
+static bool voice_make_call = false;
+static bool voice_end_call = false;
+static char voice_status_text[256] = "";
+
+void queue_voice_action(int tab_index, bool call, bool end_call, const char* status) {
+    pthread_mutex_lock(&voice_mutex);
+    if (tab_index >= 0) voice_target_tab = tab_index;
+    if (call) voice_make_call = true;
+    if (end_call) voice_end_call = true;
+    if (status) strncpy(voice_status_text, status, sizeof(voice_status_text) - 1);
+    pthread_mutex_unlock(&voice_mutex);
+}
+
 void voice_button_callback(AromaNode* node, void *user_data) {
+    trigger_manual_wake();
     set_voice_status("Listening...");
 }
 
@@ -255,6 +272,25 @@ int main(void)
 
     while (aroma_ui_is_running())
     {
+        pthread_mutex_lock(&voice_mutex);
+        if (voice_target_tab != -1) {
+            navigate_to_tab(voice_target_tab);
+            voice_target_tab = -1;
+        }
+        if (voice_make_call) {
+            dial_call_callback(NULL, NULL);
+            voice_make_call = false;
+        }
+        if (voice_end_call) {
+            dial_end_callback(NULL, NULL);
+            voice_end_call = false;
+        }
+        if (strlen(voice_status_text) > 0) {
+            set_voice_status(voice_status_text);
+            voice_status_text[0] = '\0';
+        }
+        pthread_mutex_unlock(&voice_mutex);
+
         aroma_ui_process_events();
         aroma_ui_render(state.window);
         usleep(16000);

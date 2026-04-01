@@ -6,52 +6,53 @@
 #include <vosk_api.h>
 #include "cJSON.h"
 #include "voice_control.h"
+#include <stdbool.h>
 
-extern void dial_call_callback(void* node, void *user_data);
-extern void dial_end_callback(void* node, void *user_data);
-extern void navigate_to_tab(int index);
-extern void set_voice_status(const char* status);
+extern void queue_voice_action(int tab_index, bool call, bool end_call, const char* status);
+
+static bool manual_wake_active = false;
+
+void trigger_manual_wake(void) {
+    manual_wake_active = true;
+}
 
 static void process_intent(const char *text) {
-    if (strstr(text, "hey aroma") || strstr(text, "aroma")) {
+    bool is_awake = manual_wake_active || strstr(text, "hey aroma") || strstr(text, "aroma");
+
+    if (is_awake) {
+        manual_wake_active = false;
+        
         if (strstr(text, "music")) {
             printf("Voice Intent: OPEN MUSIC\n");
-            navigate_to_tab(1);
-            set_voice_status("Opened Music");
+            queue_voice_action(1, false, false, "Opened Music");
         } else if (strstr(text, "phone") || strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: OPEN PHONE\n");
-            navigate_to_tab(2);
-            set_voice_status("Opened Phone");
+            queue_voice_action(2, false, false, "Opened Phone");
         } else if (strstr(text, "settings")) {
             printf("Voice Intent: OPEN SETTINGS\n");
-            navigate_to_tab(3);
-            set_voice_status("Opened Settings");
+            queue_voice_action(3, false, false, "Opened Settings");
         } else if (strstr(text, "main") || strstr(text, "home")) {
             printf("Voice Intent: OPEN MAIN\n");
-            navigate_to_tab(0);
-            set_voice_status("Opened Home");
+            queue_voice_action(0, false, false, "Opened Home");
         } else if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
-            dial_call_callback(NULL, NULL);
+            queue_voice_action(-1, true, false, "");
         } else if (strstr(text, "end") || strstr(text, "hang up")) {
             printf("Voice Intent: END CALL\n");
-            dial_end_callback(NULL, NULL);
+            queue_voice_action(-1, false, true, "");
         } else {
-            set_voice_status("Command not recognized");
             printf("Voice Intent: UNKNOWN -> %s\n", text);
+            queue_voice_action(-1, false, false, "Command not recognized");
         }
     } else {
-        // If not containing "aroma" or "hey aroma"
         if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
-            dial_call_callback(NULL, NULL);
+            queue_voice_action(-1, true, false, "");
         } else if (strstr(text, "end") || strstr(text, "hang up")) {
             printf("Voice Intent: END CALL\n");
-            dial_end_callback(NULL, NULL);
+            queue_voice_action(-1, false, true, "");
         } else {
-            // Optional: print unhandled partial speech
-            // printf("Background chatter: %s\n", text);
-            set_voice_status("");
+            queue_voice_action(-1, false, false, ""); // Clear status
         }
     }
 }
@@ -129,7 +130,6 @@ static void *voice_thread_func(void *arg) {
                 cJSON_Delete(json);
             }
         } else {
-            // Partial results can be printed for debugging
             const char *partial_res = vosk_recognizer_partial_result(recognizer);
             cJSON *json = cJSON_Parse(partial_res);
             if (json) {
