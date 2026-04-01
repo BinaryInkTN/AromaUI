@@ -443,7 +443,7 @@ int main(void)
     aroma_ui_shutdown();
     return 0;
 }
-
+  
 void build_music_ui(AromaNode *window)
 {
     int area_w = WIN_W - 250;
