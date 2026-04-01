@@ -102,6 +102,7 @@ typedef struct {
     
     AromaNode *voice_button;
     AromaNode *voice_status_label;
+    AromaNode *voice_status_card;
 
     AromaTheme theme;
     bool dark_theme_enabled;
@@ -170,6 +171,10 @@ void navigate_to_tab(int index) {
 void set_voice_status(const char* status) {
     if (state.voice_status_label) {
         aroma_label_set_text(state.voice_status_label, status);
+    }
+    if (state.voice_status_card) {
+        bool hide = (status == NULL || strlen(status) == 0);
+        aroma_node_set_hidden(state.voice_status_card, hide);
     }
 }
 
@@ -267,7 +272,16 @@ int main(void)
     state.bluetooth_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO, WIN_W - 200, 30, 24, state.theme.colors.primary, state.icon_font);
 
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
-    state.voice_status_label = aroma_ui_label((AromaNode *)state.window, "", WIN_W - 450, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    
+    state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -20, 600, 80, CARD_TYPE_ELEVATED);
+    aroma_node_set_z_index(state.voice_status_card, 9999);
+    aroma_node_set_hidden(state.voice_status_card, true);
+
+    AromaNode *voice_card_container = aroma_ui_container(state.voice_status_card, 0, 20, 600, 60, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
+    aroma_node_set_gap(voice_card_container, 20);
+
+    AromaNode *voice_mic_icon = aroma_ui_icon(voice_card_container, AROMA_ICON_MIC, 0, 0, 32, state.theme.colors.primary, state.icon_font);
+    state.voice_status_label = aroma_ui_label(voice_card_container, "", 0, 0, LABEL_STYLE_LABEL_LARGE, state.ui_font);
 
     state.general_root = aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)state.general_root, 20);

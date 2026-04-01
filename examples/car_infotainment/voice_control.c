@@ -168,7 +168,6 @@ static void *voice_thread_func(void *arg) {
                 cJSON *partial = cJSON_GetObjectItem(json, "partial");
                 if (partial && partial->valuestring && strlen(partial->valuestring) > 0) {
                     if (!manual_wake_active && (strstr(partial->valuestring, "hey aroma") || strstr(partial->valuestring, "aroma"))) {
-                        // Wake word detected in partial result! Play chime natively.
                         system("(speaker-test -t sine -f 800 -l 1 >/dev/null 2>&1 & pid=$!; sleep 0.1; kill -9 $pid >/dev/null 2>&1) &");
                         trigger_manual_wake();
                     }
