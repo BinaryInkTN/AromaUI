@@ -47,11 +47,11 @@ static void process_intent(const char *text) {
             aroma_voice_speak("Switching to dark mode");
             queue_voice_theme(1);
             queue_voice_action(-1, false, false, "Dark Mode Set");
-        } else if (strstr(text, "ac up") || strstr(text, "increase temperature") || strstr(text, "hotter")) {
+        } else if (strstr(text, "ac up") || strstr(text, "increase temperature") || strstr(text, "hotter") || strstr(text, "air conditioning up") || strstr(text, "increase air conditioning")) {
             printf("Voice Intent: AC UP\n");
             queue_voice_ac_action(1);
             queue_voice_action(-1, false, false, "AC Temp Increased");
-        } else if (strstr(text, "ac down") || strstr(text, "decrease temperature") || strstr(text, "colder")) {
+        } else if (strstr(text, "ac down") || strstr(text, "decrease temperature") || strstr(text, "colder") || strstr(text, "air conditioning down") || strstr(text, "decrease air conditioning")) {
             printf("Voice Intent: AC DOWN\n");
             queue_voice_ac_action(-1);
             queue_voice_action(-1, false, false, "AC Temp Decreased");

@@ -378,11 +378,11 @@ int main(void)
 
         if (voice_info_request != 0) {
             if (voice_info_request == 1) {
-                aroma_voice_speak("Battery is at 85 percent charge.");
+                aroma_voice_speak("Battery is at 75 percent charge.");
             } else if (voice_info_request == 2) {
-                aroma_voice_speak("Estimated range is 320 kilometers.");
+                aroma_voice_speak("Estimated range is 204 kilometers.");
             } else if (voice_info_request == 3) {
-                aroma_voice_speak("Battery is at 85 percent. Estimated range is 320 kilometers.");
+                aroma_voice_speak("Battery is at 75 percent. Estimated range is 204 kilometers.");
             }
             voice_info_request = 0;
         }
