@@ -11,10 +11,12 @@
 extern void queue_voice_action(int tab_index, bool call, bool end_call, const char* status);
 extern void queue_voice_partial(const char* partial_text);
 extern void queue_voice_theme(int dark_mode);
+extern void queue_voice_ac_action(int temp_delta);
+extern void queue_voice_info_request(int info_type); // 1 = battery, 2 = range
 
 static bool manual_wake_active = false;
 
-static void speak(const char *message) {
+void aroma_voice_speak(const char *message) {
     if (!message || strlen(message) == 0) return;
     char cmd[512];
     snprintf(cmd, sizeof(cmd), "pico2wave -w /tmp/aroma_tts.wav \"%s\" && aplay -q /tmp/aroma_tts.wav &", message);
@@ -33,53 +35,73 @@ static void process_intent(const char *text) {
         
         if (strstr(text, "music")) {
             printf("Voice Intent: OPEN MUSIC\n");
-            speak("Opening Music");
+            aroma_voice_speak("Opening Music");
             queue_voice_action(1, false, false, "Opened Music");
         } else if (strstr(text, "light mode") || strstr(text, "light theme")) {
             printf("Voice Intent: LIGHT MODE\n");
-            speak("Switching to light mode");
+            aroma_voice_speak("Switching to light mode");
             queue_voice_theme(0);
             queue_voice_action(-1, false, false, "Light Mode Set");
         } else if (strstr(text, "dark mode") || strstr(text, "dark theme")) {
             printf("Voice Intent: DARK MODE\n");
-            speak("Switching to dark mode");
+            aroma_voice_speak("Switching to dark mode");
             queue_voice_theme(1);
             queue_voice_action(-1, false, false, "Dark Mode Set");
+        } else if (strstr(text, "ac up") || strstr(text, "increase temperature") || strstr(text, "hotter")) {
+            printf("Voice Intent: AC UP\n");
+            queue_voice_ac_action(1);
+            queue_voice_action(-1, false, false, "AC Temp Increased");
+        } else if (strstr(text, "ac down") || strstr(text, "decrease temperature") || strstr(text, "colder")) {
+            printf("Voice Intent: AC DOWN\n");
+            queue_voice_ac_action(-1);
+            queue_voice_action(-1, false, false, "AC Temp Decreased");
+        } else if (strstr(text, "battery") && strstr(text, "range")) {
+            printf("Voice Intent: BATTERY AND RANGE\n");
+            queue_voice_info_request(3);
+            queue_voice_action(-1, false, false, "Getting Battery and Range");
+        } else if (strstr(text, "battery") || strstr(text, "charge")) {
+            printf("Voice Intent: BATTERY\n");
+            queue_voice_info_request(1);
+            queue_voice_action(-1, false, false, "Getting Battery Status");
+        } else if (strstr(text, "range") || strstr(text, "how far")) {
+            printf("Voice Intent: RANGE\n");
+            queue_voice_info_request(2);
+            queue_voice_action(-1, false, false, "Getting Range Status");
         } else if (strstr(text, "phone") || strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: OPEN PHONE\n");
-            speak("Opening Phone");
+            aroma_voice_speak("Opening Phone");
             queue_voice_action(2, false, false, "Opened Phone");
         } else if (strstr(text, "settings")) {
             printf("Voice Intent: OPEN SETTINGS\n");
-            speak("Opening Settings");
+            aroma_voice_speak("Opening Settings");
             queue_voice_action(3, false, false, "Opened Settings");
         } else if (strstr(text, "main") || strstr(text, "home")) {
             printf("Voice Intent: OPEN MAIN\n");
-            speak("Opening Home screen");
+            aroma_voice_speak("Opening Home screen");
             queue_voice_action(0, false, false, "Opened Home");
         } else if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
-            speak("Starting call");
+            aroma_voice_speak("Starting call");
             queue_voice_action(-1, true, false, "");
         } else if (strstr(text, "end") || strstr(text, "hang up")) {
             printf("Voice Intent: END CALL\n");
-            speak("Ending call");
+            aroma_voice_speak("Ending call");
             queue_voice_action(-1, false, true, "");
         } else {
             printf("Voice Intent: UNKNOWN -> %s\n", text);
-            speak("Sorry, I didn't catch that.");
+            aroma_voice_speak("Sorry, I didn't catch that.");
         }
     } else {
         if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
-            speak("Starting call");
+            aroma_voice_speak("Starting call");
             queue_voice_action(-1, true, false, "");
         } else if (strstr(text, "end") || strstr(text, "hang up")) {
             printf("Voice Intent: END CALL\n");
-            speak("Ending call");
+            aroma_voice_speak("Ending call");
             queue_voice_action(-1, false, true, "");
         } else {
-            queue_voice_action(-1, false, false, ""); // Clear status
+            queue_voice_action(-1, false, false, "");
         }
     }
 }

@@ -187,6 +187,10 @@ static char voice_status_text[256] = "";
 static char voice_partial_text[512] = "";
 static int voice_partial_timeout = 0;
 static int voice_theme_change = -1;
+static int voice_ac_change = 0;
+static int voice_info_request = 0;
+
+static int current_ac_temp = 23;
 
 void queue_voice_partial(const char* partial_text) {
     pthread_mutex_lock(&voice_mutex);
@@ -201,6 +205,18 @@ void queue_voice_partial(const char* partial_text) {
 void queue_voice_theme(int dark_mode) {
     pthread_mutex_lock(&voice_mutex);
     voice_theme_change = dark_mode;
+    pthread_mutex_unlock(&voice_mutex);
+}
+
+void queue_voice_ac_action(int temp_delta) {
+    pthread_mutex_lock(&voice_mutex);
+    voice_ac_change = temp_delta;
+    pthread_mutex_unlock(&voice_mutex);
+}
+
+void queue_voice_info_request(int info_type) {
+    pthread_mutex_lock(&voice_mutex);
+    voice_info_request = info_type;
     pthread_mutex_unlock(&voice_mutex);
 }
 
@@ -273,7 +289,7 @@ int main(void)
 
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
     
-    state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -20, 600, 80, CARD_TYPE_ELEVATED);
+    state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -20, 600, 80, CARD_TYPE_FILLED);
     aroma_node_set_hidden(state.voice_status_card, true);
 
     state.voice_status_label = aroma_ui_label(state.voice_status_card, "  ", 20, 40, LABEL_STYLE_LABEL_LARGE, state.ui_font);
@@ -345,6 +361,30 @@ int main(void)
                 aroma_ui_set_theme(&state.theme);
             }
             voice_theme_change = -1;
+        }
+
+        if (voice_ac_change != 0) {
+            current_ac_temp += voice_ac_change;
+            if (current_ac_temp < 16) current_ac_temp = 16;
+            if (current_ac_temp > 30) current_ac_temp = 30;
+            char temp_str[16];
+            snprintf(temp_str, sizeof(temp_str), "%d°C", current_ac_temp);
+            aroma_label_set_text(state.ac_temp_label, temp_str);
+            char speak_str[64];
+            snprintf(speak_str, sizeof(speak_str), "Setting AC to %d degrees", current_ac_temp);
+            aroma_voice_speak(speak_str);
+            voice_ac_change = 0;
+        }
+
+        if (voice_info_request != 0) {
+            if (voice_info_request == 1) {
+                aroma_voice_speak("Battery is at 85 percent charge.");
+            } else if (voice_info_request == 2) {
+                aroma_voice_speak("Estimated range is 320 kilometers.");
+            } else if (voice_info_request == 3) {
+                aroma_voice_speak("Battery is at 85 percent. Estimated range is 320 kilometers.");
+            }
+            voice_info_request = 0;
         }
         pthread_mutex_unlock(&voice_mutex);
 
