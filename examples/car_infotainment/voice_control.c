@@ -54,7 +54,7 @@ static void *voice_thread_func(void *arg) {
     int dir;
     int rc;
 
-    VoskModel *model = vosk_model_new("model");
+    VoskModel *model = vosk_model_new("../model");
     if (!model) {
         fprintf(stderr, "Failed to load Vosk model\n");
         return NULL;
