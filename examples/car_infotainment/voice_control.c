@@ -30,10 +30,18 @@ static void process_intent(const char *text) {
             printf("Voice Intent: OPEN MAIN\n");
             navigate_to_tab(0);
             set_voice_status("Opened Home");
+        } else if (strstr(text, "call") || strstr(text, "dial")) {
+            printf("Voice Intent: CALL\n");
+            dial_call_callback(NULL, NULL);
+        } else if (strstr(text, "end") || strstr(text, "hang up")) {
+            printf("Voice Intent: END CALL\n");
+            dial_end_callback(NULL, NULL);
         } else {
             set_voice_status("Command not recognized");
+            printf("Voice Intent: UNKNOWN -> %s\n", text);
         }
     } else {
+        // If not containing "aroma" or "hey aroma"
         if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
             dial_call_callback(NULL, NULL);
@@ -41,7 +49,8 @@ static void process_intent(const char *text) {
             printf("Voice Intent: END CALL\n");
             dial_end_callback(NULL, NULL);
         } else {
-            printf("Voice Intent: UNKNOWN -> %s\n", text);
+            // Optional: print unhandled partial speech
+            // printf("Background chatter: %s\n", text);
             set_voice_status("");
         }
     }
