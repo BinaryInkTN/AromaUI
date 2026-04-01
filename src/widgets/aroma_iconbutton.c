@@ -160,6 +160,19 @@ void aroma_iconbutton_set_colors(AromaNode* button_node, uint32_t bg_color, uint
     aroma_node_invalidate(button_node);
 }
 
+void aroma_iconbutton_set_icon(AromaNode* button_node, const char* icon_text)
+{
+    if (!button_node || !button_node->node_widget_ptr) return;
+    AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
+    if (icon_text) {
+        strncpy(btn->icon_text, icon_text, AROMA_ICON_TEXT_MAX - 1);
+        btn->icon_text[AROMA_ICON_TEXT_MAX - 1] = '\0';
+    } else {
+        btn->icon_text[0] = '\0';
+    }
+    aroma_node_invalidate(button_node);
+}
+
 void aroma_iconbutton_set_font(AromaNode* button_node, AromaFont* font)
 {
     if (!button_node || !button_node->node_widget_ptr) return;

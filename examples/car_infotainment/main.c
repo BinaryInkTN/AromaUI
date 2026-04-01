@@ -164,9 +164,11 @@ static float music_volume = 0.7f;
 void music_play_callback(AromaNode* node, void *user_data) {
     if (!music_playing) {
         music_playing = true;
+        aroma_iconbutton_set_icon(state.music_control_play, AROMA_ICON_PAUSE);
         system("aplay ../sample.wav >/dev/null 2>&1 &");
     } else {
         music_playing = false;
+        aroma_iconbutton_set_icon(state.music_control_play, AROMA_ICON_PLAY_ARROW);
         system("pkill aplay >/dev/null 2>&1");
     }
 }
