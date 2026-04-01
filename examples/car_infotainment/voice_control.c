@@ -107,12 +107,18 @@ static void *voice_thread_func(void *arg) {
         }
 
         frames_read++;
+        
+        long long sum = 0;
+        for (int i = 0; i < rc; i++) {
+            sum += abs(buffer[i]);
+        }
+        long average_level = sum / rc;
+
         if (frames_read % 100 == 0) {
-            // Optional: check if we are actually reading audio frames periodically
-            // printf("ALSA: Read 100 frames (~6.4 seconds of audio)\n");
+            printf("ALSA: Read 100 frames (~6.4 seconds of audio), Average volume level: %ld\n", average_level);
         }
 
-        if (vosk_recognizer_accept_waveform_s(recognizer, buffer, rc * 2)) {
+        if (vosk_recognizer_accept_waveform(recognizer, (const char *)buffer, rc * 2)) {
             const char *result = vosk_recognizer_result(recognizer);
             cJSON *json = cJSON_Parse(result);
             if (json) {
