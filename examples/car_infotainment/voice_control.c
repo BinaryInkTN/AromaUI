@@ -15,7 +15,8 @@ static bool manual_wake_active = false;
 static void speak(const char *message) {
     if (!message || strlen(message) == 0) return;
     char cmd[512];
-    snprintf(cmd, sizeof(cmd), "espeak \"%s\" 2>/dev/null &", message);
+    // Use pico2wave for a much more natural-sounding offline voice
+    snprintf(cmd, sizeof(cmd), "pico2wave -w /tmp/aroma_tts.wav \"%s\" && aplay -q /tmp/aroma_tts.wav &", message);
     int ret = system(cmd);
     (void)ret; // Ignore return value
 }
