@@ -191,11 +191,12 @@ void queue_voice_partial(const char* partial_text) {
     pthread_mutex_lock(&voice_mutex);
     if (partial_text && strlen(partial_text) > 0) {
         strncpy(voice_partial_text, partial_text, sizeof(voice_partial_text) - 1);
+        voice_partial_text[sizeof(voice_partial_text) - 1] = '\0';
         voice_popup_visible = true;
         voice_popup_state_changed = true;
     } else {
-        voice_popup_visible = false;
-        voice_popup_state_changed = true;
+        // Just trigger the timeout countdown, don't instantly hide
+        voice_popup_state_changed = true; 
     }
     pthread_mutex_unlock(&voice_mutex);
 }
@@ -324,6 +325,13 @@ int main(void)
         }
         if (strlen(voice_status_text) > 0) {
             set_voice_status(voice_status_text);
+            
+            // Re-show popup with final status text
+            aroma_node_set_hidden(state.voice_popup_card, false);
+            aroma_label_set_text(state.voice_popup_label, voice_status_text);
+            voice_popup_timeout = 180;
+            voice_popup_visible = true;
+
             voice_status_text[0] = '\0';
         }
         
