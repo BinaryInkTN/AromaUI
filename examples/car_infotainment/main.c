@@ -98,6 +98,7 @@ typedef struct {
     AromaNode *music_control_prev;
     AromaNode *music_control_next;
     AromaNode *music_control_volume;
+    AromaNode *volume_slider;
     AromaNode *available_devices_list;
     
     AromaNode *voice_button;
@@ -156,10 +157,18 @@ void bt_connect_callback(AromaNode* node, void *user_data) {
     aroma_label_set_text(state.bt_device_name, "BMW X5 Audio");
 }
 
-void music_play_callback(AromaNode* node, void *user_data) {
-    static bool playing = false;
-    playing = !playing;
+static int current_ac_temp = 23;
+static bool music_playing = false;
+static float music_volume = 0.7f;
 
+void music_play_callback(AromaNode* node, void *user_data) {
+    if (!music_playing) {
+        music_playing = true;
+        system("aplay ../sample.wav >/dev/null 2>&1 &");
+    } else {
+        music_playing = false;
+        system("pkill aplay >/dev/null 2>&1");
+    }
 }
 
 void navigate_to_tab(int index) {
@@ -189,8 +198,13 @@ static int voice_partial_timeout = 0;
 static int voice_theme_change = -1;
 static int voice_ac_change = 0;
 static int voice_info_request = 0;
+static int voice_music_action = 0; // 1=play, 2=pause, 3=vol_up, 4=vol_down
 
-static int current_ac_temp = 23;
+void queue_voice_music_action(int action) {
+    pthread_mutex_lock(&voice_mutex);
+    voice_music_action = action;
+    pthread_mutex_unlock(&voice_mutex);
+}
 
 void queue_voice_partial(const char* partial_text) {
     pthread_mutex_lock(&voice_mutex);
@@ -386,6 +400,35 @@ int main(void)
             }
             voice_info_request = 0;
         }
+
+        if (voice_music_action != 0) {
+            if (voice_music_action == 1) { // play
+                if (!music_playing) {
+                    music_play_callback(NULL, NULL);
+                    aroma_voice_speak("Playing music");
+                } else {
+                    aroma_voice_speak("Music is already playing");
+                }
+            } else if (voice_music_action == 2) { // pause
+                if (music_playing) {
+                    music_play_callback(NULL, NULL);
+                    aroma_voice_speak("Paused music");
+                } else {
+                    aroma_voice_speak("Music is not playing");
+                }
+            } else if (voice_music_action == 3) { // volume up
+                music_volume += 0.1f;
+                if (music_volume > 1.0f) music_volume = 1.0f;
+                aroma_progressbar_set_progress(state.volume_slider, music_volume);
+                aroma_voice_speak("Volume increased");
+            } else if (voice_music_action == 4) { // volume down
+                music_volume -= 0.1f;
+                if (music_volume < 0.0f) music_volume = 0.0f;
+                aroma_progressbar_set_progress(state.volume_slider, music_volume);
+                aroma_voice_speak("Volume decreased");
+            }
+            voice_music_action = 0;
+        }
         pthread_mutex_unlock(&voice_mutex);
 
         aroma_ui_process_events();
@@ -509,7 +552,7 @@ void build_music_ui(AromaNode *window)
         volume_container, AROMA_ICON_VOLUME_UP, 0, 0, 32,
         state.theme.colors.primary, state.icon_font);
 
-    AromaNode *volume_slider = aroma_ui_progressbar(
+    state.volume_slider = aroma_ui_progressbar(
         volume_container, 0, 0, 400, 4,
         PROGRESS_TYPE_DETERMINATE, 0.7f);
 
