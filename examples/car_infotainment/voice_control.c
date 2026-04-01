@@ -8,13 +8,19 @@
 #include "voice_control.h"
 #include <stdbool.h>
 
+#include <time.h>
+
 extern void queue_voice_action(int tab_index, bool call, bool end_call, const char* status);
 extern void queue_voice_partial(const char* partial_text);
 extern void queue_voice_theme(int dark_mode);
 extern void queue_voice_ac_action(int temp_delta);
 extern void queue_voice_info_request(int info_type); // 1 = battery, 2 = range
 
-static bool manual_wake_active = false;
+static time_t manual_wake_time = 0;
+
+bool is_manual_wake_active(void) {
+    return (time(NULL) - manual_wake_time) < 6; // 6 seconds to think
+}
 
 void aroma_voice_speak(const char *message) {
     if (!message || strlen(message) == 0) return;
@@ -25,13 +31,13 @@ void aroma_voice_speak(const char *message) {
 }
 
 void trigger_manual_wake(void) {
-    manual_wake_active = true;
+    manual_wake_time = time(NULL);
 }
 
 static void process_intent(const char *text) {
-    bool is_awake = manual_wake_active || strstr(text, "hey aroma") || strstr(text, "aroma");
+    bool is_awake = is_manual_wake_active() || strstr(text, "hey aroma") || strstr(text, "aroma");
     if (is_awake) {
-        manual_wake_active = false;
+        bool command_executed = true;
         
         if (strstr(text, "music")) {
             printf("Voice Intent: OPEN MUSIC\n");
@@ -88,8 +94,15 @@ static void process_intent(const char *text) {
             aroma_voice_speak("Ending call");
             queue_voice_action(-1, false, true, "");
         } else {
+            command_executed = false;
+        }
+
+        if (command_executed) {
+            manual_wake_time = 0; 
+        } else if (strlen(text) > 0 && strcmp(text, "hey aroma") != 0 && strcmp(text, "aroma") != 0 && strcmp(text, "uh") != 0) {
             printf("Voice Intent: UNKNOWN -> %s\n", text);
             aroma_voice_speak("Sorry, I didn't catch that.");
+            queue_voice_action(-1, false, false, "");
         }
     } else {
         if (strstr(text, "call") || strstr(text, "dial")) {
@@ -174,7 +187,7 @@ static void *voice_thread_func(void *arg) {
             if (json) {
                 cJSON *text = cJSON_GetObjectItem(json, "text");
                 if (text && text->valuestring && strlen(text->valuestring) > 0) {
-                    if (manual_wake_active || strstr(text->valuestring, "hey aroma") || strstr(text->valuestring, "aroma")) {
+                    if (is_manual_wake_active() || strstr(text->valuestring, "hey aroma") || strstr(text->valuestring, "aroma")) {
                         queue_voice_partial(text->valuestring);
                     }
                     process_intent(text->valuestring);
@@ -187,11 +200,11 @@ static void *voice_thread_func(void *arg) {
             if (json) {
                 cJSON *partial = cJSON_GetObjectItem(json, "partial");
                 if (partial && partial->valuestring && strlen(partial->valuestring) > 0) {
-                    if (!manual_wake_active && (strstr(partial->valuestring, "hey aroma") || strstr(partial->valuestring, "aroma"))) {
+                    if (!is_manual_wake_active() && (strstr(partial->valuestring, "hey aroma") || strstr(partial->valuestring, "aroma"))) {
                         system("(speaker-test -t sine -f 800 -l 1 >/dev/null 2>&1 & pid=$!; sleep 0.1; kill -9 $pid >/dev/null 2>&1) &");
                         trigger_manual_wake();
                     }
-                    if (manual_wake_active) {
+                    if (is_manual_wake_active()) {
                         queue_voice_partial(partial->valuestring);
                     }
                 }
