@@ -19,6 +19,16 @@ link_directories(
 
 add_executable(infotainment main.c cJSON.c voice_control.c)
 
+find_program(PICO2WAVE_BIN pico2wave)
+if(NOT PICO2WAVE_BIN)
+    message(WARNING "pico2wave not found! TTS will not work. Please install libttspico-utils (e.g. sudo apt-get install libttspico-utils).")
+endif()
+
+find_program(APLAY_BIN aplay)
+if(NOT APLAY_BIN)
+    message(WARNING "aplay not found! TTS playback will not work. Please install alsa-utils.")
+endif()
+
 find_package(Vulkan QUIET)
 
 target_link_libraries(infotainment
