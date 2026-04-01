@@ -31,7 +31,8 @@ static void process_intent(const char *text) {
 
     if (is_awake) {
         manual_wake_active = false;
-        
+        speak("How Can I help?");
+        delay(500); // Give TTS a moment to start before processing the command
         if (strstr(text, "music")) {
             printf("Voice Intent: OPEN MUSIC\n");
             speak("Opening Music");
