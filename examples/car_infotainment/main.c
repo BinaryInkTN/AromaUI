@@ -274,12 +274,9 @@ int main(void)
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
     
     state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -20, 600, 80, CARD_TYPE_ELEVATED);
-    aroma_node_set_z_index(state.voice_status_card, 9999);
     aroma_node_set_hidden(state.voice_status_card, true);
 
-    state.voice_status_label = aroma_ui_label(state.voice_status_card, "  ", 0, 45, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    
-    // We can center it roughly manually or rely on its own layout if it doesn't support ALIGN_CENTER natively
+    state.voice_status_label = aroma_ui_label(state.voice_status_card, "  ", 20, 40, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     
     state.general_root = aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)state.general_root, 20);
