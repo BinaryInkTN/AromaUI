@@ -12,6 +12,14 @@ extern void queue_voice_action(int tab_index, bool call, bool end_call, const ch
 
 static bool manual_wake_active = false;
 
+static void speak(const char *message) {
+    if (!message || strlen(message) == 0) return;
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd), "espeak \"%s\" 2>/dev/null &", message);
+    int ret = system(cmd);
+    (void)ret; // Ignore return value
+}
+
 void trigger_manual_wake(void) {
     manual_wake_active = true;
 }
@@ -24,32 +32,41 @@ static void process_intent(const char *text) {
         
         if (strstr(text, "music")) {
             printf("Voice Intent: OPEN MUSIC\n");
+            speak("Opening Music");
             queue_voice_action(1, false, false, "Opened Music");
         } else if (strstr(text, "phone") || strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: OPEN PHONE\n");
+            speak("Opening Phone");
             queue_voice_action(2, false, false, "Opened Phone");
         } else if (strstr(text, "settings")) {
             printf("Voice Intent: OPEN SETTINGS\n");
+            speak("Opening Settings");
             queue_voice_action(3, false, false, "Opened Settings");
         } else if (strstr(text, "main") || strstr(text, "home")) {
             printf("Voice Intent: OPEN MAIN\n");
+            speak("Opening Home screen");
             queue_voice_action(0, false, false, "Opened Home");
         } else if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
+            speak("Starting call");
             queue_voice_action(-1, true, false, "");
         } else if (strstr(text, "end") || strstr(text, "hang up")) {
             printf("Voice Intent: END CALL\n");
+            speak("Ending call");
             queue_voice_action(-1, false, true, "");
         } else {
             printf("Voice Intent: UNKNOWN -> %s\n", text);
+            speak("Sorry, I didn't catch that.");
             queue_voice_action(-1, false, false, "Command not recognized");
         }
     } else {
         if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
+            speak("Starting call");
             queue_voice_action(-1, true, false, "");
         } else if (strstr(text, "end") || strstr(text, "hang up")) {
             printf("Voice Intent: END CALL\n");
+            speak("Ending call");
             queue_voice_action(-1, false, true, "");
         } else {
             queue_voice_action(-1, false, false, ""); // Clear status
