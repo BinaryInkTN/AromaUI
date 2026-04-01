@@ -68,7 +68,6 @@ static void process_intent(const char *text) {
         } else {
             printf("Voice Intent: UNKNOWN -> %s\n", text);
             speak("Sorry, I didn't catch that.");
-            queue_voice_action(-1, false, false, "Unknown Command");
         }
     } else {
         if (strstr(text, "call") || strstr(text, "dial")) {
