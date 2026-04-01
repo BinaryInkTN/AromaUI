@@ -277,11 +277,7 @@ int main(void)
     aroma_node_set_z_index(state.voice_status_card, 9999);
     aroma_node_set_hidden(state.voice_status_card, true);
 
-    AromaNode *voice_card_container = aroma_ui_container(state.voice_status_card, 0, 20, 600, 60, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
-    aroma_node_set_gap(voice_card_container, 20);
-
-    AromaNode *voice_mic_icon = aroma_ui_icon(voice_card_container, AROMA_ICON_MIC, 0, 0, 32, state.theme.colors.primary, state.icon_font);
-    state.voice_status_label = aroma_ui_label(voice_card_container, "", 0, 0, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    state.voice_status_label = aroma_ui_label(state.voice_status_card, "", 0, 30, LABEL_STYLE_LABEL_LARGE, state.ui_font);
 
     state.general_root = aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)state.general_root, 20);
