@@ -9,16 +9,17 @@
 #include <stdbool.h>
 
 extern void queue_voice_action(int tab_index, bool call, bool end_call, const char* status);
+extern void queue_voice_partial(const char* partial_text);
+extern void queue_voice_theme(int dark_mode);
 
 static bool manual_wake_active = false;
 
 static void speak(const char *message) {
     if (!message || strlen(message) == 0) return;
     char cmd[512];
-    // Use pico2wave for a much more natural-sounding offline voice
     snprintf(cmd, sizeof(cmd), "pico2wave -w /tmp/aroma_tts.wav \"%s\" && aplay -q /tmp/aroma_tts.wav &", message);
     int ret = system(cmd);
-    (void)ret; // Ignore return value
+    (void)ret;
 }
 
 void trigger_manual_wake(void) {
@@ -35,6 +36,16 @@ static void process_intent(const char *text) {
             printf("Voice Intent: OPEN MUSIC\n");
             speak("Opening Music");
             queue_voice_action(1, false, false, "Opened Music");
+        } else if (strstr(text, "light mode") || strstr(text, "light theme")) {
+            printf("Voice Intent: LIGHT MODE\n");
+            speak("Switching to light mode");
+            queue_voice_theme(0);
+            queue_voice_action(-1, false, false, "Light Mode Set");
+        } else if (strstr(text, "dark mode") || strstr(text, "dark theme")) {
+            printf("Voice Intent: DARK MODE\n");
+            speak("Switching to dark mode");
+            queue_voice_theme(1);
+            queue_voice_action(-1, false, false, "Dark Mode Set");
         } else if (strstr(text, "phone") || strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: OPEN PHONE\n");
             speak("Opening Phone");
@@ -58,7 +69,7 @@ static void process_intent(const char *text) {
         } else {
             printf("Voice Intent: UNKNOWN -> %s\n", text);
             speak("Sorry, I didn't catch that.");
-            queue_voice_action(-1, false, false, "Command not recognized");
+            queue_voice_action(-1, false, false, "Unknown Command");
         }
     } else {
         if (strstr(text, "call") || strstr(text, "dial")) {
@@ -143,7 +154,10 @@ static void *voice_thread_func(void *arg) {
             if (json) {
                 cJSON *text = cJSON_GetObjectItem(json, "text");
                 if (text && text->valuestring && strlen(text->valuestring) > 0) {
+                    queue_voice_partial(text->valuestring);
                     process_intent(text->valuestring);
+                } else {
+                    queue_voice_partial(""); 
                 }
                 cJSON_Delete(json);
             }
@@ -153,7 +167,7 @@ static void *voice_thread_func(void *arg) {
             if (json) {
                 cJSON *partial = cJSON_GetObjectItem(json, "partial");
                 if (partial && partial->valuestring && strlen(partial->valuestring) > 0) {
-                    printf("Partial heard: %s\n", partial->valuestring);
+                    queue_voice_partial(partial->valuestring);
                 }
                 cJSON_Delete(json);
             }

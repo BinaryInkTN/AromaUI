@@ -106,6 +106,9 @@ typedef struct {
     AromaTheme theme;
     bool dark_theme_enabled;
     char current_number[20];
+    
+    AromaNode *voice_popup_card;
+    AromaNode *voice_popup_label;
 } AppState;
 
 static AppState state = {0};
@@ -179,6 +182,30 @@ static bool voice_make_call = false;
 static bool voice_end_call = false;
 static char voice_status_text[256] = "";
 
+static char voice_partial_text[512] = "";
+static bool voice_popup_visible = false;
+static bool voice_popup_state_changed = false;
+static int voice_theme_change = -1;
+
+void queue_voice_partial(const char* partial_text) {
+    pthread_mutex_lock(&voice_mutex);
+    if (partial_text && strlen(partial_text) > 0) {
+        strncpy(voice_partial_text, partial_text, sizeof(voice_partial_text) - 1);
+        voice_popup_visible = true;
+        voice_popup_state_changed = true;
+    } else {
+        voice_popup_visible = false;
+        voice_popup_state_changed = true;
+    }
+    pthread_mutex_unlock(&voice_mutex);
+}
+
+void queue_voice_theme(int dark_mode) {
+    pthread_mutex_lock(&voice_mutex);
+    voice_theme_change = dark_mode;
+    pthread_mutex_unlock(&voice_mutex);
+}
+
 void queue_voice_action(int tab_index, bool call, bool end_call, const char* status) {
     pthread_mutex_lock(&voice_mutex);
     if (tab_index >= 0) voice_target_tab = tab_index;
@@ -191,6 +218,7 @@ void queue_voice_action(int tab_index, bool call, bool end_call, const char* sta
 void voice_button_callback(AromaNode* node, void *user_data) {
     trigger_manual_wake();
     set_voice_status("Listening...");
+    queue_voice_partial("Listening...");
 }
 
 int main(void)
@@ -268,8 +296,17 @@ int main(void)
     aroma_tabs_set_content(state.tabs, 2, &state.phone_root, 1);
     aroma_tabs_set_content(state.tabs, 3, &state.settings_root, 1);
 
+    // Create the voice status popup
+    state.voice_popup_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 250, WIN_H/2 - 75, 500, 150, CARD_TYPE_ELEVATED);
+    aroma_node_set_hidden(state.voice_popup_card, true);
+    aroma_node_set_z_index(state.voice_popup_card, 9999);
+    
+    AromaNode *popup_title = aroma_ui_label((AromaNode *)state.voice_popup_card, "Voice Command", 20, 20, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    state.voice_popup_label = aroma_ui_label((AromaNode *)state.voice_popup_card, "...", 20, 70, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+
     start_voice_control_thread();
 
+    int voice_popup_timeout = 0;
     while (aroma_ui_is_running())
     {
         pthread_mutex_lock(&voice_mutex);
@@ -288,6 +325,38 @@ int main(void)
         if (strlen(voice_status_text) > 0) {
             set_voice_status(voice_status_text);
             voice_status_text[0] = '\0';
+        }
+        
+        if (voice_popup_state_changed) {
+            aroma_node_set_hidden(state.voice_popup_card, !voice_popup_visible);
+            if (voice_popup_visible) {
+                 aroma_label_set_text(state.voice_popup_label, voice_partial_text);
+                 voice_popup_timeout = 180; // ~3 seconds wait
+            }
+            voice_popup_state_changed = false;
+        } else if (voice_popup_visible && voice_popup_timeout > 0) {
+             voice_popup_timeout--;
+             if (voice_popup_timeout == 0) {
+                 voice_popup_visible = false;
+                 aroma_node_set_hidden(state.voice_popup_card, true);
+             }
+        }
+        
+        if (voice_theme_change != -1) {
+            bool want_dark = (voice_theme_change == 1);
+            if (state.dark_theme_enabled != want_dark) {
+                state.dark_theme_enabled = want_dark;
+                if (want_dark) {
+                    state.theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
+                } else {
+                    state.theme = aroma_theme_create_high_contrast();
+                    state.theme.colors.primary = 0xFF2196F3;
+                    state.theme.colors.primary_dark = 0xFF1976D2;
+                    state.theme.colors.primary_light = 0xFFBBDEFB;
+                }
+                aroma_ui_set_theme(&state.theme);
+            }
+            voice_theme_change = -1;
         }
         pthread_mutex_unlock(&voice_mutex);
 
