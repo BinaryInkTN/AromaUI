@@ -154,7 +154,9 @@ static void *voice_thread_func(void *arg) {
             if (json) {
                 cJSON *text = cJSON_GetObjectItem(json, "text");
                 if (text && text->valuestring && strlen(text->valuestring) > 0) {
-                    queue_voice_partial(text->valuestring);
+                    if (manual_wake_active || strstr(text->valuestring, "hey aroma") || strstr(text->valuestring, "aroma")) {
+                        queue_voice_partial(text->valuestring);
+                    }
                     process_intent(text->valuestring);
                 }
                 cJSON_Delete(json);
@@ -170,7 +172,9 @@ static void *voice_thread_func(void *arg) {
                         system("(speaker-test -t sine -f 800 -l 1 >/dev/null 2>&1 & pid=$!; sleep 0.1; kill -9 $pid >/dev/null 2>&1) &");
                         trigger_manual_wake();
                     }
-                    queue_voice_partial(partial->valuestring);
+                    if (manual_wake_active) {
+                        queue_voice_partial(partial->valuestring);
+                    }
                 }
                 cJSON_Delete(json);
             }
