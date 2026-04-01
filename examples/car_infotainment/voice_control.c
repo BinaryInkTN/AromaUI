@@ -70,8 +70,12 @@ static void *voice_thread_func(void *arg) {
     }
     VoskRecognizer *recognizer = vosk_recognizer_new(model, sample_rate);
 
+    printf("Opening ALSA capture device...\n");
     rc = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 0);
-    if (rc < 0) return NULL;
+    if (rc < 0) {
+        fprintf(stderr, "Unable to open PCM device: %s\n", snd_strerror(rc));
+        return NULL;
+    }
     
     snd_pcm_hw_params_alloca(&params);
     snd_pcm_hw_params_any(handle, params);
@@ -82,16 +86,30 @@ static void *voice_thread_func(void *arg) {
     snd_pcm_hw_params_set_period_size(handle, params, 1024, dir);
     
     rc = snd_pcm_hw_params(handle, params);
-    if (rc < 0) return NULL;
+    if (rc < 0) {
+        fprintf(stderr, "Unable to set HW parameters: %s\n", snd_strerror(rc));
+        return NULL;
+    }
+
+    printf("ALSA capture device ready, listening for commands...\n");
 
     short buffer[4096];
+    int frames_read = 0;
     while (1) {
         rc = snd_pcm_readi(handle, buffer, 1024);
         if (rc == -EPIPE) {
+            fprintf(stderr, "ALSA Overrun occurred\n");
             snd_pcm_prepare(handle);
             continue;
         } else if (rc < 0) {
+            fprintf(stderr, "ALSA Read error: %s\n", snd_strerror(rc));
             continue;
+        }
+
+        frames_read++;
+        if (frames_read % 100 == 0) {
+            // Optional: check if we are actually reading audio frames periodically
+            // printf("ALSA: Read 100 frames (~6.4 seconds of audio)\n");
         }
 
         if (vosk_recognizer_accept_waveform_s(recognizer, buffer, rc * 2)) {
@@ -101,6 +119,17 @@ static void *voice_thread_func(void *arg) {
                 cJSON *text = cJSON_GetObjectItem(json, "text");
                 if (text && text->valuestring && strlen(text->valuestring) > 0) {
                     process_intent(text->valuestring);
+                }
+                cJSON_Delete(json);
+            }
+        } else {
+            // Partial results can be printed for debugging
+            const char *partial_res = vosk_recognizer_partial_result(recognizer);
+            cJSON *json = cJSON_Parse(partial_res);
+            if (json) {
+                cJSON *partial = cJSON_GetObjectItem(json, "partial");
+                if (partial && partial->valuestring && strlen(partial->valuestring) > 0) {
+                    printf("Partial heard: %s\n", partial->valuestring);
                 }
                 cJSON_Delete(json);
             }
