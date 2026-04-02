@@ -124,10 +124,6 @@ static void* tile_fetch_worker(void* arg) {
                         rename(tmp_path, req.filepath);
                         // Wake up event loop to redraw map immediately
                         aroma_ui_request_redraw(NULL);
-                        AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-                        if (platform && platform->request_window_update) {
-                            platform->request_window_update(0);
-                        }
                     } else {
                         unlink(tmp_path);
                     }

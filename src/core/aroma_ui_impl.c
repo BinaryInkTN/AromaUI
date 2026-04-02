@@ -190,7 +190,6 @@ void aroma_ui_request_redraw(void *user_data)
     if (g_main_window)
     {
         aroma_node_invalidate(g_main_window);
-        aroma_ui_render_all_windows_impl();
     }
 }
 
