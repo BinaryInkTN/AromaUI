@@ -81,6 +81,7 @@ add_library(aroma
     widgets/aroma_image.c
     widgets/aroma_icon.c
     widgets/aroma_canvas.c
+    widgets/aroma_map.c
 )
 
 target_include_directories(aroma
@@ -106,7 +107,7 @@ endif()
 
 target_link_libraries(aroma
     PUBLIC GLESv2
-    PRIVATE freetype
+    PRIVATE freetype pthread curl
     PRIVATE m
 )
 

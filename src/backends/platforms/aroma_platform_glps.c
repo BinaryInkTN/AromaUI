@@ -86,6 +86,9 @@ static void glps_mouse_move_callback(size_t window_id, double mouse_x, double mo
     (void)window_id;
     (void)data;
     bool moved = (mouse_x != platform_ctx.last_mouse_x) || (mouse_y != platform_ctx.last_mouse_y);
+    if (moved) {
+        queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, mouse_x, mouse_y, 0);
+    }
 
     aroma_event_handle_pointer_move((int)mouse_x, (int)mouse_y, platform_ctx.mouse_button_down);
 

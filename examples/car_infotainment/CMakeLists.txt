@@ -32,6 +32,7 @@ endif()
 find_package(Vulkan QUIET)
 
 target_link_libraries(infotainment
+
     aroma
     GLPS
     GLESv2
@@ -41,6 +42,7 @@ target_link_libraries(infotainment
     m
     pthread
     asound
+    curl
     vosk
     $<$<BOOL:${Vulkan_FOUND}>:Vulkan::Vulkan>
 )

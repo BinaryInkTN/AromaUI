@@ -30,10 +30,6 @@ The infotainment system supports voice commands for hands-free operation. Users 
 | What is the charge? | Display the vehicle's battery information |
 
 
-
-
-
-
 ### Main Dashboard
 The main dashboard provides an overview of the vehicle's status, including speed, fuel level, climate control.
 ![Infotainment Example](./images/example_screenshot.png)

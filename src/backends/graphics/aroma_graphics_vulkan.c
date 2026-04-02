@@ -341,7 +341,7 @@ static bool create_swapchain(int width, int height)
     {
         for (uint32_t i = 0; i < formatCount; i++)
         {
-            if ((formats[i].format == VK_FORMAT_R8G8B8A8_SRGB ||
+            if ((formats[i].format == VK_FORMAT_R8G8B8A8_UNORM ||
                  formats[i].format == VK_FORMAT_B8G8R8A8_SRGB) &&
                 formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
@@ -352,7 +352,7 @@ static bool create_swapchain(int width, int height)
     }
     free(formats);
 
-    vk_ctx.srgbSwapchain = (chosenFormat.format == VK_FORMAT_R8G8B8A8_SRGB ||
+    vk_ctx.srgbSwapchain = (chosenFormat.format == VK_FORMAT_R8G8B8A8_UNORM ||
                             chosenFormat.format == VK_FORMAT_B8G8R8A8_SRGB);
     LOG_INFO("Vulkan swapchain format: %d  colorSpace: %d  srgb: %s",
              (int)chosenFormat.format, (int)chosenFormat.colorSpace,
@@ -920,7 +920,7 @@ static bool create_white_texture(void)
         return false;
     vk_copy_to_buffer(&vk_ctx, stagingMemory, &white, imageSize);
 
-    if (!vk_create_image(&vk_ctx, 1, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+    if (!vk_create_image(&vk_ctx, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                          VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                          &vk_ctx.whiteTexture.image, &vk_ctx.whiteTexture.memory))
@@ -940,7 +940,7 @@ static bool create_white_texture(void)
     vkFreeMemory(vk_ctx.device, stagingMemory, NULL);
 
     vk_ctx.whiteTexture.imageView = vk_create_image_view(&vk_ctx, vk_ctx.whiteTexture.image,
-                                                         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+                                                         VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkSamplerCreateInfo samplerInfo = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -1849,7 +1849,7 @@ static unsigned int vk_load_image_from_memory(unsigned char *data, size_t binary
     vk_copy_to_buffer(&vk_ctx, stagingMemory, img, imageSize);
     stbi_image_free(img);
 
-    if (!vk_create_image(&vk_ctx, (uint32_t)w, (uint32_t)h, VK_FORMAT_R8G8B8A8_SRGB,
+    if (!vk_create_image(&vk_ctx, (uint32_t)w, (uint32_t)h, VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_TILING_OPTIMAL,
                          VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -1869,7 +1869,7 @@ static unsigned int vk_load_image_from_memory(unsigned char *data, size_t binary
     vkDestroyBuffer(vk_ctx.device, stagingBuffer, NULL);
     vkFreeMemory(vk_ctx.device, stagingMemory, NULL);
 
-    tex->imageView = vk_create_image_view(&vk_ctx, tex->image, VK_FORMAT_R8G8B8A8_SRGB,
+    tex->imageView = vk_create_image_view(&vk_ctx, tex->image, VK_FORMAT_R8G8B8A8_UNORM,
                                           VK_IMAGE_ASPECT_COLOR_BIT);
     VkSamplerCreateInfo samplerInfo = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,

@@ -22,6 +22,7 @@ typedef struct {
     AromaWindow *window;
     AromaContainer *general_root;
     AromaNode *settings_root;
+    AromaNode *map_root;
     AromaNode *phone_root;
     AromaNode *music_root;
     AromaNode *tabs;
@@ -251,6 +252,18 @@ void voice_button_callback(AromaNode* node, void *user_data) {
     queue_voice_partial("Listening...");
 }
 
+void map_zoom_in_cb(void* user_data) {
+    if (user_data) {
+        aroma_map_zoom_in((AromaNode*)user_data);
+    }
+}
+
+void map_zoom_out_cb(void* user_data) {
+    if (user_data) {
+        aroma_map_zoom_out((AromaNode*)user_data);
+    }
+}
+
 int main(void)
 {
     aroma_ui_init();
@@ -321,14 +334,23 @@ int main(void)
     state.tab_font = aroma_font_create_from_memory(
         icon_ttf, icon_ttf_len, 128);
     state.tabs = aroma_ui_tabs_with_icons((AromaNode *)state.window, 0, WIN_H - 80, WIN_W, 80,
-                                          (const char *[]){"Main Screen", "Music", "Phone", "Settings"},
-                                          (const char *[]){AROMA_ICON_DASHBOARD, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS},
-                                          4, NULL, NULL, state.ui_font, state.tab_font);
+                                          (const char *[]){"Main Screen", "Music", "Phone", "Settings", "Map"},
+                                          (const char *[]){AROMA_ICON_DASHBOARD, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
+                                          5, NULL, NULL, state.ui_font, state.tab_font);
 
     aroma_tabs_set_content(state.tabs, 0, (AromaNode **)&state.general_root, 1);
     aroma_tabs_set_content(state.tabs, 1, &state.music_root, 1);
     aroma_tabs_set_content(state.tabs, 2, &state.phone_root, 1);
     aroma_tabs_set_content(state.tabs, 3, &state.settings_root, 1);
+    
+    state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
+    AromaNode* actual_map = (AromaNode *)aroma_map_create((AromaNode *)state.map_root, 0, 0, WIN_W - 250, WIN_H - 210);
+    
+    // Zoom buttons
+    AromaNode* zoom_in = aroma_ui_iconbutton(state.map_root, AROMA_ICON_ADD, WIN_W - 250 - 70, 20, 50, ICON_BUTTON_FILLED, map_zoom_in_cb, (void*)actual_map, state.icon_font);
+    AromaNode* zoom_out = aroma_ui_iconbutton(state.map_root, AROMA_ICON_REMOVE, WIN_W - 250 - 70, 80, 50, ICON_BUTTON_FILLED, map_zoom_out_cb, (void*)actual_map, state.icon_font);
+
+    aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
 
     start_voice_control_thread();
 
