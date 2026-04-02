@@ -38,6 +38,10 @@ The main dashboard provides an overview of the vehicle's status, including speed
 The settings page allows users to customize their infotainment experience, including theme selection and display preferences.
 ![Settings Page](./images/example_screenshot_settings.png)
 
+### Navigation Page
+This features a map view with zoom controls, allowing users to navigate and explore their surroundings.
+![Navigation Page](./getting-started/infotainment_map.png)
+
 ### Running the Example
 To run the Infotainment example, follow these steps:
 
