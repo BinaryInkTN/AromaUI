@@ -136,20 +136,9 @@ static bool __tabs_handle_event(AromaEvent* event, void* user_data)
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_MOVE: {
-            int new_hover = in_bounds ? __tabs_index_from_x(tabs, event->data.mouse.x) : -1;
-            if (new_hover != tabs->hovered_index) {
-                tabs->hovered_index = new_hover;
-                aroma_node_invalidate(event->target_node);
-                __tabs_request_redraw(user_data);
-            }
             return in_bounds;
         }
         case EVENT_TYPE_MOUSE_EXIT:
-            if (tabs->hovered_index != -1) {
-                tabs->hovered_index = -1;
-                aroma_node_invalidate(event->target_node);
-                __tabs_request_redraw(user_data);
-            }
             return false;
         case EVENT_TYPE_MOUSE_CLICK:
             if (in_bounds) {

@@ -103,7 +103,7 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
     button->state = BUTTON_STATE_IDLE;
     AromaTheme theme = aroma_theme_get_global();
     button->idle_color = theme.colors.primary;
-    button->hover_color = theme.colors.primary_light;
+    button->hover_color = theme.colors.primary;
     button->pressed_color = theme.colors.primary_dark;
     button->text_color = theme.colors.surface;
     button->use_theme_colors = true;
@@ -318,7 +318,7 @@ bool aroma_button_handle_mouse_event(AromaNode* button_node, int mouse_x, int mo
         }
         else
         {
-            button->state = BUTTON_STATE_HOVER;
+            button->state = BUTTON_STATE_IDLE;
             if (prev_state != BUTTON_STATE_HOVER && button->on_hover)
             {
                 LOG_INFO("Button hovered: %s", button->label);
@@ -372,7 +372,7 @@ void aroma_button_draw(AromaNode* button_node, size_t window_id)
     if (button->use_theme_colors) {
         AromaTheme theme = aroma_theme_get_global();
         button->idle_color = theme.colors.primary;
-        button->hover_color = theme.colors.primary_light;
+        button->hover_color = theme.colors.primary;
         button->pressed_color = theme.colors.primary_dark;
         button->text_color = theme.colors.surface; 
     }
