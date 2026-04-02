@@ -22,7 +22,7 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 #include <curl/curl.h>
 
 #define TILE_CACHE_DIR "/tmp/aroma_tiles"
-#define MAX_TILES_MEM 128
+#define MAX_TILES_MEM 256
 #define TILE_SIZE 256
 
 typedef struct {
@@ -171,17 +171,9 @@ static void request_tile_download(int z, int x, int y, bool is_dark, const char*
 
 
 static void unload_old_zoom_tiles(struct AromaMapExtra* extra) {
-    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
-    if (!gfx || !gfx->unload_image) return;
-    for (int i=0; i<MAX_TILES_MEM; i++) {
-        if (extra->tiles[i].valid && extra->tiles[i].z != extra->zoom) {
-            if (extra->tiles[i].is_ready && extra->tiles[i].texture_id != 0) gfx->unload_image(extra->tiles[i].texture_id);
-            extra->tiles[i].valid = false;
-            extra->tiles[i].is_ready = false;
-            extra->tiles[i].is_loading = false;
-            extra->tiles[i].texture_id = 0;
-        }
-    }
+    // Leaflet optimization: Do not immediately unload old zoom tiles.
+    // The strict LRU eviction will recycle them naturally, allowing 
+    // them to remain as fallback blurry background layers during zoom.
 }
 static bool __map_event_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node || !event->target_node->node_widget_ptr) return false;
@@ -295,9 +287,9 @@ static void __map_draw(AromaNode* node, size_t window_id) {
     double view_tl_x = center_x - map->rect.width / 2.0;
     double view_tl_y = center_y - map->rect.height / 2.0;
     
-    int tx_start = (int)floor(view_tl_x / TILE_SIZE);
-    int ty_start = (int)floor(view_tl_y / TILE_SIZE);
-    int tx_end = (int)floor((view_tl_x + map->rect.width) / TILE_SIZE) + 1;
+    int tx_start = (int)floor(view_tl_x / TILE_SIZE) - 1; // Leaflet optimization: +1 buffer
+    int ty_start = (int)floor(view_tl_y / TILE_SIZE) - 1;
+    int tx_end = (int)floor((view_tl_x + map->rect.width) / TILE_SIZE) + 1; // Leaflet optimization: +1 buffer
     int ty_end = (int)floor((view_tl_y + map->rect.height) / TILE_SIZE) + 1;
     
 
@@ -375,8 +367,42 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             if (found_tile && found_tile->is_ready && gfx && gfx->draw_image) {
                 gfx->draw_image(window_id, draw_x, draw_y, TILE_SIZE, TILE_SIZE, found_tile->texture_id);
             } else {
+                bool drawn_fallback = false;
+                if (z > 0 && gfx && gfx->draw_image) {
+                    int pz = z - 1;
+                    int px = wrapped_x / 2;
+                    int py = y / 2;
+                    MapTile* fallback = NULL;
+                    for (int i=0; i<MAX_TILES_MEM; i++) {
+                        if (extra->tiles[i].valid && extra->tiles[i].z == pz && extra->tiles[i].x == px && extra->tiles[i].y == py && extra->tiles[i].is_ready) {
+                            fallback = &extra->tiles[i];
+                            break;
+                        }
+                    }
+                    if (fallback) {
+                        int parent_x = (x >= 0) ? (x / 2) : ((x - 1) / 2);
+                        int parent_y = y / 2;
+                        int p_draw_x = map->rect.x + (int)(parent_x * 2.0 * TILE_SIZE - view_tl_x);
+                        int p_draw_y = map->rect.y + (int)(parent_y * 2.0 * TILE_SIZE - view_tl_y);
+
+                        int cx = draw_x < map->rect.x ? map->rect.x : draw_x;
+                        int cy = draw_y < map->rect.y ? map->rect.y : draw_y;
+                        int cw = draw_x + TILE_SIZE > map->rect.x + map->rect.width ? map->rect.x + map->rect.width - cx : draw_x + TILE_SIZE - cx;
+                        int ch = draw_y + TILE_SIZE > map->rect.y + map->rect.height ? map->rect.y + map->rect.height - cy : draw_y + TILE_SIZE - cy;
+                        
+                        if (cw > 0 && ch > 0) {
+                            gfx->graphics_set_clip(cx, cy, cw, ch);
+                            gfx->draw_image(window_id, p_draw_x, p_draw_y, TILE_SIZE * 2, TILE_SIZE * 2, fallback->texture_id);
+                            gfx->graphics_set_clip(map->rect.x, map->rect.y, map->rect.width, map->rect.height);
+                            drawn_fallback = true;
+                        }
+                    }
+                }
                 
-                gfx->draw_hollow_rectangle(window_id, draw_x, draw_y, TILE_SIZE, TILE_SIZE, grid_color, 1, false, 0.0f);
+                if (!drawn_fallback && draw_x < map->rect.x + map->rect.width && draw_x + TILE_SIZE > map->rect.x &&
+                    draw_y < map->rect.y + map->rect.height && draw_y + TILE_SIZE > map->rect.y) {
+                    gfx->draw_hollow_rectangle(window_id, draw_x, draw_y, TILE_SIZE, TILE_SIZE, grid_color, 1, false, 0.0f);
+                }
             }
         }
     }
