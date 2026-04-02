@@ -32,9 +32,16 @@ typedef struct {
     bool is_loading;
     bool is_ready;
     bool valid;
-    time_t last_used;
+    uint64_t access_seq;
     char filepath[256];
 } MapTile;
+
+#define MAX_MARKERS 32
+typedef struct {
+    double lat;
+    double lon;
+    uint32_t color;
+} MapMarker;
 
 struct AromaMapExtra {
     MapTile tiles[MAX_TILES_MEM];
@@ -43,6 +50,9 @@ struct AromaMapExtra {
     int zoom;
     AromaNode* node_ptr;
     uint64_t root_id;
+    uint64_t access_counter;
+    MapMarker markers[MAX_MARKERS];
+    int marker_count;
 };
 
 
@@ -292,8 +302,6 @@ static void __map_draw(AromaNode* node, size_t window_id) {
     
 
 
-    time_t now = time(NULL);
-
     for (int y = ty_start; y <= ty_end; y++) {
         for (int x = tx_start; x <= tx_end; x++) {
             
@@ -306,26 +314,27 @@ static void __map_draw(AromaNode* node, size_t window_id) {
 
             MapTile* found_tile = NULL;
             int oldest_idx = -1;
-            time_t oldest_time = now + 1;
+            uint64_t oldest_seq = UINT64_MAX;
 
             for (int i=0; i<MAX_TILES_MEM; i++) {
                 if (extra->tiles[i].valid) {
                     if (extra->tiles[i].z == z && extra->tiles[i].x == wrapped_x && extra->tiles[i].y == y) {
                         found_tile = &extra->tiles[i];
-                        extra->tiles[i].last_used = now;
                         break;
                     }
-                    if (extra->tiles[i].last_used < oldest_time) {
-                        oldest_time = extra->tiles[i].last_used;
+                    if (extra->tiles[i].access_seq < oldest_seq) {
+                        oldest_seq = extra->tiles[i].access_seq;
                         oldest_idx = i;
                     }
                 } else {
                     oldest_idx = i;
-                    oldest_time = 0;
+                    oldest_seq = 0;
                 }
             }
 
-            if (!found_tile && oldest_idx != -1) {
+            if (found_tile) {
+                found_tile->access_seq = ++extra->access_counter;
+            } else if (oldest_idx != -1) {
                 
                 found_tile = &extra->tiles[oldest_idx];
                 if (found_tile->valid && found_tile->is_ready && found_tile->texture_id != 0 && gfx && gfx->unload_image) {
@@ -337,7 +346,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                 found_tile->y = y;
                 found_tile->is_loading = false;
                 found_tile->is_ready = false;
-                found_tile->last_used = now;
+                found_tile->access_seq = ++extra->access_counter;
                 found_tile->texture_id = 0;
             }
 
@@ -372,6 +381,31 @@ static void __map_draw(AromaNode* node, size_t window_id) {
         }
     }
     
+    for (int i = 0; i < extra->marker_count; i++) {
+        double lat = extra->markers[i].lat;
+        double lon = extra->markers[i].lon;
+        
+        double lat_rad = lat * M_PI / 180.0;
+        double px_x = (lon + 180.0) / 360.0 * (1 << z) * TILE_SIZE;
+        double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << z) * TILE_SIZE;
+        
+        int draw_x = map->rect.x + (int)(px_x - view_tl_x);
+        int draw_y = map->rect.y + (int)(px_y - view_tl_y);
+        
+        if (draw_x >= map->rect.x && draw_x <= map->rect.x + map->rect.width &&
+            draw_y >= map->rect.y && draw_y <= map->rect.y + map->rect.height) {
+            
+            if (gfx && gfx->fill_rectangle) {
+                // outer ring
+                gfx->fill_rectangle(window_id, draw_x - 8, draw_y - 8, 16, 16, extra->markers[i].color, true, 8.0f);
+                // inner white
+                gfx->fill_rectangle(window_id, draw_x - 6, draw_y - 6, 12, 12, 0xFFFFFFFF, true, 6.0f);
+                // inner bullet
+                gfx->fill_rectangle(window_id, draw_x - 4, draw_y - 4, 8, 8, extra->markers[i].color, true, 4.0f);
+            }
+        }
+    }
+
     if (theme_is_dark) {
         // No need for software overlay, using dark tiles
     }
@@ -464,6 +498,48 @@ void aroma_map_zoom_out(AromaNode* node) {
         extra->center_px_y /= 2.0;
         unload_old_zoom_tiles(extra);
     }
+    aroma_node_invalidate(node);
+}
+
+void aroma_map_set_center(AromaNode* node, double lat, double lon) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+
+    double lat_rad = lat * M_PI / 180.0;
+    double px_x = (lon + 180.0) / 360.0 * (1 << extra->zoom) * TILE_SIZE;
+    double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << extra->zoom) * TILE_SIZE;
+
+    extra->center_px_x = px_x;
+    extra->center_px_y = px_y;
+    map->center_lat = lat;
+    map->center_lon = lon;
+    aroma_node_invalidate(node);
+}
+
+void aroma_map_add_marker(AromaNode* node, double lat, double lon, uint32_t color) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+
+    if (extra->marker_count < MAX_MARKERS) {
+        extra->markers[extra->marker_count].lat = lat;
+        extra->markers[extra->marker_count].lon = lon;
+        extra->markers[extra->marker_count].color = color;
+        extra->marker_count++;
+        aroma_node_invalidate(node);
+    }
+}
+
+void aroma_map_clear_markers(AromaNode* node) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+
+    extra->marker_count = 0;
     aroma_node_invalidate(node);
 }
 

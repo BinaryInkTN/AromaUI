@@ -29,6 +29,9 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
 void aroma_map_destroy(AromaNode* node);
 void aroma_map_zoom_in(AromaNode* node);
 void aroma_map_zoom_out(AromaNode* node);
+void aroma_map_set_center(AromaNode* node, double lat, double lon);
+void aroma_map_add_marker(AromaNode* node, double lat, double lon, uint32_t color);
+void aroma_map_clear_markers(AromaNode* node);
 
 #ifdef __cplusplus
 }

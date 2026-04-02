@@ -23,3 +23,8 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests
     AND IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_subdirectory(tests)
 endif()
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/examples/car_infotainment
+    AND IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/examples/car_infotainment)
+    add_subdirectory(examples/car_infotainment)
+endif()

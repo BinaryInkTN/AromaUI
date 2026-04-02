@@ -346,6 +346,10 @@ int main(void)
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     AromaNode* actual_map = (AromaNode *)aroma_map_create((AromaNode *)state.map_root, 0, 0, WIN_W - 250, WIN_H - 210);
     
+    // Set center to a relevant location (e.g., Paris) and add a marker
+    aroma_map_set_center(actual_map, 48.8566, 2.3522);
+    aroma_map_add_marker(actual_map, 48.8566, 2.3522, 0xFFFF0000); // Red marker
+    
     // Zoom buttons
     AromaNode* zoom_in = aroma_ui_iconbutton(state.map_root, AROMA_ICON_ADD, WIN_W - 250 - 70, 20, 50, ICON_BUTTON_FILLED, map_zoom_in_cb, (void*)actual_map, state.icon_font);
     AromaNode* zoom_out = aroma_ui_iconbutton(state.map_root, AROMA_ICON_REMOVE, WIN_W - 250 - 70, 80, 50, ICON_BUTTON_FILLED, map_zoom_out_cb, (void*)actual_map, state.icon_font);

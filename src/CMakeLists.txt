@@ -144,22 +144,7 @@ endif()
 
 
 set_target_properties(aroma PROPERTIES
-    VERSION 1.0.0
+    VERSION 0.0.1
     SOVERSION 1
 )
-
-if(ENABLE_ASAN)
-    message(STATUS "AddressSanitizer enabled")
-
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(aroma PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
-        target_link_options(aroma PRIVATE -fsanitize=address)
-
-        if(NOT CMAKE_C_COMPILER_ID MATCHES "AppleClang")
-            target_compile_options(aroma PRIVATE -fsanitize-address-use-after-scope)
-        endif()
-    elseif(MSVC)
-        target_compile_options(aroma PRIVATE /fsanitize=address)
-    endif()
-endif()
 
