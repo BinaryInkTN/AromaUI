@@ -368,7 +368,7 @@ static bool __radio_handle_event(AromaEvent* event, void* user_data)
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_ENTER:
-            data->is_hovered = true;
+            data->is_hovered = false;
             aroma_node_invalidate(event->target_node);
             __radio_request_redraw(user_data);
             return true;
@@ -380,7 +380,7 @@ static bool __radio_handle_event(AromaEvent* event, void* user_data)
             return false;
         case EVENT_TYPE_MOUSE_MOVE:
             if (data->is_hovered != in_bounds) {
-                data->is_hovered = in_bounds;
+                data->is_hovered = false;
                 aroma_node_invalidate(event->target_node);
             }
             __radio_request_redraw(user_data);

@@ -178,7 +178,7 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
         }
         bool hover = in_main || in_list;
         bool state_changed = (hover != dd->is_hovered) || (previous_hover_index != dd->hover_index);
-        if (hover != dd->is_hovered) dd->is_hovered = hover;
+        if (hover != dd->is_hovered) dd->is_hovered = false;
         if (state_changed && user_data) {
             aroma_node_invalidate(event->target_node);
             __dropdown_request_redraw(user_data);
@@ -225,7 +225,7 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
 
     if (event->event_type == EVENT_TYPE_MOUSE_ENTER) {
         if (!dd->is_hovered) {
-            dd->is_hovered = true;
+            dd->is_hovered = false;
             aroma_node_invalidate(event->target_node);
         }
         __dropdown_request_redraw(user_data);

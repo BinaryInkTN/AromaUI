@@ -41,7 +41,7 @@ static void __textbox_request_redraw(void* user_data)
 static void __textbox_update_hover(AromaTextbox* textbox, AromaNode* node, bool hovered, void* user_data)
 {
     if (!textbox || textbox->is_hovered == hovered) return;
-    textbox->is_hovered = hovered;
+    textbox->is_hovered = false;
     aroma_node_invalidate(node);
     __textbox_request_redraw(user_data);
 }

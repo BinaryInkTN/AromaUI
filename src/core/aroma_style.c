@@ -389,7 +389,7 @@ AromaStyle aroma_style_create_from_theme(const AromaTheme* theme) {
     }
 
     style.idle_color = theme->colors.surface;
-    style.hover_color = aroma_color_adjust(theme->colors.surface, 0.1f);
+    /* hover disabled */
     style.active_color = aroma_color_adjust(theme->colors.surface, -0.1f);
     style.disabled_color = aroma_color_blend(theme->colors.surface, theme->colors.text_secondary, 0.38f);
     style.border_color = theme->colors.border;
@@ -422,11 +422,11 @@ void aroma_style_apply_theme_colors(AromaStyle* style, const AromaTheme* theme, 
 
     if (is_primary) {
         style->idle_color = theme->colors.primary;
-        style->hover_color = theme->colors.primary_light;
+        /* hover disabled */
         style->active_color = theme->colors.primary_dark;
     } else {
         style->idle_color = theme->colors.secondary;
-        style->hover_color = aroma_color_adjust(theme->colors.secondary, 0.1f);
+        /* hover disabled */
         style->active_color = aroma_color_adjust(theme->colors.secondary, -0.1f);
     }
 
@@ -454,7 +454,7 @@ AromaStyle aroma_style_create_error(void) {
     AromaStyle style = aroma_style_create_from_theme(&theme);
     
     style.idle_color = theme.colors.error;
-    style.hover_color = aroma_color_adjust(theme.colors.error, 0.2f);
+    /* hover disabled */
     style.active_color = aroma_color_adjust(theme.colors.error, -0.2f);
     style.text_color = theme.colors.text_primary;
     style.has_custom_colors = true;

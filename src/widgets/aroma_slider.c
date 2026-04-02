@@ -119,7 +119,7 @@ void aroma_slider_on_click(AromaNode* node, int mouse_x, int mouse_y)
         bool state_changed = false;
         if (!was_dragging) state_changed = true;
         if (!data->is_hovered) {
-            data->is_hovered = true;
+            data->is_hovered = false;
             state_changed = true;
         }
         if (state_changed) aroma_node_invalidate(node);
@@ -139,7 +139,7 @@ void aroma_slider_on_mouse_move(AromaNode* node, int mouse_x, int mouse_y, bool 
     if (!pressed) {
         bool previous_hover = data->is_hovered;
         bool was_dragging = data->is_dragging;
-        data->is_hovered = in_bounds;
+        data->is_hovered = false;
         data->is_dragging = false;
         if (previous_hover != data->is_hovered || was_dragging) {
             aroma_node_invalidate(node);
@@ -227,7 +227,7 @@ static bool __slider_default_mouse_handler(AromaEvent* event, void* user_data)
             return true;
         case EVENT_TYPE_MOUSE_ENTER:
             if (!slider->is_hovered) {
-                slider->is_hovered = true;
+                slider->is_hovered = false;
                 aroma_node_invalidate(event->target_node);
             }
             __slider_request_redraw(user_data);

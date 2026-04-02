@@ -42,7 +42,7 @@ static bool __iconbutton_handle_event(AromaEvent* event, void* user_data)
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_ENTER:
-            btn->is_hovered = true;
+            btn->is_hovered = false;
             aroma_node_invalidate(event->target_node);
             aroma_ui_request_redraw(NULL);
             return true;
