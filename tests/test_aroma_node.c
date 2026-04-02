@@ -192,8 +192,8 @@ static void test_remove_child_node(void) {
     assert(removed == NULL);
     assert(root->child_count == 1);
 
-    aroma_widget_free(children[0]->node_widget_ptr);
-    aroma_widget_free(children[1]->node_widget_ptr);
+    __destroy_node(children[0]);
+    __destroy_node(children[1]);
 
     __destroy_node(root);
     cleanup_test_environment();

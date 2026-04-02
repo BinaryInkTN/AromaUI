@@ -87,6 +87,7 @@ static void test_event_creation_and_destruction(void) {
     assert(ev->target_node == root);
 
     aroma_event_destroy(ev);
+    __destroy_node(root);
     cleanup_test_environment();
     tests_passed++;
 }
@@ -116,6 +117,7 @@ static void test_event_subscription_and_dispatch(void) {
     assert(last_event_type == EVENT_TYPE_MOUSE_MOVE);
     assert(last_node_id == root->node_id);
 
+    __destroy_node(root);
     cleanup_test_environment();
     tests_passed++;
 }
@@ -151,6 +153,7 @@ static void test_event_bubbling(void) {
     assert(handler_call_count == 1);
     assert(last_node_id == button->node_id);
 
+    __destroy_node(root);
     cleanup_test_environment();
     tests_passed++;
 }
@@ -190,6 +193,7 @@ static void test_event_consumption_stops_bubbling(void) {
 
     assert(handler_call_count == 1);
 
+    __destroy_node(root);
     cleanup_test_environment();
     tests_passed++;
 }
@@ -221,6 +225,7 @@ static void test_event_queue_processing(void) {
     assert(handler_call_count == 1);
     assert(last_event_type == EVENT_TYPE_KEY_PRESS);
 
+    __destroy_node(root);
     cleanup_test_environment();
     tests_passed++;
 }
@@ -252,6 +257,7 @@ static void test_unsubscribe_listener(void) {
 
     assert(handler_call_count == 0);
 
+    __destroy_node(root);
     cleanup_test_environment();
     tests_passed++;
 }

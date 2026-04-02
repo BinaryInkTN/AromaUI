@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 static atomic_uint_fast64_t global_node_id_counter = 1;
 static uint64_t g_frame_number = 0;
@@ -63,14 +64,21 @@ AromaNode* __create_node(AromaNodeType node_type, AromaNode* parent_node, void* 
         return NULL;
     }
 
-    
+#ifdef ESP32
     AromaNode* new_node = (AromaNode*)__slab_pool_alloc(&global_memory_system.node_pool);
+#else
+    AromaNode* new_node = (AromaNode*)calloc(1, sizeof(AromaNode));
+#endif
+
     if (!new_node) {
         LOG_CRITICAL("Failed to allocate memory for new node.");
         return NULL;
     }
 
+#ifdef ESP32
     memset(new_node, 0, sizeof(AromaNode));
+#endif
+
     new_node->node_id = __generate_node_id();
     new_node->node_type = node_type;
     new_node->z_index = 0;
@@ -149,8 +157,20 @@ void __destroy_node(AromaNode* node) {
         return;
     }
 
+    if (node->destroy_cb) {
+        void (*cb)(AromaNode*) = node->destroy_cb;
+        node->destroy_cb = NULL; // prevent recursion
+        cb(node);
+        return; // The callback manages the actual __destroy_node cleanup now!
+    }
+
+    if (node->parent_node) {
+        __remove_child_node(node->parent_node, node->node_id);
+    }
+
     for (uint64_t i = 0; i < node->child_count; i++) {
         if (node->child_nodes[i]) {
+            node->child_nodes[i]->parent_node = NULL;
             __destroy_node(node->child_nodes[i]);
         }
     }
@@ -159,9 +179,15 @@ void __destroy_node(AromaNode* node) {
         aroma_widget_free(node->node_widget_ptr);
     }
 
-    __slab_pool_free(&global_memory_system.node_pool, node);
+    uint64_t destroyed_id = node->node_id;
 
-    LOG_INFO("Destroyed node ID: %llu", node->node_id);
+#ifdef ESP32
+    __slab_pool_free(&global_memory_system.node_pool, node);
+#else
+    free(node);
+#endif
+
+    LOG_INFO("Destroyed node ID: %llu", destroyed_id);
 }
 
 void __destroy_node_tree(AromaNode* root_node) {

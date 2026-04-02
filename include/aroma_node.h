@@ -128,6 +128,7 @@ struct AromaNode
     AromaNode* child_nodes[AROMA_MAX_CHILD_NODES]; /**< Array of children. */
     void *node_widget_ptr;      /**< Pointer to specific widget data struct. */
     AromaNodeDrawFn draw_cb;    /**< Custom drawing callback. */
+    void (*destroy_cb)(struct AromaNode* node); /**< Callback for widget-specific memory cleanup. */
     uint64_t child_count;       /**< Current number of children. */
     bool is_dirty;              /**< True if node itself needs redrawing. */
     bool subtree_dirty;         /**< True if any descendant needs redrawing. */

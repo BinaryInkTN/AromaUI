@@ -123,6 +123,7 @@ static void* tile_fetch_worker(void* arg) {
                     if (res == CURLE_OK) {
                         rename(tmp_path, req.filepath);
                         // Wake up event loop to redraw map immediately
+                        aroma_ui_request_redraw(NULL);
                         AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
                         if (platform && platform->request_window_update) {
                             platform->request_window_update(0);
@@ -371,7 +372,6 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             } else {
                 
                 gfx->draw_hollow_rectangle(window_id, draw_x, draw_y, TILE_SIZE, TILE_SIZE, grid_color, 1, false, 0.0f);
-                aroma_node_invalidate(node); 
             }
         }
     }
@@ -426,10 +426,12 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data) {
             return true;
         }
         else if (event->data.key.key_code == 'x' || event->data.key.key_code == 'X' || event->data.key.key_code == '-') {
-            extra->zoom--;
-            if(extra->zoom < 2) extra->zoom = 6;
-            extra->center_px_x /= 2.0;
-            extra->center_px_y /= 2.0;
+            if (extra->zoom > 2) {
+                extra->zoom--;
+                extra->center_px_x /= 2.0;
+                extra->center_px_y /= 2.0;
+                unload_old_zoom_tiles(extra);
+            }
             if (extra->node_ptr) aroma_node_invalidate(extra->node_ptr);
             return true;
         }
@@ -460,10 +462,12 @@ void aroma_map_zoom_out(AromaNode* node) {
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
     if (!extra) return;
 
-    extra->zoom--;
-    if(extra->zoom < 2) extra->zoom = 6;
-    extra->center_px_x /= 2.0;
-    extra->center_px_y /= 2.0;
+    if (extra->zoom > 2) {
+        extra->zoom--;
+        extra->center_px_x /= 2.0;
+        extra->center_px_y /= 2.0;
+        unload_old_zoom_tiles(extra);
+    }
     aroma_node_invalidate(node);
 }
 
@@ -513,6 +517,7 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     }
     
     node->draw_cb = __map_draw;
+    node->destroy_cb = aroma_map_destroy;
     map->extra = extra;
     
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __map_event_handler, extra, 90);
