@@ -349,6 +349,10 @@ int main(void)
     // Zoom buttons
     AromaNode* zoom_in = aroma_ui_iconbutton(state.map_root, AROMA_ICON_ADD, WIN_W - 250 - 70, 20, 50, ICON_BUTTON_FILLED, map_zoom_in_cb, (void*)actual_map, state.icon_font);
     AromaNode* zoom_out = aroma_ui_iconbutton(state.map_root, AROMA_ICON_REMOVE, WIN_W - 250 - 70, 80, 50, ICON_BUTTON_FILLED, map_zoom_out_cb, (void*)actual_map, state.icon_font);
+    
+    // Disable hover effects for now as requested
+    aroma_button_set_colors(zoom_in, state.theme.colors.primary, state.theme.colors.primary, state.theme.colors.secondary, state.theme.colors.text_primary);
+    aroma_button_set_colors(zoom_out, state.theme.colors.primary, state.theme.colors.primary, state.theme.colors.secondary, state.theme.colors.text_primary);
 
     aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
 

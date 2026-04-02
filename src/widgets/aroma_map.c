@@ -162,6 +162,19 @@ static void request_tile_download(int z, int x, int y, bool is_dark, const char*
     pthread_mutex_unlock(&queue_mutex);
 }
 
+
+static void unload_old_zoom_tiles(struct AromaMapExtra* extra) {
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+    if (!gfx || !gfx->unload_image) return;
+    for (int i=0; i<MAX_TILES_MEM; i++) {
+        if (extra->tiles[i].valid && extra->tiles[i].z != extra->zoom) {
+            if (extra->tiles[i].is_ready) gfx->unload_image(extra->tiles[i].texture_id);
+            extra->tiles[i].valid = false;
+            extra->tiles[i].is_ready = false;
+            extra->tiles[i].is_loading = false;
+        }
+    }
+}
 static bool __map_event_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node || !event->target_node->node_widget_ptr) return false;
     AromaMap* map = (AromaMap*)event->target_node->node_widget_ptr;
@@ -179,6 +192,7 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
                 if(extra->zoom > 18) extra->zoom = 18;
                 extra->center_px_x *= 2.0;
                 extra->center_px_y *= 2.0;
+                unload_old_zoom_tiles(extra);
                 aroma_node_invalidate(event->target_node);
                 return true;
             }
@@ -400,13 +414,13 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data) {
             if(extra->zoom > 18) extra->zoom = 18;
             extra->center_px_x *= 2.0;
             extra->center_px_y *= 2.0;
-            
+            unload_old_zoom_tiles(extra);
             if (extra->node_ptr) aroma_node_invalidate(extra->node_ptr);
             return true;
         }
         else if (event->data.key.key_code == 'x' || event->data.key.key_code == 'X' || event->data.key.key_code == '-') {
             extra->zoom--;
-            if(extra->zoom < 2) extra->zoom = 2;
+            if(extra->zoom < 2) extra->zoom = 6;
             extra->center_px_x /= 2.0;
             extra->center_px_y /= 2.0;
             if (extra->node_ptr) aroma_node_invalidate(extra->node_ptr);
@@ -426,6 +440,7 @@ void aroma_map_zoom_in(AromaNode* node) {
     if(extra->zoom > 18) extra->zoom = 18;
     extra->center_px_x *= 2.0;
     extra->center_px_y *= 2.0;
+    unload_old_zoom_tiles(extra);
     aroma_node_invalidate(node);
 }
 
@@ -436,7 +451,7 @@ void aroma_map_zoom_out(AromaNode* node) {
     if (!extra) return;
 
     extra->zoom--;
-    if(extra->zoom < 2) extra->zoom = 2;
+    if(extra->zoom < 2) extra->zoom = 6;
     extra->center_px_x /= 2.0;
     extra->center_px_y /= 2.0;
     aroma_node_invalidate(node);
@@ -465,10 +480,10 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     struct AromaMapExtra* extra = aroma_widget_alloc(sizeof(struct AromaMapExtra));
     memset(extra, 0, sizeof(struct AromaMapExtra));
     
-    extra->zoom = 2; 
+    extra->zoom = 6; 
     
-    extra->center_px_x = ((1<<extra->zoom) * TILE_SIZE) / 2.0;
-    extra->center_px_y = ((1<<extra->zoom) * TILE_SIZE) / 2.0;
+    extra->center_px_x = 8623.0;
+    extra->center_px_y = 6545.0;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, map);
     if (node) extra->node_ptr = node;
