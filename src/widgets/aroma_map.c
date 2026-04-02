@@ -63,6 +63,7 @@ typedef struct {
     int z, x, y;
     bool is_dark;
     char filepath[256];
+    uint64_t node_id;
 } TileRequest;
 
 #define MAX_QUEUE 256
@@ -136,7 +137,8 @@ static void* tile_fetch_worker(void* arg) {
                     if (res == CURLE_OK) {
                         rename(tmp_path, req.filepath);
                         // Wake up event loop to redraw map immediately
-                        aroma_ui_request_redraw(NULL);
+                        AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, NULL, NULL);
+                        if (ev) aroma_event_queue(ev);
                     } else {
                         unlink(tmp_path);
                     }
@@ -148,7 +150,7 @@ static void* tile_fetch_worker(void* arg) {
     return NULL;
 }
 
-static void request_tile_download(int z, int x, int y, bool is_dark, const char* filepath) {
+static void request_tile_download(int z, int x, int y, bool is_dark, const char* filepath, uint64_t node_id) {
     pthread_mutex_lock(&queue_mutex);
     int next_tail = (queue_tail + 1) % MAX_QUEUE;
     if (next_tail != queue_head) {
@@ -164,6 +166,7 @@ static void request_tile_download(int z, int x, int y, bool is_dark, const char*
             fetch_queue[queue_tail].x = x;
             fetch_queue[queue_tail].y = y;
             fetch_queue[queue_tail].is_dark = is_dark;
+            fetch_queue[queue_tail].node_id = node_id;
             strncpy(fetch_queue[queue_tail].filepath, filepath, 255);
             queue_tail = next_tail;
             pthread_cond_signal(&queue_cond);
@@ -243,6 +246,13 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
         case EVENT_TYPE_MOUSE_RELEASE:
             if (map->is_dragging) {
                 map->is_dragging = false;
+                aroma_node_invalidate(event->target_node);
+                return true;
+            }
+            break;
+
+        case EVENT_TYPE_CUSTOM:
+            if (event->data.custom.custom_type == 999) {
                 aroma_node_invalidate(event->target_node);
                 return true;
             }
@@ -360,7 +370,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                 } else if (!found_tile->is_loading) {
                     
                     found_tile->is_loading = true;
-                    request_tile_download(z, wrapped_x, y, theme_is_dark, filepath);
+                    request_tile_download(z, wrapped_x, y, theme_is_dark, filepath, node->node_id);
                 }
             }
 
@@ -690,6 +700,7 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __map_event_handler, extra, 90);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, __map_event_handler, extra, 80);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __map_event_handler, extra, 80);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_CUSTOM, __map_event_handler, extra, 90);
 
     return node;
 }
