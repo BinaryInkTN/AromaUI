@@ -24,7 +24,7 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 #include <curl/curl.h>
 
 #define TILE_CACHE_DIR "/tmp/aroma_tiles"
-#define MAX_TILES_MEM 256
+#define MAX_TILES_MEM 128
 #define TILE_SIZE 256
 
 typedef struct {
@@ -141,6 +141,9 @@ static void* tile_fetch_worker(void* arg) {
                         if (ev) aroma_event_queue(ev);
                     } else {
                         unlink(tmp_path);
+                        // Send failure event
+                        AromaEvent *ev = aroma_event_create_custom(req.node_id, 998, NULL, NULL);
+                        if (ev) aroma_event_queue(ev);
                     }
                 }
                 curl_easy_cleanup(curl);
@@ -150,7 +153,8 @@ static void* tile_fetch_worker(void* arg) {
     return NULL;
 }
 
-static void request_tile_download(int z, int x, int y, bool is_dark, const char* filepath, uint64_t node_id) {
+static bool request_tile_download(int z, int x, int y, bool is_dark, const char* filepath, uint64_t node_id) {
+    bool queued = false;
     pthread_mutex_lock(&queue_mutex);
     int next_tail = (queue_tail + 1) % MAX_QUEUE;
     if (next_tail != queue_head) {
@@ -171,8 +175,10 @@ static void request_tile_download(int z, int x, int y, bool is_dark, const char*
             queue_tail = next_tail;
             pthread_cond_signal(&queue_cond);
         }
+        queued = true;
     }
     pthread_mutex_unlock(&queue_mutex);
+    return queued;
 }
 
 
@@ -363,21 +369,26 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                     }
                     if (gfx && gfx->load_image) {
                         found_tile->texture_id = gfx->load_image(filepath);
-                        if (found_tile->texture_id != 0) {
-                            found_tile->is_ready = true;
+                        
+                        // Set it to ready regardless of success to prevent endless retries for corrupted tiles
+                        found_tile->is_ready = true;
+                        if (found_tile->texture_id == 0) {
+                            LOG_WARNING("Failed to load map tile (corrupted/invalid file): %s", filepath);
                         }
                     }
                 } else if (!found_tile->is_loading) {
                     
                     found_tile->is_loading = true;
-                    request_tile_download(z, wrapped_x, y, theme_is_dark, filepath, node->node_id);
+                    if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath, node->node_id)) {
+                        found_tile->is_loading = false;
+                    }
                 }
             }
 
             int draw_x = map->rect.x + (int)(x * TILE_SIZE - view_tl_x);
             int draw_y = map->rect.y + (int)(y * TILE_SIZE - view_tl_y);
 
-            if (found_tile && found_tile->is_ready && gfx && gfx->draw_image) {
+            if (found_tile && found_tile->is_ready && found_tile->texture_id != 0 && gfx && gfx->draw_image) {
                 gfx->draw_image(window_id, draw_x, draw_y, TILE_SIZE, TILE_SIZE, found_tile->texture_id);
             } else {
                 bool drawn_fallback = false;

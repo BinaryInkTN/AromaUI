@@ -1948,6 +1948,9 @@ static void vk_unload_image(unsigned int texture_id)
         return;
 
     vkDeviceWaitIdle(vk_ctx.device);
+    if (tex->descriptorSet) {
+        vkFreeDescriptorSets(vk_ctx.device, vk_ctx.descriptorPool, 1, &tex->descriptorSet);
+    }
     vkDestroySampler(vk_ctx.device, tex->sampler, NULL);
     vkDestroyImageView(vk_ctx.device, tex->imageView, NULL);
     vkDestroyImage(vk_ctx.device, tex->image, NULL);
