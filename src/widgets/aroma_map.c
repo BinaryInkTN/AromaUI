@@ -5,6 +5,8 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "core/aroma_common.h"
 #include "aroma_ui.h"
+#include "aroma_font.h"
+#include "aroma_ubuntu_font.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -53,6 +55,7 @@ struct AromaMapExtra {
     uint64_t access_counter;
     MapMarker markers[MAX_MARKERS];
     int marker_count;
+    AromaFont* font;
 };
 
 
@@ -436,6 +439,26 @@ static void __map_draw(AromaNode* node, size_t window_id) {
         // No need for software overlay, using dark tiles
     }
 
+    if (map->show_osm_attribution && extra->font && gfx && gfx->render_text) {
+        const char* text = "Powered by OpenStreetMap";
+        int text_w = aroma_font_get_line_width(extra->font, text);
+        int text_h = aroma_font_get_line_height(extra->font);
+        
+        int padding = 4;
+        int bg_w = text_w + padding * 2;
+        int bg_h = text_h + padding * 2;
+        int bg_x = map->rect.x + map->rect.width - bg_w - 4;
+        int bg_y = map->rect.y + map->rect.height - bg_h - 4;
+        
+        uint32_t bg_attr_color = theme_is_dark ? 0xAA000000 : 0xAAFFFFFF;
+        if (gfx->fill_rectangle) {
+            gfx->fill_rectangle(window_id, bg_x, bg_y, bg_w, bg_h, bg_attr_color, true, 4.0f);
+        }
+        
+        uint32_t text_color = theme_is_dark ? 0xFFFFFFFF : 0xFF000000;
+        gfx->render_text(window_id, extra->font, text, bg_x + padding, bg_y + padding, text_color, 1.0f);
+    }
+
     gfx->graphics_clear_clip();
 }
 
@@ -454,6 +477,7 @@ void aroma_map_destroy(AromaNode* node) {
                 gfx->unload_image(extra->tiles[i].texture_id);
             }
         }
+        if (extra->font) aroma_font_destroy(extra->font);
         aroma_widget_free(extra);
         map->extra = NULL;
     }
@@ -544,6 +568,44 @@ void aroma_map_set_center(AromaNode* node, double lat, double lon) {
     aroma_node_invalidate(node);
 }
 
+void aroma_map_pan_to(AromaNode* node, double lat, double lon) {
+    aroma_map_set_center(node, lat, lon);
+}
+
+void aroma_map_set_zoom(AromaNode* node, int zoom) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+
+    if (zoom < 2) zoom = 2;
+    if (zoom > 18) zoom = 18;
+    
+    if (extra->zoom == zoom) return;
+
+    extra->zoom = zoom;
+    map->zoom = zoom;
+    
+    double lat_rad = map->center_lat * M_PI / 180.0;
+    double px_x = (map->center_lon + 180.0) / 360.0 * (1 << zoom) * TILE_SIZE;
+    double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << zoom) * TILE_SIZE;
+
+    extra->center_px_x = px_x;
+    extra->center_px_y = px_y;
+
+    unload_old_zoom_tiles(extra);
+    aroma_node_invalidate(node);
+}
+
+void aroma_map_set_show_attribution(AromaNode* node, bool show) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    if (map->show_osm_attribution != show) {
+        map->show_osm_attribution = show;
+        aroma_node_invalidate(node);
+    }
+}
+
 void aroma_map_add_marker(AromaNode* node, double lat, double lon, uint32_t color) {
     if (!node || !node->node_widget_ptr) return;
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
@@ -587,15 +649,20 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     map->rect.y = y;
     map->rect.width = width;
     map->rect.height = height;
-    map->zoom = 2; 
+    map->zoom = 6;
+    map->center_lat = 0.0;
+    map->center_lon = 0.0;
+    map->show_osm_attribution = false;
 
     struct AromaMapExtra* extra = aroma_widget_alloc(sizeof(struct AromaMapExtra));
     memset(extra, 0, sizeof(struct AromaMapExtra));
     
-    extra->zoom = 6; 
+    extra->zoom = map->zoom;
     
-    extra->center_px_x = 8623.0;
-    extra->center_px_y = 6545.0;
+    extra->center_px_x = 8192.0; // center for zoom 6 at 0,0
+    extra->center_px_y = 8192.0;
+
+    extra->font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 12);
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, map);
     if (node) extra->node_ptr = node;

@@ -22,14 +22,18 @@ typedef struct AromaMap {
     double offset_x;
     double offset_y;
     
+    bool show_osm_attribution;
     void* extra;
 } AromaMap;
 
 AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int height);
 void aroma_map_destroy(AromaNode* node);
+void aroma_map_set_zoom(AromaNode* node, int zoom);
 void aroma_map_zoom_in(AromaNode* node);
 void aroma_map_zoom_out(AromaNode* node);
 void aroma_map_set_center(AromaNode* node, double lat, double lon);
+void aroma_map_pan_to(AromaNode* node, double lat, double lon);
+void aroma_map_set_show_attribution(AromaNode* node, bool show);
 void aroma_map_add_marker(AromaNode* node, double lat, double lon, uint32_t color);
 void aroma_map_clear_markers(AromaNode* node);
 
