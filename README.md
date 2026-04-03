@@ -4,7 +4,7 @@
 <br/>
 
 <div style="text-align:center;">
-  <img src="docs/images/hero-image.png" />
+  <img src="docs/getting-started/infotainment_map.png" />
 </div>
 
 <br/>
