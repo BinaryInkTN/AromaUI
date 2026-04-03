@@ -124,9 +124,9 @@ static void* tile_fetch_worker(void* arg) {
             
             char url[512];
             if (req.is_dark) {
-                snprintf(url, sizeof(url), "https:
+                snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", req.z, req.x, req.y);
             } else {
-                snprintf(url, sizeof(url), "https:
+                snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
             }
             
             char tmp_path[512];
@@ -147,12 +147,12 @@ static void* tile_fetch_worker(void* arg) {
                     
                     if (res == CURLE_OK) {
                         rename(tmp_path, req.filepath);
-                        
+                        // Wake up event loop to redraw map immediately
                         AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, NULL, NULL);
                         if (ev) aroma_event_queue(ev);
                     } else {
                         unlink(tmp_path);
-                        
+                        // Send failure event
                         AromaEvent *ev = aroma_event_create_custom(req.node_id, 998, NULL, NULL);
                         if (ev) aroma_event_queue(ev);
                     }
@@ -243,9 +243,9 @@ static void __map_anim_tick(void* user_data) {
 }
 
 static void unload_old_zoom_tiles(struct AromaMapExtra* extra) {
-    
-    
-    
+    // Leaflet optimization: Do not immediately unload old zoom tiles.
+    // The strict LRU eviction will recycle them naturally, allowing 
+    // them to remain as fallback blurry background layers during zoom.
 }
 static bool __map_event_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node || !event->target_node->node_widget_ptr) return false;
@@ -507,18 +507,18 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             draw_y >= map->rect.y && draw_y <= map->rect.y + map->rect.height) {
             
             if (gfx && gfx->fill_rectangle) {
-                
+                // outer ring
                 gfx->fill_rectangle(window_id, draw_x - 8, draw_y - 8, 16, 16, extra->markers[i].color, true, 8.0f);
-                
+                // inner white
                 gfx->fill_rectangle(window_id, draw_x - 6, draw_y - 6, 12, 12, 0xFFFFFFFF, true, 6.0f);
-                
+                // inner bullet
                 gfx->fill_rectangle(window_id, draw_x - 4, draw_y - 4, 8, 8, extra->markers[i].color, true, 4.0f);
             }
         }
     }
 
     if (theme_is_dark) {
-        
+        // No need for software overlay, using dark tiles
     }
 
     if (map->show_osm_attribution && extra->font && gfx && gfx->render_text) {
@@ -760,7 +760,7 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     
     extra->zoom = map->zoom;
     
-    extra->center_px_x = 8192.0; 
+    extra->center_px_x = 8192.0; // center for zoom 6 at 0,0
     extra->center_px_y = 8192.0;
     extra->display_px_x = 8192.0;
     extra->display_px_y = 8192.0;
