@@ -35,6 +35,8 @@ void aroma_map_set_center(AromaNode* node, double lat, double lon);
 void aroma_map_pan_to(AromaNode* node, double lat, double lon);
 void aroma_map_set_show_attribution(AromaNode* node, bool show);
 void aroma_map_add_marker(AromaNode* node, double lat, double lon, uint32_t color);
+void aroma_map_add_icon_marker(AromaNode* node, double lat, double lon, uint32_t color, const char* icon_code);
+void aroma_map_add_icon_marker(AromaNode* node, double lat, double lon, uint32_t color, const char* icon_code);
 void aroma_map_clear_markers(AromaNode* node);
 
 #ifdef __cplusplus

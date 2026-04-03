@@ -47,6 +47,7 @@ typedef struct {
     double lat;
     double lon;
     uint32_t color;
+    const char* icon_code;
 } MapMarker;
 
 struct AromaMapExtra {
@@ -704,15 +705,32 @@ void aroma_map_set_show_attribution(AromaNode* node, bool show) {
 }
 
 void aroma_map_add_marker(AromaNode* node, double lat, double lon, uint32_t color) {
-    if (!node || !node->node_widget_ptr) return;
+    if (!node || node->node_type != NODE_TYPE_WIDGET) return;
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    if (!map || !map->extra) return;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
-    if (!extra) return;
-
+    
     if (extra->marker_count < MAX_MARKERS) {
         extra->markers[extra->marker_count].lat = lat;
         extra->markers[extra->marker_count].lon = lon;
         extra->markers[extra->marker_count].color = color;
+        extra->markers[extra->marker_count].icon_code = NULL;
+        extra->marker_count++;
+        aroma_node_invalidate(node);
+    }
+}
+
+void aroma_map_add_icon_marker(AromaNode* node, double lat, double lon, uint32_t color, const char* icon_code) {
+    if (!node || node->node_type != NODE_TYPE_WIDGET) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    if (!map || !map->extra) return;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    
+    if (extra->marker_count < MAX_MARKERS) {
+        extra->markers[extra->marker_count].lat = lat;
+        extra->markers[extra->marker_count].lon = lon;
+        extra->markers[extra->marker_count].color = color;
+        extra->markers[extra->marker_count].icon_code = icon_code;
         extra->marker_count++;
         aroma_node_invalidate(node);
     }

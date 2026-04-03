@@ -159,6 +159,29 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
     queue_key_event(type, key_value, modifiers);
 }
 
+
+static void glps_scroll_callback(size_t window_id, GLPS_SCROLL_AXES axe,
+                                 GLPS_SCROLL_SOURCE source, double value,
+                                 int discrete, bool is_stopped, void *data)
+{
+    if (value == 0) return;
+    
+    float scroll_x = (axe == GLPS_SCROLL_H_AXIS) ? (float)value : 0.0f;
+    float scroll_y = (axe == GLPS_SCROLL_V_AXIS) ? (float)value : 0.0f;
+    
+    int mx = (int)platform_ctx.last_mouse_x;
+    int my = (int)platform_ctx.last_mouse_y;
+    
+    AromaNode *root = aroma_event_get_root();
+    if (!root) return;
+    
+    AromaNode *target = aroma_event_hit_test(root, mx, my);
+    uint64_t node_id = target ? target->node_id : root->node_id;
+    
+    AromaEvent *ev = aroma_event_create_scroll(node_id, mx, my, scroll_x, scroll_y);
+    if (ev) aroma_event_queue(ev);
+}
+
 int initialize()
 {
     platform_ctx.wm = glps_wm_init();
@@ -170,6 +193,7 @@ int initialize()
 
     glps_wm_set_mouse_move_callback(platform_ctx.wm, glps_mouse_move_callback, NULL);
     glps_wm_set_mouse_click_callback(platform_ctx.wm, glps_mouse_click_callback, NULL);
+    glps_wm_set_scroll_callback(platform_ctx.wm, glps_scroll_callback, NULL);
     glps_wm_set_keyboard_callback(platform_ctx.wm, glps_keyboard_callback, NULL);
 
     return 1;

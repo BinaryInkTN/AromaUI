@@ -964,6 +964,22 @@ void build_settings_ui(AromaNode *window)
     aroma_listview_add_item_with_icon(state.listviews[8], "Current time", time_str, AROMA_ICON_ACCESS_TIME, NULL);
     aroma_listview_add_item_with_icon(state.listviews[8], "Platform Backend", "GLPS (X11)", AROMA_ICON_VERIFIED_USER, NULL);
     aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[8], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
 
     state.listview_containers[8] = aroma_listview_get_scroll_container(state.listviews[8]);
 

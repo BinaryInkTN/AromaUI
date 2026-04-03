@@ -1,0 +1,251 @@
+
+static void ensure_animation_timer(AromaContainer *c)
+{
+    if (!c->fling_timer && c->self_node)
+    {
+        c->fling_timer = aroma_timer_create(
+            FLING_TICK_MS, true, fling_tick_cb, c->self_node);
+    }
+}
+
+static bool scroll_event_handler(AromaEvent *event, void *user_data)
+{
+    LOG_INFO("SCR_HANDLER: entered type=%d udata=%p", event ? event->event_type : -1, user_data);
+
+    AromaNode *node = (AromaNode *)user_data;
+    if (!node)
+        return false;
+
+    AromaContainer *c = aroma_container_get(node);
+    LOG_INFO("SCR_HANDLER: c=%p scrollable=%d node_type=%d",
+             (void *)c, c ? c->scrollable : -1, node->node_type);
+    if (!c || !c->scrollable)
+        return false;
+
+    bool can_scroll_h = (c->direction & AROMA_SCROLL_HORIZONTAL) && c->content_width > c->rect.width;
+    bool can_scroll_v = (c->direction & AROMA_SCROLL_VERTICAL) && c->content_height > c->rect.height;
+
+    switch (event->event_type)
+    {
+    case EVENT_TYPE_TOUCH_DOWN:
+    {
+        int tx = event->data.touch.x;
+        int ty = event->data.touch.y;
+        if (!point_in_rect(tx, ty, &c->rect))
+            return false;
+
+        LOG_INFO("SCROLL_DOWN: ptr=%d content_h=%d rect_h=%d can_v=%d",
+                 event->data.touch.id, c->content_height, c->rect.height, can_scroll_v);
+
+        stop_fling(c);
+        c->overscroll_x = 0.0f;
+        c->overscroll_y = 0.0f;
+
+        c->drag_start_x = tx;
+        c->drag_start_y = ty;
+        c->drag_scroll_start_x = c->scroll_fx;
+        c->drag_scroll_start_y = c->scroll_fy;
+        c->active_pointer_id = event->data.touch.id;
+        c->is_dragging = false;
+        c->scrollbar_opacity = 1.0f;
+        c->last_scroll_time = aroma_time_now_ms();
+
+        vt_reset(&c->vt);
+        vt_add(&c->vt, tx, ty, aroma_time_now_ms());
+        return false;
+    }
+
+    case EVENT_TYPE_TOUCH_MOVE:
+    {
+        if (event->data.touch.id != c->active_pointer_id)
+            return false;
+
+        if (!can_scroll_h && !can_scroll_v)
+        {
+            LOG_INFO("SCROLL_MOVE: bail can_v=%d content_h=%d rect_h=%d",
+                     can_scroll_v, c->content_height, c->rect.height);
+            return false;
+        }
+
+        int tx = event->data.touch.x;
+        int ty = event->data.touch.y;
+        int dx = c->drag_start_x - tx;
+        int dy = c->drag_start_y - ty;
+
+        vt_add(&c->vt, tx, ty, aroma_time_now_ms());
+
+        if (!c->is_dragging)
+        {
+            int abs_dx = dx < 0 ? -dx : dx;
+            int abs_dy = dy < 0 ? -dy : dy;
+            bool slop_h = can_scroll_h && abs_dx >= SCROLL_SLOP;
+            bool slop_v = can_scroll_v && abs_dy >= SCROLL_SLOP;
+            if (!slop_h && !slop_v)
+                return false;
+            c->is_dragging = true;
+
+            c->drag_start_x = tx;
+            c->drag_start_y = ty;
+            c->drag_scroll_start_x = c->scroll_fx;
+            c->drag_scroll_start_y = c->scroll_fy;
+            dx = 0;
+            dy = 0;
+        }
+
+        float new_sx = c->drag_scroll_start_x;
+        float new_sy = c->drag_scroll_start_y;
+
+        if (can_scroll_h)
+            new_sx += (float)dx * c->scroll_speed;
+        if (can_scroll_v)
+            new_sy += (float)dy * c->scroll_speed;
+
+        float mx = (float)max_scroll_x(c);
+        float my = (float)max_scroll_y(c);
+
+        c->overscroll_x = 0.0f;
+        c->overscroll_y = 0.0f;
+
+        if (new_sx < 0.0f)
+        {
+            c->overscroll_x = new_sx * OVERSCROLL_RESIST;
+            if (c->overscroll_x < -OVERSCROLL_MAX_PX)
+                c->overscroll_x = -OVERSCROLL_MAX_PX;
+            new_sx = 0.0f;
+        }
+        else if (new_sx > mx)
+        {
+            c->overscroll_x = (new_sx - mx) * OVERSCROLL_RESIST;
+            if (c->overscroll_x > OVERSCROLL_MAX_PX)
+                c->overscroll_x = OVERSCROLL_MAX_PX;
+            new_sx = mx;
+        }
+        if (new_sy < 0.0f)
+        {
+            c->overscroll_y = new_sy * OVERSCROLL_RESIST;
+            if (c->overscroll_y < -OVERSCROLL_MAX_PX)
+                c->overscroll_y = -OVERSCROLL_MAX_PX;
+            new_sy = 0.0f;
+        }
+        else if (new_sy > my)
+        {
+            c->overscroll_y = (new_sy - my) * OVERSCROLL_RESIST;
+            if (c->overscroll_y > OVERSCROLL_MAX_PX)
+                c->overscroll_y = OVERSCROLL_MAX_PX;
+            new_sy = my;
+        }
+
+        c->scroll_fx = new_sx;
+        c->scroll_fy = new_sy;
+        c->content_dirty = true;
+        c->last_scroll_time = aroma_time_now_ms();
+        LOG_INFO("SCROLL_DRAG: fy=%.1f max=%.0f over=%.1f dy=%d",
+                 c->scroll_fy, my, c->overscroll_y, dy);
+        aroma_node_invalidate(node);
+        return true;
+    }
+
+    case EVENT_TYPE_TOUCH_UP:
+    {
+
+        if (event->target_node_id != node->node_id)
+            return false;
+
+        if (event->data.touch.id != c->active_pointer_id)
+            return false;
+        bool was_dragging = c->is_dragging;
+        c->is_dragging = false;
+        c->active_pointer_id = -1;
+
+        vt_add(&c->vt, event->data.touch.x, event->data.touch.y,
+               aroma_time_now_ms());
+
+        if (was_dragging)
+        {
+
+            if (c->overscroll_x != 0.0f || c->overscroll_y != 0.0f)
+            {
+                c->bouncing = true;
+                c->bounce_start_x = c->overscroll_x;
+                c->bounce_start_y = c->overscroll_y;
+                c->bounce_start_time = aroma_time_now_ms();
+                c->fling_active = false;
+                c->last_scroll_time = aroma_time_now_ms();
+                ensure_animation_timer(c);
+                return true;
+            }
+
+            float vx = 0.0f, vy = 0.0f;
+            vt_get_velocity(&c->vt, aroma_time_now_ms(), &vx, &vy);
+
+            vx = -vx;
+            vy = -vy;
+
+            float min_vel = 150.0f;
+            bool do_fling = false;
+
+            float dur_x = 0.0f, dur_y = 0.0f;
+            float dist_x = 0.0f, dist_y = 0.0f;
+
+            if (can_scroll_h && fabsf(vx) > min_vel)
+            {
+                dur_x = fling_get_duration_ms(vx);
+                dist_x = fling_get_distance(vx);
+                do_fling = true;
+            }
+            if (can_scroll_v && fabsf(vy) > min_vel)
+            {
+                dur_y = fling_get_duration_ms(vy);
+                dist_y = fling_get_distance(vy);
+                do_fling = true;
+            }
+
+            if (do_fling)
+            {
+                c->fling_active = true;
+                c->fling_start_x = c->scroll_fx;
+                c->fling_start_y = c->scroll_fy;
+                c->fling_distance_x = dist_x;
+                c->fling_distance_y = dist_y;
+                c->fling_duration_x_ms = dur_x;
+                c->fling_duration_y_ms = dur_y;
+                c->fling_start_time = aroma_time_now_ms();
+            }
+            c->last_scroll_time = aroma_time_now_ms();
+            ensure_animation_timer(c);
+        }
+        return was_dragging;
+    }
+
+    case EVENT_TYPE_MOUSE_MOVE:
+    {
+        int mx = event->data.mouse.x;
+        int my = event->data.mouse.y;
+        if (!point_in_rect(mx, my, &c->rect))
+            return false;
+
+        int dy = event->data.mouse.delta_y;
+        int dx = event->data.mouse.delta_x;
+        if (dy == 0 && dx == 0)
+            return false;
+
+        float old_sx = c->scroll_fx;
+        float old_sy = c->scroll_fy;
+
+        if (can_scroll_v)
+            c->scroll_fy += (float)dy * c->scroll_speed;
+        if (can_scroll_h)
+            c->scroll_fx += (float)dx * c->scroll_speed;
+        clamp_scroll(c);
+
+        if (c->scroll_fx != old_sx || c->scroll_fy != old_sy)
+        {
+            c->content_dirty = true;
+            c->last_scroll_time = aroma_time_now_ms();
+            c->scrollbar_opacity = 1.0f;
+            ensure_animation_timer(c);
+            aroma_node_invalidate(node);
+        }
+        return true;
+    }
+

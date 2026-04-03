@@ -31,6 +31,7 @@ typedef enum AromaEventType {
     EVENT_TYPE_MOUSE_EXIT,        /**< Pointer left node bounds. */
     EVENT_TYPE_MOUSE_HOVER,       /**< Pointer hovering over node. */
     EVENT_TYPE_MOUSE_DOUBLE_CLICK,/**< Double click detected. */
+    EVENT_TYPE_MOUSE_SCROLL,      /**< Mouse scroll event. */
     EVENT_TYPE_KEY_PRESS,         /**< Keyboard key pressed. */
     EVENT_TYPE_KEY_RELEASE,       /**< Keyboard key released. */
     EVENT_TYPE_FOCUS_GAINED,      /**< Node gained keyboard focus. */
@@ -61,7 +62,9 @@ typedef struct {
     int delta_x;    /**< X movement delta since last event. */
     int delta_y;    /**< Y movement delta since last event. */
     uint8_t button; /**< Method/button index (e.g. 0=Left, 1=Right). */
-    uint8_t clicks; /**< Click count (e.g. 1=single, 2=double). */
+        uint8_t clicks; /**< Click count (e.g. 1=single, 2=double). */
+    float scroll_x; /**< Horizontal scroll delta. */
+    float scroll_y; /**< Vertical scroll delta. */
 } AromaMouseEventData;
 
 /**
@@ -206,6 +209,8 @@ bool aroma_event_unsubscribe(uint64_t node_id, AromaEventType event_type,
 
 AromaEvent* aroma_event_create_mouse(AromaEventType event_type, uint64_t target_node_id,
                                     int x, int y, uint8_t button);
+
+AromaEvent* aroma_event_create_scroll(uint64_t target_node_id, int x, int y, float scroll_x, float scroll_y);
 
 AromaEvent* aroma_event_create_key(AromaEventType event_type, uint64_t target_node_id,
                                    uint32_t key_code, uint16_t modifiers);

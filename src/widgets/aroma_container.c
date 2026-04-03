@@ -456,15 +456,21 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
 
     switch (event->event_type)
     {
+    case EVENT_TYPE_MOUSE_CLICK:
     case EVENT_TYPE_TOUCH_DOWN:
     {
-        int tx = event->data.touch.x;
-        int ty = event->data.touch.y;
+        int tx, ty, id;
+        if (event->event_type == EVENT_TYPE_MOUSE_CLICK) {
+            if (event->data.mouse.clicks == 0) return false;
+            tx = event->data.mouse.x; ty = event->data.mouse.y; id = 0;
+        } else {
+            tx = event->data.touch.x; ty = event->data.touch.y; id = event->data.touch.id;
+        }
         if (!point_in_rect(tx, ty, &c->rect))
             return false;
 
         LOG_INFO("SCROLL_DOWN: ptr=%d content_h=%d rect_h=%d can_v=%d",
-                 event->data.touch.id, c->content_height, c->rect.height, can_scroll_v);
+                 id, c->content_height, c->rect.height, can_scroll_v);
 
         stop_fling(c);
         c->overscroll_x = 0.0f;
@@ -484,9 +490,51 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         return false;
     }
 
+    case EVENT_TYPE_MOUSE_SCROLL:
+    {
+        int tx = event->data.mouse.x;
+        int ty = event->data.mouse.y;
+        if (!point_in_rect(tx, ty, &c->rect)) return false;
+        
+        float sx = event->data.mouse.scroll_x;
+        float sy = event->data.mouse.scroll_y;
+        
+        if (sx == 0.0f && sy == 0.0f) return false;
+        
+        float old_sx = c->scroll_fx;
+        float old_sy = c->scroll_fy;
+        
+        // Reverse direction? Usually down scroll gives sy > 0 or < 0?
+        // Wait, on most systems wheel down (scrolling page down) means negative delta or positive delta?
+        // We'll multiply by some sensitivity factor, usually 50.0f
+        
+        if (can_scroll_v) c->scroll_fy -= sy * 50.0f * c->scroll_speed;
+        if (can_scroll_h) c->scroll_fx -= sx * 50.0f * c->scroll_speed;
+        
+        clamp_scroll(c);
+        
+        if (c->scroll_fx != old_sx || c->scroll_fy != old_sy) {
+            c->content_dirty = true;
+            c->last_scroll_time = aroma_time_now_ms();
+            c->scrollbar_opacity = 1.0f;
+            ensure_animation_timer(c);
+            aroma_node_invalidate(node);
+        }
+        return true;
+    }
+
+    case EVENT_TYPE_MOUSE_MOVE:
     case EVENT_TYPE_TOUCH_MOVE:
     {
-        if (event->data.touch.id != c->active_pointer_id)
+        int tx, ty, id;
+        if (event->event_type == EVENT_TYPE_MOUSE_MOVE) {
+            tx = event->data.mouse.x; ty = event->data.mouse.y; id = 0;
+        } else {
+            tx = event->data.touch.x; ty = event->data.touch.y; id = event->data.touch.id;
+        }
+        
+
+        if (id != c->active_pointer_id)
             return false;
 
         if (!can_scroll_h && !can_scroll_v)
@@ -496,8 +544,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
             return false;
         }
 
-        int tx = event->data.touch.x;
-        int ty = event->data.touch.y;
+
         int dx = c->drag_start_x - tx;
         int dy = c->drag_start_y - ty;
 
@@ -574,13 +621,18 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         return true;
     }
 
+    case EVENT_TYPE_MOUSE_RELEASE:
     case EVENT_TYPE_TOUCH_UP:
     {
-
+        int tx, ty, id;
+        if (event->event_type == EVENT_TYPE_MOUSE_RELEASE) {
+            tx = event->data.mouse.x; ty = event->data.mouse.y; id = 0;
+        } else {
+            tx = event->data.touch.x; ty = event->data.touch.y; id = event->data.touch.id;
+        }
         if (event->target_node_id != node->node_id)
             return false;
-
-        if (event->data.touch.id != c->active_pointer_id)
+        if (id != c->active_pointer_id)
             return false;
         bool was_dragging = c->is_dragging;
         c->is_dragging = false;
@@ -646,37 +698,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         return was_dragging;
     }
 
-    case EVENT_TYPE_MOUSE_MOVE:
-    {
-        int mx = event->data.mouse.x;
-        int my = event->data.mouse.y;
-        if (!point_in_rect(mx, my, &c->rect))
-            return false;
 
-        int dy = event->data.mouse.delta_y;
-        int dx = event->data.mouse.delta_x;
-        if (dy == 0 && dx == 0)
-            return false;
-
-        float old_sx = c->scroll_fx;
-        float old_sy = c->scroll_fy;
-
-        if (can_scroll_v)
-            c->scroll_fy += (float)dy * c->scroll_speed;
-        if (can_scroll_h)
-            c->scroll_fx += (float)dx * c->scroll_speed;
-        clamp_scroll(c);
-
-        if (c->scroll_fx != old_sx || c->scroll_fy != old_sy)
-        {
-            c->content_dirty = true;
-            c->last_scroll_time = aroma_time_now_ms();
-            c->scrollbar_opacity = 1.0f;
-            ensure_animation_timer(c);
-            aroma_node_invalidate(node);
-        }
-        return true;
-    }
 
     default:
         break;
@@ -892,6 +914,8 @@ void aroma_container_set_scrollable(AromaNode *node, bool scrollable)
         aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_MOVE, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, scroll_event_handler, node, 0);
+        aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_SCROLL, scroll_event_handler, node, 0);
+        aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_SCROLL, scroll_event_handler, node, 0);
     }
 
     aroma_node_invalidate(node);
