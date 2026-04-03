@@ -32,13 +32,13 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 #define TILE_SIZE 256
 
 typedef struct {
+    uint64_t access_seq;
     int z, x, y;
-    bool is_dark;
     unsigned int texture_id;
+    bool is_dark;
     bool is_loading;
     bool is_ready;
     bool valid;
-    uint64_t access_seq;
     char filepath[256];
 } MapTile;
 
@@ -72,10 +72,10 @@ struct AromaMapExtra {
 
 
 typedef struct {
+    uint64_t node_id;
     int z, x, y;
     bool is_dark;
     char filepath[256];
-    uint64_t node_id;
 } TileRequest;
 
 #define MAX_QUEUE 256
