@@ -36,15 +36,13 @@
 
 struct AromaSidebar {
     AromaRect rect;
-    char labels[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_LABEL_MAX];
-    char icons[AROMA_SIDEBAR_MAX_ITEMS][8];
+
     AromaFont* icon_font;
     int count;
     int selected_index;
     int hovered_index;
     int item_height;
-    AromaNode* content_nodes[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_CONTENT_MAX];
-    int content_counts[AROMA_SIDEBAR_MAX_ITEMS];
+
     AromaFont* font;
     uint32_t bg_color;
     uint32_t text_color;
@@ -58,6 +56,10 @@ struct AromaSidebar {
     int full_width;
     int retracted_width;
     int breakpoint;
+    AromaNode* content_nodes[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_CONTENT_MAX];
+    int content_counts[AROMA_SIDEBAR_MAX_ITEMS];
+    char labels[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_LABEL_MAX];
+    char icons[AROMA_SIDEBAR_MAX_ITEMS][8];
 };
 
 static void __sidebar_request_redraw(void* user_data)
