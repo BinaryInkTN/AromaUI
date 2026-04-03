@@ -275,6 +275,32 @@ void map_zoom_out_cb(void* user_data) {
     }
 }
 
+void navigate(int index, void* user_data)
+{  
+    if(user_data) {
+        switch (index) {
+            case 0:
+                aroma_map_pan_to((AromaNode*)user_data, 37.7749, -122.4194); // Pan to San Francisco
+                break;
+            case 1:
+                aroma_map_pan_to((AromaNode*)user_data, 34.0522, -118.2437); // Pan to Los Angeles
+                break;
+            case 2:
+                aroma_map_pan_to((AromaNode*)user_data, 40.7128, -74.0060); // Pan to New York
+                break;
+            case 3:
+                aroma_map_pan_to((AromaNode*)user_data, 41.8781, -87.6298); // Pan to Chicago
+                break;
+            case 4:
+                aroma_map_pan_to((AromaNode*)user_data, 47.6062, -122.3321); // Pan to Seattle
+                break;
+            default:
+                break;
+         }
+    }
+    
+}
+
 int main(void)
 {
     aroma_ui_init();
@@ -320,7 +346,7 @@ int main(void)
         150, 30,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
 
-    state.status_card = aroma_ui_card((AromaNode *)state.window, WIN_W - 235, 18, 200, 50, CARD_TYPE_GLASS);
+    state.status_card = aroma_ui_card((AromaNode *)state.window, WIN_W - 235, 18, 200, 50, CARD_TYPE_FILLED);
     state.signal_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_SIGNAL_CELLULAR_4_BAR, WIN_W - 120, 30, 24, state.theme.colors.primary, state.icon_font);
     state.wifi_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_WIFI, WIN_W - 80, 30, 24, state.theme.colors.primary, state.icon_font);
     state.battery_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BATTERY_FULL, WIN_W - 40, 30, 24, state.theme.colors.primary, state.icon_font);
@@ -358,15 +384,23 @@ int main(void)
     actual_map = (AromaNode *)aroma_map_create((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
         aroma_map_set_show_attribution(actual_map, true);
         aroma_node_set_z_index(actual_map, -1);
-    // Set center to a relevant location (e.g., Paris) and add a marker
     aroma_map_set_center(actual_map, 48.8566, 2.3522);
-    aroma_map_add_marker(actual_map, 48.8566, 2.3522, 0xFFFF0000); // Red marker
-    
-    // Zoom buttons
+    aroma_map_add_marker(actual_map, 48.8566, 2.3522, 0xFFFF0000); 
+    AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, 20, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
+    aroma_node_set_z_index(map_recently_visited_card, 10);
+    AromaNode* map_recently_visited_title = aroma_ui_label(map_recently_visited_card, "Recently Visited", 20, 20, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    AromaNode *recent_listview = aroma_ui_listview(map_recently_visited_card, 0, 60, 300, 400, navigate, actual_map,state.ui_font);
+    aroma_listview_add_item(recent_listview, "Home", "123 Main St", NULL);
+    aroma_listview_add_item(recent_listview, "Work", "456 Business Rd", NULL);
+    aroma_listview_add_item(recent_listview, "Gym", "789 Fitness Ave", NULL);
+    aroma_listview_add_item(recent_listview, "Supermarket", "321 Grocery Ln", NULL);
+    aroma_listview_add_item(recent_listview, "Cafe", "654 Coffee St", NULL);
+    aroma_listview_add_item(recent_listview, "Library", "987 Book Rd", NULL);
+    aroma_listview_add_item(recent_listview, "Park", "246 Greenway Blvd", NULL);
+
     AromaNode* zoom_in = aroma_ui_iconbutton(state.map_root, AROMA_ICON_ADD, WIN_W - 70, 120, 50, ICON_BUTTON_FILLED, map_zoom_in_cb, (void*)actual_map, state.icon_font);
     AromaNode* zoom_out = aroma_ui_iconbutton(state.map_root, AROMA_ICON_REMOVE, WIN_W - 70, 180, 50, ICON_BUTTON_FILLED, map_zoom_out_cb, (void*)actual_map, state.icon_font);
     
-    // Disable hover effects for now as requested
     aroma_button_set_colors(zoom_in, state.theme.colors.primary, state.theme.colors.primary, state.theme.colors.secondary, state.theme.colors.text_primary);
     aroma_button_set_colors(zoom_out, state.theme.colors.primary, state.theme.colors.primary, state.theme.colors.secondary, state.theme.colors.text_primary);
 
