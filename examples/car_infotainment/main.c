@@ -7,6 +7,8 @@
 #include <pthread.h>
 #include "voice_control.h"
 
+AromaNode* actual_map = NULL;
+
 #define WIN_W 1280
 #define WIN_H 800
 
@@ -197,6 +199,15 @@ static bool voice_end_call = false;
 static char voice_status_text[256] = "";
 
 static char voice_partial_text[512] = "";
+static char voice_nav_dest[128] = {0};
+static bool voice_nav_trigger = false;
+
+void queue_voice_navigation(const char* dest) {
+    pthread_mutex_lock(&voice_mutex);
+    strncpy(voice_nav_dest, dest, sizeof(voice_nav_dest)-1);
+    voice_nav_trigger = true;
+    pthread_mutex_unlock(&voice_mutex);
+}
 static int voice_partial_timeout = 0;
 static int voice_theme_change = -1;
 static int voice_ac_change = 0;
@@ -344,7 +355,7 @@ int main(void)
     aroma_tabs_set_content(state.tabs, 3, &state.settings_root, 1);
       
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
-    AromaNode* actual_map = (AromaNode *)aroma_map_create((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
+    actual_map = (AromaNode *)aroma_map_create((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
         aroma_map_set_show_attribution(actual_map, true);
         aroma_node_set_z_index(actual_map, -1);
     // Set center to a relevant location (e.g., Paris) and add a marker
@@ -366,6 +377,21 @@ int main(void)
     while (aroma_ui_is_running())
     {
         pthread_mutex_lock(&voice_mutex);
+        
+        if (voice_nav_trigger) {
+            double lat = 37.7749, lon = -122.4194;
+            if (strstr(voice_nav_dest, "paris")) { lat = 48.8566; lon = 2.3522; }
+            else if (strstr(voice_nav_dest, "london")) { lat = 51.5074; lon = -0.1278; }
+            else if (strstr(voice_nav_dest, "new york")) { lat = 40.7128; lon = -74.0060; }
+            else if (strstr(voice_nav_dest, "tokyo")) { lat = 35.6762; lon = 139.6503; }
+            else if (strstr(voice_nav_dest, "berlin")) { lat = 52.5200; lon = 13.4050; }
+            
+            if (actual_map) {
+                aroma_map_set_zoom(actual_map, 10);
+                aroma_map_pan_to(actual_map, lat, lon);
+            }
+            voice_nav_trigger = false;
+        }
         if (voice_target_tab != -1) {
             navigate_to_tab(voice_target_tab);
             voice_target_tab = -1;

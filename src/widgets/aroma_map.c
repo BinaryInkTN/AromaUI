@@ -1,3 +1,5 @@
+
+
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "backends/aroma_abi.h"
@@ -7,6 +9,8 @@
 #include "aroma_ui.h"
 #include "aroma_font.h"
 #include "aroma_ubuntu_font.h"
+#include "aroma_timer.h"
+#include "aroma_timer.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -56,6 +60,13 @@ struct AromaMapExtra {
     MapMarker markers[MAX_MARKERS];
     int marker_count;
     AromaFont* font;
+
+    AromaTimer* anim_timer;
+    double velocity_x;
+    double velocity_y;
+    double display_zoom;
+    double display_px_x;
+    double display_px_y;
 };
 
 
@@ -113,9 +124,9 @@ static void* tile_fetch_worker(void* arg) {
             
             char url[512];
             if (req.is_dark) {
-                snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", req.z, req.x, req.y);
+                snprintf(url, sizeof(url), "https:
             } else {
-                snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
+                snprintf(url, sizeof(url), "https:
             }
             
             char tmp_path[512];
@@ -136,12 +147,12 @@ static void* tile_fetch_worker(void* arg) {
                     
                     if (res == CURLE_OK) {
                         rename(tmp_path, req.filepath);
-                        // Wake up event loop to redraw map immediately
+                        
                         AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, NULL, NULL);
                         if (ev) aroma_event_queue(ev);
                     } else {
                         unlink(tmp_path);
-                        // Send failure event
+                        
                         AromaEvent *ev = aroma_event_create_custom(req.node_id, 998, NULL, NULL);
                         if (ev) aroma_event_queue(ev);
                     }
@@ -182,10 +193,59 @@ static bool request_tile_download(int z, int x, int y, bool is_dark, const char*
 }
 
 
+
+
+static void __map_anim_tick(void* user_data) {
+    if (!user_data) return;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)user_data;
+    if (!extra->node_ptr || !extra->node_ptr->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)extra->node_ptr->node_widget_ptr;
+    
+    bool changed = false;
+
+    if (fabs(extra->display_zoom - extra->zoom) > 0.001) {
+        extra->display_zoom += (extra->zoom - extra->display_zoom) * 0.15;
+        changed = true;
+    } else {
+        extra->display_zoom = extra->zoom;
+    }
+
+    if (!map->is_dragging) {
+        if (fabs(extra->velocity_x) > 0.1 || fabs(extra->velocity_y) > 0.1) {
+            extra->center_px_x += extra->velocity_x;
+            extra->center_px_y += extra->velocity_y;
+            extra->velocity_x *= 0.90;
+            extra->velocity_y *= 0.90;
+            changed = true;
+        } else {
+            extra->velocity_x = 0;
+            extra->velocity_y = 0;
+        }
+    } else {
+        extra->velocity_x = 0;
+        extra->velocity_y = 0;
+    }
+
+    double diff_x = extra->center_px_x - extra->display_px_x;
+    double diff_y = extra->center_px_y - extra->display_px_y;
+    if (fabs(diff_x) > 0.1 || fabs(diff_y) > 0.1) {
+        extra->display_px_x += diff_x * 0.4;
+        extra->display_px_y += diff_y * 0.4;
+        changed = true;
+    } else {
+        extra->display_px_x = extra->center_px_x;
+        extra->display_px_y = extra->center_px_y;
+    }
+
+    if (changed) {
+        aroma_node_invalidate(extra->node_ptr);
+    }
+}
+
 static void unload_old_zoom_tiles(struct AromaMapExtra* extra) {
-    // Leaflet optimization: Do not immediately unload old zoom tiles.
-    // The strict LRU eviction will recycle them naturally, allowing 
-    // them to remain as fallback blurry background layers during zoom.
+    
+    
+    
 }
 static bool __map_event_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node || !event->target_node->node_widget_ptr) return false;
@@ -204,7 +264,11 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
         if (extra->zoom < 18) {
             extra->zoom++;
             extra->center_px_x *= 2.0;
+            extra->display_px_x *= 2.0;
+
             extra->center_px_y *= 2.0;
+            extra->display_px_y *= 2.0;
+
             unload_old_zoom_tiles(extra);
         }
 
@@ -239,6 +303,11 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
                 
                 extra->center_px_x -= dx;
                 extra->center_px_y -= dy;
+                extra->display_px_x -= dx;
+                extra->display_px_y -= dy;
+                
+                extra->velocity_x = -dx * 0.5;
+                extra->velocity_y = -dy * 0.5;
                 
                 map->last_mouse_x = event->data.mouse.x;
                 map->last_mouse_y = event->data.mouse.y;
@@ -293,25 +362,24 @@ static void __map_draw(AromaNode* node, size_t window_id) {
 
     gfx->graphics_set_clip(map->rect.x, map->rect.y, map->rect.width, map->rect.height);
 
-    int z = extra->zoom;
-    double center_x = extra->center_px_x;
-    double center_y = extra->center_px_y;
 
+    int z = (int)round(extra->display_zoom);
+    if (z < 0) z = 0; if (z > 18) z = 18;
+    double scale = pow(2.0, extra->display_zoom - z);
     
+    double center_x = extra->display_px_x * pow(2.0, extra->display_zoom - extra->zoom);
+    double center_y = extra->display_px_y * pow(2.0, extra->display_zoom - extra->zoom);
+
     double max_px = (double)((1 << z) * TILE_SIZE);
-    
-    
-    
     
     double view_tl_x = center_x - map->rect.width / 2.0;
     double view_tl_y = center_y - map->rect.height / 2.0;
     
-    int tx_start = (int)floor(view_tl_x / TILE_SIZE) - 1; // Leaflet optimization: +1 buffer
-    int ty_start = (int)floor(view_tl_y / TILE_SIZE) - 1;
-    int tx_end = (int)floor((view_tl_x + map->rect.width) / TILE_SIZE) + 1; // Leaflet optimization: +1 buffer
-    int ty_end = (int)floor((view_tl_y + map->rect.height) / TILE_SIZE) + 1;
-    
-
+    double current_tile_size = TILE_SIZE * scale;
+    int tx_start = (int)floor(view_tl_x / current_tile_size) - 1;
+    int ty_start = (int)floor(view_tl_y / current_tile_size) - 1;
+    int tx_end = (int)floor((view_tl_x + map->rect.width) / current_tile_size) + 1;
+    int ty_end = (int)floor((view_tl_y + map->rect.height) / current_tile_size) + 1;
 
     for (int y = ty_start; y <= ty_end; y++) {
         for (int x = tx_start; x <= tx_end; x++) {
@@ -319,7 +387,6 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             if (y < 0 || y >= (1<<z)) continue;
             int wrapped_x = (x % (1<<z) + (1<<z)) % (1<<z); 
 
-            
             char filepath[256];
             snprintf(filepath, sizeof(filepath), "%s/osm_%s_%d_%d_%d.png", TILE_CACHE_DIR, theme_is_dark ? "dark" : "light", z, wrapped_x, y);
 
@@ -346,7 +413,6 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             if (found_tile) {
                 found_tile->access_seq = ++extra->access_counter;
             } else if (oldest_idx != -1) {
-                
                 found_tile = &extra->tiles[oldest_idx];
                 if (found_tile->valid && found_tile->is_ready && found_tile->texture_id != 0 && gfx && gfx->unload_image) {
                     gfx->unload_image(found_tile->texture_id);
@@ -363,21 +429,14 @@ static void __map_draw(AromaNode* node, size_t window_id) {
 
             if (found_tile && !found_tile->is_ready) {
                 if (access(filepath, F_OK) != -1) {
-                    
                     if (found_tile->is_loading) {
                         found_tile->is_loading = false;
                     }
                     if (gfx && gfx->load_image) {
                         found_tile->texture_id = gfx->load_image(filepath);
-                        
-                        // Set it to ready regardless of success to prevent endless retries for corrupted tiles
                         found_tile->is_ready = true;
-                        if (found_tile->texture_id == 0) {
-                            LOG_WARNING("Failed to load map tile (corrupted/invalid file): %s", filepath);
-                        }
                     }
                 } else if (!found_tile->is_loading) {
-                    
                     found_tile->is_loading = true;
                     if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath, node->node_id)) {
                         found_tile->is_loading = false;
@@ -385,11 +444,13 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                 }
             }
 
-            int draw_x = map->rect.x + (int)(x * TILE_SIZE - view_tl_x);
-            int draw_y = map->rect.y + (int)(y * TILE_SIZE - view_tl_y);
+            int draw_x = map->rect.x + (int)(x * current_tile_size - view_tl_x);
+            int draw_y = map->rect.y + (int)(y * current_tile_size - view_tl_y);
+            int draw_size = (int)(current_tile_size) + 1;
 
             if (found_tile && found_tile->is_ready && found_tile->texture_id != 0 && gfx && gfx->draw_image) {
-                gfx->draw_image(window_id, draw_x, draw_y, TILE_SIZE, TILE_SIZE, found_tile->texture_id);
+                gfx->draw_image(window_id, draw_x, draw_y, draw_size, draw_size, found_tile->texture_id);
+
             } else {
                 bool drawn_fallback = false;
                 if (z > 0 && gfx && gfx->draw_image) {
@@ -446,18 +507,18 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             draw_y >= map->rect.y && draw_y <= map->rect.y + map->rect.height) {
             
             if (gfx && gfx->fill_rectangle) {
-                // outer ring
+                
                 gfx->fill_rectangle(window_id, draw_x - 8, draw_y - 8, 16, 16, extra->markers[i].color, true, 8.0f);
-                // inner white
+                
                 gfx->fill_rectangle(window_id, draw_x - 6, draw_y - 6, 12, 12, 0xFFFFFFFF, true, 6.0f);
-                // inner bullet
+                
                 gfx->fill_rectangle(window_id, draw_x - 4, draw_y - 4, 8, 8, extra->markers[i].color, true, 4.0f);
             }
         }
     }
 
     if (theme_is_dark) {
-        // No need for software overlay, using dark tiles
+        
     }
 
     if (map->show_osm_attribution && extra->font && gfx && gfx->render_text) {
@@ -492,6 +553,9 @@ void aroma_map_destroy(AromaNode* node) {
         aroma_event_unsubscribe(extra->root_id, EVENT_TYPE_KEY_PRESS, __map_event_handler_global);
     }
     if (extra) {
+        if (extra->anim_timer) {
+            aroma_timer_cancel(extra->anim_timer);
+        }
         AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
         for (int i=0; i<MAX_TILES_MEM; i++) {
             if (extra->tiles[i].valid && extra->tiles[i].is_ready && gfx && gfx->unload_image) {
@@ -519,7 +583,11 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data) {
         if (extra->zoom < 18) {
             extra->zoom++;
             extra->center_px_x *= 2.0;
+            extra->display_px_x *= 2.0;
+
             extra->center_px_y *= 2.0;
+            extra->display_px_y *= 2.0;
+
             unload_old_zoom_tiles(extra);
         }
 
@@ -530,7 +598,11 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data) {
             if (extra->zoom > 2) {
                 extra->zoom--;
                 extra->center_px_x /= 2.0;
+                extra->display_px_x /= 2.0;
+
                 extra->center_px_y /= 2.0;
+                extra->display_px_y /= 2.0;
+
                 unload_old_zoom_tiles(extra);
             }
             if (extra->node_ptr) aroma_node_invalidate(extra->node_ptr);
@@ -550,7 +622,11 @@ void aroma_map_zoom_in(AromaNode* node) {
         if (extra->zoom < 18) {
             extra->zoom++;
             extra->center_px_x *= 2.0;
+            extra->display_px_x *= 2.0;
+
             extra->center_px_y *= 2.0;
+            extra->display_px_y *= 2.0;
+
             unload_old_zoom_tiles(extra);
         }
 
@@ -566,7 +642,11 @@ void aroma_map_zoom_out(AromaNode* node) {
     if (extra->zoom > 2) {
         extra->zoom--;
         extra->center_px_x /= 2.0;
+                extra->display_px_x /= 2.0;
+
         extra->center_px_y /= 2.0;
+                extra->display_px_y /= 2.0;
+
         unload_old_zoom_tiles(extra);
     }
     aroma_node_invalidate(node);
@@ -680,8 +760,14 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     
     extra->zoom = map->zoom;
     
-    extra->center_px_x = 8192.0; // center for zoom 6 at 0,0
+    extra->center_px_x = 8192.0; 
     extra->center_px_y = 8192.0;
+    extra->display_px_x = 8192.0;
+    extra->display_px_y = 8192.0;
+    extra->display_zoom = map->zoom;
+    extra->velocity_x = 0;
+    extra->velocity_y = 0;
+    extra->anim_timer = aroma_timer_create(16, true, __map_anim_tick, extra);
 
     extra->font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 12);
 

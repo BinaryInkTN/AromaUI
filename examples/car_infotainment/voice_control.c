@@ -15,7 +15,8 @@ extern void queue_voice_partial(const char* partial_text);
 extern void queue_voice_theme(int dark_mode);
 extern void queue_voice_ac_action(int temp_delta);
 extern void queue_voice_info_request(int info_type); // 1 = battery, 2 = range
-extern void queue_voice_music_action(int action); // 1=play, 2=pause, 3=vol_up, 4=vol_down
+extern void queue_voice_music_action(int action);
+extern void queue_voice_navigation(const char* dest); // 1=play, 2=pause, 3=vol_up, 4=vol_down
 
 static time_t manual_wake_time = 0;
 
@@ -102,6 +103,15 @@ static void process_intent(const char *text) {
             printf("Voice Intent: OPEN MAIN\n");
             aroma_voice_speak("Opening Home screen");
             queue_voice_action(0, false, false, "Opened Home");
+        } else if (strstr(text, "navigate to")) {
+            char* dest = strstr(text, "navigate to") + 11;
+            while(*dest == ' ') dest++;
+            printf("Voice Intent: NAVIGATE TO %s\n", dest);
+            char msg[128];
+            snprintf(msg, sizeof(msg), "Navigating to %s", dest);
+            aroma_voice_speak(msg);
+            queue_voice_navigation(dest);
+            queue_voice_action(4, false, false, msg);
         } else if (strstr(text, "call") || strstr(text, "dial")) {
             printf("Voice Intent: CALL\n");
             aroma_voice_speak("Starting call");
