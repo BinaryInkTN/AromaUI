@@ -28,7 +28,7 @@ typedef struct VkVertex
 #define VK_MAX_FONT_CACHE 16
 #define VK_INVALID_FONT_INDEX (-1)
 #define VK_MAX_TEXTURES 256
-#define VK_MAX_TEXT_GLYPHS_PER_FRAME 1024
+#define VK_MAX_TEXT_GLYPHS_PER_FRAME 16384
 
 typedef struct VkTextureHandle
 {
