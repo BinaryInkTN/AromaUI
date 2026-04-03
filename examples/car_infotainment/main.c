@@ -382,6 +382,7 @@ int main(void)
       
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     actual_map = (AromaNode *)aroma_map_create((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
+    
         aroma_map_set_show_attribution(actual_map, true);
         aroma_node_set_z_index(actual_map, -1);
     aroma_map_set_center(actual_map, 48.8566, 2.3522);

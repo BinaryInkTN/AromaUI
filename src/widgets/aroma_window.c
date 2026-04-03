@@ -101,3 +101,17 @@ void aroma_window_set_fullscreen(AromaNode* window_node, bool enable) {
         platform_interface->set_fullscreen(win->window_id, enable);
     }
 }
+
+void aroma_window_destroy(AromaNode* window_node) {
+    if (!window_node || window_node->node_type != NODE_TYPE_ROOT) {
+        return;
+    }
+    
+    // Unsubscribe from window-level events
+    aroma_event_unsubscribe(window_node->node_id, EVENT_TYPE_WINDOW_RESIZE, window_resize_handler);
+
+    // Completely destroy the node tree recursively. 
+    // __destroy_node_tree will trigger all child destroy_callbacks.
+    extern void __destroy_node_tree(AromaNode*);
+    __destroy_node_tree(window_node);
+}

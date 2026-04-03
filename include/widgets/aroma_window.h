@@ -15,6 +15,7 @@ typedef struct AromaWindow
 
 AromaNode* aroma_window_create(const char* title, int x, int y, int width, int height);
 void aroma_window_get_size(AromaNode* window_node, int* width, int* height);
+void aroma_window_destroy(AromaNode* window_node);
 
 /**
  * @brief Sets the fullscreen state of the window (Android only)

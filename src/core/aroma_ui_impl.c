@@ -384,7 +384,7 @@ void aroma_ui_destroy_window_impl(AromaWindow *window)
         if (g_windows[i].window == window)
         {
 
-            __destroy_node(g_windows[i].root_node);
+            aroma_window_destroy((AromaNode*)g_windows[i].root_node);
 
             if (g_window_drawlists[i])
             {
