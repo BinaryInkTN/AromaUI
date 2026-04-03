@@ -497,8 +497,8 @@ static void __map_draw(AromaNode* node, size_t window_id) {
         double lon = extra->markers[i].lon;
         
         double lat_rad = lat * M_PI / 180.0;
-        double px_x = (lon + 180.0) / 360.0 * (1 << z) * TILE_SIZE;
-        double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << z) * TILE_SIZE;
+        double px_x = (lon + 180.0) / 360.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
+        double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
         
         int draw_x = map->rect.x + (int)(px_x - view_tl_x);
         int draw_y = map->rect.y + (int)(px_y - view_tl_y);
@@ -515,10 +515,6 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                 gfx->fill_rectangle(window_id, draw_x - 4, draw_y - 4, 8, 8, extra->markers[i].color, true, 4.0f);
             }
         }
-    }
-
-    if (theme_is_dark) {
-        // No need for software overlay, using dark tiles
     }
 
     if (map->show_osm_attribution && extra->font && gfx && gfx->render_text) {
