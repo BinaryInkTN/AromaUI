@@ -545,14 +545,14 @@ static bool create_descriptor_pool(void)
 {
     VkDescriptorPoolSize poolSize = {
         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount = 1024,
+        .descriptorCount = 8192,
     };
 
     VkDescriptorPoolCreateInfo poolInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .poolSizeCount = 1,
         .pPoolSizes = &poolSize,
-        .maxSets = 1024,
+        .maxSets = 8192,
         .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
     };
 

@@ -87,10 +87,22 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
     if (card->use_theme_colors)
     {
         AromaTheme theme = aroma_theme_get_global();
-        card->bg_color = card->type == CARD_TYPE_FILLED
-                             ? aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f)
-                             : theme.colors.surface;
+        if (card->type == CARD_TYPE_FILLED) {
+            card->bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f);
+        } else if (card->type == CARD_TYPE_GLASS) {
+            uint8_t r, g, b;
+            aroma_color_extract_rgb(theme.colors.surface, &r, &g, &b);
+            card->bg_color = aroma_color_rgba(r, g, b, 180); // ~70% opacity, implies glass blur layer behind
+        } else {
+            card->bg_color = theme.colors.surface;
+        }
         card->border_color = theme.colors.border;
+        
+        if (card->type == CARD_TYPE_GLASS) {
+            uint8_t r, g, b;
+            aroma_color_extract_rgb(theme.colors.border, &r, &g, &b);
+            card->border_color = aroma_color_rgba(255, 255, 255, 60); // Glossy thin edge for glass effect
+        }
     }
 
     if (card->type == CARD_TYPE_ELEVATED && card->shadow_color != 0)
@@ -106,7 +118,7 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
                         card->rect.width, card->rect.height,
                         card->bg_color, true, card->border_radius);
 
-    if (card->type == CARD_TYPE_OUTLINED)
+    if (card->type == CARD_TYPE_OUTLINED || card->type == CARD_TYPE_GLASS)
     {
         gfx->draw_hollow_rectangle(window_id,
                                    card->rect.x, card->rect.y,
@@ -140,10 +152,20 @@ AromaCard *card = (AromaCard *)calloc(1, sizeof(AromaCard));
     card->type = type;
 
     AromaTheme theme = aroma_theme_get_global();
-    card->bg_color = type == CARD_TYPE_FILLED
-                         ? aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f)
-                         : theme.colors.surface;
+    if (type == CARD_TYPE_FILLED) {
+        card->bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f);
+    } else if (type == CARD_TYPE_GLASS) {
+        uint8_t r, g, b;
+        aroma_color_extract_rgb(theme.colors.surface, &r, &g, &b);
+        card->bg_color = aroma_color_rgba(r, g, b, 180);
+    } else {
+        card->bg_color = theme.colors.surface;
+    }
+    
     card->border_color = theme.colors.border;
+    if (type == CARD_TYPE_GLASS) {
+        card->border_color = aroma_color_rgba(255, 255, 255, 60); // Glossy thin edge
+    }
     card->border_radius = 12.0f;
     card->shadow_color = 0x40000000;
     card->use_theme_colors = true;

@@ -11,7 +11,8 @@ extern "C" {
 typedef enum {
     CARD_TYPE_ELEVATED,  // Elevated card with shadow
     CARD_TYPE_FILLED,    // Filled card with tint
-    CARD_TYPE_OUTLINED   // Outlined card with border
+    CARD_TYPE_OUTLINED,  // Outlined card with border
+    CARD_TYPE_GLASS      // Glass blur background card
 } AromaCardType;
 
 typedef struct AromaCard AromaCard;
