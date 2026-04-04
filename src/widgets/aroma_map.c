@@ -21,7 +21,6 @@
 static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 
-
 static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 
 #include <stdlib.h>
@@ -80,7 +79,6 @@ struct AromaMapExtra {
     pthread_mutex_t route_mutex;
 };
 
-
 typedef struct {
     uint64_t node_id;
     int z, x, y;
@@ -97,7 +95,7 @@ static pthread_cond_t queue_cond = PTHREAD_COND_INITIALIZER;
 
 #define MAX_WORKER_THREADS 16
 static pthread_t worker_threads[MAX_WORKER_THREADS];
-static int num_active_workers = 2; // Default for low-power devices
+static int num_active_workers = 2;
 static bool worker_running = false;
 static bool curl_initialized = false;
 
@@ -137,7 +135,7 @@ static void decode_polyline(const char* encoded, double** lats, double** lons, i
         do {
             if (index >= len) break;
             b = encoded[index++];
-            if (b == '\\' && encoded[index] == '\\') index++; // Handle JSON escaped backslashes inline
+            if (b == '\\' && encoded[index] == '\\') index++;
             b -= 63;
             result |= (b & 0x1f) << shift;
             shift += 5;
@@ -149,7 +147,7 @@ static void decode_polyline(const char* encoded, double** lats, double** lons, i
         do {
             if (index >= len) break;
             b = encoded[index++];
-            if (b == '\\' && encoded[index] == '\\') index++; // Handle JSON escaped backslashes inline
+            if (b == '\\' && encoded[index] == '\\') index++;
             b -= 63;
             result |= (b & 0x1f) << shift;
             shift += 5;
@@ -177,23 +175,23 @@ typedef struct {
 static void* route_fetch_worker(void* arg) {
     RouteRequest* req = (RouteRequest*)arg;
     struct AromaMapExtra* extra = req->extra;
-    
+
     char url[512];
     snprintf(url, sizeof(url), "http://routing.openstreetmap.de/routed-car/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline",
              req->start_lon, req->start_lat, req->end_lon, req->end_lat);
-             
+
     CURL *curl = curl_easy_init();
     if (curl) {
         struct MemoryStruct chunk;
         chunk.memory = malloc(1);
         chunk.size = 0;
-        
+
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "AromaUI/1.0");
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
-        
+
         CURLcode res = curl_easy_perform(curl);
         if (res == CURLE_OK && chunk.size > 0) {
             char* geom_start = strstr(chunk.memory, "\"geometry\":\"");
@@ -205,7 +203,12 @@ static void* route_fetch_worker(void* arg) {
                     double *rlats = NULL, *rlons = NULL;
                     int rcount = 0;
                     decode_polyline(geom_start, &rlats, &rlons, &rcount);
-                    
+                    for (int n = 0; n < rcount; n++) {
+                        double lat_rad = rlats[n] * M_PI / 180.0;
+                        rlats[n] = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0;
+                        rlons[n] = (rlons[n] + 180.0) / 360.0;
+                    }
+
                     pthread_mutex_lock(&extra->route_mutex);
                     if (extra->route_lats) free(extra->route_lats);
                     if (extra->route_lons) free(extra->route_lons);
@@ -215,7 +218,8 @@ static void* route_fetch_worker(void* arg) {
                     extra->route_active = true;
                     extra->route_loading = false;
                     pthread_mutex_unlock(&extra->route_mutex);
-                    
+    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
+
                     AromaEvent *ev = aroma_event_create_custom(req->node->node_id, 999, NULL, NULL);
                     if (ev) aroma_event_queue(ev);
                 }
@@ -225,6 +229,7 @@ static void* route_fetch_worker(void* arg) {
             extra->route_loading = false;
             extra->route_active = false;
             pthread_mutex_unlock(&extra->route_mutex);
+    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
         }
         free(chunk.memory);
         curl_easy_cleanup(curl);
@@ -237,7 +242,7 @@ static void* tile_fetch_worker(void* arg) {
     while (worker_running) {
         TileRequest req;
         bool has_req = false;
-        
+
         pthread_mutex_lock(&queue_mutex);
         while (queue_head == queue_tail && worker_running) {
             struct timespec ts;
@@ -255,23 +260,23 @@ static void* tile_fetch_worker(void* arg) {
             has_req = true;
         }
         pthread_mutex_unlock(&queue_mutex);
-        
+
         if (has_req) {
-            
+
             if (access(req.filepath, F_OK) != -1) {
                 continue;
             }
-            
+
             char url[512];
             if (req.is_dark) {
                 snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", req.z, req.x, req.y);
             } else {
                 snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
             }
-            
+
             char tmp_path[512];
             snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", req.filepath);
-            
+
             CURL *curl = curl_easy_init();
             if (curl) {
                 FILE *fp = fopen(tmp_path, "wb");
@@ -281,18 +286,18 @@ static void* tile_fetch_worker(void* arg) {
                     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
                     curl_easy_setopt(curl, CURLOPT_USERAGENT, "AromaUI/1.0");
                     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
-                    
+
                     CURLcode res = curl_easy_perform(curl);
                     fclose(fp);
-                    
+
                     if (res == CURLE_OK) {
                         rename(tmp_path, req.filepath);
-                        // Wake up event loop to redraw map immediately
+
                         AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, NULL, NULL);
                         if (ev) aroma_event_queue(ev);
                     } else {
                         unlink(tmp_path);
-                        // Send failure event
+
                         AromaEvent *ev = aroma_event_create_custom(req.node_id, 998, NULL, NULL);
                         if (ev) aroma_event_queue(ev);
                     }
@@ -309,7 +314,7 @@ static bool request_tile_download(int z, int x, int y, bool is_dark, const char*
     pthread_mutex_lock(&queue_mutex);
     int next_tail = (queue_tail + 1) % MAX_QUEUE;
     if (next_tail != queue_head) {
-        
+
         bool exists = false;
         for (int i = queue_head; i != queue_tail; i = (i + 1) % MAX_QUEUE) {
             if (fetch_queue[i].z == z && fetch_queue[i].x == x && fetch_queue[i].y == y && fetch_queue[i].is_dark == is_dark) {
@@ -332,15 +337,12 @@ static bool request_tile_download(int z, int x, int y, bool is_dark, const char*
     return queued;
 }
 
-
-
-
 static void __map_anim_tick(void* user_data) {
     if (!user_data) return;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)user_data;
     if (!extra->node_ptr || !extra->node_ptr->node_widget_ptr) return;
     AromaMap* map = (AromaMap*)extra->node_ptr->node_widget_ptr;
-    
+
     bool changed = false;
 
     if (fabs(extra->display_zoom - extra->zoom) > 0.001) {
@@ -354,7 +356,7 @@ static void __map_anim_tick(void* user_data) {
         if (fabs(extra->velocity_x) > 0.1 || fabs(extra->velocity_y) > 0.1) {
             extra->center_px_x += extra->velocity_x;
             extra->center_px_y += extra->velocity_y;
-            // High fidelity friction decay
+
             extra->velocity_x *= 0.94;
             extra->velocity_y *= 0.94;
             changed = true;
@@ -384,9 +386,7 @@ static void __map_anim_tick(void* user_data) {
 }
 
 static void unload_old_zoom_tiles(struct AromaMapExtra* extra) {
-    // Leaflet optimization: Do not immediately unload old zoom tiles.
-    // The strict LRU eviction will recycle them naturally, allowing 
-    // them to remain as fallback blurry background layers during zoom.
+
 }
 static bool __map_event_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node || !event->target_node->node_widget_ptr) return false;
@@ -394,14 +394,14 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
     struct AromaMapExtra* extra = (struct AromaMapExtra*)user_data;
     if (!extra) return false;
 
-    LOG_INFO("MAP EVENT %d (Drag: %d, x: %d y: %d rx: %d ry: %d rw: %d rh: %d)", 
+    LOG_INFO("MAP EVENT %d (Drag: %d, x: %d y: %d rx: %d ry: %d rw: %d rh: %d)",
         event->event_type, map->is_dragging, event->data.mouse.x, event->data.mouse.y, map->rect.x, map->rect.y, map->rect.width, map->rect.height);
-    
+
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_DOUBLE_CLICK:
             if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
                 event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height) {
-                
+
         if (extra->zoom < 18) {
             extra->zoom++;
             extra->center_px_x *= 2.0;
@@ -421,33 +421,31 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
         case EVENT_TYPE_MOUSE_CLICK:
             if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
                 event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height) {
-                
-                // Check if a marker was clicked to open a popup
+
                 int clicked_marker = -1;
                 double center_x = extra->display_px_x * pow(2.0, extra->display_zoom - extra->zoom);
                 double center_y = extra->display_px_y * pow(2.0, extra->display_zoom - extra->zoom);
                 double view_tl_x = center_x - map->rect.width / 2.0;
                 double view_tl_y = center_y - map->rect.height / 2.0;
-                
-                for (int i = 0; i < extra->marker_count; i++) {
+
+    for (int i = 0; i < extra->marker_count; i++) {
                     if (!extra->markers[i].popup_text) continue;
                     double lat_rad = extra->markers[i].lat * M_PI / 180.0;
                     double px_x = (extra->markers[i].lon + 180.0) / 360.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
                     double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
                     int draw_x = map->rect.x + (int)(px_x - view_tl_x);
                     int draw_y = map->rect.y + (int)(px_y - view_tl_y);
-                    
-                    // Hitbox for marker
+
                     if (event->data.mouse.x >= draw_x - 12 && event->data.mouse.x <= draw_x + 12 &&
                         event->data.mouse.y >= draw_y - 12 && event->data.mouse.y <= draw_y + 12) {
                         clicked_marker = i;
                         break;
                     }
                 }
-                
+
                 if (clicked_marker != -1) {
                     if (extra->active_popup_idx == clicked_marker) {
-                        extra->active_popup_idx = -1; // toggle off
+                        extra->active_popup_idx = -1;
                     } else {
                         extra->active_popup_idx = clicked_marker;
                     }
@@ -455,14 +453,14 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
                     map->is_dragging = true;
                     map->last_mouse_x = event->data.mouse.x;
                     map->last_mouse_y = event->data.mouse.y;
-                    extra->active_popup_idx = -1; // clicking map closes info
+                    extra->active_popup_idx = -1;
                 }
-                
+
                 aroma_node_invalidate(event->target_node);
                 return true;
             }
             break;
-            
+
         case EVENT_TYPE_MOUSE_MOVE:
             if (map->is_dragging) {
                 if (event->data.mouse.x < map->rect.x || event->data.mouse.x > map->rect.x + map->rect.width ||
@@ -471,27 +469,26 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
                     aroma_node_invalidate(event->target_node);
                     return true;
                 }
-                
+
                 int dx = event->data.mouse.x - map->last_mouse_x;
                 int dy = event->data.mouse.y - map->last_mouse_y;
-                
+
                 extra->center_px_x -= dx;
                 extra->center_px_y -= dy;
                 extra->display_px_x -= dx;
                 extra->display_px_y -= dy;
-                
-                // Track dragging kinetics for high frame gliding
+
                 extra->velocity_x = -dx * 0.8;
                 extra->velocity_y = -dy * 0.8;
-                
+
                 map->last_mouse_x = event->data.mouse.x;
                 map->last_mouse_y = event->data.mouse.y;
-                
+
                 aroma_node_invalidate(event->target_node);
                 return true;
             }
             break;
-            
+
         case EVENT_TYPE_MOUSE_EXIT:
         case EVENT_TYPE_MOUSE_RELEASE:
             if (map->is_dragging) {
@@ -504,7 +501,7 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
         case EVENT_TYPE_MOUSE_SCROLL:
             if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
                 event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height) {
-                
+
                 if (event->data.mouse.scroll_y > 0 && extra->zoom < 18) {
                     extra->zoom++;
                     extra->center_px_x *= 2.0;
@@ -538,16 +535,69 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
     return false;
 }
 
-static void _map_draw_line(AromaGraphicsInterface* gfx, size_t window_id, int x0, int y0, int x1, int y1, uint32_t color, int thickness) {
+static void _map_draw_line(AromaGraphicsInterface* gfx, size_t window_id, int x0, int y0, int x1, int y1, uint32_t color, int thickness, int cx, int cy, int cw, int ch) {
     if (!gfx || !gfx->fill_rectangle) return;
+
+    int outcode0 = (((x0) < cx) ? 1 : ((x0) > cx + cw) ? 2 : 0) | (((y0) < cy) ? 4 : ((y0) > cy + ch) ? 8 : 0);
+    int outcode1 = (((x1) < cx) ? 1 : ((x1) > cx + cw) ? 2 : 0) | (((y1) < cy) ? 4 : ((y1) > cy + ch) ? 8 : 0);
+
+    while (1) {
+        if (!(outcode0 | outcode1)) {
+            break;
+        } else if (outcode0 & outcode1) {
+            return;
+        } else {
+            int x = 0, y = 0;
+            int out = outcode0 ? outcode0 : outcode1;
+
+            if (out & 8) {
+                x = x0 + (x1 - x0) * (cy + ch - y0) / (y1 - y0);
+                y = cy + ch;
+            } else if (out & 4) {
+                x = x0 + (x1 - x0) * (cy - y0) / (y1 - y0);
+                y = cy;
+            } else if (out & 2) {
+                y = y0 + (y1 - y0) * (cx + cw - x0) / (x1 - x0);
+                x = cx + cw;
+            } else if (out & 1) {
+                y = y0 + (y1 - y0) * (cx - x0) / (x1 - x0);
+                x = cx;
+            }
+
+            if (out == outcode0) {
+                x0 = x; y0 = y;
+                outcode0 = (((x0) < cx) ? 1 : ((x0) > cx + cw) ? 2 : 0) | (((y0) < cy) ? 4 : ((y0) > cy + ch) ? 8 : 0);
+            } else {
+                x1 = x; y1 = y;
+                outcode1 = (((x1) < cx) ? 1 : ((x1) > cx + cw) ? 2 : 0) | (((y1) < cy) ? 4 : ((y1) > cy + ch) ? 8 : 0);
+            }
+        }
+    }
+
     int dx = x1 - x0;
     int dy = y1 - y0;
     int adx = dx < 0 ? -dx : dx;
     int ady = dy < 0 ? -dy : dy;
+
+    if (adx == 0) {
+        int y_min = y0 < y1 ? y0 : y1;
+        gfx->fill_rectangle(window_id, x0 - thickness/2, y_min - thickness/2, thickness, ady + thickness, color, true, thickness/2.0f);
+        return;
+    }
+    if (ady == 0) {
+        int x_min = x0 < x1 ? x0 : x1;
+        gfx->fill_rectangle(window_id, x_min - thickness/2, y0 - thickness/2, adx + thickness, thickness, color, true, thickness/2.0f);
+        return;
+    }
+
     int d_max = adx > ady ? adx : ady;
-    int steps = d_max / (thickness / 4);
+
+    int step_size = (thickness * 7) / 10;
+    if (step_size < 1) step_size = 1;
+
+    int steps = d_max / step_size;
     if (steps == 0) steps = 1;
-    
+
     for (int i = 0; i <= steps; i++) {
         int x = x0 + dx * i / steps;
         int y = y0 + dy * i / steps;
@@ -561,14 +611,12 @@ static void __map_draw(AromaNode* node, size_t window_id) {
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
     if (!extra) return;
 
-
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
-    
+
     AromaTheme theme = aroma_ui_get_theme();
     uint32_t bg_color = theme.colors.surface;
     uint32_t grid_color = theme.colors.border;
-    
-    
+
     uint8_t r = (bg_color >> 16) & 0xFF;
     uint8_t g = (bg_color >> 8) & 0xFF;
     uint8_t b = bg_color & 0xFF;
@@ -578,19 +626,18 @@ static void __map_draw(AromaNode* node, size_t window_id) {
 
     gfx->graphics_set_clip(map->rect.x, map->rect.y, map->rect.width, map->rect.height);
 
-
     int z = (int)round(extra->display_zoom);
     if (z < 0) z = 0; if (z > 18) z = 18;
     double scale = pow(2.0, extra->display_zoom - z);
-    
+
     double center_x = extra->display_px_x * pow(2.0, extra->display_zoom - extra->zoom);
     double center_y = extra->display_px_y * pow(2.0, extra->display_zoom - extra->zoom);
 
     double max_px = (double)((1 << z) * TILE_SIZE);
-    
+
     double view_tl_x = center_x - map->rect.width / 2.0;
     double view_tl_y = center_y - map->rect.height / 2.0;
-    
+
     double current_tile_size = TILE_SIZE * scale;
     int tx_start = (int)floor(view_tl_x / current_tile_size) - 1;
     int ty_start = (int)floor(view_tl_y / current_tile_size) - 1;
@@ -599,9 +646,9 @@ static void __map_draw(AromaNode* node, size_t window_id) {
 
     for (int y = ty_start; y <= ty_end; y++) {
         for (int x = tx_start; x <= tx_end; x++) {
-            
+
             if (y < 0 || y >= (1<<z)) continue;
-            int wrapped_x = (x % (1<<z) + (1<<z)) % (1<<z); 
+            int wrapped_x = (x % (1<<z) + (1<<z)) % (1<<z);
 
             char filepath[256];
             snprintf(filepath, sizeof(filepath), "%s/osm_%s_%d_%d_%d.png", TILE_CACHE_DIR, theme_is_dark ? "dark" : "light", z, wrapped_x, y);
@@ -690,7 +737,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                         int cy = draw_y < map->rect.y ? map->rect.y : draw_y;
                         int cw = draw_x + TILE_SIZE > map->rect.x + map->rect.width ? map->rect.x + map->rect.width - cx : draw_x + TILE_SIZE - cx;
                         int ch = draw_y + TILE_SIZE > map->rect.y + map->rect.height ? map->rect.y + map->rect.height - cy : draw_y + TILE_SIZE - cy;
-                        
+
                         if (cw > 0 && ch > 0) {
                             gfx->graphics_set_clip(cx, cy, cw, ch);
                             gfx->draw_image(window_id, p_draw_x, p_draw_y, TILE_SIZE * 2, TILE_SIZE * 2, fallback->texture_id);
@@ -699,7 +746,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                         }
                     }
                 }
-                
+
                 if (!drawn_fallback && draw_x < map->rect.x + map->rect.width && draw_x + TILE_SIZE > map->rect.x &&
                     draw_y < map->rect.y + map->rect.height && draw_y + TILE_SIZE > map->rect.y) {
                     gfx->draw_hollow_rectangle(window_id, draw_x, draw_y, TILE_SIZE, TILE_SIZE, grid_color, 1, false, 0.0f);
@@ -707,7 +754,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             }
         }
     }
-    
+
     pthread_mutex_lock(&extra->route_mutex);
     if (extra->route_active && extra->route_point_count > 1 && gfx) {
         uint32_t inner_color = extra->route_color;
@@ -716,97 +763,104 @@ static void __map_draw(AromaNode* node, size_t window_id) {
         uint32_t b = inner_color & 0xFF;
         uint32_t a = (inner_color >> 24) & 0xFF;
         uint32_t border_color = (a << 24) | ((r/2) << 16) | ((g/2) << 8) | (b/2);
-        
+
+        double z_factor = pow(2.0, extra->display_zoom) * TILE_SIZE;
         for (int pass = 0; pass < 2; pass++) {
             int thickness = pass == 0 ? 12 : 6;
             uint32_t pass_color = pass == 0 ? border_color : inner_color;
 
-            int last_x = 0;
-            int last_y = 0;
+            int last_drawn_x = 0;
+            int last_drawn_y = 0;
+            bool has_last_drawn = false;
+
             for (int i = 0; i < extra->route_point_count; i++) {
-                double lat = extra->route_lats[i];
-                double lon = extra->route_lons[i];
-                
-                double lat_rad = lat * M_PI / 180.0;
-                double px_x = (lon + 180.0) / 360.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
-                double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
-                
+                double px_x = extra->route_lons[i] * z_factor;
+                double px_y = extra->route_lats[i] * z_factor;
+
                 int draw_x = map->rect.x + (int)(px_x - view_tl_x);
                 int draw_y = map->rect.y + (int)(px_y - view_tl_y);
-                
-                if (i > 0) {
-                    // Quick AABB intersection to avoid drawing completely offscreen segments
+
+                if (has_last_drawn) {
+                    int adx = draw_x - last_drawn_x;
+                    int ady = draw_y - last_drawn_y;
+                    if (adx < 0) adx = -adx;
+                    if (ady < 0) ady = -ady;
+
+                    if (adx < thickness && ady < thickness && i < extra->route_point_count - 1) {
+                        continue;
+                    }
+
                     int expand = 20;
-                    int min_x = last_x < draw_x ? last_x : draw_x;
-                    int max_x = last_x > draw_x ? last_x : draw_x;
-                    int min_y = last_y < draw_y ? last_y : draw_y;
-                    int max_y = last_y > draw_y ? last_y : draw_y;
-                    
+                    int min_x = last_drawn_x < draw_x ? last_drawn_x : draw_x;
+                    int max_x = last_drawn_x > draw_x ? last_drawn_x : draw_x;
+                    int min_y = last_drawn_y < draw_y ? last_drawn_y : draw_y;
+                    int max_y = last_drawn_y > draw_y ? last_drawn_y : draw_y;
+
                     if (!(max_x < map->rect.x - expand || min_x > map->rect.x + map->rect.width + expand ||
                           max_y < map->rect.y - expand || min_y > map->rect.y + map->rect.height + expand)) {
-                        
-                        _map_draw_line(gfx, window_id, last_x, last_y, draw_x, draw_y, pass_color, thickness);
+
+                        _map_draw_line(gfx, window_id, last_drawn_x, last_drawn_y, draw_x, draw_y, pass_color, thickness, map->rect.x - expand, map->rect.y - expand, map->rect.width + expand * 2, map->rect.height + expand * 2);
                     }
                 }
-                last_x = draw_x;
-                last_y = draw_y;
+                last_drawn_x = draw_x;
+                last_drawn_y = draw_y;
+                has_last_drawn = true;
             }
         }
     }
     pthread_mutex_unlock(&extra->route_mutex);
-    
+    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
+
     for (int i = 0; i < extra->marker_count; i++) {
         double lat = extra->markers[i].lat;
         double lon = extra->markers[i].lon;
-        
+
         double lat_rad = lat * M_PI / 180.0;
-        double px_x = (lon + 180.0) / 360.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
-        double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
-        
+        double px_x = (lon + 180.0) / 360.0 * z_factor_m;
+        double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * z_factor_m;
+
         int draw_x = map->rect.x + (int)(px_x - view_tl_x);
         int draw_y = map->rect.y + (int)(px_y - view_tl_y);
-        
+
         if (draw_x >= map->rect.x && draw_x <= map->rect.x + map->rect.width &&
             draw_y >= map->rect.y && draw_y <= map->rect.y + map->rect.height) {
-            
+
             if (gfx && gfx->fill_rectangle) {
-                // outer ring
+
                 gfx->fill_rectangle(window_id, draw_x - 8, draw_y - 8, 16, 16, extra->markers[i].color, true, 8.0f);
-                // inner white
+
                 gfx->fill_rectangle(window_id, draw_x - 6, draw_y - 6, 12, 12, 0xFFFFFFFF, true, 6.0f);
-                // inner bullet
+
                 gfx->fill_rectangle(window_id, draw_x - 4, draw_y - 4, 8, 8, extra->markers[i].color, true, 4.0f);
             }
-            
-            // Draw Popup if active
+
             if (extra->active_popup_idx == i && extra->markers[i].popup_text && extra->font && gfx && gfx->render_text) {
                 const char* text = extra->markers[i].popup_text;
                 int text_w = aroma_font_get_line_width(extra->font, text);
                 int text_h = aroma_font_get_line_height(extra->font);
-                
+
                 int padding = 8;
                 int bg_w = text_w + padding * 2;
                 int bg_h = text_h + padding * 2;
-                
-                // Position popup directly above marker
+
                 int bg_x = draw_x - (bg_w / 2);
-                int bg_y = draw_y - 8 - bg_h - 10; // offset slightly above
-                
-                if (bg_x < map->rect.x) bg_x = map->rect.x; // avoid map edge clipping horizontally
+                int bg_y = draw_y - 8 - bg_h - 10;
+
+                if (bg_x < map->rect.x) bg_x = map->rect.x;
                 if (bg_x + bg_w > map->rect.x + map->rect.width) bg_x = map->rect.x + map->rect.width - bg_w;
-                
+
                 uint32_t popup_bg = theme_is_dark ? 0xEE2A2A2A : 0xEEFFFFFF;
                 uint32_t text_color = theme_is_dark ? 0xFFFFFFFF : 0xFF000000;
                 uint32_t outline_color = theme_is_dark ? 0x66FFFFFF : 0x44000000;
-                
+
                 if (gfx->fill_rectangle) {
-                    // Draw shadow / slight floating effect box
+
                     gfx->fill_rectangle(window_id, bg_x, bg_y, bg_w, bg_h, popup_bg, true, 6.0f);
                     if (gfx->draw_hollow_rectangle) {
                         gfx->draw_hollow_rectangle(window_id, bg_x, bg_y, bg_w, bg_h, outline_color, 1, true, 6.0f);
                     }
                 }
-                
+
                 gfx->render_text(window_id, extra->font, text, bg_x + padding, bg_y + padding, text_color, 1.0f);
             }
         }
@@ -816,18 +870,18 @@ static void __map_draw(AromaNode* node, size_t window_id) {
         const char* text = "Powered by OpenStreetMap";
         int text_w = aroma_font_get_line_width(extra->font, text);
         int text_h = aroma_font_get_line_height(extra->font);
-        
+
         int padding = 4;
         int bg_w = text_w + padding * 2;
         int bg_h = text_h + padding * 2;
         int bg_x = map->rect.x + map->rect.width - bg_w - 4;
         int bg_y = map->rect.y + map->rect.height - bg_h - 4;
-        
+
         uint32_t bg_attr_color = theme_is_dark ? 0xAA000000 : 0xAAFFFFFF;
         if (gfx->fill_rectangle) {
             gfx->fill_rectangle(window_id, bg_x, bg_y, bg_w, bg_h, bg_attr_color, true, 4.0f);
         }
-        
+
         uint32_t text_color = theme_is_dark ? 0xFFFFFFFF : 0xFF000000;
         gfx->render_text(window_id, extra->font, text, bg_x + padding, bg_y + padding, text_color, 1.0f);
     }
@@ -839,7 +893,7 @@ void aroma_map_destroy(AromaNode* node) {
     if (!node || !node->node_widget_ptr) return;
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
-    
+
     if (extra && extra->root_id) {
         aroma_event_unsubscribe(extra->root_id, EVENT_TYPE_KEY_PRESS, __map_event_handler_global);
     }
@@ -860,7 +914,7 @@ void aroma_map_destroy(AromaNode* node) {
         aroma_widget_free(extra);
         map->extra = NULL;
     }
-    
+
     aroma_widget_free(node->node_widget_ptr);
     node->node_widget_ptr = NULL;
     __destroy_node(node);
@@ -871,9 +925,9 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data) {
     struct AromaMapExtra* extra = (struct AromaMapExtra*)user_data;
 
     if (event->event_type == EVENT_TYPE_KEY_PRESS) {
-        
+
         if (event->data.key.key_code == 'z' || event->data.key.key_code == 'Z' || event->data.key.key_code == '=') {
-            
+
         if (extra->zoom < 18) {
             extra->zoom++;
             extra->center_px_x *= 2.0;
@@ -912,7 +966,6 @@ void aroma_map_zoom_in(AromaNode* node) {
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
     if (!extra) return;
 
-    
         if (extra->zoom < 18) {
             extra->zoom++;
             extra->center_px_x *= 2.0;
@@ -975,12 +1028,12 @@ void aroma_map_set_zoom(AromaNode* node, int zoom) {
 
     if (zoom < 2) zoom = 2;
     if (zoom > 18) zoom = 18;
-    
+
     if (extra->zoom == zoom) return;
 
     extra->zoom = zoom;
     map->zoom = zoom;
-    
+
     double lat_rad = map->center_lat * M_PI / 180.0;
     double px_x = (map->center_lon + 180.0) / 360.0 * (1 << zoom) * TILE_SIZE;
     double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << zoom) * TILE_SIZE;
@@ -1006,7 +1059,7 @@ void aroma_map_add_marker(AromaNode* node, double lat, double lon, uint32_t colo
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
     if (!map || !map->extra) return;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
-    
+
     if (extra->marker_count < MAX_MARKERS) {
         extra->markers[extra->marker_count].lat = lat;
         extra->markers[extra->marker_count].lon = lon;
@@ -1023,7 +1076,7 @@ void aroma_map_add_icon_marker(AromaNode* node, double lat, double lon, uint32_t
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
     if (!map || !map->extra) return;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
-    
+
     if (extra->marker_count < MAX_MARKERS) {
         extra->markers[extra->marker_count].lat = lat;
         extra->markers[extra->marker_count].lon = lon;
@@ -1040,7 +1093,7 @@ void aroma_map_add_popup_marker(AromaNode* node, double lat, double lon, uint32_
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
     if (!map || !map->extra) return;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
-    
+
     if (extra->marker_count < MAX_MARKERS) {
         extra->markers[extra->marker_count].lat = lat;
         extra->markers[extra->marker_count].lon = lon;
@@ -1073,16 +1126,15 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
         curl_global_init(CURL_GLOBAL_ALL);
         curl_initialized = true;
         mkdir(TILE_CACHE_DIR, 0777);
-        
-        // Dynamically scale map workers for the hardware platform
+
 #if defined(_SC_NPROCESSORS_ONLN)
         int cores = sysconf(_SC_NPROCESSORS_ONLN);
         if (cores > 0) {
-            num_active_workers = cores * 2; // Lean into I/O concurrency
+            num_active_workers = cores * 2;
         }
 #endif
 #if defined(ESP32)
-        num_active_workers = 1; // Strict constraint for deeply embedded TLS
+        num_active_workers = 1;
 #endif
         if (num_active_workers > MAX_WORKER_THREADS) num_active_workers = MAX_WORKER_THREADS;
         if (num_active_workers < 1) num_active_workers = 1;
@@ -1098,7 +1150,7 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
 
     AromaMap* map = (AromaMap*)aroma_widget_alloc(sizeof(AromaMap));
     if (!map) return NULL;
-    
+
     memset(map, 0, sizeof(AromaMap));
     map->rect.x = x;
     map->rect.y = y;
@@ -1111,9 +1163,9 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
 
     struct AromaMapExtra* extra = aroma_widget_alloc(sizeof(struct AromaMapExtra));
     memset(extra, 0, sizeof(struct AromaMapExtra));
-    
+
     extra->zoom = map->zoom;
-    
+
     pthread_mutex_init(&extra->route_mutex, NULL);
     extra->route_lats = NULL;
     extra->route_lons = NULL;
@@ -1121,8 +1173,8 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     extra->route_color = 0;
     extra->route_active = false;
     extra->route_loading = false;
-    
-    extra->center_px_x = 8192.0; // center for zoom 6 at 0,0
+
+    extra->center_px_x = 8192.0;
     extra->center_px_y = 8192.0;
     extra->display_px_x = 8192.0;
     extra->display_px_y = 8192.0;
@@ -1136,10 +1188,9 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, map);
     if (node) extra->node_ptr = node;
 
-    
     AromaNode* root = aroma_event_get_root();
     extra->root_id = root ? root->node_id : 0;
-    
+
     if (extra->root_id) {
         aroma_event_subscribe(extra->root_id, EVENT_TYPE_KEY_PRESS, __map_event_handler_global, extra, 90);
     }
@@ -1149,11 +1200,11 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
         aroma_widget_free(map);
         return NULL;
     }
-    
+
     node->draw_cb = __map_draw;
     node->destroy_cb = aroma_map_destroy;
     map->extra = extra;
-    
+
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __map_event_handler, extra, 90);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_DOUBLE_CLICK, __map_event_handler, extra, 90);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __map_event_handler, extra, 90);
@@ -1174,10 +1225,12 @@ void aroma_map_set_route(AromaNode* node, double start_lat, double start_lon, do
     extra->route_color = color;
     if (extra->route_loading) {
         pthread_mutex_unlock(&extra->route_mutex);
+    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
         return;
     }
     extra->route_loading = true;
     pthread_mutex_unlock(&extra->route_mutex);
+    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
 
     RouteRequest* req = malloc(sizeof(RouteRequest));
     req->start_lat = start_lat;
@@ -1210,5 +1263,6 @@ void aroma_map_clear_route(AromaNode* node) {
         extra->route_lons = NULL;
     }
     pthread_mutex_unlock(&extra->route_mutex);
+    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
     aroma_node_invalidate(node);
 }
