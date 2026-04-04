@@ -39,6 +39,9 @@ void aroma_map_add_icon_marker(AromaNode* node, double lat, double lon, uint32_t
 void aroma_map_add_popup_marker(AromaNode* node, double lat, double lon, uint32_t color, const char* popup_text);
 void aroma_map_clear_markers(AromaNode* node);
 
+void aroma_map_set_route(AromaNode* node, double start_lat, double start_lon, double end_lat, double end_lon, uint32_t route_color);
+void aroma_map_clear_route(AromaNode* node);
+
 #ifdef __cplusplus
 }
 #endif

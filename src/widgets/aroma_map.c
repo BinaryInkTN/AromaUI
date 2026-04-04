@@ -70,6 +70,14 @@ struct AromaMapExtra {
     double display_zoom;
     double display_px_x;
     double display_px_y;
+
+    double* route_lats;
+    double* route_lons;
+    int route_point_count;
+    uint32_t route_color;
+    bool route_active;
+    bool route_loading;
+    pthread_mutex_t route_mutex;
 };
 
 
@@ -96,6 +104,129 @@ static bool curl_initialized = false;
 static size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     size_t written = fwrite(ptr, size, nmemb, stream);
     return written;
+}
+
+struct MemoryStruct {
+    char *memory;
+    size_t size;
+};
+
+static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t realsize = size * nmemb;
+    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+
+    char *ptr = realloc(mem->memory, mem->size + realsize + 1);
+    if(ptr == NULL) return 0;
+
+    mem->memory = ptr;
+    memcpy(&(mem->memory[mem->size]), contents, realsize);
+    mem->size += realsize;
+    mem->memory[mem->size] = 0;
+    return realsize;
+}
+
+static void decode_polyline(const char* encoded, double** lats, double** lons, int* count) {
+    int cap = 100;
+    *lats = malloc(cap * sizeof(double));
+    *lons = malloc(cap * sizeof(double));
+    *count = 0;
+
+    int index = 0, len = strlen(encoded), lat = 0, lon = 0;
+    while (index < len) {
+        int b, shift = 0, result = 0;
+        do {
+            if (index >= len) break;
+            b = encoded[index++] - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20 && index < len);
+        int dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+        lat += dlat;
+
+        shift = 0; result = 0;
+        do {
+            if (index >= len) break;
+            b = encoded[index++] - 63;
+            result |= (b & 0x1f) << shift;
+            shift += 5;
+        } while (b >= 0x20 && index < len);
+        int dlon = ((result & 1) ? ~(result >> 1) : (result >> 1));
+        lon += dlon;
+
+        if (*count >= cap) {
+            cap *= 2;
+            *lats = realloc(*lats, cap * sizeof(double));
+            *lons = realloc(*lons, cap * sizeof(double));
+        }
+        (*lats)[*count] = lat / 1e5;
+        (*lons)[*count] = lon / 1e5;
+        (*count)++;
+    }
+}
+
+typedef struct {
+    double start_lat, start_lon, end_lat, end_lon;
+    AromaNode* node;
+    struct AromaMapExtra* extra;
+} RouteRequest;
+
+static void* route_fetch_worker(void* arg) {
+    RouteRequest* req = (RouteRequest*)arg;
+    struct AromaMapExtra* extra = req->extra;
+    
+    char url[512];
+    snprintf(url, sizeof(url), "http://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline",
+             req->start_lon, req->start_lat, req->end_lon, req->end_lat);
+             
+    CURL *curl = curl_easy_init();
+    if (curl) {
+        struct MemoryStruct chunk;
+        chunk.memory = malloc(1);
+        chunk.size = 0;
+        
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "AromaUI/1.0");
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+        
+        CURLcode res = curl_easy_perform(curl);
+        if (res == CURLE_OK && chunk.size > 0) {
+            char* geom_start = strstr(chunk.memory, "\"geometry\":\"");
+            if (geom_start) {
+                geom_start += 12;
+                char* geom_end = strchr(geom_start, '\"');
+                if (geom_end) {
+                    *geom_end = '\0';
+                    double *rlats = NULL, *rlons = NULL;
+                    int rcount = 0;
+                    decode_polyline(geom_start, &rlats, &rlons, &rcount);
+                    
+                    pthread_mutex_lock(&extra->route_mutex);
+                    if (extra->route_lats) free(extra->route_lats);
+                    if (extra->route_lons) free(extra->route_lons);
+                    extra->route_lats = rlats;
+                    extra->route_lons = rlons;
+                    extra->route_point_count = rcount;
+                    extra->route_active = true;
+                    extra->route_loading = false;
+                    pthread_mutex_unlock(&extra->route_mutex);
+                    
+                    AromaEvent *ev = aroma_event_create_custom(req->node->node_id, 999, NULL, NULL);
+                    if (ev) aroma_event_queue(ev);
+                }
+            }
+        } else {
+            pthread_mutex_lock(&extra->route_mutex);
+            extra->route_loading = false;
+            extra->route_active = false;
+            pthread_mutex_unlock(&extra->route_mutex);
+        }
+        free(chunk.memory);
+        curl_easy_cleanup(curl);
+    }
+    free(req);
+    return NULL;
 }
 
 static void* tile_fetch_worker(void* arg) {
@@ -403,6 +534,23 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
     return false;
 }
 
+static void _map_draw_line(AromaGraphicsInterface* gfx, size_t window_id, int x0, int y0, int x1, int y1, uint32_t color, int thickness) {
+    if (!gfx || !gfx->fill_rectangle) return;
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+    int adx = dx < 0 ? -dx : dx;
+    int ady = dy < 0 ? -dy : dy;
+    int d_max = adx > ady ? adx : ady;
+    int steps = d_max / (thickness / 2);
+    if (steps == 0) steps = 1;
+    
+    for (int i = 0; i <= steps; i++) {
+        int x = x0 + dx * i / steps;
+        int y = y0 + dy * i / steps;
+        gfx->fill_rectangle(window_id, x - thickness/2, y - thickness/2, thickness, thickness, color, true, thickness/2.0f);
+    }
+}
+
 static void __map_draw(AromaNode* node, size_t window_id) {
     if (!node || !node->node_widget_ptr) return;
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
@@ -556,6 +704,39 @@ static void __map_draw(AromaNode* node, size_t window_id) {
         }
     }
     
+    pthread_mutex_lock(&extra->route_mutex);
+    if (extra->route_active && extra->route_point_count > 1 && gfx) {
+        int last_x = 0;
+        int last_y = 0;
+        for (int i = 0; i < extra->route_point_count; i++) {
+            double lat = extra->route_lats[i];
+            double lon = extra->route_lons[i];
+            
+            double lat_rad = lat * M_PI / 180.0;
+            double px_x = (lon + 180.0) / 360.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
+            double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
+            
+            int draw_x = map->rect.x + (int)(px_x - view_tl_x);
+            int draw_y = map->rect.y + (int)(px_y - view_tl_y);
+            
+            if (i > 0) {
+                // Optimize: only draw line if either point is within or near visible bounds
+                int expand = 50; 
+                bool p1_visible = (last_x >= map->rect.x - expand && last_x <= map->rect.x + map->rect.width + expand &&
+                                   last_y >= map->rect.y - expand && last_y <= map->rect.y + map->rect.height + expand);
+                bool p2_visible = (draw_x >= map->rect.x - expand && draw_x <= map->rect.x + map->rect.width + expand &&
+                                   draw_y >= map->rect.y - expand && draw_y <= map->rect.y + map->rect.height + expand);
+                
+                if (p1_visible || p2_visible) {
+                    _map_draw_line(gfx, window_id, last_x, last_y, draw_x, draw_y, extra->route_color, 4);
+                }
+            }
+            last_x = draw_x;
+            last_y = draw_y;
+        }
+    }
+    pthread_mutex_unlock(&extra->route_mutex);
+    
     for (int i = 0; i < extra->marker_count; i++) {
         double lat = extra->markers[i].lat;
         double lon = extra->markers[i].lon;
@@ -655,6 +836,9 @@ void aroma_map_destroy(AromaNode* node) {
             }
         }
         if (extra->font) aroma_font_destroy(extra->font);
+        if (extra->route_lats) free(extra->route_lats);
+        if (extra->route_lons) free(extra->route_lons);
+        pthread_mutex_destroy(&extra->route_mutex);
         aroma_widget_free(extra);
         map->extra = NULL;
     }
@@ -912,6 +1096,14 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     
     extra->zoom = map->zoom;
     
+    pthread_mutex_init(&extra->route_mutex, NULL);
+    extra->route_lats = NULL;
+    extra->route_lons = NULL;
+    extra->route_point_count = 0;
+    extra->route_color = 0;
+    extra->route_active = false;
+    extra->route_loading = false;
+    
     extra->center_px_x = 8192.0; // center for zoom 6 at 0,0
     extra->center_px_y = 8192.0;
     extra->display_px_x = 8192.0;
@@ -953,4 +1145,52 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     aroma_event_subscribe(node->node_id, EVENT_TYPE_CUSTOM, __map_event_handler, extra, 90);
 
     return node;
+}
+void aroma_map_set_route(AromaNode* node, double start_lat, double start_lon, double end_lat, double end_lon, uint32_t color) {
+    if (!node || node->node_type != NODE_TYPE_WIDGET) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+
+    pthread_mutex_lock(&extra->route_mutex);
+    extra->route_color = color;
+    if (extra->route_loading) {
+        pthread_mutex_unlock(&extra->route_mutex);
+        return;
+    }
+    extra->route_loading = true;
+    pthread_mutex_unlock(&extra->route_mutex);
+
+    RouteRequest* req = malloc(sizeof(RouteRequest));
+    req->start_lat = start_lat;
+    req->start_lon = start_lon;
+    req->end_lat = end_lat;
+    req->end_lon = end_lon;
+    req->node = node;
+    req->extra = extra;
+
+    pthread_t fetch_thread;
+    pthread_create(&fetch_thread, NULL, route_fetch_worker, req);
+    pthread_detach(fetch_thread);
+}
+
+void aroma_map_clear_route(AromaNode* node) {
+    if (!node || node->node_type != NODE_TYPE_WIDGET) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+
+    pthread_mutex_lock(&extra->route_mutex);
+    extra->route_active = false;
+    extra->route_point_count = 0;
+    if (extra->route_lats) {
+        free(extra->route_lats);
+        extra->route_lats = NULL;
+    }
+    if (extra->route_lons) {
+        free(extra->route_lons);
+        extra->route_lons = NULL;
+    }
+    pthread_mutex_unlock(&extra->route_mutex);
+    aroma_node_invalidate(node);
 }

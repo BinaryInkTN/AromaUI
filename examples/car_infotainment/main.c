@@ -387,6 +387,11 @@ int main(void)
         aroma_node_set_z_index(actual_map, -1);
     aroma_map_set_center(actual_map, 48.8566, 2.3522);
     aroma_map_add_marker(actual_map, 48.8566, 2.3522, 0xFFFF0000); 
+    aroma_map_add_marker(actual_map, 52.5200, 13.4050, 0xFF0000FF);
+    aroma_map_set_route(actual_map, 48.8566, 2.3522, 52.5200, 13.4050, 0xFF007BFF); // Paris to Berlin with Blue color
+    aroma_map_add_popup_marker(actual_map, 48.8566, 2.3522, 0xFFFF0000, "Start: Paris");
+    aroma_map_add_popup_marker(actual_map, 52.5200, 13.4050, 0xFF0000FF, "End: Berlin");
+
     AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, 20, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
     aroma_node_set_z_index(map_recently_visited_card, 10);
     AromaNode* map_recently_visited_title = aroma_ui_label(map_recently_visited_card, "Recently Visited", 20, 20, LABEL_STYLE_LABEL_LARGE, state.ui_font);
