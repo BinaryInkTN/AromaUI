@@ -1339,27 +1339,6 @@ extern "C"
         return overlay;
     }
 
-    /**
-     * @brief Create a generic top-level window (not part of the node tree structure usually).
-     *
-     * @param title Window title.
-     * @param width Window width.
-     * @param height Window height.
-     * @param fullscreen True to request fullscreen mode.
-     * @return Pointer to the new window node.
-     */
-    static inline AromaNode *aroma_ui_window(
-        const char *title,
-        int width, int height,
-        bool fullscreen)
-    {
-        AromaNode *win = aroma_window_create(title, 0, 0, width, height);
-        if (win && fullscreen)
-        {
-            aroma_window_set_fullscreen(win, true);
-        }
-        return win;
-    }
 
 #ifdef __ANDROID__
     // Forward struct for Android App state

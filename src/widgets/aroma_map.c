@@ -85,7 +85,9 @@ static int queue_tail = 0;
 static pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t queue_cond = PTHREAD_COND_INITIALIZER;
 
-static pthread_t worker_thread;
+#define MAX_WORKER_THREADS 16
+static pthread_t worker_threads[MAX_WORKER_THREADS];
+static int num_active_workers = 2; // Default for low-power devices
 static bool worker_running = false;
 static bool curl_initialized = false;
 
@@ -751,9 +753,27 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
         curl_global_init(CURL_GLOBAL_ALL);
         curl_initialized = true;
         mkdir(TILE_CACHE_DIR, 0777);
+        
+        // Dynamically scale map workers for the hardware platform
+#if defined(_SC_NPROCESSORS_ONLN)
+        int cores = sysconf(_SC_NPROCESSORS_ONLN);
+        if (cores > 0) {
+            num_active_workers = cores * 2; // Lean into I/O concurrency
+        }
+#endif
+#if defined(ESP32)
+        num_active_workers = 1; // Strict constraint for deeply embedded TLS
+#endif
+        if (num_active_workers > MAX_WORKER_THREADS) num_active_workers = MAX_WORKER_THREADS;
+        if (num_active_workers < 1) num_active_workers = 1;
+
+        LOG_INFO("Initializing aroma map with %d async download threads", num_active_workers);
+
         worker_running = true;
-        pthread_create(&worker_thread, NULL, tile_fetch_worker, NULL);
-        pthread_detach(worker_thread);
+        for (int i = 0; i < num_active_workers; i++) {
+            pthread_create(&worker_threads[i], NULL, tile_fetch_worker, NULL);
+            pthread_detach(worker_threads[i]);
+        }
     }
 
     AromaMap* map = (AromaMap*)aroma_widget_alloc(sizeof(AromaMap));

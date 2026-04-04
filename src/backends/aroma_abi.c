@@ -229,8 +229,6 @@ static void drawlist_proxy_graphics_flush(void) {
     }
 }
 
-/* notify_dirty_region goes directly to the real backend — NOT through
- * the drawlist — because it must be called before the render pass begins. */
 static void drawlist_proxy_notify_dirty_region(int x, int y, int w, int h) {
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->notify_dirty_region) {
