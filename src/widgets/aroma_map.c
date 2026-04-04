@@ -541,7 +541,7 @@ static void _map_draw_line(AromaGraphicsInterface* gfx, size_t window_id, int x0
     int adx = dx < 0 ? -dx : dx;
     int ady = dy < 0 ? -dy : dy;
     int d_max = adx > ady ? adx : ady;
-    int steps = d_max / (thickness / 2);
+    int steps = d_max / (thickness / 4);
     if (steps == 0) steps = 1;
     
     for (int i = 0; i <= steps; i++) {
@@ -706,33 +706,45 @@ static void __map_draw(AromaNode* node, size_t window_id) {
     
     pthread_mutex_lock(&extra->route_mutex);
     if (extra->route_active && extra->route_point_count > 1 && gfx) {
-        int last_x = 0;
-        int last_y = 0;
-        for (int i = 0; i < extra->route_point_count; i++) {
-            double lat = extra->route_lats[i];
-            double lon = extra->route_lons[i];
-            
-            double lat_rad = lat * M_PI / 180.0;
-            double px_x = (lon + 180.0) / 360.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
-            double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
-            
-            int draw_x = map->rect.x + (int)(px_x - view_tl_x);
-            int draw_y = map->rect.y + (int)(px_y - view_tl_y);
-            
-            if (i > 0) {
-                // Optimize: only draw line if either point is within or near visible bounds
-                int expand = 50; 
-                bool p1_visible = (last_x >= map->rect.x - expand && last_x <= map->rect.x + map->rect.width + expand &&
-                                   last_y >= map->rect.y - expand && last_y <= map->rect.y + map->rect.height + expand);
-                bool p2_visible = (draw_x >= map->rect.x - expand && draw_x <= map->rect.x + map->rect.width + expand &&
-                                   draw_y >= map->rect.y - expand && draw_y <= map->rect.y + map->rect.height + expand);
+        uint32_t inner_color = extra->route_color;
+        uint32_t r = (inner_color >> 16) & 0xFF;
+        uint32_t g = (inner_color >> 8) & 0xFF;
+        uint32_t b = inner_color & 0xFF;
+        uint32_t a = (inner_color >> 24) & 0xFF;
+        uint32_t border_color = (a << 24) | ((r/2) << 16) | ((g/2) << 8) | (b/2);
+        
+        for (int pass = 0; pass < 2; pass++) {
+            int thickness = pass == 0 ? 12 : 6;
+            uint32_t pass_color = pass == 0 ? border_color : inner_color;
+
+            int last_x = 0;
+            int last_y = 0;
+            for (int i = 0; i < extra->route_point_count; i++) {
+                double lat = extra->route_lats[i];
+                double lon = extra->route_lons[i];
                 
-                if (p1_visible || p2_visible) {
-                    _map_draw_line(gfx, window_id, last_x, last_y, draw_x, draw_y, extra->route_color, 4);
+                double lat_rad = lat * M_PI / 180.0;
+                double px_x = (lon + 180.0) / 360.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
+                double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
+                
+                int draw_x = map->rect.x + (int)(px_x - view_tl_x);
+                int draw_y = map->rect.y + (int)(px_y - view_tl_y);
+                
+                if (i > 0) {
+                    // Optimize: only draw line if either point is within or near visible bounds
+                    int expand = 50; 
+                    bool p1_visible = (last_x >= map->rect.x - expand && last_x <= map->rect.x + map->rect.width + expand &&
+                                       last_y >= map->rect.y - expand && last_y <= map->rect.y + map->rect.height + expand);
+                    bool p2_visible = (draw_x >= map->rect.x - expand && draw_x <= map->rect.x + map->rect.width + expand &&
+                                       draw_y >= map->rect.y - expand && draw_y <= map->rect.y + map->rect.height + expand);
+                    
+                    if (p1_visible || p2_visible) {
+                        _map_draw_line(gfx, window_id, last_x, last_y, draw_x, draw_y, pass_color, thickness);
+                    }
                 }
+                last_x = draw_x;
+                last_y = draw_y;
             }
-            last_x = draw_x;
-            last_y = draw_y;
         }
     }
     pthread_mutex_unlock(&extra->route_mutex);
