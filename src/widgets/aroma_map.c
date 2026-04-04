@@ -136,7 +136,9 @@ static void decode_polyline(const char* encoded, double** lats, double** lons, i
         int b, shift = 0, result = 0;
         do {
             if (index >= len) break;
-            b = encoded[index++] - 63;
+            b = encoded[index++];
+            if (b == '\\' && encoded[index] == '\\') index++; // Handle JSON escaped backslashes inline
+            b -= 63;
             result |= (b & 0x1f) << shift;
             shift += 5;
         } while (b >= 0x20 && index < len);
@@ -146,7 +148,9 @@ static void decode_polyline(const char* encoded, double** lats, double** lons, i
         shift = 0; result = 0;
         do {
             if (index >= len) break;
-            b = encoded[index++] - 63;
+            b = encoded[index++];
+            if (b == '\\' && encoded[index] == '\\') index++; // Handle JSON escaped backslashes inline
+            b -= 63;
             result |= (b & 0x1f) << shift;
             shift += 5;
         } while (b >= 0x20 && index < len);
