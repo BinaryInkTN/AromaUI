@@ -179,7 +179,7 @@ static void* route_fetch_worker(void* arg) {
     struct AromaMapExtra* extra = req->extra;
     
     char url[512];
-    snprintf(url, sizeof(url), "http://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline",
+    snprintf(url, sizeof(url), "http://routing.openstreetmap.de/routed-car/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline",
              req->start_lon, req->start_lat, req->end_lon, req->end_lat);
              
     CURL *curl = curl_easy_init();
@@ -735,14 +735,16 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                 int draw_y = map->rect.y + (int)(px_y - view_tl_y);
                 
                 if (i > 0) {
-                    // Optimize: only draw line if either point is within or near visible bounds
-                    int expand = 50; 
-                    bool p1_visible = (last_x >= map->rect.x - expand && last_x <= map->rect.x + map->rect.width + expand &&
-                                       last_y >= map->rect.y - expand && last_y <= map->rect.y + map->rect.height + expand);
-                    bool p2_visible = (draw_x >= map->rect.x - expand && draw_x <= map->rect.x + map->rect.width + expand &&
-                                       draw_y >= map->rect.y - expand && draw_y <= map->rect.y + map->rect.height + expand);
+                    // Quick AABB intersection to avoid drawing completely offscreen segments
+                    int expand = 20;
+                    int min_x = last_x < draw_x ? last_x : draw_x;
+                    int max_x = last_x > draw_x ? last_x : draw_x;
+                    int min_y = last_y < draw_y ? last_y : draw_y;
+                    int max_y = last_y > draw_y ? last_y : draw_y;
                     
-                    if (p1_visible || p2_visible) {
+                    if (!(max_x < map->rect.x - expand || min_x > map->rect.x + map->rect.width + expand ||
+                          max_y < map->rect.y - expand || min_y > map->rect.y + map->rect.height + expand)) {
+                        
                         _map_draw_line(gfx, window_id, last_x, last_y, draw_x, draw_y, pass_color, thickness);
                     }
                 }
