@@ -282,39 +282,39 @@ void navigate(int index, void* user_data)
         aroma_map_clear_route(map);
         switch (index) {
             case 0:
-                aroma_map_pan_to(map, 37.7749, -122.4194); // SF Downtown
+                aroma_map_pan_to(map, 48.8566, 2.3522); // Paris
                 aroma_map_set_zoom(map, 12);
-                aroma_map_set_route(map, 37.7749, -122.4194, 37.8199, -122.4783, 0xFF35A8FE); // Golden Gate
-                aroma_map_add_popup_marker(map, 37.7749, -122.4194, 0xFF00C853, "Start: SF Downtown");
-                aroma_map_add_popup_marker(map, 37.8199, -122.4783, 0xFFD50000, "Home: Golden Gate");
+                aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE); // Paris to Versailles
+                aroma_map_add_popup_marker(map, 48.8566, 2.3522, 0xFF00C853, "Start: Paris");
+                aroma_map_add_popup_marker(map, 48.8049, 2.1204, 0xFFD50000, "Home: Versailles");
                 break;
             case 1:
-                aroma_map_pan_to(map, 34.0522, -118.2437); // LA
+                aroma_map_pan_to(map, 51.5074, -0.1278); // London
                 aroma_map_set_zoom(map, 11);
-                aroma_map_set_route(map, 34.0522, -118.2437, 34.0195, -118.4912, 0xFF35A8FE); // LA to Santa Monica
-                aroma_map_add_popup_marker(map, 34.0522, -118.2437, 0xFF00C853, "Start: LA Downtown");
-                aroma_map_add_popup_marker(map, 34.0195, -118.4912, 0xFFD50000, "Work: Santa Monica");
+                aroma_map_set_route(map, 51.5074, -0.1278, 51.4700, -0.4543, 0xFF35A8FE); // London to Heathrow
+                aroma_map_add_popup_marker(map, 51.5074, -0.1278, 0xFF00C853, "Start: London");
+                aroma_map_add_popup_marker(map, 51.4700, -0.4543, 0xFFD50000, "Work: Heathrow");
                 break;
             case 2:
-                aroma_map_pan_to(map, 40.7128, -74.0060); // NY
+                aroma_map_pan_to(map, 52.5200, 13.4050); // Berlin
                 aroma_map_set_zoom(map, 11);
-                aroma_map_set_route(map, 40.7128, -74.0060, 40.6413, -73.7781, 0xFF35A8FE); // NY to JFK
-                aroma_map_add_popup_marker(map, 40.7128, -74.0060, 0xFF00C853, "Start: Manhattan");
-                aroma_map_add_popup_marker(map, 40.6413, -73.7781, 0xFFD50000, "Gym: JFK Airport");
+                aroma_map_set_route(map, 52.5200, 13.4050, 52.3667, 13.5033, 0xFF35A8FE); // Berlin to BER
+                aroma_map_add_popup_marker(map, 52.5200, 13.4050, 0xFF00C853, "Start: Berlin");
+                aroma_map_add_popup_marker(map, 52.3667, 13.5033, 0xFFD50000, "Gym: BER Airport");
                 break;
             case 3:
-                aroma_map_pan_to(map, 41.8781, -87.6298); // Chicago
+                aroma_map_pan_to(map, 41.9028, 12.4964); // Rome
                 aroma_map_set_zoom(map, 12);
-                aroma_map_set_route(map, 41.8781, -87.6298, 41.9483, -87.6556, 0xFF35A8FE); // Chicago to Wrigley Field
-                aroma_map_add_popup_marker(map, 41.8781, -87.6298, 0xFF00C853, "Start: Downtown");
-                aroma_map_add_popup_marker(map, 41.9483, -87.6556, 0xFFD50000, "Supermarket: Wrigley");
+                aroma_map_set_route(map, 41.9028, 12.4964, 41.7999, 12.2462, 0xFF35A8FE); // Rome to FCO
+                aroma_map_add_popup_marker(map, 41.9028, 12.4964, 0xFF00C853, "Start: Colosseum");
+                aroma_map_add_popup_marker(map, 41.7999, 12.2462, 0xFFD50000, "Supermarket: FCO");
                 break;
             case 4:
-                aroma_map_pan_to(map, 47.6062, -122.3321); // Seattle
+                aroma_map_pan_to(map, 48.1351, 11.5820); // Munich
                 aroma_map_set_zoom(map, 11);
-                aroma_map_set_route(map, 47.6062, -122.3321, 47.4502, -122.3088, 0xFF35A8FE); // Seattle to SeaTac
-                aroma_map_add_popup_marker(map, 47.6062, -122.3321, 0xFF00C853, "Start: Seattle");
-                aroma_map_add_popup_marker(map, 47.4502, -122.3088, 0xFFD50000, "Cafe: SeaTac");
+                aroma_map_set_route(map, 48.1351, 11.5820, 48.3537, 11.7861, 0xFF35A8FE); // Munich to MUC
+                aroma_map_add_popup_marker(map, 48.1351, 11.5820, 0xFF00C853, "Start: Marienplatz");
+                aroma_map_add_popup_marker(map, 48.3537, 11.7861, 0xFFD50000, "Cafe: MUC Airport");
                 break;
             default:
                 break;
@@ -407,11 +407,11 @@ int main(void)
     
         aroma_map_set_show_attribution(actual_map, true);
         aroma_node_set_z_index(actual_map, -1);
-    aroma_map_set_center(actual_map, 37.7749, -122.4194);
+    aroma_map_set_center(actual_map, 48.8566, 2.3522);
     aroma_map_set_zoom(actual_map, 12);
-    aroma_map_set_route(actual_map, 37.7749, -122.4194, 37.8199, -122.4783, 0xFF35A8FE); 
-    aroma_map_add_popup_marker(actual_map, 37.7749, -122.4194, 0xFF00C853, "Start: SF Downtown");
-    aroma_map_add_popup_marker(actual_map, 37.8199, -122.4783, 0xFFD50000, "Home: Golden Gate");
+    aroma_map_set_route(actual_map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE); 
+    aroma_map_add_popup_marker(actual_map, 48.8566, 2.3522, 0xFF00C853, "Start: Paris");
+    aroma_map_add_popup_marker(actual_map, 48.8049, 2.1204, 0xFFD50000, "Home: Versailles");
 
     AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, 20, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
     aroma_node_set_z_index(map_recently_visited_card, 10);
