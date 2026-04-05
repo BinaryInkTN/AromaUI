@@ -127,6 +127,8 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
                             aroma_animation_start(content, AROMA_ANIM_SLIDE_X, content_rect->x + offset, content_rect->x, tabs->transition_duration);
                         } else if (tabs->transition_type == AROMA_ANIM_SLIDE_Y) {
                             aroma_animation_start(content, AROMA_ANIM_SLIDE_Y, content_rect->y + offset, content_rect->y, tabs->transition_duration);
+                        } else if (tabs->transition_type == AROMA_ANIM_FADE) {
+                            aroma_animation_start(content, AROMA_ANIM_FADE, 0.0f, 1.0f, tabs->transition_duration);
                         }
                     }
                 }

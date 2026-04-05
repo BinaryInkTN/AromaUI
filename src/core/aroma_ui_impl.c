@@ -588,9 +588,37 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color)
         qsort(tasks, task_count, sizeof(AromaDrawTask), draw_task_compare);
     }
 
+    AromaTheme theme = aroma_theme_get_global();
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+
     for (size_t i = 0; i < task_count; ++i)
     {
         tasks[i].draw_cb(tasks[i].node, window_id);
+
+        if (tasks[i].node && gfx && gfx->fill_rectangle)
+        {
+            float effective_opacity = 1.0f;
+            AromaNode* curr = tasks[i].node;
+            while (curr) {
+                effective_opacity *= curr->opacity;
+                curr = curr->parent_node;
+            }
+
+            if (effective_opacity < 0.99f && tasks[i].node->node_widget_ptr)
+            {
+                AromaRect* rect = (AromaRect*)tasks[i].node->node_widget_ptr;
+                
+                uint8_t r, g, b;
+                aroma_color_extract_rgb(theme.colors.background, &r, &g, &b);
+                float alpha_f = 1.0f - effective_opacity;
+                if (alpha_f < 0.0f) alpha_f = 0.0f;
+                if (alpha_f > 1.0f) alpha_f = 1.0f;
+                uint8_t a = (uint8_t)(alpha_f * 255.0f);
+                
+                uint32_t overlay_color = aroma_color_rgba(r, g, b, a);
+                gfx->fill_rectangle(window_id, rect->x, rect->y, rect->width, rect->height, overlay_color, false, 0.0f);
+            }
+        }
     }
 
     if (!frame_active)

@@ -119,6 +119,25 @@ static AppState state = {0};
 
 void build_general_ui(AromaContainer *root);
 void build_settings_ui(AromaNode *window);
+
+void toggle_recent_card_cb(void* user_data) {
+    AromaNode* card = (AromaNode*)user_data;
+    if (!card) return;
+    
+    // We assume based on X if it's hidden or shown
+    // Let's get the card's rect
+    AromaRect* rect = (AromaRect*)card->node_widget_ptr;
+    if (rect) {
+        if (rect->x < 0) {
+            // It's hidden, slide it in!
+            aroma_animation_start(card, AROMA_ANIM_SLIDE_X, rect->x, 20, 300);
+        } else {
+            // It's shown, slide it out!
+            aroma_animation_start(card, AROMA_ANIM_SLIDE_X, rect->x, -350, 300);
+        }
+    }
+}
+
 void build_phone_ui(AromaNode *window);
 void build_music_ui(AromaNode *window);
 void listview_callback(int index, void *user_data);
@@ -458,9 +477,16 @@ int main(void)
     aroma_map_add_popup_marker(actual_map, 48.8566, 2.3522, 0xFF00C853, "Start: Paris");
     aroma_map_add_popup_marker(actual_map, 48.8049, 2.1204, 0xFFD50000, "Home: Versailles");
     aroma_map_add_icon_marker(actual_map, 48.8606, 2.3376, 0xFFFFD600, AROMA_ICON_STAR); // Louvre Museum
-    AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, 20, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
+    AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, -350, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
     aroma_node_set_z_index(map_recently_visited_card, 10);
+    
+    AromaNode* toggle_recent_btn = aroma_ui_iconbutton(state.map_root, AROMA_ICON_HISTORY,  WIN_W - 70, 240, 50, ICON_BUTTON_FILLED, toggle_recent_card_cb, (void*)map_recently_visited_card, state.icon_font);
+    aroma_node_set_z_index(toggle_recent_btn, 5);
+
     AromaNode* map_recently_visited_title = aroma_ui_label(map_recently_visited_card, "Recently Visited", 20, 20, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    
+    AromaNode* close_recent_btn = aroma_ui_iconbutton(map_recently_visited_card, AROMA_ICON_CLOSE, 240, 10, 40, ICON_BUTTON_OUTLINED, toggle_recent_card_cb, (void*)map_recently_visited_card, state.icon_font);
+
     AromaNode *recent_listview = aroma_ui_listview(map_recently_visited_card, 0, 60, 300, 300, navigate, actual_map,state.ui_font);
     aroma_listview_add_item(recent_listview, "Home", "123 Main St", NULL);
     aroma_listview_add_item(recent_listview, "Work", "456 Business Rd", NULL);
@@ -864,6 +890,23 @@ static AromaNode *settings_listview(AromaNode *parent, int x, int y, int w, int 
     return lv;
 }
 
+bool g_voice_assistant_enabled = true;
+
+void toggle_tab_animation_cb(AromaNode* sender, void* user_data) {
+    static bool is_slide = true;
+    is_slide = !is_slide;
+    if (is_slide) {
+        aroma_tabs_set_transition(state.tabs, AROMA_ANIM_SLIDE_X, 300);
+    } else {
+        aroma_tabs_set_transition(state.tabs, AROMA_ANIM_FADE, 300);
+    }
+}
+
+void toggle_voice_assistant_cb(AromaNode* sender, void* user_data) {
+    g_voice_assistant_enabled = !g_voice_assistant_enabled;
+    printf("Voice assistant %s\n", g_voice_assistant_enabled ? "enabled" : "disabled");
+}
+
 void build_settings_ui(AromaNode *window)
 {
     int area_w = WIN_W - 250;
@@ -880,6 +923,7 @@ void build_settings_ui(AromaNode *window)
         "Sound & Media",
         "Navigation",
         "Vehicle & Climate",
+        "Behaviors",
         "System & About"
     };
     const char *icons[] = {
@@ -888,9 +932,10 @@ void build_settings_ui(AromaNode *window)
         AROMA_ICON_VOLUME_UP,
         AROMA_ICON_MAP,
         AROMA_ICON_DIRECTIONS_CAR,
+        AROMA_ICON_SETTINGS,
         AROMA_ICON_INFO
     };
-    int num_sections = 6;
+    int num_sections = 7;
     state.settings_font = aroma_font_create_from_memory(
         aroma_ubuntu_ttf,
         aroma_ubuntu_ttf_len,
@@ -936,8 +981,14 @@ void build_settings_ui(AromaNode *window)
     aroma_listview_add_item_with_icon(state.listviews[4], "Drive mode", "Comfort", AROMA_ICON_DIRECTIONS_CAR, NULL);
     state.listview_containers[4] = aroma_listview_get_scroll_container(state.listviews[4]);
 
-    // Section 5: System & About
+    // Section 5: Behaviors
     state.listviews[5] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
+    aroma_listview_add_item_with_icon(state.listviews[5], "Tab Transition", "Toggle Fade/Slide", AROMA_ICON_SETTINGS, toggle_tab_animation_cb);
+    aroma_listview_add_item_with_icon(state.listviews[5], "Voice Assistant", "Enable/Disable Assistant", AROMA_ICON_VOLUME_UP, toggle_voice_assistant_cb);
+    state.listview_containers[5] = aroma_listview_get_scroll_container(state.listviews[5]);
+
+    // Section 6: System & About
+    state.listviews[6] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
 
     char processor_name[256] = "Unknown";
     FILE *cpuinfo = fopen("/proc/cpuinfo", "r");
@@ -1043,19 +1094,19 @@ void build_settings_ui(AromaNode *window)
     timeinfo = localtime(&rawtime);
     strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", timeinfo);
 
-    aroma_listview_add_item_with_icon(state.listviews[5], "Processor", processor_name, AROMA_ICON_MEMORY, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "RAM", ram_str, AROMA_ICON_STORAGE, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Vehicle name", "Aroma Automotive", AROMA_ICON_DIRECTIONS_CAR, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Software", "AromaHMI v0.0.1 Built with AromaSDK", AROMA_ICON_INFO, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Build date", __DATE__ " " __TIME__, AROMA_ICON_BUILD, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Security patch", "March 1, 2026", AROMA_ICON_SECURITY, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Uptime", uptime_str, AROMA_ICON_ACCESS_TIME, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Load average", load_str, AROMA_ICON_COMPUTER, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Current time", time_str, AROMA_ICON_ACCESS_TIME, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Platform Backend", "GLPS (X11)", AROMA_ICON_VERIFIED_USER, NULL);
-    aroma_listview_add_item_with_icon(state.listviews[5], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Processor", processor_name, AROMA_ICON_MEMORY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "RAM", ram_str, AROMA_ICON_STORAGE, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Vehicle name", "Aroma Automotive", AROMA_ICON_DIRECTIONS_CAR, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Software", "AromaHMI v0.0.1 Built with AromaSDK", AROMA_ICON_INFO, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Build date", __DATE__ " " __TIME__, AROMA_ICON_BUILD, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Security patch", "March 1, 2026", AROMA_ICON_SECURITY, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Uptime", uptime_str, AROMA_ICON_ACCESS_TIME, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Load average", load_str, AROMA_ICON_COMPUTER, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Current time", time_str, AROMA_ICON_ACCESS_TIME, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Platform Backend", "GLPS (X11)", AROMA_ICON_VERIFIED_USER, NULL);
+    aroma_listview_add_item_with_icon(state.listviews[6], "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
 
-    state.listview_containers[5] = aroma_listview_get_scroll_container(state.listviews[5]);
+    state.listview_containers[6] = aroma_listview_get_scroll_container(state.listviews[6]);
 
     for (int i = 0; i < num_sections; i++) {
         aroma_sidebar_set_content(state.sidebar, i, &state.listview_containers[i], 1);

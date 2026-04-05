@@ -89,6 +89,7 @@ AromaNode* __create_node(AromaNodeType node_type, AromaNode* parent_node, void* 
     new_node->subtree_dirty = false;
     new_node->is_hidden = false;
     new_node->propagate_dirty = true;
+    new_node->opacity = 1.0f;
     new_node->dirty_frame = 0;
 
     for (uint64_t i = 0; i < AROMA_MAX_CHILD_NODES; i++) {

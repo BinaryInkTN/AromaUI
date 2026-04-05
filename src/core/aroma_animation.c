@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 static AromaAnimation* animation_list = NULL;
 static AromaTimer* anim_timer = NULL;
 
@@ -37,8 +41,41 @@ static void update_animations(void* arg) {
             curr->is_running = false;
         }
 
-        // Simple ease out
-        float ease = 1.0f - powf(1.0f - progress, 3.0f);
+        float ease = progress;
+        switch (curr->easing) {
+            case AROMA_EASE_LINEAR:
+                ease = progress;
+                break;
+            case AROMA_EASE_IN_QUAD:
+                ease = progress * progress;
+                break;
+            case AROMA_EASE_OUT_QUAD:
+                ease = progress * (2.0f - progress);
+                break;
+            case AROMA_EASE_IN_OUT_QUAD:
+                ease = progress < 0.5f ? 2.0f * progress * progress : -1.0f + (4.0f - 2.0f * progress) * progress;
+                break;
+            case AROMA_EASE_OUT_CUBIC:
+                ease = 1.0f - powf(1.0f - progress, 3.0f);
+                break;
+            case AROMA_EASE_OUT_BACK: {
+                const float c1 = 1.70158f;
+                const float c3 = c1 + 1.0f;
+                float p = progress - 1.0f;
+                ease = 1.0f + c3 * powf(p, 3.0f) + c1 * powf(p, 2.0f);
+                break;
+            }
+            case AROMA_EASE_OUT_ELASTIC: {
+                const float c4 = (2.0f * (float)M_PI) / 3.0f;
+                if (progress == 0.0f) ease = 0.0f;
+                else if (progress == 1.0f) ease = 1.0f;
+                else ease = powf(2.0f, -10.0f * progress) * sinf((progress * 10.0f - 0.75f) * c4) + 1.0f;
+                break;
+            }
+            default:
+                ease = 1.0f - powf(1.0f - progress, 3.0f);
+                break;
+        }
         curr->current_val = curr->start_val + (curr->end_val - curr->start_val) * ease;
 
         AromaRect* rect = (AromaRect*)curr->target->node_widget_ptr;
@@ -47,9 +84,21 @@ static void update_animations(void* arg) {
                 rect->x = (int)curr->current_val;
             } else if (curr->type == AROMA_ANIM_SLIDE_Y) {
                 rect->y = (int)curr->current_val;
+            } else if (curr->type == AROMA_ANIM_SCALE_X) {
+                rect->width = (int)curr->current_val;
+            } else if (curr->type == AROMA_ANIM_SCALE_Y) {
+                rect->height = (int)curr->current_val;
             }
         }
         
+        if (curr->type == AROMA_ANIM_FADE) {
+            curr->target->opacity = curr->current_val;
+        }
+
+        if (curr->type == AROMA_ANIM_CUSTOM && curr->custom_cb) {
+            curr->custom_cb(curr->target, curr->current_val, curr->user_data);
+        }
+
         aroma_node_invalidate(curr->target);
 
         needs_redraw = true;
@@ -81,6 +130,7 @@ AromaAnimation* aroma_animation_start(AromaNode* target, AromaAnimationType type
     anim->duration_ms = duration_ms;
     anim->start_time = aroma_time_now_ms();
     anim->is_running = true;
+    anim->easing = AROMA_EASE_OUT_CUBIC; // Default easing
 
     anim->next = animation_list;
     animation_list = anim;
@@ -98,5 +148,21 @@ void aroma_animation_stop(AromaNode* target) {
             curr->is_running = false; // Will be cleaned up on next tick
         }
         curr = curr->next;
+    }
+}
+
+
+AromaAnimation* aroma_animation_start_custom(AromaNode* target, float start_val, float end_val, uint32_t duration_ms, AromaAnimationCallback cb, void* user_data) {
+    AromaAnimation* anim = aroma_animation_start(target, AROMA_ANIM_CUSTOM, start_val, end_val, duration_ms);
+    if (anim) {
+        anim->custom_cb = cb;
+        anim->user_data = user_data;
+    }
+    return anim;
+}
+
+void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing) {
+    if (anim) {
+        anim->easing = easing;
     }
 }

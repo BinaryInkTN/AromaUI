@@ -1,320 +1,435 @@
 {
-  "name": "AromaSDK",
-  "version": "0.0.1 (alpha)",
-  "description": "Lightweight development toolkit for cross-platform applications on Linux, Android, and embedded systems.",
-
-  "hero": {
-    "title": "AromaSDK",
-    "description": "Vulkan, OpenGL, and Embedded Graphics APIs with native performance and elegant C interfaces.",
-    
-    "image": "images/hero_image.png",
-    "actions": [
-      {
-        "icon": "code",
-        "text": "Get Started",
-        "primary": true,
-        "onclick": "showCategory('Getting Started')"
-      },
-      {
-        "icon": "github",
-        "text": "View on GitHub",
-        "primary": false,
-        "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"
-      }
+    "name": "AromaSDK",
+    "version": "0.0.1 (alpha)",
+    "description": "Lightweight development toolkit for cross-platform applications on Linux, Android, and embedded systems.",
+    "hero": {
+        "title": "AromaSDK",
+        "description": "Vulkan, OpenGL, and Embedded Graphics APIs with native performance and elegant C interfaces.",
+        "image": "images/hero_image.png",
+        "actions": [
+            {
+                "icon": "code",
+                "text": "Get Started",
+                "primary": true,
+                "onclick": "showCategory('Getting Started')"
+            },
+            {
+                "icon": "github",
+                "text": "View on GitHub",
+                "primary": false,
+                "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"
+            }
+        ],
+        "stats": [
+            {
+                "value": "5",
+                "label": "Platforms"
+            },
+            {
+                "value": "100%",
+                "label": "Open Source"
+            },
+            {
+                "value": "MIT",
+                "label": "License"
+            }
+        ],
+        "platformIcons": [
+            {
+                "icon": "terminal",
+                "title": "X11"
+            },
+            {
+                "icon": "terminal",
+                "title": "Wayland"
+            },
+            {
+                "icon": "terminal",
+                "title": "Espressif"
+            },
+            {
+                "icon": "monitor",
+                "title": "Windows"
+            },
+            {
+                "icon": "smartphone",
+                "title": "Android"
+            }
+        ]
+    },
+    "categories": [
+        {
+            "name": "Getting Started",
+            "icon": "rocket",
+            "description": "Quick start guides, examples, installation, and basic concepts"
+        },
+        {
+            "name": "Core Systems",
+            "icon": "settings",
+            "description": "Low-level system access, JNI integration, and runtime services"
+        },
+        {
+            "name": "Connectivity",
+            "icon": "share-2",
+            "description": "Network protocols, device communication, and wireless APIs"
+        },
+        {
+            "name": "User Interface",
+            "icon": "palette",
+            "description": "UI components, layouts, theming, and user interaction"
+        },
+        {
+            "name": "Media & Graphics",
+            "icon": "film",
+            "description": "Camera, audio, video, and graphics processing"
+        },
+        {
+            "name": "Data Management",
+            "icon": "database",
+            "description": "Storage, file systems, preferences, and data persistence"
+        },
+        {
+            "name": "Security & Privacy",
+            "icon": "shield",
+            "description": "Permissions, encryption, authentication, and secure storage"
+        },
+        {
+            "name": "Development Tools",
+            "icon": "wrench",
+            "description": "Build tools, debugging, testing, and deployment utilities"
+        },
+        {
+            "name": "Advanced Topics",
+            "icon": "brain",
+            "description": "Performance optimization, best practices, and architectural patterns"
+        }
     ],
-    "stats": [
-      { "value": "5", "label": "Platforms" },
-      { "value": "100%", "label": "Open Source" },
-      { "value": "MIT", "label": "License" }
-    ],
-    "platformIcons": [
-      { "icon": "terminal", "title": "X11" },
-    { "icon": "terminal", "title": "Wayland" },
-    { "icon": "terminal", "title": "Espressif" },
-      { "icon": "monitor", "title": "Windows" },
-      { "icon": "smartphone", "title": "Android" }
+    "sections": [
+        {
+            "title": "SDK Installation",
+            "description": "Detailed installation instructions for all supported platforms.",
+            "icon": "download",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Installation",
+            "file": "docs/getting-started/installation.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Project Setup",
+            "description": "Create and configure your first AromaUI project.",
+            "icon": "folder",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Setup",
+            "file": "docs/getting-started/project.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Infotainment Example",
+            "description": "Industrial-grade infotainment system example showcasing core features and best practices.",
+            "icon": "play",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Examples",
+            "file": "docs/getting-started/infotainment_example.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Hello World Tutorial",
+            "description": "Build your first cross-platform app with AromaUI.",
+            "icon": "code",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Tutorials",
+            "file": "docs/getting-started/hello-world.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Architecture Overview",
+            "description": "Understand AromaUI's architecture and design philosophy.",
+            "icon": "boxes",
+            "color": "#4285F4",
+            "category": "Getting Started",
+            "subcategory": "Concepts",
+            "file": "docs/getting-started/architecture.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Core JNI API",
+            "description": "Low-level JNI and native runtime access for maximum performance.",
+            "icon": "braces",
+            "color": "#006875",
+            "category": "Core Systems",
+            "subcategory": "Native Integration",
+            "file": "docs/core/core_jni.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "AromaABI Interface",
+            "description": "Direct access to AromaABI for advanced system interactions.",
+            "icon": "cpu",
+            "color": "#006875",
+            "category": "Core Systems",
+            "subcategory": "Platform & Graphics",
+            "file": "docs/core/core_abi.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "System Services",
+            "description": "Access system services, background tasks, and runtime management.",
+            "icon": "settings",
+            "color": "#006875",
+            "category": "Core Systems",
+            "subcategory": "Runtime",
+            "file": "docs/core/services_fs.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Device Information",
+            "description": "Query device hardware, battery status, and system properties.",
+            "icon": "smartphone",
+            "color": "#386A20",
+            "category": "Core Systems",
+            "subcategory": "Hardware",
+            "file": "docs/core/device_information.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Bluetooth Classic API",
+            "description": "Full-featured Bluetooth classic support for device discovery and communication.",
+            "icon": "bluetooth",
+            "color": "#6750A4",
+            "category": "Connectivity",
+            "subcategory": "Bluetooth",
+            "file": "docs/connectivity/bluetooth_classic.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Wi-Fi API",
+            "description": "Comprehensive Wi-Fi management: scan, connect, configure, and monitor.",
+            "icon": "wifi",
+            "color": "#1D192B",
+            "category": "Connectivity",
+            "subcategory": "Wi-Fi",
+            "file": "docs/connectivity/wifi.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "UI Utilities",
+            "description": "Essential UI helpers: toasts, dialogs, and material components.",
+            "icon": "component",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Core Components",
+            "file": "docs/ui/ui_utilities.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title":"Animation Manager",
+            "description": "Create smooth animations with the built-in animation system.",
+            "icon": "animation",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Core Components",
+            "file": "docs/ui/animations.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows"
+            ]
+        },
+        {
+            "title": "Widgets Library",
+            "description": "Pre-built material design widgets for rapid UI development.",
+            "icon": "component",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Core Components",
+            "file": "docs/ui/widgets.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Layout Management",
+            "description": "Create responsive layouts that adapt to different screen sizes.",
+            "icon": "layout-dashboard",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Layouts",
+            "file": "docs/ui/layouts.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "DPI Conversion",
+            "description": "Convert between density-independent pixels (dp) and actual pixels.",
+            "icon": "layout",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Utilities",
+            "file": "docs/ui/dpi.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Orientation API",
+            "description": "Control and respond to device orientation changes.",
+            "icon": "rotate-cw",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Utilities",
+            "file": "docs/ui/orientation.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Theming System",
+            "description": "Create consistent themes with light, dark, and custom color schemes.",
+            "icon": "palette",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Theming",
+            "file": "docs/ui/theming.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Camera API",
+            "description": "Capture photos and videos with full camera control.",
+            "icon": "camera",
+            "color": "#9A4521",
+            "category": "Media & Graphics",
+            "subcategory": "Camera",
+            "file": "docs/media/camera.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Font Module",
+            "description": "Load and manage fonts for high-quality text rendering.",
+            "icon": "custom_typography",
+            "color": "#9A4521",
+            "category": "User Interface",
+            "subcategory": "Typography",
+            "file": "docs/ui/font_system.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Preferences API",
+            "description": "Simple key-value storage for user preferences and settings.",
+            "icon": "settings",
+            "color": "#4A4458",
+            "category": "Data Management",
+            "subcategory": "Storage",
+            "file": "docs/data/preferences.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Permissions API",
+            "description": "Request and manage runtime permissions gracefully.",
+            "icon": "shield",
+            "color": "#B3261E",
+            "category": "Security & Privacy",
+            "subcategory": "Permissions",
+            "file": "docs/security/permissions.md",
+            "platforms": [
+                "android"
+            ]
+        },
+        {
+            "title": "Building & Deployment",
+            "description": "Build and deploy AromaUI apps for all platforms.",
+            "icon": "rocket",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "Build",
+            "file": "docs/tools/building_deployment.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
+            "title": "Logging System",
+            "description": "Comprehensive logging with multiple verbosity levels.",
+            "icon": "terminal",
+            "color": "#4285F4",
+            "category": "Development Tools",
+            "subcategory": "Debugging",
+            "file": "docs/tools/logging.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        }
     ]
-  },
-
-  "categories": [
-    {
-      "name": "Getting Started",
-      "icon": "rocket",
-      "description": "Quick start guides, examples, installation, and basic concepts"
-    },
-    {
-      "name": "Core Systems",
-      "icon": "settings",
-      "description": "Low-level system access, JNI integration, and runtime services"
-    },
-    {
-      "name": "Connectivity",
-      "icon": "share-2",
-      "description": "Network protocols, device communication, and wireless APIs"
-    },
-    {
-      "name": "User Interface",
-      "icon": "palette",
-      "description": "UI components, layouts, theming, and user interaction"
-    },
-    {
-      "name": "Media & Graphics",
-      "icon": "film",
-      "description": "Camera, audio, video, and graphics processing"
-    },
-    {
-      "name": "Data Management",
-      "icon": "database",
-      "description": "Storage, file systems, preferences, and data persistence"
-    },
-    {
-      "name": "Security & Privacy",
-      "icon": "shield",
-      "description": "Permissions, encryption, authentication, and secure storage"
-    },
-    {
-      "name": "Development Tools",
-      "icon": "wrench",
-      "description": "Build tools, debugging, testing, and deployment utilities"
-    },
-    {
-      "name": "Advanced Topics",
-      "icon": "brain",
-      "description": "Performance optimization, best practices, and architectural patterns"
-    }
-  ],
-
-  "sections": [
-    {
-      "title": "SDK Installation",
-      "description": "Detailed installation instructions for all supported platforms.",
-      "icon": "download",
-      "color": "#4285F4",
-      "category": "Getting Started",
-      "subcategory": "Installation",
-      "file": "docs/getting-started/installation.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Project Setup",
-      "description": "Create and configure your first AromaUI project.",
-      "icon": "folder",
-      "color": "#4285F4",
-      "category": "Getting Started",
-      "subcategory": "Setup",
-      "file": "docs/getting-started/project.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Infotainment Example",
-      "description": "Industrial-grade infotainment system example showcasing core features and best practices.",
-      "icon": "play",
-      "color": "#4285F4",
-      "category": "Getting Started",
-      "subcategory": "Examples",
-      "file": "docs/getting-started/infotainment_example.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Hello World Tutorial",
-      "description": "Build your first cross-platform app with AromaUI.",
-      "icon": "code",
-      "color": "#4285F4",
-      "category": "Getting Started",
-      "subcategory": "Tutorials",
-      "file": "docs/getting-started/hello-world.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Architecture Overview",
-      "description": "Understand AromaUI's architecture and design philosophy.",
-      "icon": "boxes",
-      "color": "#4285F4",
-      "category": "Getting Started",
-      "subcategory": "Concepts",
-      "file": "docs/getting-started/architecture.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Core JNI API",
-      "description": "Low-level JNI and native runtime access for maximum performance.",
-      "icon": "braces",
-      "color": "#006875",
-      "category": "Core Systems",
-      "subcategory": "Native Integration",
-      "file": "docs/core/core_jni.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "AromaABI Interface",
-      "description": "Direct access to AromaABI for advanced system interactions.",
-      "icon": "cpu",
-      "color": "#006875",
-      "category": "Core Systems",
-      "subcategory": "Platform & Graphics",
-      "file": "docs/core/core_abi.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "System Services",
-      "description": "Access system services, background tasks, and runtime management.",
-      "icon": "settings",
-      "color": "#006875",
-      "category": "Core Systems",
-      "subcategory": "Runtime",
-      "file": "docs/core/services_fs.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Device Information",
-      "description": "Query device hardware, battery status, and system properties.",
-      "icon": "smartphone",
-      "color": "#386A20",
-      "category": "Core Systems",
-      "subcategory": "Hardware",
-      "file": "docs/core/device_information.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Bluetooth Classic API",
-      "description": "Full-featured Bluetooth classic support for device discovery and communication.",
-      "icon": "bluetooth",
-      "color": "#6750A4",
-      "category": "Connectivity",
-      "subcategory": "Bluetooth",
-      "file": "docs/connectivity/bluetooth_classic.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Wi-Fi API",
-      "description": "Comprehensive Wi-Fi management: scan, connect, configure, and monitor.",
-      "icon": "wifi",
-      "color": "#1D192B",
-      "category": "Connectivity",
-      "subcategory": "Wi-Fi",
-      "file": "docs/connectivity/wifi.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "UI Utilities",
-      "description": "Essential UI helpers: toasts, dialogs, and material components.",
-      "icon": "component",
-      "color": "#7D5260",
-      "category": "User Interface",
-      "subcategory": "Core Components",
-      "file": "docs/ui/ui_utilities.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Widgets Library",
-      "description": "Pre-built material design widgets for rapid UI development.",
-      "icon": "component",
-      "color": "#7D5260",
-      "category": "User Interface",
-      "subcategory": "Core Components",
-      "file": "docs/ui/widgets.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Layout Management",
-      "description": "Create responsive layouts that adapt to different screen sizes.",
-      "icon": "layout-dashboard",
-      "color": "#7D5260",
-      "category": "User Interface",
-      "subcategory": "Layouts",
-      "file": "docs/ui/layouts.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "DPI Conversion",
-      "description": "Convert between density-independent pixels (dp) and actual pixels.",
-      "icon": "layout",
-      "color": "#7D5260",
-      "category": "User Interface",
-      "subcategory": "Utilities",
-      "file": "docs/ui/dpi.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Orientation API",
-      "description": "Control and respond to device orientation changes.",
-      "icon": "rotate-cw",
-      "color": "#7D5260",
-      "category": "User Interface",
-      "subcategory": "Utilities",
-      "file": "docs/ui/orientation.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Theming System",
-      "description": "Create consistent themes with light, dark, and custom color schemes.",
-      "icon": "palette",
-      "color": "#7D5260",
-      "category": "User Interface",
-      "subcategory": "Theming",
-      "file": "docs/ui/theming.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-  
-    {
-      "title": "Camera API",
-      "description": "Capture photos and videos with full camera control.",
-      "icon": "camera",
-      "color": "#9A4521",
-      "category": "Media & Graphics",
-      "subcategory": "Camera",
-      "file": "docs/media/camera.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Font Module",
-      "description": "Load and manage fonts for high-quality text rendering.",
-      "icon": "custom_typography",
-      "color": "#9A4521",
-      "category": "User Interface",
-      "subcategory": "Typography",
-      "file": "docs/ui/font_system.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Preferences API",
-      "description": "Simple key-value storage for user preferences and settings.",
-      "icon": "settings",
-      "color": "#4A4458",
-      "category": "Data Management",
-      "subcategory": "Storage",
-      "file": "docs/data/preferences.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Permissions API",
-      "description": "Request and manage runtime permissions gracefully.",
-      "icon": "shield",
-      "color": "#B3261E",
-      "category": "Security & Privacy",
-      "subcategory": "Permissions",
-      "file": "docs/security/permissions.md",
-      "platforms": ["android"]
-    },
-    {
-      "title": "Building & Deployment",
-      "description": "Build and deploy AromaUI apps for all platforms.",
-      "icon": "rocket",
-      "color": "#4285F4",
-      "category": "Development Tools",
-      "subcategory": "Build",
-      "file": "docs/tools/building_deployment.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    },
-    {
-      "title": "Logging System",
-      "description": "Comprehensive logging with multiple verbosity levels.",
-      "icon": "terminal",
-      "color": "#4285F4",
-      "category": "Development Tools",
-      "subcategory": "Debugging",
-      "file": "docs/tools/logging.md",
-      "platforms": ["android", "linux", "windows", "espressif"]
-    }
-  ]
 }

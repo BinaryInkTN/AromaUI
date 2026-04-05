@@ -9,6 +9,7 @@
 #include <stdbool.h>
 
 #include <time.h>
+extern bool g_voice_assistant_enabled;
 
 extern void queue_voice_action(int tab_index, bool call, bool end_call, const char* status);
 extern void queue_voice_partial(const char* partial_text);
@@ -195,6 +196,7 @@ static void *voice_thread_func(void *arg) {
             fprintf(stderr, "ALSA Read error: %s\n", snd_strerror(rc));
             continue;
         }
+        if (!g_voice_assistant_enabled) continue;
 
         frames_read++;
         

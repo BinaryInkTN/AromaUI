@@ -134,6 +134,7 @@ struct AromaNode
     bool subtree_dirty;         /**< True if any descendant needs redrawing. */
     bool is_hidden;             /**< True if node is strictly invisible. */
     bool propagate_dirty;       /**< True if dirty state propagates subtree_dirty up. */
+    float opacity;              /**< Node opacity (0.0 to 1.0). */
     uint64_t dirty_frame;       /**< Frame number when node was last invalidated. */
     AromaLayout layout;         /**< Layout configuration. */
 };
