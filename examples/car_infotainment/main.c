@@ -376,43 +376,44 @@ int main(void)
         "12:45 PM",
         50, 30,
         LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(state.time_label, 10);
+    aroma_node_set_z_index(state.time_label, 999999);
 
     state.location_label = aroma_ui_label(
         (AromaNode *)state.window,
         "San Francisco, 68°F",
         150, 30,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(state.location_label, 10);
+    aroma_node_set_z_index(state.location_label, 999999);
 
     state.status_card = aroma_ui_card((AromaNode *)state.window, WIN_W - 235, 18, 200, 50, CARD_TYPE_FILLED);
-    aroma_node_set_z_index(state.status_card, 10);
+    aroma_node_set_z_index(state.status_card, 999999);
     
     state.signal_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_SIGNAL_CELLULAR_4_BAR, WIN_W - 120, 30, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.signal_icon, 10);
+    aroma_node_set_z_index(state.signal_icon, 999999);
     
     state.wifi_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_WIFI, WIN_W - 80, 30, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.wifi_icon, 10);
+    aroma_node_set_z_index(state.wifi_icon, 999999);
     
     state.battery_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BATTERY_FULL, WIN_W - 40, 30, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.battery_icon, 10);
+    aroma_node_set_z_index(state.battery_icon, 999999);
     
     state.gps_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_GPS_FIXED, WIN_W - 160, 30, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.gps_icon, 10);
+    aroma_node_set_z_index(state.gps_icon, 999999);
     
     state.bluetooth_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO, WIN_W - 200, 30, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.bluetooth_icon, 10);
+    aroma_node_set_z_index(state.bluetooth_icon, 999999);
 
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(state.voice_button, 10);
+    aroma_node_set_z_index(state.voice_button, 999999);
     
     state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -20, 600, 80, CARD_TYPE_FILLED);
+    aroma_node_set_z_index(state.voice_status_card, 99998);
     aroma_node_set_hidden(state.voice_status_card, true);
 
     state.voice_status_label = aroma_ui_label(state.voice_status_card, "  ", 20, 40, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     state.loading_spinner = aroma_ui_loading(state.voice_status_card, 530, 28, 22, 5, state.theme.colors.primary);
     aroma_node_set_z_index(state.loading_spinner, 99999);
-    
+    aroma_node_set_z_index(state.voice_status_label, 99999);
     state.general_root = aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)state.general_root, 20);
 
@@ -436,7 +437,7 @@ int main(void)
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     actual_map = aroma_ui_map((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
     aroma_node_set_z_index(actual_map, 0);
-    aroma_map_set_show_attribution(actual_map, true);
+    aroma_map_set_show_attribution(actual_map, false);
     aroma_map_set_center(actual_map, 48.8566, 2.3522);
     aroma_map_set_zoom(actual_map, 12);
     aroma_map_set_route(actual_map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE); 

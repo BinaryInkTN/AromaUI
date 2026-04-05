@@ -15,11 +15,11 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include "aroma_ubuntu_font.h"
 #include <stdlib.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <math.h>
 
 #ifdef __ANDROID__
 #include <android_native_app_glue.h>
@@ -820,20 +820,60 @@ static void show_splash_screen(size_t window_id, int width, int height)
     int slogan_x = (width - (int)slogan_width) / 2;
     int slogan_y = title_y + title_height + gap;
 
-    if (gfx->render_text)
-    {
-        gfx->render_text(window_id, font, g_splash_title, title_x, title_y,
-                         theme.colors.primary, title_scale);
-        gfx->render_text(window_id, font, g_splash_slogan, slogan_x, slogan_y,
-                         theme.colors.text_secondary, slogan_scale);
-    }
-    aroma_font_destroy(font);
+    uint64_t start_time = aroma_time_now_ms();
+    float start_angle = 0.0f;
 
+    while (aroma_time_now_ms() - start_time < 3000) {
+        if (gfx->clear)
+        {
+            gfx->clear(window_id, theme.colors.background);
+        }
+
+        if (gfx->render_text)
+        {
+            gfx->render_text(window_id, font, g_splash_title, title_x, title_y,
+                             theme.colors.primary, title_scale);
+            gfx->render_text(window_id, font, g_splash_slogan, slogan_x, slogan_y,
+                             theme.colors.text_secondary, slogan_scale);
+        }
+
+        if (gfx->fill_rectangle) {
+            int spinner_r = 22;
+            int thickness = 5;
+            int cx = width / 2;
+            int cy = slogan_y + slogan_height + 40 + spinner_r;
+            int orbit_r = spinner_r - thickness;
+            if (orbit_r < 1) orbit_r = 1;
+
+            for (int i = 0; i < 4; i++) {
+                float angle = start_angle - (i * 20.0f);
+                float angle_rad = angle * 3.14159265f / 180.0f;
+                int dot_size = (thickness * 2) - i * (thickness / 2);
+                if (dot_size < 2) dot_size = 2;
+                
+                int dx = cx + (int)(orbit_r * cosf(angle_rad)) - dot_size / 2;
+                int dy = cy + (int)(orbit_r * sinf(angle_rad)) - dot_size / 2;
+                
+                uint32_t color = theme.colors.primary;
+                uint32_t a = (color >> 24) & 0xFF; // AROMA colors are ARGB or RGBA?
+                if (a == 0) a = 0xFF; 
+                a = a / (i + 1);
+                // Assume ARGB format
+                uint32_t c = (a << 24) | (color & 0x00FFFFFF);
+                
+                gfx->fill_rectangle(window_id, dx, dy, dot_size, dot_size, c, true, dot_size / 2.0f);
+            }
+        }
+        
+        start_angle += 10.0f;
+        if (start_angle >= 360.0f) start_angle -= 360.0f;
 
 #ifndef ESP32
-    aroma_graphics_swap_buffers(window_id);
+        aroma_graphics_swap_buffers(window_id);
 #endif
 
-    SLEEP_MS(5000);
-
+        SLEEP_MS(30);
+    }
+    
+    aroma_font_destroy(font);
 }
