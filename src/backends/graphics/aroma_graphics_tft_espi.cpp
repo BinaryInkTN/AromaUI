@@ -233,6 +233,10 @@ float measure_text(size_t window_id, AromaFont* font,
 }
 
 unsigned int load_image(const char* image_path) { (void)image_path; return 0; }
+unsigned int load_image_from_rgba(unsigned char* data, int width, int height) {
+    return 0; // Not supported directly in TFT without format conversion
+}
+
 unsigned int load_image_from_memory(const uint16_t* data, unsigned long len) {
     int slot = find_free_slot();
     if (slot < 0) return 0; 
@@ -288,6 +292,7 @@ AromaGraphicsInterface aroma_graphics_tft = {
     .measure_text                    = measure_text,
     .unload_image                    = unload_image,
     .load_image                      = load_image,
+    .load_image_from_rgba            = load_image_from_rgba,
     .load_image_from_memory          = load_image_from_memory,
     .draw_image                      = draw_image,
     .graphics_set_tft_context        = graphics_set_tft_context,

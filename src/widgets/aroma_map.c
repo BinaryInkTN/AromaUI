@@ -341,6 +341,18 @@ static void __map_anim_tick(void* user_data) {
     if (!user_data) return;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)user_data;
     if (!extra->node_ptr || !extra->node_ptr->node_widget_ptr) return;
+
+    AromaNode* curr = extra->node_ptr;
+    bool is_visible = true;
+    while(curr) {
+        if (curr->is_hidden) {
+            is_visible = false;
+            break;
+        }
+        curr = curr->parent_node;
+    }
+    if (!is_visible) return;
+
     AromaMap* map = (AromaMap*)extra->node_ptr->node_widget_ptr;
 
     bool changed = false;
@@ -367,6 +379,7 @@ static void __map_anim_tick(void* user_data) {
     } else {
         extra->velocity_x = 0;
         extra->velocity_y = 0;
+        changed = true;
     }
 
     double diff_x = extra->center_px_x - extra->display_px_x;
@@ -463,13 +476,6 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
 
         case EVENT_TYPE_MOUSE_MOVE:
             if (map->is_dragging) {
-                if (event->data.mouse.x < map->rect.x || event->data.mouse.x > map->rect.x + map->rect.width ||
-                    event->data.mouse.y < map->rect.y || event->data.mouse.y > map->rect.y + map->rect.height) {
-                    map->is_dragging = false;
-                    aroma_node_invalidate(event->target_node);
-                    return true;
-                }
-
                 int dx = event->data.mouse.x - map->last_mouse_x;
                 int dy = event->data.mouse.y - map->last_mouse_y;
 
@@ -489,7 +495,6 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
             }
             break;
 
-        case EVENT_TYPE_MOUSE_EXIT:
         case EVENT_TYPE_MOUSE_RELEASE:
             if (map->is_dragging) {
                 map->is_dragging = false;
@@ -523,8 +528,21 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
             break;
 
         case EVENT_TYPE_CUSTOM:
-            if (event->data.custom.custom_type == 999) {
-                aroma_node_invalidate(event->target_node);
+            if (event->data.custom.custom_type == 999 || event->data.custom.custom_type == 998) {
+                if (extra->node_ptr) {
+                    AromaNode* curr = extra->node_ptr;
+                    bool is_visible = true;
+                    while(curr) {
+                        if (curr->is_hidden) {
+                            is_visible = false;
+                            break;
+                        }
+                        curr = curr->parent_node;
+                    }
+                    if (is_visible) {
+                        aroma_node_invalidate(event->target_node);
+                    }
+                }
                 return true;
             }
             break;
@@ -1014,6 +1032,7 @@ void aroma_map_set_center(AromaNode* node, double lat, double lon) {
     map->center_lat = lat;
     map->center_lon = lon;
     aroma_node_invalidate(node);
+
 }
 
 void aroma_map_pan_to(AromaNode* node, double lat, double lon) {

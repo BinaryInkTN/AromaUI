@@ -121,6 +121,42 @@ extern "C"
         }
     }
 
+    /**
+     * @brief Create an animated loading spinner.
+     * 
+     * @param parent Parent node.
+     * @param x X-coordinate relative to parent.
+     * @param y Y-coordinate relative to parent.
+     * @param radius Spinner radius in pixels.
+     * @param thickness Line thickness in pixels.
+     * @param color Spinner color in 0xAARRGGBB format.
+     * @return Pointer to the new loading spinner node.
+     */
+    static inline AromaNode *aroma_ui_loading(
+        AromaNode *parent,
+        int x, int y, int radius, int thickness,
+        uint32_t color)
+    {
+        return aroma_loading_create(parent, x, y, radius, thickness, color);
+    }
+
+    /**
+     * @brief Create an interactive map widget.
+     * 
+     * @param parent Parent node.
+     * @param x X-coordinate relative to parent.
+     * @param y Y-coordinate relative to parent.
+     * @param width Width of the map view.
+     * @param height Height of the map view.
+     * @return Pointer to the new map node.
+     */
+    static inline AromaNode *aroma_ui_map(
+        AromaNode *parent,
+        int x, int y, int width, int height)
+    {
+        return aroma_map_create(parent, x, y, width, height);
+    }
+
     void aroma_ui_set_immediate_mode(bool enabled);
     bool aroma_ui_is_immediate_mode(void);
     void aroma_ui_request_redraw(void *user_data);

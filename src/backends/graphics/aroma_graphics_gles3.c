@@ -1006,11 +1006,10 @@ unsigned int load_image(const char *image_path)
     return texture;
 }
 
-unsigned int load_image_from_memory(unsigned char *data, size_t binary_length)
+unsigned int load_image_from_rgba(unsigned char *img_data, int width, int height)
 {
-    if (!data || binary_length == 0)
+    if (!img_data || width <= 0 || height <= 0)
     {
-        LOG_ERROR("Invalid data or length for memory image loading");
         return 0;
     }
 
@@ -1033,16 +1032,6 @@ unsigned int load_image_from_memory(unsigned char *data, size_t binary_length)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    stbi_set_flip_vertically_on_load(1);
-    int width, height, channels;
-    unsigned char *img_data = stbi_load_from_memory(data, (int)binary_length,
-                                                    &width, &height, &channels, 4);
-    if (!img_data)
-    {
-        LOG_ERROR("Failed to load image from memory");
-        glDeleteTextures(1, &texture);
-        return 0;
-    }
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, img_data);
@@ -1050,10 +1039,33 @@ unsigned int load_image_from_memory(unsigned char *data, size_t binary_length)
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
+    LOG_INFO("Successfully loaded texture from RGBA (ID: %u, %dx%d)",
+             texture, width, height);
+    return texture;
+}
+
+unsigned int load_image_from_memory(unsigned char *data, size_t binary_length)
+{
+    if (!data || binary_length == 0)
+    {
+        LOG_ERROR("Invalid data or length for memory image loading");
+        return 0;
+    }
+
+    stbi_set_flip_vertically_on_load(1);
+    int width, height, channels;
+    unsigned char *img_data = stbi_load_from_memory(data, (int)binary_length,
+                                                    &width, &height, &channels, 4);
+    if (!img_data)
+    {
+        LOG_ERROR("Failed to load image from memory");
+        return 0;
+    }
+
+    unsigned int texture = load_image_from_rgba(img_data, width, height);
+
     stbi_image_free(img_data);
 
-    LOG_INFO("Successfully loaded texture from memory (ID: %u, %dx%d, Forced RGBA)",
-             texture, width, height);
     return texture;
 }
 
@@ -1196,6 +1208,7 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .measure_text = measure_text,
     .unload_image = unload_image,
     .load_image = load_image,
+    .load_image_from_rgba = load_image_from_rgba,
     .load_image_from_memory = load_image_from_memory,
     .draw_image = draw_image,
     .shutdown = shutdown,

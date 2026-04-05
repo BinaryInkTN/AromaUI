@@ -446,3 +446,47 @@ Displays runtime diagnostics.
     );
 
 Creates a top level window node.
+---
+
+## 19. Loading Spinner
+
+    AromaNode* aroma_ui_loading(
+        AromaNode* parent,
+        int x, int y, int radius, int thickness,
+        uint32_t color
+    );
+
+Creates an animated loading spinner to indicate progress or working states in the application.
+
+Parameters:
+- `parent`: Parent node
+- `x`, `y`: Position relative to parent
+- `radius`: Spinner radius in pixels
+- `thickness`: Line thickness in pixels
+- `color`: Spinner color in `0xAARRGGBB` format
+
+---
+
+## 20. Map
+
+    AromaNode* aroma_ui_map(
+        AromaNode* parent,
+        int x, int y, int width, int height
+    );
+
+An interactive map widget with support for zooming, panning, route drawing, and custom markers. Used for navigation and location features.
+
+Parameters:
+- `parent`: Parent node
+- `x`, `y`: Position relative to parent
+- `width`, `height`: Dimensions
+
+Related functions:
+- `aroma_map_set_center(node, lat, lon)` - Set map center coordinates
+- `aroma_map_set_zoom(node, zoom_level)` - Set zoom level (e.g. 10 to 18)
+- `aroma_map_zoom_in(node)`, `aroma_map_zoom_out(node)` - Adjust zoom level safely
+- `aroma_map_add_marker(node, lat, lon, color)` - Add plain colored marker
+- `aroma_map_add_popup_marker(node, lat, lon, color, text)` - Add marker with an interactive popup label
+- `aroma_map_set_route(node, start_lat, start_lon, end_lat, end_lon, color)` - Outline a route path on the map
+- `aroma_map_clear_markers(node)` - Clear all set markers
+- `aroma_map_clear_route(node)` - Clear defined route graphic

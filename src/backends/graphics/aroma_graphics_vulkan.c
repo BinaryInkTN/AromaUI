@@ -1814,42 +1814,30 @@ static VkTextureHandle *find_texture_by_id(uint32_t id)
     return NULL;
 }
 
-static unsigned int vk_load_image_from_memory(unsigned char *data, size_t binary_length)
+static unsigned int vk_load_image_from_rgba(unsigned char *data, int width, int height)
 {
-    if (!data || binary_length == 0 || !vk_ctx.initialized)
+    if (!data || width <= 0 || height <= 0 || !vk_ctx.initialized)
         return 0;
-
-    stbi_set_flip_vertically_on_load(1);
-    int w, h, channels;
-    unsigned char *img = stbi_load_from_memory(data, (int)binary_length, &w, &h, &channels, 4);
-    if (!img)
-    {
-        LOG_ERROR("Vulkan: Failed to decode image from memory");
-        return 0;
-    }
 
     VkTextureHandle *tex = find_texture_slot();
     if (!tex)
     {
         LOG_ERROR("Vulkan: No free texture slots");
-        stbi_image_free(img);
         return 0;
     }
 
-    VkDeviceSize imageSize = (VkDeviceSize)w * h * 4;
+    VkDeviceSize imageSize = (VkDeviceSize)width * height * 4;
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
     if (!vk_create_buffer(&vk_ctx, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                           &stagingBuffer, &stagingMemory))
     {
-        stbi_image_free(img);
         return 0;
     }
-    vk_copy_to_buffer(&vk_ctx, stagingMemory, img, imageSize);
-    stbi_image_free(img);
+    vk_copy_to_buffer(&vk_ctx, stagingMemory, data, imageSize);
 
-    if (!vk_create_image(&vk_ctx, (uint32_t)w, (uint32_t)h, VK_FORMAT_R8G8B8A8_UNORM,
+    if (!vk_create_image(&vk_ctx, (uint32_t)width, (uint32_t)height, VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_TILING_OPTIMAL,
                          VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -1862,7 +1850,7 @@ static unsigned int vk_load_image_from_memory(unsigned char *data, size_t binary
 
     vk_transition_image_layout(&vk_ctx, tex->image,
                                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    vk_copy_buffer_to_image(&vk_ctx, stagingBuffer, tex->image, (uint32_t)w, (uint32_t)h);
+    vk_copy_buffer_to_image(&vk_ctx, stagingBuffer, tex->image, (uint32_t)width, (uint32_t)height);
     vk_transition_image_layout(&vk_ctx, tex->image,
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -1904,13 +1892,33 @@ static unsigned int vk_load_image_from_memory(unsigned char *data, size_t binary
     };
     vkUpdateDescriptorSets(vk_ctx.device, 1, &dsWrite, 0, NULL);
 
-    tex->width = w;
-    tex->height = h;
+    tex->width = width;
+    tex->height = height;
     tex->id = vk_ctx.nextTextureId++;
     tex->in_use = true;
 
-    LOG_INFO("Vulkan: Texture loaded from memory (ID: %u, %dx%d)", tex->id, w, h);
+    LOG_INFO("Vulkan: Texture loaded from rgba (ID: %u, %dx%d)", tex->id, width, height);
     return tex->id;
+}
+
+static unsigned int vk_load_image_from_memory(unsigned char *data, size_t binary_length)
+{
+    if (!data || binary_length == 0 || !vk_ctx.initialized)
+        return 0;
+
+    stbi_set_flip_vertically_on_load(1);
+    int w, h, channels;
+    unsigned char *img = stbi_load_from_memory(data, (int)binary_length, &w, &h, &channels, 4);
+    if (!img)
+    {
+        LOG_ERROR("Vulkan: Failed to decode image from memory");
+        return 0;
+    }
+
+    unsigned int tex_id = vk_load_image_from_rgba(img, w, h);
+    stbi_image_free(img);
+
+    return tex_id;
 }
 
 static unsigned int vk_load_image(const char *image_path)
@@ -2155,6 +2163,7 @@ AromaGraphicsInterface aroma_graphics_vulkan = {
     .measure_text = vk_measure_text,
     .unload_image = vk_unload_image,
     .load_image = vk_load_image,
+    .load_image_from_rgba = vk_load_image_from_rgba,
     .load_image_from_memory = vk_load_image_from_memory,
     .draw_image = vk_draw_image,
     .shutdown = vk_shutdown,

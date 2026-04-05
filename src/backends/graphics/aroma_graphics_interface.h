@@ -69,11 +69,13 @@ extern "C"
         void (*unload_image)(unsigned int texture_id);
         unsigned int (*load_image)(const char *image_path);
 #ifndef ESP32
+        unsigned int (*load_image_from_rgba)(unsigned char *data, int width, int height);
         unsigned int (*load_image_from_memory)(
             unsigned char *data,
             long unsigned int binary_length);
 #else
-    unsigned int (*load_image_from_memory)(
+    unsigned int (*load_image_from_rgba)(unsigned char *data, int width, int height);
+        unsigned int (*load_image_from_memory)(
         const uint16_t *data,
         long unsigned int binary_length
 
