@@ -446,7 +446,7 @@ int main(void)
     AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, 20, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
     aroma_node_set_z_index(map_recently_visited_card, 10);
     AromaNode* map_recently_visited_title = aroma_ui_label(map_recently_visited_card, "Recently Visited", 20, 20, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    AromaNode *recent_listview = aroma_ui_listview(map_recently_visited_card, 0, 60, 300, 400, navigate, actual_map,state.ui_font);
+    AromaNode *recent_listview = aroma_ui_listview(map_recently_visited_card, 0, 60, 300, 300, navigate, actual_map,state.ui_font);
     aroma_listview_add_item(recent_listview, "Home", "123 Main St", NULL);
     aroma_listview_add_item(recent_listview, "Work", "456 Business Rd", NULL);
     aroma_listview_add_item(recent_listview, "Gym", "789 Fitness Ave", NULL);
