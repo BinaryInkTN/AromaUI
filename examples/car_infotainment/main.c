@@ -1,4 +1,5 @@
 #include <aroma.h>
+#include <aroma_animation.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
@@ -197,13 +198,24 @@ void navigate_to_tab(int index) {
     }
 }
 
+static bool voice_is_visible = false;
+
 void set_voice_status(const char* status) {
     if (state.voice_status_label) {
         aroma_label_set_text(state.voice_status_label, status);
     }
     if (state.voice_status_card) {
         bool hide = (status == NULL || strlen(status) == 0);
-        aroma_node_set_hidden(state.voice_status_card, hide);
+        if (!hide && !voice_is_visible) {
+            aroma_node_set_hidden(state.voice_status_card, false);
+            aroma_node_set_hidden(state.loading_spinner, false);
+            aroma_animation_start((AromaNode*)state.voice_status_card, AROMA_ANIM_SLIDE_Y, -100, -20, 300);
+            voice_is_visible = true;
+        } else if (hide && voice_is_visible) {
+            aroma_animation_start((AromaNode*)state.voice_status_card, AROMA_ANIM_SLIDE_Y, -20, -100, 300);
+            voice_is_visible = false;
+            aroma_node_set_hidden(state.loading_spinner, true);
+        }
     }
 }
 
@@ -341,6 +353,7 @@ void navigate(int index, void* user_data)
 int main(void)
 {
     aroma_ui_init();
+    aroma_animation_manager_init();
     aroma_splash(true, "AromaOS", "Automotive HMI Demo");
 
     state.theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
@@ -406,14 +419,15 @@ int main(void)
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.voice_button, 999999);
     
-    state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -20, 600, 80, CARD_TYPE_FILLED);
+    state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -100, 600, 80, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.voice_status_card, 99998);
-    aroma_node_set_hidden(state.voice_status_card, true);
+    aroma_node_set_hidden(state.voice_status_card, false);
 
     state.voice_status_label = aroma_ui_label(state.voice_status_card, "  ", 20, 40, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     state.loading_spinner = aroma_ui_loading(state.voice_status_card, 530, 28, 22, 5, state.theme.colors.primary);
     aroma_node_set_z_index(state.loading_spinner, 99999);
     aroma_node_set_z_index(state.voice_status_label, 99999);
+    aroma_node_set_hidden(state.loading_spinner, true);
     state.general_root = aroma_ui_container((AromaNode *)state.window, 125, 90, WIN_W - 250, WIN_H - 210, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)state.general_root, 20);
 
@@ -443,7 +457,7 @@ int main(void)
     aroma_map_set_route(actual_map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE); 
     aroma_map_add_popup_marker(actual_map, 48.8566, 2.3522, 0xFF00C853, "Start: Paris");
     aroma_map_add_popup_marker(actual_map, 48.8049, 2.1204, 0xFFD50000, "Home: Versailles");
-
+    aroma_map_add_icon_marker(actual_map, 48.8606, 2.3376, 0xFFFFD600, AROMA_ICON_STAR); // Louvre Museum
     AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, 20, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
     aroma_node_set_z_index(map_recently_visited_card, 10);
     AromaNode* map_recently_visited_title = aroma_ui_label(map_recently_visited_card, "Recently Visited", 20, 20, LABEL_STYLE_LABEL_LARGE, state.ui_font);
@@ -463,6 +477,9 @@ int main(void)
     aroma_button_set_colors(zoom_out, state.theme.colors.primary, state.theme.colors.primary, state.theme.colors.secondary, state.theme.colors.text_primary);
 
     aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
+    
+    // Add custom sliding transition animation for tabs
+    aroma_tabs_set_transition(state.tabs, AROMA_ANIM_SLIDE_X, 400);
 
     start_voice_control_thread();
 

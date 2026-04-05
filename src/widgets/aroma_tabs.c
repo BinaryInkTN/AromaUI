@@ -11,6 +11,7 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#include "aroma_animation.h"
 
 #define AROMA_TABS_CONTENT_MAX 8
 #define AROMA_TABS_GAP 8
@@ -39,6 +40,9 @@ struct AromaTabs {
     void (*on_change)(AromaNode*, int, void*);
     void* user_data;
     bool visibility_dirty;  
+    int transition_type;
+    uint32_t transition_duration;
+    int prev_selected_index;
 };
 
 static void __tabs_request_redraw(void* user_data)
@@ -116,6 +120,15 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
                                            content_rect->y, 
                                            content_rect->width, 
                                            content_rect->height);
+                                           
+                    if (tabs->transition_type != 0 && tabs->transition_duration > 0 && tabs->prev_selected_index != tabs->selected_index) {
+                        int offset = (tabs->selected_index > tabs->prev_selected_index) ? 200 : -200;
+                        if (tabs->transition_type == AROMA_ANIM_SLIDE_X) {
+                            aroma_animation_start(content, AROMA_ANIM_SLIDE_X, content_rect->x + offset, content_rect->x, tabs->transition_duration);
+                        } else if (tabs->transition_type == AROMA_ANIM_SLIDE_Y) {
+                            aroma_animation_start(content, AROMA_ANIM_SLIDE_Y, content_rect->y + offset, content_rect->y, tabs->transition_duration);
+                        }
+                    }
                 }
             }
             
@@ -144,6 +157,7 @@ static bool __tabs_handle_event(AromaEvent* event, void* user_data)
             if (in_bounds) {
                 int index = __tabs_index_from_x(tabs, event->data.mouse.x);
                 if (index >= 0 && index < tabs->count && index != tabs->selected_index) {
+                    tabs->prev_selected_index = tabs->selected_index;
                     tabs->selected_index = index;
                     tabs->visibility_dirty = true;  
                     __tabs_update_content_visibility(tabs);
@@ -261,6 +275,7 @@ void aroma_tabs_set_selected(AromaNode* tabs_node, int index)
     if (index < 0 || index >= tabs->count || index >= AROMA_TABS_MAX) return;
     
     if (tabs->selected_index != index) {
+        tabs->prev_selected_index = tabs->selected_index;
         tabs->selected_index = index;
         tabs->visibility_dirty = true;
         __tabs_update_content_visibility(tabs);
@@ -528,4 +543,12 @@ void aroma_tabs_destroy(AromaNode* tabs_node)
         aroma_widget_free(tabs);
         tabs_node->node_widget_ptr = NULL;
     }
+}
+
+void aroma_tabs_set_transition(AromaNode* tabs_node, int type, uint32_t duration_ms)
+{
+    if (!tabs_node || !tabs_node->node_widget_ptr) return;
+    AromaTabs* tabs = (AromaTabs*)tabs_node->node_widget_ptr;
+    tabs->transition_type = type;
+    tabs->transition_duration = duration_ms;
 }

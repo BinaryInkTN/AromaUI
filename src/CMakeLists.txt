@@ -36,6 +36,7 @@ add_library(aroma
     core/aroma_ui_impl.c
     core/aroma_logger.c
     core/aroma_node.c
+    core/aroma_animation.c
     core/aroma_layout.c
     core/aroma_slab_alloc.c
     core/aroma_event.c

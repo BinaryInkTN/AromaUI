@@ -19,9 +19,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 static bool __map_event_handler_global(AromaEvent* event, void* user_data);
-static bool __map_event_handler_global(AromaEvent* event, void* user_data);
-
-static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 
 #include <stdlib.h>
 #include <curl/curl.h>
@@ -218,7 +215,6 @@ static void* route_fetch_worker(void* arg) {
                     extra->route_active = true;
                     extra->route_loading = false;
                     pthread_mutex_unlock(&extra->route_mutex);
-    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
 
                     AromaEvent *ev = aroma_event_create_custom(req->node->node_id, 999, NULL, NULL);
                     if (ev) aroma_event_queue(ev);
@@ -229,7 +225,6 @@ static void* route_fetch_worker(void* arg) {
             extra->route_loading = false;
             extra->route_active = false;
             pthread_mutex_unlock(&extra->route_mutex);
-    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
         }
         free(chunk.memory);
         curl_easy_cleanup(curl);
@@ -263,10 +258,11 @@ static void* tile_fetch_worker(void* arg) {
 
         if (has_req) {
 
-            if (access(req.filepath, F_OK) != -1) {
-                continue;
-            }
-
+          if (access(req.filepath, F_OK) != -1) {
+    AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, NULL, NULL);
+    if (ev) aroma_event_queue(ev);
+    continue;
+}
             char url[512];
             if (req.is_dark) {
                 snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", req.z, req.x, req.y);
@@ -399,7 +395,27 @@ static void __map_anim_tick(void* user_data) {
 }
 
 static void unload_old_zoom_tiles(struct AromaMapExtra* extra) {
+    if (!extra) return;
 
+    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+
+    for (int i = 0; i < MAX_TILES_MEM; i++) {
+        if (extra->tiles[i].valid) {
+
+            if (extra->tiles[i].is_ready && extra->tiles[i].texture_id != 0) {
+                if (gfx && gfx->unload_image) {
+                    gfx->unload_image(extra->tiles[i].texture_id);
+                }
+            }
+
+            extra->tiles[i].valid = false;
+            extra->tiles[i].is_ready = false;
+            extra->tiles[i].is_loading = false;
+            extra->tiles[i].texture_id = 0;
+        }
+    }
+
+    extra->access_counter = 0;
 }
 static bool __map_event_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node || !event->target_node->node_widget_ptr) return false;
@@ -414,19 +430,7 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
         case EVENT_TYPE_MOUSE_DOUBLE_CLICK:
             if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
                 event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height) {
-
-        if (extra->zoom < 18) {
-            extra->zoom++;
-            extra->center_px_x *= 2.0;
-            extra->display_px_x *= 2.0;
-
-            extra->center_px_y *= 2.0;
-            extra->display_px_y *= 2.0;
-
-            unload_old_zoom_tiles(extra);
-        }
-
-                aroma_node_invalidate(event->target_node);
+                aroma_map_zoom_in(event->target_node);
                 return true;
             }
             break;
@@ -507,22 +511,11 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
             if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
                 event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height) {
 
-                if (event->data.mouse.scroll_y > 0 && extra->zoom < 18) {
-                    extra->zoom++;
-                    extra->center_px_x *= 2.0;
-                    extra->display_px_x *= 2.0;
-                    extra->center_px_y *= 2.0;
-                    extra->display_px_y *= 2.0;
-                    unload_old_zoom_tiles(extra);
-                } else if (event->data.mouse.scroll_y < 0 && extra->zoom > 2) {
-                    extra->zoom--;
-                    extra->center_px_x /= 2.0;
-                    extra->display_px_x /= 2.0;
-                    extra->center_px_y /= 2.0;
-                    extra->display_px_y /= 2.0;
-                    unload_old_zoom_tiles(extra);
+                if (event->data.mouse.scroll_y > 0) {
+                    aroma_map_zoom_in(event->target_node);
+                } else if (event->data.mouse.scroll_y < 0) {
+                    aroma_map_zoom_out(event->target_node);
                 }
-                aroma_node_invalidate(event->target_node);
                 return true;
             }
             break;
@@ -945,33 +938,11 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data) {
     if (event->event_type == EVENT_TYPE_KEY_PRESS) {
 
         if (event->data.key.key_code == 'z' || event->data.key.key_code == 'Z' || event->data.key.key_code == '=') {
-
-        if (extra->zoom < 18) {
-            extra->zoom++;
-            extra->center_px_x *= 2.0;
-            extra->display_px_x *= 2.0;
-
-            extra->center_px_y *= 2.0;
-            extra->display_px_y *= 2.0;
-
-            unload_old_zoom_tiles(extra);
-        }
-
-            if (extra->node_ptr) aroma_node_invalidate(extra->node_ptr);
+            aroma_map_zoom_in(extra->node_ptr);
             return true;
         }
         else if (event->data.key.key_code == 'x' || event->data.key.key_code == 'X' || event->data.key.key_code == '-') {
-            if (extra->zoom > 2) {
-                extra->zoom--;
-                extra->center_px_x /= 2.0;
-                extra->display_px_x /= 2.0;
-
-                extra->center_px_y /= 2.0;
-                extra->display_px_y /= 2.0;
-
-                unload_old_zoom_tiles(extra);
-            }
-            if (extra->node_ptr) aroma_node_invalidate(extra->node_ptr);
+            aroma_map_zoom_out(extra->node_ptr);
             return true;
         }
     }
@@ -1244,12 +1215,10 @@ void aroma_map_set_route(AromaNode* node, double start_lat, double start_lon, do
     extra->route_color = color;
     if (extra->route_loading) {
         pthread_mutex_unlock(&extra->route_mutex);
-    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
         return;
     }
     extra->route_loading = true;
     pthread_mutex_unlock(&extra->route_mutex);
-    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
 
     RouteRequest* req = malloc(sizeof(RouteRequest));
     req->start_lat = start_lat;
@@ -1282,6 +1251,5 @@ void aroma_map_clear_route(AromaNode* node) {
         extra->route_lons = NULL;
     }
     pthread_mutex_unlock(&extra->route_mutex);
-    double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
     aroma_node_invalidate(node);
 }
