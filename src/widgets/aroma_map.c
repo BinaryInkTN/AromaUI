@@ -188,6 +188,8 @@ static void* route_fetch_worker(void* arg) {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "AromaUI/1.0");
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+        curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
         CURLcode res = curl_easy_perform(curl);
         if (res == CURLE_OK && chunk.size > 0) {
@@ -264,7 +266,8 @@ static void* tile_fetch_worker(void* arg) {
     continue;
 }
             char url[512];
-            if (req.is_dark) {
+            LOG_INFO("Processing tile request z=%d x=%d y=%d", req.z, req.x, req.y);
+              if (req.is_dark) {
                 snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", req.z, req.x, req.y);
             } else {
                 snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
@@ -276,25 +279,37 @@ static void* tile_fetch_worker(void* arg) {
             CURL *curl = curl_easy_init();
             if (curl) {
                 FILE *fp = fopen(tmp_path, "wb");
+                if (!fp) { LOG_ERROR("Failed to open %s", tmp_path); }
                 if (fp) {
                     curl_easy_setopt(curl, CURLOPT_URL, url);
                     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
                     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-                    curl_easy_setopt(curl, CURLOPT_USERAGENT, "AromaUI/1.0");
-                    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
+                    curl_easy_setopt(curl, CURLOPT_USERAGENT, "AromaUI/0.0.1");
+                    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+                    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+                    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+                    curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
                     CURLcode res = curl_easy_perform(curl);
-                    fclose(fp);
+                      fclose(fp);
+                      if (res != CURLE_OK) { LOG_ERROR("CURL failed: %d URL: %s", res, url); }
+                      if (res != CURLE_OK) { LOG_ERROR("CURL failed: %d URL: %s", res, url); }
 
-                    if (res == CURLE_OK) {
+                    LOG_INFO("CURL OK for z=%d x=%d y=%d", req.z, req.x, req.y);
+                      if (res == CURLE_OK) {
                         rename(tmp_path, req.filepath);
 
-                        AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, NULL, NULL);
+                        TileRequest* event_req = malloc(sizeof(TileRequest));
+                        if (event_req) *event_req = req;
+                        AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, event_req, free);
                         if (ev) aroma_event_queue(ev);
                     } else {
-                        unlink(tmp_path);
+                          LOG_ERROR("CURLE Error %d for %d %d %d", res, req.z, req.x, req.y);
+                          unlink(tmp_path);
 
-                        AromaEvent *ev = aroma_event_create_custom(req.node_id, 998, NULL, NULL);
+                        TileRequest* event_req = malloc(sizeof(TileRequest));
+                        if (event_req) *event_req = req;
+                        AromaEvent *ev = aroma_event_create_custom(req.node_id, 998, event_req, free);
                         if (ev) aroma_event_queue(ev);
                     }
                 }
@@ -522,7 +537,15 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
 
         case EVENT_TYPE_CUSTOM:
             if (event->data.custom.custom_type == 999 || event->data.custom.custom_type == 998) {
-                if (extra->node_ptr) {
+                TileRequest* req = (TileRequest*)event->data.custom.data;
+                if (req) {
+                    for (int i=0; i<MAX_TILES_MEM; i++) {
+                        if (extra->tiles[i].valid && extra->tiles[i].z == req->z && extra->tiles[i].x == req->x && extra->tiles[i].y == req->y) {
+                            extra->tiles[i].is_loading = false;
+                        }
+                    }
+                }
+                if (event->data.custom.custom_type == 999 && extra->node_ptr) {
                     AromaNode* curr = extra->node_ptr;
                     bool is_visible = true;
                     while(curr) {
@@ -708,7 +731,12 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                     }
                     if (gfx && gfx->load_image) {
                         found_tile->texture_id = gfx->load_image(filepath);
-                        found_tile->is_ready = true;
+                        if (found_tile->texture_id != 0) {
+                            found_tile->is_ready = true;
+                        } else {
+                            unlink(filepath);
+                            found_tile->is_loading = false;
+                        }
                     }
                 } else if (!found_tile->is_loading) {
                     found_tile->is_loading = true;
