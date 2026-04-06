@@ -2,9 +2,11 @@
 #include <aroma_animation.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <stdbool.h>
+#include <limits.h>
 #include <pthread.h>
 #include "voice_control.h"
 
@@ -113,6 +115,8 @@ typedef struct {
     AromaTheme theme;
     bool dark_theme_enabled;
     char current_number[20];
+    AromaNode *easter_egg_overlay;
+    AromaNode *easter_egg_icon;
 } AppState;
 
 static AppState state = {0};
@@ -123,16 +127,14 @@ void build_settings_ui(AromaNode *window);
 void toggle_recent_card_cb(void* user_data) {
     AromaNode* card = (AromaNode*)user_data;
     if (!card) return;
-    
-    // We assume based on X if it's hidden or shown
-    // Let's get the card's rect
+
     AromaRect* rect = (AromaRect*)card->node_widget_ptr;
     if (rect) {
         if (rect->x < 0) {
-            // It's hidden, slide it in!
+            
             aroma_animation_start(card, AROMA_ANIM_SLIDE_X, rect->x, 20, 300);
         } else {
-            // It's shown, slide it out!
+            
             aroma_animation_start(card, AROMA_ANIM_SLIDE_X, rect->x, -350, 300);
         }
     }
@@ -258,7 +260,7 @@ static int voice_partial_timeout = 0;
 static int voice_theme_change = -1;
 static int voice_ac_change = 0;
 static int voice_info_request = 0;
-static int voice_music_action = 0; // 1=play, 2=pause, 3=vol_up, 4=vol_down
+static int voice_music_action = 0; 
 
 void queue_voice_music_action(int action) {
     pthread_mutex_lock(&voice_mutex);
@@ -271,7 +273,7 @@ void queue_voice_partial(const char* partial_text) {
     if (partial_text && strlen(partial_text) > 0) {
         strncpy(voice_partial_text, partial_text, sizeof(voice_partial_text) - 1);
         voice_partial_text[sizeof(voice_partial_text) - 1] = '\0';
-        voice_partial_timeout = 180; // keep visible for ~3 seconds
+        voice_partial_timeout = 180; 
     }
     pthread_mutex_unlock(&voice_mutex);
 }
@@ -328,37 +330,37 @@ void navigate(int index, void* user_data)
         aroma_map_clear_route(map);
         switch (index) {
             case 0:
-                aroma_map_pan_to(map, 48.8566, 2.3522); // Paris
+                aroma_map_pan_to(map, 48.8566, 2.3522); 
                 aroma_map_set_zoom(map, 12);
-                aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE); // Paris to Versailles
+                aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE); 
                 aroma_map_add_popup_marker(map, 48.8566, 2.3522, 0xFF00C853, "Start: Paris");
                 aroma_map_add_popup_marker(map, 48.8049, 2.1204, 0xFFD50000, "Home: Versailles");
                 break;
             case 1:
-                aroma_map_pan_to(map, 51.5074, -0.1278); // London
+                aroma_map_pan_to(map, 51.5074, -0.1278); 
                 aroma_map_set_zoom(map, 11);
-                aroma_map_set_route(map, 51.5074, -0.1278, 51.4700, -0.4543, 0xFF35A8FE); // London to Heathrow
+                aroma_map_set_route(map, 51.5074, -0.1278, 51.4700, -0.4543, 0xFF35A8FE); 
                 aroma_map_add_popup_marker(map, 51.5074, -0.1278, 0xFF00C853, "Start: London");
                 aroma_map_add_popup_marker(map, 51.4700, -0.4543, 0xFFD50000, "Work: Heathrow");
                 break;
             case 2:
-                aroma_map_pan_to(map, 52.5200, 13.4050); // Berlin
+                aroma_map_pan_to(map, 52.5200, 13.4050); 
                 aroma_map_set_zoom(map, 11);
-                aroma_map_set_route(map, 52.5200, 13.4050, 52.3667, 13.5033, 0xFF35A8FE); // Berlin to BER
+                aroma_map_set_route(map, 52.5200, 13.4050, 52.3667, 13.5033, 0xFF35A8FE); 
                 aroma_map_add_popup_marker(map, 52.5200, 13.4050, 0xFF00C853, "Start: Berlin");
                 aroma_map_add_popup_marker(map, 52.3667, 13.5033, 0xFFD50000, "Gym: BER Airport");
                 break;
             case 3:
-                aroma_map_pan_to(map, 41.9028, 12.4964); // Rome
+                aroma_map_pan_to(map, 41.9028, 12.4964); 
                 aroma_map_set_zoom(map, 12);
-                aroma_map_set_route(map, 41.9028, 12.4964, 41.7999, 12.2462, 0xFF35A8FE); // Rome to FCO
+                aroma_map_set_route(map, 41.9028, 12.4964, 41.7999, 12.2462, 0xFF35A8FE); 
                 aroma_map_add_popup_marker(map, 41.9028, 12.4964, 0xFF00C853, "Start: Colosseum");
                 aroma_map_add_popup_marker(map, 41.7999, 12.2462, 0xFFD50000, "Supermarket: FCO");
                 break;
             case 4:
-                aroma_map_pan_to(map, 48.1351, 11.5820); // Munich
+                aroma_map_pan_to(map, 48.1351, 11.5820); 
                 aroma_map_set_zoom(map, 11);
-                aroma_map_set_route(map, 48.1351, 11.5820, 48.3537, 11.7861, 0xFF35A8FE); // Munich to MUC
+                aroma_map_set_route(map, 48.1351, 11.5820, 48.3537, 11.7861, 0xFF35A8FE); 
                 aroma_map_add_popup_marker(map, 48.1351, 11.5820, 0xFF00C853, "Start: Marienplatz");
                 aroma_map_add_popup_marker(map, 48.3537, 11.7861, 0xFFD50000, "Cafe: MUC Airport");
                 break;
@@ -367,6 +369,57 @@ void navigate(int index, void* user_data)
          }
     }
     
+}
+
+void close_easter_egg_cb(void* user_data) {
+    if (state.easter_egg_overlay) {
+        aroma_node_set_hidden(state.easter_egg_overlay, true);
+    }
+}
+
+static float bounce_start_x = 0;
+static float bounce_start_y = 0;
+static float bounce_end_x = 0;
+static float bounce_end_y = 0;
+
+void bounce_anim_cb(AromaNode* target, float current_val, void* user_data) {
+    if (!target) return;
+    AromaRect* r = (AromaRect*)target->node_widget_ptr;
+    if (r) {
+        r->x = bounce_start_x + (bounce_end_x - bounce_start_x) * current_val;
+        r->y = bounce_start_y + (bounce_end_y - bounce_start_y) * current_val;
+    }
+}
+
+void interact_easter_egg_cb(void* user_data) {
+    if (state.easter_egg_icon) {
+        AromaRect* r = (AromaRect*)state.easter_egg_icon->node_widget_ptr;
+        if (r) {
+            bounce_start_x = r->x;
+            bounce_start_y = r->y;
+            bounce_end_x = 50 + (rand() % (WIN_W - 200));
+            bounce_end_y = 50 + (rand() % (WIN_H - 200));
+            
+            AromaAnimation* anim = aroma_animation_start_custom(state.easter_egg_icon, 0.0f, 1.0f, 800, bounce_anim_cb, NULL);
+            if (anim) {
+                aroma_animation_set_easing(anim, AROMA_EASE_OUT_ELASTIC);
+            }
+        }
+    }
+}
+
+void build_easter_egg_ui(AromaNode *window) {
+    state.easter_egg_overlay = aroma_ui_card(window, 0, 0, WIN_W, WIN_H, CARD_TYPE_GLASS);
+    if (!state.easter_egg_overlay) return;
+    
+    aroma_node_set_z_index(state.easter_egg_overlay, INT_MAX);
+    aroma_node_set_hidden(state.easter_egg_overlay, true);
+
+    state.easter_egg_icon = aroma_ui_iconbutton(state.easter_egg_overlay, AROMA_ICON_BUG_REPORT, WIN_W/2 - 50, WIN_H/2 - 50, 100, ICON_BUTTON_FILLED, interact_easter_egg_cb, NULL, state.icon_font);
+    aroma_node_set_z_index(state.easter_egg_icon, INT_MAX);
+
+    AromaNode* close_btn = aroma_ui_iconbutton(state.easter_egg_overlay, AROMA_ICON_CLOSE, WIN_W - 80, 30, 50, ICON_BUTTON_OUTLINED, close_easter_egg_cb, NULL, state.icon_font);
+    aroma_node_set_z_index(close_btn, INT_MAX);
 }
 
 int main(void)
@@ -476,7 +529,7 @@ int main(void)
     aroma_map_set_route(actual_map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE); 
     aroma_map_add_popup_marker(actual_map, 48.8566, 2.3522, 0xFF00C853, "Start: Paris");
     aroma_map_add_popup_marker(actual_map, 48.8049, 2.1204, 0xFFD50000, "Home: Versailles");
-    aroma_map_add_icon_marker(actual_map, 48.8606, 2.3376, 0xFFFFD600, AROMA_ICON_STAR); // Louvre Museum
+    aroma_map_add_icon_marker(actual_map, 48.8606, 2.3376, 0xFFFFD600, AROMA_ICON_STAR); 
     AromaNode* map_recently_visited_card = aroma_ui_card(state.map_root, -350, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
     aroma_node_set_z_index(map_recently_visited_card, 10);
     
@@ -503,10 +556,10 @@ int main(void)
     aroma_button_set_colors(zoom_out, state.theme.colors.primary, state.theme.colors.primary, state.theme.colors.secondary, state.theme.colors.text_primary);
 
     aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
-    
-    // Add custom sliding transition animation for tabs
+
     aroma_tabs_set_transition(state.tabs, AROMA_ANIM_SLIDE_X, 400);
 
+    build_easter_egg_ui((AromaNode*)state.window);
     start_voice_control_thread();
 
     while (aroma_ui_is_running())
@@ -541,7 +594,7 @@ int main(void)
         }
         if (strlen(voice_status_text) > 0) {
             set_voice_status(voice_status_text);
-            voice_partial_timeout = 180; // Keep the final action message for 3 secs
+            voice_partial_timeout = 180; 
             voice_status_text[0] = '\0';
         } else if (voice_partial_timeout > 0) {
             if (strlen(voice_partial_text) > 0) {
@@ -596,26 +649,26 @@ int main(void)
         }
 
         if (voice_music_action != 0) {
-            if (voice_music_action == 1) { // play
+            if (voice_music_action == 1) { 
                 if (!music_playing) {
                     music_play_callback(NULL, NULL);
                     aroma_voice_speak("Playing music");
                 } else {
                     aroma_voice_speak("Music is already playing");
                 }
-            } else if (voice_music_action == 2) { // pause
+            } else if (voice_music_action == 2) { 
                 if (music_playing) {
                     music_play_callback(NULL, NULL);
                     aroma_voice_speak("Paused music");
                 } else {
                     aroma_voice_speak("Music is not playing");
                 }
-            } else if (voice_music_action == 3) { // volume up
+            } else if (voice_music_action == 3) { 
                 music_volume += 0.1f;
                 if (music_volume > 1.0f) music_volume = 1.0f;
                 aroma_progressbar_set_progress(state.volume_slider, music_volume);
                 aroma_voice_speak("Volume increased");
-            } else if (voice_music_action == 4) { // volume down
+            } else if (voice_music_action == 4) { 
                 music_volume -= 0.1f;
                 if (music_volume < 0.0f) music_volume = 0.0f;
                 aroma_progressbar_set_progress(state.volume_slider, music_volume);
@@ -855,22 +908,22 @@ void listview_callback(int index, void *user_data)
             state.dark_theme_enabled = !state.dark_theme_enabled;
         }
     }
-    else if (selected == 5)
+    else if (selected == 6)
     {
         static int build_clicks = 0;
-        if (index == 4) // Build date item
+        if (index == 4) 
         {
             build_clicks++;
             if (build_clicks > 2 && build_clicks < 7) {
                 char msg[64];
                 snprintf(msg, sizeof(msg), "You are now %d steps away from being a developer.", 7 - build_clicks);
                 queue_voice_partial(msg);
-            } else if (build_clicks == 7) {
-                queue_voice_action(-1, false, false, "You are now a developer!");
-                // Little success chime
-                system("(speaker-test -t sine -f 1200 -l 1 >/dev/null 2>&1 & pid=$!; sleep 0.15; kill -9 $pid >/dev/null 2>&1) &");
-            } else if (build_clicks > 7) {
-                queue_voice_partial("No need, you are already a developer.");
+            } else if (build_clicks >= 7) {
+                if (build_clicks == 7) {
+                    queue_voice_action(-1, false, false, "You are now a developer!");
+                    system("(speaker-test -t sine -f 1200 -l 1 >/dev/null 2>&1 & pid=$!; sleep 0.15; kill -9 $pid >/dev/null 2>&1) &");
+                }
+                aroma_node_set_hidden(state.easter_egg_overlay, false);
             }
         }
         else
@@ -946,48 +999,41 @@ void build_settings_ui(AromaNode *window)
         labels, icons, num_sections,
         NULL, NULL, state.settings_font, state.icon_font);
 
-    // Section 0: Connectivity
     state.listviews[0] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
     aroma_listview_add_item_with_icon(state.listviews[0], "Wi-Fi", "Connected - AutoNet", AROMA_ICON_WIFI, NULL);
     aroma_listview_add_item_with_icon(state.listviews[0], "Bluetooth", "1 Device Paired", AROMA_ICON_BLUETOOTH, NULL);
     aroma_listview_add_item_with_icon(state.listviews[0], "Mobile data", "5G connection active", AROMA_ICON_NETWORK_CELL, NULL);
     state.listview_containers[0] = aroma_listview_get_scroll_container(state.listviews[0]);
 
-    // Section 1: Display & Theme
     state.listviews[1] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
     aroma_listview_add_item_with_icon(state.listviews[1], "Brightness level", "Adaptive", AROMA_ICON_BRIGHTNESS_HIGH, NULL);
     aroma_listview_add_item_with_icon(state.listviews[1], "Dark theme", "Toggle dark/light mode", AROMA_ICON_INVERT_COLORS, NULL);
     aroma_listview_add_item_with_icon(state.listviews[1], "Auto-rotate screen", "On", AROMA_ICON_SCREEN_ROTATION, NULL);
     state.listview_containers[1] = aroma_listview_get_scroll_container(state.listviews[1]);
 
-    // Section 2: Sound & Media
     state.listviews[2] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
     aroma_listview_add_item_with_icon(state.listviews[2], "Media volume", "70%", AROMA_ICON_VOLUME_UP, NULL);
     aroma_listview_add_item_with_icon(state.listviews[2], "Navigation volume", "80%", AROMA_ICON_NAVIGATION, NULL);
     aroma_listview_add_item_with_icon(state.listviews[2], "System sounds", "On", AROMA_ICON_NOTIFICATIONS, NULL);
     state.listview_containers[2] = aroma_listview_get_scroll_container(state.listviews[2]);
 
-    // Section 3: Navigation
     state.listviews[3] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
     aroma_listview_add_item_with_icon(state.listviews[3], "Location services", "High accuracy", AROMA_ICON_GPS_FIXED, NULL);
     aroma_listview_add_item_with_icon(state.listviews[3], "Live traffic", "On", AROMA_ICON_DIRECTIONS_CAR, NULL);
     aroma_listview_add_item_with_icon(state.listviews[3], "Voice guidance", "On", AROMA_ICON_VOLUME_UP, NULL);
     state.listview_containers[3] = aroma_listview_get_scroll_container(state.listviews[3]);
 
-    // Section 4: Vehicle & Climate
     state.listviews[4] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
     aroma_listview_add_item_with_icon(state.listviews[4], "Climate settings", "Auto mode", AROMA_ICON_DIRECTIONS_CAR, NULL);
     aroma_listview_add_item_with_icon(state.listviews[4], "Vehicle diagnostics", "All systems normal", AROMA_ICON_INFO, NULL);
     aroma_listview_add_item_with_icon(state.listviews[4], "Drive mode", "Comfort", AROMA_ICON_DIRECTIONS_CAR, NULL);
     state.listview_containers[4] = aroma_listview_get_scroll_container(state.listviews[4]);
 
-    // Section 5: Behaviors
     state.listviews[5] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
     aroma_listview_add_item_with_icon(state.listviews[5], "Tab Transition", "Toggle Fade/Slide", AROMA_ICON_SETTINGS, toggle_tab_animation_cb);
     aroma_listview_add_item_with_icon(state.listviews[5], "Voice Assistant", "Enable/Disable Assistant", AROMA_ICON_VOLUME_UP, toggle_voice_assistant_cb);
     state.listview_containers[5] = aroma_listview_get_scroll_container(state.listviews[5]);
 
-    // Section 6: System & About
     state.listviews[6] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h, state.settings_font);
 
     char processor_name[256] = "Unknown";

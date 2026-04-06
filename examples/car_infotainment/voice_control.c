@@ -15,14 +15,14 @@ extern void queue_voice_action(int tab_index, bool call, bool end_call, const ch
 extern void queue_voice_partial(const char* partial_text);
 extern void queue_voice_theme(int dark_mode);
 extern void queue_voice_ac_action(int temp_delta);
-extern void queue_voice_info_request(int info_type); // 1 = battery, 2 = range
+extern void queue_voice_info_request(int info_type); 
 extern void queue_voice_music_action(int action);
-extern void queue_voice_navigation(const char* dest); // 1=play, 2=pause, 3=vol_up, 4=vol_down
+extern void queue_voice_navigation(const char* dest); 
 
 static time_t manual_wake_time = 0;
 
 bool is_manual_wake_active(void) {
-    return (time(NULL) - manual_wake_time) < 6; // 6 seconds to think
+    return (time(NULL) - manual_wake_time) < 6; 
 }
 
 void aroma_voice_speak(const char *message) {
