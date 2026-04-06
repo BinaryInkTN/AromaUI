@@ -28,6 +28,8 @@ void aroma_sidebar_set_font(AromaNode* sidebar_node, AromaFont* font);
 
 void aroma_sidebar_set_content(AromaNode* sidebar_node, int index, AromaNode** content_nodes, int content_count);
 
+void aroma_sidebar_set_transition(AromaNode* sidebar_node, int type, uint32_t duration_ms);
+
 void aroma_sidebar_set_icon(AromaNode* sidebar_node, int index, const char* icon_code, AromaFont* icon_font);
 
 void aroma_sidebar_set_responsive(AromaNode* sidebar_node, bool enable);

@@ -27,6 +27,7 @@
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_style.h"
 #include "aroma_ui.h"
+#include "aroma_animation.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
@@ -60,6 +61,10 @@ struct AromaSidebar {
     int content_counts[AROMA_SIDEBAR_MAX_ITEMS];
     char labels[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_LABEL_MAX];
     char icons[AROMA_SIDEBAR_MAX_ITEMS][8];
+    
+    int transition_type;
+    uint32_t transition_duration;
+    int prev_selected_index;
 };
 
 static void __sidebar_request_redraw(void* user_data)
@@ -103,6 +108,30 @@ static void __sidebar_update_content_visibility(AromaSidebar* sidebar)
              * pipeline from traversing its subtree. No recursion
              * needed, and avoids clobbering child visibility state. */
             aroma_node_set_hidden(content, hide);
+            
+            if (!hide) {
+                if (content->node_widget_ptr) {
+                    AromaRect* content_rect = (AromaRect*)content->node_widget_ptr;
+                    aroma_node_update_layout(content, 
+                                           content_rect->x, 
+                                           content_rect->y, 
+                                           content_rect->width, 
+                                           content_rect->height);
+                    
+                    if (sidebar->transition_type != 0 && sidebar->transition_duration > 0 && sidebar->prev_selected_index != sidebar->selected_index) {
+                        int offset = (sidebar->selected_index > sidebar->prev_selected_index) ? 200 : -200;
+                        if (sidebar->transition_type == AROMA_ANIM_SLIDE_X) {
+                            aroma_animation_start(content, AROMA_ANIM_SLIDE_X, content_rect->x + offset, content_rect->x, sidebar->transition_duration);
+                        } else if (sidebar->transition_type == AROMA_ANIM_SLIDE_Y) {
+                            aroma_animation_start(content, AROMA_ANIM_SLIDE_Y, content_rect->y + offset, content_rect->y, sidebar->transition_duration);
+                        } else if (sidebar->transition_type == AROMA_ANIM_FADE) {
+                            aroma_animation_start(content, AROMA_ANIM_FADE, 0.0f, 1.0f, sidebar->transition_duration);
+                        }
+                    }
+                }
+            }
+            
+            aroma_node_invalidate(content);
         }
     }
 }
@@ -137,6 +166,7 @@ static bool __sidebar_handle_event(AromaEvent* event, void* user_data)
             if (in_bounds) {
                 int index = __sidebar_index_from_y(sidebar, event->data.mouse.y);
                 if (index >= 0 && index < sidebar->count && index != sidebar->selected_index) {
+                    sidebar->prev_selected_index = sidebar->selected_index;
                     sidebar->selected_index = index;
                     __sidebar_update_content_visibility(sidebar);
                     if (sidebar->on_select) {
@@ -233,6 +263,7 @@ void aroma_sidebar_set_selected(AromaNode* sidebar_node, int index)
     AromaSidebar* sidebar = (AromaSidebar*)sidebar_node->node_widget_ptr;
     if (index < 0 || index >= sidebar->count) return;
     if (sidebar->selected_index != index) {
+        sidebar->prev_selected_index = sidebar->selected_index;
         sidebar->selected_index = index;
     }
     __sidebar_update_content_visibility(sidebar);
@@ -457,4 +488,12 @@ void aroma_sidebar_destroy(AromaNode* sidebar_node)
         aroma_widget_free(sidebar_node->node_widget_ptr);
         sidebar_node->node_widget_ptr = NULL;
     }
+}
+
+void aroma_sidebar_set_transition(AromaNode* sidebar_node, int type, uint32_t duration_ms)
+{
+    if (!sidebar_node || !sidebar_node->node_widget_ptr) return;
+    AromaSidebar* sidebar = (AromaSidebar*)sidebar_node->node_widget_ptr;
+    sidebar->transition_type = type;
+    sidebar->transition_duration = duration_ms;
 }

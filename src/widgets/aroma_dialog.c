@@ -118,7 +118,7 @@ static bool __dialog_handle_event(AromaEvent *event, void *user_data)
     if (!event || !event->target_node)
         return false;
 
-    AromaDialog *dlg = (AromaDialog *)event->target_node->node_widget_ptr;
+    AromaDialog *dlg = (AromaDialog *)user_data;
     if (!dlg || !dlg->visible)
         return false;
     if (event->event_type != EVENT_TYPE_MOUSE_RELEASE)
@@ -144,7 +144,7 @@ static bool __dialog_handle_event(AromaEvent *event, void *user_data)
                 dlg->actions[i].callback(dlg->actions[i].user_data);
             dlg->visible = false;
             aroma_node_invalidate(event->target_node);
-            __dialog_request_redraw(user_data);
+            aroma_ui_request_redraw(NULL);
             return true;
         }
     }
@@ -199,14 +199,14 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     __dialog_recompute_action_layout(dlg, gfx, 0);
 
-    AromaNode *node = __add_child_node(NODE_TYPE_WIDGET, parent, dlg);
+    AromaNode *node = __add_child_node(NODE_TYPE_CONTAINER, parent, dlg);
     if (!node)
     {
         aroma_widget_free(dlg);
         return NULL;
     }
     aroma_node_set_draw_cb(node, aroma_dialog_draw);
-    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __dialog_handle_event, aroma_ui_request_redraw, 100);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __dialog_handle_event, dlg, 100);
 
     const int padding = 16;
     dlg->content_y_offset = 72;

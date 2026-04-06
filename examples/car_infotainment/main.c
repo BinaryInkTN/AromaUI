@@ -558,6 +558,7 @@ int main(void)
     aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
 
     aroma_tabs_set_transition(state.tabs, AROMA_ANIM_SLIDE_X, 400);
+    aroma_sidebar_set_transition(state.sidebar, AROMA_ANIM_FADE, 300);
 
     build_easter_egg_ui((AromaNode*)state.window);
     start_voice_control_thread();
@@ -689,6 +690,47 @@ int main(void)
     return 0;
 }
   
+static AromaNode *devices_dialog = NULL;
+
+static void close_devices_dialog(void *user_data) {
+    if (devices_dialog) {
+        aroma_dialog_hide(devices_dialog);
+    }
+}
+
+static void connect_device_callback(void *user_data) {
+    if (devices_dialog) {
+        aroma_dialog_hide(devices_dialog);
+        aroma_label_set_text(state.bt_device_name, "Connected to new device");
+    }
+}
+
+static void open_devices_dialog_cb(AromaNode *node, void *user_data) {
+    if (!devices_dialog) {
+        devices_dialog = aroma_dialog_create((AromaNode*)state.window, "Available Devices", "", 460, 400, DIALOG_TYPE_BASIC);
+        if (devices_dialog) {
+            aroma_dialog_set_font(devices_dialog, state.ui_font);
+            
+            AromaNode *content = aroma_dialog_get_content_area(devices_dialog);
+            if (content) {
+                AromaNode *devices_listview = aroma_ui_listview(content, 0, 0, 420, 200, NULL, NULL, state.ui_font);
+                if (devices_listview) {
+                    aroma_listview_set_icon_font(devices_listview, state.icon_font);
+                    aroma_listview_add_item_with_icon(devices_listview, "BMW X5 Audio", "Connected", "\ue328", NULL); // AROMA_ICON_BLUETOOTH
+                    aroma_listview_add_item_with_icon(devices_listview, "AirPods Pro", "Paired", "\ue310", NULL); // AROMA_ICON_HEADPHONES
+                    aroma_listview_add_item_with_icon(devices_listview, "iPhone 15", "Available", "\ue32c", NULL); // AROMA_ICON_SMARTPHONE
+                }
+            }
+            
+            aroma_dialog_add_action(devices_dialog, "Cancel", close_devices_dialog, NULL);
+            aroma_dialog_add_action(devices_dialog, "Connect", connect_device_callback, NULL);
+        }
+    }
+    
+    if (devices_dialog) {
+        aroma_dialog_show(devices_dialog);
+    }
+}
 void build_music_ui(AromaNode *window)
 {
     int area_w = WIN_W - 250;
@@ -698,11 +740,10 @@ void build_music_ui(AromaNode *window)
 
     state.music_container = aroma_ui_container(
         state.music_root, 20, 20, area_w - 40, area_h - 40,
-        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_START, AROMA_ALIGN_CENTER);
-    aroma_node_set_gap((AromaNode *)state.music_container, 20);
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_SPACE_BETWEEN, AROMA_ALIGN_CENTER);
 
     AromaNode *bt_header = aroma_ui_container(
-        state.music_container, 0, 0, area_w - 80, 60,
+        state.music_container, 0, 0, area_w - 40, 60,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_SPACE_BETWEEN, AROMA_ALIGN_CENTER);
 
     AromaNode *bt_info = aroma_ui_container(
@@ -711,33 +752,30 @@ void build_music_ui(AromaNode *window)
 
     state.bt_status_label = aroma_ui_label(
         bt_info,
-        "Bluetooth Audio", 0, 0,
+        "Your Library", 0, 0,
         LABEL_STYLE_LABEL_LARGE, state.ui_font);
 
     state.bt_device_name = aroma_ui_label(
         bt_info,
-        "Not Connected", 0, 25,
+        "Playing from iPhone", 0, 25,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
 
     state.bt_connect_button = aroma_ui_button(
         bt_header,
-        "Connect", 0, 0, 100, 40,
-        NULL, NULL,
+        "Devices", 0, 0, 100, 40,
+        open_devices_dialog_cb, NULL,
         state.ui_font);
 
-    AromaNode *now_playing_card = aroma_ui_card(
-        state.music_container, 0, 0, area_w - 80, 300, CARD_TYPE_ELEVATED);
-
-    AromaNode *now_playing_content = aroma_ui_container(
-        now_playing_card, 20, 20, area_w - 120, 260,
-        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_CENTER);
-    aroma_node_set_gap((AromaNode *)now_playing_content, 30);
+    AromaNode *middle_content = aroma_ui_container(
+        state.music_container, 0, 0, area_w - 40, 280,
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
+    aroma_node_set_gap((AromaNode *)middle_content, 40);
 
     state.now_playing_art = aroma_ui_card(
-        now_playing_content, 0, 0, 200, 200, CARD_TYPE_FILLED);
+        middle_content, 0, 0, 280, 280, CARD_TYPE_FILLED);
 
     AromaNode *now_playing_info = aroma_ui_container(
-        now_playing_content, 0, 0, 300, 200,
+        middle_content, 0, 0, 300, 280,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_START);
     aroma_node_set_gap((AromaNode *)now_playing_info, 10);
 
@@ -751,62 +789,71 @@ void build_music_ui(AromaNode *window)
         "The Weeknd", 0, 0,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
 
-    AromaNode *progress_container = aroma_ui_container(
-        now_playing_info, 0, 0, 300, 40,
+    AromaNode *bottom_bar = aroma_ui_container(
+        state.music_container, 0, 0, area_w - 40, 120,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_STRETCH);
+    aroma_node_set_gap((AromaNode *)bottom_bar, 10);
 
-    state.now_playing_progress = aroma_ui_progressbar(
-        progress_container, 0, 0, 300, 4,
-        PROGRESS_TYPE_DETERMINATE, 0.45f);
-
-    AromaNode *time_container = aroma_ui_container(
-        progress_container, 0, 5, 300, 20,
+    AromaNode *progress_container = aroma_ui_container(
+        bottom_bar, 0, 0, area_w - 40, 40,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_SPACE_BETWEEN, AROMA_ALIGN_CENTER);
+    aroma_node_set_gap((AromaNode *)progress_container, 15);
 
     state.now_playing_time_elapsed = aroma_ui_label(
-        time_container,
+        progress_container,
         "1:23", 0, 0,
         LABEL_STYLE_LABEL_SMALL, state.ui_font);
 
+    int progress_bar_width = area_w - 40 - 15 - 40 - 15 - 40;
+    state.now_playing_progress = aroma_ui_progressbar(
+        progress_container, 0, 0, progress_bar_width, 6,
+        PROGRESS_TYPE_DETERMINATE, 0.45f);
+
     state.now_playing_time_total = aroma_ui_label(
-        time_container,
+        progress_container,
         "3:45", 0, 0,
         LABEL_STYLE_LABEL_SMALL, state.ui_font);
 
-    AromaNode *controls = aroma_ui_container(
-        now_playing_info, 0, 0, 300, 60,
+    AromaNode *controls_row = aroma_ui_container(
+        bottom_bar, 0, 0, area_w - 40, 64,
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_SPACE_BETWEEN, AROMA_ALIGN_CENTER);
+
+    AromaNode *controls_left = aroma_ui_container(
+        controls_row, 0, 0, 150, 64, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_CENTER);
+    
+    AromaNode *like_button = aroma_ui_iconbutton(
+        controls_left, AROMA_ICON_FAVORITE_BORDER, 0, 0, 48,
+        ICON_BUTTON_STANDARD, NULL, NULL, state.icon_font);
+
+    AromaNode *play_controls = aroma_ui_container(
+        controls_row, 0, 0, 250, 64,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
-    aroma_node_set_gap((AromaNode *)controls, 20);
+    aroma_node_set_gap((AromaNode *)play_controls, 15);
 
     state.music_control_prev = aroma_ui_iconbutton(
-        controls, AROMA_ICON_SKIP_PREVIOUS, 0, 0, 48,
-        ICON_BUTTON_FILLED, NULL, NULL, state.icon_font);
+        play_controls, AROMA_ICON_SKIP_PREVIOUS, 0, 0, 48,
+        ICON_BUTTON_STANDARD, NULL, NULL, state.icon_font);
 
     state.music_control_play = aroma_ui_iconbutton(
-        controls, AROMA_ICON_PLAY_ARROW, 0, 0, 64,
+        play_controls, AROMA_ICON_PLAY_ARROW, 0, 0, 64,
         ICON_BUTTON_FILLED, music_play_callback, NULL, state.icon_font);
 
     state.music_control_next = aroma_ui_iconbutton(
-        controls, AROMA_ICON_SKIP_NEXT, 0, 0, 48,
-        ICON_BUTTON_FILLED, NULL, NULL, state.icon_font);
+        play_controls, AROMA_ICON_SKIP_NEXT, 0, 0, 48,
+        ICON_BUTTON_STANDARD, NULL, NULL, state.icon_font);
 
-    AromaNode *volume_container = aroma_ui_container(
-        state.music_container, 0, 0, area_w - 80, 60,
-        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_CENTER);
-    aroma_node_set_gap((AromaNode *)volume_container, 20);
+    AromaNode *controls_right = aroma_ui_container(
+        controls_row, 0, 0, 200, 64,
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_END, AROMA_ALIGN_CENTER);
+    aroma_node_set_gap((AromaNode *)controls_right, 10);
 
     state.music_control_volume = aroma_ui_icon(
-        volume_container, AROMA_ICON_VOLUME_UP, 0, 0, 32,
+        controls_right, AROMA_ICON_VOLUME_UP, 0, 0, 24,
         state.theme.colors.primary, state.icon_font);
 
     state.volume_slider = aroma_ui_progressbar(
-        volume_container, 0, 0, 400, 4,
+        controls_right, 0, 0, 100, 4,
         PROGRESS_TYPE_DETERMINATE, 0.7f);
-
-    AromaNode *devices_section = aroma_ui_container(
-        state.music_container, 0, 0, area_w - 80, 150,
-        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
-
 }
 void build_phone_ui(AromaNode *window)
 {
