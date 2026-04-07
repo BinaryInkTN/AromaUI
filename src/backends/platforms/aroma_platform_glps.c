@@ -25,6 +25,7 @@ typedef struct
     double last_mouse_y;
     bool mouse_button_down;
     bool capslock_active;
+    bool ctrl_active;
 } AromaGLPSContext;
 
 static AromaGLPSContext platform_ctx = (AromaGLPSContext){
@@ -33,7 +34,8 @@ static AromaGLPSContext platform_ctx = (AromaGLPSContext){
     .last_mouse_x = 0.0,
     .last_mouse_y = 0.0,
     .mouse_button_down = false,
-    .capslock_active = false};
+    .capslock_active = false,
+    .ctrl_active = false};
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
@@ -119,9 +121,12 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
 
     (void)data;
 
-    if (state && keycode == 0xFFE5)
+    if (state && (keycode == 0xFFE5 || keycode == 66)) // Added 66 as typical CapsLock for x11
     {
         platform_ctx.capslock_active = !platform_ctx.capslock_active;
+    }
+    if (keycode == 37 || keycode == 105) { // L_Ctrl and R_Ctrl in typical X11
+        platform_ctx.ctrl_active = state;
     }
 
     uint32_t key_value = 0;
@@ -143,6 +148,10 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
     {
         modifiers |= AROMA_KEY_MOD_CAPSLOCK;
     }
+    if (platform_ctx.ctrl_active)
+    {
+        modifiers |= AROMA_KEY_MOD_CTRL;
+    }
 
     if (has_char && (modifiers & AROMA_KEY_MOD_CAPSLOCK))
     {
@@ -151,6 +160,10 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
             key_value = (uint32_t)toupper((int)key_value);
         }
     }
+    if (modifiers & AROMA_KEY_MOD_CTRL && has_char && (key_value >= 1 && key_value <= 26)) {
+        key_value += 'a' - 1; // convert ctrl-seq like \t (9) to 'i'
+    }
+
     else
     {
     }

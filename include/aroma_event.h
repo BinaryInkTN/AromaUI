@@ -19,6 +19,7 @@ typedef struct AromaEvent AromaEvent;
 
 /** @brief Modifier flag for Caps Lock. */
 #define AROMA_KEY_MOD_CAPSLOCK 0x0001u
+#define AROMA_KEY_MOD_CTRL 0x0002u
 
 /**
  * @brief Enumeration of supported event types.

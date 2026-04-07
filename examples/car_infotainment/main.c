@@ -117,6 +117,8 @@ typedef struct {
     char current_number[20];
     AromaNode *easter_egg_overlay;
     AromaNode *easter_egg_icon;
+    AromaNode *debug_overlay;
+    bool debug_overlay_visible;
 } AppState;
 
 static AppState state = {0};
@@ -422,6 +424,20 @@ void build_easter_egg_ui(AromaNode *window) {
     aroma_node_set_z_index(close_btn, INT_MAX);
 }
 
+bool global_keyboard_event_handler(AromaEvent *event, void *user_data) {
+    if (event->event_type == EVENT_TYPE_KEY_PRESS) {
+        if ((event->data.key.key_code == 'i' || event->data.key.key_code == 'I') && (event->data.key.modifiers & AROMA_KEY_MOD_CTRL)) {
+            state.debug_overlay_visible = !state.debug_overlay_visible;
+            if (state.debug_overlay) {
+                aroma_debug_overlay_set_visible(state.debug_overlay, state.debug_overlay_visible);
+                aroma_node_invalidate((AromaNode *)state.window);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 int main(void)
 {
     aroma_ui_init();
@@ -454,6 +470,9 @@ int main(void)
         WIN_W, WIN_H);
 
     aroma_event_set_root((AromaNode *)state.window);
+
+    aroma_event_subscribe(((AromaNode *)state.window)->node_id, EVENT_TYPE_KEY_PRESS, global_keyboard_event_handler, NULL, 0);
+
     aroma_ui_prepare_font_for_window(0, state.ui_font);
 
     state.time_label = aroma_ui_label(
@@ -561,6 +580,12 @@ int main(void)
     aroma_sidebar_set_transition(state.sidebar, AROMA_ANIM_FADE, 300);
 
     build_easter_egg_ui((AromaNode*)state.window);
+
+    state.debug_overlay = aroma_ui_debug_overlay((AromaNode *)state.window, WIN_W - 220, 100, 200, state.ui_font);
+    state.debug_overlay_visible = false;
+    aroma_debug_overlay_set_visible(state.debug_overlay, false);
+    aroma_node_set_z_index(state.debug_overlay, INT_MAX - 1);
+
     start_voice_control_thread();
 
     while (aroma_ui_is_running())
