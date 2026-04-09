@@ -85,6 +85,7 @@ add_library(aroma
     widgets/aroma_map.c
     widgets/aroma_gif.c
     widgets/aroma_loading.c
+    widgets/aroma_table.c
 )
 
 target_include_directories(aroma

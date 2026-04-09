@@ -1085,6 +1085,43 @@ extern "C"
     }
 
     /**
+     * @brief Creates a complex data table widget.
+     * @param parent Parent node.
+     * @param x X-coordinate.
+     * @param y Y-coordinate.
+     * @param width Width.
+     * @param height Height.
+     * @param num_cols Number of columns in the table.
+     * @param callback Callback when a row is clicked.
+     * @param user_data User data.
+     * @return Pointer to the data table node.
+     */
+    static inline AromaNode *aroma_ui_table(
+        AromaNode *parent,
+        int x, int y, int width, int height,
+        int num_cols,
+        void (*callback)(int, void *),
+        void *user_data)
+    {
+        AromaNode *sc = aroma_container_create(parent, x, y, width, height);
+        if (!sc)
+            return NULL;
+        aroma_container_set_scrollable(sc, true);
+        aroma_container_set_scroll_direction(sc, AROMA_SCROLL_VERTICAL);
+
+        aroma_node_set_layout_mode(sc, AROMA_LAYOUT_MODE_FLEX);
+        aroma_node_set_flex_direction(sc, AROMA_FLEX_COLUMN);
+        
+        AromaNode *tbl = aroma_table_create(sc, 0, 0, width, height, num_cols);
+        if (tbl)
+        {
+            if (callback)
+                aroma_table_set_callback(tbl, callback, user_data);
+        }
+        return tbl; // Return the table node
+    }
+
+    /**
      * @brief Create a menu helper.
      *
      * @param parent Parent node.

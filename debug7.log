@@ -1,0 +1,2102 @@
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:37] __node_system_init: Node system initialized with multi-cache memory system.
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/vendors/glps/src/glps_egl_context.c:51] glps_egl_init: EGL initialized successfully (version 1.5)
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:150] aroma_ui_init_impl: Platform backend initialized successfully
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:172] aroma_ui_init_impl: Aroma UI initialized successfully (mode: batched)
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/examples/car_infotainment/../../include/aroma_ui.h:194] aroma_ui_set_theme: Theme updated
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 1, type: 0
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:332] aroma_ui_create_window_impl: Window 0 created: title='Automotive HMI', size=1280x800
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:798] show_splash_screen: Showing splash screen...
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:26] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 1)
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 2)
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 2, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 2 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 3, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 3 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 4, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 4 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 5, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 5 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 6, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 6 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 7, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 7 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 8, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 8 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 9, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 9 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 10, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 10 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 11, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 11 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 12, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 12 to parent ID: 11
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 13, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 13 to parent ID: 11
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 14, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 14 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 15, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 15 to parent ID: 14
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 16, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 16 to parent ID: 14
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 17, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 17 to parent ID: 16
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 18, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 18 to parent ID: 16
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 19, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 19 to parent ID: 18
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../test.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../test.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../test.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 20, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 20 to parent ID: 18
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (0, 0) size 280x70, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../car.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../car.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../car.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 21, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 21 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (40, 20) size 316x151, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 22, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 22 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 23, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 23 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 24, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 24 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 25, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 25 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 26, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 26 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 27, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 27 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 28, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 28 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 29, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 29 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 30, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 30 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 31, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 31 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 32, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 32 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 33, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 33 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 34, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 34 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 35, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 35 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 36, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 36 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 37, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 37 to parent ID: 36
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 38, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 38 to parent ID: 36
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 39, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 39 to parent ID: 36
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 40, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 40 to parent ID: 36
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 41, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 41 to parent ID: 36
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 42, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 42 to parent ID: 15
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 43, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 43 to parent ID: 42
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 44, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 44 to parent ID: 42
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 45, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 45 to parent ID: 42
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 46, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 46 to parent ID: 42
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 47, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 47 to parent ID: 42
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 48, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 48 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 49, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 49 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 50, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 50 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 51, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 51 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 52, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 52 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../air-conditioner.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../air-conditioner.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../air-conditioner.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 53, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 53 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (170, 215) size 48x48, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../under.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../under.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../under.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 54, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 54 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (270, 215) size 48x48, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../both.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../both.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../both.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 55, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 55 to parent ID: 17
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (370, 215) size 48x48, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 56, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 56 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../brake_indicator.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../brake_indicator.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../brake_indicator.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 57, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 57 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (20, 60) size 32x32, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../abs_indicator.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../abs_indicator.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../abs_indicator.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 58, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 58 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (70, 60) size 32x32, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 59, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 59 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../high_beams.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../high_beams.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../high_beams.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 60, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 60 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (120, 60) size 32x32, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../low_beams.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../low_beams.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../low_beams.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 61, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 61 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (170, 60) size 32x32, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../seatbelt.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../seatbelt.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../seatbelt.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 62, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 62 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (220, 60) size 32x32, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../battery_indicator.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../battery_indicator.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../battery_indicator.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 63, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 63 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (20, 120) size 32x32, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:768] load_image: Attempting to load image: ../temperature.png
+[2026-04-08 19:30:29] [31mERROR[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:773] load_image: Image file not found or inaccessible: ../temperature.png
+[2026-04-08 19:30:29] [33mWARNING[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:133] aroma_image_create: Failed to load image: ../temperature.png
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 64, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 64 to parent ID: 19
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:146] aroma_image_create: Created image widget at (70, 120) size 32x32, texture ID: 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 65, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 65 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 66, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 66 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 67, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 67 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 68, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 68 to parent ID: 67
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 69, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 69 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 70, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 70 to parent ID: 69
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 71, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 71 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 72, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 72 to parent ID: 71
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 73, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 73 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 74, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 74 to parent ID: 73
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 75, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 75 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 76, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 76 to parent ID: 75
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 77, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 77 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 78, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 78 to parent ID: 77
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 79, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 79 to parent ID: 65
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 80, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 80 to parent ID: 79
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 81, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 81 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 82, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 82 to parent ID: 81
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 83, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 83 to parent ID: 82
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 84, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 84 to parent ID: 83
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 85, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 85 to parent ID: 83
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 86, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 86 to parent ID: 83
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 87, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 87 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='1', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 3)
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 88, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 88 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='2', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 89, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 89 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='3', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 90, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 90 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='4', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 91, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 91 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='5', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 92, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 92 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='6', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 93, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 93 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='7', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 94, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 94 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='8', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 95, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 95 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='9', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 96, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 96 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='*', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 97, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 97 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='0', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 98, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 98 to parent ID: 86
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='#', x=0, y=0, w=80, h=80
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 99, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 99 to parent ID: 83
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 100, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 100 to parent ID: 99
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 101, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 101 to parent ID: 99
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 102, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 102 to parent ID: 99
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 103, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 103 to parent ID: 82
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 104, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 104 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 105, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 105 to parent ID: 104
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 106, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 106 to parent ID: 105
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 107, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 107 to parent ID: 106
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 108, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 108 to parent ID: 107
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 109, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 109 to parent ID: 107
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 110, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 110 to parent ID: 106
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='Devices', x=0, y=0, w=100, h=40
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 111, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 111 to parent ID: 105
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 112, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 112 to parent ID: 111
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 113, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 113 to parent ID: 111
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 114, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 114 to parent ID: 113
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 115, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 115 to parent ID: 113
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 116, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 116 to parent ID: 105
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 117, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 117 to parent ID: 116
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 118, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 118 to parent ID: 117
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 119, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 119 to parent ID: 117
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 120, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 120 to parent ID: 117
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 121, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 121 to parent ID: 116
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 122, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 122 to parent ID: 121
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 123, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 123 to parent ID: 122
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 124, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 124 to parent ID: 121
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 125, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 125 to parent ID: 124
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 126, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 126 to parent ID: 124
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 127, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 127 to parent ID: 124
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 128, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 128 to parent ID: 121
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 129, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 129 to parent ID: 128
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 130, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 130 to parent ID: 128
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 131, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 131 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 132, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 132 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_map.c:1160] aroma_map_create: Initializing aroma map with 16 async download threads
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 133, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 133 to parent ID: 132
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 134, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 134 to parent ID: 132
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 135, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 135 to parent ID: 132
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 136, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 136 to parent ID: 134
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 137, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 137 to parent ID: 134
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 138, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 138 to parent ID: 134
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 139, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 139 to parent ID: 138
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 140, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 140 to parent ID: 132
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 141, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 141 to parent ID: 132
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:201] aroma_button_set_colors: Button colors updated
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:201] aroma_button_set_colors: Button colors updated
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 142, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 142 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 143, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 143 to parent ID: 142
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 144, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 144 to parent ID: 142
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 145, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 145 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 146, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 146 to parent ID: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 147, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 147 to parent ID: 146
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 148, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 148 to parent ID: 147
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 149, type: 1
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 149 to parent ID: 147
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 150, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 150 to parent ID: 149
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 151, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 151 to parent ID: 147
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 152, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 152 to parent ID: 147
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='Cancel', x=480, y=1120, w=150, h=50
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:99] __create_node: Created node ID: 153, type: 2
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:121] __add_child_node: Added child node ID: 153 to parent ID: 147
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:130] aroma_button_create: Button created: label='Connect', x=650, y=1120, w=150, h=50
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:157] aroma_button_set_on_click: Button click callback registered
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+DEBUG: DRAWING LABEL 'Vehicle Status: All systems normal' AT x=215, y=290 COLOR=00E6E1E5
+ERROR (VoskAPI:Model():model.cc:122) Folder '../model' does not contain model files. Make sure you specified the model path properly in Model constructor. If you are not sure about relative path, use absolute path specification.
+Failed to load Vosk model
+DEBUG: DRAWING LABEL '204' AT x=215, y=400 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'km' AT x=257, y=410 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Remaining' AT x=215, y=430 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '128' AT x=325, y=400 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Wh' AT x=367, y=410 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Average' AT x=325, y=430 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '35.5' AT x=435, y=400 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'kWh' AT x=483, y=410 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Fuel Capacity' AT x=435, y=430 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Speed' AT x=165, y=490 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '88' AT x=165, y=510 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'km/h' AT x=165, y=630 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Gear: Drive' AT x=315, y=510 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Adjust AC to your comfort level' AT x=565, y=110 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '23°C' AT x=770, y=150 COLOR=00E6E1E5
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+DEBUG: DRAWING LABEL 'System Status' AT x=565, y=430 COLOR=00E6E1E5
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_image.c:82] aroma_image_draw: Skipping image draw - no texture loaded
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'P' AT x=345, y=548 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'R' AT x=386, y=548 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'N' AT x=427, y=548 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'D' AT x=468, y=548 COLOR=00E6E1E5
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 4)
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 5)
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 6)
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:29] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 7)
+DEBUG: DRAWING LABEL 'Your Library' AT x=345, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=345, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=850, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=850, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=345, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1281, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:31] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/utils/aroma_gles3_text.c:100] gles3_text_renderer_load_font: Loaded initial glyphs: 95
+
+[2026-04-08 19:30:31] [34mINFO[0m [/home/yassineaa/AromaUI/src/backends/graphics/aroma_graphics_gles3.c:192] get_or_load_font_renderer: Loaded new font for window 0 (total: 8)
+DEBUG: DRAWING LABEL 'Your Library' AT x=312, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=312, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=817, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=817, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=312, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1248, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=287, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=287, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=792, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=792, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=287, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1223, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:31] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_map.c:441] __map_event_handler: MAP EVENT 16 (Drag: 0, x: 999 y: 0 rx: 0 ry: 0 rw: 1280 rh: 720)
+DEBUG: DRAWING LABEL 'Your Library' AT x=265, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=265, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=770, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=770, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=265, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1201, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=247, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=247, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=752, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=752, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=247, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1183, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=231, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=231, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=736, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=736, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=231, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1167, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=217, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=217, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=722, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=722, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=217, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1153, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=204, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=204, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=709, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=709, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=204, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1140, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=193, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=193, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=698, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=698, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=193, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1129, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=184, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=184, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=689, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=689, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=184, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1120, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=175, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=175, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=680, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=680, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=175, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1111, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=168, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=168, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=673, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=673, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=168, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1104, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=162, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=162, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=667, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=667, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=162, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1098, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=157, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=157, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=662, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=662, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=157, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1093, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=153, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=153, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=658, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=658, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=153, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1089, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=150, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=150, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=655, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=655, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=150, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1086, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=148, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=148, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=653, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=653, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=148, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1084, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=146, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=146, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=651, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=651, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=146, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1082, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:32] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:34] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_button.c:315] aroma_button_handle_mouse_event: Button clicked: Devices
+DEBUG: SHOWING SHEET. child count = 1
+DEBUG: CONTAINER child count = 5, is_hidden=0
+SHEET ANIM CB CALLED: 800.000000
+Anim target_y: 800.000000 | sheet->container_y: 800 | first_child_y: 820
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 721.742798
+Anim target_y: 721.742798 | sheet->container_y: 721 | first_child_y: 741
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 657.392273
+Anim target_y: 657.392273 | sheet->container_y: 657 | first_child_y: 677
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 604.799988
+Anim target_y: 604.799988 | sheet->container_y: 604 | first_child_y: 624
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 559.909058
+Anim target_y: 559.909058 | sheet->container_y: 559 | first_child_y: 579
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 522.109741
+Anim target_y: 522.109741 | sheet->container_y: 522 | first_child_y: 542
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 490.792419
+Anim target_y: 490.792419 | sheet->container_y: 490 | first_child_y: 510
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 465.347290
+Anim target_y: 465.347290 | sheet->container_y: 465 | first_child_y: 485
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 443.321594
+Anim target_y: 443.321594 | sheet->container_y: 443 | first_child_y: 463
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 428.935181
+Anim target_y: 428.935181 | sheet->container_y: 428 | first_child_y: 448
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 417.149994
+Anim target_y: 417.149994 | sheet->container_y: 417 | first_child_y: 437
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 409.423065
+Anim target_y: 409.423065 | sheet->container_y: 409 | first_child_y: 429
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 404.455750
+Anim target_y: 404.455750 | sheet->container_y: 404 | first_child_y: 424
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 401.442017
+Anim target_y: 401.442017 | sheet->container_y: 401 | first_child_y: 421
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 400.291595
+Anim target_y: 400.291595 | sheet->container_y: 400 | first_child_y: 420
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 400.007568
+Anim target_y: 400.007568 | sheet->container_y: 400 | first_child_y: 420
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 400.000000
+Anim target_y: 400.000000 | sheet->container_y: 400 | first_child_y: 420
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:35] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:442] scroll_event_handler: SCR_HANDLER: entered type=0 udata=0x5c9da404c420
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/widgets/aroma_container.c:449] scroll_event_handler: SCR_HANDLER: c=0x5c9da404c2d0 scrollable=1 node_type=1
+SHEET ANIM CB CALLED: 408.000000
+Anim target_y: 408.000000 | sheet->container_y: 408 | first_child_y: 428
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 416.000000
+Anim target_y: 416.000000 | sheet->container_y: 416 | first_child_y: 436
+SHEET ANIM CB CALLED: 425.000000
+Anim target_y: 425.000000 | sheet->container_y: 425 | first_child_y: 445
+SHEET ANIM CB CALLED: 434.000000
+Anim target_y: 434.000000 | sheet->container_y: 434 | first_child_y: 454
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 443.000000
+Anim target_y: 443.000000 | sheet->container_y: 443 | first_child_y: 463
+SHEET ANIM CB CALLED: 452.000000
+Anim target_y: 452.000000 | sheet->container_y: 452 | first_child_y: 472
+SHEET ANIM CB CALLED: 460.000000
+Anim target_y: 460.000000 | sheet->container_y: 460 | first_child_y: 480
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 468.000000
+Anim target_y: 468.000000 | sheet->container_y: 468 | first_child_y: 488
+SHEET ANIM CB CALLED: 475.000000
+Anim target_y: 475.000000 | sheet->container_y: 475 | first_child_y: 495
+SHEET ANIM CB CALLED: 483.000000
+Anim target_y: 483.000000 | sheet->container_y: 483 | first_child_y: 503
+[2026-04-08 19:30:36] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 489.000000
+Anim target_y: 489.000000 | sheet->container_y: 489 | first_child_y: 509
+SHEET ANIM CB CALLED: 496.000000
+Anim target_y: 496.000000 | sheet->container_y: 496 | first_child_y: 516
+SHEET ANIM CB CALLED: 502.000000
+Anim target_y: 502.000000 | sheet->container_y: 502 | first_child_y: 522
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 507.000000
+Anim target_y: 507.000000 | sheet->container_y: 507 | first_child_y: 527
+SHEET ANIM CB CALLED: 512.000000
+Anim target_y: 512.000000 | sheet->container_y: 512 | first_child_y: 532
+SHEET ANIM CB CALLED: 515.000000
+Anim target_y: 515.000000 | sheet->container_y: 515 | first_child_y: 535
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 519.000000
+Anim target_y: 519.000000 | sheet->container_y: 519 | first_child_y: 539
+SHEET ANIM CB CALLED: 523.000000
+Anim target_y: 523.000000 | sheet->container_y: 523 | first_child_y: 543
+SHEET ANIM CB CALLED: 527.000000
+Anim target_y: 527.000000 | sheet->container_y: 527 | first_child_y: 547
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 532.000000
+Anim target_y: 532.000000 | sheet->container_y: 532 | first_child_y: 552
+SHEET ANIM CB CALLED: 538.000000
+Anim target_y: 538.000000 | sheet->container_y: 538 | first_child_y: 558
+SHEET ANIM CB CALLED: 543.000000
+Anim target_y: 543.000000 | sheet->container_y: 543 | first_child_y: 563
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 549.000000
+Anim target_y: 549.000000 | sheet->container_y: 549 | first_child_y: 569
+SHEET ANIM CB CALLED: 555.000000
+Anim target_y: 555.000000 | sheet->container_y: 555 | first_child_y: 575
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 561.000000
+Anim target_y: 561.000000 | sheet->container_y: 561 | first_child_y: 581
+SHEET ANIM CB CALLED: 566.000000
+Anim target_y: 566.000000 | sheet->container_y: 566 | first_child_y: 586
+SHEET ANIM CB CALLED: 571.000000
+Anim target_y: 571.000000 | sheet->container_y: 571 | first_child_y: 591
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 576.000000
+Anim target_y: 576.000000 | sheet->container_y: 576 | first_child_y: 596
+SHEET ANIM CB CALLED: 580.000000
+Anim target_y: 580.000000 | sheet->container_y: 580 | first_child_y: 600
+SHEET ANIM CB CALLED: 584.000000
+Anim target_y: 584.000000 | sheet->container_y: 584 | first_child_y: 604
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 587.000000
+Anim target_y: 587.000000 | sheet->container_y: 587 | first_child_y: 607
+SHEET ANIM CB CALLED: 590.000000
+Anim target_y: 590.000000 | sheet->container_y: 590 | first_child_y: 610
+SHEET ANIM CB CALLED: 593.000000
+Anim target_y: 593.000000 | sheet->container_y: 593 | first_child_y: 613
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 596.000000
+Anim target_y: 596.000000 | sheet->container_y: 596 | first_child_y: 616
+SHEET ANIM CB CALLED: 598.000000
+Anim target_y: 598.000000 | sheet->container_y: 598 | first_child_y: 618
+SHEET ANIM CB CALLED: 600.000000
+Anim target_y: 600.000000 | sheet->container_y: 600 | first_child_y: 620
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 603.000000
+Anim target_y: 603.000000 | sheet->container_y: 603 | first_child_y: 623
+SHEET ANIM CB CALLED: 606.000000
+Anim target_y: 606.000000 | sheet->container_y: 606 | first_child_y: 626
+SHEET ANIM CB CALLED: 609.000000
+Anim target_y: 609.000000 | sheet->container_y: 609 | first_child_y: 629
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 613.000000
+Anim target_y: 613.000000 | sheet->container_y: 613 | first_child_y: 633
+SHEET ANIM CB CALLED: 618.000000
+Anim target_y: 618.000000 | sheet->container_y: 618 | first_child_y: 638
+SHEET ANIM CB CALLED: 623.000000
+Anim target_y: 623.000000 | sheet->container_y: 623 | first_child_y: 643
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 628.000000
+Anim target_y: 628.000000 | sheet->container_y: 628 | first_child_y: 648
+SHEET ANIM CB CALLED: 634.000000
+Anim target_y: 634.000000 | sheet->container_y: 634 | first_child_y: 654
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 639.000000
+Anim target_y: 639.000000 | sheet->container_y: 639 | first_child_y: 659
+SHEET ANIM CB CALLED: 643.000000
+Anim target_y: 643.000000 | sheet->container_y: 643 | first_child_y: 663
+SHEET ANIM CB CALLED: 648.000000
+Anim target_y: 648.000000 | sheet->container_y: 648 | first_child_y: 668
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 651.000000
+Anim target_y: 651.000000 | sheet->container_y: 651 | first_child_y: 671
+SHEET ANIM CB CALLED: 654.000000
+Anim target_y: 654.000000 | sheet->container_y: 654 | first_child_y: 674
+SHEET ANIM CB CALLED: 657.000000
+Anim target_y: 657.000000 | sheet->container_y: 657 | first_child_y: 677
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 659.000000
+Anim target_y: 659.000000 | sheet->container_y: 659 | first_child_y: 679
+SHEET ANIM CB CALLED: 662.000000
+Anim target_y: 662.000000 | sheet->container_y: 662 | first_child_y: 682
+SHEET ANIM CB CALLED: 663.000000
+Anim target_y: 663.000000 | sheet->container_y: 663 | first_child_y: 683
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 664.000000
+Anim target_y: 664.000000 | sheet->container_y: 664 | first_child_y: 684
+SHEET ANIM CB CALLED: 665.000000
+Anim target_y: 665.000000 | sheet->container_y: 665 | first_child_y: 685
+SHEET ANIM CB CALLED: 666.000000
+Anim target_y: 666.000000 | sheet->container_y: 666 | first_child_y: 686
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 667.000000
+Anim target_y: 667.000000 | sheet->container_y: 667 | first_child_y: 687
+SHEET ANIM CB CALLED: 668.000000
+Anim target_y: 668.000000 | sheet->container_y: 668 | first_child_y: 688
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 669.000000
+Anim target_y: 669.000000 | sheet->container_y: 669 | first_child_y: 689
+SHEET ANIM CB CALLED: 670.000000
+Anim target_y: 670.000000 | sheet->container_y: 670 | first_child_y: 690
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 671.000000
+Anim target_y: 671.000000 | sheet->container_y: 671 | first_child_y: 691
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 672.000000
+Anim target_y: 672.000000 | sheet->container_y: 672 | first_child_y: 692
+SHEET ANIM CB CALLED: 673.000000
+Anim target_y: 673.000000 | sheet->container_y: 673 | first_child_y: 693
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 671.000000
+Anim target_y: 671.000000 | sheet->container_y: 671 | first_child_y: 691
+SHEET ANIM CB CALLED: 666.000000
+Anim target_y: 666.000000 | sheet->container_y: 666 | first_child_y: 686
+SHEET ANIM CB CALLED: 659.000000
+Anim target_y: 659.000000 | sheet->container_y: 659 | first_child_y: 679
+SHEET ANIM CB CALLED: 651.000000
+Anim target_y: 651.000000 | sheet->container_y: 651 | first_child_y: 671
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 643.000000
+Anim target_y: 643.000000 | sheet->container_y: 643 | first_child_y: 663
+SHEET ANIM CB CALLED: 635.000000
+Anim target_y: 635.000000 | sheet->container_y: 635 | first_child_y: 655
+SHEET ANIM CB CALLED: 626.000000
+Anim target_y: 626.000000 | sheet->container_y: 626 | first_child_y: 646
+SHEET ANIM CB CALLED: 618.000000
+Anim target_y: 618.000000 | sheet->container_y: 618 | first_child_y: 638
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 609.000000
+Anim target_y: 609.000000 | sheet->container_y: 609 | first_child_y: 629
+SHEET ANIM CB CALLED: 601.000000
+Anim target_y: 601.000000 | sheet->container_y: 601 | first_child_y: 621
+SHEET ANIM CB CALLED: 593.000000
+Anim target_y: 593.000000 | sheet->container_y: 593 | first_child_y: 613
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 585.000000
+Anim target_y: 585.000000 | sheet->container_y: 585 | first_child_y: 605
+SHEET ANIM CB CALLED: 577.000000
+Anim target_y: 577.000000 | sheet->container_y: 577 | first_child_y: 597
+SHEET ANIM CB CALLED: 571.000000
+Anim target_y: 571.000000 | sheet->container_y: 571 | first_child_y: 591
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 565.000000
+Anim target_y: 565.000000 | sheet->container_y: 565 | first_child_y: 585
+SHEET ANIM CB CALLED: 559.000000
+Anim target_y: 559.000000 | sheet->container_y: 559 | first_child_y: 579
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 555.000000
+Anim target_y: 555.000000 | sheet->container_y: 555 | first_child_y: 575
+SHEET ANIM CB CALLED: 552.000000
+Anim target_y: 552.000000 | sheet->container_y: 552 | first_child_y: 572
+SHEET ANIM CB CALLED: 550.000000
+Anim target_y: 550.000000 | sheet->container_y: 550 | first_child_y: 570
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 548.000000
+Anim target_y: 548.000000 | sheet->container_y: 548 | first_child_y: 568
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 551.000000
+Anim target_y: 551.000000 | sheet->container_y: 551 | first_child_y: 571
+SHEET ANIM CB CALLED: 557.000000
+Anim target_y: 557.000000 | sheet->container_y: 557 | first_child_y: 577
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 565.000000
+Anim target_y: 565.000000 | sheet->container_y: 565 | first_child_y: 585
+SHEET ANIM CB CALLED: 574.000000
+Anim target_y: 574.000000 | sheet->container_y: 574 | first_child_y: 594
+SHEET ANIM CB CALLED: 583.000000
+Anim target_y: 583.000000 | sheet->container_y: 583 | first_child_y: 603
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 594.000000
+Anim target_y: 594.000000 | sheet->container_y: 594 | first_child_y: 614
+SHEET ANIM CB CALLED: 605.000000
+Anim target_y: 605.000000 | sheet->container_y: 605 | first_child_y: 625
+SHEET ANIM CB CALLED: 615.000000
+Anim target_y: 615.000000 | sheet->container_y: 615 | first_child_y: 635
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 626.000000
+Anim target_y: 626.000000 | sheet->container_y: 626 | first_child_y: 646
+SHEET ANIM CB CALLED: 636.000000
+Anim target_y: 636.000000 | sheet->container_y: 636 | first_child_y: 656
+SHEET ANIM CB CALLED: 644.000000
+Anim target_y: 644.000000 | sheet->container_y: 644 | first_child_y: 664
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 653.000000
+Anim target_y: 653.000000 | sheet->container_y: 653 | first_child_y: 673
+SHEET ANIM CB CALLED: 661.000000
+Anim target_y: 661.000000 | sheet->container_y: 661 | first_child_y: 681
+SHEET ANIM CB CALLED: 668.000000
+Anim target_y: 668.000000 | sheet->container_y: 668 | first_child_y: 688
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 674.000000
+Anim target_y: 674.000000 | sheet->container_y: 674 | first_child_y: 694
+SHEET ANIM CB CALLED: 680.000000
+Anim target_y: 680.000000 | sheet->container_y: 680 | first_child_y: 700
+SHEET ANIM CB CALLED: 685.000000
+Anim target_y: 685.000000 | sheet->container_y: 685 | first_child_y: 705
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 689.000000
+Anim target_y: 689.000000 | sheet->container_y: 689 | first_child_y: 709
+SHEET ANIM CB CALLED: 693.000000
+Anim target_y: 693.000000 | sheet->container_y: 693 | first_child_y: 713
+SHEET ANIM CB CALLED: 696.000000
+Anim target_y: 696.000000 | sheet->container_y: 696 | first_child_y: 716
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 698.000000
+Anim target_y: 698.000000 | sheet->container_y: 698 | first_child_y: 718
+SHEET ANIM CB CALLED: 701.000000
+Anim target_y: 701.000000 | sheet->container_y: 701 | first_child_y: 721
+SHEET ANIM CB CALLED: 702.000000
+Anim target_y: 702.000000 | sheet->container_y: 702 | first_child_y: 722
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 704.000000
+Anim target_y: 704.000000 | sheet->container_y: 704 | first_child_y: 724
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 705.000000
+Anim target_y: 705.000000 | sheet->container_y: 705 | first_child_y: 725
+SHEET ANIM CB CALLED: 706.000000
+Anim target_y: 706.000000 | sheet->container_y: 706 | first_child_y: 726
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 706.000000
+Anim target_y: 706.000000 | sheet->container_y: 706 | first_child_y: 726
+SHEET ANIM CB CALLED: 707.000000
+Anim target_y: 707.000000 | sheet->container_y: 707 | first_child_y: 727
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 708.000000
+Anim target_y: 708.000000 | sheet->container_y: 708 | first_child_y: 728
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 709.000000
+Anim target_y: 709.000000 | sheet->container_y: 709 | first_child_y: 729
+SHEET ANIM CB CALLED: 710.000000
+Anim target_y: 710.000000 | sheet->container_y: 710 | first_child_y: 730
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 711.000000
+Anim target_y: 711.000000 | sheet->container_y: 711 | first_child_y: 731
+SHEET ANIM CB CALLED: 712.000000
+Anim target_y: 712.000000 | sheet->container_y: 712 | first_child_y: 732
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 713.000000
+Anim target_y: 713.000000 | sheet->container_y: 713 | first_child_y: 733
+SHEET ANIM CB CALLED: 715.000000
+Anim target_y: 715.000000 | sheet->container_y: 715 | first_child_y: 735
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 717.000000
+Anim target_y: 717.000000 | sheet->container_y: 717 | first_child_y: 737
+SHEET ANIM CB CALLED: 721.000000
+Anim target_y: 721.000000 | sheet->container_y: 721 | first_child_y: 741
+SHEET ANIM CB CALLED: 727.000000
+Anim target_y: 727.000000 | sheet->container_y: 727 | first_child_y: 747
+[2026-04-08 19:30:37] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 734.000000
+Anim target_y: 734.000000 | sheet->container_y: 734 | first_child_y: 754
+SHEET ANIM CB CALLED: 743.000000
+Anim target_y: 743.000000 | sheet->container_y: 743 | first_child_y: 763
+SHEET ANIM CB CALLED: 754.000000
+Anim target_y: 754.000000 | sheet->container_y: 754 | first_child_y: 774
+[2026-04-08 19:30:38] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 766.000000
+Anim target_y: 766.000000 | sheet->container_y: 766 | first_child_y: 786
+SHEET ANIM CB CALLED: 779.000000
+Anim target_y: 779.000000 | sheet->container_y: 779 | first_child_y: 799
+SHEET ANIM CB CALLED: 792.000000
+Anim target_y: 792.000000 | sheet->container_y: 792 | first_child_y: 812
+[2026-04-08 19:30:38] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 804.000000
+Anim target_y: 804.000000 | sheet->container_y: 804 | first_child_y: 824
+SHEET ANIM CB CALLED: 816.000000
+Anim target_y: 816.000000 | sheet->container_y: 816 | first_child_y: 836
+SHEET ANIM CB CALLED: 825.000000
+Anim target_y: 825.000000 | sheet->container_y: 825 | first_child_y: 845
+[2026-04-08 19:30:38] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:249] aroma_ui_render_impl: Rendering window ID 0
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 825.000000
+Anim target_y: 825.000000 | sheet->container_y: 825 | first_child_y: 845
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 824.855591
+Anim target_y: 824.855591 | sheet->container_y: 824 | first_child_y: 844
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 824.391602
+Anim target_y: 824.391602 | sheet->container_y: 824 | first_child_y: 844
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 823.654419
+Anim target_y: 823.654419 | sheet->container_y: 823 | first_child_y: 843
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 822.566406
+Anim target_y: 822.566406 | sheet->container_y: 822 | first_child_y: 842
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 821.079590
+Anim target_y: 821.079590 | sheet->container_y: 821 | first_child_y: 841
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 819.430420
+Anim target_y: 819.430420 | sheet->container_y: 819 | first_child_y: 839
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 817.382385
+Anim target_y: 817.382385 | sheet->container_y: 817 | first_child_y: 837
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 815.140381
+Anim target_y: 815.140381 | sheet->container_y: 815 | first_child_y: 835
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 812.468384
+Anim target_y: 812.468384 | sheet->container_y: 812 | first_child_y: 832
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 809.476379
+Anim target_y: 809.476379 | sheet->container_y: 809 | first_child_y: 829
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 806.337585
+Anim target_y: 806.337585 | sheet->container_y: 806 | first_child_y: 826
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 802.909973
+Anim target_y: 802.909973 | sheet->container_y: 802 | first_child_y: 822
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+SHEET ANIM CB CALLED: 800.000000
+Anim target_y: 800.000000 | sheet->container_y: 800 | first_child_y: 820
+DEBUG: DRAWING LABEL 'Your Library' AT x=145, y=123 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Playing from iPhone' AT x=145, y=141 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'Blinding Lights' AT x=650, y=331 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'The Weeknd' AT x=650, y=363 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '1:23' AT x=145, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '3:45' AT x=1081, y=556 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '  ' AT x=360, y=-60 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL '12:45 PM' AT x=50, y=30 COLOR=00E6E1E5
+DEBUG: DRAWING LABEL 'San Francisco, 68°F' AT x=150, y=30 COLOR=00E6E1E5
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 2
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 3
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 4
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 5
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 6
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 7
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 8
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 9
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 10
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 12
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 13
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 11
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 21
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 22
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 23
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 24
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 25
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 26
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 27
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 28
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 29
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 30
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 31
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 32
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 33
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 34
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 35
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 37
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 38
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 39
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 40
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 41
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 36
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 43
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 44
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 45
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 46
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 47
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 42
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 15
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 48
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 49
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 50
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 51
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 52
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 53
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 54
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 55
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 17
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 56
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 57
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 58
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 59
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 60
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 61
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 62
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 63
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 64
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 19
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 20
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 18
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 16
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 14
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 66
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 68
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 67
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 70
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 69
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 72
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 71
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 74
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 73
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 76
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 75
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 78
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 77
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 80
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 79
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 65
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 84
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 85
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 87
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 88
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 89
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 90
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 91
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 92
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 93
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 94
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 95
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 96
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 97
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 98
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 86
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 100
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 101
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 102
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 99
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 83
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 103
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 82
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 81
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 108
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 109
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 107
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 110
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 106
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 112
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 114
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 115
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 113
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 111
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 118
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 119
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 120
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 117
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 123
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 122
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 125
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 126
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 127
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 124
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 129
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 130
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 128
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 121
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 116
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 105
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 104
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 131
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 133
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 136
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 137
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 139
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 138
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 134
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 135
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 140
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 141
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 132
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 143
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 144
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 142
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 145
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 148
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 150
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 149
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 151
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 152
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 153
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 147
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 146
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:191] __destroy_node: Destroyed node ID: 1
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:201] __destroy_node_tree: Destroyed entire node tree
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:415] aroma_ui_destroy_window_impl: Window destroyed
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/examples/car_infotainment/../../include/aroma_ui.h:319] aroma_ui_unload_font: Font unloaded
+[2026-04-08 19:30:39] [33mWARNING[0m [/home/yassineaa/AromaUI/src/backends/platforms/aroma_platform_glps.c:298] shutdown: TODO: Window manager has no active windows; skipping GLPS destroy to avoid shutdown crash.
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:213] aroma_ui_shutdown_impl: Platform backend shutdown
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_node.c:42] __node_system_destroy: Node system destroyed.
+[2026-04-08 19:30:39] [34mINFO[0m [/home/yassineaa/AromaUI/src/core/aroma_ui_impl.c:236] aroma_ui_shutdown_impl: Aroma UI shutdown complete

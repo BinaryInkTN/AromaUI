@@ -954,7 +954,7 @@ void build_phone_ui(AromaNode *window)
         main_row, 0, 300, area_w - 460, area_h - 80,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_gap((AromaNode *)lists_section, 20);
-
+    
 }
 
 void listview_callback(int index, void *user_data)

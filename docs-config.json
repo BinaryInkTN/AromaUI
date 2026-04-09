@@ -297,6 +297,22 @@
             ]
         },
         {
+            "id": "ui-data-table",
+            "title": "Data Table",
+            "description": "Qt-style responsive data table with cells, formatting, and row selection.",
+            "icon": "table",
+            "color": "#7D5260",
+            "category": "User Interface",
+            "subcategory": "Core Components",
+            "file": "docs/ui/data_table.md",
+            "platforms": [
+                "android",
+                "linux",
+                "windows",
+                "espressif"
+            ]
+        },
+        {
             "title": "Layout Management",
             "description": "Create responsive layouts that adapt to different screen sizes.",
             "icon": "layout-dashboard",

@@ -42,6 +42,7 @@ typedef struct WidgetBase {
 #include "widgets/aroma_map.h"
 #include "widgets/aroma_gif.h"
 #include "widgets/aroma_loading.h"
+#include "widgets/aroma_table.h"
 
 #endif
 
