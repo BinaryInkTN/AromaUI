@@ -299,7 +299,7 @@
         {
             "id": "ui-data-table",
             "title": "Data Table",
-            "description": "Qt-style responsive data table with cells, formatting, and row selection.",
+            "description": "Responsive data table with cells, formatting, and row selection.",
             "icon": "table",
             "color": "#7D5260",
             "category": "User Interface",

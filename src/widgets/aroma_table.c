@@ -43,7 +43,6 @@ static bool __table_handle_event(AromaEvent* event, void* user_data) {
         int my;
         if (event->event_type == EVENT_TYPE_MOUSE_CLICK) my = event->data.mouse.y - t->rect.y;
         else my = event->data.touch.y - t->rect.y;
-
         if (my > t->header_height) {
             int row = (my - t->header_height) / t->row_height;
             if (row >= 0 && row < t->num_rows) {

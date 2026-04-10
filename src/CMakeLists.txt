@@ -111,9 +111,12 @@ endif()
 
 target_link_libraries(aroma
     PUBLIC GLESv2
-    PRIVATE freetype pthread curl
+    PRIVATE freetype 
     PRIVATE m
 )
+if (UNIX AND NOT ANDROID)
+    target_link_libraries(aroma PRIVATE curl pthread)
+endif()
 
 if(Vulkan_FOUND)
     if(ANDROID_VULKAN_NATIVE)

@@ -444,7 +444,8 @@ int main(void)
     aroma_animation_manager_init();
     aroma_splash(true, "AromaOS", "Automotive HMI Demo");
 
-    state.theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
+    state.theme = aroma_theme_create_material_blue_dark();
+
     state.dark_theme_enabled = true;
     aroma_ui_set_theme(&state.theme);
 
@@ -510,6 +511,16 @@ int main(void)
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.voice_button, 999999);
     
+    aroma_animation_start(state.time_label, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
+    aroma_animation_start(state.status_card, AROMA_ANIM_SLIDE_Y, -40, 18, 1200);
+    aroma_animation_start(state.location_label, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
+    aroma_animation_start(state.signal_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
+    aroma_animation_start(state.wifi_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
+    aroma_animation_start(state.battery_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
+    aroma_animation_start(state.gps_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
+    aroma_animation_start(state.bluetooth_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
+    aroma_animation_start(state.voice_button, AROMA_ANIM_SLIDE_Y, -40, 22, 1200);
+
     state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -100, 600, 80, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.voice_status_card, 99998);
     aroma_node_set_hidden(state.voice_status_card, false);
@@ -534,10 +545,14 @@ int main(void)
                                           (const char *[]){AROMA_ICON_DASHBOARD, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
                                           5, NULL, NULL, state.ui_font, state.tab_font);
 
+    aroma_animation_start(state.tabs, AROMA_ANIM_SLIDE_Y, WIN_H+80, WIN_H - 80, 1200);
+
     aroma_tabs_set_content(state.tabs, 0, (AromaNode **)&state.general_root, 1);
     aroma_tabs_set_content(state.tabs, 1, &state.music_root, 1);
     aroma_tabs_set_content(state.tabs, 2, &state.phone_root, 1);
     aroma_tabs_set_content(state.tabs, 3, &state.settings_root, 1);
+
+    aroma_animation_start(state.general_root, AROMA_ANIM_FADE, 0, 1, 1200);
       
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     actual_map = aroma_ui_map((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
@@ -576,7 +591,7 @@ int main(void)
 
     aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
 
-    aroma_tabs_set_transition(state.tabs, AROMA_ANIM_SLIDE_X, 400);
+    aroma_tabs_set_transition(state.tabs, AROMA_ANIM_FADE, 400);
     aroma_sidebar_set_transition(state.sidebar, AROMA_ANIM_FADE, 300);
 
     build_easter_egg_ui((AromaNode*)state.window);

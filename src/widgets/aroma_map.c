@@ -1,4 +1,5 @@
 
+#ifndef __ANDROID__
 
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -22,6 +23,7 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 
 #include <stdlib.h>
 #include <curl/curl.h>
+
 
 #define TILE_CACHE_DIR "/tmp/aroma_tiles"
 #define MAX_TILES_MEM 128
@@ -1281,3 +1283,5 @@ void aroma_map_clear_route(AromaNode* node) {
     pthread_mutex_unlock(&extra->route_mutex);
     aroma_node_invalidate(node);
 }
+
+#endif

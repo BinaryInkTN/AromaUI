@@ -504,10 +504,6 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         float old_sx = c->scroll_fx;
         float old_sy = c->scroll_fy;
         
-        // Reverse direction? Usually down scroll gives sy > 0 or < 0?
-        // Wait, on most systems wheel down (scrolling page down) means negative delta or positive delta?
-        // We'll multiply by some sensitivity factor, usually 50.0f
-        
         if (can_scroll_v) c->scroll_fy -= sy * 50.0f * c->scroll_speed;
         if (can_scroll_h) c->scroll_fx -= sx * 50.0f * c->scroll_speed;
         
@@ -821,10 +817,6 @@ AromaNode *aroma_container_create(AromaNode *parent, int x, int y, int width, in
     }
 
     container->self_node = node;
-    /* _cache starts at 0 (from memset in __create_node) — children's
-       coordinates are local to the container, so the cache origin must
-       be 0 for the delta-shift arithmetic in NONE-mode layout to work
-       correctly at any nesting depth. */
     aroma_node_set_draw_cb(node, aroma_container_draw);
     aroma_node_invalidate(node);
 
@@ -1121,9 +1113,6 @@ static void draw_subtree_recursive(AromaNode *node, size_t window_id)
     {
         draw_cb(node, window_id);
     }
-
-    /* If this child is itself a scrollable container its draw callback
-       already rendered its own descendants — don't recurse further. */
     if (aroma_container_is_scrollable(node))
         return;
 
@@ -1151,10 +1140,7 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
 
     if (c->scrollable)
     {
-        /* Scrollable containers draw their own children because
-         * collect_draw_tasks() stops recursion at scrollable nodes.
-         * The container applies scroll offsets and a clip rect before
-         * recursively drawing each child subtree. */
+       
         if (gfx && gfx->graphics_set_clip)
         {
             gfx->graphics_set_clip(c->rect.x, c->rect.y,
@@ -1196,7 +1182,5 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
         c->prev_scroll_y = scroll_y_int(c);
         c->content_dirty = false;
     }
-    /* Non-scrollable containers: children are drawn by the flat task
-     * list built in collect_draw_tasks(), which recurses into them.
-     * Drawing children here as well would cause a double draw. */
+
 }

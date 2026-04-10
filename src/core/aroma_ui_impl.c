@@ -902,6 +902,7 @@ static void show_splash_screen(size_t window_id, int width, int height)
 
         SLEEP_MS(30);
     }
-    
+
     aroma_font_destroy(font);
+
 }
