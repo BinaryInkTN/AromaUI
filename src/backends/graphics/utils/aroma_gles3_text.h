@@ -11,7 +11,7 @@
 #define MAX_GLYPHS 512
 
 typedef struct {
-    uint32_t codepoint; // Added codepoint
+    uint32_t codepoint;
     uint32_t texture_id;
     int width;
     int height;
@@ -26,7 +26,7 @@ typedef struct {
     GLuint vao;
     GLuint vbo;
     int font_height;
-    FT_Face face; // Store FT_Face reference for on-demand loading
+    FT_Face face;
 } GLES3TextRenderer;
 
 int gles3_text_renderer_init(GLES3TextRenderer* renderer);

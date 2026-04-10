@@ -207,7 +207,7 @@ void music_play_callback(AromaNode* node, void *user_data) {
     if (!music_playing) {
         music_playing = true;
         aroma_iconbutton_set_icon(state.music_control_play, AROMA_ICON_PAUSE);
-        system("aplay ../sample.wav >/dev/null 2>&1 &");
+        system("aplay ../assets/sample.wav >/dev/null 2>&1 &");
     } else {
         music_playing = false;
         aroma_iconbutton_set_icon(state.music_control_play, AROMA_ICON_PLAY_ARROW);
@@ -442,7 +442,7 @@ int main(void)
 {
     aroma_ui_init();
     aroma_animation_manager_init();
-    aroma_splash(true, "AromaOS", "Automotive HMI Demo");
+    aroma_splash(true, "AromaHMI 0.0.1", "The Ultimate Car Infotainment Demo");
 
     state.theme = aroma_theme_create_material_blue_dark();
 
@@ -511,15 +511,15 @@ int main(void)
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.voice_button, 999999);
     
-    aroma_animation_start(state.time_label, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
-    aroma_animation_start(state.status_card, AROMA_ANIM_SLIDE_Y, -40, 18, 1200);
-    aroma_animation_start(state.location_label, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
-    aroma_animation_start(state.signal_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
-    aroma_animation_start(state.wifi_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
-    aroma_animation_start(state.battery_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
-    aroma_animation_start(state.gps_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
-    aroma_animation_start(state.bluetooth_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 1200);
-    aroma_animation_start(state.voice_button, AROMA_ANIM_SLIDE_Y, -40, 22, 1200);
+    aroma_animation_start(state.time_label, AROMA_ANIM_SLIDE_Y, -40, 30, 800);
+    aroma_animation_start(state.status_card, AROMA_ANIM_SLIDE_Y, -40, 18, 800);
+    aroma_animation_start(state.location_label, AROMA_ANIM_SLIDE_Y, -40, 30, 800);
+    aroma_animation_start(state.signal_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 800);
+    aroma_animation_start(state.wifi_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 800);
+    aroma_animation_start(state.battery_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 800);
+    aroma_animation_start(state.gps_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 800);
+    aroma_animation_start(state.bluetooth_icon, AROMA_ANIM_SLIDE_Y, -40, 30, 800);
+    aroma_animation_start(state.voice_button, AROMA_ANIM_SLIDE_Y, -40, 22, 800  );
 
     state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W/2 - 300, -100, 600, 80, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.voice_status_card, 99998);
@@ -556,6 +556,7 @@ int main(void)
       
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     actual_map = aroma_ui_map((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
+    
     aroma_node_set_z_index(actual_map, 0);
     aroma_map_set_show_attribution(actual_map, false);
     aroma_map_set_center(actual_map, 48.8566, 2.3522);
@@ -591,7 +592,7 @@ int main(void)
 
     aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
 
-    aroma_tabs_set_transition(state.tabs, AROMA_ANIM_FADE, 400);
+    aroma_tabs_set_transition(state.tabs, AROMA_ANIM_SLIDE_X, 400);
     aroma_sidebar_set_transition(state.sidebar, AROMA_ANIM_FADE, 300);
 
     build_easter_egg_ui((AromaNode*)state.window);
@@ -1261,14 +1262,14 @@ void build_general_ui(AromaContainer *root)
 
     state.applets_row = aroma_ui_container((AromaNode *)state.applets_container, 0, 130, 610, 270, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     state.system_status_card = aroma_ui_card((AromaNode *)state.applets_row, 0, 0, 280, 70, CARD_TYPE_ELEVATED);
-    AromaNode *applet2 = aroma_ui_image((AromaNode *)state.applets_row, "../test.png", 0, 0, 280, 70);
+    AromaNode *applet2 = aroma_ui_image((AromaNode *)state.applets_row, "../assets/test.png", 0, 0, 280, 70);
     aroma_node_set_gap((AromaNode *)state.applets_row, 20);
     aroma_node_set_flex_grow(state.system_status_card, 1);
     aroma_node_set_flex_grow(applet2, 1);
 
     state.vehicle_image = aroma_ui_image(
         (AromaNode *)state.general_info_card,
-        "../car.png",
+        "../assets/car.png",
         40, 20,
         264 * 1.2, 126 * 1.2);
 
@@ -1418,19 +1419,19 @@ void build_general_ui(AromaContainer *root)
 
     state.ac_image1 = aroma_ui_image(
         (AromaNode *)state.ac_applet,
-        "../air-conditioner.png",
+        "../assets/air-conditioner.png",
         170, 215,
         48, 48);
 
     state.ac_image2 = aroma_ui_image(
         (AromaNode *)state.ac_applet,
-        "../under.png",
+        "../assets/under.png",
         270, 215,
         48, 48);
 
     state.ac_image3 = aroma_ui_image(
         (AromaNode *)state.ac_applet,
-        "../both.png",
+        "../assets/both.png",
         370, 215,
         48, 48);
 
@@ -1439,14 +1440,14 @@ void build_general_ui(AromaContainer *root)
     int icon_x_positions[] = {20, 70, 115, 120, 170, 220, 20, 70};
     int icon_y_positions[] = {60, 60, 55, 60, 60, 60, 120, 120};
     const char *icon_paths[] = {
-        "../brake_indicator.png",
-        "../abs_indicator.png",
+        "../assets/brake_indicator.png",
+        "../assets/abs_indicator.png",
         NULL,
-        "../high_beams.png",
-        "../low_beams.png",
-        "../seatbelt.png",
-        "../battery_indicator.png",
-        "../temperature.png"
+        "../assets/high_beams.png",
+        "../assets/low_beams.png",
+        "../assets/seatbelt.png",
+        "../assets/battery_indicator.png",
+        "../assets/temperature.png"
     };
 
     for (int i = 0; i < 8; i++) {

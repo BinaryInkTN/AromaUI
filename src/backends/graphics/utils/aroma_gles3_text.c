@@ -55,11 +55,10 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
         return;
     }
 
-    renderer->face = face; // Store face
+    renderer->face = face; 
     renderer->font_height = face->size->metrics.height >> 6;
     renderer->glyph_count = 0;
 
-    // Preload ASCII 32-126 for performance
     for (uint32_t c = 32; c < 127; c++) {
         FT_Error error = FT_Load_Char(face, c, FT_LOAD_RENDER);
         if (error) continue;
@@ -100,19 +99,14 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
     LOG_INFO("Loaded initial glyphs: %d\n", renderer->glyph_count);
 }
 
-// Helper: Get or load glyph
 static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) {
-    // Search cache
     for (int i = 0; i < renderer->glyph_count; i++) {
         if (renderer->glyphs[i].codepoint == codepoint) {
             return &renderer->glyphs[i];
         }
     }
 
-    // Not found, load it
     if (renderer->glyph_count >= MAX_GLYPHS) {
-        // Cache full - simple strategy: do not load (or implement eviction)
-        // For icons, this might be an issue if we have > 512 distinct chars
         return NULL;
     }
 
@@ -163,20 +157,16 @@ static uint32_t __utf8_next(const char** p) {
     else if ((c & 0xE0) == 0xC0) len = 2;
     else if ((c & 0xF0) == 0xE0) len = 3;
     else if ((c & 0xF8) == 0xF0) len = 4;
-    else { *p += 1; return 0xFFFD; } /* replacement char for invalid lead byte */
+    else { *p += 1; return 0xFFFD; } 
 
     if (len == 1) {
         *p += 1;
         return c;
     }
     
-    /* Validate all continuation bytes before decoding.
-       If a continuation byte is missing or invalid (e.g. due to a
-       partially-written string from another thread), bail out instead
-       of producing a garbage codepoint. */
+
     for (int i = 1; i < len; i++) {
         if (s[i] == 0 || (s[i] & 0xC0) != 0x80) {
-            /* Broken sequence — skip only the lead byte */
             *p += 1;
             return 0xFFFD;
         }
@@ -280,11 +270,6 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
         current_x += (float)g->advance * scale;
     }
 
-    /* NOTE: Do NOT call glDisable(GL_BLEND) here.
-     * Blend must stay enabled for the rest of the frame so that
-     * subsequent draws (images with alpha, rounded shapes, etc.)
-     * composite correctly.  The frame-state cache in the GLES3
-     * backend assumes blend remains on after ensure_frame_state(). */
     glBindVertexArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -300,12 +285,7 @@ float gles3_text_measure_text(const GLES3TextRenderer* renderer, const char* tex
     if (!renderer || !text || scale <= 0.0f) {
         return 0.0f;
     }
-    
-    // We cannot load glyphs in measure_text because it is const GLES3TextRenderer*
-    // However, for layout purposes, we really should. 
-    // But for now, let's just assume simple measurement or cast away const if really needed.
-    // Casting away const is unsafe if called from thread, but this is UI thread single threaded mostly.
-    
+
     GLES3TextRenderer* mutable_renderer = (GLES3TextRenderer*)renderer;
 
     float width = 0.0f;

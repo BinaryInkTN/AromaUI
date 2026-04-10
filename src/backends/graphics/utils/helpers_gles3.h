@@ -20,7 +20,7 @@ typedef struct
 typedef struct Vertex
 {
     vec2 pos;
-    vec4 col;        /* RGBA */
+    vec4 col;       
     vec2 texCoord;
 } Vertex;
 
