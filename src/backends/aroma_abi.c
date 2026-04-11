@@ -8,7 +8,7 @@
 #include <stddef.h>
 
 static _Atomic(AromaGraphicsBackendType) current_graphics_backend = GRAPHICS_BACKEND_GLES3;
-static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BACKEND_TFT_ESPI;
+static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BACKEND_GLPS;
 
 static AromaGraphicsInterface* get_real_graphics_interface(void) {
 #ifdef ESP32
@@ -243,6 +243,7 @@ static bool drawlist_proxy_get_pending_dirty_rect(int *x, int *y, int *w, int *h
     }
     return false;
 }
+
 
 static AromaGraphicsInterface drawlist_proxy = {
     .setup_shared_window_resources = drawlist_proxy_setup_shared_window_resources,

@@ -1,5 +1,29 @@
+/*
+ Copyright (c) 2026 BinaryInkTN
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy of
+ this software and associated documentation files (the "Software"), to deal in
+ the Software without restriction, including without limitation the rights to
+ use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ the Software, and to permit persons to whom the Software is furnished to do so,
+ subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+#include <X11/X.h>
+#include <X11/Xlib.h>
 #include <aroma.h>
 #include <aroma_animation.h>
+#include <aroma_native_utils.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -438,11 +462,13 @@ bool global_keyboard_event_handler(AromaEvent *event, void *user_data) {
     return false;
 }
 
-int main(void)
+int main(int argc, char **argv) 
 {
-    aroma_ui_init();
+
     aroma_animation_manager_init();
     aroma_splash(true, "AromaHMI 0.0.1", "The Ultimate Car Infotainment Demo");
+  
+    aroma_ui_init();
 
     state.theme = aroma_theme_create_material_blue_dark();
 
@@ -469,6 +495,7 @@ int main(void)
     state.window = aroma_ui_create_window(
         "Automotive HMI",
         WIN_W, WIN_H);
+
 
     aroma_event_set_root((AromaNode *)state.window);
 
@@ -812,8 +839,9 @@ void build_music_ui(AromaNode *window)
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
     aroma_node_set_gap((AromaNode *)middle_content, 40);
 
-    state.now_playing_art = aroma_ui_card(
-        middle_content, 0, 0, 280, 280, CARD_TYPE_FILLED);
+    state.now_playing_art =  state.now_playing_art = aroma_ui_image(
+        middle_content, "../assets/album_cover.jpg", 0, 0, 280, 280);
+
 
     AromaNode *now_playing_info = aroma_ui_container(
         middle_content, 0, 0, 300, 280,
@@ -822,12 +850,12 @@ void build_music_ui(AromaNode *window)
 
     state.now_playing_title = aroma_ui_label(
         now_playing_info,
-        "Blinding Lights", 0, 0,
+        "good kid, m.A.A.d city", 0, 0,
         LABEL_STYLE_LABEL_LARGE, state.now_playing_font);
 
     state.now_playing_artist = aroma_ui_label(
         now_playing_info,
-        "The Weeknd", 0, 0,
+        "Kendrick Lamar", 0, 0,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
 
     AromaNode *bottom_bar = aroma_ui_container(

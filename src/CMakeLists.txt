@@ -47,6 +47,8 @@ add_library(aroma
     core/aroma_time.c
     core/aroma_timer.c
     core/aroma_drawlist.c
+    core/aroma_native_utils.c
+
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
     backends/graphics/utils/aroma_gles3_text.c
@@ -86,6 +88,8 @@ add_library(aroma
     widgets/aroma_gif.c
     widgets/aroma_loading.c
     widgets/aroma_table.c
+
+    
 )
 
 target_include_directories(aroma
@@ -125,7 +129,7 @@ if(Vulkan_FOUND)
         target_include_directories(aroma PUBLIC ${Vulkan_INCLUDE_DIRS})
         target_link_libraries(aroma PUBLIC Vulkan::Vulkan)
     endif()
-    target_compile_definitions(aroma PRIVATE AROMA_HAS_VULKAN=1)
+    #target_compile_definitions(aroma PRIVATE AROMA_HAS_VULKAN=1)
 endif()
 
 if(ANDROID)

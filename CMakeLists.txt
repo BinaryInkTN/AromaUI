@@ -11,7 +11,7 @@ find_package(Freetype REQUIRED)
 # so glps_wm_vk_create_surface is compiled and exported.
 find_package(Vulkan QUIET)
 if(Vulkan_FOUND)
-    set(GLPS_INCLUDE_VULKAN ON CACHE BOOL "Enable Vulkan support in GLPS" FORCE)
+    set(GLPS_INCLUDE_VULKAN OFF CACHE BOOL "Enable Vulkan support in GLPS" FORCE)
 endif()
 
 add_subdirectory(vendors/glps)

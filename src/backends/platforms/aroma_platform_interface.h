@@ -449,6 +449,9 @@ typedef struct AromaPlatformInterface {
 
     long (*android_get_preference_long)(const char* key, long default_value);
 
+    void* (*get_native_window_ptr)(size_t window_id);
+    void* (*get_native_display_ptr)(void);
+
 } AromaPlatformInterface;
 
 

@@ -333,6 +333,16 @@ static const char **glps_get_vulkan_instance_extensions(uint32_t *count_out)
 }
 #endif
 
+static void *glps_get_native_window_ptr(size_t window_id)
+{
+    return glps_wm_window_get_native_ptr(platform_ctx.wm, window_id);
+}
+
+static void* glps_get_display()
+{
+    return glps_wm_get_display(platform_ctx.wm);
+}
+
 AromaPlatformInterface aroma_platform_glps = {
     .initialize = initialize,
     .create_window = create_window,
@@ -351,6 +361,9 @@ AromaPlatformInterface aroma_platform_glps = {
     .create_vulkan_surface = NULL,
     .get_vulkan_instance_extensions = NULL,
 #endif
+
+    .get_native_window_ptr = glps_get_native_window_ptr,
+    .get_native_display_ptr = glps_get_display,
 };
 
 #endif

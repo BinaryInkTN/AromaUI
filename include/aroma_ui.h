@@ -1413,6 +1413,7 @@ extern "C"
     }
 
 
+
 #ifdef __ANDROID__
     // Forward struct for Android App state
     struct android_app;
