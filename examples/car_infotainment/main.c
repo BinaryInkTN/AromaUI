@@ -470,6 +470,8 @@ int main(int argc, char **argv)
   
     aroma_ui_init();
 
+
+
     state.theme = aroma_theme_create_material_blue_dark();
 
     state.dark_theme_enabled = true;
@@ -628,7 +630,22 @@ int main(int argc, char **argv)
     state.debug_overlay_visible = false;
     aroma_debug_overlay_set_visible(state.debug_overlay, false);
     aroma_node_set_z_index(state.debug_overlay, INT_MAX - 1);
-
+    Window* window = (Window*) aroma_native_get_window_ptr(0);
+    if(!window) {
+        fprintf(stderr, "Failed to get native window pointer\n");
+        return EXIT_FAILURE;
+    }
+    Display* display = (Display*) aroma_native_get_display_ptr();
+    if(!display) {
+        fprintf(stderr, "Failed to get native display pointer\n");
+        return EXIT_FAILURE;
+    }
+    
+    Window native_window = (Window) (uintptr_t) *window;
+Window child = XCreateSimpleWindow(display, native_window, 10, 10, 200, 200, 1, 
+                                   BlackPixel(display, 0), WhitePixel(display, 0));   
+   XMapWindow(display, child);
+    XFlush(display);
     start_voice_control_thread();
 
     while (aroma_ui_is_running())
