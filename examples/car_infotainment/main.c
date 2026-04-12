@@ -1,23 +1,4 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -32,7 +13,10 @@
 #include <stdbool.h>
 #include <limits.h>
 #include <pthread.h>
+#include <signal.h>
 #include "voice_control.h"
+#include <X11/Xatom.h>
+#include <X11/Xutil.h>
 
 AromaNode* actual_map = NULL;
 
@@ -144,6 +128,13 @@ typedef struct {
     AromaNode *debug_overlay;
     bool debug_overlay_visible;
 } AppState;
+typedef struct {
+    pid_t       pid;
+    const char *class_name;
+    const char *window_name;
+    Window      result;
+    int         found_any_window;
+} FindCtx;
 
 static AppState state = {0};
 
@@ -461,6 +452,272 @@ bool global_keyboard_event_handler(AromaEvent *event, void *user_data) {
     }
     return false;
 }
+static int  g_x_error_occurred = 0;
+
+static int x_error_handler(Display *display, XErrorEvent *err) {
+    char buf[256];
+    XGetErrorText(display, err->error_code, buf, sizeof(buf));
+    fprintf(stderr, "[X11 Error] %s (opcode=%d, resource=0x%lx)\n",
+            buf, err->request_code, err->resourceid);
+    g_x_error_occurred = 1;
+    return 0;
+}
+
+
+static int window_is_valid(Display *display, Window w) {
+    g_x_error_occurred = 0;
+    XWindowAttributes attrs;
+    Status ok = XGetWindowAttributes(display, w, &attrs);
+    XSync(display, False);
+    if (!ok || g_x_error_occurred)             return 0;  
+    if (attrs.class == InputOnly)            return 0;  
+    if (attrs.map_state == IsUnmapped)         return 0;  
+    return 1;
+}
+
+
+static Window get_inner_window(Display *display, Window w) {
+    Window root_ret, parent_ret;
+    Window *children = NULL;
+    unsigned int nchildren = 0;
+
+    if (!XQueryTree(display, w, &root_ret, &parent_ret, &children, &nchildren))
+        return w;  
+
+    if (nchildren == 0) {
+        if (children) XFree(children);
+        return w;  
+    }
+
+    
+    Window result = w;  
+    for (unsigned int i = 0; i < nchildren; i++) {
+        XWindowAttributes attrs;
+        g_x_error_occurred = 0;
+        XGetWindowAttributes(display, children[i], &attrs);
+        if (!g_x_error_occurred && attrs.class == InputOutput) {
+            result = children[i];
+            fprintf(stderr, "[finder] Resolved inner GTK window: 0x%lx -> 0x%lx\n", w, result);
+            break;
+        }
+    }
+
+    if (children) XFree(children);
+    return result;
+}
+
+static void search_recursive(Display *display, Window root, FindCtx *ctx) {
+    Window root_ret, parent_ret;
+    Window *children = NULL;
+    unsigned int nchildren = 0;
+
+    if (!XQueryTree(display, root, &root_ret, &parent_ret, &children, &nchildren))
+        return;
+
+    for (unsigned int i = 0; i < nchildren && ctx->result == 0; i++) {
+        Window w = children[i];
+        ctx->found_any_window = 1;
+
+        
+        if (ctx->pid > 0) {
+            Atom net_wm_pid = XInternAtom(display, "_NET_WM_PID", False);
+            Atom actual_type;
+            int actual_format;
+            unsigned long nitems, bytes_after;
+            unsigned char *prop = NULL;
+
+            if (XGetWindowProperty(display, w, net_wm_pid,
+                                   0, 1, False, XA_CARDINAL,
+                                   &actual_type, &actual_format,
+                                   &nitems, &bytes_after, &prop) == Success && prop) {
+                pid_t win_pid = *(pid_t *)prop;
+                XFree(prop);
+                if (win_pid == ctx->pid) {
+                    fprintf(stderr, "[finder] Match via _NET_WM_PID on 0x%lx\n", w);
+                    ctx->result = get_inner_window(display, w);
+                    continue;
+                }
+            }
+        }
+
+        
+        if (ctx->class_name && strlen(ctx->class_name) > 0) {
+            XClassHint hint;
+            if (XGetClassHint(display, w, &hint)) {
+                int match = (strcmp(hint.res_name,  ctx->class_name) == 0 ||
+                             strcmp(hint.res_class, ctx->class_name) == 0);
+                XFree(hint.res_name);
+                XFree(hint.res_class);
+                if (match) {
+                    fprintf(stderr, "[finder] Match via WM_CLASS on 0x%lx\n", w);
+                    ctx->result = get_inner_window(display, w);
+                    continue;
+                }
+            }
+        }
+
+if (ctx->window_name && strlen(ctx->window_name) > 0) {
+    Atom net_wm_name = XInternAtom(display, "_NET_WM_NAME", False);
+    Atom utf8_string = XInternAtom(display, "UTF8_STRING", False);
+    Atom actual_type;
+    int actual_format;
+    unsigned long nitems, bytes_after;
+    unsigned char *prop = NULL;
+
+    if (XGetWindowProperty(display, w, net_wm_name,
+                           0, 1024, False, utf8_string,
+                           &actual_type, &actual_format,
+                           &nitems, &bytes_after, &prop) == Success && prop) {
+        if (strstr((char *)prop, ctx->window_name)) {
+            fprintf(stderr, "[finder] Match via _NET_WM_NAME ('%s') on 0x%lx\n",
+                    (char *)prop, w);
+            XFree(prop);
+            ctx->result = get_inner_window(display, w);
+            continue;
+        }
+        XFree(prop);
+    }
+}
+
+
+if (ctx->window_name && strlen(ctx->window_name) > 0) {
+    char *win_name = NULL;
+    if (XFetchName(display, w, &win_name) && win_name) {
+        if (strstr(win_name, ctx->window_name)) {
+            fprintf(stderr, "[finder] Match via WM_NAME ('%s') on 0x%lx\n",
+                    win_name, w);
+            XFree(win_name);
+            ctx->result = get_inner_window(display, w);
+            continue;
+        }
+        XFree(win_name);
+    }
+}
+
+        search_recursive(display, w, ctx);
+    }
+
+    if (children) XFree(children);
+}
+Window find_child_window(Display *display, pid_t pid,
+                         const char *class_name,
+                         const char *window_name) {
+    FindCtx ctx = {
+        .pid              = pid,
+        .class_name       = class_name,
+        .window_name      = window_name,
+        .result           = 0,
+        .found_any_window = 0,
+    };
+
+    XSync(display, False);
+    search_recursive(display, XDefaultRootWindow(display), &ctx);
+
+    if (ctx.result == 0) {
+        if (!ctx.found_any_window)
+            fprintf(stderr, "[finder] No windows found — child not ready yet\n");
+        else
+            fprintf(stderr, "[finder] Windows exist but none matched "
+                            "pid=%d class='%s' name='%s'\n",
+                    pid,
+                    class_name  ? class_name  : "",
+                    window_name ? window_name : "");
+    }
+
+    return ctx.result;
+}
+
+int embed_child_window(Display *display, Window parent, pid_t pid) {
+    XSetErrorHandler(x_error_handler);
+
+
+    Window client_win = 0;
+    int attempts = 0;
+
+    while (attempts < 200) {
+        usleep(100000);
+        XSync(display, False);
+
+        Window candidate = find_child_window(display, pid, "", "Basic Example");
+        if (candidate) {
+            fprintf(stderr, "[embed] Candidate 0x%lx found, checking stability...\n", candidate);
+            usleep(300000);
+            XSync(display, False);
+
+            if (window_is_valid(display, candidate)) {
+                client_win = candidate;
+                break;
+            }
+            fprintf(stderr, "[embed] Candidate died, retrying...\n");
+        }
+        attempts++;
+    }
+
+    if (!client_win) {
+        fprintf(stderr, "[embed] No stable window found for PID %d\n", pid);
+        return -1;
+    }
+
+    fprintf(stderr, "[embed] Found inner app window 0x%lx\n", client_win);
+
+    XGrabServer(display);
+
+    g_x_error_occurred = 0;
+    XWindowAttributes attrs;
+    XGetWindowAttributes(display, client_win, &attrs);
+    XSync(display, False);
+    if (g_x_error_occurred) {
+        fprintf(stderr, "[embed] Window died before grab\n");
+        XUngrabServer(display);
+        return -1;
+    }
+
+
+    XSetWindowAttributes xswa = {0};
+    xswa.override_redirect = True;
+    XChangeWindowAttributes(display, client_win, CWOverrideRedirect, &xswa);
+    XSync(display, False);
+    if (g_x_error_occurred) {
+        fprintf(stderr, "[embed] Could not set override-redirect\n");
+        XUngrabServer(display);
+        return -1;
+    }
+
+
+    g_x_error_occurred = 0;
+    XReparentWindow(display, client_win, parent, 0, 0);
+    XSync(display, False);
+    if (g_x_error_occurred) {
+        fprintf(stderr, "[embed] XReparentWindow failed\n");
+        XUngrabServer(display);
+        return -1;
+    }
+    XWindowAttributes child_attrs;
+    XGetWindowAttributes(display, client_win, &child_attrs);
+
+    XResizeWindow(display, client_win, child_attrs.width, child_attrs.height);
+    XMoveWindow(display, client_win, 0, 0);
+    XSync(display, False);
+
+    XUngrabServer(display);
+    XFlush(display);
+
+    XRaiseWindow(display, client_win);
+    XSync(display, False);
+
+    {
+        Window rroot, rparent;
+        Window *rchildren = NULL;
+        unsigned int rnchildren = 0;
+        XQueryTree(display, client_win, &rroot, &rparent, &rchildren, &rnchildren);
+        if (rchildren) XFree(rchildren);
+        fprintf(stderr, "[embed] Final parent of 0x%lx = 0x%lx (wanted 0x%lx) — %s\n",
+                client_win, rparent, parent,
+                rparent == parent ? "SUCCESS" : "FAILED");
+    }
+
+    return 0;
+}
 
 int main(int argc, char **argv) 
 {
@@ -469,8 +726,7 @@ int main(int argc, char **argv)
     aroma_splash(true, "AromaHMI 0.0.1", "The Ultimate Car Infotainment Demo");
   
     aroma_ui_init();
-
-
+    gtk_init(&argc, &argv);
 
     state.theme = aroma_theme_create_material_blue_dark();
 
@@ -630,7 +886,8 @@ int main(int argc, char **argv)
     state.debug_overlay_visible = false;
     aroma_debug_overlay_set_visible(state.debug_overlay, false);
     aroma_node_set_z_index(state.debug_overlay, INT_MAX - 1);
-    Window* window = (Window*) aroma_native_get_window_ptr(0);
+
+    uintptr_t window = (uintptr_t) aroma_native_get_window_ptr(0);
     if(!window) {
         fprintf(stderr, "Failed to get native window pointer\n");
         return EXIT_FAILURE;
@@ -640,12 +897,26 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to get native display pointer\n");
         return EXIT_FAILURE;
     }
+
+
+    Window native_window = (Window) (uintptr_t) window;
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        
+        execl("../webview_example", "../webview_example", NULL);
+        perror("execl");   
+       
     
-    Window native_window = (Window) (uintptr_t) *window;
-Window child = XCreateSimpleWindow(display, native_window, 10, 10, 200, 200, 1, 
-                                   BlackPixel(display, 0), WhitePixel(display, 0));   
-   XMapWindow(display, child);
-    XFlush(display);
+        _exit(1);          
+    }
+    
+    
+    if (embed_child_window(display, native_window, pid) != 0) {
+        
+        kill(pid, SIGTERM);
+        return EXIT_FAILURE;
+    }
     start_voice_control_thread();
 
     while (aroma_ui_is_running())
@@ -801,9 +1072,9 @@ static void open_devices_dialog_cb(AromaNode *node, void *user_data) {
                 AromaNode *devices_listview = aroma_ui_listview(content, 0, 0, 420, 200, NULL, NULL, state.ui_font);
                 if (devices_listview) {
                     aroma_listview_set_icon_font(devices_listview, state.icon_font);
-                    aroma_listview_add_item_with_icon(devices_listview, "BMW X5 Audio", "Connected", "\ue328", NULL); // AROMA_ICON_BLUETOOTH
-                    aroma_listview_add_item_with_icon(devices_listview, "AirPods Pro", "Paired", "\ue310", NULL); // AROMA_ICON_HEADPHONES
-                    aroma_listview_add_item_with_icon(devices_listview, "iPhone 15", "Available", "\ue32c", NULL); // AROMA_ICON_SMARTPHONE
+                    aroma_listview_add_item_with_icon(devices_listview, "BMW X5 Audio", "Connected", "\ue328", NULL); 
+                    aroma_listview_add_item_with_icon(devices_listview, "AirPods Pro", "Paired", "\ue310", NULL); 
+                    aroma_listview_add_item_with_icon(devices_listview, "iPhone 15", "Available", "\ue32c", NULL); 
                 }
             }
             

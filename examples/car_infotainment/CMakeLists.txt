@@ -47,5 +47,6 @@ target_link_libraries(infotainment PRIVATE
     asound
     curl
     vosk
+    gtk-3
     Vulkan::Vulkan
 )

@@ -9,7 +9,8 @@
                 "${workspaceFolder}/src/backends/graphics/**",
                 "${workspaceFolder}/src/backends/**",
                 "${workspaceFolder}/include/**",
-                "${workspaceFolder}/include/widgets/**"
+                "${workspaceFolder}/include/widgets/**",
+                "/usr/include/gtk-3.0"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
