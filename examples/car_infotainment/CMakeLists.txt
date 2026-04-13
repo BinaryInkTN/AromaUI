@@ -25,10 +25,6 @@ add_executable(infotainment
 )
 
 
-include_directories(${WEBKIT_INCLUDE_DIRS})
-link_directories(${WEBKIT_LIBRARY_DIRS})
-add_definitions(${WEBKIT_CFLAGS_OTHER})
-
 find_program(PICO2WAVE_BIN pico2wave)
 find_program(APLAY_BIN aplay)
 
@@ -47,6 +43,5 @@ target_link_libraries(infotainment PRIVATE
     asound
     curl
     vosk
-    gtk-3
     Vulkan::Vulkan
 )
