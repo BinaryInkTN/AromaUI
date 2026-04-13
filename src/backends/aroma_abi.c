@@ -7,7 +7,7 @@
 #include <stdatomic.h>
 #include <stddef.h>
 
-static _Atomic(AromaGraphicsBackendType) current_graphics_backend = GRAPHICS_BACKEND_GLES3;
+static _Atomic(AromaGraphicsBackendType) current_graphics_backend = GRAPHICS_BACKEND_VULKAN;
 static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BACKEND_GLPS;
 
 static AromaGraphicsInterface* get_real_graphics_interface(void) {

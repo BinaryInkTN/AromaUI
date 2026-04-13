@@ -60,7 +60,7 @@ typedef struct {
     AromaNode *vehicle_view_warning_message_card;
     AromaNode *vehicle_view_warning_message_label;
     AromaNode *vehicle_view_warning_warning_icon;
-
+    AromaNode *vehicle_view_warning_message_action;
     AromaNode *vehicle_status_label;
     AromaNode *battery_progress;
     AromaNode *battery_icon_large;
@@ -590,6 +590,8 @@ int main(int argc, char **argv)
 
     aroma_node_set_z_index(state.vehicle_view_warning_message_card, 10);
     state.vehicle_view_warning_message_label = aroma_ui_label(state.vehicle_view_warning_message_card, "Warning: The Frunk is Open. Close it before driving.", 80, 24, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    state.vehicle_view_warning_message_action = aroma_ui_button(state.vehicle_view_warning_message_card, "Close Frunk", 465, 15, 120, 40, NULL, NULL, state.ui_font);
+    aroma_node_set_z_index(state.vehicle_view_warning_message_action, 11);
     aroma_node_set_z_index(state.vehicle_view_warning_message_label, 11);
     aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
