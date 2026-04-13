@@ -30,6 +30,7 @@ typedef struct {
     AromaWindow *window;
     AromaContainer *general_root;
     AromaNode *settings_root;
+    AromaNode *vehicle_view_root;
     AromaNode *map_root;
     AromaNode *phone_root;
     AromaNode *music_root;
@@ -44,6 +45,18 @@ typedef struct {
     AromaNode *bluetooth_icon;
     AromaNode *general_info_card;
     AromaNode *vehicle_image;
+    AromaNode *vehicle_view_lock_icon;
+    AromaNode *vehicle_view_lock_divider;
+    AromaNode *vehicle_view_charge_port_divider;
+    AromaNode *vehicle_view_charge_port_icon;
+    AromaNode *vehicle_view_frunk_header;
+    AromaNode *vehicle_view_frunk_desc;
+    AromaNode *vehicle_view_frunk_icon;
+    AromaNode *vehicle_view_image;
+    AromaNode *vehicle_view_frunk_divider;
+    AromaNode *vehicle_view_trunk_divider;
+    AromaNode *vehicle_view_trunk_header;
+    AromaNode *vehicle_view_trunk_desc;
     AromaNode *vehicle_status_label;
     AromaNode *battery_progress;
     AromaNode *battery_icon_large;
@@ -545,14 +558,29 @@ int main(int argc, char **argv)
     state.tab_font = aroma_font_create_from_memory(
         icon_ttf, icon_ttf_len, 128);
     state.tabs = aroma_ui_tabs_with_icons((AromaNode *)state.window, 0, WIN_H - 80, WIN_W, 80,
-                                          (const char *[]){"Main Screen", "Music", "Phone", "Settings", "Map"},
-                                          (const char *[]){AROMA_ICON_DASHBOARD, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
-                                          5, NULL, NULL, state.ui_font, state.tab_font);
+                                          (const char *[]){"Vehicle View", "Main Screen", "Music", "Phone", "Settings", "Map"},
+                                          (const char *[]){AROMA_ICON_SYSTEM_UPDATE, AROMA_ICON_DASHBOARD, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
+                                          6, NULL, NULL, state.ui_font, state.tab_font);
     aroma_animation_start(state.tabs, AROMA_ANIM_SLIDE_Y, WIN_H+80, WIN_H - 80, 1200);
-    aroma_tabs_set_content(state.tabs, 0, (AromaNode **)&state.general_root, 1);
-    aroma_tabs_set_content(state.tabs, 1, &state.music_root, 1);
-    aroma_tabs_set_content(state.tabs, 2, &state.phone_root, 1);
-    aroma_tabs_set_content(state.tabs, 3, &state.settings_root, 1);
+    state.vehicle_view_root = aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
+    AromaNode *backroad = aroma_ui_image(state.vehicle_view_root, "../assets/backroad_blur.png", 0, 0, WIN_W, WIN_H-70);
+    aroma_animation_start(backroad, AROMA_ANIM_FADE, 0, 1, 1000);
+    aroma_node_set_z_index(backroad, 0);
+    state.vehicle_view_image = aroma_ui_image(state.vehicle_view_root, "../assets/car.png", 300, 300, WIN_W/2, WIN_H/2 - 100);
+    state.vehicle_view_frunk_divider = aroma_ui_divider(state.vehicle_view_root, 400, 310, 80, DIVIDER_ORIENTATION_VERTICAL);
+    state.vehicle_view_lock_divider = aroma_ui_divider(state.vehicle_view_root, 700, 230, 80, DIVIDER_ORIENTATION_VERTICAL);
+    state.vehicle_view_lock_icon = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_LOCK_OPEN, 712, 190, 24, state.theme.colors.primary, state.icon_font);
+    
+    state.vehicle_view_frunk_header = aroma_ui_label(state.vehicle_view_root, "Frunk", 410, 290, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    state.vehicle_view_frunk_desc = aroma_ui_label(state.vehicle_view_root, "Open", 410, 315, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+   
+    state.vehicle_view_trunk_divider = aroma_ui_divider(state.vehicle_view_root, 880, 310, 80, DIVIDER_ORIENTATION_VERTICAL);
+    state.vehicle_view_trunk_header = aroma_ui_label(state.vehicle_view_root, "Trunk", 890, 290, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    state.vehicle_view_trunk_desc = aroma_ui_label(state.vehicle_view_root, "Closed", 890, 315, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    state.vehicle_view_charge_port_divider = aroma_ui_divider(state.vehicle_view_root, 900, 430, 40, DIVIDER_ORIENTATION_HORIZONTAL);
+    state.vehicle_view_charge_port_icon = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_POWER, 970, 415, 24, state.theme.colors.primary, state.icon_font);
+    aroma_animation_start(state.vehicle_view_image, AROMA_ANIM_SLIDE_X, 1500, 300, 1000);
+
     aroma_animation_start(state.general_root, AROMA_ANIM_FADE, 0, 1, 1200);
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     actual_map = aroma_ui_map((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
@@ -590,7 +618,12 @@ int main(int argc, char **argv)
     state.debug_overlay_visible = false;
     aroma_debug_overlay_set_visible(state.debug_overlay, false);
     aroma_node_set_z_index(state.debug_overlay, INT_MAX - 1);
-
+aroma_tabs_set_content(state.tabs, 0, (AromaNode **)&state.vehicle_view_root, 1);
+aroma_tabs_set_content(state.tabs, 1, (AromaNode **)&state.general_root, 1);
+aroma_tabs_set_content(state.tabs, 2, &state.music_root, 1);
+aroma_tabs_set_content(state.tabs, 3, &state.phone_root, 1);
+aroma_tabs_set_content(state.tabs, 4, &state.settings_root, 1);
+aroma_tabs_set_content(state.tabs, 5, &state.map_root, 1);
     start_voice_control_thread();
     while (aroma_ui_is_running())
     {
