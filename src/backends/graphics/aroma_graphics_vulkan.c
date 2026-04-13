@@ -4,6 +4,7 @@
 #include "utils/helpers_vulkan.h"
 #include "utils/aroma_vulkan_text.h"
 #include "aroma_abi.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include "aroma_ui.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_font.h"

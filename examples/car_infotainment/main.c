@@ -1,4 +1,4 @@
-
+#define AROMA_HAS_VULKAN 
 #include <aroma.h>
 #include <aroma_animation.h>
 #include <aroma_native_utils.h>
@@ -62,6 +62,10 @@ typedef struct {
     AromaNode *vehicle_view_warning_warning_icon;
     AromaNode *vehicle_view_warning_message_action;
     AromaNode *vehicle_status_label;
+    AromaNode *vehicle_view_hints;
+    AromaFont* clock_font;
+    AromaFont* clock_pm_am_font;
+    AromaNode *vehicle_view_large_clock_pm_am;
     AromaNode *battery_progress;
     AromaNode *battery_icon_large;
     AromaNode *range_value_label;
@@ -131,7 +135,7 @@ typedef struct {
     AromaNode *voice_status_label;
     AromaNode *voice_status_card;
     AromaNode *loading_spinner;
-
+    AromaNode *vehicle_view_large_clock;
     AromaTheme theme;
     bool dark_theme_enabled;
     char current_number[20];
@@ -587,7 +591,11 @@ int main(int argc, char **argv)
     state.vehicle_view_warning_message_card = aroma_ui_card(state.vehicle_view_root, 330, 630, 600, 70, CARD_TYPE_FILLED);
     state.vehicle_view_warning_warning_icon = aroma_ui_icon(state.vehicle_view_warning_message_card, AROMA_ICON_WARNING, 65, 22, 24, 0xFFFFD600, state.icon_font);
     aroma_node_set_z_index(state.vehicle_view_warning_warning_icon, 11);
-
+    state.clock_font = aroma_font_create("../assets/Ubuntu-Light.ttf", 68);
+    state.clock_pm_am_font = aroma_font_create("../assets/Ubuntu-Light.ttf", 24);
+    state.vehicle_view_large_clock = aroma_ui_label(state.vehicle_view_root, "12:45", WIN_W/2 - 90, 35, LABEL_STYLE_LABEL_LARGE, state.clock_font);
+    state.vehicle_view_hints = aroma_ui_label(state.vehicle_view_root, "Say \"Hey Aroma\" to call assistant", 40, 30, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    state.vehicle_view_large_clock_pm_am = aroma_ui_label(state.vehicle_view_root, "PM", WIN_W/2 + 90, 60, LABEL_STYLE_LABEL_MEDIUM, state.clock_pm_am_font);
     aroma_node_set_z_index(state.vehicle_view_warning_message_card, 10);
     state.vehicle_view_warning_message_label = aroma_ui_label(state.vehicle_view_warning_message_card, "Warning: The Frunk is Open. Close it before driving.", 80, 24, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     state.vehicle_view_warning_message_action = aroma_ui_button(state.vehicle_view_warning_message_card, "Close Frunk", 465, 15, 120, 40, NULL, NULL, state.ui_font);
@@ -597,7 +605,7 @@ int main(int argc, char **argv)
     aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);
-    
+    aroma_animation_start(state.vehicle_view_warning_message_card, AROMA_ANIM_SLIDE_Y, 1000, 630, 1200);
     aroma_animation_start(state.general_root, AROMA_ANIM_FADE, 0, 1, 1200);
     
     
@@ -753,6 +761,12 @@ aroma_tabs_set_content(state.tabs, 5, &state.map_root, 1);
             voice_music_action = 0;
         }
         pthread_mutex_unlock(&voice_mutex);
+        
+            aroma_node_set_hidden(state.time_label, aroma_tabs_get_selected(state.tabs) == 0);
+            aroma_node_set_hidden(state.location_label, aroma_tabs_get_selected(state.tabs) == 0);
+            aroma_node_set_hidden(state.status_card, aroma_tabs_get_selected(state.tabs) == 0);
+     
+            aroma_node_set_hidden(state.voice_button, aroma_tabs_get_selected(state.tabs) == 0);
         aroma_ui_process_events();
         aroma_ui_render(state.window);
         usleep(16000);
