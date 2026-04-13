@@ -57,6 +57,10 @@ typedef struct {
     AromaNode *vehicle_view_trunk_divider;
     AromaNode *vehicle_view_trunk_header;
     AromaNode *vehicle_view_trunk_desc;
+    AromaNode *vehicle_view_warning_message_card;
+    AromaNode *vehicle_view_warning_message_label;
+    AromaNode *vehicle_view_warning_warning_icon;
+
     AromaNode *vehicle_status_label;
     AromaNode *battery_progress;
     AromaNode *battery_icon_large;
@@ -559,12 +563,12 @@ int main(int argc, char **argv)
         icon_ttf, icon_ttf_len, 128);
     state.tabs = aroma_ui_tabs_with_icons((AromaNode *)state.window, 0, WIN_H - 80, WIN_W, 80,
                                           (const char *[]){"Vehicle View", "Main Screen", "Music", "Phone", "Settings", "Map"},
-                                          (const char *[]){AROMA_ICON_SYSTEM_UPDATE, AROMA_ICON_DASHBOARD, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
+                                          (const char *[]){AROMA_ICON_VISIBILITY, AROMA_ICON_DASHBOARD, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
                                           6, NULL, NULL, state.ui_font, state.tab_font);
     aroma_animation_start(state.tabs, AROMA_ANIM_SLIDE_Y, WIN_H+80, WIN_H - 80, 1200);
     state.vehicle_view_root = aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     AromaNode *backroad = aroma_ui_image(state.vehicle_view_root, "../assets/backroad_blur.png", 0, 0, WIN_W, WIN_H-70);
-    aroma_animation_start(backroad, AROMA_ANIM_FADE, 0, 1, 1000);
+    aroma_animation_start(backroad, AROMA_ANIM_FADE, 0, 1, 10000);
     aroma_node_set_z_index(backroad, 0);
     state.vehicle_view_image = aroma_ui_image(state.vehicle_view_root, "../assets/car.png", 300, 300, WIN_W/2, WIN_H/2 - 100);
     state.vehicle_view_frunk_divider = aroma_ui_divider(state.vehicle_view_root, 400, 310, 80, DIVIDER_ORIENTATION_VERTICAL);
@@ -579,9 +583,22 @@ int main(int argc, char **argv)
     state.vehicle_view_trunk_desc = aroma_ui_label(state.vehicle_view_root, "Closed", 890, 315, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     state.vehicle_view_charge_port_divider = aroma_ui_divider(state.vehicle_view_root, 900, 430, 40, DIVIDER_ORIENTATION_HORIZONTAL);
     state.vehicle_view_charge_port_icon = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_POWER, 970, 415, 24, state.theme.colors.primary, state.icon_font);
-    aroma_animation_start(state.vehicle_view_image, AROMA_ANIM_SLIDE_X, 1500, 300, 1000);
+    
+    state.vehicle_view_warning_message_card = aroma_ui_card(state.vehicle_view_root, 330, 630, 600, 70, CARD_TYPE_FILLED);
+    state.vehicle_view_warning_warning_icon = aroma_ui_icon(state.vehicle_view_warning_message_card, AROMA_ICON_WARNING, 65, 22, 24, 0xFFFFD600, state.icon_font);
+    aroma_node_set_z_index(state.vehicle_view_warning_warning_icon, 11);
 
+    aroma_node_set_z_index(state.vehicle_view_warning_message_card, 10);
+    state.vehicle_view_warning_message_label = aroma_ui_label(state.vehicle_view_warning_message_card, "Warning: The Frunk is Open. Close it before driving.", 80, 24, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    aroma_node_set_z_index(state.vehicle_view_warning_message_label, 11);
+    aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
+    aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
+    aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
+    aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);
+    
     aroma_animation_start(state.general_root, AROMA_ANIM_FADE, 0, 1, 1200);
+    
+    
     state.map_root = (AromaNode*)aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H - 80, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     actual_map = aroma_ui_map((AromaNode *)state.map_root, 0, 0, WIN_W, WIN_H - 80);
     aroma_node_set_z_index(actual_map, 0);
