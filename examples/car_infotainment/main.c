@@ -1,4 +1,4 @@
-#define AROMA_HAS_VULKAN
+
 #include <aroma.h>
 #include <aroma_animation.h>
 #include <aroma_native_utils.h>
@@ -642,12 +642,15 @@ int main(int argc, char **argv)
     AromaNode *backroad = aroma_ui_image(state.vehicle_view_root, "../assets/backroad_blur.png", 0, 0, WIN_W, WIN_H);
     aroma_node_set_z_index(backroad, 0);
     state.vehicle_view_image = aroma_ui_image(state.vehicle_view_root, "../assets/car.png", 250, 250, 700, 405);
-    state.vehicle_view_frunk_divider = aroma_ui_divider(state.vehicle_view_root, 400, 310, 80, DIVIDER_ORIENTATION_VERTICAL);
-    state.vehicle_view_lock_divider = aroma_ui_divider(state.vehicle_view_root, 600, 250, 80, DIVIDER_ORIENTATION_VERTICAL);
-    state.vehicle_view_lock_icon = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_LOCK_OPEN, 712, 190, 24, state.theme.colors.primary, state.icon_font);
+    AromaNode *overlay = aroma_ui_image(state.vehicle_view_root, "../assets/overlay.png", 250, 250, 700, 405);
+    aroma_node_set_z_index(overlay, 11);
 
-    state.vehicle_view_frunk_header = aroma_ui_label(state.vehicle_view_root, "Frunk", 410, 290, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    state.vehicle_view_frunk_desc = aroma_ui_label(state.vehicle_view_root, "Open", 410, 315, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    state.vehicle_view_frunk_divider = aroma_ui_divider(state.vehicle_view_root, 400, 340, 80, DIVIDER_ORIENTATION_VERTICAL);
+    state.vehicle_view_lock_divider = aroma_ui_divider(state.vehicle_view_root, 700, 260, 80, DIVIDER_ORIENTATION_VERTICAL);
+    state.vehicle_view_lock_icon = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_LOCK_OPEN, 712, 220, 24, state.theme.colors.primary, state.icon_font);
+
+    state.vehicle_view_frunk_header = aroma_ui_label(state.vehicle_view_root, "Frunk", 410, 320, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    state.vehicle_view_frunk_desc = aroma_ui_label(state.vehicle_view_root, "Open", 410, 345, LABEL_STYLE_LABEL_LARGE, state.ui_font);
 
     state.vehicle_view_trunk_divider = aroma_ui_divider(state.vehicle_view_root, 880, 310, 80, DIVIDER_ORIENTATION_VERTICAL);
     state.vehicle_view_trunk_header = aroma_ui_label(state.vehicle_view_root, "Trunk", 890, 290, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
@@ -672,13 +675,24 @@ int main(int argc, char **argv)
     aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);
+    
+    
     AromaAnimation *warning_animation = aroma_animation_start(state.vehicle_view_warning_message_card, AROMA_ANIM_SLIDE_Y, 1000, 630, 2000);
     aroma_animation_set_easing(warning_animation, AROMA_EASE_OUT_ELASTIC);
-
+    
     aroma_animation_start(state.general_root, AROMA_ANIM_FADE, 0, 1, 1200);
 
     // hidden for now
     aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
+    AromaNode *vehicle_view_car_icons_container = aroma_ui_container(state.vehicle_view_root,  50, 100, 28, 300, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
+    AromaNode *vehicle_view_high_beams_icon = aroma_ui_image(vehicle_view_car_icons_container, "../assets/high_beams.png", 50, 100, 28, 28);
+       AromaNode *vehicle_view_low_beams_icon = aroma_ui_image(vehicle_view_car_icons_container, "../assets/low_beams.png", 50, 100, 28, 28);
+
+    AromaNode *vehicle_view_abs_icon = aroma_ui_image(vehicle_view_car_icons_container, "../assets/abs_indicator.png", 50, 100, 28, 28);
+    AromaNode *vehicle_view_brake_icon = aroma_ui_image(vehicle_view_car_icons_container, "../assets/brake_indicator.png", 50, 100, 28, 28);
+    aroma_node_set_gap(vehicle_view_car_icons_container, 20);
+    aroma_node_set_z_index(vehicle_view_abs_icon, 11);
+    aroma_node_set_z_index(vehicle_view_high_beams_icon, 11);
 
     AromaNode *navigate_to_card = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 + 100, WIN_H - 200, 300, 120, CARD_TYPE_FILLED);
     AromaNode *music_card = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 - 400, WIN_H - 200, 450, 120, CARD_TYPE_FILLED);
@@ -951,6 +965,9 @@ int main(int argc, char **argv)
         uint64_t current_time = aroma_time_now_ms();
         if (!is_warning_shown && current_time - last_time_update > 6000)
         {
+            aroma_image_set_source(overlay, "../assets/car_battery.png");
+                        aroma_animation_start(overlay, AROMA_ANIM_FADE, 0, 1, 2000);
+
             aroma_node_set_hidden(music_card, true);
             aroma_node_set_hidden(navigate_to_card, true);
 

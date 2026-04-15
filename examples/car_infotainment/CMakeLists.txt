@@ -42,6 +42,7 @@ target_link_libraries(infotainment PRIVATE
     pthread
     asound
     curl
+    curl
     vosk
     Vulkan::Vulkan
 )
