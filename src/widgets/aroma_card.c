@@ -88,7 +88,7 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
     {
         AromaTheme theme = aroma_theme_get_global();
         if (card->type == CARD_TYPE_FILLED) {
-            card->bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.08f);
+            card->bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary, 0.2f);
         } else if (card->type == CARD_TYPE_GLASS) {
             uint8_t r, g, b;
             aroma_color_extract_rgb(theme.colors.surface, &r, &g, &b);

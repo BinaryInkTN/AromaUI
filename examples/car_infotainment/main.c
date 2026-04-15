@@ -642,8 +642,18 @@ int main(int argc, char **argv)
     AromaNode *backroad = aroma_ui_image(state.vehicle_view_root, "../assets/backroad_blur.png", 0, 0, WIN_W, WIN_H);
     aroma_node_set_z_index(backroad, 0);
     state.vehicle_view_image = aroma_ui_image(state.vehicle_view_root, "../assets/car.png", 250, 250, 700, 405);
-    AromaNode *overlay = aroma_ui_image(state.vehicle_view_root, "../assets/overlay.png", 250, 250, 700, 405);
-    aroma_node_set_z_index(overlay, 11);
+    AromaNode *overlay = aroma_ui_image(state.vehicle_view_root, NULL, 250, 250, 700, 405);
+    AromaNode *battery_card = aroma_ui_card(state.vehicle_view_root, WIN_W/2 - 200, 650, 400, 120, CARD_TYPE_FILLED);
+    AromaNode *battery_icon_large = aroma_ui_image(battery_card, "../assets/battery.png", 20, 20, 80, 80);
+    AromaNode *battery_supercharging_label = aroma_ui_label(battery_card, "Supercharging", 120, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    AromaFont *battery_time_font = aroma_font_create("../assets/Ubuntu-Light.ttf", 28);
+    AromaNode *battery_time_charging = aroma_ui_label(battery_card, "2 hr 48 min", 120, 50, LABEL_STYLE_LABEL_LARGE, battery_time_font);
+    aroma_node_set_hidden(battery_card, true);
+    aroma_node_set_z_index(battery_card, 11);
+    aroma_node_set_z_index(battery_icon_large, 12);
+    aroma_node_set_z_index(battery_supercharging_label, 12);
+    aroma_node_set_z_index(battery_time_charging, 12);
+
 
     state.vehicle_view_frunk_divider = aroma_ui_divider(state.vehicle_view_root, 400, 340, 80, DIVIDER_ORIENTATION_VERTICAL);
     state.vehicle_view_lock_divider = aroma_ui_divider(state.vehicle_view_root, 700, 260, 80, DIVIDER_ORIENTATION_VERTICAL);
@@ -965,13 +975,25 @@ int main(int argc, char **argv)
         uint64_t current_time = aroma_time_now_ms();
         if (!is_warning_shown && current_time - last_time_update > 6000)
         {
-            aroma_image_set_source(overlay, "../assets/car_battery.png");
-                        aroma_animation_start(overlay, AROMA_ANIM_FADE, 0, 1, 2000);
 
+            AromaAnimation* battery_animation = aroma_animation_start(battery_card, AROMA_ANIM_SLIDE_Y, 1000, 650, 1200);
+            aroma_animation_set_easing(battery_animation, AROMA_EASE_OUT_ELASTIC);
+            aroma_node_set_hidden(battery_card, false);
+            aroma_image_set_source(overlay, "../assets/car_battery.png");
+            aroma_node_set_hidden(state.vehicle_view_charge_port_divider, true);
+            aroma_node_set_hidden(state.vehicle_view_lock_divider, true);
+            aroma_node_set_hidden(state.vehicle_view_trunk_divider, true);
+            aroma_node_set_hidden(state.vehicle_view_frunk_divider, true);
+            aroma_node_set_hidden(state.vehicle_view_lock_icon, true);
+            aroma_node_set_hidden(state.vehicle_view_frunk_header, true);
+            aroma_node_set_hidden(state.vehicle_view_frunk_desc, true);
+            aroma_node_set_hidden(state.vehicle_view_trunk_header, true);
+            aroma_node_set_hidden(state.vehicle_view_trunk_desc, true);
+            aroma_node_set_hidden(state.vehicle_view_charge_port_icon, true);
             aroma_node_set_hidden(music_card, true);
             aroma_node_set_hidden(navigate_to_card, true);
 
-            aroma_node_set_hidden(state.vehicle_view_warning_message_card, false);
+            aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
             aroma_animation_start(state.vehicle_view_warning_message_card, AROMA_ANIM_SLIDE_Y, 1000, 630, 2000);
             last_time_update = current_time;
             is_warning_shown = true;

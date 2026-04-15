@@ -129,7 +129,7 @@ if(Vulkan_FOUND)
         target_include_directories(aroma PUBLIC ${Vulkan_INCLUDE_DIRS})
         target_link_libraries(aroma PUBLIC Vulkan::Vulkan)
     endif()
-    #target_compile_definitions(aroma PRIVATE AROMA_HAS_VULKAN=1)
+    target_compile_definitions(aroma PRIVATE AROMA_HAS_VULKAN=1)
 endif()
 
 if(ANDROID)
