@@ -16,7 +16,6 @@ extern void queue_voice_partial(const char* partial_text);
 extern void queue_voice_theme(int dark_mode);
 extern void queue_voice_ac_action(int temp_delta);
 extern void queue_voice_info_request(int info_type); 
-extern void queue_voice_music_action(int action);
 extern void queue_voice_navigation(const char* dest); 
 
 static time_t manual_wake_time = 0;
@@ -44,19 +43,16 @@ static void process_intent(const char *text) {
         
         if (strstr(text, "play the music") || strstr(text, "play music") || strstr(text, "play song") || strstr(text, "resume music")) {
             printf("Voice Intent: PLAY MUSIC\n");
-            queue_voice_music_action(1);
             queue_voice_action(-1, false, false, "Playing Music");
         } else if (strstr(text, "pause music") || strstr(text, "pause song") || strstr(text, "stop music")) {
             printf("Voice Intent: PAUSE MUSIC\n");
-            queue_voice_music_action(2);
+       
             queue_voice_action(-1, false, false, "Pausing Music");
         } else if (strstr(text, "volume up") || strstr(text, "increase volume") || strstr(text, "louder")) {
             printf("Voice Intent: VOLUME UP\n");
-            queue_voice_music_action(3);
             queue_voice_action(-1, false, false, "Volume Up");
         } else if (strstr(text, "volume down") || strstr(text, "decrease volume") || strstr(text, "quieter")) {
             printf("Voice Intent: VOLUME DOWN\n");
-            queue_voice_music_action(4);
             queue_voice_action(-1, false, false, "Volume Down");
         } else if (strstr(text, "music")) {
             printf("Voice Intent: OPEN MUSIC\n");
