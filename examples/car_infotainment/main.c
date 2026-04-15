@@ -16,20 +16,18 @@
 #define WIN_W 1280
 #define WIN_H 800
 
-
 #define Z_LAYER_BACKGROUND          1
 #define Z_LAYER_VEHICLE_IMAGE       2
 #define Z_LAYER_VEHICLE_OVERLAYS    3
 #define Z_LAYER_CARDS_BOTTOM        10
-#define Z_LAYER_CARDS_CONTENT       11
+#define Z_LAYER_CARDS_CONTENT       12
 #define Z_LAYER_MAP_BUTTON          15
 #define Z_LAYER_MAP_PANEL           20
 #define Z_LAYER_MAP_CONTROLS        21
 #define Z_LAYER_MAP_CLOSE           22
-#define Z_LAYER_STATUS_BAR          999999
+#define Z_LAYER_STATUS_BAR          100    
 #define Z_LAYER_VOICE_CARD          999998
 #define Z_LAYER_VOICE_CONTENT       999999
-
 
 #define MAP_PANEL_WIDTH     450
 #define MAP_PANEL_OFFSET    (WIN_W - MAP_PANEL_WIDTH)
@@ -49,7 +47,6 @@ typedef struct
     AromaNode      *tabs;
     AromaNode      *sidebar;
 
-   
     AromaNode *time_label;
     AromaNode *location_label;
     AromaNode *status_card;
@@ -59,7 +56,6 @@ typedef struct
     AromaNode *gps_icon;
     AromaNode *bluetooth_icon;
 
-   
     AromaNode *vehicle_view_lock_icon;
     AromaNode *vehicle_view_lock_divider;
     AromaNode *vehicle_view_charge_port_divider;
@@ -79,26 +75,26 @@ typedef struct
     AromaNode *vehicle_view_hints;
     AromaNode *vehicle_view_side_arrow_icon_button;
 
-   
+    // Map nodes
     AromaNode *map_node;
     AromaNode *map_panel;
     AromaNode *map_overlay_background; 
     bool       map_panel_open;
 
-   
+    // Climate control
     AromaNode *ac_temp_label;
 
-   
+    // Voice control
     AromaNode *voice_button;
     AromaNode *voice_status_label;
     AromaNode *voice_status_card;
     AromaNode *loading_spinner;
 
-   
+    // Settings
     AromaNode *listviews[7];
     AromaNode *listview_containers[7];
 
-   
+    // Easter egg
     AromaNode *easter_egg_overlay;
     AromaNode *easter_egg_icon;
 
@@ -108,7 +104,7 @@ typedef struct
 
 static AppState state = {0};
 
-
+// Function declarations
 void build_settings_ui(AromaNode *window);
 void build_vehicle_view(AromaNode *window);
 void build_easter_egg_ui(AromaNode *window);
@@ -116,7 +112,7 @@ void listview_callback(int index, void *user_data);
 void navigate_to_tab(int index);
 bool global_keyboard_event_handler(AromaEvent *event, void *user_data);
 
-
+// Voice control globals
 static bool            voice_is_visible   = false;
 static pthread_mutex_t voice_mutex        = PTHREAD_MUTEX_INITIALIZER;
 static int             voice_target_tab   = -1;
@@ -132,7 +128,7 @@ static int             current_ac_temp    = 23;
 
 bool g_voice_assistant_enabled = true;
 
-
+// Voice control functions
 void set_voice_status(const char *status)
 {
     if (state.voice_status_label)
@@ -216,24 +212,21 @@ void voice_button_callback(AromaNode *node, void *user_data)
     queue_voice_partial("Listening...");
 }
 
-
 void navigate_to_tab(int index)
 {
     if (state.tabs)
         aroma_tabs_set_selected(state.tabs, index);
 }
 
-
+// Map panel functions - status bar stays visible
 static void open_map_panel(void *user_data)
 {
     if (!state.map_panel || state.map_panel_open)
         return;
     
-   
     if (state.map_overlay_background)
         aroma_node_set_hidden(state.map_overlay_background, false);
     
-   
     aroma_node_set_hidden(state.map_panel, false);
     aroma_animation_start(state.map_panel, AROMA_ANIM_SLIDE_X, WIN_W, MAP_PANEL_OFFSET, 350);
     state.map_panel_open = true;
@@ -244,17 +237,12 @@ static void close_map_panel(void *user_data)
     if (!state.map_panel || !state.map_panel_open)
         return;
     
-   
     if (state.map_overlay_background)
         aroma_node_set_hidden(state.map_overlay_background, true);
     
-   
-    aroma_animation_start(state.map_panel, AROMA_ANIM_SLIDE_X, MAP_PANEL_OFFSET, WIN_W, 300);
+    aroma_animation_start(state.map_panel, AROMA_ANIM_SLIDE_X, MAP_PANEL_OFFSET, WIN_W, 350);
     state.map_panel_open = false;
     
-   
-    usleep(300000);
-    aroma_node_set_hidden(state.map_panel, true);
 }
 
 static void map_zoom_in_cb(void *user_data)
@@ -273,6 +261,7 @@ static void toggle_recent_card_cb(void *user_data)
 {
     AromaNode *card = (AromaNode *)user_data;
     if (!card) return;
+    aroma_node_set_hidden(card, !card->is_hidden);
     AromaRect *rect = (AromaRect *)card->node_widget_ptr;
     if (!rect) return;
     if (rect->x < 0)
@@ -306,7 +295,6 @@ static void navigate_map(int index, void *user_data)
     aroma_map_add_popup_marker(map, r->end_lat, r->end_lon, 0xFFD50000, r->end_label);
 }
 
-
 static void ac_temp_up_callback(AromaNode *node, void *user_data)
 {
     if (current_ac_temp < 30) current_ac_temp++;
@@ -323,7 +311,6 @@ static void ac_temp_down_callback(AromaNode *node, void *user_data)
     aroma_label_set_text(state.ac_temp_label, buf);
 }
 
-
 static float bounce_start_x, bounce_start_y, bounce_end_x, bounce_end_y;
 
 static void bounce_anim_cb(AromaNode *target, float t, void *user_data)
@@ -335,6 +322,12 @@ static void bounce_anim_cb(AromaNode *target, float t, void *user_data)
         r->x = bounce_start_x + (bounce_end_x - bounce_start_x) * t;
         r->y = bounce_start_y + (bounce_end_y - bounce_start_y) * t;
     }
+}
+
+static void settings_button_callback(AromaNode *node, void *user_data)
+{
+    navigate_to_tab(1);
+    close_map_panel(NULL);
 }
 
 static void interact_easter_egg_cb(void *user_data)
@@ -377,7 +370,6 @@ void build_easter_egg_ui(AromaNode *window)
     aroma_node_set_z_index(close_btn, INT_MAX);
 }
 
-
 bool global_keyboard_event_handler(AromaEvent *event, void *user_data)
 {
     if (event->event_type == EVENT_TYPE_KEY_PRESS)
@@ -385,13 +377,11 @@ bool global_keyboard_event_handler(AromaEvent *event, void *user_data)
         if ((event->data.key.key_code == 'i' || event->data.key.key_code == 'I') &&
             (event->data.key.modifiers & AROMA_KEY_MOD_CTRL))
         {
-           
             return true;
         }
     }
     return false;
 }
-
 
 void toggle_tab_animation_cb(AromaNode *sender, void *user_data)
 {
@@ -413,7 +403,6 @@ void listview_callback(int index, void *user_data)
 
     if (selected == 1 && index == 1)
     {
-       
         if (state.dark_theme_enabled)
         {
             state.theme = aroma_theme_create_high_contrast();
@@ -465,7 +454,6 @@ static AromaNode *settings_listview(AromaNode *parent, int x, int y, int w, int 
     return lv;
 }
 
-
 void build_settings_ui(AromaNode *window)
 {
     int area_w    = WIN_W - 250;
@@ -493,51 +481,43 @@ void build_settings_ui(AromaNode *window)
         labels, icons, num_sections,
         NULL, NULL, state.settings_font, state.icon_font);
 
-   
     state.listviews[0] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     aroma_listview_add_item_with_icon(state.listviews[0], "Wi-Fi",       "Connected - AutoNet",    AROMA_ICON_WIFI,         NULL);
     aroma_listview_add_item_with_icon(state.listviews[0], "Bluetooth",   "1 Device Paired",        AROMA_ICON_BLUETOOTH,    NULL);
     aroma_listview_add_item_with_icon(state.listviews[0], "Mobile data", "5G connection active",   AROMA_ICON_NETWORK_CELL, NULL);
     state.listview_containers[0] = aroma_listview_get_scroll_container(state.listviews[0]);
 
-   
     state.listviews[1] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     aroma_listview_add_item_with_icon(state.listviews[1], "Brightness level",    "Adaptive",         AROMA_ICON_BRIGHTNESS_HIGH, NULL);
     aroma_listview_add_item_with_icon(state.listviews[1], "Dark theme",          "Toggle dark/light",AROMA_ICON_INVERT_COLORS,   NULL);
     aroma_listview_add_item_with_icon(state.listviews[1], "Auto-rotate screen",  "On",               AROMA_ICON_SCREEN_ROTATION, NULL);
     state.listview_containers[1] = aroma_listview_get_scroll_container(state.listviews[1]);
 
-   
     state.listviews[2] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     aroma_listview_add_item_with_icon(state.listviews[2], "Media volume",      "70%", AROMA_ICON_VOLUME_UP,    NULL);
     aroma_listview_add_item_with_icon(state.listviews[2], "Navigation volume", "80%", AROMA_ICON_NAVIGATION,   NULL);
     aroma_listview_add_item_with_icon(state.listviews[2], "System sounds",     "On",  AROMA_ICON_NOTIFICATIONS,NULL);
     state.listview_containers[2] = aroma_listview_get_scroll_container(state.listviews[2]);
 
-   
     state.listviews[3] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     aroma_listview_add_item_with_icon(state.listviews[3], "Location services", "High accuracy", AROMA_ICON_GPS_FIXED,       NULL);
     aroma_listview_add_item_with_icon(state.listviews[3], "Live traffic",      "On",            AROMA_ICON_DIRECTIONS_CAR,  NULL);
     aroma_listview_add_item_with_icon(state.listviews[3], "Voice guidance",    "On",            AROMA_ICON_VOLUME_UP,       NULL);
     state.listview_containers[3] = aroma_listview_get_scroll_container(state.listviews[3]);
 
-   
     state.listviews[4] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     aroma_listview_add_item_with_icon(state.listviews[4], "Climate settings",    "Auto mode",           AROMA_ICON_DIRECTIONS_CAR, NULL);
     aroma_listview_add_item_with_icon(state.listviews[4], "Vehicle diagnostics", "All systems normal",  AROMA_ICON_INFO,           NULL);
     aroma_listview_add_item_with_icon(state.listviews[4], "Drive mode",          "Comfort",             AROMA_ICON_DIRECTIONS_CAR, NULL);
     state.listview_containers[4] = aroma_listview_get_scroll_container(state.listviews[4]);
 
-   
     state.listviews[5] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     aroma_listview_add_item_with_icon(state.listviews[5], "Tab Transition",  "Toggle Fade/Slide",      AROMA_ICON_SETTINGS,   toggle_tab_animation_cb);
     aroma_listview_add_item_with_icon(state.listviews[5], "Voice Assistant", "Enable/Disable",         AROMA_ICON_VOLUME_UP,  toggle_voice_assistant_cb);
     state.listview_containers[5] = aroma_listview_get_scroll_container(state.listviews[5]);
 
-   
     state.listviews[6] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
 
-   
     char processor_name[256] = "Unknown";
     FILE *cpuinfo = fopen("/proc/cpuinfo", "r");
     if (cpuinfo)
@@ -633,25 +613,21 @@ void build_settings_ui(AromaNode *window)
     aroma_node_set_hidden(state.settings_root, true);
 }
 
-
 void build_vehicle_view(AromaNode *window)
 {
     state.vehicle_view_root = aroma_ui_container(
         window, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
 
-   
     AromaNode *backroad = aroma_ui_image(state.vehicle_view_root, "../assets/backroad_blur.png", 0, 0, WIN_W, WIN_H);
     aroma_node_set_z_index(backroad, Z_LAYER_BACKGROUND);
 
-   
     AromaNode *car_img = aroma_ui_image(state.vehicle_view_root, "../assets/car.png", 250, 250, 700, 405);
     aroma_node_set_z_index(car_img, Z_LAYER_VEHICLE_IMAGE);
     
     AromaNode *overlay = aroma_ui_image(state.vehicle_view_root, NULL, 250, 250, 700, 405);
     aroma_node_set_z_index(overlay, Z_LAYER_VEHICLE_OVERLAYS);
 
-   
     state.clock_font       = aroma_font_create("../assets/Ubuntu-Light.ttf", 68);
     state.clock_pm_am_font = aroma_font_create("../assets/Ubuntu-Light.ttf", 24);
     state.vehicle_view_large_clock = aroma_ui_label(
@@ -665,7 +641,6 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *location_temp_label = aroma_ui_label(state.vehicle_view_root, "68°F, San Francisco", WIN_W / 2 - 70, 130, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(location_temp_label, Z_LAYER_VEHICLE_OVERLAYS);
 
-   
     state.vehicle_view_hints = aroma_ui_label(
         state.vehicle_view_root, "Say \"Hey Aroma\" to call assistant",
         60, 30, LABEL_STYLE_LABEL_LARGE, state.ui_font);
@@ -673,8 +648,7 @@ void build_vehicle_view(AromaNode *window)
     
     AromaNode *mic_hint_icon = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_MIC, 50, 33, 24, state.theme.colors.primary, state.icon_font);
     aroma_node_set_z_index(mic_hint_icon, Z_LAYER_VEHICLE_OVERLAYS);
-
-   
+  
     state.vehicle_view_frunk_divider = aroma_ui_divider(state.vehicle_view_root, 400, 340, 80, DIVIDER_ORIENTATION_VERTICAL);
     aroma_node_set_z_index(state.vehicle_view_frunk_divider, Z_LAYER_VEHICLE_OVERLAYS);
     
@@ -705,7 +679,6 @@ void build_vehicle_view(AromaNode *window)
     state.vehicle_view_charge_port_icon    = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_POWER, 970, 415, 24, state.theme.colors.primary, state.icon_font);
     aroma_node_set_z_index(state.vehicle_view_charge_port_icon, Z_LAYER_VEHICLE_OVERLAYS);
 
-   
     state.vehicle_view_warning_message_card = aroma_ui_card(state.vehicle_view_root, 330, 630, 600, 70, CARD_TYPE_FILLED);
     state.vehicle_view_warning_warning_icon  = aroma_ui_icon(state.vehicle_view_warning_message_card, AROMA_ICON_WARNING, 65, 22, 24, 0xFFFFD600, state.icon_font);
     state.vehicle_view_warning_message_label = aroma_ui_label(state.vehicle_view_warning_message_card, "Warning: The Frunk is Open. Close it before driving.", 80, 24, LABEL_STYLE_LABEL_LARGE, state.ui_font);
@@ -717,7 +690,6 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(state.vehicle_view_warning_message_action, Z_LAYER_CARDS_CONTENT);
     aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
 
-   
     AromaNode *icons_col = aroma_ui_container(
         state.vehicle_view_root, 50, 100, 28, 300,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
@@ -730,8 +702,7 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *brake_icon = aroma_ui_image(icons_col, "../assets/brake_indicator.png", 0, 0, 28, 28);
     (void)low_beams; (void)brake_icon;
 
-   
-    AromaNode *ac_card = aroma_ui_card(state.vehicle_view_root, 30, WIN_H - 200, 220, 120, CARD_TYPE_FILLED);
+    AromaNode *ac_card = aroma_ui_card(state.vehicle_view_root, 30, 650, 220, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(ac_card, Z_LAYER_CARDS_BOTTOM);
     
     AromaFont *ac_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 36);
@@ -746,7 +717,6 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(ac_down, Z_LAYER_CARDS_CONTENT);
     aroma_node_set_z_index(ac_up,   Z_LAYER_CARDS_CONTENT);
 
-   
     AromaNode *music_card = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 - 225, WIN_H - 200, 450, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(music_card, Z_LAYER_CARDS_BOTTOM);
     
@@ -756,15 +726,16 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *music_label = aroma_ui_label(music_card, "Now Playing: Kendrick Lamar - HUMBLE.", 20, 20, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(music_label, Z_LAYER_CARDS_CONTENT);
     
-    AromaNode *music_row = aroma_ui_container(music_card, 65, 70, 410, 40, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_CENTER);
-    aroma_node_set_gap(music_row, 40);
-    aroma_node_set_z_index(music_row, Z_LAYER_CARDS_CONTENT);
+    AromaNode *music_row = aroma_ui_container(music_card, 110, 70, 410, 40, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_CENTER);
+    aroma_node_set_gap(music_row, 80);
     
     AromaNode *m_prev = aroma_ui_icon(music_row, AROMA_ICON_SKIP_PREVIOUS, 0,  0, 40, aroma_color_blend(state.theme.colors.primary, state.theme.colors.surface, 0.5), state.icon_font);
     AromaNode *m_play = aroma_ui_icon(music_row, AROMA_ICON_PLAY_ARROW,    0,  0, 40, state.theme.colors.primary, state.icon_font);
     AromaNode *m_next = aroma_ui_icon(music_row, AROMA_ICON_SKIP_NEXT,     0,  0, 40, aroma_color_blend(state.theme.colors.primary, state.theme.colors.surface, 0.5), state.icon_font);
-
-   
+    aroma_node_set_z_index(m_prev, Z_LAYER_CARDS_CONTENT);
+    aroma_node_set_z_index(m_play, Z_LAYER_CARDS_CONTENT);
+    aroma_node_set_z_index(m_next, Z_LAYER_CARDS_CONTENT);
+        
     AromaNode *nav_card = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 + 250, WIN_H - 200, 300, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(nav_card, Z_LAYER_CARDS_BOTTOM);
     
@@ -789,43 +760,38 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(nav_home_icon, Z_LAYER_CARDS_CONTENT);
     aroma_node_set_z_index(nav_work_icon, Z_LAYER_CARDS_CONTENT);
 
-   
     AromaAnimation *a1 = aroma_animation_start(music_card, AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 150, 2000);
     AromaAnimation *a2 = aroma_animation_start(nav_card,   AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 150, 2000);
+    AromaAnimation *a3 = aroma_animation_start(ac_card, AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 150, 2000);
+
     aroma_animation_set_easing(a1, AROMA_EASE_OUT_ELASTIC);
     aroma_animation_set_easing(a2, AROMA_EASE_OUT_ELASTIC);
+    aroma_animation_set_easing(a3, AROMA_EASE_OUT_ELASTIC);
 
-   
     state.vehicle_view_side_arrow_icon_button = aroma_ui_iconbutton(
         state.vehicle_view_root, AROMA_ICON_MAP,
         WIN_W - 80, WIN_H / 2 - 25, 50, 
         ICON_BUTTON_FILLED, open_map_panel, NULL, state.icon_font);
     aroma_node_set_z_index(state.vehicle_view_side_arrow_icon_button, Z_LAYER_MAP_BUTTON);
 
-   
     aroma_animation_start(state.vehicle_view_frunk_divider,       AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_trunk_divider,       AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_lock_divider,        AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);
 
-   
-    
-   
     state.map_overlay_background = aroma_ui_container(
-        state.vehicle_view_root, 0, 0, WIN_W, WIN_H,
+        window, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_z_index(state.map_overlay_background, Z_LAYER_MAP_PANEL - 1);
     aroma_node_set_hidden(state.map_overlay_background, true);
     
-   
     state.map_panel = aroma_ui_container(
-        state.vehicle_view_root, MAP_PANEL_OFFSET, 0, MAP_PANEL_WIDTH, WIN_H,
+        window, MAP_PANEL_OFFSET, 0, MAP_PANEL_WIDTH, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_z_index(state.map_panel, Z_LAYER_MAP_PANEL);
     aroma_node_set_hidden(state.map_panel, true);
     state.map_panel_open = false;
 
-   
     state.map_node = aroma_ui_map(state.map_panel, 0, 0, MAP_PANEL_WIDTH, WIN_H);
     aroma_node_set_z_index(state.map_node, Z_LAYER_MAP_PANEL);
     aroma_map_set_show_attribution(state.map_node, false);
@@ -836,7 +802,6 @@ void build_vehicle_view(AromaNode *window)
     aroma_map_add_popup_marker(state.map_node, 48.8049, 2.1204, 0xFFD50000, "Home: Versailles");
     aroma_map_add_icon_marker(state.map_node, 48.8606, 2.3376, 0xFFFFD600, AROMA_ICON_STAR);
 
-   
     AromaNode *zoom_in  = aroma_ui_iconbutton(state.map_panel, AROMA_ICON_ADD,    MAP_PANEL_WIDTH - 70, 120, 50, ICON_BUTTON_FILLED, map_zoom_in_cb,  (void *)state.map_node, state.icon_font);
     AromaNode *zoom_out = aroma_ui_iconbutton(state.map_panel, AROMA_ICON_REMOVE, MAP_PANEL_WIDTH - 70, 180, 50, ICON_BUTTON_FILLED, map_zoom_out_cb, (void *)state.map_node, state.icon_font);
     aroma_button_set_colors(zoom_in,  state.theme.colors.primary, state.theme.colors.primary, state.theme.colors.secondary, state.theme.colors.text_primary);
@@ -844,9 +809,9 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(zoom_in,  Z_LAYER_MAP_CONTROLS);
     aroma_node_set_z_index(zoom_out, Z_LAYER_MAP_CONTROLS);
 
-   
     AromaNode *recent_card = aroma_ui_card(state.map_panel, -350, WIN_H - 500, 300, 400, CARD_TYPE_GLASS);
     aroma_node_set_z_index(recent_card, Z_LAYER_MAP_CONTROLS);
+    aroma_node_set_hidden(recent_card, true);
     
     AromaNode *recent_label = aroma_ui_label(recent_card, "Recently Visited", 20, 20, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(recent_label, Z_LAYER_MAP_CONTROLS + 1);
@@ -865,27 +830,19 @@ void build_vehicle_view(AromaNode *window)
     aroma_listview_add_item(recent_lv, "Library",     "987 Book Rd",     NULL);
     aroma_listview_add_item(recent_lv, "Park",        "246 Greenway Blvd", NULL);
 
-   
     AromaNode *toggle_recent = aroma_ui_iconbutton(
         state.map_panel, AROMA_ICON_HISTORY,
         MAP_PANEL_WIDTH - 70, 240, 50, ICON_BUTTON_FILLED,
         toggle_recent_card_cb, (void *)recent_card, state.icon_font);
     aroma_node_set_z_index(toggle_recent, Z_LAYER_MAP_CONTROLS);
 
-   
     AromaNode *close_map = aroma_ui_iconbutton(
         state.map_panel, AROMA_ICON_ARROW_BACK,
         20, 20, 50, ICON_BUTTON_FILLED,
         close_map_panel, NULL, state.icon_font);
     aroma_node_set_z_index(close_map, Z_LAYER_MAP_CLOSE);
     
-   
-    AromaNode *map_header = aroma_ui_label(
-        state.map_panel, "Navigation", 
-        80, 35, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(map_header, Z_LAYER_MAP_CONTROLS);
 }
-
 
 int main(int argc, char **argv)
 {
@@ -907,13 +864,14 @@ int main(int argc, char **argv)
     aroma_event_subscribe(((AromaNode *)state.window)->node_id, EVENT_TYPE_KEY_PRESS, global_keyboard_event_handler, NULL, 0);
     aroma_ui_prepare_font_for_window(0, state.ui_font);
 
-   
-    state.time_label = aroma_ui_label((AromaNode *)state.window, "12:45 PM", 50, 30, LABEL_STYLE_LABEL_LARGE,  state.ui_font);
+    // Create status bar nodes directly on window with highest z-index
+    state.time_label = aroma_ui_label((AromaNode *)state.window, "12:45 PM", 50, 30, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(state.time_label, Z_LAYER_STATUS_BAR);
 
     state.location_label = aroma_ui_label((AromaNode *)state.window, "San Francisco, 68°F", 150, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(state.location_label, Z_LAYER_STATUS_BAR);
 
+    aroma_node_set_hidden(state.location_label, true);     aroma_node_set_hidden(state.time_label, true); 
     state.status_card = aroma_ui_card((AromaNode *)state.window, WIN_W - 235, 18, 200, 50, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.status_card, Z_LAYER_STATUS_BAR);
 
@@ -922,14 +880,17 @@ int main(int argc, char **argv)
     state.battery_icon   = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BATTERY_FULL,           WIN_W -  40, 30, 24, state.theme.colors.primary, state.icon_font);
     state.gps_icon       = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_GPS_FIXED,              WIN_W - 160, 30, 24, state.theme.colors.primary, state.icon_font);
     state.bluetooth_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO,        WIN_W - 200, 30, 24, state.theme.colors.primary, state.icon_font);
+    
     AromaNode *status_icons[] = {state.signal_icon, state.wifi_icon, state.battery_icon, state.gps_icon, state.bluetooth_icon};
     for (int i = 0; i < 5; i++)
         aroma_node_set_z_index(status_icons[i], Z_LAYER_STATUS_BAR);
 
     state.voice_button = aroma_ui_iconbutton((AromaNode *)state.window, AROMA_ICON_MIC, WIN_W - 290, 22, 40, ICON_BUTTON_FILLED, voice_button_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.voice_button, Z_LAYER_STATUS_BAR);
+      AromaNode *settings_icon = aroma_ui_iconbutton(state.window, AROMA_ICON_SETTINGS,  WIN_W - 345, 22, 40, ICON_BUTTON_OUTLINED, settings_button_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(settings_icon, Z_LAYER_STATUS_BAR);
 
-   
+    // Animate status bar entrance
     AromaNode *status_nodes[] = {
         state.time_label, state.status_card, state.location_label,
         state.signal_icon, state.wifi_icon, state.battery_icon,
@@ -939,7 +900,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < 9; i++)
         aroma_animation_start(status_nodes[i], AROMA_ANIM_SLIDE_Y, -40, status_y[i], 800);
 
-   
+    // Voice status card
     state.voice_status_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 - 300, -100, 600, 80, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.voice_status_card, Z_LAYER_VOICE_CARD);
     state.voice_status_label = aroma_ui_label(state.voice_status_card, "  ", 20, 40, LABEL_STYLE_LABEL_LARGE, state.ui_font);
@@ -948,12 +909,12 @@ int main(int argc, char **argv)
     aroma_node_set_z_index(state.voice_status_label, Z_LAYER_VOICE_CONTENT);
     aroma_node_set_hidden(state.loading_spinner, true);
 
-   
+    // Build main UI
     build_vehicle_view((AromaNode *)state.window);
     build_settings_ui((AromaNode *)state.window);
     build_easter_egg_ui((AromaNode *)state.window);
 
-   
+    // Create tabs
     state.tab_font = aroma_font_create_from_memory(icon_ttf, icon_ttf_len, 128);
     state.tabs = aroma_ui_tabs_with_icons(
         (AromaNode *)state.window, 0, WIN_H - 80, WIN_W, 80,
@@ -966,19 +927,35 @@ int main(int argc, char **argv)
     aroma_tabs_set_content(state.tabs, 0, (AromaNode **)&state.vehicle_view_root, 1);
     aroma_tabs_set_content(state.tabs, 1, &state.settings_root, 1);
     aroma_tabs_set_transition(state.tabs, AROMA_ANIM_SLIDE_X, 400);
-
-   
+    // Start voice control thread
     start_voice_control_thread();
 
-   
     uint64_t last_time_update = aroma_time_now_ms();
     bool     battery_shown    = false;
 
     while (aroma_ui_is_running())
     {
+        // Update time display
+        uint64_t now = aroma_time_now_ms();
+        if (now - last_time_update > 1000) {
+            time_t rawtime;
+            struct tm *timeinfo;
+            char time_str[16];
+            char clock_str[16];
+            
+            time(&rawtime);
+            timeinfo = localtime(&rawtime);
+            strftime(time_str, sizeof(time_str), "%I:%M %p", timeinfo);
+            strftime(clock_str, sizeof(clock_str), "%H:%M", timeinfo);
+            
+            if (state.vehicle_view_large_clock)
+                aroma_label_set_text(state.vehicle_view_large_clock, clock_str);
+            
+            last_time_update = now;
+        }
+
         pthread_mutex_lock(&voice_mutex);
 
-       
         if (voice_nav_trigger)
         {
             static const struct { const char *key; double lat, lon; } cities[] = {
@@ -999,19 +976,16 @@ int main(int argc, char **argv)
                 aroma_map_set_zoom(state.map_node, 10);
                 aroma_map_pan_to(state.map_node, lat, lon);
             }
-           
             open_map_panel(NULL);
             voice_nav_trigger = false;
         }
 
-       
         if (voice_target_tab != -1)
         {
             navigate_to_tab(voice_target_tab);
             voice_target_tab = -1;
         }
 
-       
         if (strlen(voice_status_text) > 0)
         {
             set_voice_status(voice_status_text);
@@ -1029,7 +1003,6 @@ int main(int argc, char **argv)
             }
         }
 
-       
         if (voice_theme_change != -1)
         {
             bool want_dark = (voice_theme_change == 1);
@@ -1050,7 +1023,6 @@ int main(int argc, char **argv)
             voice_theme_change = -1;
         }
 
-       
         if (voice_ac_change != 0)
         {
             current_ac_temp += voice_ac_change;
@@ -1065,7 +1037,6 @@ int main(int argc, char **argv)
             voice_ac_change = 0;
         }
 
-       
         if (voice_info_request != 0)
         {
             if      (voice_info_request == 1) aroma_voice_speak("Battery is at 75 percent charge.");
@@ -1076,27 +1047,34 @@ int main(int argc, char **argv)
 
         pthread_mutex_unlock(&voice_mutex);
 
-       
+        // Show/hide based on current tab
         bool on_vehicle = (aroma_tabs_get_selected(state.tabs) == 0);
-        aroma_node_set_hidden(state.time_label,    on_vehicle);
-        aroma_node_set_hidden(state.location_label,on_vehicle);
-        aroma_node_set_hidden(state.status_card,   on_vehicle);
-        aroma_node_set_hidden(state.voice_button,  on_vehicle);
-        aroma_node_set_hidden(state.tabs,          on_vehicle);
+        
+        // Status bar is always visible on vehicle tab (even when map is open)
+        // because it has higher z-index than map panel
+        aroma_node_set_hidden(state.time_label, true);
+        aroma_node_set_hidden(state.location_label, true);
+        aroma_node_set_hidden(state.status_card, !on_vehicle);
+        aroma_node_set_hidden(state.voice_button, !on_vehicle);
+        aroma_node_set_hidden(state.tabs, on_vehicle);
+        aroma_node_set_hidden(settings_icon, !on_vehicle);
+        
+        // Hide status bar icons when on settings tab
+        for (int i = 0; i < 5; i++)
+            aroma_node_set_hidden(status_icons[i], !on_vehicle);
 
-       
         if (!battery_shown && aroma_time_now_ms() - last_time_update > 6000)
         {
             battery_shown = true;
-           
         }
+
 
         aroma_ui_process_events();
         aroma_ui_render(state.window);
         usleep(16000);
     }
 
-   
+    // Cleanup
     aroma_ui_destroy_window(state.window);
     aroma_ui_unload_font(state.ui_font);
     aroma_ui_unload_font(state.icon_font);
