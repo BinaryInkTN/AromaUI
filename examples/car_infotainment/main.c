@@ -558,6 +558,7 @@ int main(int argc, char **argv)
     aroma_ui_init();
     state.theme = aroma_theme_create_material_blue();
     state.theme.enable_shadows = false;
+    state.theme.colors.background = aroma_color_blend(state.theme.colors.primary, state.theme.colors.background, 0.96f);
     aroma_ui_set_theme(&state.theme);
     state.ui_font = aroma_font_create_from_memory(
         aroma_ubuntu_ttf,
@@ -630,13 +631,13 @@ int main(int argc, char **argv)
     //build_general_ui(state.general_root);
     build_settings_ui((AromaNode *)state.window);
     build_phone_ui((AromaNode *)state.window);
-    build_music_ui((AromaNode *)state.window);
+    //build_music_ui((AromaNode *)state.window);
     state.tab_font = aroma_font_create_from_memory(
         icon_ttf, icon_ttf_len, 128);
     state.tabs = aroma_ui_tabs_with_icons((AromaNode *)state.window, 0, WIN_H - 80, WIN_W, 80,
-                                          (const char *[]){"Vehicle View",  "Music", "Phone", "Settings", "Map"},
-                                          (const char *[]){AROMA_ICON_VISIBILITY, AROMA_ICON_MUSIC_NOTE, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
-                                          5, NULL, NULL, state.ui_font, state.tab_font);
+                                          (const char *[]){"Vehicle View",  "Phone", "Settings", "Map"},
+                                          (const char *[]){AROMA_ICON_VISIBILITY, AROMA_ICON_PHONE, AROMA_ICON_SETTINGS, AROMA_ICON_MAP},
+                                          4, NULL, NULL, state.ui_font, state.tab_font);
     aroma_animation_start(state.tabs, AROMA_ANIM_SLIDE_Y, WIN_H + 80, WIN_H - 80, 1200);
     state.vehicle_view_root = aroma_ui_container((AromaNode *)state.window, 0, 0, WIN_W, WIN_H, AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     AromaNode *backroad = aroma_ui_image(state.vehicle_view_root, "../assets/backroad_blur.png", 0, 0, WIN_W, WIN_H);
@@ -791,10 +792,9 @@ int main(int argc, char **argv)
     /// aroma_debug_overlay_set_visible(state.debug_overlay, false);
     // aroma_node_set_z_index(state.debug_overlay, INT_MAX - 1);
     aroma_tabs_set_content(state.tabs, 0, (AromaNode **)&state.vehicle_view_root, 1);
-    aroma_tabs_set_content(state.tabs, 1, &state.music_root, 1);
-    aroma_tabs_set_content(state.tabs, 2, &state.phone_root, 1);
-    aroma_tabs_set_content(state.tabs, 3, &state.settings_root, 1);
-    aroma_tabs_set_content(state.tabs, 4, &state.map_root, 1);
+    aroma_tabs_set_content(state.tabs, 1, &state.phone_root, 1);
+    aroma_tabs_set_content(state.tabs, 2, &state.settings_root, 1);
+    aroma_tabs_set_content(state.tabs, 3, &state.map_root, 1);
 
     start_voice_control_thread();
     uint64_t last_time_update = aroma_time_now_ms();
