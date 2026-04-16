@@ -642,7 +642,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(location_temp_label, Z_LAYER_VEHICLE_OVERLAYS);
 
     state.vehicle_view_hints = aroma_ui_label(
-        state.vehicle_view_root, "Say \"Hey Aroma\" to call assistant",
+        state.window, "Say \"Hey Aroma\" to call assistant",
         60, 30, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(state.vehicle_view_hints, Z_LAYER_VEHICLE_OVERLAYS);
     
@@ -655,7 +655,7 @@ void build_vehicle_view(AromaNode *window)
     state.vehicle_view_lock_divider  = aroma_ui_divider(state.vehicle_view_root, 700, 260, 80, DIVIDER_ORIENTATION_VERTICAL);
     aroma_node_set_z_index(state.vehicle_view_lock_divider, Z_LAYER_VEHICLE_OVERLAYS);
     
-    state.vehicle_view_lock_icon     = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_LOCK_OPEN, 712, 220, 24, state.theme.colors.primary, state.icon_font);
+    state.vehicle_view_lock_icon     = aroma_ui_icon(state.vehicle_view_root, AROMA_ICON_LOCK, 712, 220, 24, state.theme.colors.primary, state.icon_font);
     aroma_node_set_z_index(state.vehicle_view_lock_icon, Z_LAYER_VEHICLE_OVERLAYS);
     
     state.vehicle_view_frunk_header  = aroma_ui_label(state.vehicle_view_root, "Frunk", 410, 320, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
@@ -875,11 +875,11 @@ int main(int argc, char **argv)
     state.status_card = aroma_ui_card((AromaNode *)state.window, WIN_W - 235, 18, 200, 50, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.status_card, Z_LAYER_STATUS_BAR);
 
-    state.signal_icon    = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_SIGNAL_CELLULAR_4_BAR, WIN_W - 120, 30, 24, state.theme.colors.primary, state.icon_font);
-    state.wifi_icon      = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_WIFI,                  WIN_W -  80, 30, 24, state.theme.colors.primary, state.icon_font);
-    state.battery_icon   = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BATTERY_FULL,           WIN_W -  40, 30, 24, state.theme.colors.primary, state.icon_font);
-    state.gps_icon       = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_GPS_FIXED,              WIN_W - 160, 30, 24, state.theme.colors.primary, state.icon_font);
-    state.bluetooth_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO,        WIN_W - 200, 30, 24, state.theme.colors.primary, state.icon_font);
+    state.signal_icon    = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_SIGNAL_CELLULAR_4_BAR, WIN_W - 120, 30, 24, state.theme.colors.text_primary, state.icon_font);
+    state.wifi_icon      = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_WIFI,                  WIN_W -  80, 30, 24, state.theme.colors.text_primary, state.icon_font);
+    state.battery_icon   = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BATTERY_FULL,           WIN_W -  40, 30, 24, state.theme.colors.text_primary, state.icon_font);
+    state.gps_icon       = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_GPS_FIXED,              WIN_W - 160, 30, 24, state.theme.colors.text_primary, state.icon_font);
+    state.bluetooth_icon = aroma_ui_icon((AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO,        WIN_W - 200, 30, 24, state.theme.colors.text_primary, state.icon_font);
     
     AromaNode *status_icons[] = {state.signal_icon, state.wifi_icon, state.battery_icon, state.gps_icon, state.bluetooth_icon};
     for (int i = 0; i < 5; i++)
