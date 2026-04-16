@@ -570,7 +570,6 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
     }
     return false;
 }
-
 static void _map_draw_line(AromaGraphicsInterface* gfx, size_t window_id, int x0, int y0, int x1, int y1, uint32_t color, int thickness, int cx, int cy, int cw, int ch) {
     if (!gfx || !gfx->fill_rectangle) return;
 
@@ -578,59 +577,33 @@ static void _map_draw_line(AromaGraphicsInterface* gfx, size_t window_id, int x0
     int outcode1 = (((x1) < cx) ? 1 : ((x1) > cx + cw) ? 2 : 0) | (((y1) < cy) ? 4 : ((y1) > cy + ch) ? 8 : 0);
 
     while (1) {
-        if (!(outcode0 | outcode1)) {
-            break;
-        } else if (outcode0 & outcode1) {
-            return;
+        if (!(outcode0 | outcode1)) break;
+        if (outcode0 & outcode1) return;
+
+        int out = outcode0 ? outcode0 : outcode1;
+        int x, y;
+
+        if      (out & 8) { x = x0 + (x1-x0)*(cy+ch-y0)/(y1-y0); y = cy+ch; }
+        else if (out & 4) { x = x0 + (x1-x0)*(cy-y0)/(y1-y0);    y = cy;    }
+        else if (out & 2) { y = y0 + (y1-y0)*(cx+cw-x0)/(x1-x0); x = cx+cw; }
+        else              { y = y0 + (y1-y0)*(cx-x0)/(x1-x0);     x = cx;    }
+
+        if (out == outcode0) {
+            x0 = x; y0 = y;
+            outcode0 = (((x0) < cx) ? 1 : ((x0) > cx + cw) ? 2 : 0) | (((y0) < cy) ? 4 : ((y0) > cy + ch) ? 8 : 0);
         } else {
-            int x = 0, y = 0;
-            int out = outcode0 ? outcode0 : outcode1;
-
-            if (out & 8) {
-                x = x0 + (x1 - x0) * (cy + ch - y0) / (y1 - y0);
-                y = cy + ch;
-            } else if (out & 4) {
-                x = x0 + (x1 - x0) * (cy - y0) / (y1 - y0);
-                y = cy;
-            } else if (out & 2) {
-                y = y0 + (y1 - y0) * (cx + cw - x0) / (x1 - x0);
-                x = cx + cw;
-            } else if (out & 1) {
-                y = y0 + (y1 - y0) * (cx - x0) / (x1 - x0);
-                x = cx;
-            }
-
-            if (out == outcode0) {
-                x0 = x; y0 = y;
-                outcode0 = (((x0) < cx) ? 1 : ((x0) > cx + cw) ? 2 : 0) | (((y0) < cy) ? 4 : ((y0) > cy + ch) ? 8 : 0);
-            } else {
-                x1 = x; y1 = y;
-                outcode1 = (((x1) < cx) ? 1 : ((x1) > cx + cw) ? 2 : 0) | (((y1) < cy) ? 4 : ((y1) > cy + ch) ? 8 : 0);
-            }
+            x1 = x; y1 = y;
+            outcode1 = (((x1) < cx) ? 1 : ((x1) > cx + cw) ? 2 : 0) | (((y1) < cy) ? 4 : ((y1) > cy + ch) ? 8 : 0);
         }
     }
 
-    int dx = x1 - x0;
-    int dy = y1 - y0;
+    int dx = x1 - x0, dy = y1 - y0;
     int adx = dx < 0 ? -dx : dx;
     int ady = dy < 0 ? -dy : dy;
-
-    if (adx == 0) {
-        int y_min = y0 < y1 ? y0 : y1;
-        gfx->fill_rectangle(window_id, x0 - thickness/2, y_min - thickness/2, thickness, ady + thickness, color, true, thickness/2.0f);
-        return;
-    }
-    if (ady == 0) {
-        int x_min = x0 < x1 ? x0 : x1;
-        gfx->fill_rectangle(window_id, x_min - thickness/2, y0 - thickness/2, adx + thickness, thickness, color, true, thickness/2.0f);
-        return;
-    }
-
     int d_max = adx > ady ? adx : ady;
 
     int step_size = (thickness * 7) / 10;
     if (step_size < 1) step_size = 1;
-
     int steps = d_max / step_size;
     if (steps == 0) steps = 1;
 
@@ -640,7 +613,6 @@ static void _map_draw_line(AromaGraphicsInterface* gfx, size_t window_id, int x0
         gfx->fill_rectangle(window_id, x - thickness/2, y - thickness/2, thickness, thickness, color, true, thickness/2.0f);
     }
 }
-
 static void __map_draw(AromaNode* node, size_t window_id) {
     if (!node || !node->node_widget_ptr) return;
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
