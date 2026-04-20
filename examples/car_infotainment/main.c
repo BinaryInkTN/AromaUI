@@ -32,7 +32,7 @@
 #define MAP_PANEL_WIDTH     WIN_W
 #define MAP_PANEL_OFFSET    0
 
-#define SETTINGS_PANEL_W    500
+#define SETTINGS_PANEL_W    800
 #define SETTINGS_ANIM_MS    350
 
 typedef struct
@@ -80,6 +80,13 @@ typedef struct
     AromaNode *overlay;
     AromaNode *recent_lv;
 
+    AromaNode *vehicle_view_battery_divider;
+    AromaNode *vehicle_view_battery_percentage;
+
+    AromaNode *battery_image;
+    AromaNode *battery_health;
+    AromaNode *battery_percentage;
+
     AromaNode *map_node;
     AromaNode *map_panel;
     AromaNode *map_overlay_background;
@@ -103,6 +110,8 @@ typedef struct
     AromaNode *easter_egg_icon;
 
     AromaNode *mic_hint_icon;
+
+    AromaNode *battery_button;
 
     AromaTheme theme;
     bool dark_theme_enabled;
@@ -258,8 +267,9 @@ static void open_map_panel(void *user_data)
         aroma_node_set_hidden(state.map_overlay_background, false);
 
     aroma_node_set_hidden(state.map_panel, false);
-    aroma_animation_start(state.map_panel, AROMA_ANIM_SLIDE_X, WIN_W, MAP_PANEL_OFFSET, 350);
+    AromaAnimation* map_anim = aroma_animation_start(state.map_panel, AROMA_ANIM_SLIDE_X, WIN_W, MAP_PANEL_OFFSET, 450);
     aroma_animation_start(state.recent_lv, AROMA_ANIM_SLIDE_X, WIN_W, MAP_PANEL_OFFSET, 350);
+    aroma_animation_set_easing(map_anim, AROMA_EASE_OUT_CUBIC);
     state.map_panel_open = true;
 }
 
@@ -271,8 +281,41 @@ static void close_map_panel(void *user_data)
     if (state.map_overlay_background)
         aroma_node_set_hidden(state.map_overlay_background, true);
 
-    aroma_animation_start(state.map_panel, AROMA_ANIM_SLIDE_X, MAP_PANEL_OFFSET, WIN_W, 350);
+    AromaAnimation* map_anim = aroma_animation_start(state.map_panel, AROMA_ANIM_SLIDE_X, MAP_PANEL_OFFSET, WIN_W, 450);
+        aroma_animation_set_easing(map_anim, AROMA_EASE_OUT_CUBIC);
+
     state.map_panel_open = false;
+}
+
+static void battery_diagnostics(AromaNode *node, void *user_data)
+{   
+
+    aroma_image_set_source(state.overlay, "../assets/car_battery.png");
+    AromaAnimation*anim = aroma_animation_start(state.overlay, AROMA_ANIM_SLIDE_Y, 900, 250, 400);
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_ELASTIC);
+
+    aroma_node_set_hidden(state.vehicle_view_lock_divider, true);
+    aroma_node_set_hidden(state.vehicle_view_charge_port_divider, true);
+    aroma_node_set_hidden(state.vehicle_view_charge_port_icon, true);
+    aroma_node_set_hidden(state.vehicle_view_frunk_header, true);
+    aroma_node_set_hidden(state.vehicle_view_frunk_desc, true);
+    aroma_node_set_hidden(state.vehicle_view_frunk_divider, true);
+    aroma_node_set_hidden(state.vehicle_view_trunk_divider, true);
+    aroma_node_set_hidden(state.vehicle_view_trunk_header, true);
+    aroma_node_set_hidden(state.vehicle_view_trunk_desc, true);
+    aroma_node_set_hidden(state.vehicle_view_lock_icon, true);
+    aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
+    aroma_node_set_hidden(state.vehicle_view_warning_message_label, true);
+    aroma_node_set_hidden(state.vehicle_view_warning_warning_icon, true);
+    aroma_node_set_hidden(state.vehicle_view_warning_message_action, true);
+    aroma_node_set_hidden(state.battery_image, false);
+    aroma_node_set_hidden(state.battery_health, false);
+    aroma_node_set_hidden(state.battery_percentage, false);
+    aroma_animation_start(state.battery_image, AROMA_ANIM_FADE, 0, 1, 1000);
+    aroma_animation_start(state.battery_health, AROMA_ANIM_FADE, 0, 1, 1000);
+    aroma_animation_start(state.battery_percentage, AROMA_ANIM_FADE, 0, 1, 1000);
+
+    
 }
 
 static void open_settings_panel(void *user_data)
@@ -288,7 +331,7 @@ static void open_settings_panel(void *user_data)
     animate_node_x(state.settings_panel_node, WIN_W, WIN_W - SETTINGS_PANEL_W);
     animate_node_x(state.vehicle_view_root, 0, -SETTINGS_PANEL_W);
 
-    shift_node(state.overlay, -SETTINGS_PANEL_W / 3);
+    shift_node(state.overlay, -SETTINGS_PANEL_W);
     shift_node(state.status_card, -SETTINGS_PANEL_W);
     shift_node(state.battery_icon, -SETTINGS_PANEL_W);
     shift_node(state.signal_icon, -SETTINGS_PANEL_W);
@@ -313,7 +356,7 @@ void close_settings_panel(void *user_data)
     animate_node_x(state.settings_panel_node, WIN_W - SETTINGS_PANEL_W, WIN_W);
     animate_node_x(state.vehicle_view_root, -SETTINGS_PANEL_W, 0);
 
-    shift_node(state.overlay, SETTINGS_PANEL_W / 3);
+    shift_node(state.overlay, SETTINGS_PANEL_W);
     shift_node(state.status_card, SETTINGS_PANEL_W);
     shift_node(state.battery_icon, SETTINGS_PANEL_W);
     shift_node(state.signal_icon, SETTINGS_PANEL_W);
@@ -603,12 +646,12 @@ void build_settings_ui(AromaNode *window)
     aroma_listview_add_item_with_icon(state.listviews[4], "Vehicle diagnostics", "All systems normal", AROMA_ICON_INFO,           NULL);
     aroma_listview_add_item_with_icon(state.listviews[4], "Drive mode",          "Comfort",            AROMA_ICON_DIRECTIONS_CAR, NULL);
     state.listview_containers[4] = aroma_listview_get_scroll_container(state.listviews[4]);
-
+    
     state.listviews[5] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     aroma_listview_add_item_with_icon(state.listviews[5], "Tab Transition",  "Toggle Fade/Slide", AROMA_ICON_SETTINGS,  toggle_tab_animation_cb);
     aroma_listview_add_item_with_icon(state.listviews[5], "Voice Assistant", "Enable/Disable",    AROMA_ICON_VOLUME_UP, toggle_voice_assistant_cb);
     state.listview_containers[5] = aroma_listview_get_scroll_container(state.listviews[5]);
-
+    
     state.listviews[6] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
 
     char processor_name[256] = "Unknown";
@@ -720,6 +763,8 @@ void build_vehicle_view(AromaNode *window)
     state.overlay = aroma_ui_image(state.vehicle_view_root, NULL, 250, 250, 700, 405);
     aroma_node_set_z_index(state.overlay, Z_LAYER_VEHICLE_OVERLAYS);
 
+    state.battery_button = aroma_ui_iconbutton(state.vehicle_view_root, AROMA_ICON_BATTERY_FULL, WIN_W - 395, 22, 40, ICON_BUTTON_OUTLINED, battery_diagnostics, NULL, state.icon_font);
+    aroma_node_set_z_index(state.battery_button, Z_LAYER_VEHICLE_OVERLAYS);
     state.clock_font       = aroma_font_create("../assets/Ubuntu-Light.ttf", 68);
     state.clock_pm_am_font = aroma_font_create("../assets/Ubuntu-Light.ttf", 24);
     state.vehicle_view_large_clock = aroma_ui_label(
@@ -781,18 +826,31 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(state.vehicle_view_warning_message_label,  Z_LAYER_MAP_PANEL+2);
     aroma_node_set_z_index(state.vehicle_view_warning_message_action, Z_LAYER_MAP_PANEL+2);
     aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
+    state.battery_image = aroma_ui_image(state.vehicle_view_root, "../assets/charging.png", WIN_W/2 - 180,  200, 128, 128);
+    state.battery_health = aroma_ui_label(state.vehicle_view_root, "Battery Health: Good", WIN_W/2 -20, 220, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    aroma_node_set_z_index(state.battery_health, Z_LAYER_VEHICLE_OVERLAYS);
+    aroma_label_set_color(state.battery_health, 0xFF00C853);
+    state.battery_percentage = aroma_ui_label(state.vehicle_view_root, "85%", WIN_W/2 - 20, 260, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    aroma_node_set_z_index(state.battery_percentage, Z_LAYER_VEHICLE_OVERLAYS);
 
+    aroma_node_set_hidden(state.battery_image, true);
+    aroma_node_set_hidden(state.battery_health, true);
+    aroma_node_set_hidden(state.battery_percentage, true);
+    aroma_node_set_z_index(state.battery_image, Z_LAYER_VEHICLE_OVERLAYS);
     AromaNode *icons_col = aroma_ui_container(
         state.vehicle_view_root, 50, 100, 28, 300,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
     aroma_node_set_gap(icons_col, 20);
-    aroma_node_set_z_index(icons_col, Z_LAYER_VEHICLE_OVERLAYS);
+
 
     AromaNode *high_beams = aroma_ui_image(icons_col, "../assets/high_beams.png",      0, 0, 28, 28);
     AromaNode *low_beams  = aroma_ui_image(icons_col, "../assets/low_beams.png",       0, 0, 28, 28);
     AromaNode *abs_icon   = aroma_ui_image(icons_col, "../assets/abs_indicator.png",   0, 0, 28, 28);
     AromaNode *brake_icon = aroma_ui_image(icons_col, "../assets/brake_indicator.png", 0, 0, 28, 28);
-    (void)low_beams; (void)brake_icon;
+    aroma_node_set_z_index(high_beams, Z_LAYER_VEHICLE_OVERLAYS);
+    aroma_node_set_z_index(low_beams, Z_LAYER_VEHICLE_OVERLAYS);
+    aroma_node_set_z_index(abs_icon, Z_LAYER_VEHICLE_OVERLAYS);
+    aroma_node_set_z_index(brake_icon, Z_LAYER_VEHICLE_OVERLAYS);
 
     AromaNode *ac_card = aroma_ui_card(state.window, 30, 650, 220, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(ac_card, Z_LAYER_MAP_PANEL+1);
@@ -924,12 +982,15 @@ void build_vehicle_view(AromaNode *window)
         20, 20, 50, ICON_BUTTON_FILLED,
         close_map_panel, NULL, state.icon_font);
     aroma_node_set_z_index(close_map, Z_LAYER_MAP_CLOSE);
+
 }
 
 int main(int argc, char **argv)
 {
     aroma_animation_manager_init();
-    aroma_splash(false, "AromaHMI 0.0.1", "The Ultimate Car Infotainment Demo");
+    char build_info[256];
+    snprintf(build_info, sizeof(build_info), "AromaOS v0.0.1 - Build: %s %s", __DATE__, __TIME__);
+    aroma_splash(true, "AromaOS", build_info);
     aroma_ui_init();
 
     state.theme = aroma_theme_create_material_blue();
