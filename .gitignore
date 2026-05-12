@@ -2,4 +2,4 @@ build/
 cmake-build-*/
 CMakeCache.txt
 CMakeFiles/
-examples/car_infotainment/vosk_lib/
+vosk_lib/
