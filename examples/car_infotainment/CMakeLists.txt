@@ -18,18 +18,31 @@ link_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib
 )
 
+option(ENABLE_VOICE_CONTROL "Enable voice control (requires libvosk)" OFF)
+
 add_executable(infotainment
     main.c
     cJSON.c
-    voice_control.c
 )
-
-
-find_program(PICO2WAVE_BIN pico2wave)
-find_program(APLAY_BIN aplay)
 
 find_package(Vulkan REQUIRED)
 
+if(ENABLE_VOICE_CONTROL)
+    find_library(VOSK_LIB vosk HINTS ${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib)
+    if(NOT VOSK_LIB)
+        message(WARNING "libvosk not found — disabling voice control")
+        set(ENABLE_VOICE_CONTROL OFF)
+    endif()
+endif()
+
+if(ENABLE_VOICE_CONTROL)
+    target_sources(infotainment PRIVATE voice_control.c)
+    target_compile_definitions(infotainment PRIVATE AROMA_USE_VOICE_CONTROL)
+    target_link_libraries(infotainment PRIVATE vosk)
+    message(STATUS "Voice control: ENABLED")
+else()
+    message(STATUS "Voice control: DISABLED")
+endif()
 
 target_link_libraries(infotainment PRIVATE
     aroma
@@ -42,7 +55,5 @@ target_link_libraries(infotainment PRIVATE
     pthread
     asound
     curl
-    curl
-    vosk
     Vulkan::Vulkan
 )

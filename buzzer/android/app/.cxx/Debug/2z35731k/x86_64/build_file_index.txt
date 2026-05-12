@@ -1,0 +1,3 @@
+/home/yassine/AromaUI/buzzer/android/app/src/main/cpp/CMakeLists.txt
+/home/yassine/AromaUI/src/CMakeLists.txt
+/home/yassine/AromaUI/vendors/freetype/CMakeLists.txt
