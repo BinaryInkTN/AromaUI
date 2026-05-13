@@ -12,14 +12,23 @@ find_package(Freetype REQUIRED)
 # Enable Vulkan in the GLPS vendor library when Vulkan is available,
 # so glps_wm_vk_create_surface is compiled and exported.
 find_package(Vulkan QUIET)
-if(Vulkan_FOUND)
+if(Vulkan_FOUND AND NOT ENABLE_GLFW)
     set(GLPS_INCLUDE_VULKAN ON CACHE BOOL "Enable Vulkan support in GLPS" FORCE)
 endif()
 
-add_subdirectory(vendors/glps)
+if(NOT ENABLE_GLFW)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vendors/glps/CMakeLists.txt")
+        add_subdirectory(vendors/glps)
+    endif()
+endif()
+
 add_subdirectory(src)
 
-target_link_libraries(aroma PRIVATE GLPS)
+if(NOT ENABLE_GLFW)
+    if(TARGET GLPS)
+        target_link_libraries(aroma PRIVATE GLPS)
+    endif()
+endif()
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests
     AND IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
