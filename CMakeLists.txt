@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(aroma LANGUAGES C)
 
+option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 

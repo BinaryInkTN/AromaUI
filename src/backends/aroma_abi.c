@@ -291,6 +291,9 @@ AromaPlatformInterface* aroma_get_platform_interface(void) {
 #elif defined(__ANDROID__)
     current_platform_backend = PLATFORM_BACKEND_ANDROID;
     return &aroma_platform_android;
+#elif defined(AROMA_USE_GLFW)
+    current_platform_backend = PLATFORM_BACKEND_GLFW;
+    return &aroma_platform_glfw;
 #else
     current_platform_backend = PLATFORM_BACKEND_GLPS;
     return &aroma_platform_glps;

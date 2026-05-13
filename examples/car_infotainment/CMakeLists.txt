@@ -19,6 +19,7 @@ link_directories(
 )
 
 option(ENABLE_VOICE_CONTROL "Enable voice control (requires libvosk)" OFF)
+option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
 
 add_executable(infotainment
     main.c
@@ -44,16 +45,34 @@ else()
     message(STATUS "Voice control: DISABLED")
 endif()
 
-target_link_libraries(infotainment PRIVATE
-    aroma
-    GLPS
-    GLESv2
-    EGL
-    X11
-    freetype
-    m
-    pthread
-    asound
-    curl
-    Vulkan::Vulkan
-)
+if(ENABLE_GLFW)
+    find_package(glfw3 REQUIRED)
+    target_compile_definitions(infotainment PRIVATE AROMA_USE_GLFW)
+    target_link_libraries(infotainment PRIVATE
+        aroma
+        glfw
+        GLESv2
+        freetype
+        m
+        pthread
+        asound
+        curl
+        Vulkan::Vulkan
+    )
+    message(STATUS "Windowing Backend: GLFW")
+else()
+    target_link_libraries(infotainment PRIVATE
+        aroma
+        GLPS
+        GLESv2
+        EGL
+        X11
+        freetype
+        m
+        pthread
+        asound
+        curl
+        Vulkan::Vulkan
+    )
+    message(STATUS "Windowing Backend: GLPS")
+endif()

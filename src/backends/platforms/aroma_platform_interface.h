@@ -477,6 +477,8 @@ extern AromaPlatformInterface aroma_platform_tft;
  */
 extern AromaPlatformInterface aroma_platform_android;
 
+extern AromaPlatformInterface aroma_platform_glfw;
+
 #ifdef __cplusplus
 }
 #endif

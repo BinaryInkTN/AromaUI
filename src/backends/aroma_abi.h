@@ -5,6 +5,7 @@
 
 typedef enum AromaPlatformBackendType {
     PLATFORM_BACKEND_GLPS,
+    PLATFORM_BACKEND_GLFW,
     PLATFORM_BACKEND_ANDROID,
     PLATFORM_BACKEND_TFT_ESPI
 } AromaPlatformBackendType;
