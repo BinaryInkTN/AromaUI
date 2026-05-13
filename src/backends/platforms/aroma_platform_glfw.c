@@ -94,24 +94,42 @@ static void glfw_mouse_button_callback(GLFWwindow* window, int button, int actio
 
 static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (action == GLFW_REPEAT) return;
+    AromaEventType type = (action == GLFW_RELEASE) ? EVENT_TYPE_KEY_RELEASE : EVENT_TYPE_KEY_PRESS;
 
-    uint32_t key_value = (uint32_t)key; 
+    uint32_t key_value = 0;
+    bool is_printable = false;
+
+    switch (key) {
+        case GLFW_KEY_BACKSPACE: key_value = 8; break;
+        case GLFW_KEY_ENTER:
+        case GLFW_KEY_KP_ENTER: key_value = 10; break;
+        case GLFW_KEY_LEFT: key_value = 0xFF51; break;
+        case GLFW_KEY_UP: key_value = 0xFF52; break;
+        case GLFW_KEY_RIGHT: key_value = 0xFF53; break;
+        case GLFW_KEY_DOWN: key_value = 0xFF54; break;
+        case GLFW_KEY_HOME: key_value = 0xFF50; break;
+        case GLFW_KEY_END: key_value = 0xFF57; break;
+        case GLFW_KEY_DELETE: key_value = 127; break;
+        default:
+            is_printable = true;
+            key_value = (uint32_t)key;
+            break;
+    }
+
     uint16_t modifiers = 0;
     if (mods & GLFW_MOD_CAPS_LOCK) modifiers |= AROMA_KEY_MOD_CAPSLOCK;
     if (mods & GLFW_MOD_CONTROL)   modifiers |= AROMA_KEY_MOD_CTRL;
 
-    
-    AromaEventType type = (action == GLFW_PRESS) ? EVENT_TYPE_KEY_PRESS : EVENT_TYPE_KEY_RELEASE;
+    if (is_printable && type == EVENT_TYPE_KEY_PRESS && !(modifiers & AROMA_KEY_MOD_CTRL)) {
+        return; 
+    }
+
     queue_key_event(type, key_value, modifiers);
 }
 
 static void glfw_char_callback(GLFWwindow* window, unsigned int codepoint)
 {
-    AromaEventType type = EVENT_TYPE_KEY_PRESS;
-    queue_key_event(type, codepoint, 0);
-    
-    
+    queue_key_event(EVENT_TYPE_KEY_PRESS, codepoint, 0);
 }
 
 static void glfw_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)

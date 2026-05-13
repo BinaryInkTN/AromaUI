@@ -46,11 +46,20 @@ else()
 endif()
 
 if(ENABLE_GLFW)
-    find_package(glfw3 REQUIRED)
     target_compile_definitions(infotainment PRIVATE AROMA_USE_GLFW)
+    
+    # We no longer hard-require find_package(glfw3) here since libaroma 
+    # might embed glfw statically from the submodule. If glfw3 is found, 
+    # we link against it; otherwise, we assume libaroma passes along the glfw symbols.
+    find_package(glfw3 QUIET)
+    if (TARGET glfw OR TARGET glfw3 OR glfw3_FOUND)
+        target_link_libraries(infotainment PRIVATE
+            glfw
+        )
+    endif()
+
     target_link_libraries(infotainment PRIVATE
         aroma
-        glfw
         GLESv2
         freetype
         m
