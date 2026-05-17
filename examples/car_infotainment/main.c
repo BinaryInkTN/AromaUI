@@ -15,8 +15,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+#ifndef __EMSCRIPTEN__
 #include <linux/can.h>
 #include <linux/can/raw.h>
+#endif
 #include <fcntl.h>
 
 #ifdef AROMA_USE_VOICE_CONTROL
@@ -108,6 +113,9 @@ static void *log_capture_thread_func(void *arg)
 
 static void init_log_capture(void)
 {
+#ifdef __EMSCRIPTEN__
+    return;
+#else
     if (pipe(log_pipe_fd) == -1) {
         perror("Failed to create log capture pipe");
         return;
@@ -127,10 +135,14 @@ static void init_log_capture(void)
 
     log_capture_running = 1;
     pthread_create(&log_capture_thread, NULL, log_capture_thread_func, NULL);
+#endif
 }
 
 static void cleanup_log_capture(void)
 {
+#ifdef __EMSCRIPTEN__
+    return;
+#else
     log_capture_running = 0;
     close(log_pipe_fd[1]);
     pthread_join(log_capture_thread, NULL);
@@ -144,6 +156,7 @@ static void cleanup_log_capture(void)
         dup2(original_stderr, STDERR_FILENO);
         close(original_stderr);
     }
+#endif
 }
 
 static void app_log(const char *fmt, ...)
@@ -316,6 +329,7 @@ static int             current_ac_temp       = 23;
 
 bool g_voice_assistant_enabled = true;
 
+#ifndef __EMSCRIPTEN__
 void parse_can(struct can_frame *frame)
 {
     pthread_mutex_lock(&can_mtx);
@@ -427,6 +441,7 @@ void *can_thread(void *arg)
     close(s);
     return NULL;
 }
+#endif
 
 void set_voice_status(const char *status)
 {
@@ -502,7 +517,7 @@ void queue_voice_action(int tab_index, bool call, bool end_call, const char *sta
     pthread_mutex_unlock(&voice_mutex);
 }
 
-void voice_button_callback(AromaNode *node, void *user_data)
+void voice_button_callback(void *user_data)
 {
 #ifdef AROMA_USE_VOICE_CONTROL
     trigger_manual_wake();
@@ -633,7 +648,7 @@ void close_settings_panel(void *user_data)
     fflush(stdout);
 }
 
-static void battery_diagnostics(AromaNode *node, void *user_data)
+static void battery_diagnostics(void *user_data)
 {
     aroma_image_set_source(state.overlay, "../assets/car_battery.png");
     AromaAnimation *anim = aroma_animation_start(
@@ -708,7 +723,7 @@ static void navigate_map(int index, void *user_data)
     fflush(stdout);
 }
 
-static void ac_temp_up_callback(AromaNode *node, void *user_data)
+static void ac_temp_up_callback(void *user_data)
 {
     if (current_ac_temp < 30) current_ac_temp++;
     char buf[16];
@@ -718,7 +733,7 @@ static void ac_temp_up_callback(AromaNode *node, void *user_data)
     fflush(stdout);
 }
 
-static void ac_temp_down_callback(AromaNode *node, void *user_data)
+static void ac_temp_down_callback(void *user_data)
 {
     if (current_ac_temp > 16) current_ac_temp--;
     char buf[16];
@@ -791,7 +806,7 @@ bool global_keyboard_event_handler(AromaEvent *event, void *user_data)
     return false;
 }
 
-static void settings_button_callback(AromaNode *node, void *user_data)
+static void settings_button_callback(void *user_data)
 {
     if (state.map_panel_open)
         close_map_panel(NULL);
@@ -1229,7 +1244,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(abs_icon,   Z_LAYER_VEHICLE_OVERLAYS);
     aroma_node_set_z_index(brake_icon, Z_LAYER_VEHICLE_OVERLAYS);
 
-    state.ac_card = aroma_ui_card(state.window, 30, WIN_H - 200, 220, 120, CARD_TYPE_FILLED);
+    state.ac_card = aroma_ui_card((AromaNode *)state.window, 30, WIN_H - 200, 220, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.ac_card, Z_LAYER_MAP_PANEL + 1);
 
     AromaFont *ac_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 36);
@@ -1244,7 +1259,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(ac_down, Z_LAYER_MAP_PANEL + 2);
     aroma_node_set_z_index(ac_up,   Z_LAYER_MAP_PANEL + 2);
 
-    state.music_card = aroma_ui_card(state.window, WIN_W / 2 - 225, WIN_H - 200, 450, 120, CARD_TYPE_FILLED);
+    state.music_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 - 225, WIN_H - 200, 450, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.music_card, Z_LAYER_MAP_PANEL + 1);
 
     AromaNode *music_divider = aroma_ui_divider(state.music_card, 0, 60, 450, DIVIDER_ORIENTATION_HORIZONTAL);
@@ -1265,7 +1280,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(m_play, Z_LAYER_MAP_PANEL + 2);
     aroma_node_set_z_index(m_next, Z_LAYER_MAP_PANEL + 2);
 
-    state.nav_card = aroma_ui_card(state.window, WIN_W / 2 + 250, WIN_H - 200, 300, 120, CARD_TYPE_FILLED);
+    state.nav_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 + 250, WIN_H - 200, 300, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.nav_card, Z_LAYER_MAP_PANEL + 1);
 
     AromaNode *nav_divider_h = aroma_ui_divider(state.nav_card,   0, 60, 300, DIVIDER_ORIENTATION_HORIZONTAL);
@@ -1362,15 +1377,17 @@ void build_vehicle_view(AromaNode *window)
 
 int main(int argc, char **argv)
 {
-    init_log_capture();
+   // init_log_capture();
 
     aroma_animation_manager_init();
 
     char build_info[256];
     snprintf(build_info, sizeof(build_info),
              "AromaOS v0.0.1 - Build: %s %s", __DATE__, __TIME__);
-    aroma_splash(true, "AromaOS", build_info);
-    aroma_ui_init();
+    aroma_splash(false, "AromaOS", build_info);
+    bool ui_ok = aroma_ui_init();
+    printf("Aroma UI init: %s\n", ui_ok ? "ok" : "failed");
+    fflush(stdout);
 
     state.theme = aroma_theme_create_material_blue();
     state.theme.enable_shadows = false;
@@ -1382,6 +1399,8 @@ int main(int argc, char **argv)
     state.icon_font = aroma_font_create_from_memory(icon_ttf,         icon_ttf_len,         24);
 
     state.window = aroma_ui_create_window("Automotive HMI", WIN_W, WIN_H);
+    printf("Aroma window: %p\n", (void *)state.window);
+    fflush(stdout);
     aroma_event_set_root((AromaNode *)state.window);
     aroma_event_subscribe(((AromaNode *)state.window)->node_id,
                           EVENT_TYPE_KEY_PRESS, global_keyboard_event_handler, NULL, 0);
@@ -1424,7 +1443,7 @@ int main(int argc, char **argv)
     aroma_node_set_z_index(state.voice_button, Z_LAYER_STATUS_BAR);
 
     state.settings_icon = aroma_ui_iconbutton(
-        state.window, AROMA_ICON_SETTINGS,
+        (AromaNode *)state.window, AROMA_ICON_SETTINGS,
         WIN_W - 345, 22, 40, ICON_BUTTON_OUTLINED,
         settings_button_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.settings_icon, Z_LAYER_STATUS_BAR);
@@ -1467,8 +1486,10 @@ int main(int argc, char **argv)
 
     start_voice_control_thread();
 
+#ifndef __EMSCRIPTEN__
     pthread_t can_t;
     pthread_create(&can_t, NULL, can_thread, NULL);
+#endif
 
     aroma_node_set_hidden(state.time_label,     true);
     aroma_node_set_hidden(state.location_label, true);
@@ -1711,7 +1732,11 @@ int main(int argc, char **argv)
 
         aroma_ui_process_events();
         aroma_ui_render(state.window);
+    #ifdef __EMSCRIPTEN__
+        emscripten_sleep(16);
+    #else
         usleep(16000);
+    #endif
     }
 
     cleanup_log_capture();

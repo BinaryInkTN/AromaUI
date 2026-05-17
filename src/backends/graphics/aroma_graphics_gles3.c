@@ -5,6 +5,7 @@
 #include "aroma_abi.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_font.h"
+#include "aroma_native_utils.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <math.h>
@@ -765,12 +766,15 @@ unsigned int load_image(const char *image_path)
         return 0;
     }
 
-    LOG_INFO("Attempting to load image: %s", image_path);
+    char resolved_image_path[1024];
+    const char *load_path = aroma_resolve_asset_path(image_path, resolved_image_path, sizeof(resolved_image_path));
 
-    FILE *file = fopen(image_path, "rb");
+    LOG_INFO("Attempting to load image: %s", load_path);
+
+    FILE *file = fopen(load_path, "rb");
     if (!file)
     {
-        LOG_ERROR("Image file not found or inaccessible: %s", image_path);
+        LOG_ERROR("Image file not found or inaccessible: %s", load_path);
         return 0;
     }
     fclose(file);
@@ -785,7 +789,7 @@ unsigned int load_image(const char *image_path)
         return 0;
     }
 
-    LOG_INFO("Generated OpenGL texture ID: %u for %s", texture, image_path);
+    LOG_INFO("Generated OpenGL texture ID: %u for %s", texture, load_path);
 
     glBindTexture(GL_TEXTURE_2D, texture);
     if (glGetError() != GL_NO_ERROR)
@@ -803,7 +807,7 @@ unsigned int load_image(const char *image_path)
     int img_width = 0, img_height = 0, nrChannels = 0;
     int success = 0;
 
-    const char *ext = strrchr(image_path, '.');
+    const char *ext = strrchr(load_path, '.');
 
     GLenum glError = glGetError();
     if (glError != GL_NO_ERROR)
@@ -815,14 +819,14 @@ unsigned int load_image(const char *image_path)
 
     if (ext && (strcasecmp(ext, ".svg") == 0))
     {
-        LOG_INFO("Loading SVG file: %s", image_path);
+        LOG_INFO("Loading SVG file: %s", load_path);
         NSVGimage *image = NULL;
         NSVGrasterizer *rast = NULL;
 
-        image = nsvgParseFromFile(image_path, "px", 96.0f);
+        image = nsvgParseFromFile(load_path, "px", 96.0f);
         if (!image)
         {
-            LOG_ERROR("NanoSVG failed to parse SVG file: %s", image_path);
+            LOG_ERROR("NanoSVG failed to parse SVG file: %s", load_path);
             glDeleteTextures(1, &texture);
             return 0;
         }
@@ -830,7 +834,7 @@ unsigned int load_image(const char *image_path)
         rast = nsvgCreateRasterizer();
         if (!rast)
         {
-            LOG_ERROR("Failed to create NanoSVG rasterizer for: %s", image_path);
+            LOG_ERROR("Failed to create NanoSVG rasterizer for: %s", load_path);
             nsvgDelete(image);
             glDeleteTextures(1, &texture);
             return 0;
@@ -847,7 +851,7 @@ unsigned int load_image(const char *image_path)
         if (!data)
         {
             LOG_ERROR("Failed to allocate memory for SVG rasterization: %s (needed %zu bytes)",
-                      image_path, data_size);
+                      load_path, data_size);
             nsvgDeleteRasterizer(rast);
             nsvgDelete(image);
             glDeleteTextures(1, &texture);
@@ -860,22 +864,22 @@ unsigned int load_image(const char *image_path)
 
         nsvgDeleteRasterizer(rast);
         nsvgDelete(image);
-        LOG_INFO("Successfully rasterized SVG: %s", image_path);
+        LOG_INFO("Successfully rasterized SVG: %s", load_path);
     }
-    else if (is_stb_supported_image_format(image_path))
+    else if (is_stb_supported_image_format(load_path))
     {
-        LOG_INFO("Loading raster image: %s", image_path);
+        LOG_INFO("Loading raster image: %s", load_path);
         stbi_set_flip_vertically_on_load(1);
-        data = stbi_load(image_path, &img_width, &img_height, &nrChannels, 0);
+        data = stbi_load(load_path, &img_width, &img_height, &nrChannels, 0);
         if (data)
         {
             success = 1;
             LOG_INFO("STB loaded image: %s (%dx%d, %d channels)",
-                     image_path, img_width, img_height, nrChannels);
+                     load_path, img_width, img_height, nrChannels);
         }
         else
         {
-            LOG_ERROR("STB failed to load image: %s", image_path);
+            LOG_ERROR("STB failed to load image: %s", load_path);
             const char *reason = stbi_failure_reason();
             if (reason)
             {
@@ -885,14 +889,14 @@ unsigned int load_image(const char *image_path)
     }
     else
     {
-        LOG_ERROR("Unsupported image format: %s", image_path);
+        LOG_ERROR("Unsupported image format: %s", load_path);
         glDeleteTextures(1, &texture);
         return 0;
     }
 
     if (!success || !data)
     {
-        LOG_ERROR("Failed to load image data: %s", image_path);
+        LOG_ERROR("Failed to load image data: %s", load_path);
         glDeleteTextures(1, &texture);
 
         if (ext && strcasecmp(ext, ".svg") == 0)
@@ -908,7 +912,7 @@ unsigned int load_image(const char *image_path)
 
     if (img_width <= 0 || img_height <= 0)
     {
-        LOG_ERROR("Invalid image dimensions: %s (%dx%d)", image_path, img_width, img_height);
+        LOG_ERROR("Invalid image dimensions: %s (%dx%d)", load_path, img_width, img_height);
         glDeleteTextures(1, &texture);
 
         if (ext && strcasecmp(ext, ".svg") == 0)
@@ -938,7 +942,7 @@ unsigned int load_image(const char *image_path)
         format = GL_RGBA;
         break;
     default:
-        LOG_ERROR("Unsupported number of channels: %d for %s", nrChannels, image_path);
+        LOG_ERROR("Unsupported number of channels: %d for %s", nrChannels, load_path);
         glDeleteTextures(1, &texture);
         if (ext && strcasecmp(ext, ".svg") == 0)
         {
@@ -1001,7 +1005,7 @@ unsigned int load_image(const char *image_path)
     }
 
     LOG_INFO("Texture %u successfully created: %s (%dx%d)",
-             texture, image_path, img_width, img_height);
+             texture, load_path, img_width, img_height);
 
     return texture;
 }

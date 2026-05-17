@@ -1,4 +1,4 @@
-if(NOT ANDROID)
+if(NOT ANDROID AND NOT EMSCRIPTEN)
     # GLPS for Linux
     if(NOT TARGET GLPS)
         if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/CMakeLists.txt")
@@ -67,9 +67,7 @@ add_library(aroma
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
     backends/graphics/utils/aroma_gles3_text.c
-    backends/graphics/aroma_graphics_vulkan.c
-    backends/graphics/utils/helpers_vulkan.c
-    backends/graphics/utils/aroma_vulkan_text.c
+    
     backends/aroma_abi.c
 
     widgets/aroma_window.c
@@ -99,7 +97,7 @@ add_library(aroma
     widgets/aroma_image.c
     widgets/aroma_icon.c
     widgets/aroma_canvas.c
-    widgets/aroma_map.c
+    
     widgets/aroma_gif.c
     widgets/aroma_loading.c
     widgets/aroma_table.c
@@ -118,6 +116,15 @@ target_include_directories(aroma
 
 find_package(Vulkan QUIET)
 
+# Add Vulkan backend only when Vulkan is available and not targeting Emscripten
+if(Vulkan_FOUND AND NOT EMSCRIPTEN)
+    target_sources(aroma PRIVATE
+        backends/graphics/aroma_graphics_vulkan.c
+        backends/graphics/utils/helpers_vulkan.c
+        backends/graphics/utils/aroma_vulkan_text.c
+    )
+endif()
+
 # On Android, Vulkan is a system library that may not be found by find_package.
 # The NDK provides headers and the device provides libvulkan.so.
 if(ANDROID AND NOT Vulkan_FOUND)
@@ -133,7 +140,7 @@ target_link_libraries(aroma
     PRIVATE freetype 
     PRIVATE m
 )
-if (UNIX AND NOT ANDROID)
+if (UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE curl pthread)
 endif()
 
@@ -147,10 +154,22 @@ if(Vulkan_FOUND)
     target_compile_definitions(aroma PRIVATE AROMA_HAS_VULKAN=1)
 endif()
 
+# Exclude network/map widget on Emscripten by default (no libcurl port)
+if(NOT EMSCRIPTEN)
+    target_sources(aroma PRIVATE widgets/aroma_map.c)
+endif()
+
 if(ANDROID)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_android.c)
     target_link_libraries(aroma PRIVATE android EGL log GLESv3 freetype)
     target_include_directories(aroma PRIVATE ${ANDROID_NDK}/sources/android/native_app_glue)
+elseif(EMSCRIPTEN)
+    target_sources(aroma PRIVATE backends/platforms/aroma_platform_emscripten.c)
+    target_compile_definitions(aroma PUBLIC AROMA_USE_EMSCRIPTEN)
+    target_link_libraries(aroma PRIVATE freetype)
+    # Add stubs for features not available or built on Emscripten
+    target_sources(aroma PRIVATE backends/graphics/aroma_graphics_emscripten_stub.c)
+    target_sources(aroma PRIVATE ../src/widgets/aroma_map_stub.c)
 elseif(ENABLE_GLFW)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_glfw.c)
     if(TARGET glfw)

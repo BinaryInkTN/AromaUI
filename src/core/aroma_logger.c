@@ -8,7 +8,7 @@
 #ifdef ESP32
 #include <Arduino.h>
 #endif 
-#if !defined(_WIN32) && !defined(ESP32)
+#if !defined(_WIN32) && !defined(ESP32) && !defined(__EMSCRIPTEN__)
 #include <execinfo.h>
 #endif
 #include <unistd.h>

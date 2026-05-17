@@ -479,6 +479,10 @@ extern AromaPlatformInterface aroma_platform_android;
 
 extern AromaPlatformInterface aroma_platform_glfw;
 
+#ifdef __EMSCRIPTEN__
+extern AromaPlatformInterface aroma_platform_emscripten;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

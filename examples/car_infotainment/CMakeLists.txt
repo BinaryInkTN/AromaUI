@@ -26,7 +26,11 @@ add_executable(infotainment
     cJSON.c
 )
 
-find_package(Vulkan REQUIRED)
+if(NOT EMSCRIPTEN)
+    find_package(Vulkan REQUIRED)
+else()
+    message(STATUS "Building for Emscripten — skipping Vulkan requirement")
+endif()
 
 if(ENABLE_VOICE_CONTROL)
     find_library(VOSK_LIB vosk HINTS ${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib)
@@ -45,7 +49,30 @@ else()
     message(STATUS "Voice control: DISABLED")
 endif()
 
-if(ENABLE_GLFW)
+if(EMSCRIPTEN)
+    if(NOT TARGET aroma)
+        add_subdirectory(${AROMA_ROOT}/src aroma_sdk)
+    endif()
+
+    target_link_libraries(infotainment PRIVATE
+        aroma
+        freetype
+        m
+    )
+    target_link_options(infotainment PRIVATE
+        "-sMIN_WEBGL_VERSION=1"
+        "-sMAX_WEBGL_VERSION=1"
+        "-sFULL_ES3=1"
+        "-sASYNCIFY=1"
+        "-sEXPORTED_FUNCTIONS=['_main','_aroma_event_handle_touch','_aroma_event_handle_pointer_move','_aroma_emscripten_dispatch_mouse','_aroma_test_get_last_mouse_event_type','_aroma_test_get_last_mouse_event_x','_aroma_test_get_last_mouse_event_y','_aroma_test_get_last_mouse_event_target']"
+        "-sEXPORTED_RUNTIME_METHODS=['callMain','ccall','cwrap']"
+    )
+    # Preload the example assets (fonts/images) into the WASM virtual FS at /assets
+    target_link_options(infotainment PRIVATE
+        "--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
+    )
+    message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
+elseif(ENABLE_GLFW)
     target_compile_definitions(infotainment PRIVATE AROMA_USE_GLFW)
     
     # We no longer hard-require find_package(glfw3) here since libaroma 

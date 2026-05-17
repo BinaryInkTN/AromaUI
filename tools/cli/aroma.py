@@ -628,6 +628,7 @@ class BuildSystem:
     def __init__(self, project_dir: str):
         self.project_dir = project_dir
         self.android_dir = os.path.join(project_dir, "android")
+        self.web_build_dir = os.path.join(project_dir, "build-web")
 
     def build_linux(self) -> bool:
         build_dir = os.path.join(self.project_dir, "build")
@@ -672,6 +673,29 @@ class BuildSystem:
                     return False
 
         return self._run_gradle_build(release, aab)
+
+    def build_web(self) -> bool:
+        print_step("Configuring web build")
+
+        if not shutil.which("emcmake") or not shutil.which("emmake"):
+            print_error("Emscripten tools not found. Source emsdk_env.sh first.")
+            return False
+
+        os.makedirs(self.web_build_dir, exist_ok=True)
+
+        configure = run_command(["emcmake", "cmake", ".."], cwd=self.web_build_dir)
+        if configure is None or configure.returncode != 0:
+            print_error("Web CMake configuration failed")
+            return False
+
+        build = run_command(["emmake", "make", "-j4"], cwd=self.web_build_dir)
+        if build is None or build.returncode != 0:
+            print_error("Web build failed")
+            return False
+
+        self._write_web_index()
+        print_success("Web build successful!")
+        return True
 
     def _ensure_sdk(self, sdk: AndroidSDK) -> bool:
         sdk_path = sdk.find_existing()
@@ -760,6 +784,89 @@ class BuildSystem:
                 return
 
         print_error("Build finished but output file not found.")
+    def _find_web_bundle_js(self) -> Optional[str]:
+        if not os.path.exists(self.web_build_dir):
+            return None
+
+        candidates: List[str] = []
+        for root, _, files in os.walk(self.web_build_dir):
+            for file_name in files:
+                if not file_name.endswith(".js"):
+                    continue
+                if file_name.endswith(".worker.js") or file_name.endswith(".wasm.js"):
+                    continue
+                candidates.append(os.path.join(root, file_name))
+
+        if not candidates:
+            return None
+
+        project_name = os.path.basename(self.project_dir)
+        for candidate in candidates:
+            if os.path.splitext(os.path.basename(candidate))[0] == project_name:
+                return candidate
+
+        return sorted(candidates)[0]
+
+    def _write_web_index(self) -> Optional[str]:
+        js_path = self._find_web_bundle_js()
+        if not js_path:
+            print_error("Web build finished but no JS bundle was found.")
+            return None
+
+        js_name = os.path.basename(js_path)
+        index_path = os.path.join(self.web_build_dir, "index.html")
+        cache_bust = str(int(time.time()))
+        html = f"""<!doctype html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>{os.path.basename(self.project_dir)}</title>
+  <style>
+    html, body {{ height: 100%; margin: 0; background: #111318; color: #f2f4f8; font-family: sans-serif; }}
+    canvas {{ width: 100vw; height: 100vh; display: block; background: #111318; }}
+  </style>
+</head>
+<body>
+  <canvas id=\"canvas\"></canvas>
+  <script>
+    window.appLogs = [];
+    window.onerror = function (message, source, lineno, colno, error) {{
+      console.error(message, source, lineno, colno, error);
+    }};
+
+    var Module = {{
+      canvas: document.getElementById('canvas'),
+      print: (...args) => window.appLogs.push(args.join(' ')),
+      printErr: (...args) => window.appLogs.push(args.join(' ')),
+      onRuntimeInitialized: function () {{
+        var canvas = Module.canvas;
+        function toCanvasCoords(event) {{
+          var rect = canvas.getBoundingClientRect();
+          var scaleX = canvas.width / rect.width;
+          var scaleY = canvas.height / rect.height;
+          return {{ x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY }};
+        }}
+        function sendMouse(action, event) {{
+          if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+          var p = toCanvasCoords(event);
+          Module._aroma_emscripten_dispatch_mouse(action, p.x | 0, p.y | 0, 0);
+        }}
+        window.addEventListener('mousemove', function (event) {{ sendMouse(0, event); }}, {{ passive: true }});
+        window.addEventListener('mousedown', function (event) {{ sendMouse(1, event); event.preventDefault(); }}, {{ passive: false }});
+        window.addEventListener('mouseup', function (event) {{ sendMouse(2, event); event.preventDefault(); }}, {{ passive: false }});
+      }}
+    }};
+  </script>
+  <script src=\"{js_name}?v={cache_bust}\"></script>
+</body>
+</html>
+"""
+
+        with open(index_path, "w") as f:
+            f.write(html)
+
+        return index_path
 
 
 def cmd_doctor(args):
@@ -839,6 +946,8 @@ def cmd_build(args):
         build_system.build_linux()
     elif args.platform == "android":
         build_system.build_android(args.release, args.aab)
+    elif args.platform == "web":
+        build_system.build_web()
 
 
 def cmd_run(args):
@@ -854,6 +963,9 @@ def cmd_run(args):
     elif args.platform == "android":
         if not build_system.build_android(False, False):
             return
+    elif args.platform == "web":
+        if not build_system.build_web():
+            return
 
     cwd = os.getcwd()
 
@@ -861,6 +973,8 @@ def cmd_run(args):
         _run_linux(cwd)
     elif args.platform == "android":
         _run_android(cwd, args.emu)
+    elif args.platform == "web":
+        _run_web(build_system.web_build_dir, args.port)
 
 
 def _run_linux(cwd: str) -> None:
@@ -898,7 +1012,6 @@ def _run_android(cwd: str, use_emu: bool) -> None:
         or "device" not in result.stdout.replace("List of devices attached", "").strip()
     ):
         print_error("No Android devices connected.")
-        return
 
     apk_path = os.path.join(cwd, "android/app/build/outputs/apk/debug/app-debug.apk")
     if not os.path.exists(apk_path):
@@ -927,6 +1040,15 @@ def _run_android(cwd: str, use_emu: bool) -> None:
             "-n",
             f"{package_name}/android.app.NativeActivity",
         ]
+    )
+
+
+def _run_web(build_dir: str, port: int) -> None:
+    print_step(f"Serving web build at http://localhost:{port}/")
+    print_info("Press Ctrl+C to stop the server.")
+    subprocess.run(
+        ["python3", "-m", "http.server", str(port), "--directory", build_dir],
+        check=False,
     )
 
 
@@ -1118,11 +1240,13 @@ Examples:
   aroma create myapp
   aroma build linux
   aroma build android
+    aroma build web
   aroma build android --release
   aroma build android --release --aab
   aroma sign
   aroma run linux
   aroma run android
+    aroma run web
   aroma run android --emu
         """,
     )
@@ -1137,17 +1261,18 @@ Examples:
 
     build_p = subparsers.add_parser("build", help="Build the project")
     build_p.add_argument(
-        "platform", choices=["linux", "android"], default="linux", nargs="?"
+        "platform", choices=["linux", "android", "web"], default="linux", nargs="?"
     )
     build_p.add_argument("--release", action="store_true", help="Build release version")
     build_p.add_argument("--aab", action="store_true", help="Build Android App Bundle")
 
     run_p = subparsers.add_parser("run", help="Run the project")
     run_p.add_argument(
-        "platform", choices=["linux", "android"], default="linux", nargs="?"
+        "platform", choices=["linux", "android", "web"], default="linux", nargs="?"
     )
     run_p.add_argument("--emu", action="store_true", help="Run in emulator")
     run_p.add_argument("--release", action="store_true", help=argparse.SUPPRESS)
+    run_p.add_argument("--port", type=int, default=8000, help="Web server port")
 
     sign_p = subparsers.add_parser("sign", help="Setup release signing keystore")
 

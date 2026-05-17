@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Infotainment (AromaUI wasm)</title>
+  <style>html,body{height:100%;margin:0}canvas{display:block;width:100%;height:100%}</style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error(message, source, lineno, colno, error);
+    };
+    window.appLogs = [];
+    var Module = {
+      canvas: document.getElementById('canvas'),
+      print: (...args) => window.appLogs.push(args.join(' ')),
+      printErr: (...args) => window.appLogs.push(args.join(' ')),
+    };
+
+    function setupMouseBridge() {
+      var canvas = Module.canvas;
+      var down = false;
+
+      function toCanvasCoords(event) {
+        var rect = canvas.getBoundingClientRect();
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        return {
+          x: (event.clientX - rect.left) * scaleX,
+          y: (event.clientY - rect.top) * scaleY
+        };
+      }
+
+      function sendPointer(event, state) {
+        if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+        var p = toCanvasCoords(event);
+        Module._aroma_emscripten_dispatch_mouse(state === 1 ? 1 : 2, p.x | 0, p.y | 0, 0);
+      }
+
+      function sendMove(event) {
+        if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+        var p = toCanvasCoords(event);
+        Module._aroma_emscripten_dispatch_mouse(0, p.x | 0, p.y | 0, 0);
+      }
+
+      window.addEventListener('mousemove', sendMove, { passive: true });
+      window.addEventListener('mousedown', function (event) {
+        down = true;
+        sendMove(event);
+        sendPointer(event, 1);
+        event.preventDefault();
+      }, { passive: false });
+      window.addEventListener('mouseup', function (event) {
+        sendPointer(event, 0);
+        down = false;
+        sendMove(event);
+        event.preventDefault();
+      }, { passive: false });
+      canvas.addEventListener('mouseleave', function (event) {
+        if (down) {
+          sendPointer(event, 0);
+          down = false;
+        }
+      }, { passive: true });
+      window.addEventListener('wheel', function (event) {
+        event.preventDefault();
+      }, { passive: false });
+    }
+
+    // Preload example assets into Emscripten FS so C code can fopen() them.
+    (function() {
+      var assetFiles = [
+        "Ubuntu-Bold.ttf","Ubuntu-Light.ttf","abs_indicator.png","air-conditioner.png",
+        "album_cover.jpg","aromaos_logo.png","backroad_blur.png","backroad_dark.png",
+        "battery.png","battery_indicator.png","both.png","brake_indicator.png",
+        "car.png","car_battery.png","charging.png","high_beams.png","low_beams.png",
+        "maps_example.jpg","sample.wav","seatbelt.png","splash.gif","temperature.png",
+        "test.png","under.png"
+      ];
+
+      Module.preRun = Module.preRun || [];
+      Module.preRun.push(function() {
+        if (!Module['FS_createDataFile']) return; // FS not available?
+        try { Module.FS_createPath('/', 'assets', true, true); } catch(e) {}
+        var pending = 0;
+        assetFiles.forEach(function(name) {
+          pending++;
+          var dep = 'preload_' + name;
+          Module.addRunDependency(dep);
+          fetch('assets/' + name).then(function(resp) {
+            if (!resp.ok) { console.warn('Failed to fetch asset', name); Module.removeRunDependency(dep); return; }
+            return resp.arrayBuffer();
+          }).then(function(buf) {
+            if (!buf) { return; }
+            var data = new Uint8Array(buf);
+            try {
+              Module.FS_createDataFile('/assets', name, data, true, true, true);
+            } catch (e) {
+              try { Module.FS_unlink('/assets/' + name); } catch(e2){}
+              Module.FS_createDataFile('/assets', name, data, true, true, true);
+            }
+          }).catch(function(err){ console.warn('Error loading asset', name, err); }).finally(function(){ Module.removeRunDependency(dep); pending--; });
+        });
+      });
+    })();
+
+    Module.onRuntimeInitialized = function () {
+      setupMouseBridge();
+    };
+  </script>
+  <script src="infotainment.js?v=20260517d"></script>
+</body>
+</html>

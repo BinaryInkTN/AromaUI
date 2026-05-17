@@ -17,3 +17,22 @@ add_executable({{PROJECT_NAME}} src/main.c)
 
 target_include_directories({{PROJECT_NAME}} PRIVATE ${AROMA_DIR}/include)
 target_link_libraries({{PROJECT_NAME}} PRIVATE aroma)
+
+if(EMSCRIPTEN)
+    target_link_libraries({{PROJECT_NAME}} PRIVATE freetype m)
+    target_link_options({{PROJECT_NAME}} PRIVATE
+        "-sMIN_WEBGL_VERSION=1"
+        "-sMAX_WEBGL_VERSION=1"
+        "-sFULL_ES3=1"
+        "-sASYNCIFY=1"
+        "-sEXPORTED_RUNTIME_METHODS=['callMain','ccall','cwrap']"
+    )
+
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+        target_link_options({{PROJECT_NAME}} PRIVATE
+            "--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
+        )
+    endif()
+
+    message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
+endif()

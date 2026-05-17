@@ -1,5 +1,9 @@
 #include <aroma.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 int main()
 {
@@ -13,7 +17,7 @@ int main()
         aroma_ubuntu_ttf,
         aroma_ubuntu_ttf_len,
         16);
-    AromaNode *history_table = aroma_ui_table(window, 0, 0, 480, 320, 3, NULL, NULL);
+    AromaNode *history_table = aroma_ui_table((AromaNode*)window, 0, 0, 480, 320, 3, NULL, NULL);
     if (history_table) {
         aroma_node_set_flex_grow(history_table->parent_node, 1.0f); // Grow the scroll container
 

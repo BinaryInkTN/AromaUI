@@ -1,5 +1,6 @@
 #include "core/aroma_font.h"
 #include "core/aroma_logger.h"
+#include "aroma_native_utils.h"
 
 #ifdef ESP32
 #include <stdlib.h>
@@ -149,7 +150,10 @@ AromaFont* aroma_font_create(const char* font_path, int size_px) {
     AromaFont* font = malloc(sizeof(AromaFont));
     if (!font) return NULL;
 
-    FT_Error error = FT_New_Face(ft_library, font_path, 0, &font->face);
+    char resolved_font_path[1024];
+    const char* load_path = aroma_resolve_asset_path(font_path, resolved_font_path, sizeof(resolved_font_path));
+
+    FT_Error error = FT_New_Face(ft_library, load_path, 0, &font->face);
     if (error) {
         free(font);
         return NULL;
