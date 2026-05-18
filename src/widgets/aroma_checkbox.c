@@ -11,7 +11,7 @@
 
 #define AROMA_CHECKBOX_LABEL_MAX 64
 
-typedef struct AromaCheckbox {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaCheckbox {
     AromaRect rect;
     bool checked;
     bool is_hovered;

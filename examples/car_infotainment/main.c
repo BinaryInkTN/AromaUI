@@ -34,7 +34,7 @@ static inline void aroma_voice_speak(const char *s)  { (void)s; }
 
 #define CAN_INTERFACE "vcan0"
 
-typedef struct {
+typedef struct __attribute__((packed, aligned(1))) {
     double   speed;
     int      rpm;
     int      gear;
@@ -197,6 +197,7 @@ static void app_log(const char *fmt, ...)
 #define Z_LAYER_MAP_CONTROLS     21
 #define Z_LAYER_MAP_CLOSE        22
 #define Z_LAYER_STATUS_BAR       100
+#define Z_LAYER_STATUS_ICONS     101
 #define Z_LAYER_SETTINGS_PANEL   150
 #define Z_LAYER_VOICE_CARD       999998
 #define Z_LAYER_VOICE_CONTENT    999999
@@ -650,7 +651,7 @@ void close_settings_panel(void *user_data)
 
 static void battery_diagnostics(void *user_data)
 {
-    aroma_image_set_source(state.overlay, "../assets/car_battery.png");
+    aroma_image_set_source(state.overlay, "/assets/car_battery.png");
     AromaAnimation *anim = aroma_animation_start(
         state.overlay, AROMA_ANIM_SLIDE_Y, 900, 250, 400);
     aroma_animation_set_easing(anim, AROMA_EASE_OUT_ELASTIC);
@@ -697,7 +698,7 @@ static void navigate_map(int index, void *user_data)
     if (!map) return;
     aroma_map_clear_route(map);
 
-    typedef struct {
+    typedef struct __attribute__((packed, aligned(1))) {
         double lat, lon;
         const char *start_label, *end_label;
         double end_lat, end_lon;
@@ -918,6 +919,8 @@ void build_settings_ui(AromaNode *window)
         aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18);
     state.log_font = aroma_font_create_from_memory(
         aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 14);
+    if (!state.settings_font) { printf("FONT ERROR: settings_font NULL\n"); fflush(stdout); }
+    else { printf("FONT OK: settings_font=%p log_font=%p\n", (void*)state.settings_font, (void*)state.log_font); fflush(stdout); }
 
     state.settings_root = aroma_container_create(
         state.settings_panel_node, 10, 10, area_w, area_h);
@@ -1082,11 +1085,11 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
 
     AromaNode *backroad = aroma_ui_image(
-        state.vehicle_view_root, "../assets/backroad_blur.png", 0, 0, WIN_W, WIN_H);
+        state.vehicle_view_root, "/assets/backroad_blur.png", 0, 0, WIN_W, WIN_H);
     aroma_node_set_z_index(backroad, Z_LAYER_BACKGROUND);
 
     AromaNode *car_img = aroma_ui_image(
-        state.vehicle_view_root, "../assets/car.png", 250, 250, 700, 405);
+        state.vehicle_view_root, "/assets/car.png", 250, 250, 700, 405);
     aroma_node_set_z_index(car_img, Z_LAYER_VEHICLE_IMAGE);
 
     state.overlay = aroma_ui_image(state.vehicle_view_root, NULL, 250, 250, 700, 405);
@@ -1098,8 +1101,10 @@ void build_vehicle_view(AromaNode *window)
         battery_diagnostics, NULL, state.icon_font);
     aroma_node_set_z_index(state.battery_button, Z_LAYER_VEHICLE_OVERLAYS);
 
-    state.clock_font       = aroma_font_create("../assets/Ubuntu-Light.ttf", 68);
-    state.clock_pm_am_font = aroma_font_create("../assets/Ubuntu-Light.ttf", 24);
+    state.clock_font       = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 68);
+    state.clock_pm_am_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24);
+    if (!state.clock_font) { LOG_ERROR("FONT ERROR: clock_font NULL"); }
+    else { LOG_INFO("FONT OK: clock_font=%p pm_am=%p", (void*)state.clock_font, (void*)state.clock_pm_am_font); }
 
     state.vehicle_view_large_clock = aroma_ui_label(
         state.vehicle_view_root, "12:45",
@@ -1116,7 +1121,6 @@ void build_vehicle_view(AromaNode *window)
         WIN_W / 2 - 100, 130, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(location_temp_label, Z_LAYER_VEHICLE_OVERLAYS);
 
-   
     state.gear_bg_card = aroma_ui_card(
         state.vehicle_view_root, 25, 18, 225, 50, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.gear_bg_card, Z_LAYER_VEHICLE_OVERLAYS);
@@ -1213,7 +1217,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
 
     state.battery_image = aroma_ui_image(
-        state.vehicle_view_root, "../assets/charging.png",
+        state.vehicle_view_root, "/assets/charging.png",
         WIN_W / 2 - 180, 200, 128, 128);
     state.battery_health = aroma_ui_label(
         state.vehicle_view_root, "Battery Health: Good",
@@ -1235,10 +1239,10 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
     aroma_node_set_gap(icons_col, 20);
 
-    AromaNode *high_beams = aroma_ui_image(icons_col, "../assets/high_beams.png",      0, 0, 28, 28);
-    AromaNode *low_beams  = aroma_ui_image(icons_col, "../assets/low_beams.png",       0, 0, 28, 28);
-    AromaNode *abs_icon   = aroma_ui_image(icons_col, "../assets/abs_indicator.png",   0, 0, 28, 28);
-    AromaNode *brake_icon = aroma_ui_image(icons_col, "../assets/brake_indicator.png", 0, 0, 28, 28);
+    AromaNode *high_beams = aroma_ui_image(icons_col, "/assets/high_beams.png",      0, 0, 28, 28);
+    AromaNode *low_beams  = aroma_ui_image(icons_col, "/assets/low_beams.png",       0, 0, 28, 28);
+    AromaNode *abs_icon   = aroma_ui_image(icons_col, "/assets/abs_indicator.png",   0, 0, 28, 28);
+    AromaNode *brake_icon = aroma_ui_image(icons_col, "/assets/brake_indicator.png", 0, 0, 28, 28);
     aroma_node_set_z_index(high_beams, Z_LAYER_VEHICLE_OVERLAYS);
     aroma_node_set_z_index(low_beams,  Z_LAYER_VEHICLE_OVERLAYS);
     aroma_node_set_z_index(abs_icon,   Z_LAYER_VEHICLE_OVERLAYS);
@@ -1377,8 +1381,6 @@ void build_vehicle_view(AromaNode *window)
 
 int main(int argc, char **argv)
 {
-   // init_log_capture();
-
     aroma_animation_manager_init();
 
     char build_info[256];
@@ -1397,6 +1399,8 @@ int main(int argc, char **argv)
 
     state.ui_font   = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24);
     state.icon_font = aroma_font_create_from_memory(icon_ttf,         icon_ttf_len,         24);
+    if (!state.ui_font || !state.icon_font) { printf("FONT ERROR: ui_font=%p icon_font=%p\n", (void*)state.ui_font, (void*)state.icon_font); fflush(stdout); }
+    else { printf("FONT OK: ui_font=%p icon_font=%p\n", (void*)state.ui_font, (void*)state.icon_font); fflush(stdout); }
 
     state.window = aroma_ui_create_window("Automotive HMI", WIN_W, WIN_H);
     printf("Aroma window: %p\n", (void *)state.window);
@@ -1410,7 +1414,6 @@ int main(int argc, char **argv)
         (AromaNode *)state.window, "12:45 PM", 50, 30,
         LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(state.time_label, Z_LAYER_STATUS_BAR);
-
     state.location_label = aroma_ui_label(
         (AromaNode *)state.window, "San Francisco, 68°F", 150, 30,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
@@ -1434,19 +1437,19 @@ int main(int argc, char **argv)
         state.gps_icon,    state.bluetooth_icon
     };
     for (int i = 0; i < 5; i++)
-        aroma_node_set_z_index(status_icons[i], Z_LAYER_STATUS_BAR);
+        aroma_node_set_z_index(status_icons[i], Z_LAYER_STATUS_ICONS);
 
     state.voice_button = aroma_ui_iconbutton(
         (AromaNode *)state.window, AROMA_ICON_MIC,
         WIN_W - 290, 22, 40, ICON_BUTTON_FILLED,
         voice_button_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(state.voice_button, Z_LAYER_STATUS_BAR);
+    aroma_node_set_z_index(state.voice_button, Z_LAYER_STATUS_ICONS);
 
     state.settings_icon = aroma_ui_iconbutton(
         (AromaNode *)state.window, AROMA_ICON_SETTINGS,
         WIN_W - 345, 22, 40, ICON_BUTTON_OUTLINED,
         settings_button_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(state.settings_icon, Z_LAYER_STATUS_BAR);
+    aroma_node_set_z_index(state.settings_icon, Z_LAYER_STATUS_ICONS);
 
     AromaNode *status_nodes[] = {
         state.time_label,    state.status_card,    state.location_label,
@@ -1633,7 +1636,7 @@ int main(int argc, char **argv)
             snprintf(spd_str, sizeof(spd_str), "%.0f", spd);
             aroma_label_set_text(state.speed_label, spd_str);
         }
-       
+
         if (state.gear_fg_card) {
             static int last_gear_idx = -1;
             if (gear_idx >= 0 && gear_idx <= 3 && gear_idx != last_gear_idx) {
@@ -1739,8 +1742,6 @@ int main(int argc, char **argv)
     #endif
     }
 
-    cleanup_log_capture();
-
     aroma_ui_destroy_window(state.window);
     aroma_ui_unload_font(state.ui_font);
     aroma_ui_unload_font(state.icon_font);
@@ -1748,7 +1749,6 @@ int main(int argc, char **argv)
     aroma_ui_unload_font(state.clock_font);
     aroma_ui_unload_font(state.clock_pm_am_font);
     aroma_ui_unload_font(state.settings_font);
-    aroma_ui_unload_font(state.log_font);
     aroma_ui_shutdown();
     return 0;
 }

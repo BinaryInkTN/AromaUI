@@ -1,23 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 #ifndef ESP32
 #include "aroma_gles3_text.h"
 #include "helpers_gles3.h"
@@ -50,12 +30,75 @@ int gles3_text_renderer_init(GLES3TextRenderer* renderer) {
     return 1;
 }
 
+static GLuint __upload_glyph_bitmap(const FT_GlyphSlot g) {
+    if (!g) {
+        LOG_ERROR("__upload_glyph_bitmap: null glyph slot");
+        return 0;
+    }
+
+    if (g->bitmap.width <= 0 || g->bitmap.rows <= 0 || !g->bitmap.buffer) {
+        LOG_WARNING("__upload_glyph_bitmap: empty glyph bitmap width=%d rows=%d buffer=%p",
+                    (int)g->bitmap.width, (int)g->bitmap.rows, (void*)g->bitmap.buffer);
+        return 0;
+    }
+
+    const int width    = (int)g->bitmap.width;
+    const int rows     = (int)g->bitmap.rows;
+    const int pitch    = (int)g->bitmap.pitch;
+    const int abs_pitch = pitch < 0 ? -pitch : pitch;
+
+    if (abs_pitch < width) {
+        return 0;
+    }
+
+    size_t packed_size = (size_t)width * (size_t)rows;
+    unsigned char* packed = (unsigned char*)malloc(packed_size);
+    if (!packed) {
+        LOG_ERROR("__upload_glyph_bitmap: allocation failed for size=%zu", packed_size);
+        return 0;
+    }
+
+    const unsigned char* src = (const unsigned char*)g->bitmap.buffer;
+    if (pitch < 0) {
+        src += (size_t)(rows - 1) * (size_t)abs_pitch;
+    }
+
+    for (int y = 0; y < rows; y++) {
+        const unsigned char* row_src = pitch >= 0
+            ? (src + (size_t)y * (size_t)abs_pitch)
+            : (src - (size_t)y * (size_t)abs_pitch);
+        memcpy(packed + (size_t)y * (size_t)width, row_src, (size_t)width);
+    }
+
+    GLuint texture = 0;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+#if defined(__EMSCRIPTEN__)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, rows, 0,
+                 GL_LUMINANCE, GL_UNSIGNED_BYTE, packed);
+#else
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, rows, 0,
+                 GL_RED, GL_UNSIGNED_BYTE, packed);
+#endif
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    free(packed);
+    return texture;
+}
+
 void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
     if (!renderer || !face) {
         return;
     }
 
-    renderer->face = face; 
+    renderer->face = face;
     renderer->font_height = face->size->metrics.height >> 6;
     renderer->glyph_count = 0;
 
@@ -78,20 +121,7 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
             .advance = (int)(g->advance.x >> 6)
         };
 
-        if (g->bitmap.width > 0 && g->bitmap.rows > 0 && g->bitmap.buffer) {
-            GLuint texture;
-            glGenTextures(1, &texture);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, g->bitmap.width, g->bitmap.rows, 0,
-                         GL_ALPHA, GL_UNSIGNED_BYTE, g->bitmap.buffer);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glyph.texture_id = texture;
-        }
+        glyph.texture_id = __upload_glyph_bitmap(g);
 
         renderer->glyphs[renderer->glyph_count++] = glyph;
     }
@@ -128,20 +158,7 @@ static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) 
         .advance = (int)(g->advance.x >> 6)
     };
 
-    if (g->bitmap.width > 0 && g->bitmap.rows > 0 && g->bitmap.buffer) {
-        GLuint texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, g->bitmap.width, g->bitmap.rows, 0,
-                 GL_ALPHA, GL_UNSIGNED_BYTE, g->bitmap.buffer);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glyph.texture_id = texture;
-    }
+    glyph.texture_id = __upload_glyph_bitmap(g);
 
     renderer->glyphs[renderer->glyph_count] = glyph;
     return &renderer->glyphs[renderer->glyph_count++];
@@ -157,13 +174,12 @@ static uint32_t __utf8_next(const char** p) {
     else if ((c & 0xE0) == 0xC0) len = 2;
     else if ((c & 0xF0) == 0xE0) len = 3;
     else if ((c & 0xF8) == 0xF0) len = 4;
-    else { *p += 1; return 0xFFFD; } 
+    else { *p += 1; return 0xFFFD; }
 
     if (len == 1) {
         *p += 1;
         return c;
     }
-    
 
     for (int i = 1; i < len; i++) {
         if (s[i] == 0 || (s[i] & 0xC0) != 0x80) {
@@ -226,7 +242,7 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
 
     float current_x = x;
     int glyphs_rendered = 0;
-    
+
     const char* p = text;
     while (*p != '\0') {
         uint32_t codepoint = __utf8_next(&p);
@@ -247,7 +263,6 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
 
         float x_pos = current_x + g->bearing_x * scale;
         float y_pos = y + (renderer->font_height - g->bearing_y) * scale;
-
 
         float w = (float)g->width * scale;
         float h = (float)g->height * scale;
@@ -271,15 +286,10 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
     }
 
     glBindVertexArray(0);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     (void)glyphs_rendered;
 }
-
-// Helper declaration
-static uint32_t __utf8_next(const char** p);
-static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint);
 
 float gles3_text_measure_text(const GLES3TextRenderer* renderer, const char* text, float scale) {
     if (!renderer || !text || scale <= 0.0f) {
@@ -293,7 +303,7 @@ float gles3_text_measure_text(const GLES3TextRenderer* renderer, const char* tex
     while (*p != '\0') {
         uint32_t codepoint = __utf8_next(&p);
         if (codepoint == 0) break;
-        
+
         GLES3Glyph* g = __get_glyph(mutable_renderer, codepoint);
         if (g) {
             width += (float)g->advance * scale;

@@ -11,7 +11,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaWindow AromaWindow;
+typedef struct  AromaWindow AromaWindow;
 
 #define AROMA_BUTTON_LABEL_MAX 64
 
@@ -21,8 +21,10 @@ typedef enum AromaButtonState {
     BUTTON_STATE_PRESSED,
     BUTTON_STATE_RELEASED
 } AromaButtonState;
-typedef struct AromaButton {
+typedef struct  AromaButton {
     AromaRect rect;
+    AromaFont* font;
+
     char label[AROMA_BUTTON_LABEL_MAX];
     AromaButtonState state;
 
@@ -43,7 +45,6 @@ typedef struct AromaButton {
     bool (*on_hover)(AromaNode*, void*);
     void* user_data;
 
-    AromaFont* font;
     
     // Icon support
     char icon[8];

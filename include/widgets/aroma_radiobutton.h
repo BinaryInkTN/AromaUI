@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 // Material Design 3 Radio Button
-typedef struct AromaRadioButton AromaRadioButton;
+typedef struct  AromaRadioButton AromaRadioButton;
 
 // Create radio button
 AromaNode* aroma_radiobutton_create(AromaNode* parent, const char* label, int x, int y, int width, int height, int group_id);

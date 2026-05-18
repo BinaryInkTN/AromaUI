@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-typedef struct AromaWindow AromaWindow;
+typedef struct  AromaWindow AromaWindow;
 typedef enum {
     AROMA_CANVAS_DRAW_MODE_IDLE,
     AROMA_CANVAS_DRAW_MODE_RECT,
@@ -24,7 +24,7 @@ typedef enum {
     AROMA_CANVAS_DRAW_MODE_CLEAR
 } CanvasDrawMode;
 
-typedef struct {
+typedef struct  {
     int x;
     int y;
     int width;

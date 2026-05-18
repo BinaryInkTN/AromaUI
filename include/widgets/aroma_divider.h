@@ -12,7 +12,7 @@ typedef enum {
     DIVIDER_ORIENTATION_VERTICAL
 } AromaDividerOrientation;
 
-typedef struct AromaDivider AromaDivider;
+typedef struct  AromaDivider AromaDivider;
 
 // Create divider
 AromaNode* aroma_divider_create(AromaNode* parent, int x, int y, int length, AromaDividerOrientation orientation);

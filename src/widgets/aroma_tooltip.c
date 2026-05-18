@@ -30,7 +30,7 @@
 
 #define AROMA_TOOLTIP_TEXT_MAX 128
 
-typedef struct AromaTooltip {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaTooltip {
     AromaRect rect;
     char text[AROMA_TOOLTIP_TEXT_MAX];
     AromaTooltipPosition position;
@@ -56,6 +56,7 @@ AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int 
     tip->position = position;
     tip->visible = false;
     strncpy(tip->text, text, AROMA_TOOLTIP_TEXT_MAX - 1);
+    tip->text[AROMA_TOOLTIP_TEXT_MAX - 1] = '\0';
     AromaTheme theme = aroma_theme_get_global();
     tip->corner_radius = 6.0f;
     tip->text_scale = 1.0f;
@@ -81,6 +82,7 @@ void aroma_tooltip_set_text(AromaNode* tooltip_node, const char* text)
     if (!tooltip_node || !tooltip_node->node_widget_ptr || !text) return;
     AromaTooltip* tip = (AromaTooltip*)tooltip_node->node_widget_ptr;
     strncpy(tip->text, text, AROMA_TOOLTIP_TEXT_MAX - 1);
+    tip->text[AROMA_TOOLTIP_TEXT_MAX - 1] = '\0';
     aroma_node_invalidate(tooltip_node);
 }
 

@@ -28,7 +28,7 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 
-typedef struct AromaDivider {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaDivider {
     AromaRect rect;
     AromaDividerOrientation orientation;
     uint32_t color;

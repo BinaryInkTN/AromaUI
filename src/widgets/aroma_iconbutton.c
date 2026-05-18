@@ -10,22 +10,22 @@
 
 #define AROMA_ICON_TEXT_MAX 16
 
-typedef struct AromaIconButton {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaIconButton {
     AromaRect rect;
-    char icon_text[AROMA_ICON_TEXT_MAX];
-    AromaIconButtonVariant variant;
-    uint32_t bg_color;
-    uint32_t icon_color;
-    bool is_hovered;
-    bool is_pressed;
     void (*callback)(void* user_data);
     void* user_data;
     AromaFont* font;
+    uint32_t bg_color;
+    uint32_t icon_color;
+    uint32_t border_color;
     float corner_radius;
     float text_scale;
-    uint32_t border_color;
     int text_x;
     int text_y;
+    AromaIconButtonVariant variant;
+    char icon_text[AROMA_ICON_TEXT_MAX];
+    bool is_hovered;
+    bool is_pressed;
     bool use_theme_colors;
 } AromaIconButton;
 
@@ -79,9 +79,10 @@ static bool __iconbutton_handle_event(AromaEvent* event, void* user_data)
 static void __iconbutton_update_layout(AromaIconButton* btn)
 {
     btn->corner_radius = (float)btn->rect.height / 2.0f;
-    btn->text_x = btn->rect.x + btn->rect.width / 2 - aroma_font_get_px_size(btn->font) / 2;
+    int font_px = btn->font ? aroma_font_get_px_size(btn->font) : 0;
+    btn->text_x = btn->rect.x + btn->rect.width / 2 - font_px / 2;
     int asc = 0;
-    int line = btn->font ? aroma_font_get_px_size(btn->font) : btn->rect.height;
+    int line = btn->font ? font_px : btn->rect.height;
     btn->text_y = btn->rect.y + (btn->rect.height - line) / 2 + asc;
 }
 
@@ -218,8 +219,9 @@ if (btn->use_theme_colors) {
 
     if (btn->font && btn->icon_text[0] && gfx->render_text) {
         /* Recompute text position from current rect (layout may have moved us) */
-        int tx = btn->rect.x + btn->rect.width / 2 - aroma_font_get_px_size(btn->font) / 2;
-        int line = aroma_font_get_px_size(btn->font);
+        int font_px = aroma_font_get_px_size(btn->font);
+        int tx = btn->rect.x + btn->rect.width / 2 - font_px / 2;
+        int line = font_px;
         int ty = btn->rect.y + (btn->rect.height - line) / 2;
         gfx->render_text(window_id, btn->font, btn->icon_text, tx, ty, btn->icon_color, btn->text_scale);
     }

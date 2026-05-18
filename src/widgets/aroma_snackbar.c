@@ -16,26 +16,26 @@
 
 #define AROMA_SNACKBAR_TEXT_MAX 128
 
-typedef struct AromaSnackbar {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaSnackbar {
     AromaRect rect;
-    char message[AROMA_SNACKBAR_TEXT_MAX];
-    char action_label[32];
+    uint64_t show_time_ms;
     void (*action_callback)(void* user_data);
     void* user_data;
-    int action_hit_width;
-    int duration_ms;
-    bool visible;
-    bool pending_show;
     AromaFont* font;
-    float corner_radius;
-    float text_scale;
+    AromaTimer* dismiss_timer;
+    AromaNode* self_node;
     uint32_t bg_color;
     uint32_t text_color;
     uint32_t action_color;
+    int action_hit_width;
+    int duration_ms;
+    float corner_radius;
+    float text_scale;
+    char message[AROMA_SNACKBAR_TEXT_MAX];
+    char action_label[32];
+    bool visible;
+    bool pending_show;
     bool use_theme_color;
-    uint64_t show_time_ms;
-    AromaTimer* dismiss_timer;
-    AromaNode* self_node;
 } AromaSnackbar;
 
 static int g_win_w = 800;
@@ -100,6 +100,7 @@ AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int dur
     bar->text_scale = 1.0f;
 
     strncpy(bar->message, message, AROMA_SNACKBAR_TEXT_MAX - 1);
+    bar->message[AROMA_SNACKBAR_TEXT_MAX - 1] = '\0';
 
     AromaTheme theme = aroma_theme_get_global();
     bar->bg_color = 0x333333;
@@ -143,6 +144,7 @@ void aroma_snackbar_set_action(AromaNode* snackbar_node, const char* action_text
 
     AromaSnackbar* bar = (AromaSnackbar*)snackbar_node->node_widget_ptr;
     strncpy(bar->action_label, action_text, sizeof(bar->action_label) - 1);
+    bar->action_label[sizeof(bar->action_label) - 1] = '\0';
     bar->action_callback = callback;
     bar->user_data = user_data;
 

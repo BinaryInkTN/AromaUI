@@ -8,7 +8,7 @@ extern "C" {
 #endif
 typedef void (*AromaTimerCallback)(void* user_data);
 
-typedef struct AromaTimer AromaTimer;
+typedef struct  AromaTimer AromaTimer;
 
 void aroma_timer_init(void);
 void aroma_timer_shutdown(void);

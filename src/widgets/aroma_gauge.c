@@ -10,7 +10,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-typedef struct AromaGauge {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaGauge {
     AromaRect rect;
     int thickness;
     float value;

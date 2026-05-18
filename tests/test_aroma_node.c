@@ -30,19 +30,19 @@
 static int tests_passed = 0;
 static int tests_failed = 0;
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) {
     int id;
     char name[32];
 } MockWidgetSmall;  
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) {
     float position[4];
     char text[64];
     int flags;
     double scale;
 } MockWidgetMedium;  
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) {
     int data[32];
     float matrix[16];
     char description[128];

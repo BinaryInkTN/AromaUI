@@ -112,12 +112,12 @@ enum NSVGpaintOrder {
 	NSVG_PAINT_STROKE = 0x02,
 };
 
-typedef struct NSVGgradientStop {
+typedef struct  NSVGgradientStop {
 	unsigned int color;
 	float offset;
 } NSVGgradientStop;
 
-typedef struct NSVGgradient {
+typedef struct  NSVGgradient {
 	float xform[6];
 	char spread;
 	float fx, fy;
@@ -125,7 +125,7 @@ typedef struct NSVGgradient {
 	NSVGgradientStop stops[1];
 } NSVGgradient;
 
-typedef struct NSVGpaint {
+typedef struct  NSVGpaint {
 	signed char type;
 	union {
 		unsigned int color;
@@ -133,7 +133,7 @@ typedef struct NSVGpaint {
 	};
 } NSVGpaint;
 
-typedef struct NSVGpath
+typedef struct  NSVGpath
 {
 	float* pts;					// Cubic bezier points: x0,y0, [cpx1,cpx1,cpx2,cpy2,x1,y1], ...
 	int npts;					// Total number of bezier points.
@@ -142,7 +142,7 @@ typedef struct NSVGpath
 	struct NSVGpath* next;		// Pointer to next path, or NULL if last element.
 } NSVGpath;
 
-typedef struct NSVGshape
+typedef struct  NSVGshape
 {
 	char id[64];				// Optional 'id' attr of the shape or its group
 	NSVGpaint fill;				// Fill paint
@@ -166,7 +166,7 @@ typedef struct NSVGshape
 	struct NSVGshape* next;		// Pointer to next shape, or NULL if last element.
 } NSVGshape;
 
-typedef struct NSVGimage
+typedef struct  NSVGimage
 {
 	float width;				// Width of the image.
 	float height;				// Height of the image.
@@ -388,20 +388,20 @@ enum NSVGunits {
 	NSVG_UNITS_EX
 };
 
-typedef struct NSVGcoordinate {
+typedef struct  NSVGcoordinate {
 	float value;
 	int units;
 } NSVGcoordinate;
 
-typedef struct NSVGlinearData {
+typedef struct  NSVGlinearData {
 	NSVGcoordinate x1, y1, x2, y2;
 } NSVGlinearData;
 
-typedef struct NSVGradialData {
+typedef struct  NSVGradialData {
 	NSVGcoordinate cx, cy, r, fx, fy;
 } NSVGradialData;
 
-typedef struct NSVGgradientData
+typedef struct  NSVGgradientData
 {
 	char id[64];
 	char ref[64];
@@ -418,7 +418,7 @@ typedef struct NSVGgradientData
 	struct NSVGgradientData* next;
 } NSVGgradientData;
 
-typedef struct NSVGattrib
+typedef struct  NSVGattrib
 {
 	char id[64];
 	float xform[6];
@@ -447,7 +447,7 @@ typedef struct NSVGattrib
     unsigned char paintOrder;
 } NSVGattrib;
 
-typedef struct NSVGparser
+typedef struct  NSVGparser
 {
 	NSVGattrib attr[NSVG_MAX_ATTR];
 	int attrHead;
@@ -1298,7 +1298,7 @@ static unsigned int nsvg__parseColorRGB(const char* str)
 	return NSVG_RGB(rgbi[0], rgbi[1], rgbi[2]);
 }
 
-typedef struct NSVGNamedColor {
+typedef struct  NSVGNamedColor {
 	const char* name;
 	unsigned int color;
 } NSVGNamedColor;

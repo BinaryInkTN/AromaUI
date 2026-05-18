@@ -13,10 +13,10 @@ extern "C" {
 #define AROMA_TEXTBOX_MAX_LENGTH 256
 #define AROMA_TEXTBOX_CURSOR_BLINK_RATE 500
 
-typedef struct AromaFont AromaFont;
-typedef struct AromaWindow AromaWindow;
+typedef struct  AromaFont AromaFont;
+typedef struct  AromaWindow AromaWindow;
 
-typedef struct AromaTextbox
+typedef struct  AromaTextbox
 {
     AromaRect rect;
     char text[AROMA_TEXTBOX_MAX_LENGTH];

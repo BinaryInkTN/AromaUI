@@ -14,8 +14,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaNode AromaNode;
-typedef struct AromaEvent AromaEvent;
+typedef struct  AromaNode AromaNode;
+typedef struct  AromaEvent AromaEvent;
 
 /** @brief Modifier flag for Caps Lock. */
 #define AROMA_KEY_MOD_CAPSLOCK 0x0001u
@@ -52,7 +52,7 @@ typedef enum AromaEventType {
 /**
  * @brief Data associated with touch events.
  */
-typedef struct {
+typedef struct  {
     int id;         /**< Touch pointer ID. */
     int x;          /**< X coordinate. */
     int y;          /**< Y coordinate. */
@@ -61,13 +61,15 @@ typedef struct {
 /**
  * @brief Data associated with mouse/pointer events.
  */
-typedef struct {
+typedef struct  {
     int x;          /**< X coordinate relative to screen/window. */
     int y;          /**< Y coordinate relative to screen/window. */
     int delta_x;    /**< X movement delta since last event. */
     int delta_y;    /**< Y movement delta since last event. */
     uint8_t button; /**< Method/button index (e.g. 0=Left, 1=Right). */
-        uint8_t clicks; /**< Click count (e.g. 1=single, 2=double). */
+    uint8_t clicks; /**< Click count (e.g. 1=single, 2=double). */
+    // WASM padding after two uint8_t fields to align floats
+    uint8_t _padding[2];
     float scroll_x; /**< Horizontal scroll delta. */
     float scroll_y; /**< Vertical scroll delta. */
 } AromaMouseEventData;
@@ -75,7 +77,7 @@ typedef struct {
 /**
  * @brief Data associated with window resize events.
  */
-typedef struct {
+typedef struct  {
     int width;      /**< New window width. */
     int height;     /**< New window height. */
 } AromaWindowResizeEventData;
@@ -83,17 +85,19 @@ typedef struct {
 /**
  * @brief Data associated with keyboard events.
  */
-typedef struct {
+typedef struct  {
     uint32_t key_code;    /**< Virtual key code. */
     uint32_t scan_code;   /**< Hardware scan code. */
     uint16_t modifiers;   /**< Active modifiers (Shift, Ctrl, etc.). */
     bool repeat;          /**< True if this is a repeat key press. */
+    // WASM padding after bool to align to 4-byte boundary
+    uint8_t _padding;
 } AromaKeyEventData;
 
 /**
  * @brief Data for custom user-defined events.
  */
-typedef struct {
+typedef struct  {
     uint32_t custom_type;       /**< User-defined type identifier. */
     void* data;                 /**< Pointer to custom data payload. */
     void (*free_data)(void*);  /**< Destructor for the payload. */
@@ -104,10 +108,12 @@ typedef struct {
  */
 struct AromaEvent {
     AromaEventType event_type;      /**< Type of the event. */
+    bool consumed;                  /**< True if event propagation should stop. */
+    // WASM padding after bool to align uint64_t
+    uint8_t _padding[3];
     uint64_t target_node_id;        /**< ID of the target node (0 for broadcast/root). */
     AromaNode* target_node;         /**< Pointer to target node (resolved by dispatcher). */
     struct timespec timestamp;      /**< Time when the event occurred. */
-    bool consumed;                  /**< True if event propagation should stop. */
 
     union {
         AromaMouseEventData mouse;     /**< Mouse event payload. */
@@ -129,7 +135,7 @@ typedef bool (*AromaEventHandler)(AromaEvent* event, void* user_data);
 /**
  * @brief Structure representing a registered event listener.
  */
-typedef struct {
+typedef struct  {
     AromaEventType event_type; /**< Event type this listener is interested in. */
     AromaEventHandler handler; /**< Callback function. */
     void* user_data;           /**< User context. */
@@ -233,4 +239,4 @@ const char* aroma_event_type_name(AromaEventType event_type);
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif  /* AROMA_EVENT_H */

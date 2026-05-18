@@ -33,33 +33,33 @@
 extern "C"
 {
 #endif
-    typedef struct AromaNode AromaNode;
-    typedef struct AromaWindow AromaWindow;
-    typedef struct AromaContainer AromaContainer;
-    typedef struct AromaButton AromaButton;
-    typedef struct AromaDropdown AromaDropdown;
-    typedef struct AromaSlider AromaSlider;
-    typedef struct AromaTextbox AromaTextbox;
-    typedef struct AromaSwitch AromaSwitch;
-    typedef struct AromaMenu AromaMenu;
-    typedef struct AromaFont AromaFont;
-    typedef struct AromaCheckbox AromaCheckbox;
-    typedef struct AromaRadioButton AromaRadioButton;
-    typedef struct AromaProgressBar AromaProgressBar;
-    typedef struct AromaLabel AromaLabel;
-    typedef struct AromaDivider AromaDivider;
-    typedef struct AromaIconButton AromaIconButton;
-    typedef struct AromaDialog AromaDialog;
-    typedef struct AromaListView AromaListView;
-    typedef struct AromaTooltip AromaTooltip;
-    typedef struct AromaCard AromaCard;
-    typedef struct AromaChip AromaChip;
-    typedef struct AromaFAB AromaFAB;
-    typedef struct AromaSnackbar AromaSnackbar;
-    typedef struct AromaTabs AromaTabs;
-    typedef struct AromaSidebar AromaSidebar;
-    typedef struct AromaDebugOverlay AromaDebugOverlay;
-    typedef struct AromaIcon AromaIcon;
+    typedef struct  AromaNode AromaNode;
+    typedef struct  AromaWindow AromaWindow;
+    typedef struct  AromaContainer AromaContainer;
+    typedef struct  AromaButton AromaButton;
+    typedef struct  AromaDropdown AromaDropdown;
+    typedef struct  AromaSlider AromaSlider;
+    typedef struct  AromaTextbox AromaTextbox;
+    typedef struct  AromaSwitch AromaSwitch;
+    typedef struct  AromaMenu AromaMenu;
+    typedef struct  AromaFont AromaFont;
+    typedef struct  AromaCheckbox AromaCheckbox;
+    typedef struct  AromaRadioButton AromaRadioButton;
+    typedef struct  AromaProgressBar AromaProgressBar;
+    typedef struct  AromaLabel AromaLabel;
+    typedef struct  AromaDivider AromaDivider;
+    typedef struct  AromaIconButton AromaIconButton;
+    typedef struct  AromaDialog AromaDialog;
+    typedef struct  AromaListView AromaListView;
+    typedef struct  AromaTooltip AromaTooltip;
+    typedef struct  AromaCard AromaCard;
+    typedef struct  AromaChip AromaChip;
+    typedef struct  AromaFAB AromaFAB;
+    typedef struct  AromaSnackbar AromaSnackbar;
+    typedef struct  AromaTabs AromaTabs;
+    typedef struct  AromaSidebar AromaSidebar;
+    typedef struct  AromaDebugOverlay AromaDebugOverlay;
+    typedef struct  AromaIcon AromaIcon;
 
     /**
      * @struct AromaWindowHandle

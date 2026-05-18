@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct AromaChip {
+typedef struct  __attribute__((packed, aligned(1))) AromaChip {
     AromaRect rect;
     char label[64];
     AromaChipType type;
@@ -40,11 +40,11 @@ static void __chip_request_redraw(void* user_data)
 static bool __chip_handle_event(AromaEvent* event, void* user_data)
 {
     if (!event || !event->target_node) return false;
-    AromaChip* chip = (AromaChip*)event->target_node->node_widget_ptr;
+    AromaChip* chip = AROMA_NODE_AS(event->target_node, AromaChip);
     if (!chip) return false;
     
     
-    AromaRect* r = (AromaRect*)event->target_node->node_widget_ptr;
+    AromaRect* r = aroma_node_get_rect(event->target_node);
     int nx = r ? r->x : 0;
     int ny = r ? r->y : 0;
     int nw = r ? r->width : 0;
@@ -165,6 +165,7 @@ AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label,
     chip->rect.x = x;
     chip->rect.y = y;
     strncpy(chip->label, label ? label : "Chip", sizeof(chip->label) - 1);
+    chip->label[sizeof(chip->label) - 1] = '\0';
     chip->type = type;
     chip->selected = false;
     chip->is_hovered = false;

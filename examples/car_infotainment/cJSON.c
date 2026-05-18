@@ -85,7 +85,7 @@
 #endif
 #endif
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) {
     const unsigned char *json;
     size_t position;
 } error;
@@ -153,7 +153,7 @@ static int case_insensitive_strcmp(const unsigned char *string1, const unsigned 
     return tolower(*string1) - tolower(*string2);
 }
 
-typedef struct internal_hooks
+typedef struct  __attribute__((packed, aligned(1))) internal_hooks
 {
     void *(CJSON_CDECL *allocate)(size_t size);
     void (CJSON_CDECL *deallocate)(void *pointer);

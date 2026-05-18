@@ -24,12 +24,12 @@ extern "C" {
 /** Model stores all the data required for recognition
  *  it contains static data and can be shared across processing
  *  threads. */
-typedef struct VoskModel VoskModel;
+typedef struct  __attribute__((packed, aligned(1))) VoskModel VoskModel;
 
 
 /** Speaker model is the same as model but contains the data
  *  for speaker identification. */
-typedef struct VoskSpkModel VoskSpkModel;
+typedef struct  __attribute__((packed, aligned(1))) VoskSpkModel VoskSpkModel;
 
 
 /** Recognizer object is the main object which processes data.
@@ -37,20 +37,20 @@ typedef struct VoskSpkModel VoskSpkModel;
  *  Once audio is processed recognizer returns JSON object as a string
  *  which represent decoded information - words, confidences, times, n-best lists,
  *  speaker information and so on */
-typedef struct VoskRecognizer VoskRecognizer;
+typedef struct  __attribute__((packed, aligned(1))) VoskRecognizer VoskRecognizer;
 
 /** Inverse text normalization */
-typedef struct VoskTextProcessor VoskTextProcessor;
+typedef struct  __attribute__((packed, aligned(1))) VoskTextProcessor VoskTextProcessor;
 
 /**
  * Batch model object
  */
-typedef struct VoskBatchModel VoskBatchModel;
+typedef struct  __attribute__((packed, aligned(1))) VoskBatchModel VoskBatchModel;
 
 /**
  * Batch recognizer object
  */
-typedef struct VoskBatchRecognizer VoskBatchRecognizer;
+typedef struct  __attribute__((packed, aligned(1))) VoskBatchRecognizer VoskBatchRecognizer;
 
 
 /** Loads model data from the file and returns the model object

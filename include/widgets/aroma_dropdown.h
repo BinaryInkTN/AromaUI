@@ -11,7 +11,7 @@ extern "C" {
 #define AROMA_DROPDOWN_MAX_OPTIONS 32
 #define AROMA_DROPDOWN_OPTION_MAX 128
 
-typedef struct AromaDropdown
+typedef struct  AromaDropdown
 {
     AromaRect rect;
     char** options;
@@ -37,7 +37,7 @@ typedef struct AromaDropdown
     } bridge;
 } AromaDropdown;
 
-typedef struct AromaWindow AromaWindow;
+typedef struct  AromaWindow AromaWindow;
 
 AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int height);
 

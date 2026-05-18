@@ -110,8 +110,8 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
             
             if (!hide) {
                 
-                if (content->node_widget_ptr) {
-                    AromaRect* content_rect = (AromaRect*)content->node_widget_ptr;
+                AromaRect* content_rect = aroma_node_get_rect(content);
+                if (content_rect) {
                     
                     
                     

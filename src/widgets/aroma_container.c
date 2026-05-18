@@ -103,7 +103,7 @@ static void vt_get_velocity(const VelocityTracker *vt, uint64_t now,
     *out_vy = (float)(vt->samples[first].y - vt->samples[last].y) / dt;
 }
 
-typedef struct AromaContainer
+typedef struct  AromaContainer
 {
     AromaRect rect;
 

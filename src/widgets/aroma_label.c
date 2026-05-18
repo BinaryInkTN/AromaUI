@@ -27,15 +27,19 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 
-#define AROMA_LABEL_TEXT_MAX 256
-
-typedef struct AromaLabel {
+#define AROMA_LABEL_TEXT_MAX 64 
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaLabel {
     AromaRect rect;
+    AromaFont* font;
+
     AromaLabelStyle style;
     uint32_t color;
-    bool use_theme_color;
-    AromaFont* font;
     float text_scale;
+    bool use_theme_color;
+    
+    // WASM padding to align char array to 4-byte boundary
+    uint8_t _padding[3];
+    
     char text[AROMA_LABEL_TEXT_MAX];
 
 } AromaLabel;

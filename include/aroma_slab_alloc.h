@@ -28,14 +28,14 @@ extern "C" {
 /**
  * @brief Internal linked list for tracking free slots.
  */
-typedef struct AromaFreeSlot {
+typedef struct  AromaFreeSlot {
     struct AromaFreeSlot* next; /**< Pointer to next free slot. */
 } AromaFreeSlot;
 
 /**
  * @brief Represents a page of memory used by the allocator.
  */
-typedef struct AromaSlabAllocatorPage {
+typedef struct  AromaSlabAllocatorPage {
     uint8_t data[AROMA_GENERIC_PAGE_SIZE]; /**< Raw data block. */
     struct AromaSlabAllocatorPage* next_page; /**< Next page in the chain. */
     uint8_t is_stack_page; /**< True if page is from preallocated stack (no free needed). */
@@ -44,7 +44,7 @@ typedef struct AromaSlabAllocatorPage {
 /**
  * @brief A slab allocator instance for a specific object size.
  */
-typedef struct AromaSlabAllocator {
+typedef struct  AromaSlabAllocator {
     size_t object_size; /**< Size of objects in this pool. */
     AromaFreeSlot* free_list; /**< Head of free list. */
     AromaSlabAllocatorPage* pages; /**< Head of pages list. */
@@ -56,7 +56,7 @@ typedef struct AromaSlabAllocator {
 /**
  * @brief Global memory system state.
  */
-typedef struct AromaMemorySystem {
+typedef struct  AromaMemorySystem {
     AromaSlabAllocator node_pool; /**< Pool for AromaNode objects. */
     AromaSlabAllocator widget_pools[AROMA_WIDGET_BUCKET_COUNT]; /**< Pools for widget user data. */
     AromaSlabAllocatorPage preallocated_pages[AROMA_MAX_PAGES]; /**< Static memory pages. */

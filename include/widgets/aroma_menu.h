@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 // Material Design 3 Menu
-typedef struct AromaMenuItem {
+typedef struct  AromaMenuItem {
     char text[64];
     bool enabled;
     bool separator;
@@ -18,7 +18,7 @@ typedef struct AromaMenuItem {
     void* user_data;
 } AromaMenuItem;
 
-typedef struct AromaMenu AromaMenu;
+typedef struct  AromaMenu AromaMenu;
 
 // Create menu
 AromaNode* aroma_menu_create(AromaNode* parent, int x, int y);

@@ -16,7 +16,7 @@ typedef enum {
     LABEL_STYLE_LABEL_SMALL
 } AromaLabelStyle;
 
-typedef struct AromaLabel AromaLabel;
+typedef struct  AromaLabel AromaLabel;
 
 // Create label
 AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y, AromaLabelStyle style);

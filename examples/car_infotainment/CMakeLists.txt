@@ -61,16 +61,17 @@ if(EMSCRIPTEN)
     )
     target_link_options(infotainment PRIVATE
         "-sMIN_WEBGL_VERSION=1"
-        "-sMAX_WEBGL_VERSION=1"
+        "-sMAX_WEBGL_VERSION=2"
         "-sFULL_ES3=1"
         "-sASYNCIFY=1"
         "-sEXPORTED_FUNCTIONS=['_main','_aroma_event_handle_touch','_aroma_event_handle_pointer_move','_aroma_emscripten_dispatch_mouse','_aroma_test_get_last_mouse_event_type','_aroma_test_get_last_mouse_event_x','_aroma_test_get_last_mouse_event_y','_aroma_test_get_last_mouse_event_target']"
-        "-sEXPORTED_RUNTIME_METHODS=['callMain','ccall','cwrap']"
+        "-sEXPORTED_RUNTIME_METHODS=['callMain','ccall','cwrap','FS','addRunDependency','removeRunDependency']"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sINITIAL_MEMORY=134217728"
     )
-    # Preload the example assets (fonts/images) into the WASM virtual FS at /assets
-    target_link_options(infotainment PRIVATE
-        "--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
-    )
+target_link_options(infotainment PRIVATE
+    "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
+)
     message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
 elseif(ENABLE_GLFW)
     target_compile_definitions(infotainment PRIVATE AROMA_USE_GLFW)

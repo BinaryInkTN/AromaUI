@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 // Material Design 3 Snackbar for temporary messages
-typedef struct AromaSnackbar AromaSnackbar;
+typedef struct  AromaSnackbar AromaSnackbar;
 
 // Create a new snackbar
 AromaNode* aroma_snackbar_create(AromaNode* parent, const char* message, int duration_ms);

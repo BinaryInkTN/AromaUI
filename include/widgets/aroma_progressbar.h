@@ -12,7 +12,7 @@ typedef enum {
     PROGRESS_TYPE_INDETERMINATE  // Shows ongoing activity
 } AromaProgressType;
 
-typedef struct AromaProgressBar AromaProgressBar;
+typedef struct  AromaProgressBar AromaProgressBar;
 
 // Create progress bar
 AromaNode* aroma_progressbar_create(AromaNode* parent, int x, int y, int width, int height, AromaProgressType type);

@@ -14,18 +14,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaFont AromaFont;
-typedef struct AromaNode AromaNode;
+typedef struct  AromaFont AromaFont;
+typedef struct  AromaNode AromaNode;
 
 /**
  * @brief Opaque handle to a draw command list.
  */
-typedef struct AromaDrawList AromaDrawList;
+typedef struct  AromaDrawList AromaDrawList;
 
 /**
  * @brief Represents a single drawing task for a node.
  */
-typedef struct AromaDrawTask {
+typedef struct  AromaDrawTask {
     AromaNode* node;                                     /**< The UI node associated with this task. */
     void (*draw_cb)(AromaNode* node, size_t window_id); /**< Callback function to execute drawing. */
     int32_t z_index;                                     /**< Z-index for ordering tasks. */

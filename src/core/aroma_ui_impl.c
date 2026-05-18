@@ -21,6 +21,10 @@
 #include <unistd.h>
 #include <math.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #ifdef __ANDROID__
 #include <android_native_app_glue.h>
 
@@ -58,7 +62,7 @@ static bool g_running = true;
 static AromaDrawList *g_window_drawlists[AROMA_MAX_WINDOWS] = {0};
 static bool g_splash_enabled = true;
 static AromaTheme g_default_theme;
-char g_splash_title[64] = "AromaUI";
+char g_splash_title[64]  = "AromaUI";
 char g_splash_slogan[64] = "Modern UI for Everywhere";
 
 static void window_update_callback(size_t window_id, void *data);
@@ -70,7 +74,34 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
 static void show_splash_screen(size_t window_id, int width, int height);
 static int draw_task_compare(const void *a, const void *b);
 
-void aroma_splash(bool enabled, const char* title, const char* slogan)
+static inline bool is_valid_node_ptr(const AromaNode *node)
+{
+    if (!node) return false;
+    if (((uintptr_t)node % _Alignof(AromaNode)) != 0) return false;
+    return true;
+}
+
+#ifdef __EMSCRIPTEN__
+EM_JS(double, aroma_emscripten_device_pixel_ratio, (void), {
+    return window.devicePixelRatio || 1.0;
+});
+#endif
+
+static int aroma_get_splash_font_size(AromaPlatformInterface *platform)
+{
+    int base = 46;
+#ifdef __EMSCRIPTEN__
+    double dpr = aroma_emscripten_device_pixel_ratio();
+    if (dpr < 1.0) dpr = 1.0;
+    return (int)(base * dpr);
+#else
+    if (platform && platform->android_sp_to_px)
+        return platform->android_sp_to_px(base);
+    return base;
+#endif
+}
+
+void aroma_splash(bool enabled, const char *title, const char *slogan)
 {
     if (title)
     {
@@ -87,8 +118,7 @@ void aroma_splash(bool enabled, const char* title, const char* slogan)
 
 void aroma_ui_open_url_impl(const char *url)
 {
-    if (!url)
-        return;
+    if (!url) return;
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->open_url)
@@ -126,7 +156,6 @@ void aroma_ui_android_intent_impl(int action, const char *uri, const char *type,
 
 bool aroma_ui_init_impl(void)
 {
-
     if (g_ui_initialized)
     {
         LOG_WARNING("Aroma UI already initialized");
@@ -167,7 +196,7 @@ bool aroma_ui_init_impl(void)
         platform->set_window_update_callback(window_update_callback, NULL);
     }
 
-    g_running = true;
+    g_running        = true;
     g_ui_initialized = true;
     LOG_INFO("Aroma UI initialized successfully (mode: %s)",
              g_immediate_mode ? "immediate" : "batched");
@@ -195,16 +224,13 @@ void aroma_ui_request_redraw(void *user_data)
 
 bool aroma_ui_consume_redraw(void)
 {
-    if (g_immediate_mode)
-        return true;
-
+    if (g_immediate_mode) return true;
     return aroma_dirty_list_has_entries();
 }
 
 void aroma_ui_shutdown_impl(void)
 {
-    if (!g_ui_initialized)
-        return;
+    if (!g_ui_initialized) return;
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->shutdown)
@@ -227,10 +253,10 @@ void aroma_ui_shutdown_impl(void)
     aroma_event_system_shutdown();
     __node_system_destroy();
 
-    g_focused_node = NULL;
-    g_main_window = NULL;
-    g_window_count = 0;
-    g_running = false;
+    g_focused_node   = NULL;
+    g_main_window    = NULL;
+    g_window_count   = 0;
+    g_running        = false;
     g_ui_initialized = false;
 
     LOG_INFO("Aroma UI shutdown complete");
@@ -243,8 +269,7 @@ bool aroma_ui_is_running_impl(void)
 
 void aroma_ui_render_impl(struct AromaWindow *window_data)
 {
-    if (!window_data)
-        return;
+    if (!window_data) return;
 
     LOG_INFO("Rendering window ID %zu", window_data->window_id);
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
@@ -256,12 +281,10 @@ void aroma_ui_render_impl(struct AromaWindow *window_data)
 
 void aroma_ui_render_all_windows_impl(void)
 {
-    if (!aroma_dirty_list_has_entries() && !g_immediate_mode)
-        return;
+    if (!aroma_dirty_list_has_entries() && !g_immediate_mode) return;
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
-    if (!platform || !platform->request_window_update)
-        return;
+    if (!platform || !platform->request_window_update) return;
 
     for (int i = 0; i < g_window_count; ++i)
     {
@@ -285,7 +308,6 @@ void aroma_ui_process_events_impl(void)
     }
 
     aroma_event_process_queue();
-
     aroma_timer_tick(aroma_time_now_ms());
 }
 
@@ -307,10 +329,10 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
     int idx = g_window_count;
     struct AromaWindow *window_data = (struct AromaWindow *)window->node_widget_ptr;
 
-    g_windows[idx].window = (AromaWindow *)window;
-    g_windows[idx].root_node = window;
-    g_windows[idx].window_id = window_data ? window_data->window_id : 0;
-    g_windows[idx].is_active = true;
+    g_windows[idx].window      = (AromaWindow *)window;
+    g_windows[idx].root_node   = window;
+    g_windows[idx].window_id   = window_data ? window_data->window_id : 0;
+    g_windows[idx].is_active   = true;
 
     g_window_drawlists[idx] = aroma_drawlist_create();
     if (!g_window_drawlists[idx])
@@ -345,10 +367,7 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
                 platform->get_window_size(g_windows[idx].window_id, &w, &h);
             }
 
-            if (w > 0 && h > 0)
-            {
-                break;
-            }
+            if (w > 0 && h > 0) break;
 
             SLEEP_MS(SPLASH_WAIT_INTERVAL_MS);
         }
@@ -361,12 +380,12 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
         if (w <= 0 || h <= 0)
         {
             LOG_WARNING("Timed out waiting for window surface. Using defaults.");
-            w = (width > 0) ? width : DEFAULT_WINDOW_WIDTH;
+            w = (width  > 0) ? width  : DEFAULT_WINDOW_WIDTH;
             h = (height > 0) ? height : DEFAULT_WINDOW_HEIGHT;
         }
 
         aroma_node_invalidate(window);
-        show_splash_screen(g_windows[idx].window_id, w, h);
+       // show_splash_screen(g_windows[idx].window_id, w, h);
     }
 
     aroma_node_invalidate(window);
@@ -376,15 +395,13 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
 
 void aroma_ui_destroy_window_impl(AromaWindow *window)
 {
-    if (!window)
-        return;
+    if (!window) return;
 
     for (int i = 0; i < g_window_count; ++i)
     {
         if (g_windows[i].window == window)
         {
-
-            aroma_window_destroy((AromaNode*)g_windows[i].root_node);
+            aroma_window_destroy((AromaNode *)g_windows[i].root_node);
 
             if (g_window_drawlists[i])
             {
@@ -395,7 +412,8 @@ void aroma_ui_destroy_window_impl(AromaWindow *window)
             int remaining = g_window_count - i - 1;
             if (remaining > 0)
             {
-                memmove(&g_windows[i], &g_windows[i + 1], remaining * sizeof(AromaWindowHandle));
+                memmove(&g_windows[i], &g_windows[i + 1],
+                        remaining * sizeof(AromaWindowHandle));
                 memmove(&g_window_drawlists[i], &g_window_drawlists[i + 1],
                         remaining * sizeof(AromaDrawList *));
             }
@@ -407,10 +425,7 @@ void aroma_ui_destroy_window_impl(AromaWindow *window)
                 g_main_window = (g_window_count > 0) ? g_windows[0].root_node : NULL;
             }
 
-            if (g_focused_node)
-            {
-                g_focused_node = NULL;
-            }
+            g_focused_node = NULL;
 
             LOG_INFO("Window destroyed");
             return;
@@ -424,7 +439,17 @@ AromaDrawList *aroma_ui_begin_frame(size_t window_id)
 
     int idx = find_window_index_by_id(window_id);
     if (idx < 0)
+    {
+        LOG_ERROR("aroma_ui_begin_frame: invalid window_id=%zu (g_window_count=%d)",
+                  window_id, g_window_count);
+#ifdef __EMSCRIPTEN__
+        for (int i = 0; i < g_window_count; ++i)
+        {
+            LOG_INFO("aroma_ui_begin_frame: known window[%d]=%zu", i, g_windows[i].window_id);
+        }
+#endif
         return NULL;
+    }
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current)
@@ -453,11 +478,20 @@ void aroma_ui_end_frame(size_t window_id)
 {
     int idx = find_window_index_by_id(window_id);
     if (idx < 0)
+    {
+        LOG_ERROR("aroma_ui_end_frame: invalid window_id=%zu (g_window_count=%d)",
+                  window_id, g_window_count);
+#ifdef __EMSCRIPTEN__
+        for (int i = 0; i < g_window_count; ++i)
+        {
+            LOG_INFO("aroma_ui_end_frame: known window[%d]=%zu", i, g_windows[i].window_id);
+        }
+#endif
         return;
+    }
 
     AromaDrawList *list = g_window_drawlists[idx];
-    if (!list)
-        return;
+    if (!list) return;
 
     aroma_drawlist_end();
 
@@ -471,7 +505,7 @@ void aroma_ui_end_frame(size_t window_id)
 #else
     aroma_drawlist_flush(list, window_id);
 
-       int backend_type = aroma_backend_abi.get_graphics_backend_type
+    int backend_type = aroma_backend_abi.get_graphics_backend_type
                            ? aroma_backend_abi.get_graphics_backend_type()
                            : -1;
 
@@ -489,7 +523,6 @@ void aroma_ui_end_frame(size_t window_id)
     {
         platform->swap_buffers(window_id);
     }
-
 #endif
 }
 
@@ -498,14 +531,12 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color)
     size_t dirty_count = 0;
     AromaNode **dirty_nodes = aroma_dirty_list_get(&dirty_count);
 
-    if (dirty_count == 0 && !g_immediate_mode)
-        return;
+    if (dirty_count == 0 && !g_immediate_mode) return;
 
     bool frame_active = aroma_drawlist_is_active();
     if (!frame_active)
     {
-        if (!aroma_ui_begin_frame(window_id))
-            return;
+        if (!aroma_ui_begin_frame(window_id)) return;
     }
 
     if (clear_color != AROMA_CLEAR_NONE)
@@ -516,13 +547,22 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color)
     AromaDrawTask tasks[AROMA_MAX_DIRTY_NODES];
     size_t task_count = 0;
 
-    int backend_type = aroma_backend_abi.get_graphics_backend_type ? aroma_backend_abi.get_graphics_backend_type() : -1;
+    int backend_type = aroma_backend_abi.get_graphics_backend_type
+                           ? aroma_backend_abi.get_graphics_backend_type()
+                           : -1;
 
-    if (backend_type == GRAPHICS_BACKEND_GLES3 || backend_type == GRAPHICS_BACKEND_VULKAN)
+    bool use_scene_traversal = false;
+#ifdef __EMSCRIPTEN__
+    use_scene_traversal = (backend_type == GRAPHICS_BACKEND_GLES3);
+#else
+    use_scene_traversal = (backend_type == GRAPHICS_BACKEND_GLES3 ||
+                           backend_type == GRAPHICS_BACKEND_VULKAN);
+#endif
+
+    if (use_scene_traversal)
     {
-
         const AromaRect *clip = NULL;
-        AromaRect dirty_clip = {0};
+        AromaRect dirty_clip  = {0};
 
         if (backend_type == GRAPHICS_BACKEND_VULKAN)
         {
@@ -531,7 +571,6 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color)
             if (gfx && gfx->get_pending_dirty_rect &&
                 gfx->get_pending_dirty_rect(&dx, &dy, &dw, &dh))
             {
-
                 int screen_w = 0, screen_h = 0;
                 AromaPlatformInterface *plat = aroma_backend_abi.get_platform_interface();
                 if (plat && plat->get_window_size)
@@ -540,12 +579,11 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color)
                 if (screen_w > 0 && screen_h > 0 &&
                     (dw * dh) < (screen_w * screen_h) / 2)
                 {
-
                     const int margin = 4;
                     dirty_clip = (AromaRect){
-                        .x = dx - margin,
-                        .y = dy - margin,
-                        .width = dw + margin * 2,
+                        .x      = dx - margin,
+                        .y      = dy - margin,
+                        .width  = dw + margin * 2,
                         .height = dh + margin * 2,
                     };
                     clip = &dirty_clip;
@@ -565,21 +603,25 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color)
     }
     else
     {
-
         for (size_t i = 0; i < dirty_count && task_count < AROMA_MAX_DIRTY_NODES; ++i)
         {
             struct AromaNode *node = dirty_nodes[i];
-            if (!node || node->is_hidden)
-                continue;
+
+            if (!is_valid_node_ptr(node)) continue;
+            if (node->is_hidden) continue;
+
+#ifdef __EMSCRIPTEN__
+            if (node->node_id == 0 || node->node_id > 1000000ULL) continue;
+#endif
 
             AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
-            if (!draw_cb)
-                continue;
+            if (!draw_cb) continue;
 
             tasks[task_count++] = (AromaDrawTask){
-                .node = node,
+                .node    = node,
                 .draw_cb = draw_cb,
-                .z_index = node->z_index};
+                .z_index = node->z_index
+            };
         }
     }
 
@@ -588,42 +630,94 @@ void aroma_ui_render_dirty_window(size_t window_id, uint32_t clear_color)
         qsort(tasks, task_count, sizeof(AromaDrawTask), draw_task_compare);
     }
 
+#ifdef __EMSCRIPTEN__
+    LOG_INFO("render_dirty: window=%zu dirty_count=%zu task_count=%zu",
+             window_id, dirty_count, task_count);
+#endif
+
     AromaTheme theme = aroma_theme_get_global();
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
 
     for (size_t i = 0; i < task_count; ++i)
     {
-        tasks[i].draw_cb(tasks[i].node, window_id);
+        AromaNode *n = tasks[i].node;
 
-        if (tasks[i].node && gfx && gfx->fill_rectangle)
+        if (!is_valid_node_ptr(n)) continue;
+
+#ifdef __EMSCRIPTEN__
+        if (n->node_id == 0 || n->node_id > 1000000ULL) continue;
+#endif
+
+        if (n->child_count > AROMA_MAX_CHILD_NODES)
+        {
+            LOG_ERROR("render_dirty: node %llu has excessive child_count=%llu, capping",
+                      (unsigned long long)n->node_id,
+                      (unsigned long long)n->child_count);
+            n->child_count = AROMA_MAX_CHILD_NODES;
+        }
+        if (n->node_type < 0 || n->node_type > NODE_TYPE_WIDGET)
+        {
+            LOG_ERROR("render_dirty: node %llu has invalid node_type=%d, skipping",
+                      (unsigned long long)n->node_id, (int)n->node_type);
+            continue;
+        }
+
+#ifdef __EMSCRIPTEN__
+        LOG_INFO("render_dirty: draw task i=%zu node_id=%llu widget_ptr=%p child_count=%llu",
+                 i,
+                 (unsigned long long)n->node_id,
+                 (void *)n->node_widget_ptr,
+                 (unsigned long long)n->child_count);
+#endif
+
+        tasks[i].draw_cb(n, window_id);
+
+#ifdef __EMSCRIPTEN__
+        LOG_INFO("render_dirty: done task i=%zu", i);
+#endif
+
+#ifndef __EMSCRIPTEN__
+        if (gfx && gfx->fill_rectangle && n->node_widget_ptr)
         {
             float effective_opacity = 1.0f;
-            AromaNode* curr = tasks[i].node;
-            while (curr) {
+            AromaNode *curr = n;
+            while (curr)
+            {
                 effective_opacity *= curr->opacity;
                 curr = curr->parent_node;
             }
 
-            if (effective_opacity < 0.99f && tasks[i].node->node_widget_ptr)
+            if (effective_opacity < 0.99f)
             {
-                AromaRect* rect = (AromaRect*)tasks[i].node->node_widget_ptr;
-                
-                uint8_t r, g, b;
-                aroma_color_extract_rgb(theme.colors.background, &r, &g, &b);
-                float alpha_f = 1.0f - effective_opacity;
-                if (alpha_f < 0.0f) alpha_f = 0.0f;
-                if (alpha_f > 1.0f) alpha_f = 1.0f;
-                uint8_t a = (uint8_t)(alpha_f * 255.0f);
-                
-                uint32_t overlay_color = aroma_color_rgba(r, g, b, a);
-                gfx->fill_rectangle(window_id, rect->x, rect->y, rect->width, rect->height, overlay_color, false, 0.0f);
+                AromaRect *rect = aroma_node_get_rect(n);
+                if (rect)
+                {
+                    uint8_t r, g, b;
+                    aroma_color_extract_rgb(theme.colors.background, &r, &g, &b);
+                    float alpha_f = 1.0f - effective_opacity;
+                    if (alpha_f < 0.0f) alpha_f = 0.0f;
+                    if (alpha_f > 1.0f) alpha_f = 1.0f;
+                    uint8_t a = (uint8_t)(alpha_f * 255.0f);
+
+                    uint32_t overlay_color = aroma_color_rgba(r, g, b, a);
+                    gfx->fill_rectangle(window_id,
+                                        rect->x, rect->y, rect->width, rect->height,
+                                        overlay_color, false, 0.0f);
+                }
             }
         }
+#endif
     }
 
     if (!frame_active)
     {
+#ifdef __EMSCRIPTEN__
+        LOG_INFO("render_dirty: calling end_frame window=%zu", window_id);
+#endif
         aroma_ui_end_frame(window_id);
+#ifdef __EMSCRIPTEN__
+        LOG_INFO("render_dirty: end_frame complete window=%zu", window_id);
+#endif
     }
 }
 
@@ -631,26 +725,30 @@ static int draw_task_compare(const void *a, const void *b)
 {
     const AromaDrawTask *ta = (const AromaDrawTask *)a;
     const AromaDrawTask *tb = (const AromaDrawTask *)b;
-
     return (ta->z_index > tb->z_index) - (ta->z_index < tb->z_index);
 }
 
 static int find_window_index_by_id(size_t window_id)
 {
+    if (g_window_count < 0 || g_window_count > AROMA_MAX_WINDOWS)
+    {
+        LOG_ERROR("find_window_index_by_id: invalid g_window_count=%d", g_window_count);
+        return INVALID_INDEX;
+    }
+
     for (int i = 0; i < g_window_count; ++i)
     {
         if (g_windows[i].window_id == window_id)
-        {
             return i;
-        }
     }
+
+    LOG_WARNING("find_window_index_by_id: window_id=%zu not found", window_id);
     return INVALID_INDEX;
 }
 
 static int find_window_index_by_node(struct AromaNode *node)
 {
-    if (!node)
-        return INVALID_INDEX;
+    if (!node) return INVALID_INDEX;
 
     struct AromaNode *root = node;
     while (root->parent_node)
@@ -661,9 +759,7 @@ static int find_window_index_by_node(struct AromaNode *node)
     for (int i = 0; i < g_window_count; ++i)
     {
         if (g_windows[i].root_node == root)
-        {
             return i;
-        }
     }
 
     return INVALID_INDEX;
@@ -673,20 +769,28 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
                                size_t *task_count, size_t max_tasks,
                                const AromaRect *clip)
 {
-    if (!node || node->is_hidden || *task_count >= max_tasks)
-        return;
+    if (!is_valid_node_ptr(node)) return;
+    if (node->is_hidden) return;
+    if (*task_count >= max_tasks) return;
 
-    if (clip && node->node_widget_ptr)
+    if (node->child_count > AROMA_MAX_CHILD_NODES)
     {
-        const AromaRect *r = (const AromaRect *)node->node_widget_ptr;
-        if (r->width > 0 && r->height > 0)
+        LOG_ERROR("collect_draw_tasks: node %llu corrupt child_count %llu",
+                  (unsigned long long)node->node_id,
+                  (unsigned long long)node->child_count);
+        return;
+    }
+
+    if (clip)
+    {
+        const AromaRect *r = aroma_node_get_rect(node);
+        if (r && r->width > 0 && r->height > 0)
         {
-            bool outside = (r->x >= clip->x + clip->width) ||
+            bool outside = (r->x >= clip->x + clip->width)  ||
                            (r->y >= clip->y + clip->height) ||
-                           (r->x + r->width <= clip->x) ||
+                           (r->x + r->width  <= clip->x)   ||
                            (r->y + r->height <= clip->y);
-            if (outside)
-                return;
+            if (outside) return;
         }
     }
 
@@ -694,9 +798,10 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
     if (draw_cb)
     {
         tasks[(*task_count)++] = (AromaDrawTask){
-            .node = node,
+            .node    = node,
             .draw_cb = draw_cb,
-            .z_index = node->z_index};
+            .z_index = node->z_index
+        };
 
         if (aroma_container_is_scrollable(node))
         {
@@ -706,10 +811,7 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
 
     for (uint64_t i = 0; i < node->child_count; ++i)
     {
-        if (node->child_nodes[i])
-        {
-            collect_draw_tasks(node->child_nodes[i], tasks, task_count, max_tasks, clip);
-        }
+        collect_draw_tasks(node->child_nodes[i], tasks, task_count, max_tasks, clip);
     }
 }
 
@@ -718,8 +820,7 @@ static void window_update_callback(size_t window_id, void *data)
     (void)data;
 
     static bool s_in_update = false;
-    if (s_in_update)
-        return;
+    if (s_in_update) return;
     s_in_update = true;
 
     if (!aroma_ui_consume_redraw())
@@ -742,6 +843,23 @@ static void window_update_callback(size_t window_id, void *data)
     {
         aroma_node_update_layout(g_windows[idx].root_node, 0, 0, width, height);
     }
+    else
+    {
+        LOG_ERROR("window_update_callback: no window for id=%zu (idx=%d, g_window_count=%d)",
+                  window_id, idx, g_window_count);
+#ifdef __EMSCRIPTEN__
+        size_t dn = 0;
+        AromaNode **dirty_nodes = aroma_dirty_list_get(&dn);
+        for (size_t i = 0; i < dn && i < 50; ++i)
+        {
+            AromaNode *n = dirty_nodes[i];
+            LOG_INFO("window_update_callback: dirty node[%zu]=%p id=%llu widget_ptr=%p",
+                     i, (void *)n,
+                     (unsigned long long)(n ? n->node_id : 0),
+                     (void *)(n ? n->node_widget_ptr : NULL));
+        }
+#endif
+    }
 
     AromaTheme theme = aroma_theme_get_global();
 
@@ -755,19 +873,13 @@ static void window_update_callback(size_t window_id, void *data)
             for (size_t i = 0; i < dirty_count; i++)
             {
                 AromaNode *node = dirty_nodes[i];
-                if (!node || !node->node_widget_ptr)
-                    continue;
-                AromaRect *r = (AromaRect *)node->node_widget_ptr;
-                if (r->width <= 0 || r->height <= 0)
-                    continue;
-                if (r->x < min_x)
-                    min_x = r->x;
-                if (r->y < min_y)
-                    min_y = r->y;
-                if (r->x + r->width > max_x)
-                    max_x = r->x + r->width;
-                if (r->y + r->height > max_y)
-                    max_y = r->y + r->height;
+                if (!is_valid_node_ptr(node)) continue;
+                AromaRect *r = aroma_node_get_rect(node);
+                if (!r || r->width <= 0 || r->height <= 0) continue;
+                if (r->x < min_x) min_x = r->x;
+                if (r->y < min_y) min_y = r->y;
+                if (r->x + r->width  > max_x) max_x = r->x + r->width;
+                if (r->y + r->height > max_y) max_y = r->y + r->height;
             }
             if (max_x > min_x && max_y > min_y)
             {
@@ -792,8 +904,7 @@ static void window_update_callback(size_t window_id, void *data)
 
 static void show_splash_screen(size_t window_id, int width, int height)
 {
-    if (!g_splash_enabled)
-        return;
+    if (!g_splash_enabled) return;
 
     LOG_INFO("Showing splash screen...");
 
@@ -811,16 +922,23 @@ static void show_splash_screen(size_t window_id, int width, int height)
         return;
     }
 
-    int splash_font_size = platform->android_sp_to_px ? platform->android_sp_to_px(46) : 46;
+    if (!aroma_ubuntu_ttf || aroma_ubuntu_ttf_len == 0)
+    {
+        LOG_ERROR("Splash font data is null or zero-length; skipping splash");
+        return;
+    }
+
+    int splash_font_size = aroma_get_splash_font_size(platform);
+
     AromaFont *font = aroma_font_create_from_memory(
         aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, splash_font_size);
 
     if (!font)
     {
-        LOG_WARNING("Could not load font for splash screen");
+        LOG_ERROR("Could not load font for splash screen (size=%d, data_len=%zu)",
+                  splash_font_size, aroma_ubuntu_ttf_len);
         return;
     }
-
 
     AromaTheme theme = aroma_theme_get_global();
 
@@ -829,29 +947,35 @@ static void show_splash_screen(size_t window_id, int width, int height)
         gfx->clear(window_id, theme.colors.background);
     }
 
-    float title_scale = 1.0f;
-    float slogan_scale = 0.3f;
+    float title_scale  = 1.0f;
+    float slogan_scale = 0.5f;
 
-    float title_width = aroma_font_get_line_width(font, g_splash_title) * title_scale;
-    int title_height = aroma_font_get_line_height(font) * title_scale;
+    float title_width   = aroma_font_get_line_width(font, g_splash_title)  * title_scale;
+    int   title_height  = (int)(aroma_font_get_line_height(font) * title_scale);
+    float slogan_width  = aroma_font_get_line_width(font, g_splash_slogan) * slogan_scale;
+    int   slogan_height = (int)(aroma_font_get_line_height(font) * slogan_scale);
 
-    float slogan_width = aroma_font_get_line_width(font, g_splash_slogan) * slogan_scale;
-    int slogan_height = aroma_font_get_line_height(font) * slogan_scale;
+    if (title_height <= 0 || slogan_height <= 0)
+    {
+        LOG_ERROR("Splash font returned zero line height; skipping splash");
+        aroma_font_destroy(font);
+        return;
+    }
 
-    int gap = 20;
+    int gap          = 20;
     int total_height = title_height + gap + slogan_height;
+    int start_y      = (height - total_height) / 2;
 
-    int start_y = (height - total_height) / 2;
-    int title_x = (width - (int)title_width) / 2;
-    int title_y = start_y;
-
+    int title_x  = (width - (int)title_width)  / 2;
+    int title_y  = start_y;
     int slogan_x = (width - (int)slogan_width) / 2;
     int slogan_y = title_y + title_height + gap;
 
     uint64_t start_time = aroma_time_now_ms();
-    float start_angle = 0.0f;
+    float    start_angle = 0.0f;
 
-    while (aroma_time_now_ms() - start_time < 3000) {
+    while (aroma_time_now_ms() - start_time < 3000)
+    {
         if (gfx->clear)
         {
             gfx->clear(window_id, theme.colors.background);
@@ -859,40 +983,42 @@ static void show_splash_screen(size_t window_id, int width, int height)
 
         if (gfx->render_text)
         {
-            gfx->render_text(window_id, font, g_splash_title, title_x, title_y,
+            gfx->render_text(window_id, font, g_splash_title,  title_x,  title_y,
                              theme.colors.primary, title_scale);
             gfx->render_text(window_id, font, g_splash_slogan, slogan_x, slogan_y,
                              theme.colors.text_secondary, slogan_scale);
         }
 
-        if (gfx->fill_rectangle) {
+        if (gfx->fill_rectangle)
+        {
             int spinner_r = 22;
             int thickness = 5;
-            int cx = width / 2;
-            int cy = slogan_y + slogan_height + 40 + spinner_r;
-            int orbit_r = spinner_r - thickness;
+            int cx        = width / 2;
+            int cy        = slogan_y + slogan_height + 40 + spinner_r;
+            int orbit_r   = spinner_r - thickness;
             if (orbit_r < 1) orbit_r = 1;
 
-            for (int i = 0; i < 4; i++) {
-                float angle = start_angle - (i * 20.0f);
+            for (int di = 0; di < 4; di++)
+            {
+                float angle     = start_angle - (di * 20.0f);
                 float angle_rad = angle * 3.14159265f / 180.0f;
-                int dot_size = (thickness * 2) - i * (thickness / 2);
+                int   dot_size  = (thickness * 2) - di * (thickness / 2);
                 if (dot_size < 2) dot_size = 2;
-                
+
                 int dx = cx + (int)(orbit_r * cosf(angle_rad)) - dot_size / 2;
                 int dy = cy + (int)(orbit_r * sinf(angle_rad)) - dot_size / 2;
-                
+
                 uint32_t color = theme.colors.primary;
-                uint32_t a = (color >> 24) & 0xFF; // AROMA colors are ARGB or RGBA?
-                if (a == 0) a = 0xFF; 
-                a = a / (i + 1);
-                // Assume ARGB format
-                uint32_t c = (a << 24) | (color & 0x00FFFFFF);
-                
-                gfx->fill_rectangle(window_id, dx, dy, dot_size, dot_size, c, true, dot_size / 2.0f);
+                uint32_t a_ch  = (color >> 24) & 0xFF;
+                if (a_ch == 0) a_ch = 0xFF;
+                a_ch /= (uint32_t)(di + 1);
+                uint32_t c = (a_ch << 24) | (color & 0x00FFFFFF);
+
+                gfx->fill_rectangle(window_id, dx, dy, dot_size, dot_size,
+                                    c, true, dot_size / 2.0f);
             }
         }
-        
+
         start_angle += 10.0f;
         if (start_angle >= 360.0f) start_angle -= 360.0f;
 
@@ -904,5 +1030,4 @@ static void show_splash_screen(size_t window_id, int width, int height)
     }
 
     aroma_font_destroy(font);
-
 }

@@ -10,9 +10,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaWindow AromaWindow;
+typedef struct  AromaWindow AromaWindow;
 
-typedef struct AromaSlider
+typedef struct  AromaSlider
 {
     AromaRect rect;
     int min_value, max_value;

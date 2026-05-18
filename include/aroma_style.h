@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaColorPalette {
+typedef struct  AromaColorPalette {
     uint32_t primary;
     uint32_t primary_dark;
     uint32_t primary_light;
@@ -19,7 +19,7 @@ typedef struct AromaColorPalette {
     uint32_t error;
 } AromaColorPalette;
 
-typedef struct AromaSpacing {
+typedef struct  AromaSpacing {
     int padding;
     int margin;
     int border_radius;
@@ -27,7 +27,7 @@ typedef struct AromaSpacing {
     int shadow_offset;
 } AromaSpacing;
 
-typedef struct AromaTypography {
+typedef struct  AromaTypography {
     int font_size;
     int line_height;
     int letter_spacing;
@@ -35,7 +35,7 @@ typedef struct AromaTypography {
     const char* font_name;
 } AromaTypography;
 
-typedef struct AromaTheme {
+typedef struct  AromaTheme {
     AromaColorPalette colors;
     AromaSpacing spacing;
     AromaTypography typography;
@@ -53,7 +53,7 @@ typedef enum AromaMaterialThemePreset {
     AROMA_THEME_MATERIAL_PINK
 } AromaMaterialThemePreset;
 
-typedef struct AromaStyle {
+typedef struct  AromaStyle {
 
     uint32_t idle_color;
     uint32_t hover_color;
@@ -123,7 +123,7 @@ uint32_t aroma_color_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 void aroma_color_extract_rgb(uint32_t color, uint8_t* r, uint8_t* g, uint8_t* b);
 
 /* Shadow functions */
-typedef struct AromaShadow {
+typedef struct  AromaShadow {
     int blur_radius;
     int offset_x;
     int offset_y;

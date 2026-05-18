@@ -69,7 +69,7 @@ typedef enum {
     STATE_END
 } GameState;
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) {
     char q[256];
     char a[128];
     char cat[64];
@@ -147,13 +147,13 @@ static const char *DEFAULT_NAMES[4] = {
     "Player 1", "Player 2", "Player 3", "Player 4"
 };
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) {
     char     name[64];
     uint32_t color;
     int      score;
 } Player;
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) {
     AromaWindow *window;
     AromaTheme   theme;
     AromaFont   *font_title;

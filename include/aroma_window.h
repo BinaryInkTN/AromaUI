@@ -7,7 +7,7 @@ extern "C" {
 #endif
 #define AROMA_WINDOW_TITLE_MAX_LENGTH 256
 
-typedef struct AromaWindow {
+typedef struct  AromaWindow {
     AromaRect rect;
     char title[AROMA_WINDOW_TITLE_MAX_LENGTH];
 } AromaWindow;

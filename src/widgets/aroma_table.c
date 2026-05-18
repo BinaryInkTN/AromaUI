@@ -12,7 +12,7 @@
 #define MAX_ROWS 100
 #define MAX_COLS 10
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
     AromaRect rect;
     int num_cols;
     int num_rows;
@@ -99,7 +99,7 @@ static void _aroma_table_update_widgets(AromaNode* table_node) {
         int cur_x = t->rect.x;
         for (int c = 0; c < t->num_cols; c++) {
             if (t->cell_widgets[r][c]) {
-                AromaRect* w_rect = (AromaRect*)t->cell_widgets[r][c]->node_widget_ptr;
+                AromaRect* w_rect = aroma_node_get_rect(t->cell_widgets[r][c]);
                 if (w_rect) {
                     w_rect->x = cur_x + 5;
                     w_rect->y = cur_y + 5;
@@ -128,6 +128,7 @@ void aroma_table_set_header(AromaNode* table_node, int col_idx, const char* text
     AromaTableInternal* t = get_table(table_node);
     if (t && col_idx >= 0 && col_idx < t->num_cols && text) {
         strncpy(t->headers[col_idx], text, 63);
+        t->headers[col_idx][63] = '\0';
         aroma_node_invalidate(table_node);
     }
 }
@@ -150,6 +151,7 @@ void aroma_table_set_cell_text(AromaNode* table_node, int row_idx, int col_idx, 
     AromaTableInternal* t = get_table(table_node);
     if (t && row_idx >= 0 && row_idx < t->num_rows && col_idx >= 0 && col_idx < t->num_cols && text) {
          strncpy(t->cells[row_idx][col_idx], text, 63);
+         t->cells[row_idx][col_idx][63] = '\0';
          aroma_node_invalidate(table_node);
     }
 }

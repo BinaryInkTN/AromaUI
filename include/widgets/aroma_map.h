@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-typedef struct AromaMap {
+typedef struct  AromaMap {
     AromaRect rect;
     double center_lat;
     double center_lon;

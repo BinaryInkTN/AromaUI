@@ -71,6 +71,154 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
+// include: /tmp/tmpek3nwq49.js
+
+  if (!Module['expectedDataFileDownloads']) Module['expectedDataFileDownloads'] = 0;
+  Module['expectedDataFileDownloads']++;
+  (() => {
+    // Do not attempt to redownload the virtual filesystem data when in a pthread or a Wasm Worker context.
+    var isPthread = typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD;
+    var isWasmWorker = typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER;
+    if (isPthread || isWasmWorker) return;
+    var isNode = globalThis.process && globalThis.process.versions && globalThis.process.versions.node && globalThis.process.type != 'renderer';
+    async function loadPackage(metadata) {
+
+      var PACKAGE_PATH = '';
+      if (typeof window === 'object') {
+        PACKAGE_PATH = window['encodeURIComponent'](window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/');
+      } else if (typeof process === 'undefined' && typeof location !== 'undefined') {
+        // web worker
+        PACKAGE_PATH = encodeURIComponent(location.pathname.substring(0, location.pathname.lastIndexOf('/')) + '/');
+      }
+      var PACKAGE_NAME = 'infotainment.data';
+      var REMOTE_PACKAGE_BASE = 'infotainment.data';
+      var REMOTE_PACKAGE_NAME = Module['locateFile'] ? Module['locateFile'](REMOTE_PACKAGE_BASE, '') : REMOTE_PACKAGE_BASE;
+      var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
+
+      async function fetchRemotePackage(packageName, packageSize) {
+        if (isNode) {
+          var contents = require('fs').readFileSync(packageName);
+          return new Uint8Array(contents).buffer;
+        }
+        if (!Module['dataFileDownloads']) Module['dataFileDownloads'] = {};
+        try {
+          var response = await fetch(packageName);
+        } catch (e) {
+          throw new Error(`Network Error: ${packageName}`, {e});
+        }
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${response.url}`);
+        }
+
+        const chunks = [];
+        const headers = response.headers;
+        const total = Number(headers.get('Content-Length') || packageSize);
+        let loaded = 0;
+
+        Module['setStatus'] && Module['setStatus']('Downloading data...');
+        const reader = response.body.getReader();
+
+        while (1) {
+          var {done, value} = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          loaded += value.length;
+          Module['dataFileDownloads'][packageName] = {loaded, total};
+
+          let totalLoaded = 0;
+          let totalSize = 0;
+
+          for (const download of Object.values(Module['dataFileDownloads'])) {
+            totalLoaded += download.loaded;
+            totalSize += download.total;
+          }
+
+          Module['setStatus'] && Module['setStatus'](`Downloading data... (${totalLoaded}/${totalSize})`);
+        }
+
+        const packageData = new Uint8Array(chunks.map((c) => c.length).reduce((a, b) => a + b, 0));
+        let offset = 0;
+        for (const chunk of chunks) {
+          packageData.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return packageData.buffer;
+      }
+
+      var fetchPromise;
+      var fetched = Module['getPreloadedPackage'] && Module['getPreloadedPackage'](REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE);
+
+      if (!fetched) {
+        // Note that we don't use await here because we want to execute the
+        // the rest of this function immediately.
+        fetchPromise = fetchRemotePackage(REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE);
+      }
+
+    async function runWithFS(Module) {
+
+      function assert(check, msg) {
+        if (!check) throw new Error(msg);
+      }
+Module['FS_createPath']("/", "assets", true, true);
+
+    for (var file of metadata['files']) {
+      var name = file['filename']
+      Module['addRunDependency'](`fp ${name}`);
+    }
+
+      async function processPackageData(arrayBuffer) {
+        assert(arrayBuffer, 'Loading data file failed.');
+        assert(arrayBuffer.constructor.name === ArrayBuffer.name, 'bad input to processPackageData ' + arrayBuffer.constructor.name);
+        var byteArray = new Uint8Array(arrayBuffer);
+        var curr;
+        // Reuse the bytearray from the XHR as the source for file reads.
+          for (var file of metadata['files']) {
+            var name = file['filename'];
+            var data = byteArray.subarray(file['start'], file['end']);
+            // canOwn this data in the filesystem, it is a slice into the heap that will never change
+        Module['FS_createDataFile'](name, null, data, true, true, true);
+        Module['removeRunDependency'](`fp ${name}`);
+          }
+          Module['removeRunDependency']('datafile_infotainment.data');
+      }
+      Module['addRunDependency']('datafile_infotainment.data');
+
+      if (!Module['preloadResults']) Module['preloadResults'] = {};
+
+      Module['preloadResults'][PACKAGE_NAME] = {fromCache: false};
+      if (!fetched) {
+        fetched = await fetchPromise;
+      }
+      processPackageData(fetched);
+
+    }
+    if (Module['calledRun']) {
+      runWithFS(Module);
+    } else {
+      if (!Module['preRun']) Module['preRun'] = [];
+      Module['preRun'].push(runWithFS); // FS is not initialized yet, wait for it
+    }
+
+    }
+    loadPackage({"files": [{"filename": "/assets/Ubuntu-Bold.ttf", "start": 0, "end": 339320}, {"filename": "/assets/Ubuntu-Light.ttf", "start": 339320, "end": 701872}, {"filename": "/assets/abs_indicator.png", "start": 701872, "end": 705808}, {"filename": "/assets/air-conditioner.png", "start": 705808, "end": 708057}, {"filename": "/assets/album_cover.jpg", "start": 708057, "end": 1224901}, {"filename": "/assets/aromaos_logo.png", "start": 1224901, "end": 1264823}, {"filename": "/assets/backroad_blur.png", "start": 1264823, "end": 1281430}, {"filename": "/assets/backroad_dark.png", "start": 1281430, "end": 1317850}, {"filename": "/assets/battery.png", "start": 1317850, "end": 1325954}, {"filename": "/assets/battery_indicator.png", "start": 1325954, "end": 1326871}, {"filename": "/assets/both.png", "start": 1326871, "end": 1329568}, {"filename": "/assets/brake_indicator.png", "start": 1329568, "end": 1332875}, {"filename": "/assets/car.png", "start": 1332875, "end": 1496441}, {"filename": "/assets/car_battery.png", "start": 1496441, "end": 3388036}, {"filename": "/assets/charging.png", "start": 3388036, "end": 3397716}, {"filename": "/assets/high_beams.png", "start": 3397716, "end": 3400293}, {"filename": "/assets/low_beams.png", "start": 3400293, "end": 3402449}, {"filename": "/assets/maps_example.jpg", "start": 3402449, "end": 3518101}, {"filename": "/assets/sample.wav", "start": 3518101, "end": 3870945}, {"filename": "/assets/seatbelt.png", "start": 3870945, "end": 3872685}, {"filename": "/assets/splash.gif", "start": 3872685, "end": 5912854}, {"filename": "/assets/temperature.png", "start": 5912854, "end": 5914600}, {"filename": "/assets/test.png", "start": 5914600, "end": 6569074}, {"filename": "/assets/under.png", "start": 6569074, "end": 6571333}], "remote_package_size": 6571333});
+
+  })();
+
+// end include: /tmp/tmpek3nwq49.js
+// include: /tmp/tmput0y5gtj.js
+
+    // All the pre-js content up to here must remain later on, we need to run
+    // it.
+    if ((typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER) || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD) || (typeof ENVIRONMENT_IS_AUDIO_WORKLET != 'undefined' && ENVIRONMENT_IS_AUDIO_WORKLET)) Module['preRun'] = [];
+    var necessaryPreJSTasks = Module['preRun'].slice();
+  // end include: /tmp/tmput0y5gtj.js
+// include: /tmp/tmpuzcfo_gz.js
+
+    if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
+    necessaryPreJSTasks.forEach((task) => {
+      if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
+    });
+  // end include: /tmp/tmpuzcfo_gz.js
 
 
 var arguments_ = [];
@@ -1660,6 +1808,13 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
         },
   write(stream, buffer, offset, length, position, canOwn) {
           assert(buffer.subarray, 'FS.write expects a TypedArray');
+          // If the buffer is located in main memory (HEAP), and if
+          // memory can grow, we can't hold on to references of the
+          // memory buffer, as they may get invalidated. That means we
+          // need to copy its contents.
+          if (buffer.buffer === HEAP8.buffer) {
+            canOwn = false;
+          }
   
           if (!length) return 0;
           var node = stream.node;
@@ -4456,23 +4611,79 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
     };
 
 
-  var abortOnCannotGrowMemory = (requestedSize) => {
-      abort(`Cannot enlarge memory arrays to size ${requestedSize} bytes (OOM). Either (1) compile with -sINITIAL_MEMORY=X with X higher than the current value ${HEAP8.length}, (2) compile with -sALLOW_MEMORY_GROWTH which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with -sABORTING_MALLOC=0`);
+  var getHeapMax = () =>
+      // Stay one Wasm page short of 4GB: while e.g. Chrome is able to allocate
+      // full 4GB Wasm memories, the size will wrap back to 0 bytes in Wasm side
+      // for any code that deals with heap sizes, which would require special
+      // casing all heap size related code to treat 0 specially.
+      2147483648;
+  
+  
+  var growMemory = (size) => {
+      var oldHeapSize = wasmMemory.buffer.byteLength;
+      var pages = ((size - oldHeapSize + 65535) / 65536) | 0;
+      try {
+        // round size grow request up to wasm page size (fixed 64KB per spec)
+        wasmMemory.grow(pages); // .grow() takes a delta compared to the previous size
+        updateMemoryViews();
+        return 1 /*success*/;
+      } catch(e) {
+        err(`growMemory: Attempted to grow heap from ${oldHeapSize} bytes to ${size} bytes, but got error: ${e}`);
+      }
+      // implicit 0 return to save code size (caller will cast "undefined" into 0
+      // anyhow)
     };
   var _emscripten_resize_heap = (requestedSize) => {
       var oldSize = HEAPU8.length;
       // With CAN_ADDRESS_2GB or MEMORY64, pointers are already unsigned.
       requestedSize >>>= 0;
-      abortOnCannotGrowMemory(requestedSize);
-    };
-
-  var findCanvasEventTarget = findEventTarget;
-  var _emscripten_set_canvas_element_size = (target, width, height) => {
-      var canvas = findCanvasEventTarget(target);
-      if (!canvas) return -4;
-      canvas.width = width;
-      canvas.height = height;
-      return 0;
+      // With multithreaded builds, races can happen (another thread might increase the size
+      // in between), so return a failure, and let the caller retry.
+      assert(requestedSize > oldSize);
+  
+      // Memory resize rules:
+      // 1.  Always increase heap size to at least the requested size, rounded up
+      //     to next page multiple.
+      // 2a. If MEMORY_GROWTH_LINEAR_STEP == -1, excessively resize the heap
+      //     geometrically: increase the heap size according to
+      //     MEMORY_GROWTH_GEOMETRIC_STEP factor (default +20%), At most
+      //     overreserve by MEMORY_GROWTH_GEOMETRIC_CAP bytes (default 96MB).
+      // 2b. If MEMORY_GROWTH_LINEAR_STEP != -1, excessively resize the heap
+      //     linearly: increase the heap size by at least
+      //     MEMORY_GROWTH_LINEAR_STEP bytes.
+      // 3.  Max size for the heap is capped at 2048MB-WASM_PAGE_SIZE, or by
+      //     MAXIMUM_MEMORY, or by ASAN limit, depending on which is smallest
+      // 4.  If we were unable to allocate as much memory, it may be due to
+      //     over-eager decision to excessively reserve due to (3) above.
+      //     Hence if an allocation fails, cut down on the amount of excess
+      //     growth, in an attempt to succeed to perform a smaller allocation.
+  
+      // A limit is set for how much we can grow. We should not exceed that
+      // (the wasm binary specifies it, so if we tried, we'd fail anyhow).
+      var maxHeapSize = getHeapMax();
+      if (requestedSize > maxHeapSize) {
+        err(`Cannot enlarge memory, requested ${requestedSize} bytes, but the limit is ${maxHeapSize} bytes!`);
+        return false;
+      }
+  
+      // Loop through potential heap size increases. If we attempt a too eager
+      // reservation that fails, cut down on the attempted size and reserve a
+      // smaller bump instead. (max 3 times, chosen somewhat arbitrarily)
+      for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
+        var overGrownHeapSize = oldSize * (1 + 0.2 / cutDown); // ensure geometric growth
+        // but limit overreserving (default to capping at +96MB overgrowth at most)
+        overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296 );
+  
+        var newSize = Math.min(maxHeapSize, alignMemory(Math.max(requestedSize, overGrownHeapSize), 65536));
+  
+        var replacement = growMemory(newSize);
+        if (replacement) {
+  
+          return true;
+        }
+      }
+      err(`Failed to grow the heap from ${oldSize} bytes to ${newSize} bytes, not enough memory!`);
+      return false;
     };
 
   var onExits = [];
@@ -5242,6 +5453,7 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
   
   var webglPowerPreferences = ["default","low-power","high-performance"];
   
+  var findCanvasEventTarget = findEventTarget;
   
   var _emscripten_webgl_do_create_context = (target, attributes) => {
       assert(attributes);
@@ -6171,6 +6383,7 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
       return func;
     };
 
+
   var runAndAbortIfError = (func) => {
       try {
         return func();
@@ -6553,6 +6766,19 @@ var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
       return (...args) => ccall(ident, returnType, argTypes, args, opts);
     };
 
+
+
+
+  var FS_createPath = (...args) => FS.createPath(...args);
+
+
+
+  var FS_unlink = (...args) => FS.unlink(...args);
+
+  var FS_createLazyFile = (...args) => FS.createLazyFile(...args);
+
+  var FS_createDevice = (...args) => FS.createDevice(...args);
+
   FS.createPreloadedFile = FS_createPreloadedFile;
   FS.preloadFile = FS_preloadFile;
   FS.staticInit();;
@@ -6619,8 +6845,17 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
 
 // Begin runtime exports
   Module['callMain'] = callMain;
+  Module['addRunDependency'] = addRunDependency;
+  Module['removeRunDependency'] = removeRunDependency;
   Module['ccall'] = ccall;
   Module['cwrap'] = cwrap;
+  Module['FS_preloadFile'] = FS_preloadFile;
+  Module['FS_unlink'] = FS_unlink;
+  Module['FS_createPath'] = FS_createPath;
+  Module['FS_createDevice'] = FS_createDevice;
+  Module['FS'] = FS;
+  Module['FS_createDataFile'] = FS_createDataFile;
+  Module['FS_createLazyFile'] = FS_createLazyFile;
   var missingLibrarySymbols = [
   'writeI53ToI64',
   'writeI53ToI64Clamped',
@@ -6634,8 +6869,6 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
   'convertU32PairToI53',
   'getTempRet0',
   'setTempRet0',
-  'getHeapMax',
-  'growMemory',
   'withStackSave',
   'inetPton4',
   'inetNtop4',
@@ -6779,7 +7012,8 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'ptrToString',
   'zeroMemory',
   'exitJS',
-  'abortOnCannotGrowMemory',
+  'getHeapMax',
+  'growMemory',
   'ENV',
   'ERRNO_CODES',
   'strError',
@@ -6808,8 +7042,6 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'wasmMemory',
   'getUniqueRunDependency',
   'noExitRuntime',
-  'addRunDependency',
-  'removeRunDependency',
   'addOnPreRun',
   'addOnExit',
   'addOnPostRun',
@@ -6873,17 +7105,12 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'SYSCALLS',
   'preloadPlugins',
   'FS_createPreloadedFile',
-  'FS_preloadFile',
   'FS_modeStringToFlags',
   'FS_getMode',
   'FS_fileDataToTypedArray',
   'FS_stdin_getChar_buffer',
   'FS_stdin_getChar',
-  'FS_unlink',
-  'FS_createPath',
-  'FS_createDevice',
   'FS_readFile',
-  'FS',
   'FS_root',
   'FS_mounts',
   'FS_devices',
@@ -6986,9 +7213,7 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'FS_findObject',
   'FS_analyzePath',
   'FS_createFile',
-  'FS_createDataFile',
   'FS_forceLoadFile',
-  'FS_createLazyFile',
   'MEMFS',
   'TTY',
   'PIPEFS',
@@ -7046,9 +7271,12 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('onSbrkGrow');
 }
 var ASM_CONSTS = {
-  1646068: ($0, $1, $2, $3) => { if (typeof window !== 'undefined') { window.aromaLastMouseDispatchAction = $0; window.aromaLastMouseDispatchX = $1; window.aromaLastMouseDispatchY = $2; window.aromaLastMouseDispatchButton = $3; } console.log('dispatch_mouse', $0, $1, $2, $3); },  
- 1646316: ($0, $1, $2, $3, $4) => { if (typeof window !== 'undefined') { window.aromaLastMouseType = $0; window.aromaLastMouseTarget = $1; window.aromaLastMouseX = $2; window.aromaLastMouseY = $3; window.aromaLastMouseButton = $4; } }
+  1648543: ($0, $1, $2, $3) => { if (typeof window !== 'undefined') { window.aromaLastMouseDispatchAction = $0; window.aromaLastMouseDispatchX = $1; window.aromaLastMouseDispatchY = $2; window.aromaLastMouseDispatchButton = $3; } console.log('dispatch_mouse', $0, $1, $2, $3); },  
+ 1648791: ($0, $1, $2, $3, $4) => { if (typeof window !== 'undefined') { window.aromaLastMouseType = $0; window.aromaLastMouseTarget = $1; window.aromaLastMouseX = $2; window.aromaLastMouseY = $3; window.aromaLastMouseButton = $4; } }
 };
+function aroma_emscripten_device_pixel_ratio() { return window.devicePixelRatio || 1.0; }
+function _aroma_get_device_pixel_ratio() { return window.devicePixelRatio || 1.0; }
+function _aroma_resize_canvas_for_dpr(selector,css_w,css_h,dpr) { var sel = UTF8ToString(selector); var el = document.querySelector(sel); if (!el) return; el.width = Math.round(css_w * dpr); el.height = Math.round(css_h * dpr); el.style.width = css_w + 'px'; el.style.height = css_h + 'px'; }
 
 // Imports from the Wasm binary.
 var _fflush = makeInvalidEarlyAccess('_fflush');
@@ -7233,6 +7461,10 @@ var wasmImports = {
   /** @export */
   _abort_js: __abort_js,
   /** @export */
+  _aroma_get_device_pixel_ratio,
+  /** @export */
+  _aroma_resize_canvas_for_dpr,
+  /** @export */
   _emscripten_throw_longjmp: __emscripten_throw_longjmp,
   /** @export */
   _localtime_js: __localtime_js,
@@ -7256,8 +7488,6 @@ var wasmImports = {
   emscripten_get_now: _emscripten_get_now,
   /** @export */
   emscripten_resize_heap: _emscripten_resize_heap,
-  /** @export */
-  emscripten_set_canvas_element_size: _emscripten_set_canvas_element_size,
   /** @export */
   emscripten_set_keydown_callback_on_thread: _emscripten_set_keydown_callback_on_thread,
   /** @export */

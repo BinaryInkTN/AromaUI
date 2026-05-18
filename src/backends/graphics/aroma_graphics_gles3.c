@@ -49,23 +49,16 @@ typedef struct
 
 typedef struct
 {
-    Vertex vertices[MAX_BATCH_VERTICES];
     int count;
     size_t window_id;
+    Vertex vertices[MAX_BATCH_VERTICES];
+
 } ShapeBatch;
 
 typedef struct
 {
-    GLuint textureID;
-    int width, height;
-    int bearingX, bearingY;
-    int advance;
-} Glyph;
-
-typedef struct
-{
-    GLES3TextRenderer renderer;
     AromaFont *font;
+    GLES3TextRenderer renderer;
     uint32_t last_used_frame;
     uint32_t font_id;
 } CachedFontRenderer;
@@ -84,17 +77,19 @@ typedef struct
     GLuint shape_program;
     GLuint text_vbo;
     GLuint shape_vbo;
-    mat4x4 projection;
     GLuint text_fragment_shader;
     GLuint text_vertex_shader;
     bool is_running;
     size_t num_windows;
-    WindowResources windows[MAX_WINDOWS];
     uint32_t current_frame;
 
     ShapeUniforms shape_uniforms;
     CachedFrameState frame_cache;
     ShapeBatch batch;
+        mat4x4 projection;
+
+        WindowResources windows[MAX_WINDOWS];
+
 } AromaGLES3Context;
 
 static AromaGLES3Context ctx = {0};
@@ -307,7 +302,7 @@ int setup_separate_window_resources(size_t window_id)
 
     GLint col_attrib = glGetAttribLocation(ctx.shape_program, "col");
     glEnableVertexAttribArray(col_attrib);
-    glVertexAttribPointer(col_attrib, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, col));
+    glVertexAttribPointer(col_attrib, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, col));
 
     glBindVertexArray(0);
 
@@ -316,10 +311,6 @@ int setup_separate_window_resources(size_t window_id)
     return 1;
 }
 
-/**
- * Ensure the GL context, viewport and projection are set for `window_id`.
- * Caches the result so repeated calls within the same frame are free.
- */
 static bool ensure_frame_state(size_t window_id)
 {
     if (ctx.frame_cache.valid && ctx.frame_cache.window_id == window_id)
@@ -351,9 +342,6 @@ static bool ensure_frame_state(size_t window_id)
     return true;
 }
 
-/**
- * Issue one batched draw call for all queued non-rounded filled rects.
- */
 static void flush_shape_batch(void)
 {
     if (ctx.batch.count == 0)
@@ -404,10 +392,6 @@ static void flush_shape_batch(void)
     ctx.batch.count = 0;
 }
 
-/**
- * Queue a non-rounded filled rect into the batch buffer.
- * Automatically flushes when the buffer is full or the window changes.
- */
 static void batch_add_rect(size_t window_id,
                            int x, int y, int w, int h,
                            uint32_t color)
@@ -422,8 +406,8 @@ static void batch_add_rect(size_t window_id,
     vec3 rgb;
     convert_hex_to_rgb(&rgb, color);
 
-    uint8_t alpha_byte = (color >> 24) & 0xFF;
-    float alpha = (alpha_byte == 0) ? 1.0f : alpha_byte / 255.0f;
+    uint8_t alpha_byte = (uint8_t)((color >> 24) & 0xFFu);
+    float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
     float x0 = (float)x, y0 = (float)y;
     float x1 = x0 + (float)w, y1 = y0 + (float)h;
@@ -460,9 +444,9 @@ void draw_rectangle(size_t window_id, int x, int y, int width, int height)
 {
 }
 
-void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint32_t color, bool isRounded, float cornerRadius)
+void fill_rectangle(size_t window_id, int x, int y, int width, int height,
+                    uint32_t color, bool isRounded, float cornerRadius)
 {
-
     if (!isRounded)
     {
         batch_add_rect(window_id, x, y, width, height, color);
@@ -477,6 +461,9 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
 
+    uint8_t alpha_byte = (uint8_t)((color >> 24) & 0xFFu);
+    float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
+
     Vertex vertices[6];
     vec2 texCoords[6] = {
         {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
@@ -486,7 +473,7 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height, uint3
         vertices[i].col[0] = color_rgb[0];
         vertices[i].col[1] = color_rgb[1];
         vertices[i].col[2] = color_rgb[2];
-        vertices[i].col[3] = 1.0f;
+        vertices[i].col[3] = alpha;
         vertices[i].texCoord[0] = texCoords[i][0];
         vertices[i].texCoord[1] = texCoords[i][1];
     }
@@ -543,24 +530,14 @@ static void shutdown(void)
         WindowResources *win = &ctx.windows[w];
 
         for (int i = 0; i < win->font_cache_count; i++)
-        {
             gles3_text_renderer_cleanup(&win->font_cache[i].renderer);
-        }
 
         if (win->text_program)
-        {
             glDeleteProgram(win->text_program);
-        }
-
         if (win->text_vao)
-        {
             glDeleteVertexArrays(1, &win->text_vao);
-        }
-
         if (win->shape_vao)
-        {
             glDeleteVertexArrays(1, &win->shape_vao);
-        }
     }
 
     glDeleteProgram(ctx.shape_program);
@@ -572,9 +549,7 @@ static void shutdown(void)
 
 static void clear(size_t window_id, uint32_t color)
 {
-
     ctx.batch.count = 0;
-
     ctx.frame_cache.valid = false;
 
     if (!ensure_frame_state(window_id))
@@ -586,20 +561,20 @@ static void clear(size_t window_id, uint32_t color)
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-static void render_text(size_t window_id, AromaFont *font, const char *text, int x, int y, uint32_t color, float scale)
+static void render_text(size_t window_id, AromaFont *font, const char *text,
+                        int x, int y, uint32_t color, float scale)
 {
     if (!font || !text || window_id >= MAX_WINDOWS)
-    {
         return;
-    }
 
     flush_shape_batch();
 
+    if (ctx.frame_cache.window_id != window_id)
+        ctx.frame_cache.valid = false;
+
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current)
-    {
         platform->make_context_current(window_id);
-    }
 
     GLES3TextRenderer *renderer = get_or_load_font_renderer(window_id, font);
     if (!renderer)
@@ -618,15 +593,11 @@ static void render_text(size_t window_id, AromaFont *font, const char *text, int
 static float measure_text(size_t window_id, AromaFont *font, const char *text, float scale)
 {
     if (!font || !text || window_id >= MAX_WINDOWS)
-    {
         return 0.0f;
-    }
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current)
-    {
         platform->make_context_current(window_id);
-    }
 
     GLES3TextRenderer *renderer = get_or_load_font_renderer(window_id, font);
     if (!renderer)
@@ -639,7 +610,8 @@ static float measure_text(size_t window_id, AromaFont *font, const char *text, f
 }
 
 static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height,
-                                  uint32_t color, int border_width, bool isRounded, float cornerRadius)
+                                  uint32_t color, int border_width,
+                                  bool isRounded, float cornerRadius)
 {
     if (border_width <= 0)
         return;
@@ -652,6 +624,9 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
 
+    uint8_t alpha_byte = (uint8_t)((color >> 24) & 0xFFu);
+    float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
+
     Vertex vertices[6];
     vec2 texCoords[6] = {
         {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
@@ -661,7 +636,7 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
         vertices[i].col[0] = color_rgb[0];
         vertices[i].col[1] = color_rgb[1];
         vertices[i].col[2] = color_rgb[2];
-        vertices[i].col[3] = 1.0f;
+        vertices[i].col[3] = alpha;
         vertices[i].texCoord[0] = texCoords[i][0];
         vertices[i].texCoord[1] = texCoords[i][1];
     }
@@ -711,7 +686,8 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     glBindVertexArray(0);
 }
 
-static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_angle, float end_angle,
+static void draw_arc(size_t window_id, int cx, int cy, int radius,
+                     float start_angle, float end_angle,
                      uint32_t color, int thickness)
 {
 }
@@ -719,15 +695,11 @@ static void draw_arc(size_t window_id, int cx, int cy, int radius, float start_a
 void aroma_gles3_load_font_for_window(size_t window_id, AromaFont *font)
 {
     if (!font || window_id >= MAX_WINDOWS)
-    {
         return;
-    }
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current)
-    {
         platform->make_context_current(window_id);
-    }
 
     get_or_load_font_renderer(window_id, font);
 }
@@ -736,20 +708,14 @@ static int is_stb_supported_image_format(const char *path)
 {
     if (!path)
         return 0;
-
     const char *ext = strrchr(path, '.');
     if (!ext)
         return 0;
-
     ext++;
-
     if (strcasecmp(ext, "png") == 0 ||
         strcasecmp(ext, "jpg") == 0 ||
         strcasecmp(ext, "jpeg") == 0)
-    {
         return 1;
-    }
-
     return 0;
 }
 
@@ -767,7 +733,8 @@ unsigned int load_image(const char *image_path)
     }
 
     char resolved_image_path[1024];
-    const char *load_path = aroma_resolve_asset_path(image_path, resolved_image_path, sizeof(resolved_image_path));
+    const char *load_path = aroma_resolve_asset_path(image_path, resolved_image_path,
+                                                     sizeof(resolved_image_path));
 
     LOG_INFO("Attempting to load image: %s", load_path);
 
@@ -785,7 +752,7 @@ unsigned int load_image(const char *image_path)
     if (texture == 0)
     {
         GLenum error = glGetError();
-        LOG_ERROR("glGenTextures failed! Could not generate texture ID. OpenGL error: 0x%X", error);
+        LOG_ERROR("glGenTextures failed! OpenGL error: 0x%X", error);
         return 0;
     }
 
@@ -820,13 +787,12 @@ unsigned int load_image(const char *image_path)
     if (ext && (strcasecmp(ext, ".svg") == 0))
     {
         LOG_INFO("Loading SVG file: %s", load_path);
-        NSVGimage *image = NULL;
+        NSVGimage *image = nsvgParseFromFile(load_path, "px", 96.0f);
         NSVGrasterizer *rast = NULL;
 
-        image = nsvgParseFromFile(load_path, "px", 96.0f);
         if (!image)
         {
-            LOG_ERROR("NanoSVG failed to parse SVG file: %s", load_path);
+            LOG_ERROR("NanoSVG failed to parse: %s", load_path);
             glDeleteTextures(1, &texture);
             return 0;
         }
@@ -834,7 +800,7 @@ unsigned int load_image(const char *image_path)
         rast = nsvgCreateRasterizer();
         if (!rast)
         {
-            LOG_ERROR("Failed to create NanoSVG rasterizer for: %s", load_path);
+            LOG_ERROR("Failed to create NanoSVG rasterizer: %s", load_path);
             nsvgDelete(image);
             glDeleteTextures(1, &texture);
             return 0;
@@ -846,12 +812,11 @@ unsigned int load_image(const char *image_path)
 
         LOG_INFO("SVG dimensions: %dx%d", img_width, img_height);
 
-        size_t data_size = img_width * img_height * 4;
+        size_t data_size = (size_t)img_width * (size_t)img_height * 4u;
         data = (unsigned char *)malloc(data_size);
         if (!data)
         {
-            LOG_ERROR("Failed to allocate memory for SVG rasterization: %s (needed %zu bytes)",
-                      load_path, data_size);
+            LOG_ERROR("Failed to allocate for SVG rasterisation: %s", load_path);
             nsvgDeleteRasterizer(rast);
             nsvgDelete(image);
             glDeleteTextures(1, &texture);
@@ -864,12 +829,11 @@ unsigned int load_image(const char *image_path)
 
         nsvgDeleteRasterizer(rast);
         nsvgDelete(image);
-        LOG_INFO("Successfully rasterized SVG: %s", load_path);
+        LOG_INFO("Successfully rasterised SVG: %s", load_path);
     }
     else if (is_stb_supported_image_format(load_path))
     {
         LOG_INFO("Loading raster image: %s", load_path);
-        stbi_set_flip_vertically_on_load(1);
         data = stbi_load(load_path, &img_width, &img_height, &nrChannels, 0);
         if (data)
         {
@@ -882,9 +846,7 @@ unsigned int load_image(const char *image_path)
             LOG_ERROR("STB failed to load image: %s", load_path);
             const char *reason = stbi_failure_reason();
             if (reason)
-            {
                 LOG_ERROR("STB failure reason: %s", reason);
-            }
         }
     }
     else
@@ -898,15 +860,10 @@ unsigned int load_image(const char *image_path)
     {
         LOG_ERROR("Failed to load image data: %s", load_path);
         glDeleteTextures(1, &texture);
-
         if (ext && strcasecmp(ext, ".svg") == 0)
-        {
             free(data);
-        }
         else
-        {
             stbi_image_free(data);
-        }
         return 0;
     }
 
@@ -914,15 +871,10 @@ unsigned int load_image(const char *image_path)
     {
         LOG_ERROR("Invalid image dimensions: %s (%dx%d)", load_path, img_width, img_height);
         glDeleteTextures(1, &texture);
-
         if (ext && strcasecmp(ext, ".svg") == 0)
-        {
             free(data);
-        }
         else
-        {
             stbi_image_free(data);
-        }
         return 0;
     }
 
@@ -942,21 +894,16 @@ unsigned int load_image(const char *image_path)
         format = GL_RGBA;
         break;
     default:
-        LOG_ERROR("Unsupported number of channels: %d for %s", nrChannels, load_path);
+        LOG_ERROR("Unsupported channel count: %d for %s", nrChannels, load_path);
         glDeleteTextures(1, &texture);
         if (ext && strcasecmp(ext, ".svg") == 0)
-        {
             free(data);
-        }
         else
-        {
             stbi_image_free(data);
-        }
         return 0;
     }
 
-    LOG_INFO("Uploading texture data to GPU (format: 0x%X, %dx%d)",
-             format, img_width, img_height);
+    LOG_INFO("Uploading texture (format: 0x%X, %dx%d)", format, img_width, img_height);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, format, img_width, img_height, 0,
@@ -966,66 +913,46 @@ unsigned int load_image(const char *image_path)
     glError = glGetError();
     if (glError != GL_NO_ERROR)
     {
-        LOG_ERROR("OpenGL error during glTexImage2D for texture %u: 0x%X", texture, glError);
+        LOG_ERROR("OpenGL error during glTexImage2D for %u: 0x%X", texture, glError);
         glDeleteTextures(1, &texture);
-
         if (ext && strcasecmp(ext, ".svg") == 0)
-        {
             free(data);
-        }
         else
-        {
             stbi_image_free(data);
-        }
         return 0;
     }
 
     glGenerateMipmap(GL_TEXTURE_2D);
-
     glError = glGetError();
     if (glError != GL_NO_ERROR)
-    {
-        LOG_WARNING("OpenGL warning during glGenerateMipmap for texture %u: 0x%X", texture, glError);
-    }
+        LOG_WARNING("OpenGL warning during glGenerateMipmap for %u: 0x%X", texture, glError);
 
     if (ext && strcasecmp(ext, ".svg") == 0)
-    {
         free(data);
-    }
     else
-    {
         stbi_image_free(data);
-    }
 
     if (!glIsTexture(texture))
     {
-        LOG_ERROR("Texture validation failed! ID %u is not a valid texture after loading", texture);
+        LOG_ERROR("Texture validation failed: ID %u is not valid", texture);
         glDeleteTextures(1, &texture);
         return 0;
     }
 
-    LOG_INFO("Texture %u successfully created: %s (%dx%d)",
-             texture, load_path, img_width, img_height);
-
+    LOG_INFO("Texture %u ready: %s (%dx%d)", texture, load_path, img_width, img_height);
     return texture;
 }
 
 unsigned int load_image_from_rgba(unsigned char *img_data, int width, int height)
 {
     if (!img_data || width <= 0 || height <= 0)
-    {
         return 0;
-    }
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (platform && platform->make_context_current)
-    {
         platform->make_context_current(0);
-    }
     else
-    {
-        LOG_WARNING("Platform interface missing make_context_current, proceeding without explicit context switch");
-    }
+        LOG_WARNING("Platform interface missing make_context_current");
 
     unsigned int texture;
     glGenTextures(1, &texture);
@@ -1043,8 +970,7 @@ unsigned int load_image_from_rgba(unsigned char *img_data, int width, int height
 
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    LOG_INFO("Successfully loaded texture from RGBA (ID: %u, %dx%d)",
-             texture, width, height);
+    LOG_INFO("Loaded texture from RGBA (ID: %u, %dx%d)", texture, width, height);
     return texture;
 }
 
@@ -1056,7 +982,6 @@ unsigned int load_image_from_memory(unsigned char *data, size_t binary_length)
         return 0;
     }
 
-    stbi_set_flip_vertically_on_load(1);
     int width, height, channels;
     unsigned char *img_data = stbi_load_from_memory(data, (int)binary_length,
                                                     &width, &height, &channels, 4);
@@ -1067,13 +992,12 @@ unsigned int load_image_from_memory(unsigned char *data, size_t binary_length)
     }
 
     unsigned int texture = load_image_from_rgba(img_data, width, height);
-
     stbi_image_free(img_data);
-
     return texture;
 }
 
-void draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
+void draw_image(size_t window_id, int x, int y, int width, int height,
+                unsigned int texture_id)
 {
     if (texture_id == 0)
     {
@@ -1098,7 +1022,7 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
     Vertex vertices[6];
 
     vec2 texCoords[6] = {
-        {0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}};
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 
     float x0 = (float)x, y0 = (float)y;
     float x1 = x0 + (float)width, y1 = y0 + (float)height;
@@ -1166,7 +1090,6 @@ void draw_image(size_t window_id, int x, int y, int width, int height, unsigned 
 
 static void gles3_set_clip(int x, int y, int w, int h)
 {
-
     flush_shape_batch();
 
     int window_height = ctx.frame_cache.height;
@@ -1175,9 +1098,7 @@ static void gles3_set_clip(int x, int y, int w, int h)
         AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
         int window_width = 0;
         if (platform && platform->get_window_size)
-        {
             platform->get_window_size(0, &window_width, &window_height);
-        }
     }
 
     int gl_y = window_height - y - h;
@@ -1190,7 +1111,6 @@ static void gles3_set_clip(int x, int y, int w, int h)
 
 static void gles3_clear_clip(void)
 {
-
     flush_shape_batch();
     glDisable(GL_SCISSOR_TEST);
 }

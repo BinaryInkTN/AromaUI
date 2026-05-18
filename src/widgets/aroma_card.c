@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct AromaCard
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaCard
 {
     AromaRect rect;
     AromaCardType type;

@@ -16,7 +16,7 @@ typedef enum {
     ICON_BUTTON_OUTLINED     
 } AromaIconButtonVariant;
 
-typedef struct AromaIconButton AromaIconButton;
+typedef struct  AromaIconButton AromaIconButton;
 
 
 AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int x, int y, int size, AromaIconButtonVariant variant);

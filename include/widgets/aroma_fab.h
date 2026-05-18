@@ -16,7 +16,7 @@ typedef enum {
     FAB_SIZE_EXTENDED // Variable width with text
 } AromaFABSize;
 
-typedef struct AromaFAB AromaFAB;
+typedef struct  AromaFAB AromaFAB;
 
 // Create a new FAB
 AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, const char* icon_text);

@@ -9,9 +9,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaWindow AromaWindow;
+typedef struct  AromaWindow AromaWindow;
 
-typedef struct AromaSwitch
+typedef struct  AromaSwitch
 {
     AromaRect rect;
     bool state;

@@ -33,7 +33,7 @@ extern "C" {
 #endif
 #endif
 
-typedef struct NSVGrasterizer NSVGrasterizer;
+typedef struct  NSVGrasterizer NSVGrasterizer;
 
 /* Example Usage:
 	// Load SVG
@@ -86,13 +86,13 @@ void nsvgDeleteRasterizer(NSVGrasterizer*);
 #define NSVG__FIXMASK		(NSVG__FIX-1)
 #define NSVG__MEMPAGE_SIZE	1024
 
-typedef struct NSVGedge {
+typedef struct  NSVGedge {
 	float x0,y0, x1,y1;
 	int dir;
 	struct NSVGedge* next;
 } NSVGedge;
 
-typedef struct NSVGpoint {
+typedef struct  NSVGpoint {
 	float x, y;
 	float dx, dy;
 	float len;
@@ -100,20 +100,20 @@ typedef struct NSVGpoint {
 	unsigned char flags;
 } NSVGpoint;
 
-typedef struct NSVGactiveEdge {
+typedef struct  NSVGactiveEdge {
 	int x,dx;
 	float ey;
 	int dir;
 	struct NSVGactiveEdge *next;
 } NSVGactiveEdge;
 
-typedef struct NSVGmemPage {
+typedef struct  NSVGmemPage {
 	unsigned char mem[NSVG__MEMPAGE_SIZE];
 	int size;
 	struct NSVGmemPage* next;
 } NSVGmemPage;
 
-typedef struct NSVGcachedPaint {
+typedef struct  NSVGcachedPaint {
 	signed char type;
 	char spread;
 	float xform[6];

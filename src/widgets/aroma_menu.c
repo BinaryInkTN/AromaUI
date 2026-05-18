@@ -31,7 +31,7 @@
 
 #define AROMA_MENU_MAX_ITEMS 32
 
-typedef struct AromaMenu {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaMenu {
     AromaRect rect;
     AromaMenuItem items[AROMA_MENU_MAX_ITEMS];
     size_t item_count;
@@ -118,6 +118,7 @@ void aroma_menu_add_item(AromaNode* menu_node, const char* text, void (*callback
     AromaMenuItem* item = &menu->items[menu->item_count++];
     memset(item, 0, sizeof(AromaMenuItem));
     strncpy(item->text, text, sizeof(item->text) - 1);
+    item->text[sizeof(item->text) - 1] = '\0';
     item->enabled = true;
     item->callback = callback;
     item->user_data = user_data;
@@ -133,8 +134,10 @@ void aroma_menu_add_item_with_icon(AromaNode* menu_node, const char* text, const
     AromaMenuItem* item = &menu->items[menu->item_count++];
     memset(item, 0, sizeof(AromaMenuItem));
     strncpy(item->text, text, sizeof(item->text) - 1);
+    item->text[sizeof(item->text) - 1] = '\0';
     if (icon_code) {
         strncpy(item->icon, icon_code, 7);
+        item->icon[7] = '\0';
     }
     item->enabled = true;
     item->callback = callback;

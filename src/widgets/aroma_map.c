@@ -29,7 +29,7 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 #define MAX_TILES_MEM 128
 #define TILE_SIZE 256
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
     uint64_t access_seq;
     int z, x, y;
     unsigned int texture_id;
@@ -41,7 +41,7 @@ typedef struct {
 } MapTile;
 
 #define MAX_MARKERS 32
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
     double lat;
     double lon;
     uint32_t color;
@@ -78,7 +78,7 @@ struct AromaMapExtra {
     pthread_mutex_t route_mutex;
 };
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
     uint64_t node_id;
     int z, x, y;
     bool is_dark;
@@ -165,7 +165,7 @@ static void decode_polyline(const char* encoded, double** lats, double** lons, i
     }
 }
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
     double start_lat, start_lon, end_lat, end_lon;
     AromaNode* node;
     struct AromaMapExtra* extra;

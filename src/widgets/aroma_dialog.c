@@ -19,7 +19,7 @@ typedef struct
     void *user_data;
 } AromaDialogAction;
 
-typedef struct AromaDialog
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaDialog
 {
     AromaRect rect;
     int centered_x;
@@ -170,8 +170,12 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
 
     if (title)
         strncpy(dlg->title, title, sizeof(dlg->title) - 1);
+    if (title)
+        dlg->title[sizeof(dlg->title) - 1] = '\0';
     if (message)
         strncpy(dlg->message, message, sizeof(dlg->message) - 1);
+    if (message)
+        dlg->message[sizeof(dlg->message) - 1] = '\0';
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (!platform)
@@ -239,6 +243,7 @@ void aroma_dialog_add_action(AromaNode *dialog_node, const char *label, void (*c
 
     AromaDialogAction *act = &dlg->actions[dlg->action_count++];
     strncpy(act->label, label, sizeof(act->label) - 1);
+    act->label[sizeof(act->label) - 1] = '\0';
     act->callback = callback;
     act->user_data = user_data;
 

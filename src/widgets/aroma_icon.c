@@ -30,7 +30,7 @@
 #include <string.h>
 
 #define AROMA_ICON_TEXT_MAX 16
-#define AROMA_ICON_PATH_MAX 256
+#define AROMA_ICON_PATH_MAX 64
 
 typedef enum {
     AROMA_ICON_MODE_NONE,
@@ -38,22 +38,21 @@ typedef enum {
     AROMA_ICON_MODE_IMAGE
 } AromaIconMode;
 
-struct AromaIcon {
+typedef struct  __attribute__((packed, aligned(1)))  AromaIcon {
     AromaRect rect;
+    AromaFont* font;
+
     AromaIconMode mode;
     
-    
-    char icon_text[AROMA_ICON_TEXT_MAX];
-    AromaFont* font;
-    
-    
-    char image_path[AROMA_ICON_PATH_MAX];
     unsigned int texture_id;
-    bool owns_texture;
-    
     uint32_t color;
     float scale;
-};
+
+    bool owns_texture;
+ 
+    char icon_text[AROMA_ICON_TEXT_MAX];
+    char image_path[AROMA_ICON_PATH_MAX];
+}AromaIcon; 
 
 
 void aroma_icon_draw(AromaNode* icon_node, size_t window_id);
@@ -102,6 +101,7 @@ void aroma_icon_set_text(AromaNode* icon_node, const char* icon_text, AromaFont*
     
     icon->mode = AROMA_ICON_MODE_FONT;
     strncpy(icon->icon_text, icon_text, AROMA_ICON_TEXT_MAX - 1);
+    icon->icon_text[AROMA_ICON_TEXT_MAX - 1] = '\0';
     icon->font = font;
     
     aroma_node_invalidate(icon_node);
@@ -115,6 +115,7 @@ void aroma_icon_set_image(AromaNode* icon_node, const char* image_path) {
     
     icon->mode = AROMA_ICON_MODE_IMAGE;
     strncpy(icon->image_path, image_path, AROMA_ICON_PATH_MAX - 1);
+    icon->image_path[AROMA_ICON_PATH_MAX - 1] = '\0';
     
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx && gfx->load_image) {

@@ -9,16 +9,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct AromaListItem {
-
-    void* user_data;
+typedef struct    __attribute__((packed, aligned(1)))
+{ 
     char text[64];
     char secondary_text[64];
     char icon[32];
+    uint8_t _pad[4];
+    void* user_data;
 } AromaListItem;
-
-typedef struct AromaListView AromaListView;
+typedef struct  AromaListView AromaListView;
 
 #define AROMA_LIST_ITEM_NORMAL      0
 #define AROMA_LIST_ITEM_HEADER       1

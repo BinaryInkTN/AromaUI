@@ -33,7 +33,7 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include <string.h>
 
-#define AROMA_SIDEBAR_CONTENT_MAX 16
+#define AROMA_SIDEBAR_CONTENT_MAX 8
 
 struct AromaSidebar {
     AromaRect rect;
@@ -57,14 +57,16 @@ struct AromaSidebar {
     int full_width;
     int retracted_width;
     int breakpoint;
-    AromaNode* content_nodes[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_CONTENT_MAX];
-    int content_counts[AROMA_SIDEBAR_MAX_ITEMS];
-    char labels[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_LABEL_MAX];
-    char icons[AROMA_SIDEBAR_MAX_ITEMS][8];
+
     
     int transition_type;
     uint32_t transition_duration;
     int prev_selected_index;
+
+        AromaNode* content_nodes[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_CONTENT_MAX];
+    int content_counts[AROMA_SIDEBAR_MAX_ITEMS];
+    char labels[AROMA_SIDEBAR_MAX_ITEMS][AROMA_SIDEBAR_LABEL_MAX];
+    char icons[AROMA_SIDEBAR_MAX_ITEMS][8];
 };
 
 static void __sidebar_request_redraw(void* user_data)
@@ -110,8 +112,8 @@ static void __sidebar_update_content_visibility(AromaSidebar* sidebar)
             aroma_node_set_hidden(content, hide);
             
             if (!hide) {
-                if (content->node_widget_ptr) {
-                    AromaRect* content_rect = (AromaRect*)content->node_widget_ptr;
+                AromaRect* content_rect = aroma_node_get_rect(content);
+                if (content_rect) {
                     aroma_node_update_layout(content, 
                                            content_rect->x, 
                                            content_rect->y, 
@@ -218,6 +220,7 @@ AromaNode* aroma_sidebar_create(AromaNode* parent, int x, int y, int width, int 
     for (int i = 0; i < sidebar->count; i++) {
         if (labels[i]) {
             strncpy(sidebar->labels[i], labels[i], AROMA_SIDEBAR_LABEL_MAX - 1);
+            sidebar->labels[i][AROMA_SIDEBAR_LABEL_MAX - 1] = '\0';
         } else {
             sidebar->labels[i][0] = '\0';
         }

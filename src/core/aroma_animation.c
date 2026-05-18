@@ -78,7 +78,7 @@ static void update_animations(void* arg) {
         }
         curr->current_val = curr->start_val + (curr->end_val - curr->start_val) * ease;
 
-        AromaRect* rect = (AromaRect*)curr->target->node_widget_ptr;
+        AromaRect* rect = aroma_node_get_rect(curr->target);
         if (rect) {
             if (curr->type == AROMA_ANIM_SLIDE_X) {
                 rect->x = (int)curr->current_val;

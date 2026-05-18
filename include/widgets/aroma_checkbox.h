@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 // Material Design 3 Checkbox
-typedef struct AromaCheckbox AromaCheckbox;
+typedef struct  AromaCheckbox AromaCheckbox;
 
 // Create checkbox
 AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label, int x, int y, int width, int height);

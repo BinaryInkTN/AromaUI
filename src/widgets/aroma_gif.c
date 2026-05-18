@@ -8,16 +8,16 @@
 #include "backends/graphics/utils/stb_image.h"
 #include <string.h>
 
-typedef struct AromaGif {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaGif {
     AromaRect rect;
+    uint64_t last_frame_time;
     unsigned int* textures;
     int* delays;
-    int num_frames;
-    int current_frame;
-    uint64_t last_frame_time;
-    bool is_playing;
     AromaTimer* timer;
     AromaNode* node;
+    int num_frames;
+    int current_frame;
+    bool is_playing;
 } AromaGif;
 
 static void aroma_gif_timer_cb(void* user_data) {

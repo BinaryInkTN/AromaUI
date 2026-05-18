@@ -8,6 +8,7 @@
 
 #ifndef AROMA_NODE_H
 #define AROMA_NODE_H
+#include "aroma_common.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,7 +23,7 @@ extern "C" {
 /** @brief Maximum number of dirty nodes tracked per frame. */
 #define AROMA_MAX_DIRTY_NODES 1024
 
-typedef struct AromaNode AromaNode;
+typedef struct  AromaNode AromaNode;
 
 /**
  * @brief Callback function type for drawing a node.
@@ -83,7 +84,7 @@ typedef enum {
  * Contains both "self" layout properties (how this node is placed) and
  * "container" properties (how this node places its children).
  */
-typedef struct {
+typedef struct   {
     // Self Layout
     AromaLayoutType type;   /**< Positioning strategy. */
     int left;              /**< Left offset/anchor. */
@@ -119,28 +120,53 @@ typedef struct {
 /**
  * @brief Base node structure for the scene graph.
  */
-struct AromaNode
+struct  AromaNode
 {
     AromaNodeType node_type;    /**< Type of node. */
     uint64_t node_id;           /**< Unique ID. */
     int32_t z_index;            /**< Drawing order (higher is on top). */
+    float opacity;              /**< Node opacity (0.0 to 1.0). */
+    
     AromaNode* parent_node;     /**< Pointer to parent. */
     AromaNode* child_nodes[AROMA_MAX_CHILD_NODES]; /**< Array of children. */
     void *node_widget_ptr;      /**< Pointer to specific widget data struct. */
     AromaNodeDrawFn draw_cb;    /**< Custom drawing callback. */
     void (*destroy_cb)(struct AromaNode* node); /**< Callback for widget-specific memory cleanup. */
+    
     uint64_t child_count;       /**< Current number of children. */
+    uint64_t dirty_frame;       /**< Frame number when node was last invalidated. */
+    
     bool is_dirty;              /**< True if node itself needs redrawing. */
     bool subtree_dirty;         /**< True if any descendant needs redrawing. */
     bool is_hidden;             /**< True if node is strictly invisible. */
     bool propagate_dirty;       /**< True if dirty state propagates subtree_dirty up. */
-    float opacity;              /**< Node opacity (0.0 to 1.0). */
-    uint64_t dirty_frame;       /**< Frame number when node was last invalidated. */
+    
+    // WASM padding to align layout struct to 8-byte boundary
+    uint8_t _padding[4];
+    
     AromaLayout layout;         /**< Layout configuration. */
 };
 
 /** @brief Helper macro to cast a node's user pointer to a specific type. */
 #define AROMA_NODE_AS(node, Type) ((Type*)((node) ? (node)->node_widget_ptr : NULL))
+
+/** @brief Return the raw widget pointer when it is suitably aligned. */
+static inline void* aroma_node_get_widget_ptr(AromaNode* node)
+{
+    void* widget_ptr = node ? node->node_widget_ptr : NULL;
+    if (!widget_ptr) return NULL;
+    if (((uintptr_t)widget_ptr % _Alignof(max_align_t)) != 0) return NULL;
+    return widget_ptr;
+}
+
+/** @brief Return the widget rect stored in a node, or NULL if it is unavailable or misaligned. */
+static inline AromaRect* aroma_node_get_rect(AromaNode* node)
+{
+    void* widget_ptr = aroma_node_get_widget_ptr(node);
+    if (!widget_ptr) return NULL;
+    if (((uintptr_t)widget_ptr % _Alignof(AromaRect)) != 0) return NULL;
+    return (AromaRect*)widget_ptr;
+}
 
 /** @internal Initialize the node system (called internally). */
 void __node_system_init(void);
@@ -365,5 +391,4 @@ void aroma_frame_advance(void);
 #ifdef __cplusplus
 }
 #endif
-#endif
-
+#endif  /* AROMA_NODE_H */

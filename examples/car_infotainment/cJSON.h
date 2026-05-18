@@ -100,7 +100,7 @@ then using the CJSON_API_VISIBILITY flag to "export" the same symbols the way CJ
 #define cJSON_StringIsConst 512
 
 /* The cJSON structure: */
-typedef struct cJSON
+typedef struct  __attribute__((packed, aligned(1))) cJSON
 {
     /* next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem */
     struct cJSON *next;
@@ -122,7 +122,7 @@ typedef struct cJSON
     char *string;
 } cJSON;
 
-typedef struct cJSON_Hooks
+typedef struct  __attribute__((packed, aligned(1))) cJSON_Hooks
 {
       /* malloc/free are CDECL on Windows regardless of the default calling convention of the compiler, so ensure the hooks allow passing those functions directly. */
       void *(CJSON_CDECL *malloc_fn)(size_t sz);

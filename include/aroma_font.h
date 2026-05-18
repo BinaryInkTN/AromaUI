@@ -13,7 +13,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaFont AromaFont;
+typedef struct  AromaFont AromaFont;
 
 /**
  * @brief Load a font from a file on disk.

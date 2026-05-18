@@ -17,7 +17,7 @@ This module is designed to be lightweight, flexible, and backend agnostic, makin
 ### `AromaFont`
 
 ```c
-typedef struct AromaFont AromaFont;
+typedef struct  __attribute__((packed, aligned(1))) AromaFont AromaFont;
 ```
 
 An opaque structure representing a loaded font instance. The internal implementation is hidden and may vary depending on the backend (for example FreeType).

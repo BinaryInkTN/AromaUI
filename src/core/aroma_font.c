@@ -1,6 +1,7 @@
 #include "core/aroma_font.h"
 #include "core/aroma_logger.h"
 #include "aroma_native_utils.h"
+#include <stdint.h>
 
 #ifdef ESP32
 #include <stdlib.h>
@@ -108,7 +109,7 @@ void* aroma_font_get_face(AromaFont* font)
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
     uint32_t codepoint;
     uint32_t texture_id;
     int width;
@@ -121,13 +122,14 @@ typedef struct {
 #define GLYPH_CACHE_SIZE 128
 
 struct AromaFont {
-    FT_Face face;
     int size_px;
     int line_height;
     int ascender;
     int descender;
-    GlyphMetrics glyph_cache[GLYPH_CACHE_SIZE];
     int glyph_count;
+    GlyphMetrics glyph_cache[GLYPH_CACHE_SIZE];
+    FT_Face face;
+
 };
 
 static FT_Library ft_library = NULL;
@@ -155,6 +157,7 @@ AromaFont* aroma_font_create(const char* font_path, int size_px) {
 
     FT_Error error = FT_New_Face(ft_library, load_path, 0, &font->face);
     if (error) {
+        LOG_ERROR("FT_New_Face failed for %s: %d", load_path, error);
         free(font);
         return NULL;
     }
@@ -178,6 +181,8 @@ AromaFont* aroma_font_create_from_memory(
     if (!init_freetype() || !data || size_px <= 0)
         return NULL;
 
+    LOG_INFO("aroma_font_create_from_memory: data=%p data_len=%u size_px=%d", (void*)data, data_len, size_px);
+
     AromaFont* font = malloc(sizeof(AromaFont));
     if (!font) return NULL;
 
@@ -185,9 +190,12 @@ AromaFont* aroma_font_create_from_memory(
         ft_library, data, data_len, 0, &font->face
     );
     if (error) {
+        LOG_ERROR("FT_New_Memory_Face (memory) failed: %d", error);
         free(font);
         return NULL;
     }
+
+    LOG_INFO("FT_New_Memory_Face succeeded: face=%p", (void*)font->face);
 
     FT_Set_Pixel_Sizes(font->face, 0, size_px);
 
@@ -201,7 +209,9 @@ AromaFont* aroma_font_create_from_memory(
 }
 
 int aroma_font_get_px_size(AromaFont* font) {
-    return font ? font->size_px : 0;
+    if (!font || ((uintptr_t)font & (sizeof(int) - 1)) != 0)
+        return 0;
+    return font->size_px;
 }
 
 void aroma_font_destroy(AromaFont* font) {
@@ -211,7 +221,7 @@ void aroma_font_destroy(AromaFont* font) {
 }
 
 int aroma_font_get_line_width(AromaFont* font, const char* text) {
-    if (!font || !text || !font->face) return 0;
+    if (!font || !text || ((uintptr_t)font & (sizeof(int) - 1)) != 0 || !font->face) return 0;
 
     int width = 0;
     FT_GlyphSlot slot = font->face->glyph;
@@ -227,19 +237,27 @@ int aroma_font_get_line_width(AromaFont* font, const char* text) {
 
 
 int aroma_font_get_line_height(AromaFont* font) {
-    return font ? font->line_height : 0;
+    if (!font || ((uintptr_t)font & (sizeof(int) - 1)) != 0)
+        return 0;
+    return font->line_height;
 }
 
 int aroma_font_get_ascender(AromaFont* font) {
-    return font ? font->ascender : 0;
+    if (!font || ((uintptr_t)font & (sizeof(int) - 1)) != 0)
+        return 0;
+    return font->ascender;
 }
 
 int aroma_font_get_descender(AromaFont* font) {
-    return font ? font->descender : 0;
+    if (!font || ((uintptr_t)font & (sizeof(int) - 1)) != 0)
+        return 0;
+    return font->descender;
 }
 
 void* aroma_font_get_face(AromaFont* font) {
-    return font ? font->face : NULL;
+    if (!font || ((uintptr_t)font & (sizeof(int) - 1)) != 0)
+        return NULL;
+    return font->face;
 }
 
 #endif /* ESP32 */

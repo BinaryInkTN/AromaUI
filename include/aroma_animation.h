@@ -29,7 +29,7 @@ typedef enum {
 
 typedef void (*AromaAnimationCallback)(AromaNode* target, float current_val, void* user_data);
 
-typedef struct _AromaAnimation {
+typedef struct  _AromaAnimation {
     AromaNode* target;
     AromaAnimationType type;
     float start_val;

@@ -12,7 +12,7 @@ extern "C" {
 #define AROMA_TABS_MAX 8
 #define AROMA_TAB_LABEL_MAX 32
 
-typedef struct AromaTabs AromaTabs;
+typedef struct  AromaTabs AromaTabs;
 
 AromaNode* aroma_tabs_create(AromaNode* parent, int x, int y, int width, int height,
                              const char** labels, int count);

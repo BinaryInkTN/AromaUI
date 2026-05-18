@@ -17,12 +17,14 @@ typedef struct
     int advance;
 } Character;
 
-typedef struct Vertex
+
+typedef struct
 {
-    vec2 pos;
-    vec4 col;       
-    vec2 texCoord;
+    float pos[2];
+    float col[4];       /* r, g, b, a */
+    float texCoord[2];
 } Vertex;
+
 
 #if defined(__EMSCRIPTEN__)
 static const char *rectangle_vertex_shader =
@@ -129,6 +131,9 @@ static const char *text_vertex_shader_source =
     "    TexCoords = vec2(vertex.z, 1.0-vertex.w);\n"
     "}\n";
 
+/* FIX: was sampling .a (alpha channel) but glyph textures are single-channel
+ * (GL_LUMINANCE or GL_RED), whose data comes through in .r, not .a.
+ * Changed texture2D(...).a  ->  texture2D(...).r  to match the WebGL2 shader. */
 static const char *text_fragment_shader_source =
     "#version 100\n"
     "precision mediump float;\n"
@@ -136,7 +141,7 @@ static const char *text_fragment_shader_source =
     "uniform sampler2D text;\n"
     "uniform vec3 textColor;\n"
     "void main() {\n"
-    "   float alpha = texture2D(text, TexCoords).a;\n"
+    "   float alpha = texture2D(text, TexCoords).r;\n"
     "   gl_FragColor = vec4(textColor, alpha);\n"
     "}\n";
 #else

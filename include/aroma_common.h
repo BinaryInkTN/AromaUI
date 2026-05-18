@@ -16,7 +16,7 @@ extern "C" {
  * @struct AromaRect
  * @brief Represents a rectangle with integer coordinates.
  */
-typedef struct AromaRect {
+typedef struct  AromaRect {
     /** @brief X coordinate of the top-left corner. */
     int x;
     /** @brief Y coordinate of the top-left corner. */

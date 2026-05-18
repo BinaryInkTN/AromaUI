@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-typedef struct AromaGauge AromaGauge;
+typedef struct  AromaGauge AromaGauge;
 
 // Create gauge
 AromaNode* aroma_gauge_create(AromaNode* parent, int x, int y, int radius, int thickness);

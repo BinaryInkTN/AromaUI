@@ -15,7 +15,7 @@ typedef enum {
     TOOLTIP_POSITION_RIGHT
 } AromaTooltipPosition;
 
-typedef struct AromaTooltip AromaTooltip;
+typedef struct  AromaTooltip AromaTooltip;
 
 // Create tooltip
 AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int y, AromaTooltipPosition position);

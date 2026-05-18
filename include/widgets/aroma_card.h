@@ -15,7 +15,7 @@ typedef enum {
     CARD_TYPE_GLASS      // Glass blur background card
 } AromaCardType;
 
-typedef struct AromaCard AromaCard;
+typedef struct  AromaCard AromaCard;
 
 // Create a new card
 AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int height, AromaCardType type);

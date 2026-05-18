@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-typedef struct AromaIcon AromaIcon;
+typedef struct  AromaIcon AromaIcon;
 
 /**
  * @brief Create a new Icon widget.

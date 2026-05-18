@@ -31,7 +31,7 @@
 
 #define AROMA_IMAGE_PATH_MAX 1024
 
-typedef struct AromaImage {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaImage {
     AromaRect rect;
     unsigned int texture_id;
     char image_path[AROMA_IMAGE_PATH_MAX];
@@ -68,7 +68,7 @@ static unsigned int __image_load_texture(const char* image_path)
 void aroma_image_draw(AromaNode* image_node, size_t window_id)
 {
     if (!image_node || !image_node->node_widget_ptr) {
-        LOG_ERROR("Invalid image node for drawing");
+        LOG_ERROR("aroma_image_draw: Invalid image node for drawing (node=%p)", (void*)image_node);
         return;
     }
     
@@ -77,9 +77,13 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
     }
     
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
-    
+    if (!image) {
+        LOG_ERROR("aroma_image_draw: node->node_widget_ptr is NULL");
+        return;
+    }
+
     if (image->texture_id == 0) {
-        LOG_INFO("Skipping image draw - no texture loaded");
+        LOG_INFO("aroma_image_draw: Skipping image draw - no texture loaded (node_id=%llu)", (unsigned long long)image_node->node_id);
         return;
     }
     
@@ -91,16 +95,21 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
     
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->draw_image) {
-        LOG_ERROR("Graphics interface not available or missing draw_image function");
+        LOG_ERROR("aroma_image_draw: Graphics interface not available or missing draw_image function");
         return;
     }
     
+    if (image->rect.width <= 0 || image->rect.height <= 0) {
+        LOG_WARNING("aroma_image_draw: invalid rect size (%d x %d) for node_id=%llu", image->rect.width, image->rect.height, (unsigned long long)image_node->node_id);
+        return;
+    }
 
     gfx->draw_image(window_id,
                     image->rect.x, image->rect.y, 
                     image->rect.width, image->rect.height, image->texture_id );
     
-    LOG_INFO("Drew image at (%d, %d) size %dx%d, texture ID: %u", 
+    LOG_INFO("aroma_image_draw: Drew image node_id=%llu at (%d, %d) size %dx%d, texture ID: %u", 
+              (unsigned long long)image_node->node_id,
               image->rect.x, image->rect.y, 
               image->rect.width, image->rect.height, 
               image->texture_id);
@@ -128,6 +137,7 @@ AromaNode* aroma_image_create(AromaNode* parent, const char* image_path, int x, 
     
     if (image_path) {
         strncpy(image->image_path, image_path, AROMA_IMAGE_PATH_MAX - 1);
+        image->image_path[AROMA_IMAGE_PATH_MAX - 1] = '\0';
         image->texture_id = __image_load_texture(image_path);
         if (image->texture_id == 0) {
             LOG_WARNING("Failed to load image: %s", image_path);

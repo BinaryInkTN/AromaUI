@@ -14,7 +14,7 @@ typedef enum {
     DIALOG_TYPE_FULL_SCREEN // Full-screen dialog
 } AromaDialogType;
 
-typedef struct AromaDialog AromaDialog;
+typedef struct  AromaDialog AromaDialog;
 
 // Create dialog
 AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char* message, int width, int height, AromaDialogType type);

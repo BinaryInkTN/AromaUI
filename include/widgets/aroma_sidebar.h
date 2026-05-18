@@ -12,7 +12,7 @@ extern "C" {
 #define AROMA_SIDEBAR_MAX_ITEMS 16
 #define AROMA_SIDEBAR_LABEL_MAX 32
 
-typedef struct AromaSidebar AromaSidebar;
+typedef struct  AromaSidebar AromaSidebar;
 
 AromaNode* aroma_sidebar_create(AromaNode* parent, int x, int y, int width, int height,
                                 const char** labels, int count);

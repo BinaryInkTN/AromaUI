@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct AromaWindow
+typedef struct  AromaWindow
 {
     AromaRect rect;
     char* title;

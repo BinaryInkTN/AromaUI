@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct AromaFAB {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaFAB {
     AromaRect rect;
     AromaFABSize size;
     char icon_text[32];
@@ -114,6 +114,7 @@ AromaNode* aroma_fab_create(AromaNode* parent, int x, int y, AromaFABSize size, 
     fab->rect.height = fab_size;
     fab->size = size;
     strncpy(fab->icon_text, icon_text ? icon_text : "+", sizeof(fab->icon_text) - 1);
+    fab->icon_text[sizeof(fab->icon_text) - 1] = '\0';
     fab->text[0] = '\0';
     AromaTheme theme = aroma_theme_get_global();
     fab->bg_color = theme.colors.primary;
@@ -177,6 +178,7 @@ void aroma_fab_set_text(AromaNode* fab_node, const char* text) {
     AromaFAB* fab = (AromaFAB*)fab_node->node_widget_ptr;
     if (!fab) return;
     strncpy(fab->text, text, sizeof(fab->text) - 1);
+    fab->text[sizeof(fab->text) - 1] = '\0';
     fab->size = FAB_SIZE_EXTENDED;
     fab->rect.width = 120 + strlen(text) * 8;
     __fab_update_layout(fab);

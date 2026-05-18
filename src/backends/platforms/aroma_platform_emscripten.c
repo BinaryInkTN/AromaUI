@@ -12,11 +12,11 @@
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 
-
 typedef struct {
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
     int canvas_width;
     int canvas_height;
+    double device_pixel_ratio;
     void (*frame_callback)(size_t, void *);
     void *frame_callback_data;
     double last_mouse_x;
@@ -27,11 +27,24 @@ typedef struct {
 
 static AromaEmscriptenContext platform_ctx = {0};
 
-
 static int              g_last_type   = -1;
 static int              g_last_x      = 0;
 static int              g_last_y      = 0;
 static unsigned long long g_last_target = 0ULL;
+
+EM_JS(double, _aroma_get_device_pixel_ratio, (void), {
+    return window.devicePixelRatio || 1.0;
+});
+
+EM_JS(void, _aroma_resize_canvas_for_dpr, (const char *selector, int css_w, int css_h, double dpr), {
+    var sel = UTF8ToString(selector);
+    var el  = document.querySelector(sel);
+    if (!el) return;
+    el.width  = Math.round(css_w  * dpr);
+    el.height = Math.round(css_h * dpr);
+    el.style.width  = css_w  + 'px';
+    el.style.height = css_h + 'px';
+});
 
 static inline void _js_expose_mouse(int type, int target, int x, int y, int btn)
 {
@@ -46,11 +59,10 @@ static inline void _js_expose_mouse(int type, int target, int x, int y, int btn)
     }, type, target, x, y, btn);
 }
 
-EMSCRIPTEN_KEEPALIVE int              aroma_test_get_last_mouse_event_type(void)   { return g_last_type;   }
-EMSCRIPTEN_KEEPALIVE int              aroma_test_get_last_mouse_event_x(void)      { return g_last_x;      }
-EMSCRIPTEN_KEEPALIVE int              aroma_test_get_last_mouse_event_y(void)      { return g_last_y;      }
-EMSCRIPTEN_KEEPALIVE unsigned long long aroma_test_get_last_mouse_event_target(void){ return g_last_target; }
-
+EMSCRIPTEN_KEEPALIVE int               aroma_test_get_last_mouse_event_type(void)    { return g_last_type;   }
+EMSCRIPTEN_KEEPALIVE int               aroma_test_get_last_mouse_event_x(void)       { return g_last_x;      }
+EMSCRIPTEN_KEEPALIVE int               aroma_test_get_last_mouse_event_y(void)       { return g_last_y;      }
+EMSCRIPTEN_KEEPALIVE unsigned long long aroma_test_get_last_mouse_event_target(void) { return g_last_target; }
 
 static inline void _client_to_canvas(double cx, double cy,
                                      double *out_x, double *out_y)
@@ -58,13 +70,18 @@ static inline void _client_to_canvas(double cx, double cy,
     double css_w = 0.0, css_h = 0.0;
     emscripten_get_element_css_size("#canvas", &css_w, &css_h);
 
-    double sx = (css_w > 0.0) ? ((double)platform_ctx.canvas_width  / css_w) : 1.0;
-    double sy = (css_h > 0.0) ? ((double)platform_ctx.canvas_height / css_h) : 1.0;
+    double dpr = platform_ctx.device_pixel_ratio;
+    if (dpr < 1.0) dpr = 1.0;
+
+    double physical_w = css_w * dpr;
+    double physical_h = css_h * dpr;
+
+    double sx = (css_w > 0.0) ? (physical_w / css_w) : 1.0;
+    double sy = (css_h > 0.0) ? (physical_h / css_h) : 1.0;
 
     *out_x = cx * sx;
     *out_y = cy * sy;
 }
-
 
 static bool _queue_mouse_event(AromaEventType type,
                                double mx, double my,
@@ -73,7 +90,7 @@ static bool _queue_mouse_event(AromaEventType type,
     AromaNode *root = aroma_event_get_root();
     if (!root) return false;
 
-    AromaNode *target   = aroma_event_hit_test(root, (int)mx, (int)my);
+    AromaNode *target    = aroma_event_hit_test(root, (int)mx, (int)my);
     uint64_t   target_id = target ? target->node_id : root->node_id;
 
     AromaEvent *ev = aroma_event_create_mouse(type, target_id,
@@ -102,7 +119,6 @@ static bool _queue_mouse_event(AromaEventType type,
     return queued;
 }
 
-
 EMSCRIPTEN_KEEPALIVE
 void aroma_emscripten_dispatch_mouse(int action, int x, int y, int button)
 {
@@ -118,14 +134,17 @@ void aroma_emscripten_dispatch_mouse(int action, int x, int y, int button)
         console.log('dispatch_mouse', $0, $1, $2, $3);
     }, action, x, y, button);
 
-    double dx = (double)x, dy = (double)y;
+    double dpr = platform_ctx.device_pixel_ratio;
+    if (dpr < 1.0) dpr = 1.0;
+    double dx = (double)x * dpr;
+    double dy = (double)y * dpr;
 
     switch (action) {
     case 0:
         platform_ctx.last_mouse_x = dx;
         platform_ctx.last_mouse_y = dy;
         _queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, dx, dy, (uint8_t)button);
-        aroma_event_handle_pointer_move(x, y, platform_ctx.mouse_button_down);
+        aroma_event_handle_pointer_move((int)dx, (int)dy, platform_ctx.mouse_button_down);
         break;
 
     case 1:
@@ -133,7 +152,7 @@ void aroma_emscripten_dispatch_mouse(int action, int x, int y, int button)
         platform_ctx.last_mouse_x = dx;
         platform_ctx.last_mouse_y = dy;
         _queue_mouse_event(EVENT_TYPE_MOUSE_CLICK, dx, dy, (uint8_t)button);
-        aroma_event_handle_pointer_move(x, y, true);
+        aroma_event_handle_pointer_move((int)dx, (int)dy, true);
         break;
 
     case 2:
@@ -141,7 +160,7 @@ void aroma_emscripten_dispatch_mouse(int action, int x, int y, int button)
         platform_ctx.last_mouse_x = dx;
         platform_ctx.last_mouse_y = dy;
         _queue_mouse_event(EVENT_TYPE_MOUSE_RELEASE, dx, dy, (uint8_t)button);
-        aroma_event_handle_pointer_move(x, y, false);
+        aroma_event_handle_pointer_move((int)dx, (int)dy, false);
         break;
 
     default:
@@ -149,7 +168,6 @@ void aroma_emscripten_dispatch_mouse(int action, int x, int y, int button)
         break;
     }
 }
-
 
 static bool _queue_key_event(AromaEventType type,
                              uint32_t key_value,
@@ -214,10 +232,8 @@ static inline uint16_t _key_modifiers(const EmscriptenKeyboardEvent *e)
     if (e->ctrlKey)  m |= AROMA_KEY_MOD_CTRL;
     if (e->shiftKey) m |= AROMA_KEY_MOD_SHIFT;
     if (e->altKey)   m |= AROMA_KEY_MOD_ALT;
-    //if (e->metaKey)  m |= AROMA_KEY_MOD_META;
     return m;
 }
-
 
 static EM_BOOL _cb_mouse_move(int et, const EmscriptenMouseEvent *e, void *ud)
 {
@@ -283,9 +299,12 @@ static EM_BOOL _cb_wheel(int et, const EmscriptenWheelEvent *e, void *ud)
     AromaNode *target = aroma_event_hit_test(root, mx, my);
     uint64_t   nid    = target ? target->node_id : root->node_id;
 
+    double dpr = platform_ctx.device_pixel_ratio;
+    if (dpr < 1.0) dpr = 1.0;
+
     AromaEvent *ev = aroma_event_create_scroll(nid, mx, my,
-                                               (float)e->deltaX,
-                                               (float)e->deltaY);
+                                               (float)(e->deltaX * dpr),
+                                               (float)(e->deltaY * dpr));
     if (ev) aroma_event_queue(ev);
     return EM_TRUE;
 }
@@ -308,15 +327,11 @@ static EM_BOOL _cb_key_up(int et, const EmscriptenKeyboardEvent *e, void *ud)
     return EM_TRUE;
 }
 
-
 static void _frame_trampoline(void *arg)
 {
     (void)arg;
-    AromaPlatformInterface *plat = aroma_backend_abi.get_platform_interface();
-    if (plat && plat->request_window_update)
-        plat->request_window_update(1);
+   
 }
-
 
 static int initialize(void)
 {
@@ -325,21 +340,30 @@ static int initialize(void)
         return 1;
     }
 
-    double w = 640.0, h = 480.0;
-    emscripten_get_element_css_size("#canvas", &w, &h);
-    if (w <= 0.0 || h <= 0.0) {
-        LOG_WARNING("initialize: canvas CSS size invalid (%.0fx%.0f), using 640x480", w, h);
-        w = 640.0; h = 480.0;
+    platform_ctx.device_pixel_ratio = _aroma_get_device_pixel_ratio();
+    if (platform_ctx.device_pixel_ratio < 1.0)
+        platform_ctx.device_pixel_ratio = 1.0;
+
+    double css_w = 640.0, css_h = 480.0;
+    emscripten_get_element_css_size("#canvas", &css_w, &css_h);
+    if (css_w <= 0.0 || css_h <= 0.0) {
+        LOG_WARNING("initialize: canvas CSS size invalid (%.0fx%.0f), using 640x480",
+                    css_w, css_h);
+        css_w = 640.0; css_h = 480.0;
     }
-    platform_ctx.canvas_width  = (int)w;
-    platform_ctx.canvas_height = (int)h;
+
+    _aroma_resize_canvas_for_dpr("#canvas", (int)css_w, (int)css_h,
+                                 platform_ctx.device_pixel_ratio);
+
+    platform_ctx.canvas_width  = (int)(css_w  * platform_ctx.device_pixel_ratio);
+    platform_ctx.canvas_height = (int)(css_h * platform_ctx.device_pixel_ratio);
 
     EmscriptenWebGLContextAttributes attr;
     emscripten_webgl_init_context_attributes(&attr);
     attr.alpha      = EM_FALSE;
     attr.depth      = EM_TRUE;
     attr.stencil    = EM_FALSE;
-    attr.antialias  = EM_TRUE;
+    attr.antialias  = EM_FALSE;
     attr.majorVersion = 2;
     attr.minorVersion = 0;
 
@@ -376,23 +400,28 @@ static int initialize(void)
     emscripten_set_main_loop_arg(_frame_trampoline, NULL, 0, 0);
 
     platform_ctx.initialized = true;
-    LOG_INFO("initialize: ok — canvas=%dx%d WebGL%d",
+    LOG_INFO("initialize: ok — canvas=%dx%d (css=%.0fx%.0f dpr=%.2f) WebGL%d",
              platform_ctx.canvas_width, platform_ctx.canvas_height,
+             css_w, css_h, platform_ctx.device_pixel_ratio,
              attr.majorVersion);
     return 1;
 }
 
 static size_t create_window(const char *title, int x, int y,
-                             int width, int height)
+                            int width, int height)
 {
     (void)title; (void)x; (void)y;
 
-    if (width  <= 0) width  = platform_ctx.canvas_width;
-    if (height <= 0) height = platform_ctx.canvas_height;
+    double dpr = platform_ctx.device_pixel_ratio;
+    if (dpr < 1.0) dpr = 1.0;
 
-    emscripten_set_canvas_element_size("#canvas", width, height);
-    platform_ctx.canvas_width  = width;
-    platform_ctx.canvas_height = height;
+    int css_w = (width  > 0) ? width  : (int)(platform_ctx.canvas_width  / dpr);
+    int css_h = (height > 0) ? height : (int)(platform_ctx.canvas_height / dpr);
+
+    _aroma_resize_canvas_for_dpr("#canvas", css_w, css_h, dpr);
+
+    platform_ctx.canvas_width  = (int)(css_w * dpr);
+    platform_ctx.canvas_height = (int)(css_h * dpr);
 
     if (platform_ctx.ctx)
         emscripten_webgl_make_context_current(platform_ctx.ctx);
@@ -401,7 +430,9 @@ static size_t create_window(const char *title, int x, int y,
     if (gfx && gfx->setup_separate_window_resources)
         gfx->setup_separate_window_resources(1);
 
-    LOG_INFO("create_window: %dx%d", width, height);
+    LOG_INFO("create_window: css=%dx%d physical=%dx%d dpr=%.2f",
+             css_w, css_h,
+             platform_ctx.canvas_width, platform_ctx.canvas_height, dpr);
     return 1;
 }
 
@@ -454,22 +485,21 @@ static void shutdown(void)
 static void *get_native_window_ptr(size_t window_id)  { (void)window_id; return NULL; }
 static void *get_native_display_ptr(void)              { return NULL; }
 
-
 AromaPlatformInterface aroma_platform_emscripten = {
-    .initialize               = initialize,
-    .create_window            = create_window,
-    .make_context_current     = make_context_current,
-    .get_window_size          = get_window_size,
-    .set_window_update_callback = set_window_update_callback,
-    .request_window_update    = request_window_update,
-    .run_event_loop           = run_event_loop,
-    .swap_buffers             = swap_buffers,
-    .shutdown                 = shutdown,
-    .set_android_app          = NULL,
-    .create_vulkan_surface    = NULL,
+    .initialize                     = initialize,
+    .create_window                  = create_window,
+    .make_context_current           = make_context_current,
+    .get_window_size                = get_window_size,
+    .set_window_update_callback     = set_window_update_callback,
+    .request_window_update          = request_window_update,
+    .run_event_loop                 = run_event_loop,
+    .swap_buffers                   = swap_buffers,
+    .shutdown                       = shutdown,
+    .set_android_app                = NULL,
+    .create_vulkan_surface          = NULL,
     .get_vulkan_instance_extensions = NULL,
-    .get_native_window_ptr    = get_native_window_ptr,
-    .get_native_display_ptr   = get_native_display_ptr,
+    .get_native_window_ptr          = get_native_window_ptr,
+    .get_native_display_ptr         = get_native_display_ptr,
 };
 
 #endif

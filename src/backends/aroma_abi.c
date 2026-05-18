@@ -119,6 +119,7 @@ static unsigned int drawlist_proxy_load_image(const char* image_path)
     {
         return real->load_image(image_path);
     }
+    return 0;
 }
 
 static void drawlist_proxy_unload_image(unsigned int texture_id)

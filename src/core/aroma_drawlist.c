@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct AromaDrawCmd {
+typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaDrawCmd {
     AromaDrawCmdType type;
     bool is_drawn;
     union {
@@ -133,7 +133,6 @@ void aroma_drawlist_reset(AromaDrawList* list)
         if (cmd->type == AROMA_DRAW_CMD_TEXT) {
             free(cmd->data.text.text);
             cmd->data.text.text = NULL;
-            
         }
         cmd->is_drawn = false;
     }
@@ -186,8 +185,7 @@ void aroma_drawlist_cmd_fill_rect(AromaDrawList* list, int x, int y, int width, 
     cmd->data.fill_rect.color = color;
     cmd->data.fill_rect.is_rounded = is_rounded;
     cmd->data.fill_rect.corner_radius = corner_radius;
-        cmd->is_drawn = false;
-
+    cmd->is_drawn = false;
 }
 
 void aroma_drawlist_cmd_hollow_rect(AromaDrawList* list, int x, int y, int width, int height,
@@ -205,8 +203,7 @@ void aroma_drawlist_cmd_hollow_rect(AromaDrawList* list, int x, int y, int width
     cmd->data.hollow_rect.border_width = border_width;
     cmd->data.hollow_rect.is_rounded = is_rounded;
     cmd->data.hollow_rect.corner_radius = corner_radius;
-        cmd->is_drawn = false;
-
+    cmd->is_drawn = false;
 }
 
 void aroma_drawlist_cmd_arc(AromaDrawList* list, int cx, int cy, int radius,
@@ -223,8 +220,7 @@ void aroma_drawlist_cmd_arc(AromaDrawList* list, int cx, int cy, int radius,
     cmd->data.arc.end_angle = end_angle;
     cmd->data.arc.color = color;
     cmd->data.arc.thickness = thickness;
-        cmd->is_drawn = false;
-
+    cmd->is_drawn = false;
 }
 
 void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* text,
@@ -240,10 +236,8 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
     cmd->data.text.y = y;
     cmd->data.text.color = color;
     cmd->data.text.scale = scale;
-        cmd->is_drawn = false;
-
+    cmd->is_drawn = false;
 }
-
 
 void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int height, unsigned int texture_id)
 {
@@ -257,7 +251,6 @@ void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int 
     cmd->data.image.height = height;
     cmd->data.image.texture_id = texture_id;
     cmd->is_drawn = false;
-
 }
 
 void aroma_drawlist_cmd_scissor_push(AromaDrawList* list, int x, int y, int width, int height)
@@ -282,7 +275,6 @@ void aroma_drawlist_cmd_scissor_pop(AromaDrawList* list)
     cmd->is_drawn = false;
 }
 
-
 void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
 {
     if (!list || list->count == 0) return;
@@ -294,20 +286,18 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
     if (!gfx) {
         g_active_drawlist = previous;
         return;
-    } 
-
+    }
 
     for (size_t i = 0; i < list->count; i++) {
         const AromaDrawCmd* cmd = &list->commands[i];
-        
+
         switch (cmd->type) {
             case AROMA_DRAW_CMD_CLEAR:
-                if (gfx->clear) {
+                if (gfx->clear)
                     gfx->clear(window_id, cmd->data.clear.color);
-                }
                 break;
             case AROMA_DRAW_CMD_FILL_RECT:
-                if (gfx->fill_rectangle) {
+                if (gfx->fill_rectangle)
                     gfx->fill_rectangle(window_id,
                                         cmd->data.fill_rect.x,
                                         cmd->data.fill_rect.y,
@@ -316,12 +306,9 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                         cmd->data.fill_rect.color,
                                         cmd->data.fill_rect.is_rounded,
                                         cmd->data.fill_rect.corner_radius);
-                 
-                }
                 break;
             case AROMA_DRAW_CMD_HOLLOW_RECT:
-                if (gfx->draw_hollow_rectangle) {
-                                      
+                if (gfx->draw_hollow_rectangle)
                     gfx->draw_hollow_rectangle(window_id,
                                                cmd->data.hollow_rect.x,
                                                cmd->data.hollow_rect.y,
@@ -331,12 +318,9 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                                cmd->data.hollow_rect.border_width,
                                                cmd->data.hollow_rect.is_rounded,
                                                cmd->data.hollow_rect.corner_radius);
-                
-                                            }
                 break;
             case AROMA_DRAW_CMD_ARC:
-                if (gfx->draw_arc) {
-         
+                if (gfx->draw_arc)
                     gfx->draw_arc(window_id,
                                   cmd->data.arc.cx,
                                   cmd->data.arc.cy,
@@ -345,48 +329,36 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
                                   cmd->data.arc.end_angle,
                                   cmd->data.arc.color,
                                   cmd->data.arc.thickness);
-
-                }
                 break;
             case AROMA_DRAW_CMD_TEXT:
-                if (gfx->render_text) {
-                 
-              
+                if (gfx->render_text)
                     gfx->render_text(window_id,
                                      cmd->data.text.font,
                                      cmd->data.text.text ? cmd->data.text.text : "",
                                      cmd->data.text.x,
                                      cmd->data.text.y,
-                                     cmd->data.text.color, cmd->data.text.scale);
-              
-             
-                                    }
+                                     cmd->data.text.color,
+                                     cmd->data.text.scale);
                 break;
             case AROMA_DRAW_CMD_IMAGE:
-                if (gfx->draw_image) {
-              
-                 
+                if (gfx->draw_image)
                     gfx->draw_image(window_id,
                                     cmd->data.image.x,
                                     cmd->data.image.y,
-                                    cmd->data.image.width,   
+                                    cmd->data.image.width,
                                     cmd->data.image.height,
                                     cmd->data.image.texture_id);
-                
-                    }
-                    break;
+                break;
             case AROMA_DRAW_CMD_SCISSOR_PUSH:
-                if (gfx->graphics_set_clip) {
+                if (gfx->graphics_set_clip)
                     gfx->graphics_set_clip(cmd->data.scissor.x,
                                            cmd->data.scissor.y,
                                            cmd->data.scissor.width,
                                            cmd->data.scissor.height);
-                }
                 break;
             case AROMA_DRAW_CMD_SCISSOR_POP:
-                if (gfx->graphics_clear_clip) {
+                if (gfx->graphics_clear_clip)
                     gfx->graphics_clear_clip();
-                }
                 break;
         }
     }
@@ -430,8 +402,7 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                     cmd->data.fill_rect.y,
                                     cmd->data.fill_rect.width,
                                     cmd->data.fill_rect.height,
-                                    x, y, width, height)) {
-
+                                    x, y, width, height))
                     gfx->fill_rectangle(window_id,
                                         cmd->data.fill_rect.x,
                                         cmd->data.fill_rect.y,
@@ -440,7 +411,6 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                         cmd->data.fill_rect.color,
                                         cmd->data.fill_rect.is_rounded,
                                         cmd->data.fill_rect.corner_radius);
-                }
                 break;
 
             case AROMA_DRAW_CMD_HOLLOW_RECT:
@@ -449,8 +419,7 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                     cmd->data.hollow_rect.y,
                                     cmd->data.hollow_rect.width,
                                     cmd->data.hollow_rect.height,
-                                    x, y, width, height)) {
-
+                                    x, y, width, height))
                     gfx->draw_hollow_rectangle(window_id,
                                                cmd->data.hollow_rect.x,
                                                cmd->data.hollow_rect.y,
@@ -460,7 +429,6 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                                cmd->data.hollow_rect.border_width,
                                                cmd->data.hollow_rect.is_rounded,
                                                cmd->data.hollow_rect.corner_radius);
-                }
                 break;
 
             case AROMA_DRAW_CMD_ARC:
@@ -469,8 +437,7 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                     cmd->data.arc.cy - cmd->data.arc.radius,
                                     cmd->data.arc.radius * 2,
                                     cmd->data.arc.radius * 2,
-                                    x, y, width, height)) {
-
+                                    x, y, width, height))
                     gfx->draw_arc(window_id,
                                   cmd->data.arc.cx,
                                   cmd->data.arc.cy,
@@ -479,17 +446,17 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                   cmd->data.arc.end_angle,
                                   cmd->data.arc.color,
                                   cmd->data.arc.thickness);
-                }
                 break;
 
-        case AROMA_DRAW_CMD_TEXT: {
-               int text_top    = cmd->data.text.y - 14;
-                int text_bottom = text_top + 18;
-
-                if (gfx->render_text &&
-                    text_bottom >= y &&
-                    text_top <= (y + height)) {
-
+            case AROMA_DRAW_CMD_TEXT:
+                /*
+                 * FIX: Never cull text. The old code used a hardcoded 18px
+                 * height window which culled all text with fonts larger than
+                 * ~18px (24px, 36px, 68px etc). Text bounding boxes also
+                 * require knowing the rendered width to cull correctly on X,
+                 * which we don't have cheaply here. Always render text.
+                 */
+                if (gfx->render_text)
                     gfx->render_text(window_id,
                                      cmd->data.text.font,
                                      cmd->data.text.text ? cmd->data.text.text : "",
@@ -497,38 +464,37 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                      cmd->data.text.y,
                                      cmd->data.text.color,
                                      cmd->data.text.scale);
-                }
                 break;
-            }
-          
+
             case AROMA_DRAW_CMD_IMAGE:
                 if (gfx->draw_image &&
                     rect_intersects(cmd->data.image.x,
                                     cmd->data.image.y,
                                     cmd->data.image.width,
                                     cmd->data.image.height,
-                                    x, y, width, height)) {
-
+                                    x, y, width, height))
                     gfx->draw_image(window_id,
                                     cmd->data.image.x,
                                     cmd->data.image.y,
                                     cmd->data.image.width,
                                     cmd->data.image.height,
                                     cmd->data.image.texture_id);
-                }
                 break;
+
             case AROMA_DRAW_CMD_SCISSOR_PUSH:
-                if (gfx->graphics_set_clip) {
+                if (gfx->graphics_set_clip)
                     gfx->graphics_set_clip(cmd->data.scissor.x,
                                            cmd->data.scissor.y,
                                            cmd->data.scissor.width,
                                            cmd->data.scissor.height);
-                }
                 break;
+
             case AROMA_DRAW_CMD_SCISSOR_POP:
-                if (gfx->graphics_clear_clip) {
+                if (gfx->graphics_clear_clip)
                     gfx->graphics_clear_clip();
-                }
+                break;
+
+            default:
                 break;
         }
     }
