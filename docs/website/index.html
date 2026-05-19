@@ -1,802 +1,1013 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AromaUI, Modern C UI Framework</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-:root {
---white:     #ffffff;
---off:       #f4f6f9;
---smoke:     #e8ecf2;
---border:    #d0d7e3;
---mid:       #6b7894;
---body:      #2c3650;
---dark:      #0d1b3e;
---black:     #060e22;
---blue:      #0066cc;
---blue-h:    #0052a3;
---blue-lt:   #e6f0ff;
---blue-mid:  #cce0ff;
---accent:    #00aaff;
---green:     #00b57a;
---r:         6px;
---r-sm:      4px;
---nav-h:     56px;
---w-outer:   400px;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
-body {
-font-family: 'IBM Plex Sans', system-ui, sans-serif;
-background: var(--white);
-color: var(--body);
-overflow-x: hidden;
-}
-a { text-decoration: none; }
-.material-symbols-outlined {
-font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
-vertical-align: middle;
-line-height: 1;
-font-size: inherit;
-}
-nav {
-position: fixed;
-inset: 0 0 auto;
-height: var(--nav-h);
-z-index: 200;
-background: rgba(255,255,255,0.95);
-backdrop-filter: blur(12px);
--webkit-backdrop-filter: blur(12px);
-border-bottom: 1px solid var(--border);
-display: flex;
-align-items: center;
-justify-content: space-between;
-padding: 0 2rem;
-}
-.nav-logo {
-font-size: 1rem;
-font-weight: 600;
-letter-spacing: -0.01em;
-color: var(--dark);
-display: flex;
-align-items: center;
-gap: 9px;
-}
-.nav-logo-mark {
-width: 28px; height: 28px;
-background: var(--blue);
-border-radius: 4px;
-display: flex; align-items: center; justify-content: center;
-}
-.nav-logo-mark svg { display: block; }
-.nav-center {
-display: flex;
-align-items: center;
-gap: 2rem;
-position: absolute;
-left: 50%;
-transform: translateX(-50%);
-}
-.nav-center a {
-font-size: 0.8rem;
-font-weight: 400;
-color: var(--mid);
-letter-spacing: 0.01em;
-transition: color 0.15s;
-}
-.nav-center a:hover { color: var(--blue); }
-.nav-right { display: flex; align-items: center; gap: 0.75rem; }
-.nav-btn-ghost {
-font-family: inherit;
-font-size: 0.78rem;
-font-weight: 500;
-color: var(--blue);
-background: transparent;
-border: 1px solid var(--blue);
-border-radius: var(--r);
-padding: 0.4rem 1rem;
-cursor: pointer;
-transition: background 0.15s, color 0.15s;
-}
-.nav-btn-ghost:hover { background: var(--blue); color: #fff; }
-.nav-btn-fill {
-font-family: inherit;
-font-size: 0.78rem;
-font-weight: 500;
-color: #fff;
-background: var(--blue);
-border: 1px solid var(--blue);
-border-radius: var(--r);
-padding: 0.4rem 1.1rem;
-cursor: pointer;
-display: flex; align-items: center; gap: 5px;
-transition: background 0.15s;
-}
-.nav-btn-fill:hover { background: var(--blue-h); border-color: var(--blue-h); }
-.topbar {
-background: var(--dark);
-color: rgba(255,255,255,0.6);
-font-size: 0.72rem;
-font-family: 'IBM Plex Mono', monospace;
-letter-spacing: 0.04em;
-text-align: center;
-padding: 0.45rem 1rem;
-margin-top: var(--nav-h);
-}
-.topbar span { color: var(--accent); margin: 0 0.3rem; }
-.hero {
-background: var(--white);
-padding: 5rem 2rem 4rem;
-display: flex;
-flex-direction: column;
-align-items: center;
-position: relative;
-overflow: hidden;
-}
-.hero::before {
-content: '';
-position: absolute;
-inset: 0;
-background:
-repeating-linear-gradient(0deg, transparent, transparent 39px, var(--smoke) 39px, var(--smoke) 40px),
-repeating-linear-gradient(90deg, transparent, transparent 79px, var(--smoke) 79px, var(--smoke) 80px);
-opacity: 0.55;
-pointer-events: none;
-}
-.hero-badge {
-display: inline-flex;
-align-items: center;
-gap: 6px;
-background: var(--blue-lt);
-border: 1px solid var(--blue-mid);
-color: var(--blue);
-font-size: 0.72rem;
-font-weight: 500;
-letter-spacing: 0.06em;
-text-transform: uppercase;
-padding: 0.3rem 0.9rem;
-border-radius: 2px;
-margin-bottom: 1.8rem;
-position: relative;
-opacity: 0;
-animation: fadeUp 0.6s 0.05s ease forwards;
-}
-.hero-badge-dot {
-width: 6px; height: 6px;
-border-radius: 50%;
-background: var(--blue);
-animation: pulse 2s infinite;
-}
-@keyframes pulse {
-0%,100% { opacity:1; transform:scale(1); }
-50% { opacity:0.5; transform:scale(1.4); }
-}
-.hero-title {
-font-size: clamp(2.6rem, 6vw, 5.2rem);
-font-weight: 600;
-letter-spacing: -0.03em;
-line-height: 1.05;
-text-align: center;
-color: var(--dark);
-max-width: 820px;
-position: relative;
-opacity: 0;
-animation: fadeUp 0.65s 0.12s ease forwards;
-}
-.hero-title .accent-word {
-color: var(--blue);
-}
-.hero-sub {
-margin-top: 1.4rem;
-font-size: clamp(0.9rem, 1.4vw, 1.05rem);
-font-weight: 300;
-color: var(--mid);
-text-align: center;
-max-width: 560px;
-line-height: 1.7;
-position: relative;
-opacity: 0;
-animation: fadeUp 0.65s 0.2s ease forwards;
-}
-.hero-actions {
-display: flex;
-gap: 0.9rem;
-margin-top: 2.2rem;
-flex-wrap: wrap;
-justify-content: center;
-position: relative;
-opacity: 0;
-animation: fadeUp 0.65s 0.28s ease forwards;
-}
-.btn-primary {
-background: var(--blue);
-color: #fff;
-font-family: inherit;
-font-size: 0.85rem;
-font-weight: 500;
-padding: 0.65rem 1.6rem;
-border: none;
-border-radius: var(--r);
-cursor: pointer;
-display: flex; align-items: center; gap: 7px;
-transition: background 0.15s, box-shadow 0.15s;
-box-shadow: 0 2px 8px rgba(0,102,204,0.25);
-}
-.btn-primary:hover { background: var(--blue-h); box-shadow: 0 4px 14px rgba(0,102,204,0.35); }
-.btn-secondary {
-background: var(--white);
-color: var(--body);
-font-family: inherit;
-font-size: 0.85rem;
-font-weight: 500;
-padding: 0.65rem 1.6rem;
-border: 1px solid var(--border);
-border-radius: var(--r);
-cursor: pointer;
-display: flex; align-items: center; gap: 7px;
-transition: border-color 0.15s, color 0.15s;
-}
-.btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
-.hero-device-wrap {
-margin-top: 4rem;
-position: relative;
-opacity: 0;
-animation: fadeUp 0.8s 0.36s ease forwards;
-}
-.band {
-width: calc(var(--w-outer) * 0.62);
-height: 52px;
-background: linear-gradient(to bottom, #c8cdd6, #dde1e9);
-border-radius: 6px 6px 0 0;
-margin: 0 auto;
-border: 1px solid #b8bfc8;
-border-bottom: none;
-}
-.band-bottom {
-border-radius: 0 0 6px 6px;
-background: linear-gradient(to top, #c8cdd6, #dde1e9);
-border-top: none;
-border-bottom: 1px solid #b8bfc8;
-}
-.watch-body {
-width: var(--w-outer);
-background: linear-gradient(145deg, #e8ecf2, #d8dde8);
-border-radius: 52px;
-padding: 20px;
-box-shadow:
-0 0 0 1px #b8bfc8,
-0 1px 0 rgba(255,255,255,0.8) inset,
-0 30px 60px -10px rgba(13,27,62,0.18),
-0 8px 24px rgba(13,27,62,0.08);
-position: relative;
-}
-.crown {
-position: absolute;
-right: -5px; top: 38%;
-width: 5px; height: 50px;
-background: linear-gradient(90deg, #bdc4ce, #d0d7e3);
-border-radius: 0 4px 4px 0;
-box-shadow: 1px 0 0 rgba(255,255,255,0.5) inset;
-}
-.crown-btn {
-position: absolute;
-right: -5px; top: 58%;
-width: 5px; height: 30px;
-background: linear-gradient(90deg, #bdc4ce, #c8cdd6);
-border-radius: 0 3px 3px 0;
-}
-.screen-bezel {
-border-radius: 34px;
-overflow: hidden;
-background: #000;
-line-height: 0;
-box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.3);
-}
-#canvas {
-display: block;
-width: 100%;
-aspect-ratio: 1/1;
-border-radius: 32px;
-}
-.screen-bezel::after {
-content: '';
-position: absolute;
-inset: 0;
-border-radius: 34px;
-background: linear-gradient(150deg, rgba(255,255,255,0.12) 0%, transparent 50%);
-pointer-events: none;
-z-index: 10;
-}
-.watch-label {
-text-align: center;
-margin-top: 1.4rem;
-font-family: 'IBM Plex Mono', monospace;
-font-size: 0.68rem;
-color: var(--mid);
-letter-spacing: 0.04em;
-}
-.watch-label a { color: var(--blue); }
-.scroll-hint {
-display: flex; flex-direction: column; align-items: center; gap: 5px;
-margin-top: 2.5rem;
-color: var(--mid);
-font-size: 0.68rem;
-letter-spacing: 0.07em;
-text-transform: uppercase;
-animation: bob 2.2s ease-in-out infinite;
-}
-@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
-.stat-bar {
-background: var(--dark);
-color: rgba(255,255,255,0.85);
-padding: 0 2rem;
-}
-.stat-bar-inner {
-max-width: 1080px;
-margin: 0 auto;
-display: grid;
-grid-template-columns: repeat(4, 1fr);
-divide: var(--border);
-}
-.stat-item {
-padding: 1.8rem 1.5rem;
-border-right: 1px solid rgba(255,255,255,0.08);
-display: flex; flex-direction: column; gap: 4px;
-}
-.stat-item:last-child { border-right: none; }
-.stat-val {
-font-size: 1.7rem;
-font-weight: 600;
-color: var(--white);
-letter-spacing: -0.02em;
-line-height: 1;
-}
-.stat-val span { color: var(--accent); }
-.stat-lbl {
-font-size: 0.72rem;
-font-weight: 400;
-color: rgba(255,255,255,0.45);
-letter-spacing: 0.04em;
-text-transform: uppercase;
-}
-section { background: var(--white); }
-.sec-inner {
-max-width: 1080px;
-margin: 0 auto;
-padding: 6rem 2rem;
-}
-.sec-label {
-display: inline-flex; align-items: center; gap: 6px;
-font-size: 0.7rem;
-font-weight: 600;
-letter-spacing: 0.1em;
-text-transform: uppercase;
-color: var(--blue);
-margin-bottom: 1rem;
-}
-.sec-label::before {
-content: '';
-display: block;
-width: 18px; height: 2px;
-background: var(--blue);
-border-radius: 2px;
-}
-.sec-title {
-font-size: clamp(1.8rem, 3.5vw, 2.8rem);
-font-weight: 600;
-letter-spacing: -0.025em;
-line-height: 1.1;
-color: var(--dark);
-}
-.sec-title .light { font-weight: 300; color: var(--mid); }
-.sec-body {
-margin-top: 1rem;
-font-size: 1rem;
-font-weight: 300;
-color: var(--mid);
-line-height: 1.7;
-max-width: 480px;
-}
-.bento {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 1px;
-margin-top: 3.5rem;
-background: var(--border);
-border: 1px solid var(--border);
-border-radius: var(--r);
-overflow: hidden;
-}
-.bento-card {
-background: var(--white);
-padding: 2rem 1.8rem;
-position: relative;
-transition: background 0.2s;
-}
-.bento-card:hover { background: var(--off); }
-.bento-card.wide { grid-column: span 2; }
-.bento-icon {
-width: 40px; height: 40px;
-border-radius: var(--r-sm);
-background: var(--blue-lt);
-border: 1px solid var(--blue-mid);
-display: flex; align-items: center; justify-content: center;
-margin-bottom: 1.3rem;
-font-size: 1.2rem;
-color: var(--blue);
-}
-.bento-icon .material-symbols-outlined {
-font-size: 1.15rem;
-font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;
-}
-.bento-title {
-font-size: 0.95rem;
-font-weight: 600;
-letter-spacing: -0.01em;
-color: var(--dark);
-margin-bottom: 0.5rem;
-}
-.bento-desc {
-font-size: 0.82rem;
-font-weight: 300;
-color: var(--mid);
-line-height: 1.65;
-}
-.bento-badge {
-display: inline-flex; align-items: center; gap: 4px;
-margin-top: 1.1rem;
-font-size: 0.65rem;
-font-family: 'IBM Plex Mono', monospace;
-color: var(--blue);
-background: var(--blue-lt);
-border: 1px solid var(--blue-mid);
-padding: 0.18rem 0.55rem;
-border-radius: 2px;
-letter-spacing: 0.04em;
-}
-hr.rule { border: none; border-top: 1px solid var(--smoke); }
-.chips-wrap {
-display: flex; flex-wrap: wrap; gap: 0.6rem;
-margin-top: 2.8rem;
-}
-.chip {
-display: flex; align-items: center; gap: 7px;
-padding: 0.45rem 1rem;
-border: 1px solid var(--border);
-border-radius: var(--r-sm);
-font-size: 0.8rem;
-font-weight: 400;
-color: var(--body);
-background: var(--white);
-transition: border-color 0.15s, color 0.15s, background 0.15s;
-cursor: default;
-}
-.chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
-.chip .material-symbols-outlined {
-font-size: 0.95rem;
-font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
-color: var(--mid);
-}
-.chip:hover .material-symbols-outlined { color: var(--blue); }
-.cta-section {
-background: var(--dark);
-color: var(--white);
-}
-.cta-section .sec-inner {
-text-align: center;
-padding: 6rem 2rem;
-}
-.cta-section .sec-label { color: var(--accent); }
-.cta-section .sec-label::before { background: var(--accent); }
-.cta-section .sec-title { color: var(--white); }
-.cta-section .sec-title .light { color: rgba(255,255,255,0.4); }
-.cta-section .sec-body { color: rgba(255,255,255,0.5); margin: 1rem auto 0; text-align: center; }
-.cta-actions {
-display: flex; gap: 0.9rem; margin-top: 2.5rem;
-justify-content: center; flex-wrap: wrap;
-}
-.btn-cta {
-background: var(--blue);
-color: #fff;
-font-family: inherit; font-size: 0.9rem; font-weight: 500;
-padding: 0.75rem 2rem;
-border: none; border-radius: var(--r);
-cursor: pointer;
-display: flex; align-items: center; gap: 7px;
-transition: background 0.15s;
-}
-.btn-cta:hover { background: #0052a3; }
-footer {
-background: #060e22;
-border-top: 1px solid rgba(255,255,255,0.06);
-}
-.footer-top {
-max-width: 1080px;
-margin: 0 auto;
-padding: 3rem 2rem 2rem;
-display: flex;
-align-items: flex-start;
-justify-content: space-between;
-flex-wrap: wrap;
-gap: 2rem;
-}
-.footer-brand {
-display: flex; flex-direction: column; gap: 8px;
-}
-.footer-logo-text {
-font-size: 0.95rem;
-font-weight: 600;
-color: var(--white);
-letter-spacing: -0.01em;
-display: flex; align-items: center; gap: 8px;
-}
-.footer-tagline { font-size: 0.75rem; color: rgba(255,255,255,0.3); }
-.footer-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
-.footer-links a { font-size: 0.78rem; color: rgba(255,255,255,0.4); transition: color 0.15s; }
-.footer-links a:hover { color: rgba(255,255,255,0.9); }
-.footer-bottom {
-max-width: 1080px;
-margin: 0 auto;
-padding: 1rem 2rem 2rem;
-border-top: 1px solid rgba(255,255,255,0.06);
-font-size: 0.7rem;
-color: rgba(255,255,255,0.18);
-font-family: 'IBM Plex Mono', monospace;
-}
-@keyframes fadeUp {
-from { opacity:0; transform: translateY(20px); }
-to   { opacity:1; transform: translateY(0); }
-}
-.reveal {
-opacity: 0;
-transform: translateY(24px);
-transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1);
-}
-.reveal.visible { opacity:1; transform:none; }
-@media (max-width: 860px) {
-.bento { grid-template-columns: 1fr; }
-.bento-card.wide { grid-column: span 1; }
-.stat-bar-inner { grid-template-columns: 1fr 1fr; }
-.stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
-.nav-center { display: none; }
-}
-@media (max-width: 540px) {
-:root { --w-outer: 280px; }
-.hero-title { font-size: 2.4rem; }
-.stat-bar-inner { grid-template-columns: 1fr 1fr; }
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AromaUI, Modern C UI framework</title>
+
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --white: #ffffff;
+      --off: #f5f5f7;
+      --smoke: #e8e8ed;
+      --mid: #86868b;
+      --dark: #1d1d1f;
+      --black: #000000;
+      --blue: #0071e3;
+      --blue-h: #0077ed;
+      --r: 20px;
+      --r-sm: 12px;
+      --nav-h: 52px;
+      --w-outer: 420px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--black);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+      line-height: 1;
+      font-size: inherit;
+    }
+
+    nav {
+      position: fixed;
+      inset: 0 0 auto;
+      height: var(--nav-h);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-logo {
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .nav-logo svg {
+      display: block;
+    }
+
+    .nav-center {
+      display: flex;
+      align-items: center;
+      gap: 2.2rem;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    a {
+      text-decoration: none !important;
+    }
+
+    .nav-center a {
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.75);
+      text-decoration: none;
+      letter-spacing: 0.005em;
+      transition: color 0.2s;
+    }
+
+    .nav-center a:hover {
+      color: var(--white);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .nav-pill {
+      font-size: 0.76rem;
+      font-weight: 400;
+      color: var(--blue);
+      text-decoration: none;
+      padding: 0.3rem 0.9rem;
+      border: 0.5px solid rgba(0, 113, 227, 0.5);
+      border-radius: 40px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .nav-pill:hover {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    .hero {
+      min-height: 100svh;
+      padding-top: var(--nav-h);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background: var(--black);
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle,
+          rgba(0, 113, 227, 0.18) 0%,
+          rgba(0, 113, 227, 0.04) 45%,
+          transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 1.2rem;
+      opacity: 0;
+      animation: up 0.7s 0.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 7vw, 6.5rem);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.04;
+      text-align: center;
+      max-width: 900px;
+      opacity: 0;
+      animation: up 0.7s 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .hero-title .thin {
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .hero-sub {
+      margin-top: 1.4rem;
+      font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      max-width: 520px;
+      line-height: 1.6;
+      opacity: 0;
+      animation: up 0.7s 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      opacity: 0;
+      animation: up 0.7s 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .btn-fill {
+      background: var(--blue);
+      color: var(--white);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 400;
+      padding: 0.62rem 1.4rem;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.2s, transform 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-fill:hover {
+      background: var(--blue-h);
+      transform: scale(1.015);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--blue);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 400;
+      padding: 0.62rem 1.4rem;
+      border: 0.5px solid rgba(0, 113, 227, 0.45);
+      border-radius: 40px;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.2s, color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(0, 113, 227, 0.08);
+    }
+
+    .watch-scene {
+      position: relative;
+      margin-top: 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      animation: up 0.9s 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .band {
+      width: calc(var(--w-outer) * 0.62);
+      height: 56px;
+      background: linear-gradient(to bottom, #1a1a1c, #2c2c2e);
+      border-radius: 8px 8px 0 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .band-bottom {
+      border-radius: 0 0 8px 8px;
+      background: linear-gradient(to top, #1a1a1c, #2c2c2e);
+    }
+
+    .band::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 12px;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 8px 0 rgba(255, 255, 255, 0.07), 0 16px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .watch-body {
+      width: var(--w-outer);
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(145deg, #3a3a3c, #1c1c1e);
+      border-radius: 58px;
+      padding: 22px;
+      box-shadow:
+        0 0 0 0.5px rgba(255, 255, 255, 0.12),
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+        0 50px 100px -20px rgba(0, 0, 0, 0.9),
+        0 0 80px rgba(0, 113, 227, 0.08);
+    }
+
+    .crown {
+      position: absolute;
+      right: -5px;
+      top: 38%;
+      width: 5px;
+      height: 52px;
+      background: linear-gradient(90deg, #2c2c2e, #48484a);
+      border-radius: 0 4px 4px 0;
+      box-shadow: 1px 0 0 rgba(255, 255, 255, 0.05) inset;
+    }
+
+    .crown-btn {
+      position: absolute;
+      right: -5px;
+      top: 58%;
+      width: 5px;
+      height: 32px;
+      background: linear-gradient(90deg, #2c2c2e, #3a3a3c);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .screen-bezel {
+      border-radius: 38px;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+      line-height: 0;
+      box-shadow:
+        inset 0 0 0 0.5px rgba(0, 0, 0, 0.8),
+        inset 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 36px;
+    }
+
+    .screen-bezel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 38px;
+      background: linear-gradient(160deg,
+          rgba(255, 255, 255, 0.06) 0%,
+          rgba(255, 255, 255, 0.01) 30%,
+          transparent 60%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .watch-label {
+      margin-top: 2.5rem;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.3);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .scroll-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3rem;
+      color: rgba(255, 255, 255, 0.25);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      animation: bob 2s ease-in-out infinite;
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
+    }
+
+    section {
+      background: var(--black);
+    }
+
+    .sec-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+    }
+
+    .sec-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 1rem;
+    }
+
+    .sec-title {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      color: var(--white);
+    }
+
+    .sec-title .thin {
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .sec-body {
+      margin-top: 1.2rem;
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.65;
+      max-width: 500px;
+    }
+
+    hr.rule {
+      border: none;
+      border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto;
+      gap: 2px;
+      margin-top: 4rem;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .bento-card {
+      background: #111;
+      padding: 2.2rem 2rem;
+      position: relative;
+      transition: background 0.3s;
+    }
+
+    .bento-card:hover {
+      background: #161616;
+    }
+
+    .bento-card.wide {
+      grid-column: span 2;
+    }
+
+    .bento-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(0, 113, 227, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.4rem;
+      font-size: 1.35rem;
+      color: var(--blue);
+    }
+
+    .bento-icon .material-symbols-outlined {
+      font-size: 1.3rem;
+      font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .bento-title {
+      font-size: 1.05rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+
+    .bento-desc {
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.45);
+      line-height: 1.65;
+    }
+
+    .bento-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 1.2rem;
+      font-size: 0.68rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.06em;
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      padding: 0.2rem 0.6rem;
+      border-radius: 40px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .code-win {
+      background: #0a0a0a;
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .code-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.7rem 1rem;
+      background: #111;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .code-file {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.3);
+      margin-left: 6px;
+    }
+
+    .code-body {
+      padding: 1.6rem 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.76rem;
+      line-height: 1.85;
+      overflow-x: auto;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .t-kw  { color: #ff7ab2; }
+    .t-fn  { color: #6bdfff; }
+    .t-str { color: #fc9a59; }
+    .t-num { color: #d9c97c; }
+    .t-cm  { color: rgba(255, 255, 255, 0.22); font-style: italic; }
+    .t-tp  { color: #acf2bd; }
+    .t-ac  { color: rgba(255, 255, 255, 0.9); }
+
+    .chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 3rem;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.5rem 1.1rem;
+      border: 0.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 40px;
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.65);
+      transition: border-color 0.2s, color 0.2s;
+      cursor: default;
+    }
+
+    .chip:hover {
+      border-color: rgba(0, 113, 227, 0.5);
+      color: var(--white);
+    }
+
+    .chip .material-symbols-outlined {
+      font-size: 1rem;
+      font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 20;
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    footer {
+      background: var(--black);
+      border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .footer-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: -0.01em;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.8rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.76rem;
+      color: rgba(255, 255, 255, 0.35);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .footer-copy {
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.2);
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    @keyframes up {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (max-width: 860px) {
+      .split { grid-template-columns: 1fr; gap: 2.5rem; }
+      .bento { grid-template-columns: 1fr; }
+      .bento-card.wide { grid-column: span 1; }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .spec-item:nth-child(2) { border-right: none; }
+      .nav-center { display: none; }
+    }
+
+    @media (max-width: 540px) {
+      :root { --w-outer: 280px; }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .hero-title { font-size: 2.6rem; }
+    }
+  </style>
 </head>
+
 <body>
-<!-- NAV -->
-<nav>
-<a class="nav-logo" href="#">
-AromaUI
-</a>
-<div class="nav-center">
-<a href="#features">Features</a>
-<a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples">Examples</a>
-<a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started">Documentation</a>
-</div>
-<div class="nav-right">
-<a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">
-<button class="nav-btn-ghost">GitHub</button>
-</a>
-<a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
-<button class="nav-btn-fill">
-<span class="material-symbols-outlined" style="font-size:0.8rem">menu_book</span>
-Get Started
-</button>
-</a>
-</div>
-</nav>
-<section class="hero">
-<h1 class="hero-title">
-Lightweight.<br>
-<span class="accent-word">Versatile.</span> Built in C.
-</h1>
-<p class="hero-sub">
-Build responsive embedded and desktop user interfaces in portable C.
-Runs on Web (Emscripten/WebGL), GLFW, Android, ESP32, and Vulkan backends.
-Includes font rendering, theming, animations, and a rich widget set.
-</p>
-<div class="hero-actions">
-<a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
-<button class="btn-primary">
-<span class="material-symbols-outlined" style="font-size:1rem">menu_book</span>
-Read the Docs
-</button>
-</a>
-<a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">
-<button class="btn-secondary">
-<span class="material-symbols-outlined" style="font-size:1rem">code</span>
-View on GitHub
-</button>
-</a>
-</div>
-<div class="hero-device-wrap">
-<div class="band"></div>
-<div class="watch-body">
-<div class="crown"></div>
-<div class="crown-btn"></div>
-<div class="screen-bezel">
-<canvas id="canvas"></canvas>
-</div>
-</div>
-<div class="band band-bottom"></div>
-<p class="watch-label">Live demo ·
-<a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples/smartwatch_example" target="_blank">examples/smartwatch_example</a>
-</p>
-</div>
-<div class="scroll-hint">
-<span class="material-symbols-outlined" style="font-size:1rem">keyboard_arrow_down</span>
-Scroll to explore
-</div>
-</section>
-<!-- FEATURES -->
-<section id="features">
-<div class="sec-inner">
-<div class="reveal">
-<h2 class="sec-title">Designed for the<br><span class="light">most constrained hardware.</span></h2>
-<p class="sec-body">Pure C. Works on Espressif, embedded Linux, and everything in between.</p>
-</div>
-<div class="bento reveal" style="transition-delay:0.1s">
-<div class="bento-card wide">
-<div class="bento-icon">
-<span class="material-symbols-outlined">memory</span>
-</div>
-<p class="bento-title">Tiny hardware footprint</p>
-<p class="bento-desc">Runs on desktop, embedded Linux, WebAssembly via Emscripten, Android, and constrained devices, portable C code with pluggable backends.</p>
-<span class="bento-badge">Bare-metal ready</span>
-</div>
-<div class="bento-card">
-<div class="bento-icon">
-<span class="material-symbols-outlined">widgets</span>
-</div>
-<p class="bento-title">Rich widget library</p>
-<p class="bento-desc">Buttons, lists, labels, icons, tables, images, maps, textboxes, tabs, dialogs, snackbars, tooltips, all fully styleable.</p>
-<span class="bento-badge">30+ widgets</span>
-</div>
-<div class="bento-card">
-<div class="bento-icon">
-<span class="material-symbols-outlined">animation</span>
-</div>
-<p class="bento-title">Smooth animations</p>
-<p class="bento-desc">Built-in animation engine with easing, optimized for native and WebGL.</p>
-<span class="bento-badge">60 FPS</span>
-</div>
-<div class="bento-card">
-<div class="bento-icon">
-<span class="material-symbols-outlined">touch_app</span>
-</div>
-<p class="bento-title">Any input device</p>
-<p class="bento-desc">Touchscreen, mouse, and keyboard support with scroll containers and gesture-friendly behavior for interactive UIs.</p>
-<span class="bento-badge">Multi-input</span>
-</div>
-<div class="bento-card">
-<div class="bento-icon">
-<span class="material-symbols-outlined">speed</span>
-</div>
-<p class="bento-title">Hardware acceleration</p>
-<p class="bento-desc">Pluggable graphics backends: GLFW, GLPS, Emscripten WebGL, Vulkan, Android canvas, and embedded display accelerators.</p>
-<span class="bento-badge">GPU support</span>
-</div>
-</div>
-</div>
-</section>
-<hr class="rule">
-<!-- PLATFORMS -->
-<section id="examples">
-<div class="sec-inner">
-<div class="reveal">
-<h2 class="sec-title">Runs on<br><span class="light">everything.</span></h2>
-<p class="sec-body">From small embedded targets to full Linux infotainment systems, one portable C codebase and a shared API.</p>
-</div>
-<div class="chips-wrap reveal" style="transition-delay:0.1s">
-<div class="chip"><span class="material-symbols-outlined">watch</span>Wearables &amp; Smartwatches</div>
-<div class="chip"><span class="material-symbols-outlined">precision_manufacturing</span>Industrial HMI</div>
-<div class="chip"><span class="material-symbols-outlined">home_iot_device</span>Smart Home</div>
-<div class="chip"><span class="material-symbols-outlined">directions_car</span>Automotive Cluster</div>
-<div class="chip"><span class="material-symbols-outlined">ecg_heart</span>Medical Devices</div>
-<div class="chip"><span class="material-symbols-outlined">point_of_sale</span>POS &amp; Retail</div>
-<div class="chip"><span class="material-symbols-outlined">code</span>Desktop Simulator</div>
-<div class="chip"><span class="material-symbols-outlined">public</span>Web via Emscripten</div>
-<div class="chip"><span class="material-symbols-outlined">phone_android</span>Android Canvas</div>
-</div>
-</div>
-</section>
-<!-- CTA -->
-<section class="cta-section">
-<div class="sec-inner">
-<div class="reveal">
-<h2 class="sec-title" style="max-width:600px; margin:0 auto;">
-Start building your<br><span class="light">embedded UI today.</span>
-</h2>
-<p class="sec-body">MIT licensed. No royalties. Works with your existing toolchain in minutes.</p>
-<div class="cta-actions">
-<a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
-<button class="btn-cta">
-<span class="material-symbols-outlined">menu_book</span>
-Read the Docs
-</button>
-</a>
-<a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">
-<button class="btn-secondary" style="background:transparent; color:rgba(255,255,255,0.6); border-color:rgba(255,255,255,0.15);">
-<span class="material-symbols-outlined">code</span>
-View on GitHub
-</button>
-</a>
-</div>
-</div>
-</div>
-</section>
-<!-- FOOTER -->
-<footer>
-<div class="footer-top">
-<div class="footer-brand">
-<span class="footer-logo-text">
-AromaUI
-</span>
-<span class="footer-tagline">Modern C UI Framework</span>
-</div>
-<ul class="footer-links">
-<li><a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">GitHub</a></li>
-<li><a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">Documentation</a></li>
-<li><a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples" target="_blank">Examples</a></li>
-</ul>
-</div>
-<div class="footer-bottom">
-Copyright 2024 AromaUI · Released under the MIT License
-</div>
-</footer>
-<script>
-const io = new IntersectionObserver(entries => {
-entries.forEach(e => {
-if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
-});
-}, { threshold: 0.12 });
-document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-window.appLogs = [];
-window.onerror = (message, source, lineno, colno, error) => console.error(message, source, lineno, colno, error);
-var Module = {
-canvas: document.getElementById('canvas'),
-print:    (...args) => { const m = args.join(' '); console.log(m); window.appLogs.push(m); },
-printErr: (...args) => { const m = args.join(' '); console.error(m); window.appLogs.push(m); },
-onRuntimeInitialized: function () {
-const canvas = Module.canvas;
-canvas.setAttribute('tabindex', '0');
-canvas.focus();
-canvas.style.touchAction = 'none';
-canvas.width  = 380;
-canvas.height = 380;
-function toCanvasCoords(clientX, clientY) {
-const rect = canvas.getBoundingClientRect();
-return {
-x: Math.round((clientX - rect.left) * (canvas.width  / rect.width)),
-y: Math.round((clientY - rect.top)  * (canvas.height / rect.height)),
-};
-}
-function sendMouse(action, cx, cy) {
-if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
-const p = toCanvasCoords(cx, cy);
-Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
-}
-canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
-canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
-canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
-function firstTouch(e) {
-return (e.touches?.length ? e.touches[0] : e.changedTouches?.[0]) ?? null;
-}
-canvas.addEventListener('touchstart', e => { const t = firstTouch(e); if(t){ canvas.focus(); sendMouse(1, t.clientX, t.clientY); } e.preventDefault(); }, { passive: false });
-canvas.addEventListener('touchmove',  e => { const t = firstTouch(e); if(t) sendMouse(0, t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
-canvas.addEventListener('touchend',   e => { const t = firstTouch(e); if(t) sendMouse(2, t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
-}
-};
-</script>
-<script src="smartwatch_example.js?v=1779150134"></script>
+
+  <nav>
+    <a class="nav-logo" href="#">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="0" y="0" width="10" height="10" rx="2" fill="white" opacity="0.9" />
+        <rect x="12" y="0" width="10" height="10" rx="2" fill="white" opacity="0.35" />
+        <rect x="0" y="12" width="10" height="10" rx="2" fill="white" opacity="0.35" />
+        <rect x="12" y="12" width="10" height="10" rx="2" fill="white" opacity="0.9" />
+      </svg>
+      AromaUI
+    </a>
+
+    <div class="nav-center">
+      <a href="#features">Features</a>
+      <a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples">Examples</a>
+      <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started">Documentation</a>
+    </div>
+
+    <div class="nav-right">
+      <a class="nav-pill" href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started">
+        <span class="material-symbols-outlined" style="font-size:0.85rem">article</span>
+        Get Started
+      </a>
+    </div>
+  </nav>
+
+
+  <section class="hero" style="padding-bottom: 5rem;">
+    <div class="hero-glow"></div>
+
+    <h1 class="hero-title">
+      <br>
+      <span style="font-weight: 100;">Lightweight</span> & <b>Versatile</b>
+    </h1>
+
+    <p class="hero-sub">
+      Build responsive embedded and desktop user interfaces in C. Runs on Web (Emscripten/WebGL),
+      GLFW, Android, ESP32, and Vulkan backends. Includes font rendering, theming, animations,
+      and a rich widget set for automotive and embedded scenarios.
+    </p>
+
+    <div class="hero-actions">
+      <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
+        <button class="btn-fill">
+          <span class="material-symbols-outlined" style="font-size:1rem">menu_book</span>
+          Read the Docs
+        </button>
+      </a>
+      <a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">
+        <button class="btn-ghost">
+          <span class="material-symbols-outlined" style="font-size:1rem">code</span>
+          View on GitHub
+        </button>
+      </a>
+    </div>
+
+    <div class="watch-scene">
+      <div class="band"></div>
+
+      <div class="watch-body">
+        <div class="crown"></div>
+        <div class="crown-btn"></div>
+
+        <div class="screen-bezel">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="band band-bottom"></div>
+
+      <p class="watch-label">Live example: <a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples/smartwatch_example" target="_blank">examples/smartwatch_example</a></p>
+    </div>
+
+    <div class="scroll-hint">
+      <span class="material-symbols-outlined" style="font-size:1.1rem">keyboard_arrow_down</span>
+      Scroll to explore
+    </div>
+  </section>
+
+
+  <section id="features">
+    <div class="sec-inner">
+      <div class="reveal">
+        <p class="sec-eyebrow">Capabilities</p>
+        <h2 class="sec-title">Designed for the<br><span class="thin">most constrained hardware.</span></h2>
+        <p class="sec-body">Pure C. Works on Espressif and Embedded Linux.</p>
+      </div>
+
+      <div class="bento reveal" style="transition-delay:0.1s">
+
+        <div class="bento-card wide">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">memory</span>
+          </div>
+          <p class="bento-title">Tiny hardware footprint</p>
+          <p class="bento-desc">Runs on desktop, embedded Linux, WebAssembly via Emscripten, Android, and constrained
+            devices, portable C code and multiple backends.</p>
+          <span class="bento-badge">
+            <span class="material-symbols-outlined" style="font-size:0.75rem">check_circle</span>
+            Bare-metal ready
+          </span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">widgets</span>
+          </div>
+          <p class="bento-title">Rich widget library</p>
+          <p class="bento-desc">A broad widget set including buttons, lists, labels, icons, tables, images, maps,
+            textboxes, tabs, dialogs, snackbars, and tooltips, all styleable.</p>
+          <span class="bento-badge">30+ widgets</span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">animation</span>
+          </div>
+          <p class="bento-title">Smooth animations</p>
+          <p class="bento-desc">Built-in animation engine with easing, property interpolation, and timeline sequencing,
+            optimized for smooth UI transitions on native and WebGL backends.</p>
+          <span class="bento-badge">60 FPS</span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">touch_app</span>
+          </div>
+          <p class="bento-title">Any input device</p>
+          <p class="bento-desc">Input support for touchscreen, mouse, and keyboard, with scroll containers and
+            gesture-friendly behavior for interactive UIs.</p>
+          <span class="bento-badge">Multi-input</span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">speed</span>
+          </div>
+          <p class="bento-title">Hardware acceleration</p>
+          <p class="bento-desc">Pluggable graphics backends: GLFW, GLPS, Emscripten WebGL, Vulkan, Android canvas, and
+            support for embedded display accelerators.</p>
+          <span class="bento-badge">GPU support</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <hr class="rule">
+
+
+
+
+
+
+
+  <section id="examples">
+    <div class="sec-inner">
+      <div class="reveal">
+        <p class="sec-eyebrow">Supported Platforms</p>
+        <h2 class="sec-title">Runs on<br><span class="thin">everything.</span></h2>
+        <p class="sec-body">From small embedded targets to full Linux infotainment systems, one portable C codebase and
+          a shared API.</p>
+      </div>
+
+      <div class="chips-wrap reveal" style="transition-delay:0.1s">
+        <div class="chip">
+          <span class="material-symbols-outlined">watch</span>
+          Wearables &amp; Smartwatches
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">precision_manufacturing</span>
+          Industrial HMI
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">home_iot_device</span>
+          Smart Home
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">directions_car</span>
+          Automotive Cluster
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">ecg_heart</span>
+          Medical Devices
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">point_of_sale</span>
+          POS &amp; Retail
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">code</span>
+          Desktop Simulator
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">public</span>
+          Web via Emscripten
+        </div>
+        <div class="chip">
+          <span class="material-symbols-outlined">phone_android</span>
+          Android Canvas
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section style="background: #0a0a0a; border-top: 0.5px solid rgba(255,255,255,0.06);">
+    <div class="sec-inner" style="text-align:center; padding: 7rem 2rem;">
+      <div class="reveal">
+        <p class="sec-eyebrow" style="text-align:center">Open Source</p>
+        <h2 class="sec-title" style="text-align:center; max-width:600px; margin:0 auto;">
+          Start building your<br><span class="thin">embedded UI today.</span>
+        </h2>
+        <p class="sec-body" style="margin: 1.2rem auto 0; text-align:center; max-width:420px;">
+          MIT licensed. No royalties. Works with your existing toolchain in minutes.
+        </p>
+        <div style="display:flex; gap:1rem; margin-top:2.5rem; justify-content:center; flex-wrap:wrap;">
+          <a style="text-decoration: none;" href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
+            <button class="btn-fill" style="font-size:0.95rem; padding: 0.75rem 2rem;">
+              <span class="material-symbols-outlined">menu_book</span>
+              Read the Docs
+            </button>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <footer>
+    <div class="footer-inner">
+      <span class="footer-logo">AromaUI</span>
+      <ul class="footer-links">
+        <li><a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">GitHub</a></li>
+        <li><a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">Documentation</a></li>
+      </ul>
+      <p class="footer-copy">Copyright 2024 AromaUI, Released under the MIT License.</p>
+    </div>
+  </footer>
+
+  <script>
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    window.appLogs = [];
+
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error(message, source, lineno, colno, error);
+    };
+
+    var Module = {
+      canvas: document.getElementById('canvas'),
+
+      print: (...args) => {
+        const msg = args.join(' ');
+        console.log(msg);
+        window.appLogs.push(msg);
+      },
+
+      printErr: (...args) => {
+        const msg = args.join(' ');
+        console.error(msg);
+        window.appLogs.push(msg);
+      },
+
+      onRuntimeInitialized: function () {
+        const canvas = Module.canvas;
+        canvas.setAttribute('tabindex', '0');
+        canvas.focus();
+        canvas.style.touchAction = 'none';
+
+        canvas.width  = 380;
+        canvas.height = 380;
+
+        function toCanvasCoords(clientX, clientY) {
+          const rect   = canvas.getBoundingClientRect();
+          const scaleX = canvas.width  / rect.width;
+          const scaleY = canvas.height / rect.height;
+          return {
+            x: Math.round((clientX - rect.left) * scaleX),
+            y: Math.round((clientY - rect.top)  * scaleY),
+          };
+        }
+
+        function sendMouse(action, clientX, clientY) {
+          if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+          const p = toCanvasCoords(clientX, clientY);
+          Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
+        }
+
+        canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
+        canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+        canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+
+        function firstTouch(e) {
+          return (e.touches && e.touches.length)
+            ? e.touches[0]
+            : (e.changedTouches && e.changedTouches.length)
+              ? e.changedTouches[0]
+              : null;
+        }
+
+        canvas.addEventListener('touchstart', e => {
+          const t = firstTouch(e);
+          if (t) { canvas.focus(); sendMouse(1, t.clientX, t.clientY); }
+          e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', e => {
+          const t = firstTouch(e);
+          if (t) sendMouse(0, t.clientX, t.clientY);
+          e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', e => {
+          const t = firstTouch(e);
+          if (t) sendMouse(2, t.clientX, t.clientY);
+          e.preventDefault();
+        }, { passive: false });
+
+        console.log("AromaUI WASM input initialized");
+      }
+    };
+  </script>
+
+  <script src="smartwatch_example.js?v=1779150134"></script>
+
 </body>
+
 </html>
