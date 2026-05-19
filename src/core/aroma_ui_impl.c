@@ -368,8 +368,11 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
             }
 
             if (w > 0 && h > 0) break;
-
+            #ifndef __EMSCRIPTEN__
             SLEEP_MS(SPLASH_WAIT_INTERVAL_MS);
+            #else 
+            emscripten_sleep(SPLASH_WAIT_INTERVAL_MS);
+            #endif
         }
 
         if (platform && platform->make_context_current)
@@ -385,7 +388,7 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
         }
 
         aroma_node_invalidate(window);
-       // show_splash_screen(g_windows[idx].window_id, w, h);
+       //show_splash_screen(g_windows[idx].window_id, w, h);
     }
 
     aroma_node_invalidate(window);

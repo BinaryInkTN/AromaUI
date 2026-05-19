@@ -242,7 +242,7 @@ void build_watch_face(AromaNode *window)
                                            20, 15, LABEL_STYLE_LABEL_LARGE, watch.ui_font);
     aroma_node_set_z_index(apps_label, Z_APPS_PANEL + 1);
     aroma_label_set_color(apps_label, watch.theme.colors.text_primary);
-
+;
     AromaNode *apps_grid = aroma_container_create(
         watch.apps_panel, WATCH_PADDING, 55, WATCH_INNER_W, WATCH_H - WATCH_PADDING - 120);
     aroma_node_set_z_index(apps_grid, Z_APPS_PANEL + 1);
@@ -279,7 +279,6 @@ void build_watch_face(AromaNode *window)
 int main(int argc, char **argv)
 {
     aroma_animation_manager_init();
-    aroma_splash(false, "Aroma Watch", "WearOS Style");
     aroma_ui_init();
 
     watch.dark_mode = false;
@@ -289,10 +288,12 @@ int main(int argc, char **argv)
     watch.heart_rate = 72;
     watch.battery_pct = 85;
 
-    watch.theme = aroma_theme_create_material_blue();
+    watch.theme = aroma_theme_create_material_black();
     watch.theme.enable_shadows = true;
-    watch.theme.colors.background = aroma_color_blend(
-        watch.theme.colors.primary, watch.theme.colors.background, 0.95f);
+    //material blue
+    watch.theme.colors.primary = 0xFF2196F3; 
+    watch.theme.colors.primary_dark = aroma_color_blend(watch.theme.colors.primary, 0xFF000000, 0.2f);
+
     aroma_ui_set_theme(&watch.theme);
 
     watch.ui_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18);

@@ -1079,124 +1079,76 @@ aroma_ui_shutdown();
       window.appLogs.push(msg);
     },
 
-    onRuntimeInitialized: function () {
-      const canvas = Module.canvas;
+  onRuntimeInitialized: function () {
+  const canvas = Module.canvas;
+  canvas.setAttribute('tabindex', '0');
+  canvas.focus();
+  canvas.style.touchAction = 'none';
 
-      // Make canvas focusable
-      canvas.setAttribute('tabindex', '0');
-      canvas.focus();
-
-      // Prevent browser gestures interfering with touch
-      canvas.style.touchAction = 'none';
-
-      // Proper framebuffer sizing
-      function resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-
-        const displayWidth = Math.floor(canvas.clientWidth * dpr);
-        const displayHeight = Math.floor(canvas.clientHeight * dpr);
-
-        if (canvas.width !== displayWidth ||
-            canvas.height !== displayHeight) {
-
-          canvas.width = displayWidth;
-          canvas.height = displayHeight;
-        }
-      }
-
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-
-      // Convert browser coords -> framebuffer coords
-      function toCanvasCoords(event) {
-        const rect = canvas.getBoundingClientRect();
-
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        return {
-          x: ((event.clientX - rect.left) * scaleX) | 0,
-          y: ((event.clientY - rect.top) * scaleY) | 0
-        };
-      }
-
-      function sendMouse(action, event) {
-        if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') {
-          return;
-        }
-
-        const p = toCanvasCoords(event);
-
-        Module._aroma_emscripten_dispatch_mouse(
-          action,
-          p.x,
-          p.y,
-          0
-        );
-      }
-
-      // Mouse events
-      canvas.addEventListener('mousemove', e => {
-        sendMouse(0, e);
-      }, { passive: true });
-
-      canvas.addEventListener('mousedown', e => {
-        canvas.focus();
-        sendMouse(1, e);
-        e.preventDefault();
-      }, { passive: false });
-
-      canvas.addEventListener('mouseup', e => {
-        sendMouse(2, e);
-        e.preventDefault();
-      }, { passive: false });
-
-      // Touch events
-      function getTouch(e) {
-        if (e.touches && e.touches.length > 0) {
-          return e.touches[0];
-        }
-
-        if (e.changedTouches && e.changedTouches.length > 0) {
-          return e.changedTouches[0];
-        }
-
-        return null;
-      }
-
-      canvas.addEventListener('touchstart', e => {
-        const t = getTouch(e);
-
-        if (t) {
-          canvas.focus();
-          sendMouse(1, t);
-        }
-
-        e.preventDefault();
-      }, { passive: false });
-
-      canvas.addEventListener('touchmove', e => {
-        const t = getTouch(e);
-
-        if (t) {
-          sendMouse(0, t);
-        }
-
-        e.preventDefault();
-      }, { passive: false });
-
-      canvas.addEventListener('touchend', e => {
-        const t = getTouch(e);
-
-        if (t) {
-          sendMouse(2, t);
-        }
-
-        e.preventDefault();
-      }, { passive: false });
-
-      console.log("AromaUI WASM input initialized");
+  // Use ResizeObserver so ANY size/zoom change is caught
+  const ro = new ResizeObserver(() => {
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth  = Math.round(canvas.clientWidth  * dpr);
+    const displayHeight = Math.round(canvas.clientHeight * dpr);
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width  = displayWidth;
+      canvas.height = displayHeight;
     }
+  });
+  ro.observe(canvas);
+
+  // Convert coords using live getBoundingClientRect + current dpr
+  function toCanvasCoords(clientX, clientY) {
+    const rect  = canvas.getBoundingClientRect();
+    const dpr   = window.devicePixelRatio || 1;
+    const scaleX = (canvas.width  / rect.width)  || dpr;
+    const scaleY = (canvas.height / rect.height) || dpr;
+    return {
+      x: Math.round((clientX - rect.left) * scaleX),
+      y: Math.round((clientY - rect.top)  * scaleY),
+    };
+  }
+
+  function sendMouse(action, clientX, clientY) {
+    if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+    const p = toCanvasCoords(clientX, clientY);
+    Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
+  }
+
+  // Mouse
+  canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
+  canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+  canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+
+  // Touch — always pull from the right touch list
+  function firstTouch(e) {
+    return (e.touches && e.touches.length)
+      ? e.touches[0]
+      : (e.changedTouches && e.changedTouches.length)
+        ? e.changedTouches[0]
+        : null;
+  }
+
+  canvas.addEventListener('touchstart', e => {
+    const t = firstTouch(e);
+    if (t) { canvas.focus(); sendMouse(1, t.clientX, t.clientY); }
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', e => {
+    const t = firstTouch(e);
+    if (t) sendMouse(0, t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', e => {
+    const t = firstTouch(e);
+    if (t) sendMouse(2, t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  console.log("AromaUI WASM input initialized");
+}
   };
 </script>
 
