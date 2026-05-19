@@ -95,6 +95,10 @@
       left: 50%;
       transform: translateX(-50%);
     }
+    
+    a {
+      text-decoration: none !important;
+    }
 
     .nav-center a {
       font-size: 0.78rem;
@@ -1109,61 +1113,159 @@ aroma_ui_shutdown();
     </div>
   </footer>
 
-
-  <script>
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-          io.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.12 });
-
-    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-
-    window.appLogs = [];
-    window.onerror = function (message, source, lineno, colno, error) {
-      console.error(message, source, lineno, colno, error);
-    };
-
-    var Module = {
-      canvas: document.getElementById('canvas'),
-      print: (...args) => window.appLogs.push(args.join(' ')),
-      printErr: (...args) => window.appLogs.push(args.join(' ')),
-      onRuntimeInitialized: function () {
-        var canvas = Module.canvas;
-
-        function toCanvasCoords(event) {
-          var rect = canvas.getBoundingClientRect();
-          var scaleX = canvas.width / rect.width;
-          var scaleY = canvas.height / rect.height;
-          return {
-            x: (event.clientX, rect.left) * scaleX | 0,
-            y: (event.clientY, rect.top) * scaleY | 0
-          };
-        }
-
-        function sendMouse(action, event) {
-          if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
-          var p = toCanvasCoords(event);
-          Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
-        }
-
-        window.addEventListener('mousemove', e => sendMouse(0, e), { passive: true });
-        window.addEventListener('mousedown', e => { sendMouse(1, e); e.preventDefault(); }, { passive: false });
-        window.addEventListener('mouseup', e => { sendMouse(2, e); e.preventDefault(); }, { passive: false });
-
-        function touchToMouse(action, e) {
-          if (!e.touches.length) return;
-          sendMouse(action, e.touches[0]);
-        }
-        canvas.addEventListener('touchstart', e => { touchToMouse(1, e); e.preventDefault(); }, { passive: false });
-        canvas.addEventListener('touchmove', e => { touchToMouse(0, e); e.preventDefault(); }, { passive: false });
-        canvas.addEventListener('touchend', e => { sendMouse(2, { clientX: 0, clientY: 0 }); }, { passive: false });
+<script>
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
       }
-    };
-  </script>
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  window.appLogs = [];
+
+  window.onerror = function (message, source, lineno, colno, error) {
+    console.error(message, source, lineno, colno, error);
+  };
+
+  var Module = {
+    canvas: document.getElementById('canvas'),
+
+    print: (...args) => {
+      const msg = args.join(' ');
+      console.log(msg);
+      window.appLogs.push(msg);
+    },
+
+    printErr: (...args) => {
+      const msg = args.join(' ');
+      console.error(msg);
+      window.appLogs.push(msg);
+    },
+
+    onRuntimeInitialized: function () {
+      const canvas = Module.canvas;
+
+      // Make canvas focusable
+      canvas.setAttribute('tabindex', '0');
+      canvas.focus();
+
+      // Prevent browser gestures interfering with touch
+      canvas.style.touchAction = 'none';
+
+      // Proper framebuffer sizing
+      function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+
+        const displayWidth = Math.floor(canvas.clientWidth * dpr);
+        const displayHeight = Math.floor(canvas.clientHeight * dpr);
+
+        if (canvas.width !== displayWidth ||
+            canvas.height !== displayHeight) {
+
+          canvas.width = displayWidth;
+          canvas.height = displayHeight;
+        }
+      }
+
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // Convert browser coords -> framebuffer coords
+      function toCanvasCoords(event) {
+        const rect = canvas.getBoundingClientRect();
+
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        return {
+          x: ((event.clientX - rect.left) * scaleX) | 0,
+          y: ((event.clientY - rect.top) * scaleY) | 0
+        };
+      }
+
+      function sendMouse(action, event) {
+        if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') {
+          return;
+        }
+
+        const p = toCanvasCoords(event);
+
+        Module._aroma_emscripten_dispatch_mouse(
+          action,
+          p.x,
+          p.y,
+          0
+        );
+      }
+
+      // Mouse events
+      canvas.addEventListener('mousemove', e => {
+        sendMouse(0, e);
+      }, { passive: true });
+
+      canvas.addEventListener('mousedown', e => {
+        canvas.focus();
+        sendMouse(1, e);
+        e.preventDefault();
+      }, { passive: false });
+
+      canvas.addEventListener('mouseup', e => {
+        sendMouse(2, e);
+        e.preventDefault();
+      }, { passive: false });
+
+      // Touch events
+      function getTouch(e) {
+        if (e.touches && e.touches.length > 0) {
+          return e.touches[0];
+        }
+
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          return e.changedTouches[0];
+        }
+
+        return null;
+      }
+
+      canvas.addEventListener('touchstart', e => {
+        const t = getTouch(e);
+
+        if (t) {
+          canvas.focus();
+          sendMouse(1, t);
+        }
+
+        e.preventDefault();
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', e => {
+        const t = getTouch(e);
+
+        if (t) {
+          sendMouse(0, t);
+        }
+
+        e.preventDefault();
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', e => {
+        const t = getTouch(e);
+
+        if (t) {
+          sendMouse(2, t);
+        }
+
+        e.preventDefault();
+      }, { passive: false });
+
+      console.log("AromaUI WASM input initialized");
+    }
+  };
+</script>
 
   <script src="smartwatch_example.js?v=1779150134"></script>
 
