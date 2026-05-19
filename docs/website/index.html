@@ -26,8 +26,7 @@
       --r: 20px;
       --r-sm: 12px;
       --nav-h: 52px;
-      --w-outer: 420px;
-      --w-inner: 380px;
+      --w-outer: min(420px, 90vw);
     }
 
     *,
@@ -95,7 +94,7 @@
       left: 50%;
       transform: translateX(-50%);
     }
-    
+
     a {
       text-decoration: none !important;
     }
@@ -336,8 +335,8 @@
 
     #canvas {
       display: block;
-      width: var(--w-inner) !important;
-      height: var(--w-inner) !important;
+      width: 100%;
+      aspect-ratio: 1 / 1;
       border-radius: 36px;
     }
 
@@ -378,15 +377,8 @@
     }
 
     @keyframes bob {
-
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-
-      50% {
-        transform: translateY(5px);
-      }
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
     }
 
     section {
@@ -538,17 +530,9 @@
       border-radius: 50%;
     }
 
-    .dot-r {
-      background: #ff5f57;
-    }
-
-    .dot-y {
-      background: #febc2e;
-    }
-
-    .dot-g {
-      background: #28c840;
-    }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
 
     .code-file {
       font-family: 'DM Mono', monospace;
@@ -566,34 +550,13 @@
       color: rgba(255, 255, 255, 0.75);
     }
 
-    .t-kw {
-      color: #ff7ab2;
-    }
-
-    .t-fn {
-      color: #6bdfff;
-    }
-
-    .t-str {
-      color: #fc9a59;
-    }
-
-    .t-num {
-      color: #d9c97c;
-    }
-
-    .t-cm {
-      color: rgba(255, 255, 255, 0.22);
-      font-style: italic;
-    }
-
-    .t-tp {
-      color: #acf2bd;
-    }
-
-    .t-ac {
-      color: rgba(255, 255, 255, 0.9);
-    }
+    .t-kw  { color: #ff7ab2; }
+    .t-fn  { color: #6bdfff; }
+    .t-str { color: #fc9a59; }
+    .t-num { color: #d9c97c; }
+    .t-cm  { color: rgba(255, 255, 255, 0.22); font-style: italic; }
+    .t-tp  { color: #acf2bd; }
+    .t-ac  { color: rgba(255, 255, 255, 0.9); }
 
     .chips-wrap {
       display: flex;
@@ -675,15 +638,8 @@
     }
 
     @keyframes up {
-      from {
-        opacity: 0;
-        transform: translateY(22px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .reveal {
@@ -699,45 +655,17 @@
     }
 
     @media (max-width: 860px) {
-      .split {
-        grid-template-columns: 1fr;
-        gap: 2.5rem;
-      }
-
-      .bento {
-        grid-template-columns: 1fr;
-      }
-
-      .bento-card.wide {
-        grid-column: span 1;
-      }
-
-      .specs-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .spec-item:nth-child(2) {
-        border-right: none;
-      }
-
-      .nav-center {
-        display: none;
-      }
+      .split { grid-template-columns: 1fr; gap: 2.5rem; }
+      .bento { grid-template-columns: 1fr; }
+      .bento-card.wide { grid-column: span 1; }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .spec-item:nth-child(2) { border-right: none; }
+      .nav-center { display: none; }
     }
 
     @media (max-width: 540px) {
-      :root {
-        --w-outer: 280px;
-        --w-inner: 220px;
-      }
-
-      .specs-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .hero-title {
-        font-size: 2.6rem;
-      }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .hero-title { font-size: 2.6rem; }
     }
   </style>
 </head>
@@ -759,7 +687,6 @@
       <a href="#features">Features</a>
       <a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples">Examples</a>
       <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started">Documentation</a>
-
     </div>
 
     <div class="nav-right">
@@ -774,9 +701,7 @@
   <section class="hero" style="padding-bottom: 5rem;">
     <div class="hero-glow"></div>
 
-
     <h1 class="hero-title">
-
       <br>
       <span class="thin">Modern, lightweight C UI framework</span>
     </h1>
@@ -788,7 +713,7 @@
     </p>
 
     <div class="hero-actions">
-     <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
+      <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
         <button class="btn-fill">
           <span class="material-symbols-outlined" style="font-size:1rem">menu_book</span>
           Read the Docs
@@ -824,7 +749,6 @@
       Scroll to explore
     </div>
   </section>
-
 
 
   <section id="features">
@@ -869,7 +793,6 @@
             optimized for smooth UI transitions on native and WebGL backends.</p>
           <span class="bento-badge">60 FPS</span>
         </div>
-
 
         <div class="bento-card">
           <div class="bento-icon">
@@ -948,8 +871,7 @@ while (aroma_ui_is_running())
 aroma_ui_destroy_window(window);
 aroma_ui_unload_font(ui_font);
 aroma_ui_shutdown();
-
-        </pre>
+            </span></pre>
           </div>
         </div>
       </div>
@@ -1002,7 +924,6 @@ aroma_ui_shutdown();
           <span class="material-symbols-outlined">public</span>
           Web via Emscripten
         </div>
-
         <div class="chip">
           <span class="material-symbols-outlined">phone_android</span>
           Android Canvas
@@ -1046,111 +967,98 @@ aroma_ui_shutdown();
     </div>
   </footer>
 
-<script>
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        io.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.12 });
+  <script>
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
 
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
-  window.appLogs = [];
+    window.appLogs = [];
 
-  window.onerror = function (message, source, lineno, colno, error) {
-    console.error(message, source, lineno, colno, error);
-  };
-
-  var Module = {
-    canvas: document.getElementById('canvas'),
-
-    print: (...args) => {
-      const msg = args.join(' ');
-      console.log(msg);
-      window.appLogs.push(msg);
-    },
-
-    printErr: (...args) => {
-      const msg = args.join(' ');
-      console.error(msg);
-      window.appLogs.push(msg);
-    },
-
-  onRuntimeInitialized: function () {
-  const canvas = Module.canvas;
-  canvas.setAttribute('tabindex', '0');
-  canvas.focus();
-  canvas.style.touchAction = 'none';
-
-  // Use ResizeObserver so ANY size/zoom change is caught
-  const ro = new ResizeObserver(() => {
-    const dpr = window.devicePixelRatio || 1;
-    const displayWidth  = Math.round(canvas.clientWidth  * dpr);
-    const displayHeight = Math.round(canvas.clientHeight * dpr);
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-      canvas.width  = displayWidth;
-      canvas.height = displayHeight;
-    }
-  });
-  ro.observe(canvas);
-
-  // Convert coords using live getBoundingClientRect + current dpr
-  function toCanvasCoords(clientX, clientY) {
-    const rect  = canvas.getBoundingClientRect();
-    const dpr   = window.devicePixelRatio || 1;
-    const scaleX = (canvas.width  / rect.width)  || dpr;
-    const scaleY = (canvas.height / rect.height) || dpr;
-    return {
-      x: Math.round((clientX - rect.left) * scaleX),
-      y: Math.round((clientY - rect.top)  * scaleY),
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error(message, source, lineno, colno, error);
     };
-  }
 
-  function sendMouse(action, clientX, clientY) {
-    if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
-    const p = toCanvasCoords(clientX, clientY);
-    Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
-  }
+    var Module = {
+      canvas: document.getElementById('canvas'),
 
-  // Mouse
-  canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
-  canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
-  canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+      print: (...args) => {
+        const msg = args.join(' ');
+        console.log(msg);
+        window.appLogs.push(msg);
+      },
 
-  // Touch — always pull from the right touch list
-  function firstTouch(e) {
-    return (e.touches && e.touches.length)
-      ? e.touches[0]
-      : (e.changedTouches && e.changedTouches.length)
-        ? e.changedTouches[0]
-        : null;
-  }
+      printErr: (...args) => {
+        const msg = args.join(' ');
+        console.error(msg);
+        window.appLogs.push(msg);
+      },
 
-  canvas.addEventListener('touchstart', e => {
-    const t = firstTouch(e);
-    if (t) { canvas.focus(); sendMouse(1, t.clientX, t.clientY); }
-    e.preventDefault();
-  }, { passive: false });
+      onRuntimeInitialized: function () {
+        const canvas = Module.canvas;
+        canvas.setAttribute('tabindex', '0');
+        canvas.focus();
+        canvas.style.touchAction = 'none';
 
-  canvas.addEventListener('touchmove', e => {
-    const t = firstTouch(e);
-    if (t) sendMouse(0, t.clientX, t.clientY);
-    e.preventDefault();
-  }, { passive: false });
+        canvas.width  = 380;
+        canvas.height = 380;
 
-  canvas.addEventListener('touchend', e => {
-    const t = firstTouch(e);
-    if (t) sendMouse(2, t.clientX, t.clientY);
-    e.preventDefault();
-  }, { passive: false });
+        function toCanvasCoords(clientX, clientY) {
+          const rect   = canvas.getBoundingClientRect();
+          const scaleX = canvas.width  / rect.width;
+          const scaleY = canvas.height / rect.height;
+          return {
+            x: Math.round((clientX - rect.left) * scaleX),
+            y: Math.round((clientY - rect.top)  * scaleY),
+          };
+        }
 
-  console.log("AromaUI WASM input initialized");
-}
-  };
-</script>
+        function sendMouse(action, clientX, clientY) {
+          if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+          const p = toCanvasCoords(clientX, clientY);
+          Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
+        }
+
+        canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
+        canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+        canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+
+        function firstTouch(e) {
+          return (e.touches && e.touches.length)
+            ? e.touches[0]
+            : (e.changedTouches && e.changedTouches.length)
+              ? e.changedTouches[0]
+              : null;
+        }
+
+        canvas.addEventListener('touchstart', e => {
+          const t = firstTouch(e);
+          if (t) { canvas.focus(); sendMouse(1, t.clientX, t.clientY); }
+          e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', e => {
+          const t = firstTouch(e);
+          if (t) sendMouse(0, t.clientX, t.clientY);
+          e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', e => {
+          const t = firstTouch(e);
+          if (t) sendMouse(2, t.clientX, t.clientY);
+          e.preventDefault();
+        }, { passive: false });
+
+        console.log("AromaUI WASM input initialized");
+      }
+    };
+  </script>
 
   <script src="smartwatch_example.js?v=1779150134"></script>
 
