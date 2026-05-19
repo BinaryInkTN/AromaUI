@@ -26,7 +26,7 @@
       --r: 20px;
       --r-sm: 12px;
       --nav-h: 52px;
-      --w-outer: min(420px, 90vw);
+      --w-outer: 420px;
     }
 
     *,
@@ -664,6 +664,7 @@
     }
 
     @media (max-width: 540px) {
+      :root { --w-outer: 280px; }
       .specs-grid { grid-template-columns: 1fr 1fr; }
       .hero-title { font-size: 2.6rem; }
     }
@@ -703,7 +704,7 @@
 
     <h1 class="hero-title">
       <br>
-      <span class="thin">Modern, lightweight C UI framework</span>
+      Lightweight & Versatile
     </h1>
 
     <p class="hero-sub">
@@ -822,64 +823,9 @@
   <hr class="rule">
 
 
-  <section id="docs">
-    <div class="sec-inner">
-      <div class="split">
-        <div class="reveal">
-          <p class="sec-eyebrow">Developer Experience</p>
-          <h2 class="sec-title">Expressive.<br><span class="thin">Concise C.</span></h2>
-          <p class="sec-body">
-            Build complex UIs with a clean object-oriented API in pure C.
-            Widgets, styles, events, and animations, composable and predictable.
-          </p>
-          <div style="margin-top:2rem; display:flex; gap:0.8rem; flex-wrap:wrap;">
-            <a style="text-decoration: none;" href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
-              <button class="btn-fill">Read the Docs</button>
-            </a>
-          </div>
-        </div>
-
-        <div class="code-win reveal" style="transition-delay:0.15s">
-          <div class="code-bar">
-            <div class="dot dot-r"></div>
-            <div class="dot dot-y"></div>
-            <div class="dot dot-g"></div>
-            <span class="code-file">example.c</span>
-          </div>
-          <div class="code-body">
-            <pre><span class="t-cm">
-aroma_ui_init();
-AromaTheme theme = aroma_theme_create_material_blue();
-aroma_ui_set_theme(&theme);
-AromaFont *ui_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24);
-AromaWindow *window = aroma_ui_create_window("Hello World", WIN_W, WIN_H);
-aroma_event_set_root((AromaNode *)window);
-aroma_ui_prepare_font_for_window(0, ui_font);
-AromaNode *label = aroma_ui_label(
-    (AromaNode *)window,
-    "Hello, World!",
-    WIN_W / 2 - 70,   /* x */
-    WIN_H / 2 - 12,   /* y */
-    LABEL_STYLE_LABEL_LARGE,
-    ui_font);
-aroma_label_set_color(label, theme.colors.text_primary);
-while (aroma_ui_is_running())
-{
-    aroma_ui_process_events();
-    aroma_ui_render(window);
-}
-aroma_ui_destroy_window(window);
-aroma_ui_unload_font(ui_font);
-aroma_ui_shutdown();
-            </span></pre>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
 
-  <hr class="rule">
+
 
 
   <section id="examples">
