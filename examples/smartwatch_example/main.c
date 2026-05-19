@@ -150,7 +150,7 @@ void build_watch_face(AromaNode *window)
         watch.watch_face, 0, 125, WATCH_INNER_W, 55, CARD_TYPE_FILLED);
     aroma_node_set_z_index(stats_card, Z_STATS);
 
-    AromaAnimation* stats_anim = aroma_animation_start(stats_card, AROMA_ANIM_SLIDE_Y, -60, 157, 1200);
+    AromaAnimation* stats_anim = aroma_animation_start(stats_card, AROMA_ANIM_SLIDE_Y, -60, 157, 1600);
 
     watch.steps_icon = aroma_ui_icon(stats_card, AROMA_ICON_DIRECTIONS_WALK, 40, 14, 22,
                                      watch.theme.colors.primary, watch.icon_font);
@@ -183,7 +183,7 @@ void build_watch_face(AromaNode *window)
     watch.weather_icon = aroma_ui_icon(weather_card, AROMA_ICON_WB_SUNNY, 40, 10, 24,
                                        0xFFFFC107, watch.icon_font);
     aroma_node_set_z_index(watch.weather_icon, Z_WEATHER + 2);
-    AromaAnimation* weather_anim = aroma_animation_start(weather_card, AROMA_ANIM_SLIDE_Y, -45, 220, 1200);
+    AromaAnimation* weather_anim = aroma_animation_start(weather_card, AROMA_ANIM_SLIDE_Y, -45, 220, 1600);
     aroma_animation_set_easing(weather_anim, AROMA_EASE_OUT_ELASTIC);
     aroma_animation_set_easing(stats_anim, AROMA_EASE_OUT_ELASTIC);
     watch.weather_label = aroma_ui_label(weather_card, "22°C Sunny", 55, 12, LABEL_STYLE_LABEL_MEDIUM, watch.small_font);
