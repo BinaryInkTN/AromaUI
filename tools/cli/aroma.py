@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import getpass
 import os
 import platform
 import re
@@ -92,7 +93,8 @@ def run_command(
 
 
 def get_input(
-    prompt: str, default: str = None, validator=None, error_msg: str = "Invalid input"
+    prompt: str, default: str = None, validator=None, error_msg: str = "Invalid input",
+    secret: bool = False
 ) -> str:
     while True:
         prompt_str = f"{Colors.BOLD}{prompt}{Colors.ENDC}"
@@ -101,7 +103,7 @@ def get_input(
         prompt_str += ": "
 
         try:
-            val = input(prompt_str).strip()
+            val = getpass.getpass(prompt_str).strip() if secret else input(prompt_str).strip()
         except KeyboardInterrupt:
             print()
             sys.exit(0)
@@ -323,7 +325,7 @@ class KeystoreManager:
             error_msg="Password must be at least 4 characters",
         )
 
-        confirm = get_input("Confirm password")
+        confirm = get_input("Confirm password", secret=True)
         if confirm != storepass:
             print_error("Passwords don't match")
             return None
@@ -337,7 +339,7 @@ class KeystoreManager:
         if use_same.lower() == "y":
             keypass = storepass
         else:
-            keypass = get_input("Key password", validator=lambda x: len(x) >= 4)
+            keypass = get_input("Key password", validator=lambda x: len(x) >= 4, secret=True)
             confirm_key = get_input("Confirm key password")
             if confirm_key != keypass:
                 print_error("Key passwords don't match")
