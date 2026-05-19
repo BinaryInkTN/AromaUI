@@ -105,21 +105,6 @@ static void toggle_notification(void *user_data)
     }
 }
 
-static void toggle_dark_mode(void *user_data)
-{
-    watch.dark_mode = !watch.dark_mode;
-    if (watch.dark_mode)
-    {
-        watch.theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
-    }
-    else
-    {
-        watch.theme = aroma_theme_create_material_blue();
-    }
-
-    aroma_ui_set_theme(&watch.theme);
-
-}
 
 static void open_quick_reply(void *user_data)
 {
