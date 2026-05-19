@@ -10,7 +10,7 @@
 
 #define AROMA_ICON_TEXT_MAX 16
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaIconButton {
+typedef struct AromaIconButton {
     AromaRect rect;
     void (*callback)(void* user_data);
     void* user_data;
