@@ -200,7 +200,14 @@
       opacity: 0;
       animation: up 0.7s 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
-
+#canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 36px;
+  position: relative;
+  z-index: 5;
+}
     .hero-actions {
       display: flex;
       gap: 1rem;
@@ -335,26 +342,20 @@
         inset 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
-    #canvas {
-      display: block;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 36px;
-    }
 
-    .screen-bezel::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 38px;
-      background: linear-gradient(160deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.02) 30%,
-          transparent 60%);
-      pointer-events: none;
-      z-index: 10;
-    }
 
+.screen-bezel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 38px;
+  background: linear-gradient(160deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 30%,
+      transparent 60%);
+  pointer-events: none;
+  z-index: 10;
+}
     .watch-label {
       margin-top: 2.5rem;
       font-size: 0.72rem;
@@ -1034,7 +1035,7 @@
             <div class="crown-btn"></div>
 
             <div class="screen-bezel">
-              <canvas id="canvas"></canvas>
+              <iframe  width="400" height="380"  src="smartwatch.html" title="Smartwatch Example"></iframe>
             </div>
           </div>
 
@@ -1057,8 +1058,7 @@
       Scroll to explore
     </div>
   </section>
-
-
+<hr class="rule">
 
 
   <section id="automotive">
@@ -1144,8 +1144,7 @@
       </div>
     </div>
   </section>
-    <hr class="rule">
-
+<hr class="rule">
   <section id="features">
     <div class="sec-inner">
       <div class="reveal">
@@ -1267,6 +1266,7 @@
   </section>
 
 
+  <hr class="rule">
 
 
   <section style="background: var(--off); border-top: 0.5px solid rgba(0,0,0,0.06);">
