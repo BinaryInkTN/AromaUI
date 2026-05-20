@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
   <title>AromaUI, Modern C UI framework</title>
 
   <link rel="stylesheet"
@@ -27,6 +27,7 @@
       --r-sm: 12px;
       --nav-h: 52px;
       --w-outer: 420px;
+      --auto-bezel-pad: 8px;
     }
 
     *,
@@ -655,21 +656,6 @@
       transform: none;
     }
 
-    @media (max-width: 860px) {
-      .split { grid-template-columns: 1fr; gap: 2.5rem; }
-      .bento { grid-template-columns: 1fr; }
-      .bento-card.wide { grid-column: span 1; }
-      .specs-grid { grid-template-columns: 1fr 1fr; }
-      .spec-item:nth-child(2) { border-right: none; }
-      .nav-center { display: none; }
-    }
-
-    @media (max-width: 540px) {
-      :root { --w-outer: 280px; }
-      .specs-grid { grid-template-columns: 1fr 1fr; }
-      .hero-title { font-size: 2.6rem; }
-    }
-
     .watch-editor-container {
       display: flex;
       gap: 2rem;
@@ -747,6 +733,225 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+    }
+
+    .auto-scene {
+      margin-top: 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+  
+
+    .dash-surround {
+      background: linear-gradient(180deg, #222225 0%, #1a1a1c 60%, #111113 100%);
+      border-radius: 22px 22px 28px 28px;
+      padding: 14px 28px 28px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 2px 0 rgba(255, 255, 255, 0.04) inset,
+        0 40px 100px -20px rgba(0, 0, 0, 0.45),
+        0 8px 32px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .dash-surround::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 22px 22px 28px 28px;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 3px,
+        rgba(255, 255, 255, 0.012) 3px,
+        rgba(255, 255, 255, 0.012) 4px
+      );
+      pointer-events: none;
+    }
+
+    .trim-bar {
+      height: 10px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 100%);
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 10px;
+    }
+
+    .bezel-accents {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bezel-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .bezel-dot.active {
+      background: #0071e3;
+      box-shadow: 0 0 6px rgba(0, 113, 227, 0.7);
+    }
+
+    .auto-screen-bezel {
+      background: #000;
+      border-radius: 10px;
+      padding: var(--auto-bezel-pad);
+      box-shadow:
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
+        inset 0 2px 8px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auto-screen-bezel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      background: linear-gradient(150deg, rgba(255, 255, 255, 0.05) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 10;
+            overflow: hidden !important;
+
+    }
+
+    .screen-iframe-wrapper {
+      position: relative;
+
+      border-radius: 4px;
+      background: #0b0e14;
+      overflow: hidden !important;
+    }
+
+    .screen-iframe {
+      width: 100%;
+      height: 100%;
+      overflow: hidden !important;
+      background: #0b0e14;
+    }
+
+    .climate-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 8px 0;
+      gap: 8px;
+    }
+
+    .climate-knob {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2a2a2e, #1c1c20);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.4);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .climate-knob::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+    }
+
+    .climate-buttons {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .climate-btn {
+      height: 22px;
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: default;
+    }
+
+    .climate-btn.on {
+      background: rgba(0, 113, 227, 0.2);
+      border-color: rgba(0, 113, 227, 0.4);
+      color: #5ca8ff;
+    }
+
+    .auto-screw {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #3a3a3e, #1a1a1c);
+      border: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .auto-screw::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 4px;
+      height: 0.5px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .auto-screw-tl { top: 8px; left: 8px; }
+    .auto-screw-tr { top: 8px; right: 8px; }
+    .auto-screw-bl { bottom: 8px; left: 8px; }
+    .auto-screw-br { bottom: 8px; right: 8px; }
+
+    .auto-label {
+      margin-top: 2rem;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(0, 0, 0, 0.35);
+      font-family: 'DM Mono', monospace;
+      text-align: center;
+    }
+
+    .auto-label a {
+      color: var(--blue);
+    }
+
+    @media (max-width: 860px) {
+      .split { grid-template-columns: 1fr; gap: 2.5rem; }
+      .bento { grid-template-columns: 1fr; }
+      .bento-card.wide { grid-column: span 1; }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .spec-item:nth-child(2) { border-right: none; }
+      .nav-center { display: none; }
+      .climate-btn:nth-child(n+4) { display: none; }
+    }
+
+    @media (max-width: 540px) {
+      :root { --w-outer: 280px; }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .hero-title { font-size: 2.6rem; }
+      .climate-buttons { display: none; }
     }
   </style>
 </head>
@@ -840,7 +1045,6 @@
 
         <div id="editor-container">
           <div class="editor-header">
-    
             <span class="code-file">smartwatch_example.c</span>
           </div>
           <div class="editor-body" id="monaco-editor"></div>
@@ -976,6 +1180,94 @@
   </section>
 
 
+  <hr class="rule">
+
+
+  <section id="automotive">
+    <div class="sec-inner">
+      <div class="reveal">
+        <p class="sec-eyebrow">Automotive</p>
+        <h2 class="sec-title">Infotainment ready.<br><span class="thin">Right out of the box.</span></h2>
+        <p class="sec-body">
+          AromaUI powers center-console tablets, instrument clusters, and head-unit displays in
+          automotive-grade embedded Linux environments. The same C API, zero porting overhead.
+        </p>
+      </div>
+
+      <div class="auto-scene reveal" style="transition-delay:0.1s">
+        <div class="tablet-mount">
+          <div class="dash-surround">
+
+            <div class="auto-screw auto-screw-tl"></div>
+            <div class="auto-screw auto-screw-tr"></div>
+            <div class="auto-screw auto-screw-bl"></div>
+            <div class="auto-screw auto-screw-br"></div>
+
+            <div class="bezel-accents">
+              <div class="bezel-dot active"></div>
+              <div class="bezel-dot"></div>
+              <div class="bezel-dot"></div>
+            </div>
+
+            <div class="trim-bar"></div>
+
+            <div class="auto-screen-bezel">
+              <div class="screen-iframe-wrapper">
+                <iframe
+                  id="infotainment-iframe"
+                  class="screen-iframe"
+                  src="infotainment.html"
+                  title="AromaUI automotive infotainment live example"
+                  sandbox="allow-scripts allow-same-origin"
+                  loading="lazy"
+                ></iframe>
+              </div>
+            </div>
+
+            <div class="climate-strip">
+              <div class="climate-knob"></div>
+       
+              <div class="climate-knob"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <p class="auto-label">
+          Live example: <a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples/infotainment_example" target="_blank">examples/infotainment_example</a>
+        </p>
+
+        <div class="chips-wrap" style="margin-top: 2rem; justify-content: center;">
+          <div class="chip">
+            <span class="material-symbols-outlined">directions_car</span>
+            Automotive Linux
+          </div>
+          <div class="chip">
+            <span class="material-symbols-outlined">touch_app</span>
+            Multi-touch input
+          </div>
+          <div class="chip">
+            <span class="material-symbols-outlined">speed</span>
+            GPU-accelerated
+          </div>
+          <div class="chip">
+            <span class="material-symbols-outlined">map</span>
+            Navigation-ready
+          </div>
+          <div class="chip">
+            <span class="material-symbols-outlined">brightness_6</span>
+            Day / Night themes
+          </div>
+          <div class="chip">
+            <span class="material-symbols-outlined">usb</span>
+            CAN / serial bridge
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
   <section style="background: var(--off); border-top: 0.5px solid rgba(0,0,0,0.06);">
     <div class="sec-inner" style="text-align:center; padding: 7rem 2rem;">
       <div class="reveal">
@@ -1011,36 +1303,37 @@
   </footer>
 
   <script>
-    const toggleContainer = document.getElementById('view-toggle');
-    const watchPanel = document.getElementById('watch-panel');
-    const editorContainer = document.getElementById('editor-container');
-    let monacoEditorInstance = null;
-    let editorInitialized = false;
+    (function() {
+      const toggleContainer = document.getElementById('view-toggle');
+      const watchPanel = document.getElementById('watch-panel');
+      const editorContainer = document.getElementById('editor-container');
+      let monacoEditorInstance = null;
+      let editorInitialized = false;
 
-    toggleContainer.addEventListener('click', function(e) {
-      const btn = e.target.closest('.view-toggle-btn');
-      if (!btn) return;
+      toggleContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.view-toggle-btn');
+        if (!btn) return;
 
-      const view = btn.dataset.view;
+        const view = btn.dataset.view;
 
-      toggleContainer.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+        toggleContainer.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-      if (view === 'watch') {
-        watchPanel.style.display = 'flex';
-        editorContainer.classList.remove('visible');
-      } else {
-        watchPanel.style.display = 'none';
-        editorContainer.classList.add('visible');
+        if (view === 'watch') {
+          watchPanel.style.display = 'flex';
+          editorContainer.classList.remove('visible');
+        } else {
+          watchPanel.style.display = 'none';
+          editorContainer.classList.add('visible');
 
-        if (!editorInitialized) {
-          initMonacoEditor();
-          editorInitialized = true;
+          if (!editorInitialized) {
+            initMonacoEditor();
+            editorInitialized = true;
+          }
         }
-      }
-    });
+      });
 
-    const defaultCode = `#include <aroma.h>
+      const defaultCode = `#include <aroma.h>
 #include <aroma_animation.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1321,7 +1614,6 @@ int main(int argc, char **argv)
 
     watch.theme = aroma_theme_create_material_black();
     watch.theme.enable_shadows = true;
-    //material blue
     watch.theme.colors.primary = 0xFF2196F3; 
     watch.theme.colors.primary_dark = aroma_color_blend(watch.theme.colors.primary, 0xFF000000, 0.2f);
 
@@ -1376,132 +1668,178 @@ int main(int argc, char **argv)
     return 0;
 }`;
 
-    function initMonacoEditor() {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js';
-      script.onload = function() {
-        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+      function initMonacoEditor() {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js';
+        script.onload = function() {
+          require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
-        require(['vs/editor/editor.main'], function () {
-          monacoEditorInstance = monaco.editor.create(document.getElementById('monaco-editor'), {
-            value: defaultCode,
-            language: 'c',
-            theme: 'vs',
-            automaticLayout: true,
-            minimap: { enabled: false },
-            fontSize: 12,
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            tabSize: 4,
-            insertSpaces: true,
-            readOnly: false,
-            renderWhitespace: 'selection',
-            fontFamily: "'DM Mono', monospace",
-            padding: { top: 12, bottom: 12 },
+          require(['vs/editor/editor.main'], function () {
+            monacoEditorInstance = monaco.editor.create(document.getElementById('monaco-editor'), {
+              value: defaultCode,
+              language: 'c',
+              theme: 'vs',
+              automaticLayout: true,
+              minimap: { enabled: false },
+              fontSize: 12,
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              tabSize: 4,
+              insertSpaces: true,
+              readOnly: false,
+              renderWhitespace: 'selection',
+              fontFamily: "'DM Mono', monospace",
+              padding: { top: 12, bottom: 12 },
+            });
+
+            monacoEditorInstance.onDidChangeModelContent(function () {
+              const code = monacoEditorInstance.getValue();
+              if (window.updateWatchCode) {
+                window.updateWatchCode(code);
+              }
+            });
           });
-
-          monacoEditorInstance.onDidChangeModelContent(function () {
-            const code = monacoEditorInstance.getValue();
-            if (window.updateWatchCode) {
-              window.updateWatchCode(code);
-            }
-          });
-        });
-      };
-      document.head.appendChild(script);
-    }
-
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-          io.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.12 });
-
-    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-
-    window.appLogs = [];
-
-    window.onerror = function (message, source, lineno, colno, error) {
-      console.error(message, source, lineno, colno, error);
-    };
-
-    var Module = {
-      canvas: document.getElementById('canvas'),
-
-      print: (...args) => {
-        const msg = args.join(' ');
-        console.log(msg);
-        window.appLogs.push(msg);
-      },
-
-      printErr: (...args) => {
-        const msg = args.join(' ');
-        console.error(msg);
-        window.appLogs.push(msg);
-      },
-
-      onRuntimeInitialized: function () {
-        const canvas = Module.canvas;
-        canvas.setAttribute('tabindex', '0');
-        canvas.focus();
-        canvas.style.touchAction = 'none';
-
-        canvas.width  = 380;
-        canvas.height = 380;
-
-        function toCanvasCoords(clientX, clientY) {
-          const rect   = canvas.getBoundingClientRect();
-          const scaleX = canvas.width  / rect.width;
-          const scaleY = canvas.height / rect.height;
-          return {
-            x: Math.round((clientX - rect.left) * scaleX),
-            y: Math.round((clientY - rect.top)  * scaleY),
-          };
-        }
-
-        function sendMouse(action, clientX, clientY) {
-          if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
-          const p = toCanvasCoords(clientX, clientY);
-          Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
-        }
-
-        canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
-        canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
-        canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
-
-        function firstTouch(e) {
-          return (e.touches && e.touches.length)
-            ? e.touches[0]
-            : (e.changedTouches && e.changedTouches.length)
-              ? e.changedTouches[0]
-              : null;
-        }
-
-        canvas.addEventListener('touchstart', e => {
-          const t = firstTouch(e);
-          if (t) { canvas.focus(); sendMouse(1, t.clientX, t.clientY); }
-          e.preventDefault();
-        }, { passive: false });
-
-        canvas.addEventListener('touchmove', e => {
-          const t = firstTouch(e);
-          if (t) sendMouse(0, t.clientX, t.clientY);
-          e.preventDefault();
-        }, { passive: false });
-
-        canvas.addEventListener('touchend', e => {
-          const t = firstTouch(e);
-          if (t) sendMouse(2, t.clientX, t.clientY);
-          e.preventDefault();
-        }, { passive: false });
-
-        console.log("AromaUI WASM input initialized");
+        };
+        document.head.appendChild(script);
       }
-    };
+
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.12 });
+
+      document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+      window.appLogs = [];
+
+      window.onerror = function (message, source, lineno, colno, error) {
+        console.error(message, source, lineno, colno, error);
+      };
+
+      var Module = {
+        canvas: document.getElementById('canvas'),
+
+        print: (...args) => {
+          const msg = args.join(' ');
+          console.log(msg);
+          window.appLogs.push(msg);
+        },
+
+        printErr: (...args) => {
+          const msg = args.join(' ');
+          console.error(msg);
+          window.appLogs.push(msg);
+        },
+
+        onRuntimeInitialized: function () {
+          const canvas = Module.canvas;
+          canvas.setAttribute('tabindex', '0');
+          canvas.focus();
+          canvas.style.touchAction = 'none';
+
+          canvas.width  = 380;
+          canvas.height = 380;
+
+          function toCanvasCoords(clientX, clientY) {
+            const rect   = canvas.getBoundingClientRect();
+            const scaleX = canvas.width  / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+              x: Math.round((clientX - rect.left) * scaleX),
+              y: Math.round((clientY - rect.top)  * scaleY),
+            };
+          }
+
+          function sendMouse(action, clientX, clientY) {
+            if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+            const p = toCanvasCoords(clientX, clientY);
+            Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
+          }
+
+          canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
+          canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+          canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+
+          function firstTouch(e) {
+            return (e.touches && e.touches.length)
+              ? e.touches[0]
+              : (e.changedTouches && e.changedTouches.length)
+                ? e.changedTouches[0]
+                : null;
+          }
+
+          canvas.addEventListener('touchstart', e => {
+            const t = firstTouch(e);
+            if (t) { canvas.focus(); sendMouse(1, t.clientX, t.clientY); }
+            e.preventDefault();
+          }, { passive: false });
+
+          canvas.addEventListener('touchmove', e => {
+            const t = firstTouch(e);
+            if (t) sendMouse(0, t.clientX, t.clientY);
+            e.preventDefault();
+          }, { passive: false });
+
+          canvas.addEventListener('touchend', e => {
+            const t = firstTouch(e);
+            if (t) sendMouse(2, t.clientX, t.clientY);
+            e.preventDefault();
+          }, { passive: false });
+
+          console.log("AromaUI WASM input initialized");
+        }
+      };
+
+
+      function scaleInfotainmentIframe() {
+        const iframe = document.getElementById('infotainment-iframe');
+        if (!iframe) return;
+
+        const wrapper = iframe.parentNode;
+        if (!wrapper) return;
+
+        const wrapperWidth = wrapper.clientWidth;
+        const wrapperHeight = wrapper.clientHeight;
+
+        if (wrapperWidth === 0 || wrapperHeight === 0) {
+          requestAnimationFrame(scaleInfotainmentIframe);
+          return;
+        }
+
+        const contentWidth = 1280;
+        const contentHeight = 800;
+
+        const scaleX = wrapperWidth / contentWidth;
+        const scaleY = wrapperHeight / contentHeight;
+        const scale = Math.min(scaleX, scaleY);
+
+        const scaledWidth = contentWidth * scale;
+        const scaledHeight = contentHeight * scale;
+
+        const offsetX = (wrapperWidth - scaledWidth) / 2;
+        const offsetY = (wrapperHeight - scaledHeight) / 2;
+
+        iframe.style.width = contentWidth + 'px';
+        iframe.style.height = contentHeight + 'px';
+        iframe.style.transform = `translate(${offsetX / scale}px, ${offsetY / scale}px) scale(${scale})`;
+        iframe.style.transformOrigin = '0 0';
+      }
+
+      window.addEventListener('resize', scaleInfotainmentIframe);
+
+      const infotainmentIframe = document.getElementById('infotainment-iframe');
+      if (infotainmentIframe) {
+        infotainmentIframe.addEventListener('load', scaleInfotainmentIframe);
+      }
+
+      setTimeout(scaleInfotainmentIframe, 300);
+      setTimeout(scaleInfotainmentIframe, 800);
+    })();
   </script>
 
   <script src="smartwatch_example.js?v=1779150134"></script>

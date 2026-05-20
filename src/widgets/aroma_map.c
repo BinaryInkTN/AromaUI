@@ -1,4 +1,3 @@
-
 #ifndef __ANDROID__
 
 #include "core/aroma_logger.h"
@@ -16,13 +15,30 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include <pthread.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/fetch.h>
+#endif
+#ifndef __EMSCRIPTEN__
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef CLOCK_REALTIME
+#define CLOCK_REALTIME 0
+#endif
+
 static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 
 #include <stdlib.h>
+#ifndef __EMSCRIPTEN__
 #include <curl/curl.h>
+#endif
 
 
 #define TILE_CACHE_DIR "/tmp/aroma_tiles"
@@ -92,12 +108,27 @@ static int queue_tail = 0;
 static pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t queue_cond = PTHREAD_COND_INITIALIZER;
 
+#ifdef __EMSCRIPTEN__
+#define MAP_ROUTE_MUTEX_INIT(extra) ((void)0)
+#define MAP_ROUTE_MUTEX_DESTROY(extra) ((void)0)
+#define MAP_ROUTE_MUTEX_LOCK(extra) ((void)0)
+#define MAP_ROUTE_MUTEX_UNLOCK(extra) ((void)0)
+#else
+#define MAP_ROUTE_MUTEX_INIT(extra) pthread_mutex_init(&(extra)->route_mutex, NULL)
+#define MAP_ROUTE_MUTEX_DESTROY(extra) pthread_mutex_destroy(&(extra)->route_mutex)
+#define MAP_ROUTE_MUTEX_LOCK(extra) pthread_mutex_lock(&(extra)->route_mutex)
+#define MAP_ROUTE_MUTEX_UNLOCK(extra) pthread_mutex_unlock(&(extra)->route_mutex)
+#endif
+
 #define MAX_WORKER_THREADS 16
 static pthread_t worker_threads[MAX_WORKER_THREADS];
 static int num_active_workers = 2;
 static bool worker_running = false;
+#ifndef __EMSCRIPTEN__
 static bool curl_initialized = false;
+#endif
 
+#ifndef __EMSCRIPTEN__
 static size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     size_t written = fwrite(ptr, size, nmemb, stream);
     return written;
@@ -121,6 +152,7 @@ static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, v
     mem->memory[mem->size] = 0;
     return realsize;
 }
+#endif
 
 static void decode_polyline(const char* encoded, double** lats, double** lons, int* count) {
     int cap = 100;
@@ -165,6 +197,46 @@ static void decode_polyline(const char* encoded, double** lats, double** lons, i
     }
 }
 
+static bool __map_apply_route_response(struct AromaMapExtra* extra, AromaNode* node, const char* response) {
+    if (!extra || !response) return false;
+
+    char* geom_start = strstr(response, "\"geometry\":\"");
+    if (!geom_start) return false;
+
+    geom_start += 12;
+    char* geom_end = strchr(geom_start, '"');
+    if (!geom_end) return false;
+
+    *geom_end = '\0';
+
+    double *rlats = NULL, *rlons = NULL;
+    int rcount = 0;
+    decode_polyline(geom_start, &rlats, &rlons, &rcount);
+    for (int n = 0; n < rcount; n++) {
+        double lat_rad = rlats[n] * M_PI / 180.0;
+        rlats[n] = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0;
+        rlons[n] = (rlons[n] + 180.0) / 360.0;
+    }
+
+    MAP_ROUTE_MUTEX_LOCK(extra);
+    if (extra->route_lats) free(extra->route_lats);
+    if (extra->route_lons) free(extra->route_lons);
+    extra->route_lats = rlats;
+    extra->route_lons = rlons;
+    extra->route_point_count = rcount;
+    extra->route_active = true;
+    extra->route_loading = false;
+    MAP_ROUTE_MUTEX_UNLOCK(extra);
+
+    if (node) {
+        AromaEvent *ev = aroma_event_create_custom(node->node_id, 999, NULL, NULL);
+        if (ev) aroma_event_queue(ev);
+    }
+
+    return true;
+}
+
+#ifndef __EMSCRIPTEN__
 typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
     double start_lat, start_lon, end_lat, end_lon;
     AromaNode* node;
@@ -176,7 +248,7 @@ static void* route_fetch_worker(void* arg) {
     struct AromaMapExtra* extra = req->extra;
 
     char url[512];
-    snprintf(url, sizeof(url), "http://routing.openstreetmap.de/routed-car/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline",
+    snprintf(url, sizeof(url), "https://routing.openstreetmap.de/routed-car/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline",
              req->start_lon, req->start_lat, req->end_lon, req->end_lat);
 
     CURL *curl = curl_easy_init();
@@ -195,40 +267,12 @@ static void* route_fetch_worker(void* arg) {
 
         CURLcode res = curl_easy_perform(curl);
         if (res == CURLE_OK && chunk.size > 0) {
-            char* geom_start = strstr(chunk.memory, "\"geometry\":\"");
-            if (geom_start) {
-                geom_start += 12;
-                char* geom_end = strchr(geom_start, '\"');
-                if (geom_end) {
-                    *geom_end = '\0';
-                    double *rlats = NULL, *rlons = NULL;
-                    int rcount = 0;
-                    decode_polyline(geom_start, &rlats, &rlons, &rcount);
-                    for (int n = 0; n < rcount; n++) {
-                        double lat_rad = rlats[n] * M_PI / 180.0;
-                        rlats[n] = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0;
-                        rlons[n] = (rlons[n] + 180.0) / 360.0;
-                    }
-
-                    pthread_mutex_lock(&extra->route_mutex);
-                    if (extra->route_lats) free(extra->route_lats);
-                    if (extra->route_lons) free(extra->route_lons);
-                    extra->route_lats = rlats;
-                    extra->route_lons = rlons;
-                    extra->route_point_count = rcount;
-                    extra->route_active = true;
-                    extra->route_loading = false;
-                    pthread_mutex_unlock(&extra->route_mutex);
-
-                    AromaEvent *ev = aroma_event_create_custom(req->node->node_id, 999, NULL, NULL);
-                    if (ev) aroma_event_queue(ev);
-                }
-            }
+            __map_apply_route_response(extra, req->node, chunk.memory);
         } else {
-            pthread_mutex_lock(&extra->route_mutex);
+            MAP_ROUTE_MUTEX_LOCK(extra);
             extra->route_loading = false;
             extra->route_active = false;
-            pthread_mutex_unlock(&extra->route_mutex);
+            MAP_ROUTE_MUTEX_UNLOCK(extra);
         }
         free(chunk.memory);
         curl_easy_cleanup(curl);
@@ -236,7 +280,132 @@ static void* route_fetch_worker(void* arg) {
     free(req);
     return NULL;
 }
+#endif
 
+#ifdef __EMSCRIPTEN__
+typedef struct {
+    int z;
+    int x;
+    int y;
+    bool is_dark;
+    struct AromaMapExtra* extra;
+} EmscriptenTileRequest;
+
+typedef struct {
+    double start_lat;
+    double start_lon;
+    double end_lat;
+    double end_lon;
+    AromaNode* node;
+    struct AromaMapExtra* extra;
+} EmscriptenRouteRequest;
+
+static void __map_request_visible_invalidate(struct AromaMapExtra* extra) {
+    if (!extra || !extra->node_ptr) return;
+
+    AromaNode* curr = extra->node_ptr;
+    bool is_visible = true;
+    while (curr) {
+        if (curr->is_hidden) {
+            is_visible = false;
+            break;
+        }
+        curr = curr->parent_node;
+    }
+
+    if (is_visible) {
+        aroma_node_invalidate(extra->node_ptr);
+    }
+}
+
+static void __map_tile_fetch_success(emscripten_fetch_t* fetch) {
+    EmscriptenTileRequest* req = fetch ? (EmscriptenTileRequest*)fetch->userData : NULL;
+    if (req && req->extra) {
+        struct AromaMapExtra* extra = req->extra;
+        AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
+
+        for (int i = 0; i < MAX_TILES_MEM; i++) {
+            if (extra->tiles[i].valid
+                && extra->tiles[i].z == req->z
+                && extra->tiles[i].x == req->x
+                && extra->tiles[i].y == req->y
+                && extra->tiles[i].is_dark == req->is_dark) {
+                extra->tiles[i].is_loading = false;
+                if (gfx && gfx->load_image_from_memory) {
+                    extra->tiles[i].texture_id = gfx->load_image_from_memory(
+                        (unsigned char*)fetch->data, (unsigned long)fetch->numBytes);
+                    extra->tiles[i].is_ready = extra->tiles[i].texture_id != 0;
+                }
+                break;
+            }
+        }
+
+        __map_request_visible_invalidate(extra);
+    }
+
+    free(req);
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_tile_fetch_error(emscripten_fetch_t* fetch) {
+    EmscriptenTileRequest* req = fetch ? (EmscriptenTileRequest*)fetch->userData : NULL;
+    if (req && req->extra) {
+        struct AromaMapExtra* extra = req->extra;
+        for (int i = 0; i < MAX_TILES_MEM; i++) {
+            if (extra->tiles[i].valid
+                && extra->tiles[i].z == req->z
+                && extra->tiles[i].x == req->x
+                && extra->tiles[i].y == req->y
+                && extra->tiles[i].is_dark == req->is_dark) {
+                extra->tiles[i].is_loading = false;
+                extra->tiles[i].is_ready = false;
+                break;
+            }
+        }
+        __map_request_visible_invalidate(extra);
+    }
+
+    free(req);
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_route_fetch_success(emscripten_fetch_t* fetch) {
+    EmscriptenRouteRequest* req = fetch ? (EmscriptenRouteRequest*)fetch->userData : NULL;
+    if (req && req->extra) {
+        char* response = malloc((size_t)fetch->numBytes + 1);
+        if (response) {
+            memcpy(response, fetch->data, (size_t)fetch->numBytes);
+            response[fetch->numBytes] = '\0';
+            if (!__map_apply_route_response(req->extra, req->node, response)) {
+                MAP_ROUTE_MUTEX_LOCK(req->extra);
+                req->extra->route_loading = false;
+                req->extra->route_active = false;
+                MAP_ROUTE_MUTEX_UNLOCK(req->extra);
+            }
+            free(response);
+        }
+    }
+
+    free(req);
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_route_fetch_error(emscripten_fetch_t* fetch) {
+    EmscriptenRouteRequest* req = fetch ? (EmscriptenRouteRequest*)fetch->userData : NULL;
+    if (req && req->extra) {
+        MAP_ROUTE_MUTEX_LOCK(req->extra);
+        req->extra->route_loading = false;
+        req->extra->route_active = false;
+        MAP_ROUTE_MUTEX_UNLOCK(req->extra);
+        __map_request_visible_invalidate(req->extra);
+    }
+
+    free(req);
+    emscripten_fetch_close(fetch);
+}
+#endif
+
+#ifndef __EMSCRIPTEN__
 static void* tile_fetch_worker(void* arg) {
     while (worker_running) {
         TileRequest req;
@@ -321,8 +490,41 @@ static void* tile_fetch_worker(void* arg) {
     }
     return NULL;
 }
+#endif
 
-static bool request_tile_download(int z, int x, int y, bool is_dark, const char* filepath, uint64_t node_id) {
+static bool request_tile_download(int z, int x, int y, bool is_dark, const char* filepath, uint64_t node_id, struct AromaMapExtra* extra) {
+#ifdef __EMSCRIPTEN__
+    (void)filepath;
+    (void)node_id;
+    if (!extra) return false;
+
+    EmscriptenTileRequest* req = malloc(sizeof(EmscriptenTileRequest));
+    if (!req) return false;
+    req->z = z;
+    req->x = x;
+    req->y = y;
+    req->is_dark = is_dark;
+    req->extra = extra;
+
+    char url[512];
+    if (is_dark) {
+        snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", z, x, y);
+    } else {
+        snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", z, x, y);
+    }
+
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess = __map_tile_fetch_success;
+    attr.onerror = __map_tile_fetch_error;
+    attr.timeoutMSecs = 30000;
+    attr.userData = req;
+
+    emscripten_fetch(&attr, url);
+    return true;
+#else
     bool queued = false;
     pthread_mutex_lock(&queue_mutex);
     int next_tail = (queue_tail + 1) % MAX_QUEUE;
@@ -348,6 +550,7 @@ static bool request_tile_download(int z, int x, int y, bool is_dark, const char*
     }
     pthread_mutex_unlock(&queue_mutex);
     return queued;
+#endif
 }
 
 static void __map_anim_tick(void* user_data) {
@@ -541,8 +744,12 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
             if (event->data.custom.custom_type == 999 || event->data.custom.custom_type == 998) {
                 TileRequest* req = (TileRequest*)event->data.custom.data;
                 if (req) {
-                    for (int i=0; i<MAX_TILES_MEM; i++) {
-                        if (extra->tiles[i].valid && extra->tiles[i].z == req->z && extra->tiles[i].x == req->x && extra->tiles[i].y == req->y) {
+                    for (int i = 0; i < MAX_TILES_MEM; i++) {
+                        if (extra->tiles[i].valid
+                            && extra->tiles[i].z == req->z
+                            && extra->tiles[i].x == req->x
+                            && extra->tiles[i].y == req->y
+                            && extra->tiles[i].is_dark == req->is_dark) {
                             extra->tiles[i].is_loading = false;
                         }
                     }
@@ -665,9 +872,12 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             int oldest_idx = -1;
             uint64_t oldest_seq = UINT64_MAX;
 
-            for (int i=0; i<MAX_TILES_MEM; i++) {
+            for (int i = 0; i < MAX_TILES_MEM; i++) {
                 if (extra->tiles[i].valid) {
-                    if (extra->tiles[i].z == z && extra->tiles[i].x == wrapped_x && extra->tiles[i].y == y) {
+                    if (extra->tiles[i].z == z
+                        && extra->tiles[i].x == wrapped_x
+                        && extra->tiles[i].y == y
+                        && extra->tiles[i].is_dark == theme_is_dark) {
                         found_tile = &extra->tiles[i];
                         break;
                     }
@@ -689,6 +899,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                     gfx->unload_image(found_tile->texture_id);
                 }
                 found_tile->valid = true;
+                found_tile->is_dark = theme_is_dark;
                 found_tile->z = z;
                 found_tile->x = wrapped_x;
                 found_tile->y = y;
@@ -698,11 +909,14 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                 found_tile->texture_id = 0;
             }
 
-            if (found_tile && !found_tile->is_ready) {
+            if (found_tile && !found_tile->is_ready && !found_tile->is_loading) {
+                found_tile->is_loading = true;
+#ifdef __EMSCRIPTEN__
+                if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath, node->node_id, extra)) {
+                    found_tile->is_loading = false;
+                }
+#else
                 if (access(filepath, F_OK) != -1) {
-                    if (found_tile->is_loading) {
-                        found_tile->is_loading = false;
-                    }
                     if (gfx && gfx->load_image) {
                         found_tile->texture_id = gfx->load_image(filepath);
                         if (found_tile->texture_id != 0) {
@@ -712,12 +926,10 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                             found_tile->is_loading = false;
                         }
                     }
-                } else if (!found_tile->is_loading) {
-                    found_tile->is_loading = true;
-                    if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath, node->node_id)) {
-                        found_tile->is_loading = false;
-                    }
+                } else if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath, node->node_id, extra)) {
+                    found_tile->is_loading = false;
                 }
+#endif
             }
 
             int draw_x = map->rect.x + (int)(x * current_tile_size - view_tl_x);
@@ -734,8 +946,13 @@ static void __map_draw(AromaNode* node, size_t window_id) {
                     int px = wrapped_x / 2;
                     int py = y / 2;
                     MapTile* fallback = NULL;
-                    for (int i=0; i<MAX_TILES_MEM; i++) {
-                        if (extra->tiles[i].valid && extra->tiles[i].z == pz && extra->tiles[i].x == px && extra->tiles[i].y == py && extra->tiles[i].is_ready) {
+                    for (int i = 0; i < MAX_TILES_MEM; i++) {
+                        if (extra->tiles[i].valid
+                            && extra->tiles[i].z == pz
+                            && extra->tiles[i].x == px
+                            && extra->tiles[i].y == py
+                            && extra->tiles[i].is_dark == theme_is_dark
+                            && extra->tiles[i].is_ready) {
                             fallback = &extra->tiles[i];
                             break;
                         }
@@ -768,7 +985,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
         }
     }
 
-    pthread_mutex_lock(&extra->route_mutex);
+    MAP_ROUTE_MUTEX_LOCK(extra);
     if (extra->route_active && extra->route_point_count > 1 && gfx) {
         uint32_t inner_color = extra->route_color;
         uint32_t r = (inner_color >> 16) & 0xFF;
@@ -821,7 +1038,7 @@ static void __map_draw(AromaNode* node, size_t window_id) {
             }
         }
     }
-    pthread_mutex_unlock(&extra->route_mutex);
+    MAP_ROUTE_MUTEX_UNLOCK(extra);
     double z_factor_m = pow(2.0, extra->display_zoom) * TILE_SIZE;
 
     for (int i = 0; i < extra->marker_count; i++) {
@@ -923,7 +1140,7 @@ void aroma_map_destroy(AromaNode* node) {
         if (extra->font) aroma_font_destroy(extra->font);
         if (extra->route_lats) free(extra->route_lats);
         if (extra->route_lons) free(extra->route_lons);
-        pthread_mutex_destroy(&extra->route_mutex);
+        MAP_ROUTE_MUTEX_DESTROY(extra);
         aroma_widget_free(extra);
         map->extra = NULL;
     }
@@ -1114,6 +1331,7 @@ void aroma_map_clear_markers(AromaNode* node) {
 }
 
 AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int height) {
+#ifndef __EMSCRIPTEN__
     if (!curl_initialized) {
         curl_global_init(CURL_GLOBAL_ALL);
         curl_initialized = true;
@@ -1139,6 +1357,7 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
             pthread_detach(worker_threads[i]);
         }
     }
+#endif
 
     AromaMap* map = (AromaMap*)aroma_widget_alloc(sizeof(AromaMap));
     if (!map) return NULL;
@@ -1158,7 +1377,7 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
 
     extra->zoom = map->zoom;
 
-    pthread_mutex_init(&extra->route_mutex, NULL);
+    MAP_ROUTE_MUTEX_INIT(extra);
     extra->route_lats = NULL;
     extra->route_lons = NULL;
     extra->route_point_count = 0;
@@ -1213,15 +1432,45 @@ void aroma_map_set_route(AromaNode* node, double start_lat, double start_lon, do
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
     if (!extra) return;
 
-    pthread_mutex_lock(&extra->route_mutex);
+    MAP_ROUTE_MUTEX_LOCK(extra);
     extra->route_color = color;
     if (extra->route_loading) {
-        pthread_mutex_unlock(&extra->route_mutex);
+        MAP_ROUTE_MUTEX_UNLOCK(extra);
         return;
     }
     extra->route_loading = true;
-    pthread_mutex_unlock(&extra->route_mutex);
+    MAP_ROUTE_MUTEX_UNLOCK(extra);
 
+#ifdef __EMSCRIPTEN__
+    EmscriptenRouteRequest* req = malloc(sizeof(EmscriptenRouteRequest));
+    if (!req) {
+        MAP_ROUTE_MUTEX_LOCK(extra);
+        extra->route_loading = false;
+        MAP_ROUTE_MUTEX_UNLOCK(extra);
+        return;
+    }
+    req->start_lat = start_lat;
+    req->start_lon = start_lon;
+    req->end_lat = end_lat;
+    req->end_lon = end_lon;
+    req->node = node;
+    req->extra = extra;
+
+    char url[512];
+    snprintf(url, sizeof(url), "https://routing.openstreetmap.de/routed-car/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=polyline",
+             req->start_lon, req->start_lat, req->end_lon, req->end_lat);
+
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess = __map_route_fetch_success;
+    attr.onerror = __map_route_fetch_error;
+    attr.timeoutMSecs = 30000;
+    attr.userData = req;
+
+    emscripten_fetch(&attr, url);
+#else
     RouteRequest* req = malloc(sizeof(RouteRequest));
     req->start_lat = start_lat;
     req->start_lon = start_lon;
@@ -1233,6 +1482,7 @@ void aroma_map_set_route(AromaNode* node, double start_lat, double start_lon, do
     pthread_t fetch_thread;
     pthread_create(&fetch_thread, NULL, route_fetch_worker, req);
     pthread_detach(fetch_thread);
+#endif
 }
 
 void aroma_map_clear_route(AromaNode* node) {
@@ -1241,7 +1491,7 @@ void aroma_map_clear_route(AromaNode* node) {
     struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
     if (!extra) return;
 
-    pthread_mutex_lock(&extra->route_mutex);
+    MAP_ROUTE_MUTEX_LOCK(extra);
     extra->route_active = false;
     extra->route_point_count = 0;
     if (extra->route_lats) {
@@ -1252,7 +1502,7 @@ void aroma_map_clear_route(AromaNode* node) {
         free(extra->route_lons);
         extra->route_lons = NULL;
     }
-    pthread_mutex_unlock(&extra->route_mutex);
+    MAP_ROUTE_MUTEX_UNLOCK(extra);
     aroma_node_invalidate(node);
 }
 

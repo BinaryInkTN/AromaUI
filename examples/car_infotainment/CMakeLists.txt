@@ -68,6 +68,7 @@ if(EMSCRIPTEN)
         "-sEXPORTED_RUNTIME_METHODS=['callMain','ccall','cwrap','FS','addRunDependency','removeRunDependency']"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=134217728"
+        "-sFETCH=1"
     )
 target_link_options(infotainment PRIVATE
     "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"

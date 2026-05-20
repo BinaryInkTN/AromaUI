@@ -155,9 +155,8 @@ if(Vulkan_FOUND)
 endif()
 
 # Exclude network/map widget on Emscripten by default (no libcurl port)
-if(NOT EMSCRIPTEN)
-    target_sources(aroma PRIVATE widgets/aroma_map.c)
-endif()
+target_sources(aroma PRIVATE widgets/aroma_map.c)
+
 
 if(ANDROID)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_android.c)
@@ -169,7 +168,6 @@ elseif(EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE freetype)
     # Add stubs for features not available or built on Emscripten
     target_sources(aroma PRIVATE backends/graphics/aroma_graphics_emscripten_stub.c)
-    target_sources(aroma PRIVATE ../src/widgets/aroma_map_stub.c)
 elseif(ENABLE_GLFW)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_glfw.c)
     if(TARGET glfw)

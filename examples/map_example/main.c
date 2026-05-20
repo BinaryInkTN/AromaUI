@@ -1,5 +1,8 @@
 #include <aroma.h>
 #include <unistd.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 int main()
 {
@@ -22,7 +25,11 @@ int main()
     {
         aroma_ui_process_events();
         aroma_ui_render(window);
+        #ifdef __EMSCRIPTEN__
+        emscripten_sleep(16); // ~60 FPS
+        #else
         usleep(16000); // ~60 FPS
+        #endif
     }
 
     aroma_ui_destroy_window(window);
