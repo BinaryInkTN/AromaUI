@@ -19,15 +19,28 @@ add_executable(smartwatch_example
 )
 
 if(NOT EMSCRIPTEN)
-    find_package(Vulkan QUIET)
-    if(NOT Vulkan_FOUND)
-        message(FATAL_ERROR "Vulkan not found.")
+    find_package(Vulkan REQUIRED)
+endif()
+
+if(ENABLE_VOICE_CONTROL)
+    find_library(VOSK_LIB vosk HINTS "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib")
+    if(NOT VOSK_LIB)
+        message(WARNING "libvosk not found - disabling voice control")
+        set(ENABLE_VOICE_CONTROL OFF)
     endif()
 endif()
 
+if(ENABLE_VOICE_CONTROL)
+    target_sources(smartwatch_example PRIVATE voice_control.c)
+    target_compile_definitions(smartwatch_example PRIVATE AROMA_USE_VOICE_CONTROL)
+    target_link_libraries(smartwatch_example PRIVATE vosk)
+    message(STATUS "Voice control: ENABLED")
+else()
+    message(STATUS "Voice control: DISABLED")
+endif()
+
 target_include_directories(smartwatch_example PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../vendors/glps/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib"
 )
 
 if(EMSCRIPTEN)
@@ -42,7 +55,6 @@ if(EMSCRIPTEN)
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=134217728"
         "-sFETCH=1"
-        #"--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
     )
     message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
 

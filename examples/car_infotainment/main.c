@@ -676,9 +676,9 @@ static void battery_diagnostics(void *user_data)
 {
     aroma_image_set_source(state.overlay,
         #ifdef __EMSCRIPTEN__
-            "assets/car_battery.png"
+            "/assets/car_battery.png"
         #else
-        "/assets/car_battery.png"
+        "../assets/car_battery.png"
         #endif
     );
     AromaAnimation *anim = aroma_animation_start(

@@ -45,7 +45,7 @@ static bool __map_event_handler_global(AromaEvent* event, void* user_data);
 #define MAX_TILES_MEM 128
 #define TILE_SIZE 256
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct   {
     uint64_t access_seq;
     int z, x, y;
     unsigned int texture_id;
@@ -57,7 +57,7 @@ typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, align
 } MapTile;
 
 #define MAX_MARKERS 32
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct   {
     double lat;
     double lon;
     uint32_t color;
@@ -94,7 +94,7 @@ struct AromaMapExtra {
     pthread_mutex_t route_mutex;
 };
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct   {
     uint64_t node_id;
     int z, x, y;
     bool is_dark;
@@ -237,7 +237,7 @@ static bool __map_apply_route_response(struct AromaMapExtra* extra, AromaNode* n
 }
 
 #ifndef __EMSCRIPTEN__
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct   {
     double start_lat, start_lon, end_lat, end_lon;
     AromaNode* node;
     struct AromaMapExtra* extra;

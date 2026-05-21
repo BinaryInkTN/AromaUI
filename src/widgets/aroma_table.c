@@ -12,7 +12,7 @@
 #define MAX_ROWS 100
 #define MAX_COLS 10
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct   {
     AromaRect rect;
     int num_cols;
     int num_rows;

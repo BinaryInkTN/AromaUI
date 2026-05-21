@@ -18,7 +18,7 @@ static void __dropdown_request_redraw(void* user_data)
     on_redraw(NULL);
 }
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct   {
     AromaNode* node;
     size_t window_id;
     int x;

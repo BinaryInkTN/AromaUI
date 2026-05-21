@@ -6,7 +6,7 @@
 #include "aroma_time.h"
 #include <math.h>
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct   {
     AromaRect rect;
     int thickness;
     uint32_t color;

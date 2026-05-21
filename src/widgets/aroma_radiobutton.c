@@ -12,9 +12,9 @@
 #define AROMA_RADIO_LABEL_MAX 64
 #define AROMA_RADIO_GROUP_MAX_ITEMS 32
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaRadioButton AromaRadioButton;
+typedef struct   AromaRadioButton AromaRadioButton;
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaRadioGroup {
+typedef struct   AromaRadioGroup {
     AromaRadioButton* buttons[AROMA_RADIO_GROUP_MAX_ITEMS];
     size_t count;
     int selected_index;

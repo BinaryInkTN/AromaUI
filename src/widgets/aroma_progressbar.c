@@ -5,7 +5,7 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaProgressBar {
+typedef struct   AromaProgressBar {
     AromaRect rect;
     AromaProgressType type;
     float progress;

@@ -28,7 +28,7 @@
 #include <string.h>
 
 #define AROMA_LABEL_TEXT_MAX 64 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaLabel {
+typedef struct   AromaLabel {
     AromaRect rect;
     AromaFont* font;
 

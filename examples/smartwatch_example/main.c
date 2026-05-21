@@ -5,6 +5,8 @@
 #include <time.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
+#include <unistd.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
 #endif
@@ -267,8 +269,8 @@ void build_watch_face(AromaNode *window)
 
 int main(int argc, char **argv)
 {
-    aroma_animation_manager_init();
     aroma_ui_init();
+    aroma_animation_manager_init();
 
     watch.dark_mode = false;
     watch.apps_open = false;

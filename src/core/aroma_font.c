@@ -109,7 +109,7 @@ void* aroma_font_get_face(AromaFont* font)
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) {
+typedef struct {
     uint32_t codepoint;
     uint32_t texture_id;
     int width;

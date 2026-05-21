@@ -108,7 +108,7 @@ static void update_animations(void* arg) {
     }
 
     if (needs_redraw) {
-        aroma_ui_render_all();
+        aroma_ui_request_redraw(NULL);
     }
 }
 

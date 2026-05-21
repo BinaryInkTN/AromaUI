@@ -17,7 +17,7 @@ static bool logging_enabled = true;
 static DebugLevel min_log_level = DEBUG_LEVEL_INFO;
 static struct timespec start_time = {0};
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) LogEntry
+typedef struct   LogEntry
 {
     char *message;
 } LogEntry;

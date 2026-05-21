@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaDrawCmd {
+typedef struct AromaDrawCmd {
     AromaDrawCmdType type;
     bool is_drawn;
     union {

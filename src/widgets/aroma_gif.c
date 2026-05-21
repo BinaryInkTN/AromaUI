@@ -8,7 +8,7 @@
 #include "backends/graphics/utils/stb_image.h"
 #include <string.h>
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaGif {
+typedef struct   AromaGif {
     AromaRect rect;
     uint64_t last_frame_time;
     unsigned int* textures;

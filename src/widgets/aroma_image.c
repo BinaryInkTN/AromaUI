@@ -31,7 +31,7 @@
 
 #define AROMA_IMAGE_PATH_MAX 1024
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaImage {
+typedef struct   AromaImage {
     AromaRect rect;
     unsigned int texture_id;
     char image_path[AROMA_IMAGE_PATH_MAX];

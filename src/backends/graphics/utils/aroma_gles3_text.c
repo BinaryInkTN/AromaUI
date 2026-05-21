@@ -17,6 +17,14 @@ int gles3_text_renderer_init(GLES3TextRenderer* renderer) {
     glGenVertexArrays(1, &renderer->vao);
     glGenBuffers(1, &renderer->vbo);
 
+    if (renderer->vao == 0 || renderer->vbo == 0) {
+        LOG_ERROR("gles3_text_renderer_init: Failed to generate OpenGL objects");
+        if (renderer->vao) glDeleteVertexArrays(1, &renderer->vao);
+        if (renderer->vbo) glDeleteBuffers(1, &renderer->vbo);
+        memset(renderer, 0, sizeof(GLES3TextRenderer));
+        return 0;
+    }
+
     glBindVertexArray(renderer->vao);
     glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
@@ -36,9 +44,7 @@ static GLuint __upload_glyph_bitmap(const FT_GlyphSlot g) {
         return 0;
     }
 
-    if (g->bitmap.width <= 0 || g->bitmap.rows <= 0 || !g->bitmap.buffer) {
-        LOG_WARNING("__upload_glyph_bitmap: empty glyph bitmap width=%d rows=%d buffer=%p",
-                    (int)g->bitmap.width, (int)g->bitmap.rows, (void*)g->bitmap.buffer);
+    if (g->bitmap.width == 0 || g->bitmap.rows == 0 || !g->bitmap.buffer) {
         return 0;
     }
 
@@ -47,11 +53,16 @@ static GLuint __upload_glyph_bitmap(const FT_GlyphSlot g) {
     const int pitch    = (int)g->bitmap.pitch;
     const int abs_pitch = pitch < 0 ? -pitch : pitch;
 
-    if (abs_pitch < width) {
+    if (abs_pitch < width || width <= 0 || rows <= 0) {
         return 0;
     }
 
     size_t packed_size = (size_t)width * (size_t)rows;
+    if (packed_size > 0x100000) {
+        LOG_ERROR("__upload_glyph_bitmap: Glyph too large (%dx%d)", width, rows);
+        return 0;
+    }
+
     unsigned char* packed = (unsigned char*)malloc(packed_size);
     if (!packed) {
         LOG_ERROR("__upload_glyph_bitmap: allocation failed for size=%zu", packed_size);
@@ -72,6 +83,12 @@ static GLuint __upload_glyph_bitmap(const FT_GlyphSlot g) {
 
     GLuint texture = 0;
     glGenTextures(1, &texture);
+    if (texture == 0) {
+        LOG_ERROR("__upload_glyph_bitmap: Failed to generate texture");
+        free(packed);
+        return 0;
+    }
+
     glBindTexture(GL_TEXTURE_2D, texture);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -82,7 +99,7 @@ static GLuint __upload_glyph_bitmap(const FT_GlyphSlot g) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, rows, 0,
                  GL_RED, GL_UNSIGNED_BYTE, packed);
 #endif
-
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -98,18 +115,21 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
         return;
     }
 
+    if (!face->size) {
+        LOG_ERROR("gles3_text_renderer_load_font: No size set on FT_Face");
+        return;
+    }
+
     renderer->face = face;
     renderer->font_height = face->size->metrics.height >> 6;
     renderer->glyph_count = 0;
 
-    for (uint32_t c = 32; c < 127; c++) {
+    for (uint32_t c = 32; c < 127 && renderer->glyph_count < MAX_GLYPHS; c++) {
         FT_Error error = FT_Load_Char(face, c, FT_LOAD_RENDER);
         if (error) continue;
 
         FT_GlyphSlot g = face->glyph;
         if (!g) continue;
-
-        if (renderer->glyph_count >= MAX_GLYPHS) break;
 
         GLES3Glyph glyph = {
             .codepoint = c,
@@ -130,6 +150,8 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
 }
 
 static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) {
+    if (!renderer) return NULL;
+
     for (int i = 0; i < renderer->glyph_count; i++) {
         if (renderer->glyphs[i].codepoint == codepoint) {
             return &renderer->glyphs[i];
@@ -137,16 +159,26 @@ static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) 
     }
 
     if (renderer->glyph_count >= MAX_GLYPHS) {
+        LOG_ERROR("__get_glyph: Maximum glyph count (%d) reached", MAX_GLYPHS);
         return NULL;
     }
 
-    if (!renderer->face) return NULL;
+    if (!renderer->face) {
+        LOG_ERROR("__get_glyph: No font face loaded");
+        return NULL;
+    }
 
     FT_Error error = FT_Load_Char(renderer->face, codepoint, FT_LOAD_RENDER);
-    if (error) return NULL;
+    if (error) {
+        LOG_ERROR("__get_glyph: FT_Load_Char failed for codepoint 0x%X", codepoint);
+        return NULL;
+    }
 
     FT_GlyphSlot g = renderer->face->glyph;
-    if (!g) return NULL;
+    if (!g) {
+        LOG_ERROR("__get_glyph: Null glyph slot");
+        return NULL;
+    }
 
     GLES3Glyph glyph = {
         .codepoint = codepoint,
@@ -161,10 +193,14 @@ static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) 
     glyph.texture_id = __upload_glyph_bitmap(g);
 
     renderer->glyphs[renderer->glyph_count] = glyph;
-    return &renderer->glyphs[renderer->glyph_count++];
+    GLES3Glyph* result = &renderer->glyphs[renderer->glyph_count];
+    renderer->glyph_count++;
+    return result;
 }
 
 static uint32_t __utf8_next(const char** p) {
+    if (!p || !*p) return 0;
+    
     const unsigned char* s = (const unsigned char*)*p;
     uint32_t c = *s;
     if (c == 0) return 0;
@@ -209,12 +245,17 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
     }
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
-    if (platform && platform->make_context_current) {
+    if (!platform) {
+        LOG_ERROR("gles3_text_render_text: Platform interface not available");
+        return;
+    }
+
+    if (platform->make_context_current) {
         platform->make_context_current(window_id);
     }
 
     int window_width, window_height;
-    if (!platform || !platform->get_window_size) {
+    if (!platform->get_window_size) {
         LOG_ERROR("Platform interface missing for window size\n");
         return;
     }
@@ -237,6 +278,11 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    if (renderer->vao == 0 || renderer->vbo == 0) {
+        LOG_ERROR("gles3_text_render_text: Invalid VAO or VBO");
+        return;
+    }
 
     glBindVertexArray(renderer->vao);
 
@@ -326,13 +372,16 @@ void gles3_text_renderer_cleanup(GLES3TextRenderer* renderer) {
 
     if (renderer->vao) {
         glDeleteVertexArrays(1, &renderer->vao);
+        renderer->vao = 0;
     }
 
     if (renderer->vbo) {
         glDeleteBuffers(1, &renderer->vbo);
+        renderer->vbo = 0;
     }
 
-    memset(renderer, 0, sizeof(GLES3TextRenderer));
+    renderer->glyph_count = 0;
+    renderer->face = NULL;
 }
 
 #endif

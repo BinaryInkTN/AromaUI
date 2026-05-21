@@ -30,7 +30,7 @@
 
 #define AROMA_TOOLTIP_TEXT_MAX 128
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaTooltip {
+typedef struct   AromaTooltip {
     AromaRect rect;
     char text[AROMA_TOOLTIP_TEXT_MAX];
     AromaTooltipPosition position;
