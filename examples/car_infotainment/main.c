@@ -34,7 +34,7 @@ static inline void aroma_voice_speak(const char *s)  { (void)s; }
 
 #define CAN_INTERFACE "vcan0"
 
-typedef struct __attribute__((packed, aligned(1))) {
+typedef struct {
     double   speed;
     int      rpm;
     int      gear;
@@ -53,6 +53,9 @@ typedef struct __attribute__((packed, aligned(1))) {
 
 static EVState         vehicle_state = {0};
 static pthread_mutex_t can_mtx       = PTHREAD_MUTEX_INITIALIZER;
+
+static volatile int    pending_map_open  = 0;
+static pthread_mutex_t pending_mtx       = PTHREAD_MUTEX_INITIALIZER;
 
 #define LOG_MAX_LINES 1024
 #define LOG_LINE_LEN  256
@@ -89,8 +92,6 @@ static void *log_capture_thread_func(void *arg)
             if (c == '\n' || c == '\r' || line_pos >= LOG_LINE_LEN - 1) {
                 line[line_pos] = '\0';
                 if (line_pos > 0) {
-                    time_t t = time(NULL);
-                    struct tm *tm_info = localtime(&t);
                     char entry[LOG_LINE_LEN];
                     snprintf(entry, sizeof(entry), "%s", line);
 
@@ -167,10 +168,8 @@ static void app_log(const char *fmt, ...)
     vsnprintf(msg, sizeof(msg), fmt, ap);
     va_end(ap);
 
-    time_t t = time(NULL);
-    struct tm *tm_info = localtime(&t);
     char entry[LOG_LINE_LEN];
-    snprintf(entry, sizeof(entry), "%s",msg);
+    snprintf(entry, sizeof(entry), "%s", msg);
 
     if (original_stdout != -1) {
         dprintf(original_stdout, "%s\n", entry);
@@ -392,9 +391,11 @@ void parse_can(struct can_frame *frame)
         }
     } else if (frame->can_id == 0x01) {
         pthread_mutex_unlock(&can_mtx);
-        printf("CAN 0x01: Map-open trigger\n");
+        pthread_mutex_lock(&pending_mtx);
+        pending_map_open = 1;
+        pthread_mutex_unlock(&pending_mtx);
+        printf("CAN 0x01: Map-open trigger (queued)\n");
         fflush(stdout);
-        open_map_panel(NULL);
     } else {
         int dlc = frame->can_dlc;
         unsigned int cid = frame->can_id;
@@ -471,6 +472,7 @@ void queue_voice_navigation(const char *dest)
 {
     pthread_mutex_lock(&voice_mutex);
     strncpy(voice_nav_dest, dest, sizeof(voice_nav_dest) - 1);
+    voice_nav_dest[sizeof(voice_nav_dest) - 1] = '\0';
     voice_nav_trigger = true;
     pthread_mutex_unlock(&voice_mutex);
 }
@@ -512,17 +514,38 @@ void queue_voice_action(int tab_index, bool call, bool end_call, const char *sta
     pthread_mutex_lock(&voice_mutex);
     if (tab_index >= 0)
         voice_target_tab = tab_index;
-    if (status)
+    if (status) {
         strncpy(voice_status_text, status, sizeof(voice_status_text) - 1);
+        voice_status_text[sizeof(voice_status_text) - 1] = '\0';
+    }
     (void)call; (void)end_call;
     pthread_mutex_unlock(&voice_mutex);
+}
+
+static void *beep_thread_func(void *arg)
+{
+    (void)arg;
+#ifdef AROMA_USE_VOICE_CONTROL
+    system("(speaker-test -t sine -f 800 -l 1 >/dev/null 2>&1 & pid=$!; sleep 0.1; kill -9 $pid >/dev/null 2>&1) &");
+#endif
+    return NULL;
+}
+
+static void spawn_beep(void)
+{
+    pthread_t t;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&t, &attr, beep_thread_func, NULL);
+    pthread_attr_destroy(&attr);
 }
 
 void voice_button_callback(void *user_data)
 {
 #ifdef AROMA_USE_VOICE_CONTROL
     trigger_manual_wake();
-    system("(speaker-test -t sine -f 800 -l 1 >/dev/null 2>&1 & pid=$!; sleep 0.1; kill -9 $pid >/dev/null 2>&1) &");
+    spawn_beep();
 #endif
     printf("Voice: manual wake triggered\n");
     fflush(stdout);
@@ -651,7 +674,7 @@ void close_settings_panel(void *user_data)
 
 static void battery_diagnostics(void *user_data)
 {
-    aroma_image_set_source(state.overlay, 
+    aroma_image_set_source(state.overlay,
         #ifdef __EMSCRIPTEN__
             "assets/car_battery.png"
         #else
@@ -704,7 +727,7 @@ static void navigate_map(int index, void *user_data)
     if (!map) return;
     aroma_map_clear_route(map);
 
-    typedef struct __attribute__((packed, aligned(1))) {
+    typedef struct {
         double lat, lon;
         const char *start_label, *end_label;
         double end_lat, end_lon;
@@ -842,6 +865,26 @@ void toggle_voice_assistant_cb(AromaNode *sender, void *user_data)
     fflush(stdout);
 }
 
+static void *dev_beep_thread_func(void *arg)
+{
+    (void)arg;
+#ifdef AROMA_USE_VOICE_CONTROL
+    system("(speaker-test -t sine -f 1200 -l 1 >/dev/null 2>&1 "
+           "& pid=$!; sleep 0.15; kill -9 $pid >/dev/null 2>&1) &");
+#endif
+    return NULL;
+}
+
+static void spawn_dev_beep(void)
+{
+    pthread_t t;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&t, &attr, dev_beep_thread_func, NULL);
+    pthread_attr_destroy(&attr);
+}
+
 void listview_callback(int index, void *user_data)
 {
     int selected = aroma_sidebar_get_selected(state.sidebar);
@@ -875,10 +918,7 @@ void listview_callback(int index, void *user_data)
             } else if (build_clicks >= 7) {
                 if (build_clicks == 7) {
                     queue_voice_action(-1, false, false, "You are now a developer!");
-#ifdef AROMA_USE_VOICE_CONTROL
-                    system("(speaker-test -t sine -f 1200 -l 1 >/dev/null 2>&1 "
-                           "& pid=$!; sleep 0.15; kill -9 $pid >/dev/null 2>&1) &");
-#endif
+                    spawn_dev_beep();
                     printf("Easter-egg: developer mode unlocked!\n");
                     fflush(stdout);
                 }
@@ -995,7 +1035,8 @@ void build_settings_ui(AromaNode *window)
                 if (strncmp(line, "model name", 10) == 0) {
                     char *colon = strchr(line, ':');
                     if (colon) {
-                        strcpy(processor_name, colon + 2);
+                        strncpy(processor_name, colon + 2, sizeof(processor_name) - 1);
+                        processor_name[sizeof(processor_name) - 1] = '\0';
                         char *nl = strchr(processor_name, '\n');
                         if (nl) *nl = '\0';
                     }
@@ -1022,7 +1063,7 @@ void build_settings_ui(AromaNode *window)
         char ram_str[64];
         if      (total_ram_mb > 1024) snprintf(ram_str, sizeof(ram_str), "%.1f GB", total_ram_mb / 1024.0);
         else if (total_ram_mb > 0)    snprintf(ram_str, sizeof(ram_str), "%ld MB",  total_ram_mb);
-        else                          strcpy(ram_str, "NaN");
+        else                          strncpy(ram_str, "NaN", sizeof(ram_str));
 
         char uptime_str[64] = "Unknown";
         FILE *uptime_file = fopen("/proc/uptime", "r");
@@ -1091,7 +1132,7 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
 
     AromaNode *backroad = aroma_ui_image(
-        state.vehicle_view_root, 
+        state.vehicle_view_root,
         #ifdef __EMSCRIPTEN__
         "/assets/backroad_blur.png"
         #else
@@ -1235,7 +1276,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
 
     state.battery_image = aroma_ui_image(
-        state.vehicle_view_root, 
+        state.vehicle_view_root,
         #ifdef __EMSCRIPTEN__
         "/assets/charging.png"
         #else
@@ -1263,8 +1304,7 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
     aroma_node_set_gap(icons_col, 20);
 
-    AromaNode *high_beams = aroma_ui_image(icons_col, 
-       
+    AromaNode *high_beams = aroma_ui_image(icons_col,
         #ifdef __EMSCRIPTEN__
         "/assets/high_beams.png"
         #else
@@ -1278,14 +1318,14 @@ void build_vehicle_view(AromaNode *window)
         "../assets/low_beams.png"
         #endif
         ,       0, 0, 28, 28);
-    AromaNode *abs_icon   = aroma_ui_image(icons_col, 
+    AromaNode *abs_icon   = aroma_ui_image(icons_col,
         #ifdef __EMSCRIPTEN__
         "/assets/abs_indicator.png"
         #else
         "../assets/abs_indicator.png"
         #endif
         ,   0, 0, 28, 28);
-    AromaNode *brake_icon = aroma_ui_image(icons_col, 
+    AromaNode *brake_icon = aroma_ui_image(icons_col,
         #ifdef __EMSCRIPTEN__
         "/assets/brake_indicator.png"
         #else
@@ -1341,8 +1381,8 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(nav_divider_h, Z_LAYER_MAP_PANEL + 2);
     aroma_node_set_z_index(nav_divider_v, Z_LAYER_MAP_PANEL + 2);
 
-    AromaNode *nav_label     = aroma_ui_label(state.nav_card, "Navigate",  20, 15, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    AromaNode *nav_map_icon  = aroma_ui_icon(state.nav_card, AROMA_ICON_MAP, 260, 20, 24, state.theme.colors.primary, state.icon_font);
+    AromaNode *nav_label      = aroma_ui_label(state.nav_card, "Navigate",  20, 15, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    AromaNode *nav_map_icon   = aroma_ui_icon(state.nav_card, AROMA_ICON_MAP, 260, 20, 24, state.theme.colors.primary, state.icon_font);
     AromaNode *nav_home_label = aroma_ui_label(state.nav_card, "Home",  20, 75, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     AromaNode *nav_work_label = aroma_ui_label(state.nav_card, "Work", 170, 75, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     AromaNode *nav_home_icon  = aroma_ui_icon(state.nav_card, AROMA_ICON_HOME, 120, 80, 24, state.theme.colors.primary, state.icon_font);
@@ -1448,15 +1488,10 @@ int main(int argc, char **argv)
 
     state.ui_font   = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24);
     state.icon_font = aroma_font_create_from_memory(icon_ttf,         icon_ttf_len,         24);
-    if (!state.ui_font || !state.icon_font) { printf("FONT ERROR: ui_font=%p icon_font=%p\n", (void*)state.ui_font, (void*)state.icon_font); fflush(stdout); }
-    else { printf("FONT OK: ui_font=%p icon_font=%p\n", (void*)state.ui_font, (void*)state.icon_font); fflush(stdout); }
 
     state.window = aroma_ui_create_window("Automotive HMI", WIN_W, WIN_H);
     printf("Aroma window: %p\n", (void *)state.window);
-    fflush(stdout);
     aroma_event_set_root((AromaNode *)state.window);
-    aroma_event_subscribe(((AromaNode *)state.window)->node_id,
-                          EVENT_TYPE_KEY_PRESS, global_keyboard_event_handler, NULL, 0);
     aroma_ui_prepare_font_for_window(0, state.ui_font);
 
     state.time_label = aroma_ui_label(
@@ -1536,26 +1571,17 @@ int main(int argc, char **argv)
     aroma_tabs_set_content(state.tabs, 0, (AromaNode **)&state.vehicle_view_root, 1);
     aroma_tabs_set_content(state.tabs, 1, &state.settings_panel_node, 1);
 
-    start_voice_control_thread();
+//m    start_voice_control_thread();
 
-#ifndef __EMSCRIPTEN__
-    pthread_t can_t;
-    pthread_create(&can_t, NULL, can_thread, NULL);
-#endif
+//#ifndef __EMSCRIPTEN__
+  //  pthread_t can_t;
+   // pthread_create(&can_t, NULL, can_thread, NULL);
+//#endif
 
     aroma_node_set_hidden(state.time_label,     true);
     aroma_node_set_hidden(state.location_label, true);
     aroma_node_set_hidden(state.tabs,           true);
 
-    printf("AromaHMI started — %s %s\n", __DATE__, __TIME__);
-    fflush(stdout);
-#ifdef AROMA_USE_VOICE_CONTROL
-    printf("Voice control: enabled\n");
-    fflush(stdout);
-#else
-    printf("Voice control: disabled (stub)\n");
-    fflush(stdout);
-#endif
 
     uint64_t last_time_update = aroma_time_now_ms();
     bool     battery_shown    = false;
@@ -1573,6 +1599,13 @@ int main(int argc, char **argv)
                 aroma_label_set_text(state.vehicle_view_large_clock, clock_str);
             last_time_update = now;
         }
+
+        pthread_mutex_lock(&pending_mtx);
+        int do_map_open = pending_map_open;
+        pending_map_open = 0;
+        pthread_mutex_unlock(&pending_mtx);
+        if (do_map_open)
+            open_map_panel(NULL);
 
         pthread_mutex_lock(&voice_mutex);
 
@@ -1658,8 +1691,7 @@ int main(int argc, char **argv)
             if      (voice_info_request == 1) aroma_voice_speak("Battery is at 75 percent charge.");
             else if (voice_info_request == 2) aroma_voice_speak("Estimated range is 204 kilometers.");
             else if (voice_info_request == 3) aroma_voice_speak("Battery is at 75 percent. Estimated range is 204 kilometers.");
-            printf("Voice: info request %d answered\n", voice_info_request);
-            fflush(stdout);
+          
             voice_info_request = 0;
         }
 
@@ -1719,7 +1751,7 @@ int main(int argc, char **argv)
         if (state.ac_temp_label) {
             char ac_str[32];
             if (hvac_active) snprintf(ac_str, sizeof(ac_str), "%.1f°C (Fan %d)", tgt_temp, fan_spd);
-            else             strcpy(ac_str, "Off");
+            else             strncpy(ac_str, "Off", sizeof(ac_str));
             aroma_label_set_text(state.ac_temp_label, ac_str);
         }
 
@@ -1765,8 +1797,7 @@ int main(int argc, char **argv)
                     if (state.ac_card)    aroma_animation_start(state.ac_card,    AROMA_ANIM_SLIDE_Y, WIN_H - 200, WIN_H + 120, 400);
                     if (state.music_card) aroma_animation_start(state.music_card, AROMA_ANIM_SLIDE_Y, WIN_H - 200, WIN_H + 120, 400);
                     if (state.nav_card)   aroma_animation_start(state.nav_card,   AROMA_ANIM_SLIDE_Y, WIN_H - 200, WIN_H + 120, 400);
-                    printf("FAULT active: 0x%04X – %s\n", fault, fault_msg);
-                    fflush(stdout);
+                 
                 }
             } else {
                 if (last_fault != 0) {
@@ -1775,9 +1806,7 @@ int main(int argc, char **argv)
                     if (state.ac_card)    aroma_animation_start(state.ac_card,    AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 400);
                     if (state.music_card) aroma_animation_start(state.music_card, AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 400);
                     if (state.nav_card)   aroma_animation_start(state.nav_card,   AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 400);
-                    printf("FAULT cleared (was 0x%04X)\n", last_fault);
-                    fflush(stdout);
-                }
+                 }
             }
             last_fault = fault;
         }
@@ -1791,7 +1820,6 @@ int main(int argc, char **argv)
     #endif
     }
 
-    aroma_ui_destroy_window(state.window);
     aroma_ui_unload_font(state.ui_font);
     aroma_ui_unload_font(state.icon_font);
     aroma_ui_unload_font(state.tab_font);
