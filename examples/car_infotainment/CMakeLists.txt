@@ -20,13 +20,6 @@ add_executable(infotainment
     cJSON.c
 )
 
-if(NOT EMSCRIPTEN)
-    find_package(Vulkan QUIET)
-    if(NOT Vulkan_FOUND)
-        message(FATAL_ERROR "Vulkan not found.")
-    endif()
-endif()
-
 if(ENABLE_VOICE_CONTROL)
     find_library(VOSK_LIB vosk HINTS "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib")
     if(NOT VOSK_LIB)
@@ -46,8 +39,6 @@ endif()
 
 target_include_directories(infotainment PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../vendors/glps/include"
 )
 
 if(EMSCRIPTEN)

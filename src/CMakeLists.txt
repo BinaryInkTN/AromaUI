@@ -1,42 +1,3 @@
-if(NOT ANDROID AND NOT EMSCRIPTEN)
-    if(NOT TARGET GLPS)
-        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/CMakeLists.txt")
-            add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps" glps_build)
-        else()
-            message(STATUS "GLPS vendor not found at ../vendors/glps")
-        endif()
-    endif()
-
-    if(ENABLE_GLFW AND NOT TARGET glfw)
-        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glfw/CMakeLists.txt")
-            set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-            set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-            set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-            add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glfw" glfw_build)
-        else()
-            message(FATAL_ERROR "glfw3 not found and vendor submodule missing.")
-        endif()
-    endif()
-endif()
-
-if(NOT TARGET freetype)
-    find_package(Freetype QUIET)
-    if(FREETYPE_FOUND)
-        add_library(freetype ALIAS Freetype::Freetype)
-    else()
-        set(FT_VENDOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/freetype")
-        if(EXISTS "${FT_VENDOR_DIR}/CMakeLists.txt")
-            set(FT_DISABLE_ZLIB TRUE CACHE BOOL "" FORCE)
-            set(FT_DISABLE_BZIP2 TRUE CACHE BOOL "" FORCE)
-            set(FT_DISABLE_PNG TRUE CACHE BOOL "" FORCE)
-            set(FT_DISABLE_BROTLI TRUE CACHE BOOL "" FORCE)
-            add_subdirectory("${FT_VENDOR_DIR}" freetype_build)
-        else()
-            message(FATAL_ERROR "Freetype not found and vendor submodule missing.")
-        endif()
-    endif()
-endif()
-
 add_library(aroma
     core/aroma_ui_impl.c
     core/aroma_logger.c
@@ -101,6 +62,16 @@ target_include_directories(aroma
     PRIVATE "$<TARGET_PROPERTY:freetype,INTERFACE_INCLUDE_DIRECTORIES>"
 )
 
+target_link_libraries(aroma PRIVATE freetype m)
+
+if(NOT EMSCRIPTEN)
+    target_link_libraries(aroma PRIVATE GLESv2)
+endif()
+
+if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
+    target_link_libraries(aroma PRIVATE curl pthread)
+endif()
+
 find_package(Vulkan QUIET)
 
 if(ANDROID AND NOT Vulkan_FOUND)
@@ -117,19 +88,6 @@ if(Vulkan_FOUND AND NOT EMSCRIPTEN)
         backends/graphics/utils/helpers_vulkan.c
         backends/graphics/utils/aroma_vulkan_text.c
     )
-endif()
-
-target_link_libraries(aroma PRIVATE freetype m)
-
-if(NOT EMSCRIPTEN)
-    target_link_libraries(aroma PRIVATE GLESv2)
-endif()
-
-if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
-    target_link_libraries(aroma PRIVATE curl pthread)
-endif()
-
-if(Vulkan_FOUND)
     if(ANDROID_VULKAN_NATIVE)
         target_link_libraries(aroma PUBLIC "${ANDROID_VULKAN_LIB}")
     else()
@@ -155,11 +113,7 @@ elseif(EMSCRIPTEN)
     target_compile_definitions(aroma PUBLIC AROMA_USE_EMSCRIPTEN)
 elseif(ENABLE_GLFW)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_glfw.c)
-    if(TARGET glfw)
-        target_link_libraries(aroma PRIVATE glfw)
-    else()
-        target_link_libraries(aroma PRIVATE glfw3)
-    endif()
+    target_link_libraries(aroma PRIVATE glfw)
     target_compile_definitions(aroma PUBLIC AROMA_USE_GLFW)
 else()
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_glps.c)
