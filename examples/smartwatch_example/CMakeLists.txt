@@ -4,80 +4,34 @@ project(settings_app C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(AROMA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
-
-include_directories(
-    ${AROMA_ROOT}/include
-    ${AROMA_ROOT}/vendors/glps/include
-)
-
-link_directories(
-    ${AROMA_ROOT}/build/src
-    ${AROMA_ROOT}/build/lib
-)
-
-option(ENABLE_VOICE_CONTROL "Enable voice control (requires libvosk)" OFF)
 option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
+
+if(ENABLE_GLFW AND EMSCRIPTEN)
+    message(FATAL_ERROR "ENABLE_GLFW and EMSCRIPTEN are mutually exclusive.")
+endif()
+
+if(NOT TARGET aroma)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../.." aroma_root)
+endif()
 
 add_executable(smartwatch_example
     main.c
 )
 
-if(ENABLE_GLFW OR NOT EMSCRIPTEN)
-    find_package(Vulkan REQUIRED)
-else()
-    message(STATUS "Building for Emscripten — skipping Vulkan requirement")
-endif()
-
-if(ENABLE_VOICE_CONTROL)
-    find_library(VOSK_LIB vosk HINTS ${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib)
-    if(NOT VOSK_LIB)
-        message(WARNING "libvosk not found — disabling voice control")
-        set(ENABLE_VOICE_CONTROL OFF)
+if(NOT EMSCRIPTEN)
+    find_package(Vulkan QUIET)
+    if(NOT Vulkan_FOUND)
+        message(FATAL_ERROR "Vulkan not found.")
     endif()
 endif()
 
-if(ENABLE_VOICE_CONTROL)
-    target_sources(smartwatch_example PRIVATE voice_control.c)
-    target_compile_definitions(smartwatch_example PRIVATE AROMA_USE_VOICE_CONTROL)
-    target_link_libraries(smartwatch_example PRIVATE vosk)
-    message(STATUS "Voice control: ENABLED")
-else()
-    message(STATUS "Voice control: DISABLED")
-endif()
+target_include_directories(smartwatch_example PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../vendors/glps/include"
+)
 
-if(ENABLE_GLFW)
-    message(STATUS "ENABLE_GLFW=ON - forcing native GLFW build (ignoring Emscripten)")
-    
-    target_compile_definitions(smartwatch_example PRIVATE AROMA_USE_GLFW)
-    
-    find_package(glfw3 REQUIRED)
-    
-    target_link_libraries(smartwatch_example PRIVATE
-        aroma
-        glfw
-        GLESv2
-        freetype
-        m
-        pthread
-        asound
-        curl
-        Vulkan::Vulkan
-    )
-    message(STATUS "Windowing Backend: GLFW (Native, forced)")
-    
-elseif(EMSCRIPTEN)
-    message(STATUS "ENABLE_GLFW=OFF - using Emscripten/WebGL backend")
-    
-    if(NOT TARGET aroma)
-        add_subdirectory(${AROMA_ROOT}/src aroma_sdk)
-    endif()
-    
-    target_link_libraries(smartwatch_example PRIVATE
-        aroma
-        freetype
-        m
-    )
+if(EMSCRIPTEN)
+    target_link_libraries(smartwatch_example PRIVATE aroma)
     target_link_options(smartwatch_example PRIVATE
         "-sMIN_WEBGL_VERSION=1"
         "-sMAX_WEBGL_VERSION=2"
@@ -87,21 +41,25 @@ elseif(EMSCRIPTEN)
         "-sEXPORTED_RUNTIME_METHODS=['callMain','ccall','cwrap','FS','addRunDependency','removeRunDependency']"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=134217728"
+        "-sFETCH=1"
+        #"--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
     )
-    # target_link_options(smartwatch_example PRIVATE
-    #   "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
-    #)
     message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
-    
-else()
-    # Default native GLPS backend
+
+elseif(ENABLE_GLFW)
     target_link_libraries(smartwatch_example PRIVATE
         aroma
-        GLPS
-        GLESv2
-        EGL
-        X11
-        freetype
+        m
+        pthread
+        asound
+        curl
+        Vulkan::Vulkan
+    )
+    message(STATUS "Windowing Backend: GLFW (Native)")
+
+else()
+    target_link_libraries(smartwatch_example PRIVATE
+        aroma
         m
         pthread
         asound

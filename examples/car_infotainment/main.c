@@ -1,6 +1,6 @@
-#include <aroma.h>
-#include <aroma_animation.h>
-#include <aroma_native_utils.h>
+#include "aroma.h"
+#include "aroma_animation.h"
+#include "aroma_native_utils.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <stdarg.h>
