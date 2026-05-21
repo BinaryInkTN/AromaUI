@@ -9,7 +9,7 @@ set(AROMA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 include_directories(
     ${AROMA_ROOT}/include
     ${AROMA_ROOT}/vendors/glps/include
-    )
+)
 
 link_directories(
     ${AROMA_ROOT}/build/src
@@ -23,7 +23,7 @@ add_executable(smartwatch_example
     main.c
 )
 
-if(NOT EMSCRIPTEN)
+if(ENABLE_GLFW OR NOT EMSCRIPTEN)
     find_package(Vulkan REQUIRED)
 else()
     message(STATUS "Building for Emscripten — skipping Vulkan requirement")
@@ -46,11 +46,33 @@ else()
     message(STATUS "Voice control: DISABLED")
 endif()
 
-if(EMSCRIPTEN)
+if(ENABLE_GLFW)
+    message(STATUS "ENABLE_GLFW=ON - forcing native GLFW build (ignoring Emscripten)")
+    
+    target_compile_definitions(smartwatch_example PRIVATE AROMA_USE_GLFW)
+    
+    find_package(glfw3 REQUIRED)
+    
+    target_link_libraries(smartwatch_example PRIVATE
+        aroma
+        glfw
+        GLESv2
+        freetype
+        m
+        pthread
+        asound
+        curl
+        Vulkan::Vulkan
+    )
+    message(STATUS "Windowing Backend: GLFW (Native, forced)")
+    
+elseif(EMSCRIPTEN)
+    message(STATUS "ENABLE_GLFW=OFF - using Emscripten/WebGL backend")
+    
     if(NOT TARGET aroma)
         add_subdirectory(${AROMA_ROOT}/src aroma_sdk)
     endif()
-
+    
     target_link_libraries(smartwatch_example PRIVATE
         aroma
         freetype
@@ -66,32 +88,13 @@ if(EMSCRIPTEN)
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=134217728"
     )
-#target_link_options(smartwatch_example PRIVATE
- #   "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
-#)
+    # target_link_options(smartwatch_example PRIVATE
+    #   "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
+    #)
     message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
-elseif(ENABLE_GLFW)
-    target_compile_definitions(smartwatch_example PRIVATE AROMA_USE_GLFW)
     
-    find_package(glfw3 QUIET)
-    if (TARGET glfw OR TARGET glfw3 OR glfw3_FOUND)
-        target_link_libraries(smartwatch_example PRIVATE
-            glfw
-        )
-    endif()
-
-    target_link_libraries(smartwatch_example PRIVATE
-        aroma
-        GLESv2
-        freetype
-        m
-        pthread
-        asound
-        curl
-        Vulkan::Vulkan
-    )
-    message(STATUS "Windowing Backend: GLFW")
 else()
+    # Default native GLPS backend
     target_link_libraries(smartwatch_example PRIVATE
         aroma
         GLPS
@@ -105,5 +108,5 @@ else()
         curl
         Vulkan::Vulkan
     )
-    message(STATUS "Windowing Backend: GLPS")
+    message(STATUS "Windowing Backend: GLPS (Native)")
 endif()

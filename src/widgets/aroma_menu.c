@@ -31,7 +31,7 @@
 
 #define AROMA_MENU_MAX_ITEMS 32
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaMenu {
+typedef struct   AromaMenu {
     AromaRect rect;
     AromaMenuItem items[AROMA_MENU_MAX_ITEMS];
     size_t item_count;

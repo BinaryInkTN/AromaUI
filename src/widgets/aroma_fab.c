@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaFAB {
+typedef struct AromaFAB {
     AromaRect rect;
     AromaFABSize size;
     char icon_text[32];

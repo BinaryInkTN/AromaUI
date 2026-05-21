@@ -26,7 +26,9 @@ add_executable(infotainment
     cJSON.c
 )
 
-if(NOT EMSCRIPTEN)
+if(NOT EMSCRIPTEN AND NOT ENABLE_GLFW)
+    find_package(Vulkan REQUIRED)
+elseif(NOT EMSCRIPTEN AND ENABLE_GLFW)
     find_package(Vulkan REQUIRED)
 else()
     message(STATUS "Building for Emscripten — skipping Vulkan requirement")
@@ -49,11 +51,33 @@ else()
     message(STATUS "Voice control: DISABLED")
 endif()
 
-if(EMSCRIPTEN)
+if(ENABLE_GLFW)
+    message(STATUS "ENABLE_GLFW=ON - forcing native GLFW build (ignoring Emscripten)")
+    
+    target_compile_definitions(infotainment PRIVATE AROMA_USE_GLFW)
+    
+    find_package(glfw3 REQUIRED)
+    
+    target_link_libraries(infotainment PRIVATE
+        aroma
+        glfw
+        GLESv2
+        freetype
+        m
+        pthread
+        asound
+        curl
+        Vulkan::Vulkan
+    )
+    message(STATUS "Windowing Backend: GLFW (Native, forced)")
+    
+elseif(EMSCRIPTEN)
+    message(STATUS "ENABLE_GLFW=OFF - using Emscripten/WebGL backend")
+    
     if(NOT TARGET aroma)
         add_subdirectory(${AROMA_ROOT}/src aroma_sdk)
     endif()
-
+    
     target_link_libraries(infotainment PRIVATE
         aroma
         freetype
@@ -70,33 +94,13 @@ if(EMSCRIPTEN)
         "-sINITIAL_MEMORY=134217728"
         "-sFETCH=1"
     )
-target_link_options(infotainment PRIVATE
-    "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
-)
-    message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
-elseif(ENABLE_GLFW)
-    target_compile_definitions(infotainment PRIVATE AROMA_USE_GLFW)
-    
-   
-    find_package(glfw3 QUIET)
-    if (TARGET glfw OR TARGET glfw3 OR glfw3_FOUND)
-        target_link_libraries(infotainment PRIVATE
-            glfw
-        )
-    endif()
-
-    target_link_libraries(infotainment PRIVATE
-        aroma
-        GLESv2
-        freetype
-        m
-        pthread
-        asound
-        curl
-        Vulkan::Vulkan
+    target_link_options(infotainment PRIVATE
+        "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
     )
-    message(STATUS "Windowing Backend: GLFW")
+    message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
+    
 else()
+    # Default native GLPS backend
     target_link_libraries(infotainment PRIVATE
         aroma
         GLPS
@@ -110,5 +114,5 @@ else()
         curl
         Vulkan::Vulkan
     )
-    message(STATUS "Windowing Backend: GLPS")
+    message(STATUS "Windowing Backend: GLPS (Native)")
 endif()

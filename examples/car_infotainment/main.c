@@ -651,7 +651,13 @@ void close_settings_panel(void *user_data)
 
 static void battery_diagnostics(void *user_data)
 {
-    aroma_image_set_source(state.overlay, "/assets/car_battery.png");
+    aroma_image_set_source(state.overlay, 
+        #ifdef __EMSCRIPTEN__
+            "assets/car_battery.png"
+        #else
+        "/assets/car_battery.png"
+        #endif
+    );
     AromaAnimation *anim = aroma_animation_start(
         state.overlay, AROMA_ANIM_SLIDE_Y, 900, 250, 400);
     aroma_animation_set_easing(anim, AROMA_EASE_OUT_ELASTIC);
@@ -1085,11 +1091,23 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
 
     AromaNode *backroad = aroma_ui_image(
-        state.vehicle_view_root, "/assets/backroad_blur.png", 0, 0, WIN_W, WIN_H);
+        state.vehicle_view_root, 
+        #ifdef __EMSCRIPTEN__
+        "/assets/backroad_blur.png"
+        #else
+        "../assets/backroad_blur.png"
+        #endif
+        , 0, 0, WIN_W, WIN_H);
     aroma_node_set_z_index(backroad, Z_LAYER_BACKGROUND);
 
     AromaNode *car_img = aroma_ui_image(
-        state.vehicle_view_root, "/assets/car.png", 250, 250, 700, 405);
+        state.vehicle_view_root,
+        #ifdef __EMSCRIPTEN__
+         "/assets/car.png"
+        #else
+        "../assets/car.png"
+        #endif
+        , 250, 250, 700, 405);
     aroma_node_set_z_index(car_img, Z_LAYER_VEHICLE_IMAGE);
 
     state.overlay = aroma_ui_image(state.vehicle_view_root, NULL, 250, 250, 700, 405);
@@ -1217,7 +1235,13 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
 
     state.battery_image = aroma_ui_image(
-        state.vehicle_view_root, "/assets/charging.png",
+        state.vehicle_view_root, 
+        #ifdef __EMSCRIPTEN__
+        "/assets/charging.png"
+        #else
+        "../assets/charging.png"
+        #endif
+        ,
         WIN_W / 2 - 180, 200, 128, 128);
     state.battery_health = aroma_ui_label(
         state.vehicle_view_root, "Battery Health: Good",
@@ -1239,10 +1263,35 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
     aroma_node_set_gap(icons_col, 20);
 
-    AromaNode *high_beams = aroma_ui_image(icons_col, "/assets/high_beams.png",      0, 0, 28, 28);
-    AromaNode *low_beams  = aroma_ui_image(icons_col, "/assets/low_beams.png",       0, 0, 28, 28);
-    AromaNode *abs_icon   = aroma_ui_image(icons_col, "/assets/abs_indicator.png",   0, 0, 28, 28);
-    AromaNode *brake_icon = aroma_ui_image(icons_col, "/assets/brake_indicator.png", 0, 0, 28, 28);
+    AromaNode *high_beams = aroma_ui_image(icons_col, 
+       
+        #ifdef __EMSCRIPTEN__
+        "/assets/high_beams.png"
+        #else
+        "../assets/high_beams.png"
+        #endif
+        ,      0, 0, 28, 28);
+    AromaNode *low_beams  = aroma_ui_image(icons_col,
+        #ifdef __EMSCRIPTEN__
+        "/assets/low_beams.png"
+        #else
+        "../assets/low_beams.png"
+        #endif
+        ,       0, 0, 28, 28);
+    AromaNode *abs_icon   = aroma_ui_image(icons_col, 
+        #ifdef __EMSCRIPTEN__
+        "/assets/abs_indicator.png"
+        #else
+        "../assets/abs_indicator.png"
+        #endif
+        ,   0, 0, 28, 28);
+    AromaNode *brake_icon = aroma_ui_image(icons_col, 
+        #ifdef __EMSCRIPTEN__
+        "/assets/brake_indicator.png"
+        #else
+        "../assets/brake_indicator.png"
+        #endif
+        , 0, 0, 28, 28);
     aroma_node_set_z_index(high_beams, Z_LAYER_VEHICLE_OVERLAYS);
     aroma_node_set_z_index(low_beams,  Z_LAYER_VEHICLE_OVERLAYS);
     aroma_node_set_z_index(abs_icon,   Z_LAYER_VEHICLE_OVERLAYS);

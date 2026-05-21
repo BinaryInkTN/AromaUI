@@ -19,7 +19,7 @@ typedef struct
     void *user_data;
 } AromaDialogAction;
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaDialog
+typedef struct  AromaDialog
 {
     AromaRect rect;
     int centered_x;

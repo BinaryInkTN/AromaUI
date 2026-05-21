@@ -16,7 +16,7 @@
 
 #define AROMA_SNACKBAR_TEXT_MAX 128
 
-typedef struct  __attribute__((packed, aligned(1))) __attribute__((packed, aligned(1))) AromaSnackbar {
+typedef struct  AromaSnackbar {
     AromaRect rect;
     uint64_t show_time_ms;
     void (*action_callback)(void* user_data);
