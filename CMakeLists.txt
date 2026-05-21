@@ -40,7 +40,7 @@ else()
 endif()
 
 find_package(Vulkan QUIET)
-if(Vulkan_FOUND AND NOT ENABLE_GLFW AND NOT EMSCRIPTEN)
+if(Vulkan_FOUND)
     set(GLPS_INCLUDE_VULKAN ON CACHE BOOL "Enable Vulkan support in GLPS" FORCE)
 endif()
 
