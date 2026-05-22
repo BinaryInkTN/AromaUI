@@ -3,4 +3,4 @@
 
 void main_loop(void);
 
-#endif
+#endif // MAIN_LOOP_H

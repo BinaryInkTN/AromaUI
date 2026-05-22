@@ -14,49 +14,77 @@
 #include "tabs_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+
+// Signal handler for clean shutdown
+static void signal_handler(int sig)
+{
+    (void)sig;
+    aroma_ui_quit();
+}
 
 int main(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
     
-    // Initialize application state first
-    init_app_state();
+    // Setup signal handlers
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
     
+    // Initialize application state
+    if (!init_app_state()) {
+        fprintf(stderr, "FATAL: Failed to initialize application state\n");
+        return EXIT_FAILURE;
+    }
+    
+    // Initialize animation system
     aroma_animation_manager_init();
 
-    char build_info[256];
+    // Show splash screen
+    char build_info[MAX_STRING_LEN];
     snprintf(build_info, sizeof(build_info),
              "AromaOS v0.0.1 - Build: %s %s", __DATE__, __TIME__);
     aroma_splash(false, "AromaOS", build_info);
     
-    bool ui_ok = aroma_ui_init();
-    if (!ui_ok) {
-        fprintf(stderr, "Failed to initialize UI\n");
-        return 1;
+    // Initialize UI
+    if (!aroma_ui_init()) {
+        fprintf(stderr, "FATAL: Failed to initialize UI\n");
+        cleanup_app_state();
+        return EXIT_FAILURE;
     }
-
-    init_theme();
-    init_fonts();
     
-    // Check if fonts loaded properly
-    if (!state.ui_font || !state.icon_font) {
-        fprintf(stderr, "Failed to load fonts\n");
+    // Initialize theme
+    if (!init_theme()) {
+        fprintf(stderr, "FATAL: Failed to initialize theme\n");
         aroma_ui_shutdown();
-        return 1;
+        cleanup_app_state();
+        return EXIT_FAILURE;
     }
     
+    // Initialize fonts
+    if (!init_fonts()) {
+        fprintf(stderr, "FATAL: Failed to initialize fonts\n");
+        aroma_ui_shutdown();
+        cleanup_app_state();
+        return EXIT_FAILURE;
+    }
+    
+    // Create main window
     state.window = aroma_ui_create_window("Automotive HMI", WIN_W, WIN_H);
     if (!state.window) {
-        fprintf(stderr, "Failed to create window\n");
+        fprintf(stderr, "FATAL: Failed to create window\n");
         cleanup_fonts();
         aroma_ui_shutdown();
-        return 1;
+        cleanup_app_state();
+        return EXIT_FAILURE;
     }
     
+    // Setup event handling
     aroma_event_set_root((AromaNode *)state.window);
     aroma_ui_prepare_font_for_window(0, state.ui_font);
 
+    // Build all UI components
     build_status_bar();
     build_voice_status_ui();
     build_vehicle_view((AromaNode *)state.window);
@@ -65,21 +93,35 @@ int main(int argc, char **argv)
     build_easter_egg_ui((AromaNode *)state.window);
     build_tabs();
 
-    aroma_node_set_hidden(state.time_label, true);
-    aroma_node_set_hidden(state.location_label, true);
-    aroma_node_set_hidden(state.tabs, true);
+    // Hide initial elements
+    if (state.time_label) {
+        aroma_node_set_hidden(state.time_label, true);
+    }
+    if (state.location_label) {
+        aroma_node_set_hidden(state.location_label, true);
+    }
+    if (state.tabs) {
+        aroma_node_set_hidden(state.tabs, true);
+    }
 
+    // Start background threads
     start_voice_control_thread();
     
 #ifndef __EMSCRIPTEN__
     start_can_thread();
 #endif
 
+    // Run main loop
     main_loop();
+    
+    // Cleanup
+#ifndef __EMSCRIPTEN__
+    stop_can_thread();
+#endif
     
     cleanup_fonts();
     aroma_ui_shutdown();
     cleanup_app_state();
     
-    return 0;
+    return EXIT_SUCCESS;
 }

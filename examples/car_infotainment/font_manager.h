@@ -1,7 +1,9 @@
 #ifndef FONT_MANAGER_H
 #define FONT_MANAGER_H
 
-void init_fonts(void);
+#include <stdbool.h>
+
+bool init_fonts(void);
 void cleanup_fonts(void);
 
-#endif
+#endif // FONT_MANAGER_H
