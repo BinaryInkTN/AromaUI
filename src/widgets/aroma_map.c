@@ -1354,7 +1354,8 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
         }
     }
 #endif
-
+    printf("sizeof(AromaMap) = %zu\n", sizeof(AromaMap));
+    printf("sizeof(AromaWidget) = %zu\n", sizeof(AromaWidget));
     AromaMap* map = (AromaMap*)calloc(1, sizeof(AromaMap));
     if (!map) return NULL;
 
