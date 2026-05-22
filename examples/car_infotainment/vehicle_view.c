@@ -265,8 +265,10 @@ void build_vehicle_view(AromaNode *window)
     state.ac_temp_label = aroma_ui_label(state.ac_card, "23°C", 75, 45, LABEL_STYLE_LABEL_LARGE, ac_font);
     aroma_node_set_z_index(state.ac_temp_label, Z_LAYER_MAP_PANEL + 2);
 
-    aroma_ui_iconbutton(state.ac_card, AROMA_ICON_REMOVE, 15, 55, 40, ICON_BUTTON_FILLED, ac_temp_down_callback, NULL, state.icon_font);
-    aroma_ui_iconbutton(state.ac_card, AROMA_ICON_ADD, 165, 55, 40, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
+    AromaNode* ac_temp_down_button = aroma_ui_iconbutton(state.ac_card, AROMA_ICON_REMOVE, 15, 55, 40, ICON_BUTTON_FILLED, ac_temp_down_callback, NULL, state.icon_font);
+    AromaNode* ac_temp_up_button = aroma_ui_iconbutton(state.ac_card, AROMA_ICON_ADD, 165, 55, 40, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(ac_temp_down_button, Z_LAYER_MAP_PANEL + 2);
+    aroma_node_set_z_index(ac_temp_up_button, Z_LAYER_MAP_PANEL + 2);
 
     
     state.music_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 - 225, WIN_H - 200, 450, 120, CARD_TYPE_FILLED);
