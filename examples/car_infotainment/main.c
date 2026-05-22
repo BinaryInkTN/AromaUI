@@ -67,7 +67,7 @@ int main(int argc, char **argv)
     build_status_bar();
     build_voice_status_ui();
     build_vehicle_view((AromaNode *)state.window);
-
+    build_map_panel((AromaNode *)state.window);
     build_settings_ui((AromaNode *)state.window);
     build_easter_egg_ui((AromaNode *)state.window);
     build_tabs();

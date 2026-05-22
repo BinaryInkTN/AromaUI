@@ -51,6 +51,7 @@ add_library(aroma
     widgets/aroma_gif.c
     widgets/aroma_loading.c
     widgets/aroma_table.c
+    widgets/aroma_map.c
 )
 
 target_include_directories(aroma
@@ -97,9 +98,6 @@ if(Vulkan_FOUND AND NOT EMSCRIPTEN)
     target_compile_definitions(aroma PRIVATE AROMA_HAS_VULKAN=1)
 endif()
 
-if(NOT EMSCRIPTEN)
-    target_sources(aroma PRIVATE widgets/aroma_map.c)
-endif()
 
 if(ANDROID)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_android.c)
