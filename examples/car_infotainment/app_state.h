@@ -10,68 +10,66 @@
 #define WIN_W 1280
 #define WIN_H 800
 
-// Layer definitions
-#define Z_LAYER_BACKGROUND       1
-#define Z_LAYER_VEHICLE_IMAGE    2
+#define Z_LAYER_BACKGROUND 1
+#define Z_LAYER_VEHICLE_IMAGE 2
 #define Z_LAYER_VEHICLE_OVERLAYS 3
-#define Z_LAYER_CARDS_BOTTOM     10
-#define Z_LAYER_MAP_PANEL        20
-#define Z_LAYER_MAP_BUTTON       15
-#define Z_LAYER_MAP_CONTROLS     21
-#define Z_LAYER_MAP_CLOSE        22
-#define Z_LAYER_STATUS_BAR       100
-#define Z_LAYER_STATUS_ICONS     101
-#define Z_LAYER_SETTINGS_PANEL   150
-#define Z_LAYER_VOICE_CARD       999998
-#define Z_LAYER_VOICE_CONTENT    999999
+#define Z_LAYER_CARDS_BOTTOM 10
+#define Z_LAYER_MAP_PANEL 20
+#define Z_LAYER_MAP_BUTTON 15
+#define Z_LAYER_MAP_CONTROLS 21
+#define Z_LAYER_MAP_CLOSE 22
+#define Z_LAYER_STATUS_BAR 100
+#define Z_LAYER_STATUS_ICONS 101
+#define Z_LAYER_SETTINGS_PANEL 150
+#define Z_LAYER_VOICE_CARD 999998
+#define Z_LAYER_VOICE_CONTENT 999999
 
-#define MAP_PANEL_WIDTH  WIN_W
+#define MAP_PANEL_WIDTH WIN_W
 #define MAP_PANEL_OFFSET 0
 #define SETTINGS_PANEL_W 800
 #define SETTINGS_ANIM_MS 350
 
-// Buffer size constants
-#define MAX_STRING_LEN    256
-#define MAX_PATH_LEN      512
-#define MAX_VOICE_TEXT    512
-#define MAX_FAULT_MSG     128
+#define MAX_STRING_LEN 256
+#define MAX_PATH_LEN 512
+#define MAX_VOICE_TEXT 512
+#define MAX_FAULT_MSG 128
 
-typedef struct {
-    double   speed;
-    int      rpm;
-    int      gear;
-    double   soc;
-    double   voltage;
-    double   current;
-    double   cabin_temp;
-    double   target_temp;
-    int      hvac_on;
-    int      fan_speed;
-    int      seat_heaters;
-    int      doors;
+typedef struct
+{
+    double speed;
+    int rpm;
+    int gear;
+    double soc;
+    double voltage;
+    double current;
+    double cabin_temp;
+    double target_temp;
+    int hvac_on;
+    int fan_speed;
+    int seat_heaters;
+    int doors;
     uint32_t fault_code;
-    double   range;
+    double range;
 } EVState;
 
-typedef struct {
-    // Fonts
+typedef struct
+{
+
     AromaFont *icon_font;
     AromaFont *ui_font;
     AromaFont *tab_font;
     AromaFont *settings_font;
     AromaFont *clock_font;
     AromaFont *clock_pm_am_font;
+    AromaFont *ac_font;
 
-    // Window
     AromaWindow *window;
-    
-    // Major UI containers
+
     AromaNode *settings_root;
     AromaNode *vehicle_view_root;
     AromaNode *tabs;
     AromaNode *sidebar;
 
-    // Status bar elements
     AromaNode *time_label;
     AromaNode *location_label;
     AromaNode *status_card;
@@ -81,7 +79,6 @@ typedef struct {
     AromaNode *gps_icon;
     AromaNode *bluetooth_icon;
 
-    // Vehicle view elements
     AromaNode *vehicle_view_lock_icon;
     AromaNode *vehicle_view_lock_divider;
     AromaNode *vehicle_view_charge_port_divider;
@@ -103,7 +100,6 @@ typedef struct {
     AromaNode *overlay;
     AromaNode *recent_lv;
 
-    // Dashboard elements
     AromaNode *speed_label;
     AromaNode *speed_gauge;
     AromaNode *range_label;
@@ -111,48 +107,39 @@ typedef struct {
     AromaNode *gear_bg_card;
     AromaNode *gear_fg_card;
 
-    // Bottom cards
     AromaNode *ac_card;
     AromaNode *music_card;
     AromaNode *nav_card;
 
-    // Battery view
     AromaNode *vehicle_view_battery_divider;
     AromaNode *vehicle_view_battery_percentage;
     AromaNode *battery_image;
     AromaNode *battery_health;
     AromaNode *battery_percentage;
 
-    // Map elements
     AromaNode *map_node;
     AromaNode *map_panel;
     AromaNode *map_overlay_background;
 
-    // Settings
     AromaNode *settings_panel_node;
     AromaNode *listviews[8];
     AromaNode *listview_containers[8];
 
-    // AC
     AromaNode *ac_temp_label;
 
-    // Voice/Settings buttons
     AromaNode *voice_button;
     AromaNode *settings_icon;
     AromaNode *voice_status_label;
     AromaNode *voice_status_card;
     AromaNode *loading_spinner;
 
-    // Easter egg
     AromaNode *easter_egg_overlay;
     AromaNode *easter_egg_icon;
     AromaNode *setup_overlay;
     AromaNode *battery_button;
 
-    // Theme
     AromaTheme theme;
-    
-    // Boolean flags
+
     bool map_panel_open;
     bool settings_panel_open;
     bool dark_theme_enabled;
@@ -160,29 +147,25 @@ typedef struct {
     bool voice_nav_trigger;
     bool g_voice_assistant_enabled;
     bool initialized;
-    
-    // Vehicle state
+
     EVState vehicle_state;
-    
-    // Synchronization - NOTE: using voice_mtx to match usage
+
     pthread_mutex_t can_mtx;
     pthread_mutex_t pending_mtx;
     pthread_mutex_t voice_mtx;
     volatile int pending_map_open;
-    
-    // Voice control state
+
     int voice_target_tab;
     int voice_partial_timeout;
     int voice_theme_change;
     int voice_ac_change;
     int voice_info_request;
     int current_ac_temp;
-    
-    // String buffers
+
     char voice_status_text[MAX_VOICE_TEXT];
     char voice_partial_text[MAX_VOICE_TEXT];
     char voice_nav_dest[MAX_STRING_LEN];
-    
+
 } AppState;
 
 extern AppState state;
@@ -192,4 +175,4 @@ void cleanup_app_state(void);
 void safe_str_copy(char *dest, const char *src, size_t dest_size);
 bool safe_node_check(const AromaNode *node, const char *node_name);
 
-#endif // APP_STATE_H
+#endif

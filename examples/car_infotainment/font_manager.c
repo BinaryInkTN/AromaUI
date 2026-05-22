@@ -43,7 +43,9 @@ bool init_fonts(void)
     
     state.settings_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18, "settings_font");
     if (!state.settings_font) success = false;
-    
+        
+    state.ac_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18, "ac_font");
+    if (!state.ac_font) success = false;
     return success;
 }
 
@@ -77,5 +79,10 @@ void cleanup_fonts(void)
     if (state.ui_font) {
         aroma_ui_unload_font(state.ui_font);
         state.ui_font = NULL;
+    }
+
+       if (state.ac_font) {
+        aroma_ui_unload_font(state.ac_font);
+        state.ac_font = NULL;
     }
 }

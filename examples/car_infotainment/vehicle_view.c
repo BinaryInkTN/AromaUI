@@ -284,7 +284,7 @@ void build_vehicle_view(AromaNode *window)
     state.ac_card = aroma_ui_card((AromaNode *)state.window, 30, WIN_H - 200, 220, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.ac_card, Z_LAYER_MAP_PANEL + 10);
 
-    AromaNode *ac_label = aroma_ui_label(state.ac_card, "Climate", 15, 12, LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    AromaNode *ac_label = aroma_ui_label(state.ac_card, "Climate", 15, 12, LABEL_STYLE_LABEL_LARGE, state.ac_font);
     aroma_node_set_z_index(ac_label, Z_LAYER_MAP_PANEL + 11);
 
     state.ac_temp_label = aroma_ui_label(state.ac_card, "23°C", 75, 45, LABEL_STYLE_LABEL_LARGE, state.clock_font);
