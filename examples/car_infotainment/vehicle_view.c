@@ -261,7 +261,7 @@ void build_vehicle_view(AromaNode *window)
 
     aroma_ui_label(state.ac_card, "Climate", 15, 12, LABEL_STYLE_LABEL_LARGE, state.ui_font);
 
-    AromaFont *ac_font = aroma_font_create_from_memory(NULL, 0, 36);  
+    AromaFont *ac_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 36);  
     state.ac_temp_label = aroma_ui_label(state.ac_card, "23°C", 75, 45, LABEL_STYLE_LABEL_LARGE, ac_font);
     aroma_node_set_z_index(state.ac_temp_label, Z_LAYER_MAP_PANEL + 2);
 
