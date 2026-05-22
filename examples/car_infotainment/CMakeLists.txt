@@ -15,21 +15,12 @@ if(NOT TARGET aroma)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../.." aroma_root)
 endif()
 
+target_compile_options(aroma PRIVATE 
+    -g
+)
+
 add_executable(infotainment
         main.c 
-       main_loop.c 
-       app_state.c 
-       can_handler.c 
-       voice_handler.c 
-       theme_manager.c 
-       font_manager.c 
-       ui_animation_utils.c 
-       map_panel.c 
-       vehicle_view.c 
-       settings_ui.c 
-       easter_egg.c 
-       status_bar.c 
-       tabs_manager.c
 )
 
 if(NOT EMSCRIPTEN)
