@@ -4,7 +4,6 @@
 
 AppState state;
 
-// Safe string copy with bounds checking
 void safe_str_copy(char *dest, const char *src, size_t dest_size)
 {
     if (!dest || !src || dest_size == 0) {
@@ -18,7 +17,6 @@ void safe_str_copy(char *dest, const char *src, size_t dest_size)
     dest[i] = '\0';
 }
 
-// Validate node pointer
 bool safe_node_check(const AromaNode *node, const char *node_name)
 {
     if (!node) {
@@ -34,7 +32,7 @@ bool init_app_state(void)
     // Zero initialize entire structure
     memset(&state, 0, sizeof(AppState));
     
-    // Initialize mutexes with error checking
+    // Initialize mutexes
     if (pthread_mutex_init(&state.can_mtx, NULL) != 0) {
         fprintf(stderr, "ERROR: Failed to initialize CAN mutex\n");
         return false;
@@ -73,7 +71,7 @@ void cleanup_app_state(void)
         return;
     }
     
-    // Reset all pointers to NULL to prevent use-after-free
+    // Reset all pointers to NULL
     state.window = NULL;
     state.settings_root = NULL;
     state.vehicle_view_root = NULL;

@@ -6,4 +6,4 @@
 bool init_fonts(void);
 void cleanup_fonts(void);
 
-#endif // FONT_MANAGER_H
+#endif 

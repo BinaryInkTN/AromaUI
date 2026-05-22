@@ -1,10 +1,7 @@
-#ifndef THEME_MANAGER_H
-#define THEME_MANAGER_H
+#ifndef TABS_MANAGER_H
+#define TABS_MANAGER_H
 
-#include <stdbool.h>
+void build_tabs(void);
+void navigate_to_tab(int index);
 
-bool init_theme(void);
-void apply_theme(bool dark_mode);
-void toggle_theme(void);
-
-#endif // THEME_MANAGER_H
+#endif 

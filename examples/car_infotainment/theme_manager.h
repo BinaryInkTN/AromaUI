@@ -7,4 +7,4 @@ void init_theme(void);
 void apply_theme(bool dark_mode);
 void toggle_theme(void);
 
-#endif
+#endif 

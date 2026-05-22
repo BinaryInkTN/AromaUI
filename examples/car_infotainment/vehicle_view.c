@@ -255,20 +255,20 @@ void build_vehicle_view(AromaNode *window)
         #endif
         , 0, 0, 28, 28);
 
-    // AC Card
+    
     state.ac_card = aroma_ui_card((AromaNode *)state.window, 30, WIN_H - 200, 220, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.ac_card, Z_LAYER_MAP_PANEL + 1);
 
     aroma_ui_label(state.ac_card, "Climate", 15, 12, LABEL_STYLE_LABEL_LARGE, state.ui_font);
 
-    AromaFont *ac_font = aroma_font_create_from_memory(NULL, 0, 36);  // Will use default
+    AromaFont *ac_font = aroma_font_create_from_memory(NULL, 0, 36);  
     state.ac_temp_label = aroma_ui_label(state.ac_card, "23°C", 75, 45, LABEL_STYLE_LABEL_LARGE, ac_font);
     aroma_node_set_z_index(state.ac_temp_label, Z_LAYER_MAP_PANEL + 2);
 
     aroma_ui_iconbutton(state.ac_card, AROMA_ICON_REMOVE, 15, 55, 40, ICON_BUTTON_FILLED, ac_temp_down_callback, NULL, state.icon_font);
     aroma_ui_iconbutton(state.ac_card, AROMA_ICON_ADD, 165, 55, 40, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
 
-    // Music Card
+    
     state.music_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 - 225, WIN_H - 200, 450, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.music_card, Z_LAYER_MAP_PANEL + 1);
 
@@ -286,7 +286,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_ui_icon(music_row, AROMA_ICON_SKIP_NEXT, 0, 0, 40, 
                   aroma_color_blend(state.theme.colors.primary, state.theme.colors.surface, 0.5), state.icon_font);
 
-    // Nav Card
+    
     state.nav_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 + 250, WIN_H - 200, 300, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.nav_card, Z_LAYER_MAP_PANEL + 1);
 

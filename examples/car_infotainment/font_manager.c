@@ -3,20 +3,17 @@
 #include "aroma.h"
 #include <stdio.h>
 
-// External font data declarations
-extern unsigned char aroma_ubuntu_ttf[];
-extern unsigned int aroma_ubuntu_ttf_len;
-extern unsigned char icon_ttf[];
-extern unsigned int icon_ttf_len;
 
-static AromaFont* create_font_safe(unsigned char *data, unsigned int len, int size, const char *name)
+
+
+static AromaFont* create_font_safe(const unsigned char *data, unsigned int len, int size, const char *name)
 {
     if (!data || len == 0 || size <= 0) {
         fprintf(stderr, "FONT ERROR: Invalid parameters for %s\n", name);
         return NULL;
     }
     
-    AromaFont *font = aroma_font_create_from_memory(data, len, size);
+    AromaFont *font = aroma_font_create_from_memory((unsigned char *)data, len, size);
     if (!font) {
         fprintf(stderr, "FONT ERROR: Failed to create %s (size %d)\n", name, size);
     }
@@ -28,7 +25,7 @@ bool init_fonts(void)
 {
     bool success = true;
     
-    // Create fonts with validation
+    
     state.ui_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24, "ui_font");
     if (!state.ui_font) success = false;
     
@@ -52,7 +49,6 @@ bool init_fonts(void)
 
 void cleanup_fonts(void)
 {
-    // Unload fonts in reverse order of creation
     if (state.settings_font) {
         aroma_ui_unload_font(state.settings_font);
         state.settings_font = NULL;
