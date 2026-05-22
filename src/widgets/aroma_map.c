@@ -645,7 +645,7 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
 
     LOG_INFO("MAP EVENT %d (Drag: %d, x: %d y: %d rx: %d ry: %d rw: %d rh: %d)",
         event->event_type, map->is_dragging, event->data.mouse.x, event->data.mouse.y, map->rect.x, map->rect.y, map->rect.width, map->rect.height);
-
+    
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_DOUBLE_CLICK:
             if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
@@ -1354,6 +1354,7 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
         }
     }
 #endif
+
     AromaMap* map = (AromaMap*)calloc(1, sizeof(AromaMap));
     if (!map) return NULL;
 
