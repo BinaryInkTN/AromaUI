@@ -1118,7 +1118,6 @@ static void __map_draw(AromaNode* node, size_t window_id) {
 
     gfx->graphics_clear_clip();
 }
-
 void aroma_map_destroy(AromaNode* node) {
     if (!node || !node->node_widget_ptr) return;
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
@@ -1132,7 +1131,7 @@ void aroma_map_destroy(AromaNode* node) {
             aroma_timer_cancel(extra->anim_timer);
         }
         AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
-        for (int i=0; i<MAX_TILES_MEM; i++) {
+        for (int i = 0; i < MAX_TILES_MEM; i++) {
             if (extra->tiles[i].valid && extra->tiles[i].is_ready && gfx && gfx->unload_image) {
                 gfx->unload_image(extra->tiles[i].texture_id);
             }
@@ -1141,15 +1140,14 @@ void aroma_map_destroy(AromaNode* node) {
         if (extra->route_lats) free(extra->route_lats);
         if (extra->route_lons) free(extra->route_lons);
         MAP_ROUTE_MUTEX_DESTROY(extra);
-        aroma_widget_free(extra);
+        free(extra);  
         map->extra = NULL;
     }
 
-    aroma_widget_free(node->node_widget_ptr);
+    free(node->node_widget_ptr);  
     node->node_widget_ptr = NULL;
     __destroy_node(node);
 }
-
 static bool __map_event_handler_global(AromaEvent* event, void* user_data) {
     if (!event || !user_data) return false;
     struct AromaMapExtra* extra = (struct AromaMapExtra*)user_data;
@@ -1349,8 +1347,6 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
         if (num_active_workers > MAX_WORKER_THREADS) num_active_workers = MAX_WORKER_THREADS;
         if (num_active_workers < 1) num_active_workers = 1;
 
-        LOG_INFO("Initializing aroma map with %d async download threads", num_active_workers);
-
         worker_running = true;
         for (int i = 0; i < num_active_workers; i++) {
             pthread_create(&worker_threads[i], NULL, tile_fetch_worker, NULL);
@@ -1359,10 +1355,9 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     }
 #endif
 
-    AromaMap* map = (AromaMap*)aroma_widget_alloc(sizeof(AromaMap));
+    AromaMap* map = (AromaMap*)calloc(1, sizeof(AromaMap));
     if (!map) return NULL;
 
-    memset(map, 0, sizeof(AromaMap));
     map->rect.x = x;
     map->rect.y = y;
     map->rect.width = width;
@@ -1372,8 +1367,11 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     map->center_lon = 0.0;
     map->show_osm_attribution = false;
 
-    struct AromaMapExtra* extra = aroma_widget_alloc(sizeof(struct AromaMapExtra));
-    memset(extra, 0, sizeof(struct AromaMapExtra));
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)calloc(1, sizeof(struct AromaMapExtra));
+    if (!extra) {
+        free(map);
+        return NULL;
+    }
 
     extra->zoom = map->zoom;
 
@@ -1407,8 +1405,11 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     }
 
     if (!node) {
-        aroma_widget_free(extra);
-        aroma_widget_free(map);
+        if (extra->font) aroma_font_destroy(extra->font);
+        if (extra->anim_timer) aroma_timer_cancel(extra->anim_timer);
+        MAP_ROUTE_MUTEX_DESTROY(extra);
+        free(extra);
+        free(map);
         return NULL;
     }
 
