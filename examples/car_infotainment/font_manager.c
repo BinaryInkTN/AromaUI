@@ -29,18 +29,20 @@ bool init_fonts(void)
     state.ui_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24, "ui_font");
     if (!state.ui_font) success = false;
     
-    state.icon_font =     state.ui_font;
-
+    state.icon_font = create_font_safe(icon_ttf, icon_ttf_len, 24, "icon_font");
+    if (!state.icon_font) success = false;
     
-    state.tab_font =     state.ui_font;
-
-    state.clock_font =    state.ui_font;
+    state.tab_font = create_font_safe(icon_ttf, icon_ttf_len, 128, "tab_font");
+    if (!state.tab_font) success = false;
     
-    state.clock_pm_am_font =    state.ui_font;
-
+    state.clock_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 68, "clock_font");
+    if (!state.clock_font) success = false;
     
-    state.settings_font =     state.ui_font;
-
+    state.clock_pm_am_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24, "clock_pm_am_font");
+    if (!state.clock_pm_am_font) success = false;
+    
+    state.settings_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18, "settings_font");
+    if (!state.settings_font) success = false;
     
     return success;
 }
