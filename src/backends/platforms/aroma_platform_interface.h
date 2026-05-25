@@ -451,7 +451,7 @@ typedef struct AromaPlatformInterface {
 
     void* (*get_native_window_ptr)(size_t window_id);
     void* (*get_native_display_ptr)(void);
-    
+        void (*set_use_surfaceless)(bool use_surfaceless);  // For GLFW backend to enable surfaceless mode if supported
     /* ======================== Offscreen Rendering ======================== */
     void (*set_offscreen_mode)(bool offscreen);
     void (*read_pixels)(size_t window_id, void* buffer, int width, int height);

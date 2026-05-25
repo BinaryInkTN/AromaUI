@@ -18,11 +18,13 @@ if(NOT ENABLE_GLFW AND NOT EMSCRIPTEN AND NOT ANDROID)
     endif()
 endif()
 
+
 if(ENABLE_GLFW AND NOT EMSCRIPTEN)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vendors/glfw/CMakeLists.txt")
         set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
         set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
         set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+        set(GLFW_USE_EGL ON CACHE BOOL "" FORCE)
         add_subdirectory(vendors/glfw)
     else()
         message(FATAL_ERROR "GLFW vendor submodule missing.")

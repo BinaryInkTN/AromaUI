@@ -1040,6 +1040,12 @@ void aroma_ui_set_offscreen_mode(bool offscreen) {
     }
 }
 
+void aroma_ui_set_use_surfaceless(bool use_surfaceless) {
+    if (aroma_backend_abi.get_platform_interface()->set_use_surfaceless) {
+        aroma_backend_abi.get_platform_interface()->set_use_surfaceless(use_surfaceless);
+    }
+}
+
 static size_t find_window_id(AromaWindow* window) {
     for (int i = 0; i < g_window_count; i++) {
         if (g_windows[i].window == window) return g_windows[i].window_id;

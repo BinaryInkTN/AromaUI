@@ -362,6 +362,7 @@ extern "C"
      * @param offscreen True to enable offscreen rendering.
      */
     extern void aroma_ui_set_offscreen_mode(bool offscreen);
+    extern void aroma_ui_set_use_surfaceless(bool use_surfaceless);
 
     /**
      * @brief Read pixels from an offscreen window.

@@ -1,3 +1,5 @@
+#define AROMA_USE_EGL_SURFACELESS // Enable surfaceless mode for GLFW backend if supported
+
 #include <aroma.h>
 #include <aroma_animation.h>
 #include <stdio.h>
@@ -347,9 +349,12 @@ void update_cluster() {
 }
 
 int main() {
+   
+       aroma_ui_set_offscreen_mode(true);
+    aroma_ui_set_use_surfaceless(true);
     aroma_ui_init();
     aroma_animation_manager_init();
-    aroma_ui_set_offscreen_mode(true);
+
 
     tc.speed_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 140);
     tc.info_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 32);
