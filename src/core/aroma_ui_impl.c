@@ -1034,3 +1034,23 @@ static void show_splash_screen(size_t window_id, int width, int height)
 
     aroma_font_destroy(font);
 }
+void aroma_ui_set_offscreen_mode(bool offscreen) {
+    if (aroma_backend_abi.get_platform_interface()->set_offscreen_mode) {
+        aroma_backend_abi.get_platform_interface()->set_offscreen_mode(offscreen);
+    }
+}
+
+static size_t find_window_id(AromaWindow* window) {
+    for (int i = 0; i < g_window_count; i++) {
+        if (g_windows[i].window == window) return g_windows[i].window_id;
+    }
+    return 0;
+}
+
+void aroma_ui_read_pixels(AromaWindow *window, void* buffer, int width, int height) {
+    if (!window) return;
+    AromaNode* root = (AromaNode*)window;
+    if (aroma_backend_abi.get_platform_interface()->read_pixels) {
+        aroma_backend_abi.get_platform_interface()->read_pixels(find_window_id(window), buffer, width, height);
+    }
+}

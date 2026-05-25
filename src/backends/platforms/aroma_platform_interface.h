@@ -451,6 +451,10 @@ typedef struct AromaPlatformInterface {
 
     void* (*get_native_window_ptr)(size_t window_id);
     void* (*get_native_display_ptr)(void);
+    
+    /* ======================== Offscreen Rendering ======================== */
+    void (*set_offscreen_mode)(bool offscreen);
+    void (*read_pixels)(size_t window_id, void* buffer, int width, int height);
 
 } AromaPlatformInterface;
 

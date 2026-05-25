@@ -51,6 +51,7 @@ add_library(aroma
     widgets/aroma_gif.c
     widgets/aroma_loading.c
     widgets/aroma_table.c
+    widgets/aroma_gauge.c
     widgets/aroma_map.c
 )
 

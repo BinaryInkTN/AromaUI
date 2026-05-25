@@ -358,6 +358,21 @@ extern "C"
     extern void aroma_ui_destroy_window_impl(AromaWindow *window);
 
     /**
+     * @brief Set offscreen rendering mode before creating window.
+     * @param offscreen True to enable offscreen rendering.
+     */
+    extern void aroma_ui_set_offscreen_mode(bool offscreen);
+
+    /**
+     * @brief Read pixels from an offscreen window.
+     * @param window Pointer to the window.
+     * @param buffer Pre-allocated buffer to store RGBA pixels.
+     * @param width Width of the window.
+     * @param height Height of the window.
+     */
+    extern void aroma_ui_read_pixels(AromaWindow *window, void* buffer, int width, int height);
+
+    /**
      * @brief Destroy a window and free resources.
      * @param window Pointer to the window to destroy.
      */

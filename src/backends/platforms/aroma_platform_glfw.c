@@ -172,10 +172,27 @@ static int initialize()
 
     return 1;
 }
+static bool g_offscreen_mode = false;
+
+static void set_offscreen_mode(bool offscreen) {
+    g_offscreen_mode = offscreen;
+}
+
+static void read_pixels(size_t window_id, void* buffer, int width, int height) {
+    (void)window_id;
+    /* OpenGL ES 3.0 glReadPixels */
+    extern void glReadPixels(int x, int y, int width, int height, unsigned int format, unsigned int type, void *pixels);
+    glReadPixels(0, 0, width, height, 0x1908 /*GL_RGBA*/, 0x1401 /*GL_UNSIGNED_BYTE*/, buffer);
+}
+
 
 static size_t create_window(const char *title, int x, int y, int width, int height)
 {
     (void)x; (void)y; 
+
+    if (g_offscreen_mode) {
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    }
 
     GLFWwindow *window = glfwCreateWindow(width, height, title, NULL, NULL);
     if (!window)
@@ -333,6 +350,8 @@ AromaPlatformInterface aroma_platform_glfw = {
 
     .get_native_window_ptr = glfw_get_native_window_ptr,
     .get_native_display_ptr = glfw_get_display,
+    .set_offscreen_mode = set_offscreen_mode,
+    .read_pixels = read_pixels,
 };
 
 #endif
