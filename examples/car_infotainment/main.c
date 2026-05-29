@@ -111,8 +111,8 @@ int main(int argc, char **argv)
     cleanup_fonts();
     aroma_ui_shutdown();
     cleanup_app_state();
-    // telemetry bridge cleanup
-    telemetry_bridge_cleanup(&telemetry_bridge);
+
+    telemetry_bridge_close(&telemetry_bridge);
 
     return EXIT_SUCCESS;
 }
