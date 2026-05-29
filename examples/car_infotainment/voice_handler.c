@@ -202,14 +202,9 @@ void process_voice_commands(void)
             }
         }
         
-        if (state.map_node && safe_node_check((const AromaNode *)state.map_node, "map_node")) {
-            aroma_map_set_zoom(state.map_node, 10);
-            aroma_map_pan_to(state.map_node, lat, lon);
-        }
+
         
-        extern void open_map_panel(void*);
-        open_map_panel(NULL);
-        state.voice_nav_trigger = false;
+     
     }
 
     

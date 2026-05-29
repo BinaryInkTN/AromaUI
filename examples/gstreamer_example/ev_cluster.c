@@ -350,8 +350,8 @@ void update_cluster() {
 
 int main() {
    
-       aroma_ui_set_offscreen_mode(true);
-    aroma_ui_set_use_surfaceless(true);
+ //      aroma_ui_set_offscreen_mode(true);
+  //  aroma_ui_set_use_surfaceless(true);
     aroma_ui_init();
     aroma_animation_manager_init();
 
@@ -387,20 +387,19 @@ int main() {
     tc.tire_rr = 42;
     tc.nav_active = false;
     tc.notif_active = false;
-
-    int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
+/*    int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
     ftruncate(shm_fd, WIDTH * HEIGHT * BPP);
     void* shm_pixels = mmap(0, WIDTH * HEIGHT * BPP, PROT_WRITE, MAP_SHARED, shm_fd, 0);
 
     int ev_shm_fd = shm_open("/aroma_events_shm", O_CREAT | O_RDWR, 0666);
     ftruncate(ev_shm_fd, sizeof(SharedEvents));
     SharedEvents* shm_events = mmap(0, sizeof(SharedEvents), PROT_READ | PROT_WRITE, MAP_SHARED, ev_shm_fd, 0);
+*/
 
     int last_x = -1, last_y = -1;
 
     while (aroma_ui_is_running()) {
-
-        int current_x = shm_events->mouse_x;
+        /*int current_x = shm_events->mouse_x;
         int current_y = shm_events->mouse_y;
         int current_click = shm_events->click;
 
@@ -422,21 +421,22 @@ int main() {
             last_y = current_y;
             shm_events->click = 0;
         }
-
+*/
+        
 
         aroma_ui_process_events();
         aroma_ui_render(tc.window);
-        aroma_ui_read_pixels(tc.window, shm_pixels, WIDTH, HEIGHT);
+        //aroma_ui_read_pixels(tc.window, shm_pixels, WIDTH, HEIGHT);
         usleep(25000);
     }
-
-    munmap(shm_pixels, WIDTH * HEIGHT * BPP);
+/*   munmap(shm_pixels, WIDTH * HEIGHT * BPP);
     close(shm_fd);
     shm_unlink(SHM_NAME);
     munmap(shm_events, sizeof(SharedEvents));
     close(ev_shm_fd);
     shm_unlink("/aroma_events_shm");
-
+*/
+ 
     aroma_ui_destroy_window(tc.window);
     aroma_ui_shutdown();
     return 0;

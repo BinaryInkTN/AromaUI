@@ -1,7 +1,6 @@
 #include "vehicle_view.h"
 #include "app_state.h"
 #include "aroma_animation.h"
-#include "map_panel.h"
 #include <stdio.h>
 
 static void ac_temp_up_callback(void *user_data)
@@ -131,8 +130,11 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(lbl_n, Z_LAYER_VEHICLE_OVERLAYS + 5);
     aroma_node_set_z_index(lbl_d, Z_LAYER_VEHICLE_OVERLAYS + 5);
 
+    char speed_buf[16];
+    snprintf(speed_buf, sizeof(speed_buf), "%d", state.vehicle_state.speed);
+
     state.speed_label = aroma_ui_label(
-        state.vehicle_view_root, "0",
+        state.vehicle_view_root, speed_buf,
         140, 215, LABEL_STYLE_LABEL_LARGE, state.clock_font);
     aroma_node_set_z_index(state.speed_label, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
@@ -281,92 +283,21 @@ void build_vehicle_view(AromaNode *window)
                                            0, 0, 28, 28);
     aroma_node_set_z_index(brake_icon, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
-    state.ac_card = aroma_ui_card((AromaNode *)state.window, 30, WIN_H - 200, 220, 120, CARD_TYPE_FILLED);
-    aroma_node_set_z_index(state.ac_card, Z_LAYER_MAP_PANEL + 10);
+    AromaNode* bottom_bar = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 - 150, WIN_H - 80, 300, 120, CARD_TYPE_GLASS);
+   // transparent macos like card
+        aroma_card_set_colors(bottom_bar, 0x80FFFFFF, 0x80FFFFFF);
+        aroma_node_set_z_index(bottom_bar, Z_LAYER_VEHICLE_OVERLAYS + 1);
+    
+    AromaNode *climate_iconbutton = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_AC_UNIT, 20, 20, 40, ICON_BUTTON_TONAL, NULL, NULL, state.icon_font);
+    aroma_node_set_z_index(climate_iconbutton, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    AromaNode *music_iconbutton = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_MUSIC_NOTE, 70, 20, 40, ICON_BUTTON_TONAL, NULL, NULL, state.icon_font);
+    aroma_node_set_z_index(music_iconbutton, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
-    AromaNode *ac_label = aroma_ui_label(state.ac_card, "Climate", 15, 12, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(ac_label, Z_LAYER_MAP_PANEL + 11);
+    AromaNode *nav_iconbutton = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_NAVIGATION, 120, 20, 40, ICON_BUTTON_TONAL, NULL, NULL, state.icon_font);
+    aroma_node_set_z_index(nav_iconbutton, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
-    state.ac_temp_label = aroma_ui_label(state.ac_card, "23°C", 75, 45, LABEL_STYLE_LABEL_LARGE, state.ac_font);
-    aroma_node_set_z_index(state.ac_temp_label, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *ac_temp_down_button = aroma_ui_iconbutton(
-        state.ac_card, AROMA_ICON_REMOVE, 15, 55, 40,
-        ICON_BUTTON_FILLED, ac_temp_down_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(ac_temp_down_button, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *ac_temp_up_button = aroma_ui_iconbutton(
-        state.ac_card, AROMA_ICON_ADD, 165, 55, 40,
-        ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(ac_temp_up_button, Z_LAYER_MAP_PANEL + 11);
-
-    state.music_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 - 225, WIN_H - 200, 450, 120, CARD_TYPE_FILLED);
-    aroma_node_set_z_index(state.music_card, Z_LAYER_MAP_PANEL + 10);
-
-    AromaNode *music_divider = aroma_ui_divider(state.music_card, 0, 60, 450, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(music_divider, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *music_label = aroma_ui_label(state.music_card, "Kendrick Lamar - HUMBLE.", 20, 18, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(music_label, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *music_row = aroma_ui_container(
-        state.music_card, 110, 70, 410, 40,
-        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW, AROMA_JUSTIFY_START, AROMA_ALIGN_CENTER);
-    aroma_node_set_z_index(music_row, Z_LAYER_MAP_PANEL + 11);
-    aroma_node_set_gap(music_row, 80);
-
-    AromaNode *m_prev = aroma_ui_icon(music_row, AROMA_ICON_SKIP_PREVIOUS, 0, 0, 40,
-                                      aroma_color_blend(state.theme.colors.primary, state.theme.colors.surface, 0.5), state.icon_font);
-    aroma_node_set_z_index(m_prev, Z_LAYER_MAP_PANEL + 12);
-
-    AromaNode *m_play = aroma_ui_icon(music_row, AROMA_ICON_PLAY_ARROW, 0, 0, 40, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(m_play, Z_LAYER_MAP_PANEL + 12);
-
-    AromaNode *m_next = aroma_ui_icon(music_row, AROMA_ICON_SKIP_NEXT, 0, 0, 40,
-                                      aroma_color_blend(state.theme.colors.primary, state.theme.colors.surface, 0.5), state.icon_font);
-    aroma_node_set_z_index(m_next, Z_LAYER_MAP_PANEL + 12);
-
-    state.nav_card = aroma_ui_card((AromaNode *)state.window, WIN_W / 2 + 250, WIN_H - 200, 300, 120, CARD_TYPE_FILLED);
-    aroma_node_set_z_index(state.nav_card, Z_LAYER_MAP_PANEL + 10);
-
-    AromaNode *nav_divider_h = aroma_ui_divider(state.nav_card, 0, 60, 300, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(nav_divider_h, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *nav_divider_v = aroma_ui_divider(state.nav_card, 150, 60, 60, DIVIDER_ORIENTATION_VERTICAL);
-    aroma_node_set_z_index(nav_divider_v, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *nav_label = aroma_ui_label(state.nav_card, "Navigate", 20, 15, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(nav_label, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *nav_map_icon = aroma_ui_icon(state.nav_card, AROMA_ICON_MAP, 260, 20, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(nav_map_icon, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *nav_home_label = aroma_ui_label(state.nav_card, "Home", 20, 75, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(nav_home_label, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *nav_work_label = aroma_ui_label(state.nav_card, "Work", 170, 75, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(nav_work_label, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *nav_home_icon = aroma_ui_icon(state.nav_card, AROMA_ICON_HOME, 120, 80, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(nav_home_icon, Z_LAYER_MAP_PANEL + 11);
-
-    AromaNode *nav_work_icon = aroma_ui_icon(state.nav_card, AROMA_ICON_WORK, 270, 80, 24, state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(nav_work_icon, Z_LAYER_MAP_PANEL + 11);
-
-    AromaAnimation *a1 = aroma_animation_start(state.music_card, AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 2000);
-    AromaAnimation *a2 = aroma_animation_start(state.nav_card, AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 2000);
-    AromaAnimation *a3 = aroma_animation_start(state.ac_card, AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 2000);
-    aroma_animation_set_easing(a1, AROMA_EASE_OUT_ELASTIC);
-    aroma_animation_set_easing(a2, AROMA_EASE_OUT_ELASTIC);
-    aroma_animation_set_easing(a3, AROMA_EASE_OUT_ELASTIC);
-
-    state.vehicle_view_side_arrow_icon_button = aroma_ui_iconbutton(
-        state.vehicle_view_root, AROMA_ICON_MAP,
-        WIN_W - 80, WIN_H / 2 - 25, 50,
-        ICON_BUTTON_FILLED, open_map_panel, NULL, state.icon_font);
-    aroma_node_set_z_index(state.vehicle_view_side_arrow_icon_button, Z_LAYER_MAP_BUTTON);
-
-    aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
+    
+        aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);

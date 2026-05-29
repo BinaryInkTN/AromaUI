@@ -28,7 +28,6 @@ add_executable(infotainment
        theme_manager.c 
        font_manager.c 
        ui_animation_utils.c 
-       map_panel.c 
        vehicle_view.c 
        settings_ui.c 
        easter_egg.c 

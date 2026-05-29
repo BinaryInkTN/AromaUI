@@ -9,12 +9,12 @@
 #include "status_bar.h"
 #include "vehicle_view.h"
 #include "settings_ui.h"
-#include "map_panel.h"
 #include "easter_egg.h"
 #include "tabs_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include "shared_memory_bridge.h"
 
 int main(int argc, char **argv)
 {
@@ -64,6 +64,17 @@ int main(int argc, char **argv)
     aroma_event_set_root((AromaNode *)state.window);
     aroma_ui_prepare_font_for_window(0, state.ui_font);
 
+    // shared memory bridge initialization
+    telemetry_bridge_t telemetry_bridge;
+    if (!telemetry_bridge_init(&telemetry_bridge))
+    {
+        fprintf(stderr, "FATAL: Failed to initialize telemetry bridge\n");
+        aroma_ui_shutdown();
+        cleanup_app_state();
+        return EXIT_FAILURE;
+    }
+    // Initial Speed
+    state.vehicle_state.speed = telemetry_speed_kmh(&telemetry_bridge.shm->frame);
     build_status_bar();
     build_voice_status_ui();
     build_vehicle_view((AromaNode *)state.window);
@@ -100,6 +111,8 @@ int main(int argc, char **argv)
     cleanup_fonts();
     aroma_ui_shutdown();
     cleanup_app_state();
+    // telemetry bridge cleanup
+    telemetry_bridge_cleanup(&telemetry_bridge);
 
     return EXIT_SUCCESS;
 }

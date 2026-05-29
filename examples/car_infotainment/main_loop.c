@@ -160,36 +160,9 @@ static void update_vehicle_display(void)
                 aroma_animation_start(state.vehicle_view_warning_message_card,
                                      AROMA_ANIM_SLIDE_Y, WIN_H + 100, WIN_H - 120, 400);
                 
-                if (state.ac_card) {
-                    aroma_animation_start(state.ac_card, 
-                                         AROMA_ANIM_SLIDE_Y, WIN_H - 200, WIN_H + 120, 400);
-                }
-                if (state.music_card) {
-                    aroma_animation_start(state.music_card, 
-                                         AROMA_ANIM_SLIDE_Y, WIN_H - 200, WIN_H + 120, 400);
-                }
-                if (state.nav_card) {
-                    aroma_animation_start(state.nav_card, 
-                                         AROMA_ANIM_SLIDE_Y, WIN_H - 200, WIN_H + 120, 400);
-                }
+        
             }
-        } else if (fault == 0 && last_fault != 0) {
-            aroma_animation_start(state.vehicle_view_warning_message_card,
-                                 AROMA_ANIM_SLIDE_Y, WIN_H - 120, WIN_H + 100, 400);
-            
-            if (state.ac_card) {
-                aroma_animation_start(state.ac_card, 
-                                     AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 400);
-            }
-            if (state.music_card) {
-                aroma_animation_start(state.music_card, 
-                                     AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 400);
-            }
-            if (state.nav_card) {
-                aroma_animation_start(state.nav_card, 
-                                     AROMA_ANIM_SLIDE_Y, WIN_H + 120, WIN_H - 200, 400);
-            }
-        }
+        } 
         
         last_fault = fault;
     }
@@ -229,17 +202,8 @@ void main_loop(void)
             last_time_update = now;
         }
 
-        int do_map_open = 0;
-        if (pthread_mutex_lock(&state.pending_mtx) == 0) {
-            do_map_open = state.pending_map_open;
-            state.pending_map_open = 0;
-            pthread_mutex_unlock(&state.pending_mtx);
-        }
-        
-        if (do_map_open) {
-            extern void open_map_panel(void*);
-            open_map_panel(NULL);
-        }
+    
+
 
         process_voice_commands();
         update_vehicle_display();
