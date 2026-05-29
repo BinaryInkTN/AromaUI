@@ -174,6 +174,24 @@ static inline void telemetry_bridge_close(telemetry_bridge_t *bridge)
     }
 }
 
+/*
+ * telemetry_bridge_read()
+ * -----------------------
+ * Seqlock reader.  Corrections vs. original:
+ *
+ * 1. Odd-seq spin no longer burns a retry count.  Retries only increment
+ *    when we complete a full copy but find seq0 != seq1 (genuine torn read).
+ *
+ * 2. Removed the redundant acquire fences around memcpy.  The acquire load
+ *    of seq0 already prevents the compiler/CPU from hoisting the memcpy
+ *    before the seq0 load.  A single acquire fence after the copy ensures
+ *    the seq1 re-read is not speculated before the copy completes.
+ *
+ * Returns:
+ *   1   – clean read, *out is valid
+ *   0   – bad arguments / NULL pointers
+ *  -1   – max_retries torn reads exceeded
+ */
 static inline int telemetry_bridge_read(telemetry_bridge_t *bridge,
                                         telemetry_frame_t  *out,
                                         unsigned            max_retries)
@@ -187,19 +205,31 @@ static inline int telemetry_bridge_read(telemetry_bridge_t *bridge,
 
     do
     {
-        if (retries++ >= max_retries)
-            return -1;
+        /* Wait out any in-progress write without consuming a retry. */
+        do
+        {
+            seq0 = atomic_load_explicit(&bridge->shm->seq_write,
+                                        memory_order_acquire);
+        } while (seq0 & 1u);
 
-        seq0 = atomic_load_explicit(&bridge->shm->seq_write, memory_order_acquire);
-
-        if (seq0 & 1u)
-            continue;
-
-        atomic_thread_fence(memory_order_acquire);
+        /* Copy the frame.  seq0 is even so the writer is idle here. */
         memcpy(out, &bridge->shm->frame, sizeof(*out));
+
+        /*
+         * Acquire fence: prevent seq1 load from being speculated above
+         * the memcpy on out-of-order CPUs (e.g. ARM).
+         */
         atomic_thread_fence(memory_order_acquire);
 
-        seq1 = atomic_load_explicit(&bridge->shm->seq_write, memory_order_acquire);
+        seq1 = atomic_load_explicit(&bridge->shm->seq_write,
+                                    memory_order_acquire);
+
+        /* Count only genuine torn reads (writer updated mid-copy). */
+        if (seq0 != seq1)
+        {
+            if (++retries >= max_retries)
+                return -1;
+        }
 
     } while (seq0 != seq1);
 

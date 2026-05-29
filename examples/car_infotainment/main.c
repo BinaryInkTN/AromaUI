@@ -64,11 +64,24 @@ int main(int argc, char **argv)
     aroma_event_set_root((AromaNode *)state.window);
     aroma_ui_prepare_font_for_window(0, state.ui_font);
 
-    // shared memory bridge initialization
+        // shared memory bridge initialization
     telemetry_bridge_t telemetry_bridge;
-    telemetry_bridge_open(&telemetry_bridge);
-    // Initial Speed
-    state.vehicle_state.speed = telemetry_speed_kmh(&telemetry_bridge.shm->frame);
+
+    if (!telemetry_bridge_open(&telemetry_bridge))
+    {
+        fprintf(stderr, "WARN: telemetry bridge unavailable, speed defaulting to 0\n");
+        state.vehicle_state.speed = 0.0f;
+    }
+    else
+    {
+        telemetry_frame_t frame;
+        int result = telemetry_bridge_read(&telemetry_bridge, &frame,
+                                        TELEMETRY_READ_MAX_RETRIES);
+        if (result == 1)
+            state.vehicle_state.speed = telemetry_speed_kmh(&frame);
+        else
+            state.vehicle_state.speed = 0.0f;
+    }
     build_status_bar();
     build_voice_status_ui();
     build_vehicle_view((AromaNode *)state.window);
