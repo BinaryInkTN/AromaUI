@@ -66,13 +66,7 @@ int main(int argc, char **argv)
 
     // shared memory bridge initialization
     telemetry_bridge_t telemetry_bridge;
-    if (!telemetry_bridge_init(&telemetry_bridge))
-    {
-        fprintf(stderr, "FATAL: Failed to initialize telemetry bridge\n");
-        aroma_ui_shutdown();
-        cleanup_app_state();
-        return EXIT_FAILURE;
-    }
+    telemetry_bridge_open(&telemetry_bridge);
     // Initial Speed
     state.vehicle_state.speed = telemetry_speed_kmh(&telemetry_bridge.shm->frame);
     build_status_bar();
