@@ -11,6 +11,7 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
 #endif
+#include "telemetry_shm.h"
 
 static const char* get_fault_message(uint32_t fault)
 {
@@ -172,7 +173,7 @@ void main_loop(telemetry_bridge_t *telemetry_bridge)
 {
     char speed_buffer[16];
     uint64_t last_time_update = aroma_time_now_ms();
-              telemetry_frame_t frame;
+    struct telemetry_frame frame;
 
     
     if (state.vehicle_view_large_clock) {

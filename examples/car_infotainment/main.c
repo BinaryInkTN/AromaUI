@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        telemetry_frame_t frame;
+        struct telemetry_frame frame;
         int result = telemetry_bridge_read(&telemetry_bridge, &frame,
                                         TELEMETRY_READ_MAX_RETRIES);
         if (result == 1)
