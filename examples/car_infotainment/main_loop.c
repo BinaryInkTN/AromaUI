@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "main_loop.h"
 #include "app_state.h"
 #include "voice_handler.h"
@@ -5,9 +7,7 @@
 #include "aroma_animation.h"
 #include <time.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
-
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
 #endif
@@ -168,10 +168,12 @@ static void update_vehicle_display(void)
     }
 }
 
-void main_loop(void)
+void main_loop(telemetry_bridge_t *telemetry_bridge)
 {
+    char speed_buffer[16];
     uint64_t last_time_update = aroma_time_now_ms();
-    
+              telemetry_frame_t frame;
+
     
     if (state.vehicle_view_large_clock) {
         time_t rawtime;
@@ -184,11 +186,11 @@ void main_loop(void)
             update_label_safe(state.vehicle_view_large_clock, clock_str);
         }
     }
-
+       
+      
     while (aroma_ui_is_running())
     {
         uint64_t now = aroma_time_now_ms();
-
         if (now - last_time_update > 30000) {
             time_t rawtime;
             struct tm *timeinfo;
@@ -200,11 +202,17 @@ void main_loop(void)
                 update_label_safe(state.vehicle_view_large_clock, clock_str);
             }
             last_time_update = now;
+
+            
         }
-
-    
-
-
+        int result = telemetry_bridge_read(telemetry_bridge, &frame,
+                                        TELEMETRY_READ_MAX_RETRIES);
+        if (result == 1)
+            state.vehicle_state.speed = telemetry_speed_kmh(&frame);
+        else
+            state.vehicle_state.speed = 0.0f;
+        snprintf(speed_buffer, sizeof(speed_buffer), "%.0f km/h", state.vehicle_state.speed);
+        aroma_label_set_text(state.speed_label, speed_buffer);
         process_voice_commands();
         update_vehicle_display();
         aroma_ui_process_events();

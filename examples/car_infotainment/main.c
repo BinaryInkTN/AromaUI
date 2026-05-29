@@ -109,7 +109,7 @@ int main(int argc, char **argv)
     start_can_thread();
 #endif
 
-    main_loop();
+    main_loop(&telemetry_bridge);
 
 #ifndef __EMSCRIPTEN__
     stop_can_thread();
