@@ -62,7 +62,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 
-#define TELEMETRY_SHM_NAME          "/telemetry_shm"
+#define TELEMETRY_SHM_NAME          "/telemetry"
 #define TELEMETRY_READ_MAX_RETRIES  100000u
 
 #define FLAG_READY_TO_DRIVE         (1u << 0)
