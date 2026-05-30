@@ -212,7 +212,7 @@ void main_loop(telemetry_bridge_t *telemetry_bridge)
             state.vehicle_state.speed = telemetry_speed_kmh(&frame);
         else
             state.vehicle_state.speed = 0.0f;
-        snprintf(speed_buffer, sizeof(speed_buffer), "%.0f km/h", state.vehicle_state.speed);
+        snprintf(speed_buffer, sizeof(speed_buffer), "%.0f", state.vehicle_state.speed);
         aroma_label_set_text(state.speed_label, speed_buffer);
         process_voice_commands();
        // update_vehicle_display();
