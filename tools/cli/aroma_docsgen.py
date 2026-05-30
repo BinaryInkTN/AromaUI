@@ -2628,9 +2628,9 @@ window.addEventListener('hashchange', () => {{
                 f"<div class='sec-items' id='si-{cid}'>"
             )
 
-            sb.append(
-                f"<div class='nav-all' onclick=\"showCategory('{cname}')\">Overview</div>"
-            )
+            #sb.append(
+            #    f"<div class='nav-all' onclick=\"showCategory('{cname}')\">Overview</div>"
+            #)
 
             for page in csects.get("", []):
                 sb.append(
@@ -2649,9 +2649,9 @@ window.addEventListener('hashchange', () => {{
                     f"</div>"
                     f"<div class='sub-items' id='ssi-{sub_id}'>"
                 )
-                sb.append(
-                    f"<div class='nav-all sub' onclick=\"showSubcategory('{cname}', '{sub_name}')\">Overview</div>"
-                )
+                # sb.append(
+                #     f"<div class='nav-all sub' onclick=\"showSubcategory('{cname}', '{sub_name}')\">Overview</div>"
+                # )
                 for page in sub_items:
                     sb.append(
                         f"<div class='nav-dest sub' data-page='{page['id']}' onclick=\"showPage('{page['id']}', '{cname}', '{sub_name}')\">"

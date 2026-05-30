@@ -1,18 +1,3 @@
-# Architecture Overview
-Relevant source files
-- [docs-config.json](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs-config.json)
-- [docs/docs.pdf](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/docs.pdf)
-- [docs/index.html](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/index.html)
-- [examples/gstreamer_example/ev_cluster.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c)
-- [include/aroma_ui.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h)
-- [include/widgets/aroma_window.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_window.h)
-- [src/backends/aroma_abi.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.c)
-- [src/backends/aroma_abi.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.h)
-- [src/backends/platforms/aroma_platform_glfw.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c)
-- [src/backends/platforms/aroma_platform_interface.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h)
-- [src/core/aroma_ui_impl.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c)
-- [src/widgets/aroma_window.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_window.c)
-- [tools/cli/aroma_docsgen.py](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/aroma_docsgen.py)
 
 AromaUI is built on a strict four-layer architecture designed to provide native performance while maintaining high portability across desktop (Linux), mobile (Android), and resource-constrained embedded systems (ESP32/TFT). The framework enforces a clear separation between application logic, UI state management, platform services, and hardware-accelerated rendering.
 

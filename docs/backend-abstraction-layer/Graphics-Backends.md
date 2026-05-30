@@ -1,24 +1,3 @@
-# Graphics Backends
-Relevant source files
-- [examples/car_infotainment/assets/Ubuntu-Light.ttf](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/assets/Ubuntu-Light.ttf)
-- [include/aroma_drawlist.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_drawlist.h)
-- [include/widgets/aroma_card.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_card.h)
-- [include/widgets/aroma_image.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_image.h)
-- [src/backends/graphics/aroma_graphics_gles3.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_gles3.c)
-- [src/backends/graphics/aroma_graphics_interface.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_interface.h)
-- [src/backends/graphics/aroma_graphics_tft_espi.cpp](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_tft_espi.cpp)
-- [src/backends/graphics/aroma_graphics_vulkan.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_vulkan.c)
-- [src/backends/graphics/utils/aroma_gles3_text.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/aroma_gles3_text.h)
-- [src/backends/graphics/utils/aroma_vulkan_text.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/aroma_vulkan_text.c)
-- [src/backends/graphics/utils/helpers_gles3.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/helpers_gles3.c)
-- [src/backends/graphics/utils/helpers_vulkan.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/helpers_vulkan.h)
-- [src/backends/graphics/utils/linmath.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/linmath.h)
-- [src/backends/graphics/utils/nanosvg.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/nanosvg.h)
-- [src/backends/graphics/utils/nanosvgrast.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/nanosvgrast.h)
-- [src/backends/platforms/aroma_platform_tft_espi.cpp](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_tft_espi.cpp)
-- [src/core/aroma_drawlist.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_drawlist.c)
-- [src/widgets/aroma_card.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_card.c)
-- [tools/cli/templates/app/main.c.tpl](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/app/main.c.tpl)
 
 The Graphics Backend subsystem in AromaUI provides a hardware-agnostic interface for rendering primitives, text, and images. It is managed by the **Backend Abstraction Layer (ABI)**, which routes high-level draw commands to one of three specialized implementations: **GLES3**, **Vulkan**, or **TFT_eSPI**.
 

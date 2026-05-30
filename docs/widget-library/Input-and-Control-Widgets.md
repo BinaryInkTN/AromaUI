@@ -1,25 +1,3 @@
-# Input and Control Widgets
-Relevant source files
-- [examples/map_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt)
-- [examples/smartwatch_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/CMakeLists.txt)
-- [include/widgets/aroma_button.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_button.h)
-- [include/widgets/aroma_canvas.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_canvas.h)
-- [include/widgets/aroma_checkbox.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_checkbox.h)
-- [include/widgets/aroma_dropdown.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_dropdown.h)
-- [include/widgets/aroma_fab.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_fab.h)
-- [include/widgets/aroma_slider.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_slider.h)
-- [include/widgets/aroma_switch.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_switch.h)
-- [include/widgets/aroma_textbox.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_textbox.h)
-- [src/widgets/aroma_button.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c)
-- [src/widgets/aroma_canvas.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_canvas.c)
-- [src/widgets/aroma_checkbox.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_checkbox.c)
-- [src/widgets/aroma_chip.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_chip.c)
-- [src/widgets/aroma_fab.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_fab.c)
-- [src/widgets/aroma_menu.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_menu.c)
-- [src/widgets/aroma_radiobutton.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_radiobutton.c)
-- [src/widgets/aroma_slider.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_slider.c)
-- [src/widgets/aroma_switch.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_switch.c)
-- [src/widgets/aroma_textbox.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c)
 
 Input and control widgets form the interactive layer of AromaUI, allowing users to manipulate data and trigger application logic. These widgets are implemented as specialized `AromaNode` objects where the `node_widget_ptr` links to a widget-specific data structure [src/widgets/aroma_button.c85](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L85-L85)
 

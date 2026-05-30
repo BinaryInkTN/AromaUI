@@ -1,29 +1,3 @@
-# Smartwatch and Other Examples
-Relevant source files
-- [docs/ui/widgets.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/widgets.md?plain=1)
-- [docs/website/index.html](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/index.html)
-- [docs/website/smartwatch.html](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/smartwatch.html)
-- [docs/website/smartwatch_example.js](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/smartwatch_example.js)
-- [docs/website/smartwatch_example.wasm](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/smartwatch_example.wasm)
-- [examples/gstreamer_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/CMakeLists.txt)
-- [examples/gstreamer_example/display.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/display.c)
-- [examples/gstreamer_example/ev_cluster.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c)
-- [examples/map_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt)
-- [examples/map_example/main.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/main.c)
-- [examples/smartwatch_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/CMakeLists.txt)
-- [examples/smartwatch_example/main.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/main.c)
-- [include/aroma_ui.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h)
-- [include/aroma_widgets.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_widgets.h)
-- [include/widgets/aroma_gif.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_gif.h)
-- [include/widgets/aroma_iconbutton.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_iconbutton.h)
-- [include/widgets/aroma_loading.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_loading.h)
-- [src/backends/platforms/aroma_platform_glfw.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c)
-- [src/backends/platforms/aroma_platform_interface.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h)
-- [src/core/aroma_ui_impl.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c)
-- [src/widgets/aroma_chip.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_chip.c)
-- [src/widgets/aroma_fab.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_fab.c)
-- [src/widgets/aroma_iconbutton.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_iconbutton.c)
-- [src/widgets/aroma_menu.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_menu.c)
 
 This page documents specialized reference applications and integration examples within the AromaUI ecosystem. These examples demonstrate the framework's versatility across WebAssembly (WASM), headless rendering for multimedia pipelines (GStreamer), and complex widget integrations like the Map system.
 

@@ -1,26 +1,3 @@
-# Layout and Navigation Widgets
-Relevant source files
-- [examples/map_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt)
-- [examples/smartwatch_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/CMakeLists.txt)
-- [include/aroma_animation.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_animation.h)
-- [include/aroma_node.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h)
-- [include/widgets/aroma_chip.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_chip.h)
-- [include/widgets/aroma_container.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_container.h)
-- [include/widgets/aroma_listview.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_listview.h)
-- [include/widgets/aroma_menu.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_menu.h)
-- [include/widgets/aroma_sidebar.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_sidebar.h)
-- [include/widgets/aroma_tabs.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_tabs.h)
-- [src/core/aroma_animation.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_animation.c)
-- [src/core/aroma_layout.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_layout.c)
-- [src/core/aroma_node.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_node.c)
-- [src/widgets/aroma_chip.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_chip.c)
-- [src/widgets/aroma_container.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_container.c)
-- [src/widgets/aroma_fab.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_fab.c)
-- [src/widgets/aroma_listview.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c)
-- [src/widgets/aroma_menu.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_menu.c)
-- [src/widgets/aroma_sidebar.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_sidebar.c)
-- [src/widgets/aroma_table.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_table.c)
-- [src/widgets/aroma_tabs.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_tabs.c)
 
 This page documents the structural and navigational components of AromaUI. These widgets manage the arrangement of child nodes, handle complex scrolling physics, and provide high-level UI patterns like tabbed interfaces, sidebars, and hierarchical lists.
 

@@ -1,23 +1,3 @@
-# Voice Control System
-Relevant source files
-- [docs/ui/animations.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/animations.md?plain=1)
-- [examples/car_infotainment/assets/backroad_dark.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/assets/backroad_dark.png)
-- [examples/car_infotainment/cJSON.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/cJSON.c)
-- [examples/car_infotainment/cJSON.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/cJSON.h)
-- [examples/car_infotainment/main.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/main.c)
-- [examples/car_infotainment/main_loop.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/main_loop.c)
-- [examples/car_infotainment/model/README](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/README)
-- [examples/car_infotainment/model/am/final.mdl](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/am/final.mdl)
-- [examples/car_infotainment/model/conf/mfcc.conf](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/conf/mfcc.conf)
-- [examples/car_infotainment/model/graph/disambig_tid.int](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/graph/disambig_tid.int)
-- [examples/car_infotainment/model/graph/phones/word_boundary.int](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/graph/phones/word_boundary.int)
-- [examples/car_infotainment/model/ivector/final.dubm](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/ivector/final.dubm)
-- [examples/car_infotainment/model/ivector/final.ie](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/ivector/final.ie)
-- [examples/car_infotainment/model/ivector/final.mat](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/model/ivector/final.mat)
-- [examples/car_infotainment/voice_control.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c)
-- [examples/car_infotainment/voice_control.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.h)
-- [examples/car_infotainment/voice_handler.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_handler.c)
-- [examples/car_infotainment/vosk_lib/vosk_api.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vosk_lib/vosk_api.h)
 
 The AromaUI Voice Control System is a high-performance, offline-capable voice assistant integrated into the AromaOS reference application. It leverages the **Vosk** speech recognition engine and **ALSA** for low-latency audio capture on Linux-based systems. The system provides a natural language interface for vehicle functions such as climate control, media playback, navigation, and system settings.
 

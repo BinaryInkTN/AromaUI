@@ -1,0 +1,1749 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
+  <title>AromaUI, Modern C UI framework</title>
+
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --white: #ffffff;
+      --off: #f5f5f7;
+      --smoke: #e8e8ed;
+      --mid: #86868b;
+      --dark: #1d1d1f;
+      --black: #000000;
+      --blue: #0071e3;
+      --blue-h: #0077ed;
+      --r: 20px;
+      --r-sm: 12px;
+      --nav-h: 52px;
+      --w-outer: 420px;
+      --auto-bezel-pad: 8px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--white);
+      color: var(--dark);
+      overflow-x: hidden;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+      line-height: 1;
+      font-size: inherit;
+    }
+
+    nav {
+      position: fixed;
+      inset: 0 0 auto;
+      height: var(--nav-h);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-logo {
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .nav-logo svg {
+      display: block;
+    }
+
+    .nav-center {
+      display: flex;
+      align-items: center;
+      gap: 2.2rem;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    a {
+      text-decoration: none !important;
+    }
+
+    .nav-center a {
+      font-size: 0.78rem;
+      color: rgba(0, 0, 0, 0.65);
+      text-decoration: none;
+      letter-spacing: 0.005em;
+      transition: color 0.2s;
+    }
+
+    .nav-center a:hover {
+      color: var(--dark);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .nav-pill {
+      font-size: 0.76rem;
+      font-weight: 400;
+      color: var(--blue);
+      text-decoration: none;
+      padding: 0.3rem 0.9rem;
+      border: 0.5px solid rgba(0, 113, 227, 0.5);
+      border-radius: 40px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .nav-pill:hover {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    .hero {
+      min-height: 100svh;
+      padding-top: var(--nav-h);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle,
+          rgba(0, 113, 227, 0.08) 0%,
+          rgba(0, 113, 227, 0.02) 45%,
+          transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+
+
+    .hero-title {
+      font-size: clamp(3rem, 7vw, 6.5rem);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.04;
+      text-align: center;
+      max-width: 900px;
+      color: var(--dark);
+      opacity: 0;
+      animation: up 0.7s 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .hero-title .thin {
+      font-weight: 300;
+      color: rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-sub {
+      margin-top: 1.4rem;
+      font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+      font-weight: 300;
+      color: rgba(0, 0, 0, 0.55);
+      text-align: center;
+      max-width: 520px;
+      line-height: 1.6;
+      opacity: 0;
+      animation: up 0.7s 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+#canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 36px;
+  position: relative;
+  z-index: 5;
+}
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      opacity: 0;
+      animation: up 0.7s 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .btn-fill {
+      background: var(--blue);
+      color: var(--white);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 400;
+      padding: 0.62rem 1.4rem;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.2s, transform 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-fill:hover {
+      background: var(--blue-h);
+      transform: scale(1.015);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--blue);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 400;
+      padding: 0.62rem 1.4rem;
+      border: 0.5px solid rgba(0, 113, 227, 0.45);
+      border-radius: 40px;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.2s, color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(0, 113, 227, 0.06);
+    }
+
+    .watch-scene {
+      position: relative;
+      margin-top: 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      animation: up 0.9s 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .band {
+      width: calc(var(--w-outer) * 0.62);
+      height: 56px;
+      background: linear-gradient(to bottom, #e8e8ea, #d1d1d6);
+      border-radius: 8px 8px 0 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .band-bottom {
+      border-radius: 0 0 8px 8px;
+      background: linear-gradient(to top, #e8e8ea, #d1d1d6);
+    }
+
+    .band::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 12px;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.08), 0 16px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    .watch-body {
+      width: var(--w-outer);
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(145deg, #d9d9dc, #b8b8bc);
+      border-radius: 58px;
+      padding: 22px;
+      box-shadow:
+        0 0 0 0.5px rgba(0, 0, 0, 0.15),
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.08) inset,
+        0 30px 80px -20px rgba(0, 0, 0, 0.15),
+        0 0 80px rgba(0, 113, 227, 0.04);
+    }
+
+    .crown {
+      position: absolute;
+      right: -5px;
+      top: 38%;
+      width: 5px;
+      height: 52px;
+      background: linear-gradient(90deg, #c0c0c3, #a8a8ab);
+      border-radius: 0 4px 4px 0;
+      box-shadow: 1px 0 0 rgba(255, 255, 255, 0.4) inset;
+    }
+
+    .crown-btn {
+      position: absolute;
+      right: -5px;
+      top: 58%;
+      width: 5px;
+      height: 32px;
+      background: linear-gradient(90deg, #c0c0c3, #b0b0b3);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .screen-bezel {
+      border-radius: 38px;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+      line-height: 0;
+      box-shadow:
+        inset 0 0 0 0.5px rgba(0, 0, 0, 0.3),
+        inset 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+
+
+.screen-bezel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 38px;
+  background: linear-gradient(160deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 30%,
+      transparent 60%);
+  pointer-events: none;
+  z-index: 10;
+}
+    .watch-label {
+      margin-top: 2.5rem;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(0, 0, 0, 0.35);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .scroll-hint {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3rem;
+      color: rgba(0, 0, 0, 0.3);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      animation: bob 2s ease-in-out infinite;
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
+    }
+
+    section {
+      background: var(--white);
+    }
+
+    .sec-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 7rem 2rem;
+    }
+
+
+    .sec-title {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      color: var(--dark);
+    }
+
+    .sec-title .thin {
+      font-weight: 300;
+      color: rgba(0, 0, 0, 0.4);
+    }
+
+    .sec-body {
+      margin-top: 1.2rem;
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: rgba(0, 0, 0, 0.55);
+      line-height: 1.65;
+      max-width: 500px;
+    }
+
+    hr.rule {
+      border: none;
+      border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto;
+      gap: 2px;
+      margin-top: 4rem;
+      background: rgba(0, 0, 0, 0.06);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .bento-card {
+      background: var(--off);
+      padding: 2.2rem 2rem;
+      position: relative;
+      transition: background 0.3s;
+    }
+
+    .bento-card:hover {
+      background: #eeeeee;
+    }
+
+    .bento-card.wide {
+      grid-column: span 2;
+    }
+
+    .bento-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(0, 113, 227, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.4rem;
+      font-size: 1.35rem;
+      color: var(--blue);
+    }
+
+    .bento-icon .material-symbols-outlined {
+      font-size: 1.3rem;
+      font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .bento-title {
+      font-size: 1.05rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .bento-desc {
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: rgba(0, 0, 0, 0.5);
+      line-height: 1.65;
+    }
+
+    .bento-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 1.2rem;
+      font-size: 0.68rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.4);
+      letter-spacing: 0.06em;
+      border: 0.5px solid rgba(0, 0, 0, 0.12);
+      padding: 0.2rem 0.6rem;
+      border-radius: 40px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .code-win {
+      background: #fafafa;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .code-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.7rem 1rem;
+      background: #f0f0f0;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.07);
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .code-file {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: rgba(0, 0, 0, 0.4);
+      margin-left: 6px;
+    }
+
+    .code-body {
+      padding: 1.6rem 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.76rem;
+      line-height: 1.85;
+      overflow-x: auto;
+      color: rgba(0, 0, 0, 0.75);
+    }
+
+    .t-kw  { color: #d63384; }
+    .t-fn  { color: #0d6efd; }
+    .t-str { color: #c45c2c; }
+    .t-num { color: #8b7500; }
+    .t-cm  { color: rgba(0, 0, 0, 0.3); font-style: italic; }
+    .t-tp  { color: #198754; }
+    .t-ac  { color: rgba(0, 0, 0, 0.9); }
+
+    .chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 3rem;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.5rem 1.1rem;
+      border: 0.5px solid rgba(0, 0, 0, 0.12);
+      border-radius: 40px;
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.6);
+      transition: border-color 0.2s, color 0.2s;
+      cursor: default;
+    }
+
+    .chip:hover {
+      border-color: rgba(0, 113, 227, 0.5);
+      color: var(--dark);
+    }
+
+    .chip .material-symbols-outlined {
+      font-size: 1rem;
+      font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 20;
+      color: rgba(0, 0, 0, 0.35);
+    }
+
+    footer {
+      background: var(--off);
+      border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .footer-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.45);
+      letter-spacing: -0.01em;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.8rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.76rem;
+      color: rgba(0, 0, 0, 0.4);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: rgba(0, 0, 0, 0.8);
+    }
+
+    .footer-copy {
+      font-size: 0.72rem;
+      color: rgba(0, 0, 0, 0.25);
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    @keyframes up {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .watch-editor-container {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .view-toggle {
+      display: flex;
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: 40px;
+      padding: 3px;
+      margin-bottom: 1.5rem;
+      gap: 2px;
+    }
+
+    .view-toggle-btn {
+      padding: 0.45rem 1.1rem;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.5);
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .view-toggle-btn.active {
+      background: var(--white);
+      color: var(--dark);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .view-toggle-btn .material-symbols-outlined {
+      font-size: 1.1rem;
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+    }
+
+    #editor-container {
+      width: 600px;
+      height: 420px;
+      border-radius: var(--r);
+      overflow: hidden;
+      border: 0.5px solid rgba(0, 0, 0, 0.12);
+      box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.15);
+      flex-shrink: 0;
+      display: none;
+    }
+
+    #editor-container.visible {
+      display: block;
+    }
+
+    .editor-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.7rem 1rem;
+      background: #f0f0f0;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.07);
+    }
+
+    .editor-body {
+      height: calc(100% - 36px);
+    }
+
+    .watch-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .auto-scene {
+      margin-top: 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+  
+
+    .dash-surround {
+      background: linear-gradient(180deg, #222225 0%, #1a1a1c 60%, #111113 100%);
+      border-radius: 22px 22px 28px 28px;
+      padding: 14px 28px 28px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 2px 0 rgba(255, 255, 255, 0.04) inset,
+        0 40px 100px -20px rgba(0, 0, 0, 0.45),
+        0 8px 32px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .dash-surround::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 22px 22px 28px 28px;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 3px,
+        rgba(255, 255, 255, 0.012) 3px,
+        rgba(255, 255, 255, 0.012) 4px
+      );
+      pointer-events: none;
+    }
+
+    .trim-bar {
+      height: 10px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 100%);
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 10px;
+    }
+
+    .bezel-accents {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bezel-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .bezel-dot.active {
+      background: #0071e3;
+      box-shadow: 0 0 6px rgba(0, 113, 227, 0.7);
+    }
+
+    .auto-screen-bezel {
+      background: #000;
+      border-radius: 10px;
+      padding: var(--auto-bezel-pad);
+      box-shadow:
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
+        inset 0 2px 8px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auto-screen-bezel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      background: linear-gradient(150deg, rgba(255, 255, 255, 0.05) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 10;
+            overflow: hidden !important;
+
+    }
+
+    .screen-iframe-wrapper {
+      position: relative;
+
+      border-radius: 4px;
+      background: #0b0e14;
+      overflow: hidden !important;
+    }
+
+    .screen-iframe {
+      width: 100%;
+      height: 100%;
+      overflow: hidden !important;
+      background: #0b0e14;
+    }
+
+    .climate-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 8px 0;
+      gap: 8px;
+    }
+
+    .climate-knob {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2a2a2e, #1c1c20);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.4);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .climate-knob::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+    }
+
+    .climate-buttons {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .climate-btn {
+      height: 22px;
+      padding: 0 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: default;
+    }
+
+    .climate-btn.on {
+      background: rgba(0, 113, 227, 0.2);
+      border-color: rgba(0, 113, 227, 0.4);
+      color: #5ca8ff;
+    }
+
+    .auto-screw {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #3a3a3e, #1a1a1c);
+      border: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .auto-screw::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 4px;
+      height: 0.5px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .auto-screw-tl { top: 8px; left: 8px; }
+    .auto-screw-tr { top: 8px; right: 8px; }
+    .auto-screw-bl { bottom: 8px; left: 8px; }
+    .auto-screw-br { bottom: 8px; right: 8px; }
+
+    .auto-label {
+      margin-top: 2rem;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(0, 0, 0, 0.35);
+      font-family: 'DM Mono', monospace;
+      text-align: center;
+    }
+
+    .auto-label a {
+      color: var(--blue);
+    }
+
+    @media (max-width: 860px) {
+      .split { grid-template-columns: 1fr; gap: 2.5rem; }
+      .bento { grid-template-columns: 1fr; }
+      .bento-card.wide { grid-column: span 1; }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .spec-item:nth-child(2) { border-right: none; }
+      .nav-center { display: none; }
+      .climate-btn:nth-child(n+4) { display: none; }
+    }
+
+    @media (max-width: 540px) {
+      :root { --w-outer: 280px; }
+      .specs-grid { grid-template-columns: 1fr 1fr; }
+      .hero-title { font-size: 2.6rem; }
+      .climate-buttons { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <a class="nav-logo" href="#">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="0" y="0" width="10" height="10" rx="2" fill="#1d1d1f" opacity="0.9" />
+        <rect x="12" y="0" width="10" height="10" rx="2" fill="#1d1d1f" opacity="0.25" />
+        <rect x="0" y="12" width="10" height="10" rx="2" fill="#1d1d1f" opacity="0.25" />
+        <rect x="12" y="12" width="10" height="10" rx="2" fill="#1d1d1f" opacity="0.9" />
+      </svg>
+      AromaUI
+    </a>
+
+    <div class="nav-center">
+      <a href="#features">Features</a>
+      <a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples">Examples</a>
+      <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started">Documentation</a>
+    </div>
+
+    <div class="nav-right">
+      <a class="nav-pill" href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started">
+        <span class="material-symbols-outlined" style="font-size:0.85rem">article</span>
+        Get Started
+      </a>
+    </div>
+  </nav>
+
+
+  <section class="hero" style="padding-bottom: 5rem;">
+    <div class="hero-glow"></div>
+
+    <h1 class="hero-title">
+      <br>
+      <span style="font-weight: 100;">Lightweight</span> & <b>Versatile</b>
+    </h1>
+
+    <p class="hero-sub">
+      Build responsive embedded and desktop user interfaces in C. Runs on Web (Emscripten/WebGL),
+      GLFW, Android, ESP32, and Vulkan backends. Includes font rendering, theming, animations,
+      and a rich widget set for automotive and embedded scenarios.
+    </p>
+
+    <div class="hero-actions">
+      <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
+        <button class="btn-fill">
+          <span class="material-symbols-outlined" style="font-size:1rem">menu_book</span>
+          Read the Docs
+        </button>
+      </a>
+      <a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">
+        <button class="btn-ghost">
+          <span class="material-symbols-outlined" style="font-size:1rem">code</span>
+          View on GitHub
+        </button>
+      </a>
+    </div>
+
+    <div class="watch-scene">
+      <div class="view-toggle" id="view-toggle">
+        <button class="view-toggle-btn active" data-view="watch">
+          <span class="material-symbols-outlined">watch</span>
+          Preview
+        </button>
+        <button class="view-toggle-btn" data-view="editor">
+          <span class="material-symbols-outlined">code</span>
+          Code
+        </button>
+      </div>
+
+      <div class="watch-editor-container">
+        <div class="watch-panel" id="watch-panel">
+          <div class="band"></div>
+
+          <div class="watch-body">
+            <div class="crown"></div>
+            <div class="crown-btn"></div>
+
+            <div class="screen-bezel">
+              <iframe  width="400" height="380"  src="smartwatch.html" title="Smartwatch Example"></iframe>
+            </div>
+          </div>
+
+          <div class="band band-bottom"></div>
+
+          <p class="watch-label">Live example: <a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples/smartwatch_example" target="_blank">examples/smartwatch_example</a></p>
+        </div>
+
+        <div id="editor-container">
+          <div class="editor-header">
+            <span class="code-file">smartwatch_example.c</span>
+          </div>
+          <div class="editor-body" id="monaco-editor"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-hint">
+      <span class="material-symbols-outlined" style="font-size:1.1rem">keyboard_arrow_down</span>
+      Scroll to explore
+    </div>
+  </section>
+<hr class="rule">
+
+
+  <section id="automotive" style="background-image: url('dashboard.jpg'); background-position: bottom; background-size: cover; color: #fff !important;">
+    <div class="sec-inner">
+      <div class="reveal">
+        <h2 class="sec-title" style="color: #fafafa;">Infotainment ready.<br><span class="thin" style="color: #ffffff;">Right out of the box.</span></h2>
+        <p class="sec-body" style="color:#fafafa;">
+          AromaUI powers center-console tablets, instrument clusters, and head-unit displays in
+          automotive-grade embedded Linux environments. The same C API, zero porting overhead.
+        </p>
+      </div>
+
+      <div class="auto-scene reveal" style="transition-delay:0.1s">
+        <div class="tablet-mount">
+          <div class="dash-surround">
+
+            <div class="auto-screw auto-screw-tl"></div>
+            <div class="auto-screw auto-screw-tr"></div>
+            <div class="auto-screw auto-screw-bl"></div>
+            <div class="auto-screw auto-screw-br"></div>
+
+            <div class="bezel-accents">
+              <div class="bezel-dot active"></div>
+              <div class="bezel-dot"></div>
+              <div class="bezel-dot"></div>
+            </div>
+
+            <div class="trim-bar"></div>
+
+            <div class="auto-screen-bezel">
+              <div class="screen-iframe-wrapper">
+                <iframe
+                  id="infotainment-iframe"
+                  class="screen-iframe"
+                  src="infotainment.html"
+                  title="AromaUI automotive infotainment live example"
+                  sandbox="allow-scripts allow-same-origin"
+                  loading="lazy"
+                ></iframe>
+              </div>
+            </div>
+
+            <div class="climate-strip">
+              <div class="climate-knob"></div>
+       
+              <div class="climate-knob"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <p class="auto-label">
+          Live example: <a href="https://github.com/BinaryInkTN/AromaUI/tree/main/examples/car_infotainment" target="_blank">examples/car_infotainment</a>
+        </p>
+
+      </div>
+    </div>
+  </section>
+<hr class="rule">
+  <section id="features">
+    <div class="sec-inner">
+      <div class="reveal">
+        <h2 class="sec-title">Designed for the<br><span class="thin">most constrained hardware.</span></h2>
+        <p class="sec-body">Pure C. Works on Espressif and Embedded Linux.</p>
+      </div>
+
+      <div class="bento reveal" style="transition-delay:0.1s">
+
+        <div class="bento-card wide">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">memory</span>
+          </div>
+          <p class="bento-title">Tiny hardware footprint</p>
+          <p class="bento-desc">Runs on desktop, embedded Linux, WebAssembly via Emscripten, Android, and constrained
+            devices, portable C code and multiple backends.</p>
+          <span class="bento-badge">
+            <span class="material-symbols-outlined" style="font-size:0.75rem">check_circle</span>
+            Bare-metal ready
+          </span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">widgets</span>
+          </div>
+          <p class="bento-title">Rich widget library</p>
+          <p class="bento-desc">A broad widget set including buttons, lists, labels, icons, tables, images, maps,
+            textboxes, tabs, dialogs, snackbars, and tooltips, all styleable.</p>
+          <span class="bento-badge">30+ widgets</span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">animation</span>
+          </div>
+          <p class="bento-title">Smooth animations</p>
+          <p class="bento-desc">Built-in animation engine with easing optimized for smooth UI transitions on native and WebGL backends.</p>
+          <span class="bento-badge">60 FPS</span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">touch_app</span>
+          </div>
+          <p class="bento-title">Any input device</p>
+          <p class="bento-desc">Input support for touchscreen, mouse, and keyboard, with scroll containers and
+            gesture-friendly behavior for interactive UIs.</p>
+          <span class="bento-badge">Multi-input</span>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-icon">
+            <span class="material-symbols-outlined">speed</span>
+          </div>
+          <p class="bento-title">Hardware acceleration</p>
+          <p class="bento-desc">Pluggable graphics backends: GLFW, GLPS, Emscripten WebGL, Vulkan, Android canvas, and
+            support for embedded display accelerators.</p>
+          <span class="bento-badge">GPU support</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <hr class="rule">
+
+  <section style="background: var(--off); border-top: 0.5px solid rgba(0,0,0,0.06);">
+    <div class="sec-inner" style="text-align:center; padding: 7rem 2rem;">
+      <div class="reveal">
+        <h2 class="sec-title" style="text-align:center; max-width:600px; margin:0 auto;">
+          Start building your<br><span class="thin">embedded UI today.</span>
+        </h2>
+        <p class="sec-body" style="margin: 1.2rem auto 0; text-align:center; max-width:420px;">
+          MIT licensed. No royalties. Works with your existing toolchain in minutes.
+        </p>
+        <div style="display:flex; gap:1rem; margin-top:2.5rem; justify-content:center; flex-wrap:wrap;">
+          <a style="text-decoration: none;" href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">
+            <button class="btn-fill" style="font-size:0.95rem; padding: 0.75rem 2rem;">
+              <span class="material-symbols-outlined">menu_book</span>
+              Read the Docs
+            </button>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <footer>
+    <div class="footer-inner">
+      <span class="footer-logo">AromaUI</span>
+      <ul class="footer-links">
+        <li><a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">GitHub</a></li>
+        <li><a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" target="_blank">Documentation</a></li>
+      </ul>
+      <p class="footer-copy">Copyright 2024 AromaUI, Released under the MIT License.</p>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      const toggleContainer = document.getElementById('view-toggle');
+      const watchPanel = document.getElementById('watch-panel');
+      const editorContainer = document.getElementById('editor-container');
+      let monacoEditorInstance = null;
+      let editorInitialized = false;
+
+      toggleContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.view-toggle-btn');
+        if (!btn) return;
+
+        const view = btn.dataset.view;
+
+        toggleContainer.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (view === 'watch') {
+          watchPanel.style.display = 'flex';
+          editorContainer.classList.remove('visible');
+        } else {
+          watchPanel.style.display = 'none';
+          editorContainer.classList.add('visible');
+
+          if (!editorInitialized) {
+            initMonacoEditor();
+            editorInitialized = true;
+          }
+        }
+      });
+
+      const defaultCode = `#include <aroma.h>
+#include <aroma_animation.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <math.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
+#define WATCH_W 380
+#define WATCH_H 380
+
+#define WATCH_PADDING 30
+#define WATCH_INNER_W (WATCH_W - 2 * WATCH_PADDING)
+#define WATCH_INNER_H (WATCH_H - 2 * WATCH_PADDING)
+
+#define Z_WATCH_FACE 1
+#define Z_STATS 2
+#define Z_WEATHER 2
+#define Z_BOTTOM_NAV 5
+#define Z_NOTIFICATION 10
+#define Z_APPS_PANEL 15
+#define Z_APPS_CLOSE 16
+
+typedef struct
+{
+    AromaFont *ui_font;
+    AromaFont *icon_font;
+    AromaFont *clock_font;
+    AromaFont *small_font;
+    AromaFont *tiny_font;
+
+    AromaWindow *window;
+    AromaNode *watch_face;
+    AromaNode *time_label;
+    AromaNode *date_label;
+    AromaNode *battery_icon;
+    AromaNode *battery_text;
+    AromaNode *steps_icon;
+    AromaNode *steps_label;
+    AromaNode *heart_icon;
+    AromaNode *heart_label;
+    AromaNode *weather_icon;
+    AromaNode *weather_label;
+
+    AromaNode *notif_card;
+    AromaNode *notif_icon;
+    AromaNode *notif_title;
+    AromaNode *notif_body;
+
+    AromaNode *apps_panel;
+    AromaNode *apps_close_btn;
+    AromaNode *settings_btn;
+
+    AromaTheme theme;
+    bool dark_mode;
+    bool apps_open;
+    bool notif_visible;
+
+    int steps;
+    int heart_rate;
+    int battery_pct;
+} WatchState;
+
+static WatchState watch = {0};
+
+static void toggle_apps(void *user_data)
+{
+    if (watch.apps_open)
+    {
+        aroma_animation_start(watch.apps_panel, AROMA_ANIM_SLIDE_Y, 0, WATCH_H, 250);
+        watch.apps_open = false;
+    }
+    else
+    {
+        aroma_node_set_hidden(watch.apps_panel, false);
+        aroma_animation_start(watch.apps_panel, AROMA_ANIM_SLIDE_Y, WATCH_H, 0, 250);
+        watch.apps_open = true;
+    }
+}
+
+static void close_apps(void *user_data)
+{
+    if (watch.apps_open)
+    {
+        aroma_animation_start(watch.apps_panel, AROMA_ANIM_SLIDE_Y, 0, WATCH_H, 250);
+        watch.apps_open = false;
+    }
+}
+
+static void toggle_notification(void *user_data)
+{
+    if (watch.notif_visible)
+    {
+        aroma_animation_start(watch.notif_card, AROMA_ANIM_SLIDE_Y, WATCH_PADDING + 10, -120, 300);
+        watch.notif_visible = false;
+    }
+    else
+    {
+        aroma_node_set_hidden(watch.notif_card, false);
+        aroma_animation_start(watch.notif_card, AROMA_ANIM_SLIDE_Y, -120, WATCH_PADDING + 10, 300);
+        watch.notif_visible = true;
+    }
+}
+
+
+static void open_quick_reply(void *user_data)
+{
+    aroma_label_set_text(watch.notif_body, "Replying...");
+}
+
+void build_watch_face(AromaNode *window)
+{
+    watch.watch_face = aroma_ui_container(
+        window, WATCH_PADDING, WATCH_PADDING, WATCH_INNER_W, WATCH_INNER_H,
+        AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
+        AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
+    aroma_node_set_z_index(watch.watch_face, Z_WATCH_FACE);
+
+    watch.time_label = aroma_ui_label(
+        watch.watch_face, "10:09",
+        WATCH_INNER_W / 2 - 85, 10, LABEL_STYLE_LABEL_LARGE, watch.clock_font);
+    aroma_node_set_z_index(watch.time_label, Z_WATCH_FACE + 1);
+    aroma_label_set_color(watch.time_label, watch.theme.colors.text_primary);
+
+    watch.date_label = aroma_ui_label(
+        watch.watch_face, "Mon, Jan 15",
+        WATCH_INNER_W / 2 - 55, 80, LABEL_STYLE_LABEL_MEDIUM, watch.small_font);
+    aroma_node_set_z_index(watch.date_label, Z_WATCH_FACE + 1);
+    aroma_label_set_color(watch.date_label, watch.theme.colors.text_secondary);
+
+    AromaNode *stats_card = aroma_ui_card(
+        watch.watch_face, 0, 125, WATCH_INNER_W, 55, CARD_TYPE_FILLED);
+    aroma_node_set_z_index(stats_card, Z_STATS);
+
+    AromaAnimation* stats_anim = aroma_animation_start(stats_card, AROMA_ANIM_SLIDE_Y, -60, 157, 1600);
+
+    watch.steps_icon = aroma_ui_icon(stats_card, AROMA_ICON_DIRECTIONS_WALK, 40, 14, 22,
+                                     watch.theme.colors.primary, watch.icon_font);
+    aroma_node_set_z_index(watch.steps_icon, Z_STATS + 2);
+
+    watch.steps_label = aroma_ui_label(stats_card, "8,432", 42, 14, LABEL_STYLE_LABEL_MEDIUM, watch.tiny_font);
+    aroma_node_set_z_index(watch.steps_label, Z_STATS + 2);
+    aroma_label_set_color(watch.steps_label, watch.theme.colors.text_primary);
+
+    watch.heart_icon = aroma_ui_icon(stats_card, AROMA_ICON_FAVORITE, 150, 16, 22,
+                                     0xFFE91E63, watch.icon_font);
+    aroma_node_set_z_index(watch.heart_icon, Z_STATS + 2);
+
+    watch.heart_label = aroma_ui_label(stats_card, "72 bpm", 152, 16, LABEL_STYLE_LABEL_MEDIUM, watch.tiny_font);
+    aroma_node_set_z_index(watch.heart_label, Z_STATS + 2);
+    aroma_label_set_color(watch.heart_label, watch.theme.colors.text_primary);
+
+    watch.battery_icon = aroma_ui_icon(stats_card, AROMA_ICON_BATTERY_FULL, 265, 16, 22,
+                                       watch.theme.colors.primary, watch.icon_font);
+    aroma_node_set_z_index(watch.battery_icon, Z_STATS + 2);
+
+    watch.battery_text = aroma_ui_label(stats_card, "85%", 267, 16, LABEL_STYLE_LABEL_MEDIUM, watch.tiny_font);
+    aroma_node_set_z_index(watch.battery_text, Z_STATS + 2);
+    aroma_label_set_color(watch.battery_text, watch.theme.colors.text_primary);
+
+    AromaNode *weather_card = aroma_ui_card(
+        watch.watch_face, WATCH_INNER_W / 2 - 80, 190, 160, 45, CARD_TYPE_FILLED);
+    aroma_node_set_z_index(weather_card, Z_WEATHER);
+
+    watch.weather_icon = aroma_ui_icon(weather_card, AROMA_ICON_WB_SUNNY, 40, 10, 24,
+                                       0xFFFFC107, watch.icon_font);
+    aroma_node_set_z_index(watch.weather_icon, Z_WEATHER + 2);
+    AromaAnimation* weather_anim = aroma_animation_start(weather_card, AROMA_ANIM_SLIDE_Y, -45, 220, 1600);
+    aroma_animation_set_easing(weather_anim, AROMA_EASE_OUT_ELASTIC);
+    aroma_animation_set_easing(stats_anim, AROMA_EASE_OUT_ELASTIC);
+    watch.weather_label = aroma_ui_label(weather_card, "22°C Sunny", 55, 12, LABEL_STYLE_LABEL_MEDIUM, watch.small_font);
+    aroma_node_set_z_index(watch.weather_label, Z_WEATHER + 2);
+    aroma_label_set_color(watch.weather_label, watch.theme.colors.text_secondary);
+
+    watch.notif_card = aroma_ui_card(window, WATCH_PADDING, -120, WATCH_INNER_W, 100, CARD_TYPE_FILLED);
+    aroma_node_set_z_index(watch.notif_card, Z_NOTIFICATION);
+    aroma_node_set_hidden(watch.notif_card, true);
+    
+    watch.notif_icon = aroma_ui_icon(watch.notif_card, AROMA_ICON_EMAIL, 40, 15, 22,
+                                     watch.theme.colors.primary, watch.icon_font);
+    aroma_node_set_z_index(watch.notif_icon, Z_NOTIFICATION + 1);
+
+    watch.notif_title = aroma_ui_label(watch.notif_card, "New Message",
+                                       55, 12, LABEL_STYLE_LABEL_MEDIUM, watch.small_font);
+    aroma_node_set_z_index(watch.notif_title, Z_NOTIFICATION + 1);
+
+    watch.notif_body = aroma_ui_label(watch.notif_card, "Hey! How are you?",
+                                      55, 38, LABEL_STYLE_LABEL_MEDIUM, watch.tiny_font);
+    aroma_node_set_z_index(watch.notif_body, Z_NOTIFICATION + 1);
+    aroma_label_set_color(watch.notif_body, watch.theme.colors.text_secondary);
+
+    AromaNode *notif_dismiss = aroma_ui_iconbutton(watch.notif_card, AROMA_ICON_CLOSE,
+                                                   WATCH_INNER_W - 60, 10, 30, ICON_BUTTON_OUTLINED,
+                                                   toggle_notification, NULL, watch.icon_font);
+    aroma_node_set_z_index(notif_dismiss, Z_NOTIFICATION + 1);
+
+    AromaNode *notif_reply = aroma_ui_iconbutton(watch.notif_card, AROMA_ICON_REPLY,
+                                                 WATCH_INNER_W - 60, 50, 30, ICON_BUTTON_FILLED,
+                                                 open_quick_reply, NULL, watch.icon_font);
+    aroma_node_set_z_index(notif_reply, Z_NOTIFICATION + 1);
+
+    AromaNode *bottom_nav = aroma_ui_container(
+        window, WATCH_PADDING, WATCH_H - WATCH_PADDING - 50, WATCH_INNER_W, 50,
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_ROW,
+        AROMA_JUSTIFY_SPACE_AROUND, AROMA_ALIGN_CENTER);
+    aroma_node_set_z_index(bottom_nav, Z_BOTTOM_NAV);
+
+    AromaNode *apps_btn = aroma_ui_iconbutton(bottom_nav, AROMA_ICON_APPS,
+                                              0, 0, 42, ICON_BUTTON_FILLED,
+                                              toggle_apps, NULL, watch.icon_font);
+    aroma_node_set_z_index(apps_btn, Z_BOTTOM_NAV + 1);
+
+    AromaNode *notif_btn = aroma_ui_iconbutton(bottom_nav, AROMA_ICON_NOTIFICATIONS,
+                                               0, 0, 42, ICON_BUTTON_FILLED,
+                                               toggle_notification, NULL, watch.icon_font);
+    aroma_node_set_z_index(notif_btn, Z_BOTTOM_NAV + 1);
+
+    watch.apps_panel = aroma_ui_card(window, 0, WATCH_H, WATCH_W, WATCH_H - WATCH_PADDING - 55, CARD_TYPE_FILLED);
+    aroma_node_set_z_index(watch.apps_panel, Z_APPS_PANEL);
+    aroma_node_set_hidden(watch.apps_panel, true);
+
+    watch.apps_close_btn = aroma_ui_iconbutton(watch.apps_panel, AROMA_ICON_CLOSE,
+                                               WATCH_W - WATCH_PADDING - 40, 10, 35, ICON_BUTTON_FILLED,
+                                               close_apps, NULL, watch.icon_font);
+    aroma_node_set_z_index(watch.apps_close_btn, Z_APPS_CLOSE);
+
+    AromaNode *apps_label = aroma_ui_label(watch.apps_panel, "Apps",
+                                           20, 15, LABEL_STYLE_LABEL_LARGE, watch.ui_font);
+    aroma_node_set_z_index(apps_label, Z_APPS_PANEL + 1);
+    aroma_label_set_color(apps_label, watch.theme.colors.text_primary);
+;
+    AromaNode *apps_grid = aroma_container_create(
+        watch.apps_panel, WATCH_PADDING, 55, WATCH_INNER_W, WATCH_H - WATCH_PADDING - 120);
+    aroma_node_set_z_index(apps_grid, Z_APPS_PANEL + 1);
+    aroma_node_set_layout_mode(apps_grid, AROMA_LAYOUT_MODE_GRID);
+    aroma_node_set_grid_cols(apps_grid, 3);
+    aroma_node_set_grid_rows(apps_grid, 2);
+    aroma_node_set_gap(apps_grid, 8);
+
+    const char *app_icons[] = {AROMA_ICON_PHONE, AROMA_ICON_EMAIL, AROMA_ICON_MAP,
+                               AROMA_ICON_MUSIC_NOTE, AROMA_ICON_CAMERA, AROMA_ICON_SETTINGS};
+    const char *app_labels[] = {"Phone", "E-Mail", "Maps", "Music", "Camera", "Settings"};
+    uint32_t app_colors[] = {0xFF4CAF50, 0xFF2196F3, 0xFFFF9800, 0xFFE91E63, 0xFF9C27B0, 0xFF607D8B};
+
+    for (int i = 0; i < 6; i++)
+    {
+        AromaNode *app_card = aroma_ui_card(apps_grid, 0, 0, 85, 85, CARD_TYPE_FILLED);
+        aroma_node_set_z_index(app_card, Z_APPS_PANEL + 2);
+
+        AromaNode *icon_bg = aroma_ui_card(app_card, 22, 10, 40, 40, CARD_TYPE_FILLED);
+        aroma_card_set_colors(icon_bg, app_colors[i], app_colors[i]);
+        aroma_node_set_z_index(icon_bg, Z_APPS_PANEL + 3);
+
+        AromaNode *app_icon = aroma_ui_icon(icon_bg, app_icons[i], 32, 8, 24,
+                                            0xFFFFFFFF, watch.icon_font);
+        aroma_node_set_z_index(app_icon, Z_APPS_PANEL + 4);
+
+        AromaNode *app_label = aroma_ui_label(app_card, app_labels[i], 23, 58,
+                                              LABEL_STYLE_LABEL_MEDIUM, watch.tiny_font);
+        aroma_node_set_z_index(app_label, Z_APPS_PANEL + 3);
+        aroma_label_set_color(app_label, watch.theme.colors.text_secondary);
+    }
+}
+
+int main(int argc, char **argv)
+{
+    aroma_animation_manager_init();
+    aroma_ui_init();
+
+    watch.dark_mode = false;
+    watch.apps_open = false;
+    watch.notif_visible = false;
+    watch.steps = 8432;
+    watch.heart_rate = 72;
+    watch.battery_pct = 85;
+
+    watch.theme = aroma_theme_create_material_black();
+    watch.theme.enable_shadows = true;
+    watch.theme.colors.primary = 0xFF2196F3; 
+    watch.theme.colors.primary_dark = aroma_color_blend(watch.theme.colors.primary, 0xFF000000, 0.2f);
+
+    aroma_ui_set_theme(&watch.theme);
+
+    watch.ui_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18);
+    watch.icon_font = aroma_font_create_from_memory(icon_ttf, icon_ttf_len, 24);
+    watch.clock_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 56);
+    watch.small_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);
+    watch.tiny_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 13);
+
+    watch.window = aroma_ui_create_window("Aroma Watch", WATCH_W, WATCH_H);
+    aroma_event_set_root((AromaNode *)watch.window);
+    aroma_ui_prepare_font_for_window(0, watch.ui_font);
+
+    build_watch_face((AromaNode *)watch.window);
+
+    uint64_t last_update = aroma_time_now_ms();
+
+    while (aroma_ui_is_running())
+    {
+        uint64_t now = aroma_time_now_ms();
+
+        if (now - last_update > 1000)
+        {
+            time_t rawtime = time(NULL);
+            struct tm *ti = localtime(&rawtime);
+            char time_str[16], date_str[32];
+            strftime(time_str, sizeof(time_str), "%H:%M", ti);
+            strftime(date_str, sizeof(date_str), "%a, %b %d", ti);
+            aroma_label_set_text(watch.time_label, time_str);
+            aroma_label_set_text(watch.date_label, date_str);
+            last_update = now;
+        }
+
+        aroma_ui_process_events();
+        aroma_ui_render(watch.window);
+#ifdef __EMSCRIPTEN__
+        emscripten_sleep(16);
+#else
+        usleep(16000);
+#endif
+    }
+
+    aroma_ui_destroy_window(watch.window);
+    aroma_ui_unload_font(watch.ui_font);
+    aroma_ui_unload_font(watch.icon_font);
+    aroma_ui_unload_font(watch.clock_font);
+    aroma_ui_unload_font(watch.small_font);
+    aroma_ui_unload_font(watch.tiny_font);
+    aroma_ui_shutdown();
+    return 0;
+}`;
+
+      function initMonacoEditor() {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js';
+        script.onload = function() {
+          require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+
+          require(['vs/editor/editor.main'], function () {
+            monacoEditorInstance = monaco.editor.create(document.getElementById('monaco-editor'), {
+              value: defaultCode,
+              language: 'c',
+              theme: 'vs',
+              automaticLayout: true,
+              minimap: { enabled: false },
+              fontSize: 12,
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              tabSize: 4,
+              insertSpaces: true,
+              readOnly: false,
+              renderWhitespace: 'selection',
+              fontFamily: "'DM Mono', monospace",
+              padding: { top: 12, bottom: 12 },
+            });
+
+            monacoEditorInstance.onDidChangeModelContent(function () {
+              const code = monacoEditorInstance.getValue();
+              if (window.updateWatchCode) {
+                window.updateWatchCode(code);
+              }
+            });
+          });
+        };
+        document.head.appendChild(script);
+      }
+
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.12 });
+
+      document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+      window.appLogs = [];
+
+      window.onerror = function (message, source, lineno, colno, error) {
+        console.error(message, source, lineno, colno, error);
+      };
+
+      var Module = {
+        canvas: document.getElementById('canvas'),
+
+        print: (...args) => {
+          const msg = args.join(' ');
+          console.log(msg);
+          window.appLogs.push(msg);
+        },
+
+        printErr: (...args) => {
+          const msg = args.join(' ');
+          console.error(msg);
+          window.appLogs.push(msg);
+        },
+
+        onRuntimeInitialized: function () {
+          const canvas = Module.canvas;
+          canvas.setAttribute('tabindex', '0');
+          canvas.focus();
+          canvas.style.touchAction = 'none';
+
+          canvas.width  = 380;
+          canvas.height = 380;
+
+          function toCanvasCoords(clientX, clientY) {
+            const rect   = canvas.getBoundingClientRect();
+            const scaleX = canvas.width  / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+              x: Math.round((clientX - rect.left) * scaleX),
+              y: Math.round((clientY - rect.top)  * scaleY),
+            };
+          }
+
+          function sendMouse(action, clientX, clientY) {
+            if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+            const p = toCanvasCoords(clientX, clientY);
+            Module._aroma_emscripten_dispatch_mouse(action, p.x, p.y, 0);
+          }
+
+          canvas.addEventListener('mousemove',  e => sendMouse(0, e.clientX, e.clientY), { passive: true });
+          canvas.addEventListener('mousedown',  e => { canvas.focus(); sendMouse(1, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+          canvas.addEventListener('mouseup',    e => { sendMouse(2, e.clientX, e.clientY); e.preventDefault(); }, { passive: false });
+
+          function firstTouch(e) {
+            return (e.touches && e.touches.length)
+              ? e.touches[0]
+              : (e.changedTouches && e.changedTouches.length)
+                ? e.changedTouches[0]
+                : null;
+          }
+
+          canvas.addEventListener('touchstart', e => {
+            const t = firstTouch(e);
+            if (t) { canvas.focus(); sendMouse(1, t.clientX, t.clientY); }
+            e.preventDefault();
+          }, { passive: false });
+
+          canvas.addEventListener('touchmove', e => {
+            const t = firstTouch(e);
+            if (t) sendMouse(0, t.clientX, t.clientY);
+            e.preventDefault();
+          }, { passive: false });
+
+          canvas.addEventListener('touchend', e => {
+            const t = firstTouch(e);
+            if (t) sendMouse(2, t.clientX, t.clientY);
+            e.preventDefault();
+          }, { passive: false });
+
+          console.log("AromaUI WASM input initialized");
+        }
+      };
+
+
+      function scaleInfotainmentIframe() {
+        const iframe = document.getElementById('infotainment-iframe');
+        if (!iframe) return;
+
+        const wrapper = iframe.parentNode;
+        if (!wrapper) return;
+
+        const wrapperWidth = wrapper.clientWidth;
+        const wrapperHeight = wrapper.clientHeight;
+
+        if (wrapperWidth === 0 || wrapperHeight === 0) {
+          requestAnimationFrame(scaleInfotainmentIframe);
+          return;
+        }
+
+        const contentWidth = 1280;
+        const contentHeight = 800;
+
+        const scaleX = wrapperWidth / contentWidth;
+        const scaleY = wrapperHeight / contentHeight;
+        const scale = Math.min(scaleX, scaleY);
+
+        const scaledWidth = contentWidth * scale;
+        const scaledHeight = contentHeight * scale;
+
+        const offsetX = (wrapperWidth - scaledWidth) / 2;
+        const offsetY = (wrapperHeight - scaledHeight) / 2;
+
+        iframe.style.width = contentWidth + 'px';
+        iframe.style.height = contentHeight + 'px';
+        iframe.style.transform = `translate(${offsetX / scale}px, ${offsetY / scale}px) scale(${scale})`;
+        iframe.style.transformOrigin = '0 0';
+      }
+
+      window.addEventListener('resize', scaleInfotainmentIframe);
+
+      const infotainmentIframe = document.getElementById('infotainment-iframe');
+      if (infotainmentIframe) {
+        infotainmentIframe.addEventListener('load', scaleInfotainmentIframe);
+      }
+
+      setTimeout(scaleInfotainmentIframe, 300);
+      setTimeout(scaleInfotainmentIframe, 800);
+    })();
+  </script>
+
+  <script src="smartwatch_example.js?v=1779150134"></script>
+
+</body>
+
+</html>

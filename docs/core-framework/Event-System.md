@@ -1,14 +1,3 @@
-# Event System
-Relevant source files
-- [examples/gstreamer_example/ev_cluster.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c)
-- [include/aroma_event.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_event.h)
-- [include/aroma_ui.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h)
-- [src/backends/platforms/aroma_platform_glfw.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c)
-- [src/backends/platforms/aroma_platform_glps.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glps.c)
-- [src/backends/platforms/aroma_platform_interface.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h)
-- [src/core/aroma_event.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c)
-- [src/core/aroma_ui_impl.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c)
-- [src/widgets/aroma_debug_overlay.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_debug_overlay.c)
 
 The Event System in AromaUI is a high-performance, deterministic pipeline responsible for capturing raw platform inputs and propagating them through the scene graph. It supports hit-testing, event bubbling, priority-based listeners, and specialized interception for touch-to-scroll physics.
 

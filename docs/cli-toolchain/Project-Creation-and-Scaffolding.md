@@ -1,14 +1,3 @@
-# Project Creation and Scaffolding
-Relevant source files
-- [.gitignore](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/.gitignore)
-- [bin/aroma](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/bin/aroma)
-- [docs/website/dashboard.jpg](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/dashboard.jpg)
-- [src/backends/graphics/utils/aroma_vulkan_text.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/aroma_vulkan_text.c)
-- [tools/cli/aroma.py](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/aroma.py)
-- [tools/cli/templates/android/app/build.gradle](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/android/app/build.gradle)
-- [tools/cli/templates/android/app/src/main/AndroidManifest.xml](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/android/app/src/main/AndroidManifest.xml)
-- [tools/cli/templates/android/app/src/main/cpp/CMakeLists.txt.tpl](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/android/app/src/main/cpp/CMakeLists.txt.tpl)
-- [tools/cli/templates/app/main.c.tpl](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/app/main.c.tpl)
 
 The AromaUI toolchain provides a streamlined project initialization system via the `aroma create` command. This system utilizes a template engine to generate cross-platform project structures, handling the complexities of Android directory layouts, JNI setup, and CMake configuration.
 

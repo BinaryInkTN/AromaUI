@@ -1,23 +1,3 @@
-# Platform Backends
-Relevant source files
-- [examples/gstreamer_example/ev_cluster.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c)
-- [include/aroma_android.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_android.h)
-- [include/aroma_drawlist.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_drawlist.h)
-- [include/aroma_event.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_event.h)
-- [include/aroma_ui.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h)
-- [src/backends/graphics/aroma_graphics_gles3.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_gles3.c)
-- [src/backends/graphics/aroma_graphics_interface.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_interface.h)
-- [src/backends/graphics/aroma_graphics_tft_espi.cpp](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_tft_espi.cpp)
-- [src/backends/platforms/aroma_platform_android.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_android.c)
-- [src/backends/platforms/aroma_platform_glfw.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c)
-- [src/backends/platforms/aroma_platform_glps.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glps.c)
-- [src/backends/platforms/aroma_platform_interface.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h)
-- [src/backends/platforms/aroma_platform_tft_espi.cpp](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_tft_espi.cpp)
-- [src/core/aroma_drawlist.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_drawlist.c)
-- [src/core/aroma_event.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c)
-- [src/core/aroma_ui_impl.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c)
-- [src/widgets/aroma_debug_overlay.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_debug_overlay.c)
-- [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl)
 
 Platform backends in AromaUI serve as the hardware and operating system abstraction layer. They implement the `AromaPlatformInterface` defined in [src/backends/platforms/aroma_platform_interface.h35-265](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h#L35-L265) providing standardized hooks for window management, input capture, and system-specific services (e.g., Android Bluetooth or JNI bridges). This architecture allows the Core Framework to remain platform-agnostic while supporting diverse targets ranging from embedded ESP32 displays to desktop Linux and mobile Android environments.
 

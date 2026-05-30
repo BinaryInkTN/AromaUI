@@ -1,15 +1,3 @@
-# Theming and Styling
-Relevant source files
-- [docs/core/core_abi.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/core/core_abi.md?plain=1)
-- [docs/getting-started/architecture.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/architecture.md?plain=1)
-- [docs/tools/logging.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/tools/logging.md?plain=1)
-- [docs/ui/layouts.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md?plain=1)
-- [docs/ui/theming.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/theming.md?plain=1)
-- [examples/car_infotainment/theme_manager.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/theme_manager.c)
-- [examples/car_infotainment/theme_manager.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/theme_manager.h)
-- [include/aroma_style.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_style.h)
-- [src/backends/graphics/utils/stb_image.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/stb_image.h)
-- [src/core/aroma_style.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_style.c)
 
 The AromaUI theming system provides a centralized mechanism for managing the visual appearance of applications. It is built around the `AromaTheme` and `AromaStyle` structures, allowing for global configuration of color palettes, spacing, typography, and shadows [include/aroma_style.h38-45](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_style.h#L38-L45) The system supports built-in presets (Material, High Contrast, Dark Mode) and granular customization via dedicated utility functions.
 

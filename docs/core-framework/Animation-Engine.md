@@ -1,17 +1,3 @@
-# Animation Engine
-Relevant source files
-- [docs/core/core_abi.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/core/core_abi.md?plain=1)
-- [docs/getting-started/architecture.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/architecture.md?plain=1)
-- [docs/tools/logging.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/tools/logging.md?plain=1)
-- [docs/ui/animations.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/animations.md?plain=1)
-- [docs/ui/layouts.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md?plain=1)
-- [docs/ui/theming.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/theming.md?plain=1)
-- [examples/car_infotainment/assets/backroad_dark.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/assets/backroad_dark.png)
-- [examples/car_infotainment/main.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/main.c)
-- [examples/car_infotainment/voice_control.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c)
-- [include/aroma_animation.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_animation.h)
-- [src/core/aroma_animation.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_animation.c)
-- [src/widgets/aroma_tabs.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_tabs.c)
 
 The AromaUI Animation Engine is a lightweight, retained-mode subsystem designed to provide smooth property transitions for `AromaNode` elements. It operates by interpolating values over time using various easing functions and automatically integrating with the framework's dirty-region tracking and layout phases to trigger necessary redraws.
 

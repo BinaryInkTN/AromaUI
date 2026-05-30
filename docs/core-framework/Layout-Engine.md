@@ -1,16 +1,3 @@
-# Layout Engine
-Relevant source files
-- [docs/core/core_abi.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/core/core_abi.md?plain=1)
-- [docs/getting-started/architecture.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/architecture.md?plain=1)
-- [docs/tools/logging.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/tools/logging.md?plain=1)
-- [docs/ui/layouts.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md?plain=1)
-- [docs/ui/theming.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/theming.md?plain=1)
-- [include/aroma_node.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h)
-- [include/widgets/aroma_listview.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_listview.h)
-- [src/core/aroma_layout.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_layout.c)
-- [src/core/aroma_node.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_node.c)
-- [src/widgets/aroma_container.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_container.c)
-- [src/widgets/aroma_listview.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c)
 
 The AromaUI Layout Engine is a top-down recursive system responsible for calculating the screen-space coordinates and dimensions of every node in the scene graph. It operates by combining "self-layout" properties (how a node positions itself relative to its parent) and "container-layout" modes (how a node arranges its children) [docs/ui/layouts.md4-9](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md?plain=1#L4-L9)
 

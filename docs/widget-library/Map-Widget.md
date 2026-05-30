@@ -1,19 +1,3 @@
-# Map Widget
-Relevant source files
-- [docs/getting-started/infotainment_example.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/infotainment_example.md?plain=1)
-- [docs/getting-started/infotainment_map.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/infotainment_map.png)
-- [docs/getting-started/voice_command_card.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/voice_command_card.png)
-- [docs/ui/widgets.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/widgets.md?plain=1)
-- [examples/map_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt)
-- [examples/map_example/main.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/main.c)
-- [examples/smartwatch_example/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/CMakeLists.txt)
-- [include/widgets/aroma_gif.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_gif.h)
-- [include/widgets/aroma_loading.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_loading.h)
-- [include/widgets/aroma_map.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_map.h)
-- [src/widgets/aroma_chip.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_chip.c)
-- [src/widgets/aroma_fab.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_fab.c)
-- [src/widgets/aroma_map.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_map.c)
-- [src/widgets/aroma_menu.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_menu.c)
 
 The `AromaMap` widget provides a high-performance, interactive mapping component capable of rendering OpenStreetMap (OSM) or CartoDB tiles. It supports complex features such as asynchronous tile fetching with a multi-layered cache, spherical mercator projection, marker/popup overlays, and OSRM-based polyline routing.
 

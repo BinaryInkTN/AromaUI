@@ -1,18 +1,3 @@
-# Scene Graph and Node System
-Relevant source files
-- [include/aroma.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma.h)
-- [include/aroma_common.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_common.h)
-- [include/aroma_logger.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_logger.h)
-- [include/aroma_native_utils.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_native_utils.h)
-- [include/aroma_node.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h)
-- [include/aroma_slab_alloc.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_slab_alloc.h)
-- [include/widgets/aroma_listview.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_listview.h)
-- [src/core/aroma_layout.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_layout.c)
-- [src/core/aroma_native_utils.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_native_utils.c)
-- [src/core/aroma_node.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_node.c)
-- [src/core/aroma_slab_alloc.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_slab_alloc.c)
-- [src/widgets/aroma_container.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_container.c)
-- [src/widgets/aroma_listview.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c)
 
 The **Scene Graph** is the foundational structure of AromaUI, representing the visual hierarchy as a tree of `AromaNode` objects. Every element on the screen—from a simple `Label` to a complex `ListView`—is a node within this directed acyclic graph. The system is designed for high performance on embedded hardware through a custom slab allocator, deterministic child limits, and a dual-stage dirty-tracking invalidation system.
 

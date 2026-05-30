@@ -1,14 +1,4 @@
 # Testing and Quality
-Relevant source files
-- [include/aroma_window.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_window.h)
-- [tests/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/CMakeLists.txt)
-- [tests/test_aroma_event_system.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_event_system.c)
-- [tests/test_aroma_event_system.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_event_system.h)
-- [tests/test_aroma_node.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_node.c)
-- [tests/test_aroma_node.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_node.h)
-- [tests/test_aroma_slab_alloc.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.c)
-- [tests/test_aroma_slab_alloc.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.h)
-- [tests/test_main.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_main.c)
 
 The AromaUI test suite provides a comprehensive set of unit and integration tests designed to ensure the stability of core UI primitives, memory management, and event propagation. The testing architecture is decoupled from any specific platform backend, allowing tests to run in a headless environment (typically Linux) to validate logic without requiring a GPU or display.
 

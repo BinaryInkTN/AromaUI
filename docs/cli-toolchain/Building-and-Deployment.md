@@ -1,16 +1,3 @@
-# Building and Deployment
-Relevant source files
-- [.gitignore](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/.gitignore)
-- [bin/aroma](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/bin/aroma)
-- [docker/Dockerfile](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docker/Dockerfile)
-- [docker/docker-compose.yml](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docker/docker-compose.yml)
-- [docs/connectivity/bluetooth_classic.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/connectivity/bluetooth_classic.md?plain=1)
-- [docs/tools/building_deployment.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/tools/building_deployment.md?plain=1)
-- [docs/ui/dpi.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/dpi.md?plain=1)
-- [docs/ui/orientation.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/orientation.md?plain=1)
-- [docs/website/dashboard.jpg](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/dashboard.jpg)
-- [tools/cli/aroma.py](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/aroma.py)
-- [tools/cli/templates/android/app/build.gradle](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/android/app/build.gradle)
 
 This page documents the complete build and deployment toolchain for AromaUI. The system is managed by the `aroma` CLI, a Python-based utility that abstracts the complexities of CMake, Android Gradle, and Emscripten to provide a unified interface for cross-platform development.
 

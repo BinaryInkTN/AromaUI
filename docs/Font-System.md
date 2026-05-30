@@ -1,16 +1,4 @@
 # Font System
-Relevant source files
-- [.gitmodules](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/.gitmodules)
-- [buzzer/src/main.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/buzzer/src/main.c)
-- [docs/ui/font_system.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/font_system.md?plain=1)
-- [include/aroma_font.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_font.h)
-- [include/aroma_ubuntu_font.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ubuntu_font.h)
-- [src/backends/graphics/utils/aroma_gles3_text.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/aroma_gles3_text.c)
-- [src/backends/graphics/utils/helpers_gles3.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/utils/helpers_gles3.h)
-- [src/core/aroma_common.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_common.h)
-- [src/core/aroma_font.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_font.c)
-- [src/core/aroma_ubuntu_font.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ubuntu_font.c)
-- [src/widgets/aroma_image.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_image.c)
 
 The **Font System** in AromaUI provides a unified interface for loading, managing, and rendering typography across diverse platforms, ranging from high-performance desktop environments to resource-constrained embedded systems. It leverages **FreeType** for vector font rasterization on most platforms while providing specialized optimizations for GLES3 backends and fallback mechanisms for TFT-based hardware.
 

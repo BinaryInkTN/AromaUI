@@ -1,21 +1,3 @@
-# Getting Started
-Relevant source files
-- [.gitignore](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/.gitignore)
-- [bin/aroma](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/bin/aroma)
-- [docs/connectivity/bluetooth_classic.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/connectivity/bluetooth_classic.png)
-- [docs/core/core_abi.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/core/core_abi.md?plain=1)
-- [docs/data/preferences.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/data/preferences.png)
-- [docs/getting-started/architecture.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/architecture.md?plain=1)
-- [docs/getting-started/hello-world.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/hello-world.md?plain=1)
-- [docs/getting-started/hello-world.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/hello-world.png)
-- [docs/getting-started/installation.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/getting-started/installation.md?plain=1)
-- [docs/security/permissions.png](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/security/permissions.png)
-- [docs/tools/logging.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/tools/logging.md?plain=1)
-- [docs/ui/layouts.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md?plain=1)
-- [docs/ui/theming.md](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/theming.md?plain=1)
-- [docs/website/dashboard.jpg](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/dashboard.jpg)
-- [tools/cli/aroma.py](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/aroma.py)
-- [tools/cli/templates/android/app/build.gradle](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tools/cli/templates/android/app/build.gradle)
 
 This page provides a comprehensive guide for new developers to set up the AromaUI environment, create a new project, and deploy a "Hello World" application across Linux, Android, and Web platforms.
 
