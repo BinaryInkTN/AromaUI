@@ -142,17 +142,16 @@ void build_vehicle_view(AromaNode *window)
         state.vehicle_view_root, "km/h", 155, 305,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(kmh_lbl, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.range_label = aroma_ui_label(
-        state.vehicle_view_root, "Range: 0 km",
-        WIN_W - 250, 100, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(state.range_label, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.climate_label = aroma_ui_label(
-        state.vehicle_view_root, "Climate: Off",
-        WIN_W - 250, 140, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(state.climate_label, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
+    AromaNode *range_card = aroma_ui_card(state.vehicle_view_root, WIN_W - 540, WIN_H - 109, 240, 80, CARD_TYPE_FILLED);
+    aroma_node_set_z_index(range_card, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    // transparent background with only border colored by primary color
+        aroma_card_set_colors(range_card, 0x80FFFFFF, 0x80FFFFFF);
+    AromaNode *range_header = aroma_ui_label(range_card, "Battery Range", 20, 5, LABEL_STYLE_LABEL_SMALL, state.ui_font);
+    aroma_node_set_z_index(range_header, Z_LAYER_VEHICLE_OVERLAYS + 3);
+    AromaNode *range_progressbar = aroma_ui_progressbar(range_card, 20, 40, 200, 20, 0xFF00C853, 0xFFBDBDBD);
+    aroma_node_set_z_index(range_progressbar, Z_LAYER_VEHICLE_OVERLAYS + 3);
+    // dark green indicator with very light gray track
+    
     state.vehicle_view_frunk_divider = aroma_ui_divider(
         state.vehicle_view_root, 400, 340, 80, DIVIDER_ORIENTATION_VERTICAL);
     aroma_node_set_z_index(state.vehicle_view_frunk_divider, Z_LAYER_VEHICLE_OVERLAYS + 1);
@@ -283,21 +282,51 @@ void build_vehicle_view(AromaNode *window)
                                            0, 0, 28, 28);
     aroma_node_set_z_index(brake_icon, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
-    AromaNode* bottom_bar = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 - 150, WIN_H - 80, 300, 120, CARD_TYPE_GLASS);
+    AromaNode* bottom_bar = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 - 360, WIN_H - 110, 420, 80, CARD_TYPE_GLASS);
    // transparent macos like card
         aroma_card_set_colors(bottom_bar, 0x80FFFFFF, 0x80FFFFFF);
         aroma_node_set_z_index(bottom_bar, Z_LAYER_VEHICLE_OVERLAYS + 1);
     
-    AromaNode *climate_iconbutton = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_AC_UNIT, 20, 20, 40, ICON_BUTTON_TONAL, NULL, NULL, state.icon_font);
-    aroma_node_set_z_index(climate_iconbutton, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    AromaNode *music_iconbutton = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_MUSIC_NOTE, 70, 20, 40, ICON_BUTTON_TONAL, NULL, NULL, state.icon_font);
-    aroma_node_set_z_index(music_iconbutton, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    AromaNode *nav_iconbutton = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_NAVIGATION, 120, 20, 40, ICON_BUTTON_TONAL, NULL, NULL, state.icon_font);
-    aroma_node_set_z_index(nav_iconbutton, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
+    AromaNode* maps_app_icon = aroma_ui_image(bottom_bar,
+#ifdef __EMSCRIPTEN__                                             
+ "/assets/maps_app.png"
+#else                                            
+  "../assets/maps_app.png"
+#endif
+                                              ,
+                                              30, 15, 48, 48);
+    aroma_node_set_z_index(maps_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    AromaNode *phone_app_icon = aroma_ui_image(bottom_bar,
+#ifdef __EMSCRIPTEN__
+                                                  "/assets/phone_app.png"
+#else
+                                                  "../assets/phone_app.png"
+#endif
+,
+    100, 15, 48, 48);
+    aroma_node_set_z_index(phone_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
     
-        aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
+    AromaNode *music_app_icon = aroma_ui_image(bottom_bar,
+#ifdef __EMSCRIPTEN__                                                
+ "/assets/music_app.png"
+#else                                                
+ "../assets/music_app.png"
+#endif
+,
+    170, 15, 48, 48);
+    aroma_node_set_z_index(music_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
+    AromaNode* divider_to_ac = aroma_ui_divider(bottom_bar, 240, 10, 60, DIVIDER_ORIENTATION_VERTICAL);
+    aroma_node_set_z_index(divider_to_ac, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
+    AromaNode *ac_minus = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_REMOVE, 260, 25, 30, ICON_BUTTON_FILLED, ac_temp_down_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(ac_minus, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    AromaNode *ac_temp_label = aroma_ui_label(bottom_bar, "22°C", 308, 22, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    aroma_node_set_z_index(ac_temp_label, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    state.ac_temp_label = ac_temp_label;
+    AromaNode *ac_plus = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_ADD, 370, 25, 30, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(ac_plus, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);

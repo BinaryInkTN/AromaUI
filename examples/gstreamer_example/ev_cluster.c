@@ -387,16 +387,6 @@ int main() {
     tc.tire_rr = 42;
     tc.nav_active = false;
     tc.notif_active = false;
-/*    int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, WIDTH * HEIGHT * BPP);
-    void* shm_pixels = mmap(0, WIDTH * HEIGHT * BPP, PROT_WRITE, MAP_SHARED, shm_fd, 0);
-
-    int ev_shm_fd = shm_open("/aroma_events_shm", O_CREAT | O_RDWR, 0666);
-    ftruncate(ev_shm_fd, sizeof(SharedEvents));
-    SharedEvents* shm_events = mmap(0, sizeof(SharedEvents), PROT_READ | PROT_WRITE, MAP_SHARED, ev_shm_fd, 0);
-*/
-
-    int last_x = -1, last_y = -1;
 
     while (aroma_ui_is_running()) {
         /*int current_x = shm_events->mouse_x;
