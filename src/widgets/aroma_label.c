@@ -27,7 +27,7 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 
-#define AROMA_LABEL_TEXT_MAX 128 
+#define AROMA_LABEL_TEXT_MAX 96 
 typedef struct   AromaLabel {
     AromaRect rect;
     AromaFont* font;
