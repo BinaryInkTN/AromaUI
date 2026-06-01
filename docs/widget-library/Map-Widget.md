@@ -1,4 +1,6 @@
 
+<iframe src="widget-library/wasm/index.html" width="100%" height="400px" style="border:none;"></iframe>
+
 The `AromaMap` widget provides a high-performance, interactive mapping component capable of rendering OpenStreetMap (OSM) or CartoDB tiles. It supports complex features such as asynchronous tile fetching with a multi-layered cache, spherical mercator projection, marker/popup overlays, and OSRM-based polyline routing.
 
 ### Purpose and Scope

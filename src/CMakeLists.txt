@@ -64,7 +64,6 @@ target_include_directories(aroma
 )
 
 target_link_libraries(aroma PRIVATE freetype m)
-
 if(NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE GLESv2 EGL)
 endif()
