@@ -7,11 +7,11 @@
 int main()
 {
     aroma_ui_init();
-    AromaTheme theme = aroma_theme_create_material_blue_dark();
+    AromaTheme theme = aroma_theme_create_material_blue();
     aroma_ui_set_theme(&theme);
-    AromaWindow *window = aroma_ui_create_window("Map Example", 1920, 1080);
+    AromaWindow *window = aroma_ui_create_window("Map Example", 700, 400);
 
-    AromaNode *map = aroma_ui_map((AromaNode *)window, 0, 0, 1920, 1080);
+    AromaNode *map = aroma_ui_map((AromaNode *)window, 0, 0, 700, 400);
     // aroma_map_set_zoom(map, 12);
     if (map)
     {
