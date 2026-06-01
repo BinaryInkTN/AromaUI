@@ -14,6 +14,21 @@
     background: #000;
   ">
 </iframe>
+
+<br />
+```c
+AromaNode *map = aroma_ui_map((AromaNode *)window, 0, 0, 700, 400);
+if (map)
+{
+    aroma_map_set_center(map, 33.8869f, 9.5375f);
+    aroma_map_add_icon_marker(map, 33.8869f, 9.5375f, 0xFF0000, AROMA_ICON_HOME);                                   // Marker at Tunisia
+    aroma_map_add_popup_marker(map, 37.7749f, -122.4194f, 0x0000FF, "San Francisco is a city in California, USA."); // Popup marker at San Francisco
+    aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);
+    // aroma_map_set_zoom(map, 12); // Uncomment to set initial zoom level
+}
+```
+<br />
+
 The `AromaMap` widget provides a high-performance, interactive mapping component capable of rendering OpenStreetMap (OSM) or CartoDB tiles. It supports complex features such as asynchronous tile fetching with a multi-layered cache, spherical mercator projection, marker/popup overlays, and OSRM-based polyline routing.
 
 ### Purpose and Scope
