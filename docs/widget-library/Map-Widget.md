@@ -1,5 +1,5 @@
 <iframe 
-  src="widget-library/wasm/index.html" 
+  src="widget-library/wasm/map_example/index.html" 
   width="100%" 
   height="400px" 
   style="

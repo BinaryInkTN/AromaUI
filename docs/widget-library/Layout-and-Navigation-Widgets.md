@@ -45,6 +45,22 @@ Unlike a raw container, `AromaListView` manages an internal array of `AromaListI
 - **Selection Logic**: Hit-testing accounts for the current scroll position of the internal `scroll_container` to map screen coordinates to the correct list index [src/widgets/aroma_listview.c121-137](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c#L121-L137)
 
 ### Table Widget
+<iframe 
+  src="widget-library/wasm/table_example/index.html" 
+  width="100%" 
+  height="400px" 
+  style="
+    overflow: hidden; 
+    border: 8px solid #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 
+      inset 0 0 0 2px #333,
+      0 0 0 4px #0a0a0a,
+      0 0 0 8px #2a2a2a,
+      0 0 20px rgba(0,0,0,0.5);
+    background: #000;
+  ">
+</iframe>
 
 The `AromaTable` widget provides a grid-based display for structured data. It utilizes the `AROMA_LAYOUT_MODE_GRID` layout mode defined in the core node system [include/aroma_node.h55](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L55-L55)
 
