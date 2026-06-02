@@ -45,6 +45,19 @@ Unlike a raw container, `AromaListView` manages an internal array of `AromaListI
 - **Selection Logic**: Hit-testing accounts for the current scroll position of the internal `scroll_container` to map screen coordinates to the correct list index [src/widgets/aroma_listview.c121-137](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c#L121-L137)
 
 ### Table Widget
+
+The `AromaTable` widget provides a grid-based display for structured data. It utilizes the `AROMA_LAYOUT_MODE_GRID` layout mode defined in the core node system [include/aroma_node.h55](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L55-L55)
+
+Sources: [src/widgets/aroma_listview.c49-53](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c#L49-L53)[src/widgets/aroma_listview.c90-101](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c#L90-L101)[include/widgets/aroma_listview.h26-30](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_listview.h#L26-L30)
+
+---
+
+## Navigation Structures: Tabs and Sidebar
+
+AromaUI provides two primary patterns for top-level navigation: `AromaTabs` (horizontal) and `AromaSidebar` (vertical/responsive).
+
+### Tabbed Navigation
+
 <iframe 
   src="widget-library/wasm/tabs_example/index.html" 
   width="100%" 
@@ -61,19 +74,6 @@ Unlike a raw container, `AromaListView` manages an internal array of `AromaListI
     background: #000;
   ">
 </iframe>
-
-The `AromaTable` widget provides a grid-based display for structured data. It utilizes the `AROMA_LAYOUT_MODE_GRID` layout mode defined in the core node system [include/aroma_node.h55](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L55-L55)
-
-Sources: [src/widgets/aroma_listview.c49-53](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c#L49-L53)[src/widgets/aroma_listview.c90-101](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_listview.c#L90-L101)[include/widgets/aroma_listview.h26-30](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_listview.h#L26-L30)
-
----
-
-## Navigation Structures: Tabs and Sidebar
-
-AromaUI provides two primary patterns for top-level navigation: `AromaTabs` (horizontal) and `AromaSidebar` (vertical/responsive).
-
-### Tabbed Navigation
-
 The `AromaTabs` widget manages a set of labels and associated `AromaNode` content subtrees.
 
 - **Visibility Management**: Only the content nodes associated with the `selected_index` are marked visible. Switching tabs triggers `aroma_node_set_hidden` on the old subtree and removes the hidden flag from the new one [src/widgets/aroma_tabs.c92-108](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_tabs.c#L92-L108)
