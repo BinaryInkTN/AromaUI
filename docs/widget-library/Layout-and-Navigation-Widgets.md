@@ -46,7 +46,7 @@ Unlike a raw container, `AromaListView` manages an internal array of `AromaListI
 
 ### Table Widget
 <iframe 
-  src="widget-library/wasm/table_example/index.html" 
+  src="widget-library/wasm/tabs_example/index.html" 
   width="100%" 
   height="400px" 
   style="
