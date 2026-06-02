@@ -7115,8 +7115,8 @@ function checkIncomingModuleAPI() {
   ignoredModuleProp('onSbrkGrow');
 }
 var ASM_CONSTS = {
-  1285663: ($0, $1, $2, $3) => { if (typeof window !== 'undefined') { window.aromaLastMouseDispatchAction = $0; window.aromaLastMouseDispatchX = $1; window.aromaLastMouseDispatchY = $2; window.aromaLastMouseDispatchButton = $3; } console.log('dispatch_mouse', $0, $1, $2, $3); },  
- 1285911: ($0, $1, $2, $3, $4) => { if (typeof window !== 'undefined') { window.aromaLastMouseType = $0; window.aromaLastMouseTarget = $1; window.aromaLastMouseX = $2; window.aromaLastMouseY = $3; window.aromaLastMouseButton = $4; } }
+  1642527: ($0, $1, $2, $3) => { if (typeof window !== 'undefined') { window.aromaLastMouseDispatchAction = $0; window.aromaLastMouseDispatchX = $1; window.aromaLastMouseDispatchY = $2; window.aromaLastMouseDispatchButton = $3; } console.log('dispatch_mouse', $0, $1, $2, $3); },  
+ 1642775: ($0, $1, $2, $3, $4) => { if (typeof window !== 'undefined') { window.aromaLastMouseType = $0; window.aromaLastMouseTarget = $1; window.aromaLastMouseX = $2; window.aromaLastMouseY = $3; window.aromaLastMouseButton = $4; } }
 };
 function aroma_emscripten_device_pixel_ratio() { return window.devicePixelRatio || 1.0; }
 function _aroma_get_device_pixel_ratio() { return window.devicePixelRatio || 1.0; }
