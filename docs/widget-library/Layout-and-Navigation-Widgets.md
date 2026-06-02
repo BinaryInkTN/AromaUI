@@ -80,7 +80,22 @@ The `AromaTabs` widget manages a set of labels and associated `AromaNode` conten
 - **Transitions**: Supports animated transitions (`AROMA_ANIM_SLIDE_X`, `AROMA_ANIM_FADE`) when switching between tabs [src/widgets/aroma_tabs.c124-133](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_tabs.c#L124-L133)
 
 ### Sidebar Navigation
-
+<iframe 
+  src="widget-library/wasm/sidebar_example/index.html" 
+  width="100%" 
+  height="400px" 
+  style="
+    overflow: hidden; 
+    border: 8px solid #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 
+      inset 0 0 0 2px #333,
+      0 0 0 4px #0a0a0a,
+      0 0 0 8px #2a2a2a,
+      0 0 20px rgba(0,0,0,0.5);
+    background: #000;
+  ">
+</iframe>
 The `AromaSidebar` is designed for large-screen or dashboard interfaces (like AromaOS).
 
 - **Responsive Behavior**: It includes a `retracted` state for small screens, switching between `full_width` and `retracted_width` based on a `breakpoint`[src/widgets/aroma_sidebar.c55-59](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_sidebar.c#L55-L59)
