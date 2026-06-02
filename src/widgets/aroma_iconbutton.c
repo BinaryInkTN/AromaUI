@@ -10,11 +10,14 @@
 
 #define AROMA_ICON_TEXT_MAX 16
 
-typedef struct AromaIconButton {
+typedef struct AromaIconButton
+{
     AromaRect rect;
-    void (*callback)(void* user_data);
-    void* user_data;
-    AromaFont* font;
+
+    void (*callback)(void *user_data);
+    void *user_data;
+    AromaFont *font;
+
     uint32_t bg_color;
     uint32_t icon_color;
     uint32_t border_color;
@@ -23,60 +26,66 @@ typedef struct AromaIconButton {
     int text_x;
     int text_y;
     AromaIconButtonVariant variant;
+
     char icon_text[AROMA_ICON_TEXT_MAX];
     bool is_hovered;
     bool is_pressed;
     bool use_theme_colors;
-} AromaIconButton;
+} __attribute__((packed)) AromaIconButton;
 
-static bool __iconbutton_handle_event(AromaEvent* event, void* user_data)
+static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
 {
     (void)user_data;
-    if (!event || !event->target_node) return false;
-    AromaIconButton* btn = (AromaIconButton*)event->target_node->node_widget_ptr;
-    if (!btn) return false;
+    if (!event || !event->target_node)
+        return false;
+    AromaIconButton *btn = (AromaIconButton *)event->target_node->node_widget_ptr;
+    if (!btn)
+        return false;
 
-    AromaRect* r = &btn->rect;
-    bool in_bounds = (event->data.mouse.x >= r->x && event->data.mouse.x <= r->x + r->width &&
-                      event->data.mouse.y >= r->y && event->data.mouse.y <= r->y + r->height);
-
-    switch (event->event_type) {
-        case EVENT_TYPE_MOUSE_ENTER:
-            btn->is_hovered = false;
+    AromaRect r = btn->rect;
+    bool in_bounds = (event->data.mouse.x >= r.x && event->data.mouse.x <= r.x + r.width &&
+                      event->data.mouse.y >= r.y && event->data.mouse.y <= r.y + r.height);
+    switch (event->event_type)
+    {
+    case EVENT_TYPE_MOUSE_ENTER:
+        btn->is_hovered = false;
+        aroma_node_invalidate(event->target_node);
+        aroma_ui_request_redraw(NULL);
+        return true;
+    case EVENT_TYPE_MOUSE_EXIT:
+        btn->is_hovered = false;
+        btn->is_pressed = false;
+        aroma_node_invalidate(event->target_node);
+        aroma_ui_request_redraw(NULL);
+        return false;
+    case EVENT_TYPE_MOUSE_CLICK:
+        if (in_bounds)
+        {
+            btn->is_pressed = true;
             aroma_node_invalidate(event->target_node);
             aroma_ui_request_redraw(NULL);
             return true;
-        case EVENT_TYPE_MOUSE_EXIT:
-            btn->is_hovered = false;
+        }
+        break;
+    case EVENT_TYPE_MOUSE_RELEASE:
+        if (btn->is_pressed)
+        {
             btn->is_pressed = false;
             aroma_node_invalidate(event->target_node);
+            if (in_bounds && btn->callback)
+                btn->callback(btn->user_data);
             aroma_ui_request_redraw(NULL);
-            return false;
-        case EVENT_TYPE_MOUSE_CLICK:
-            if (in_bounds) {
-                btn->is_pressed = true;
-                aroma_node_invalidate(event->target_node);
-                aroma_ui_request_redraw(NULL);
-                return true;
-            }
-            break;
-        case EVENT_TYPE_MOUSE_RELEASE:
-            if (btn->is_pressed) {
-                btn->is_pressed = false;
-                aroma_node_invalidate(event->target_node);
-                if (in_bounds && btn->callback) btn->callback(btn->user_data);
-                aroma_ui_request_redraw(NULL);
-                return in_bounds;
-            }
-            break;
-        default:
-            break;
+            return in_bounds;
+        }
+        break;
+    default:
+        break;
     }
 
     return false;
 }
 
-static void __iconbutton_update_layout(AromaIconButton* btn)
+static void __iconbutton_update_layout(AromaIconButton *btn)
 {
     btn->corner_radius = (float)btn->rect.height / 2.0f;
     int font_px = btn->font ? aroma_font_get_px_size(btn->font) : 0;
@@ -86,12 +95,14 @@ static void __iconbutton_update_layout(AromaIconButton* btn)
     btn->text_y = btn->rect.y + (btn->rect.height - line) / 2 + asc;
 }
 
-AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int x, int y, int size, AromaIconButtonVariant variant)
+AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int x, int y, int size, AromaIconButtonVariant variant)
 {
-    if (!parent || size <= 0) return NULL;
+    if (!parent || size <= 0)
+        return NULL;
 
-    AromaIconButton* btn = (AromaIconButton*)aroma_widget_alloc(sizeof(AromaIconButton));
-    if (!btn) return NULL;
+    AromaIconButton *btn = (AromaIconButton *)aroma_widget_alloc(sizeof(AromaIconButton));
+    if (!btn)
+        return NULL;
 
     AromaTheme theme = aroma_theme_get_global();
     btn->rect.x = x;
@@ -100,11 +111,11 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
     btn->rect.height = size;
     btn->variant = variant;
     btn->bg_color = (variant == ICON_BUTTON_FILLED || variant == ICON_BUTTON_TONAL)
-        ? theme.colors.primary
-        : theme.colors.surface;
+                        ? theme.colors.primary
+                        : theme.colors.surface;
     btn->icon_color = (variant == ICON_BUTTON_FILLED || variant == ICON_BUTTON_TONAL)
-        ? theme.colors.surface
-        : theme.colors.text_primary;
+                          ? theme.colors.surface
+                          : theme.colors.text_primary;
     btn->is_hovered = false;
     btn->is_pressed = false;
     btn->callback = NULL;
@@ -116,16 +127,20 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
     btn->text_y = 0;
     btn->use_theme_colors = true;
 
-    if (icon_text) {
+    if (icon_text)
+    {
         strncpy(btn->icon_text, icon_text, AROMA_ICON_TEXT_MAX - 1);
-    } else {
+    }
+    else
+    {
         btn->icon_text[0] = '\0';
     }
 
     __iconbutton_update_layout(btn);
 
-    AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, btn);
-    if (!node) {
+    AromaNode *node = __add_child_node(NODE_TYPE_WIDGET, parent, btn);
+    if (!node)
+    {
         aroma_widget_free(btn);
         return NULL;
     }
@@ -135,90 +150,105 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __iconbutton_handle_event, NULL, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __iconbutton_handle_event, NULL, 70);
-    
-    #ifdef ESP32
+
+#ifdef ESP32
     aroma_node_invalidate(node);
-    #endif
-    
+#endif
+
     return node;
 }
 
-void aroma_iconbutton_set_callback(AromaNode* button_node, void (*callback)(void* user_data), void* user_data)
+void aroma_iconbutton_set_callback(AromaNode *button_node, void (*callback)(void *user_data), void *user_data)
 {
-    if (!button_node || !button_node->node_widget_ptr) return;
-    AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
+    if (!button_node || !button_node->node_widget_ptr)
+        return;
+    AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
     btn->callback = callback;
     btn->user_data = user_data;
 }
 
-void aroma_iconbutton_set_colors(AromaNode* button_node, uint32_t bg_color, uint32_t icon_color)
+void aroma_iconbutton_set_colors(AromaNode *button_node, uint32_t bg_color, uint32_t icon_color)
 {
-    if (!button_node || !button_node->node_widget_ptr) return;
-    AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
+    if (!button_node || !button_node->node_widget_ptr)
+        return;
+    AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
     btn->bg_color = bg_color;
     btn->icon_color = icon_color;
     btn->use_theme_colors = false;
     aroma_node_invalidate(button_node);
 }
 
-void aroma_iconbutton_set_icon(AromaNode* button_node, const char* icon_text)
+void aroma_iconbutton_set_icon(AromaNode *button_node, const char *icon_text)
 {
-    if (!button_node || !button_node->node_widget_ptr) return;
-    AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
-    if (icon_text) {
+    if (!button_node || !button_node->node_widget_ptr)
+        return;
+    AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
+    if (icon_text)
+    {
         strncpy(btn->icon_text, icon_text, AROMA_ICON_TEXT_MAX - 1);
         btn->icon_text[AROMA_ICON_TEXT_MAX - 1] = '\0';
-    } else {
+    }
+    else
+    {
         btn->icon_text[0] = '\0';
     }
     aroma_node_invalidate(button_node);
 }
 
-void aroma_iconbutton_set_font(AromaNode* button_node, AromaFont* font)
+void aroma_iconbutton_set_font(AromaNode *button_node, AromaFont *font)
 {
-    if (!button_node || !button_node->node_widget_ptr) return;
-    AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
+    if (!button_node || !button_node->node_widget_ptr)
+        return;
+    AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
     btn->font = font;
     __iconbutton_update_layout(btn);
 }
 
-void aroma_iconbutton_draw(AromaNode* button_node, size_t window_id)
+void aroma_iconbutton_draw(AromaNode *button_node, size_t window_id)
 {
-    if (!button_node || !button_node->node_widget_ptr) return;
-    AromaIconButton* btn = (AromaIconButton*)button_node->node_widget_ptr;
-    AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
-    if (!gfx) return;
-if (btn->use_theme_colors) {
+    if (!button_node || !button_node->node_widget_ptr)
+        return;
+    AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    if (!gfx)
+        return;
+    if (btn->use_theme_colors)
+    {
         AromaTheme theme = aroma_theme_get_global();
         btn->bg_color = (btn->variant == ICON_BUTTON_FILLED || btn->variant == ICON_BUTTON_TONAL)
-            ? theme.colors.primary
-            : theme.colors.surface;
+                            ? theme.colors.primary
+                            : theme.colors.surface;
         btn->icon_color = (btn->variant == ICON_BUTTON_FILLED || btn->variant == ICON_BUTTON_TONAL)
-            ? theme.colors.surface
-            : theme.colors.text_primary;
+                              ? theme.colors.surface
+                              : theme.colors.text_primary;
         btn->border_color = theme.colors.border;
     }
 
-    
     uint32_t bg = btn->bg_color;
-    if (btn->is_pressed) {
-        if (aroma_node_is_hidden(button_node)) return;
+    if (btn->is_pressed)
+    {
+        if (aroma_node_is_hidden(button_node))
+            return;
         bg = aroma_color_adjust(bg, -0.1f);
-    } else if (btn->is_hovered) {
+    }
+    else if (btn->is_hovered)
+    {
         bg = aroma_color_adjust(bg, 0.08f);
     }
 
     gfx->fill_rectangle(window_id, btn->rect.x, btn->rect.y, btn->rect.width, btn->rect.height,
                         bg, true, btn->corner_radius);
 
-    if (btn->variant == ICON_BUTTON_OUTLINED) {
+    if (btn->variant == ICON_BUTTON_OUTLINED)
+    {
         AromaTheme theme = aroma_theme_get_global();
         gfx->draw_hollow_rectangle(window_id, btn->rect.x, btn->rect.y, btn->rect.width, btn->rect.height,
-                       btn->border_color, 1, true, btn->corner_radius);
+                                   btn->border_color, 1, true, btn->corner_radius);
     }
 
-    if (btn->font && btn->icon_text[0] && gfx->render_text) {
-        /* Recompute text position from current rect (layout may have moved us) */
+    if (btn->font && btn->icon_text[0] && gfx->render_text)
+    {
+
         int font_px = aroma_font_get_px_size(btn->font);
         int tx = btn->rect.x + btn->rect.width / 2 - font_px / 2;
         int line = font_px;
@@ -227,10 +257,12 @@ if (btn->use_theme_colors) {
     }
 }
 
-void aroma_iconbutton_destroy(AromaNode* button_node)
+void aroma_iconbutton_destroy(AromaNode *button_node)
 {
-    if (!button_node) return;
-    if (button_node->node_widget_ptr) {
+    if (!button_node)
+        return;
+    if (button_node->node_widget_ptr)
+    {
         aroma_widget_free(button_node->node_widget_ptr);
         button_node->node_widget_ptr = NULL;
     }
