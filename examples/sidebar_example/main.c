@@ -15,12 +15,15 @@ void open_sidebar(void *user_data)
 
     if (!g_sidebar_open)
     {
-        aroma_animation_start(sidebar, AROMA_ANIM_SLIDE_X, -150.0f, 10.0f, 1200);
+        AromaAnimation *anim = aroma_animation_start(sidebar, AROMA_ANIM_SLIDE_X, -150.0f, 10.0f, 400);
+            aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+
         g_sidebar_open = true;
     }
     else
     {
-        aroma_animation_start(sidebar, AROMA_ANIM_SLIDE_X, 10.0f, -150.0f, 1200);
+        AromaAnimation *anim = aroma_animation_start(sidebar, AROMA_ANIM_SLIDE_X, 10.0f, -150.0f, 400);
+            aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
         g_sidebar_open = false;
     }
 }
