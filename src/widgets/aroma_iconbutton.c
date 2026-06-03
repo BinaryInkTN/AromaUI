@@ -7,31 +7,37 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#include <stddef.h>
 
 #define AROMA_ICON_TEXT_MAX 16
 
 typedef struct AromaIconButton
 {
     AromaRect rect;
+    AromaFont *font;
 
     void (*callback)(void *user_data);
     void *user_data;
-    AromaFont *font;
 
     uint32_t bg_color;
     uint32_t icon_color;
     uint32_t border_color;
+
     float corner_radius;
     float text_scale;
+
     int text_x;
     int text_y;
+
     AromaIconButtonVariant variant;
 
-    char icon_text[AROMA_ICON_TEXT_MAX];
     bool is_hovered;
     bool is_pressed;
     bool use_theme_colors;
-} __attribute__((packed)) AromaIconButton;
+
+    char icon_text[AROMA_ICON_TEXT_MAX];
+
+} AromaIconButton;
 
 static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
 {
@@ -48,7 +54,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
     switch (event->event_type)
     {
     case EVENT_TYPE_MOUSE_ENTER:
-        btn->is_hovered = false;
+        btn->is_hovered = true;
         aroma_node_invalidate(event->target_node);
         aroma_ui_request_redraw(NULL);
         return true;
@@ -130,6 +136,7 @@ AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int
     if (icon_text)
     {
         strncpy(btn->icon_text, icon_text, AROMA_ICON_TEXT_MAX - 1);
+        btn->icon_text[AROMA_ICON_TEXT_MAX - 1] = '\0';
     }
     else
     {
@@ -209,9 +216,14 @@ void aroma_iconbutton_draw(AromaNode *button_node, size_t window_id)
     if (!button_node || !button_node->node_widget_ptr)
         return;
     AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
+
+    if (aroma_node_is_hidden(button_node))
+        return;
+
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx)
         return;
+
     if (btn->use_theme_colors)
     {
         AromaTheme theme = aroma_theme_get_global();
@@ -226,33 +238,24 @@ void aroma_iconbutton_draw(AromaNode *button_node, size_t window_id)
 
     uint32_t bg = btn->bg_color;
     if (btn->is_pressed)
-    {
-        if (aroma_node_is_hidden(button_node))
-            return;
         bg = aroma_color_adjust(bg, -0.1f);
-    }
     else if (btn->is_hovered)
-    {
         bg = aroma_color_adjust(bg, 0.08f);
-    }
 
     gfx->fill_rectangle(window_id, btn->rect.x, btn->rect.y, btn->rect.width, btn->rect.height,
                         bg, true, btn->corner_radius);
 
     if (btn->variant == ICON_BUTTON_OUTLINED)
     {
-        AromaTheme theme = aroma_theme_get_global();
         gfx->draw_hollow_rectangle(window_id, btn->rect.x, btn->rect.y, btn->rect.width, btn->rect.height,
                                    btn->border_color, 1, true, btn->corner_radius);
     }
 
     if (btn->font && btn->icon_text[0] && gfx->render_text)
     {
-
         int font_px = aroma_font_get_px_size(btn->font);
         int tx = btn->rect.x + btn->rect.width / 2 - font_px / 2;
-        int line = font_px;
-        int ty = btn->rect.y + (btn->rect.height - line) / 2;
+        int ty = btn->rect.y + (btn->rect.height - font_px) / 2;
         gfx->render_text(window_id, btn->font, btn->icon_text, tx, ty, btn->icon_color, btn->text_scale);
     }
 }

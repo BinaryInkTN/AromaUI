@@ -150,24 +150,15 @@ struct  AromaNode
 /** @brief Helper macro to cast a node's user pointer to a specific type. */
 #define AROMA_NODE_AS(node, Type) ((Type*)((node) ? (node)->node_widget_ptr : NULL))
 
-/** @brief Return the raw widget pointer when it is suitably aligned. */
 static inline void* aroma_node_get_widget_ptr(AromaNode* node)
 {
-    void* widget_ptr = node ? node->node_widget_ptr : NULL;
-    if (!widget_ptr) return NULL;
-    if (((uintptr_t)widget_ptr % _Alignof(max_align_t)) != 0) return NULL;
-    return widget_ptr;
+    return node ? node->node_widget_ptr : NULL;
 }
 
-/** @brief Return the widget rect stored in a node, or NULL if it is unavailable or misaligned. */
 static inline AromaRect* aroma_node_get_rect(AromaNode* node)
 {
-    void* widget_ptr = aroma_node_get_widget_ptr(node);
-    if (!widget_ptr) return NULL;
-    if (((uintptr_t)widget_ptr % _Alignof(AromaRect)) != 0) return NULL;
-    return (AromaRect*)widget_ptr;
+    return node ? (AromaRect*)node->node_widget_ptr : NULL;
 }
-
 /** @internal Initialize the node system (called internally). */
 void __node_system_init(void);
 /** @internal Destroy the node system. */

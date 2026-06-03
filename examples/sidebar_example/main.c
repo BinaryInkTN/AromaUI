@@ -29,7 +29,7 @@ int main()
 {
     aroma_ui_init();
     aroma_animation_manager_init();
-    AromaTheme theme = aroma_theme_create_material_black();
+    AromaTheme theme = aroma_theme_create_material_blue_dark();
     aroma_ui_set_theme(&theme);
     AromaWindow *window = aroma_ui_create_window("Map Example", 700, 400);
     AromaFont *text_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);
@@ -39,10 +39,11 @@ int main()
     AromaNode *container2 = aroma_ui_container((AromaNode *)window, 0, 0, 700, 400, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
     AromaNode *container3 = aroma_ui_container((AromaNode *)window, 0, 0, 700, 400, AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
 
+    const char *labels[] = {"Page 1", "Page 2", "Page 3"};
     AromaNode *sidebar = aroma_ui_sidebar(
         (AromaNode *)window,
         -150, 60, 150, 300,
-        (const char *[]){"Page 1", "Page 2", "Page 3"}, 3,
+        labels, 3,
         NULL, NULL,
         text_font);
 

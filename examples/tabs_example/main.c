@@ -7,7 +7,7 @@
 int main()
 {
     aroma_ui_init();
-    AromaTheme theme = aroma_theme_create_material_black();
+    AromaTheme theme = aroma_theme_create_material_blue_dark();
     aroma_ui_set_theme(&theme);
     AromaWindow *window = aroma_ui_create_window("Map Example", 700, 400);
     AromaFont *text_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);
