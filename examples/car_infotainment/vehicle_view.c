@@ -1,7 +1,337 @@
 #include "vehicle_view.h"
 #include "app_state.h"
 #include "aroma_animation.h"
+#include "bt_speaker_api.h"
 #include <stdio.h>
+#include <string.h>
+#include <pthread.h>
+#include <time.h>
+#include <unistd.h>
+
+#define MEDIA_UPDATE_INTERVAL_US 500000
+
+typedef struct
+{
+    AromaNode *media_card;
+    AromaNode *media_title_label;
+    AromaNode *media_artist_label;
+    AromaNode *media_progress_bar;
+    AromaNode *media_time_elapsed_label;
+    AromaNode *media_time_remaining_label;
+    AromaNode *media_prev_button;
+    AromaNode *media_play_pause_button;
+    AromaNode *media_next_button;
+    bool is_playing;
+    bool monitor_running;
+    pthread_t monitor_thread;
+    pthread_mutex_t lock;
+    uint32_t last_position;
+    uint32_t last_duration;
+    time_t last_position_update;
+    char current_title[256];
+    bool marquee_active;
+    int marquee_offset;
+    time_t last_marquee_update;
+} MediaPlayerUI;
+
+static MediaPlayerUI media_ui = {
+    .is_playing = false,
+    .monitor_running = false,
+    .lock = PTHREAD_MUTEX_INITIALIZER,
+    .last_position = 0,
+    .last_duration = 0,
+    .last_position_update = 0,
+    .current_title = {0},
+    .marquee_active = false,
+    .marquee_offset = 0,
+    .last_marquee_update = 0};
+
+static void update_play_pause_button_icon(void)
+{
+    if (!media_ui.media_play_pause_button)
+        return;
+
+    if (media_ui.is_playing)
+    {
+        aroma_iconbutton_set_icon(media_ui.media_play_pause_button, AROMA_ICON_PAUSE);
+    }
+    else
+    {
+        aroma_iconbutton_set_icon(media_ui.media_play_pause_button, AROMA_ICON_PLAY_ARROW);
+    }
+}
+
+static void update_marquee_title(void)
+{
+    if (!media_ui.media_title_label || !media_ui.current_title[0])
+        return;
+
+    int title_len = strlen(media_ui.current_title);
+    
+    if (title_len <= 22)
+    {
+        aroma_label_set_text(media_ui.media_title_label, media_ui.current_title);
+        media_ui.marquee_active = false;
+        return;
+    }
+
+    if (!media_ui.marquee_active)
+    {
+        media_ui.marquee_offset = 0;
+        media_ui.marquee_active = true;
+        media_ui.last_marquee_update = time(NULL);
+    }
+
+    time_t now = time(NULL);
+    if (now - media_ui.last_marquee_update >= 1)
+    {
+        media_ui.marquee_offset++;
+        media_ui.last_marquee_update = now;
+        
+        if (media_ui.marquee_offset > title_len + 5)
+            media_ui.marquee_offset = 0;
+    }
+
+    char display_text[64];
+    int max_chars = 22;
+    int remaining = title_len - media_ui.marquee_offset;
+    
+    if (remaining >= max_chars)
+    {
+        strncpy(display_text, media_ui.current_title + media_ui.marquee_offset, max_chars);
+        display_text[max_chars] = '\0';
+    }
+    else
+    {
+        int first_part = remaining;
+        if (first_part > 0)
+        {
+            strncpy(display_text, media_ui.current_title + media_ui.marquee_offset, first_part);
+            display_text[first_part] = ' ';
+            display_text[first_part + 1] = ' ';
+            int second_part = max_chars - first_part - 2;
+            if (second_part > 0 && second_part <= media_ui.marquee_offset)
+            {
+                strncpy(display_text + first_part + 2, media_ui.current_title, second_part);
+                display_text[first_part + 2 + second_part] = '\0';
+            }
+            else if (second_part > 0)
+            {
+                strncpy(display_text + first_part + 2, media_ui.current_title, media_ui.marquee_offset);
+                display_text[first_part + 2 + media_ui.marquee_offset] = '\0';
+            }
+            else
+            {
+                display_text[first_part + 2] = '\0';
+            }
+        }
+        else
+        {
+            display_text[0] = ' ';
+            display_text[1] = ' ';
+            strncpy(display_text + 2, media_ui.current_title, max_chars - 2);
+            display_text[max_chars] = '\0';
+        }
+    }
+    
+    aroma_label_set_text(media_ui.media_title_label, display_text);
+}
+
+static void on_media_prev_click(void *user_data)
+{
+    (void)user_data;
+    bt_speaker_avrcp_previous();
+}
+
+static void on_media_play_pause_click(void *user_data)
+{
+    (void)user_data;
+    pthread_mutex_lock(&media_ui.lock);
+    if (media_ui.is_playing)
+    {
+        bt_speaker_avrcp_pause();
+    }
+    else
+    {
+        bt_speaker_avrcp_play();
+    }
+    media_ui.is_playing = !media_ui.is_playing;
+    update_play_pause_button_icon();
+    media_ui.last_position_update = time(NULL);
+    pthread_mutex_unlock(&media_ui.lock);
+}
+
+static void on_media_next_click(void *user_data)
+{
+    (void)user_data;
+    bt_speaker_avrcp_next();
+}
+
+static char *format_time_ms(uint32_t ms, char *buf, size_t bufsz)
+{
+    uint32_t total_sec = ms / 1000;
+    uint32_t min = total_sec / 60;
+    uint32_t sec = total_sec % 60;
+    snprintf(buf, bufsz, "%u:%02u", min, sec);
+    return buf;
+}
+
+static void update_media_ui(void)
+{
+    pthread_mutex_lock(&media_ui.lock);
+
+    bt_media_info_t media = bt_speaker_get_media_info();
+    bt_state_t current_state = bt_speaker_get_state();
+    
+    bool is_connected = (current_state == BT_STATE_CONNECTED ||
+                         current_state == BT_STATE_PLAYING);
+    bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
+
+    if (!has_media || !is_connected)
+    {
+        if (media_ui.media_card)
+            aroma_node_set_hidden(media_ui.media_card, true);
+        media_ui.is_playing = false;
+        media_ui.last_position = 0;
+        media_ui.last_duration = 0;
+        media_ui.last_position_update = 0;
+        media_ui.current_title[0] = '\0';
+        media_ui.marquee_active = false;
+        update_play_pause_button_icon();
+        pthread_mutex_unlock(&media_ui.lock);
+        return;
+    }
+
+    if (media_ui.media_card)
+        aroma_node_set_hidden(media_ui.media_card, false);
+
+    if (media.status[0] != '\0')
+    {
+        bool currently_playing = (strcmp(media.status, "playing") == 0);
+        if (media_ui.is_playing != currently_playing)
+        {
+            media_ui.is_playing = currently_playing;
+            update_play_pause_button_icon();
+        }
+    }
+    else if (media.title[0] != '\0' || media.artist[0] != '\0')
+    {
+        if (!media_ui.is_playing)
+        {
+            media_ui.is_playing = true;
+            update_play_pause_button_icon();
+        }
+    }
+
+    if (media.title[0] && strcmp(media.title, media_ui.current_title) != 0)
+    {
+        strncpy(media_ui.current_title, media.title, sizeof(media_ui.current_title) - 1);
+        media_ui.current_title[sizeof(media_ui.current_title) - 1] = '\0';
+        media_ui.marquee_active = false;
+        media_ui.marquee_offset = 0;
+    }
+
+    update_marquee_title();
+
+    if (media_ui.media_artist_label)
+    {
+        if (media.artist[0])
+            aroma_label_set_text(media_ui.media_artist_label, media.artist);
+        else
+            aroma_label_set_text(media_ui.media_artist_label, "Unknown Artist");
+    }
+
+    uint32_t display_position = media.position;
+    uint32_t display_duration = media.duration;
+
+    if (display_duration == 0 && media_ui.last_duration > 0)
+    {
+        display_duration = media_ui.last_duration;
+    }
+
+    if (media_ui.is_playing && display_duration > 0)
+    {
+        time_t now = time(NULL);
+        if (media_ui.last_position_update > 0 && media.position > 0)
+        {
+            time_t elapsed = now - media_ui.last_position_update;
+            uint32_t estimated_position = media.position + (uint32_t)(elapsed * 1000);
+            
+            if (estimated_position < display_duration)
+            {
+                display_position = estimated_position;
+            }
+            else
+            {
+                display_position = display_duration;
+            }
+        }
+        
+        if (media.position > 0)
+        {
+            media_ui.last_position_update = now;
+            media_ui.last_position = media.position;
+        }
+    }
+    else if (!media_ui.is_playing && media.position > 0)
+    {
+        media_ui.last_position_update = 0;
+    }
+
+    if (display_duration > 0)
+    {
+        media_ui.last_duration = display_duration;
+    }
+
+    if (media_ui.media_progress_bar)
+    {
+        if (display_duration > 0)
+        {
+            float progress = (float)display_position / (float)display_duration;
+            if (progress < 0.0f) progress = 0.0f;
+            if (progress > 1.0f) progress = 1.0f;
+            aroma_progressbar_set_progress(media_ui.media_progress_bar, progress);
+        }
+        else
+        {
+            aroma_progressbar_set_progress(media_ui.media_progress_bar, 0.0f);
+        }
+    }
+
+    if (media_ui.media_time_elapsed_label)
+    {
+        char buf[16];
+        format_time_ms(display_position, buf, sizeof(buf));
+        aroma_label_set_text(media_ui.media_time_elapsed_label, buf);
+    }
+
+    if (media_ui.media_time_remaining_label)
+    {
+        char buf[16];
+        if (display_duration > display_position)
+            format_time_ms(display_duration - display_position, buf, sizeof(buf));
+        else if (display_duration > 0)
+            snprintf(buf, sizeof(buf), "0:00");
+        else
+            snprintf(buf, sizeof(buf), "--:--");
+        aroma_label_set_text(media_ui.media_time_remaining_label, buf);
+    }
+
+    pthread_mutex_unlock(&media_ui.lock);
+}
+
+static void *media_monitor_thread_func(void *arg)
+{
+    (void)arg;
+
+    while (media_ui.monitor_running)
+    {
+        update_media_ui();
+        usleep(MEDIA_UPDATE_INTERVAL_US);
+    }
+
+    return NULL;
+}
 
 static void ac_temp_up_callback(void *user_data)
 {
@@ -26,6 +356,7 @@ static void ac_temp_down_callback(void *user_data)
 static void battery_diagnostics(void *user_data)
 {
     (void)user_data;
+
     aroma_image_set_source(state.overlay,
 #ifdef __EMSCRIPTEN__
                            "/assets/car_battery.png"
@@ -58,6 +389,7 @@ static void battery_diagnostics(void *user_data)
     aroma_animation_start(state.battery_health, AROMA_ANIM_FADE, 0, 1, 1000);
     aroma_animation_start(state.battery_percentage, AROMA_ANIM_FADE, 0, 1, 1000);
 }
+
 void build_vehicle_view(AromaNode *window)
 {
     state.vehicle_view_root = aroma_ui_container(
@@ -116,7 +448,7 @@ void build_vehicle_view(AromaNode *window)
         state.vehicle_view_root, 25, 18, 225, 50, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.gear_bg_card, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
-    state.gear_fg_card = aroma_ui_card(state.gear_bg_card, 25, 5, 50, 40, CARD_TYPE_FILLED);
+    state.gear_fg_card = aroma_ui_card(state.gear_bg_card, 5, 5, 50, 40, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.gear_fg_card, Z_LAYER_VEHICLE_OVERLAYS + 4);
     aroma_card_set_colors(state.gear_fg_card,
                           state.theme.colors.primary, state.theme.colors.primary);
@@ -142,16 +474,16 @@ void build_vehicle_view(AromaNode *window)
         state.vehicle_view_root, "km/h", 155, 305,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(kmh_lbl, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    AromaNode *range_card = aroma_ui_card(state.vehicle_view_root, WIN_W - 540, WIN_H - 109, 240, 80, CARD_TYPE_FILLED);
+
+    AromaNode *range_card = aroma_ui_card(state.vehicle_view_root, WIN_W - 370, WIN_H - 110, 300, 80, CARD_TYPE_GLASS);
     aroma_node_set_z_index(range_card, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    // transparent background with only border colored by primary color
-        aroma_card_set_colors(range_card, 0x80FFFFFF, 0x80FFFFFF);
+    aroma_card_set_colors(range_card, 0x80FFFFFF, 0x80FFFFFF);
+
     AromaNode *range_header = aroma_ui_label(range_card, "Battery Range", 20, 5, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(range_header, Z_LAYER_VEHICLE_OVERLAYS + 3);
-    AromaNode *range_progressbar = aroma_ui_progressbar(range_card, 20, 40, 200, 20, 0xFF00C853, 0xFFBDBDBD);
+    AromaNode *range_progressbar = aroma_ui_progressbar(range_card, 20, 40, 260, 20, 0xFF00C853, 0xFFBDBDBD);
     aroma_node_set_z_index(range_progressbar, Z_LAYER_VEHICLE_OVERLAYS + 3);
-    // dark green indicator with very light gray track
-    
+
     state.vehicle_view_frunk_divider = aroma_ui_divider(
         state.vehicle_view_root, 400, 340, 80, DIVIDER_ORIENTATION_VERTICAL);
     aroma_node_set_z_index(state.vehicle_view_frunk_divider, Z_LAYER_VEHICLE_OVERLAYS + 1);
@@ -235,6 +567,41 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(state.battery_percentage, Z_LAYER_VEHICLE_OVERLAYS + 10);
     aroma_node_set_hidden(state.battery_percentage, true);
 
+    media_ui.media_card = aroma_ui_card(
+        state.vehicle_view_root, 50, WIN_H - 110, 380, 80, CARD_TYPE_GLASS);
+    aroma_node_set_z_index(media_ui.media_card, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    aroma_card_set_colors(media_ui.media_card, 0x80FFFFFF, 0x80FFFFFF);
+    aroma_node_set_hidden(media_ui.media_card, true);
+
+    media_ui.media_title_label = aroma_ui_label(
+        media_ui.media_card, "No Track", 16, 12,
+        LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    aroma_node_set_z_index(media_ui.media_title_label, Z_LAYER_VEHICLE_OVERLAYS + 3);
+
+    media_ui.media_artist_label = aroma_ui_label(
+        media_ui.media_card, "No Artist", 16, 40,
+        LABEL_STYLE_LABEL_SMALL, state.ui_font);
+    aroma_node_set_z_index(media_ui.media_artist_label, Z_LAYER_VEHICLE_OVERLAYS + 3);
+    aroma_label_set_color(media_ui.media_artist_label, 0xFFAAAAAA);
+
+    media_ui.media_prev_button = aroma_ui_iconbutton(
+        media_ui.media_card, AROMA_ICON_SKIP_PREVIOUS,
+        230, 22, 36, ICON_BUTTON_OUTLINED,
+        on_media_prev_click, NULL, state.icon_font);
+    aroma_node_set_z_index(media_ui.media_prev_button, Z_LAYER_VEHICLE_OVERLAYS + 3);
+
+    media_ui.media_play_pause_button = aroma_ui_iconbutton(
+        media_ui.media_card, AROMA_ICON_PLAY_ARROW,
+        274, 22, 36, ICON_BUTTON_OUTLINED,
+        on_media_play_pause_click, NULL, state.icon_font);
+    aroma_node_set_z_index(media_ui.media_play_pause_button, Z_LAYER_VEHICLE_OVERLAYS + 3);
+
+    media_ui.media_next_button = aroma_ui_iconbutton(
+        media_ui.media_card, AROMA_ICON_SKIP_NEXT,
+        318, 22, 36, ICON_BUTTON_OUTLINED,
+        on_media_next_click, NULL, state.icon_font);
+    aroma_node_set_z_index(media_ui.media_next_button, Z_LAYER_VEHICLE_OVERLAYS + 3);
+
     AromaNode *icons_col = aroma_ui_container(
         state.vehicle_view_root, 50, 100, 28, 300,
         AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN,
@@ -282,41 +649,40 @@ void build_vehicle_view(AromaNode *window)
                                            0, 0, 28, 28);
     aroma_node_set_z_index(brake_icon, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
-    AromaNode* bottom_bar = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 - 360, WIN_H - 110, 420, 80, CARD_TYPE_GLASS);
-   // transparent macos like card
-        aroma_card_set_colors(bottom_bar, 0x80FFFFFF, 0x80FFFFFF);
-        aroma_node_set_z_index(bottom_bar, Z_LAYER_VEHICLE_OVERLAYS + 1);
-    
-    AromaNode* maps_app_icon = aroma_ui_image(bottom_bar,
-#ifdef __EMSCRIPTEN__                                             
- "/assets/maps_app.png"
-#else                                            
-  "../assets/maps_app.png"
+    AromaNode *bottom_bar = aroma_ui_card(state.vehicle_view_root, WIN_W / 2 - 180, WIN_H - 110, 420, 80, CARD_TYPE_GLASS);
+    aroma_card_set_colors(bottom_bar, 0x80FFFFFF, 0x80FFFFFF);
+    aroma_node_set_z_index(bottom_bar, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
+    AromaNode *maps_app_icon = aroma_ui_image(bottom_bar,
+#ifdef __EMSCRIPTEN__
+                                              "/assets/maps_app.png"
+#else
+                                              "../assets/maps_app.png"
 #endif
                                               ,
                                               30, 15, 48, 48);
     aroma_node_set_z_index(maps_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
     AromaNode *phone_app_icon = aroma_ui_image(bottom_bar,
 #ifdef __EMSCRIPTEN__
-                                                  "/assets/phone_app.png"
+                                               "/assets/phone_app.png"
 #else
-                                                  "../assets/phone_app.png"
+                                               "../assets/phone_app.png"
 #endif
-,
-    100, 15, 48, 48);
+                                               ,
+                                               100, 15, 48, 48);
     aroma_node_set_z_index(phone_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    
+
     AromaNode *music_app_icon = aroma_ui_image(bottom_bar,
-#ifdef __EMSCRIPTEN__                                                
- "/assets/music_app.png"
-#else                                                
- "../assets/music_app.png"
+#ifdef __EMSCRIPTEN__
+                                               "/assets/music_app.png"
+#else
+                                               "../assets/music_app.png"
 #endif
-,
-    170, 15, 48, 48);
+                                               ,
+                                               170, 15, 48, 48);
     aroma_node_set_z_index(music_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
-    AromaNode* divider_to_ac = aroma_ui_divider(bottom_bar, 240, 10, 60, DIVIDER_ORIENTATION_VERTICAL);
+    AromaNode *divider_to_ac = aroma_ui_divider(bottom_bar, 240, 10, 60, DIVIDER_ORIENTATION_VERTICAL);
     aroma_node_set_z_index(divider_to_ac, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
     AromaNode *ac_minus = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_REMOVE, 260, 25, 30, ICON_BUTTON_FILLED, ac_temp_down_callback, NULL, state.icon_font);
@@ -326,8 +692,12 @@ void build_vehicle_view(AromaNode *window)
     state.ac_temp_label = ac_temp_label;
     AromaNode *ac_plus = aroma_ui_iconbutton(bottom_bar, AROMA_ICON_ADD, 370, 25, 30, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
     aroma_node_set_z_index(ac_plus, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
     aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);
+
+    media_ui.monitor_running = true;
+    pthread_create(&media_ui.monitor_thread, NULL, media_monitor_thread_func, NULL);
 }

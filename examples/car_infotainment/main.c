@@ -16,6 +16,7 @@
 #include <signal.h>
 #include "shared_memory_bridge.h"
 
+
 int main(int argc, char **argv)
 {
     (void)argc;
@@ -26,7 +27,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "FATAL: Failed to initialize application state\n");
         return EXIT_FAILURE;
     }
+ 
 
+ 
     aroma_animation_manager_init();
 
     char build_info[MAX_STRING_LEN];
@@ -40,7 +43,7 @@ int main(int argc, char **argv)
         cleanup_app_state();
         return EXIT_FAILURE;
     }
-
+    set_minimum_log_level(DEBUG_LEVEL_ERROR);
     init_theme();
 
     if (!init_fonts())
@@ -82,14 +85,13 @@ int main(int argc, char **argv)
         else
             state.vehicle_state.speed = 0.0f;
     }
-    build_status_bar();
-    build_voice_status_ui();
+   build_status_bar();
+   build_voice_status_ui();
     build_vehicle_view((AromaNode *)state.window);
     
     build_settings_ui((AromaNode *)state.window);
     build_easter_egg_ui((AromaNode *)state.window);
-    build_tabs();
-
+ build_tabs();
     if (state.time_label)
     {
         aroma_node_set_hidden(state.time_label, true);
@@ -120,6 +122,5 @@ int main(int argc, char **argv)
     cleanup_app_state();
 
     telemetry_bridge_close(&telemetry_bridge);
-
     return EXIT_SUCCESS;
 }

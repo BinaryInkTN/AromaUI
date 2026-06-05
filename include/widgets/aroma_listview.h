@@ -45,6 +45,9 @@ void aroma_listview_set_selected_corner_radius(AromaNode* list_node, float radiu
 void aroma_listview_show_headers(AromaNode* list_node, bool show);
 void aroma_listview_set_header_colors(AromaNode* list_node, uint32_t bg_color, uint32_t text_color);
 void aroma_listview_draw(AromaNode* list_node, size_t window_id);
+void aroma_listview_update_title_text(AromaNode* list_node, int index, const char* new_text);
+void aroma_listview_update_secondary_text(AromaNode* list_node, int index, const char* new_text);
+
 void aroma_listview_destroy(AromaNode* list_node);
 
 void aroma_listview_set_scroll_container(AromaNode* list_node, AromaNode* container);

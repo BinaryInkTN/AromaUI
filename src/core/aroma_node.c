@@ -1,453 +1,364 @@
+
 #include "core/aroma_node.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
 #include "core/aroma_slab_alloc.h"
 #include "aroma_ui.h"
+
 #include <inttypes.h>
 #include <stdatomic.h>
-#include <string.h>
-#include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-static atomic_uint_fast64_t global_node_id_counter = 1;
-static uint64_t g_frame_number = 0;
 
-static AromaNode* g_dirty_nodes[AROMA_MAX_DIRTY_NODES];
-static size_t g_dirty_count = 0;
+static atomic_uint_fast64_t s_node_id_counter = 1;
+static uint64_t             s_frame_number    = 0;
 
-uint64_t __generate_node_id(void) {
-    return atomic_fetch_add(&global_node_id_counter, 1);
+static AromaNode* s_dirty_nodes[AROMA_MAX_DIRTY_NODES];
+static size_t     s_dirty_count = 0;
+
+
+static uint64_t next_node_id(void)
+{
+    return atomic_fetch_add(&s_node_id_counter, 1);
 }
 
-void __reset_node_id_counter(void) {
-    atomic_store(&global_node_id_counter, 1);
-}
-
-uint64_t __get_current_node_id_counter(void) {
-    return atomic_load(&global_node_id_counter);
-}
-
-void __node_system_init(void) {
-    aroma_memory_system_init();
-    __reset_node_id_counter();
-    aroma_dirty_list_init();
-    LOG_INFO("Node system initialized with multi-cache memory system.");
-}
-
-void __node_system_destroy(void) {
-    __reset_node_id_counter();
-    LOG_INFO("Node system destroyed.");
-}
-
-AromaNode* __create_node(AromaNodeType node_type, AromaNode* parent_node, void* node_widget_ptr) {
-
-    if (node_type == NODE_TYPE_ROOT && parent_node != NULL) {
-        LOG_ERROR("Root node cannot have a parent.");
-        return NULL;
-    }
-
-    if (node_type != NODE_TYPE_ROOT && (!parent_node || !node_widget_ptr)) {
-        LOG_ERROR("Invalid parameters to create node.");
-        return NULL;
-    }
-
-    if (node_type > NODE_TYPE_WIDGET) {
-        LOG_ERROR("Invalid node type: %d", node_type);
-        return NULL;
-    }
-
-    if (parent_node && parent_node->child_count >= AROMA_MAX_CHILD_NODES) {
-        LOG_WARNING("Parent node has reached maximum child nodes (%d).", AROMA_MAX_CHILD_NODES);
-        return NULL;
-    }
-
+static AromaNode* alloc_node(void)
+{
 #ifdef ESP32
-    AromaNode* new_node = (AromaNode*)__slab_pool_alloc(&global_memory_system.node_pool);
+    AromaNode* n = (AromaNode*)__slab_pool_alloc(&global_memory_system.node_pool);
+    if (n) memset(n, 0, sizeof(AromaNode));
 #else
-    AromaNode* new_node = (AromaNode*)calloc(1, sizeof(AromaNode));
+    AromaNode* n = (AromaNode*)calloc(1, sizeof(AromaNode));
 #endif
-
-    if (!new_node) {
-        LOG_CRITICAL("Failed to allocate memory for new node.");
-        return NULL;
-    }
-
-    /* calloc already zeroes on non-ESP32; explicit memset on ESP32 */
-#ifdef ESP32
-    memset(new_node, 0, sizeof(AromaNode));
-#endif
-
-    new_node->node_id        = __generate_node_id();
-    new_node->node_type      = node_type;
-    new_node->z_index        = 0;
-    new_node->parent_node    = parent_node;
-    new_node->node_widget_ptr = node_widget_ptr;
-    new_node->child_count    = 0;
-    new_node->is_dirty       = false;
-    new_node->subtree_dirty  = false;
-    new_node->is_hidden      = false;
-    new_node->propagate_dirty = true;
-    new_node->opacity        = 1.0f;
-    new_node->dirty_frame    = 0;
-
-    /* child_nodes already zeroed by calloc / memset above */
-
-    LOG_INFO("Created node ID: %llu, type: %d", new_node->node_id, node_type);
-    return new_node;
+    return n;
 }
 
-AromaNode* __add_child_node(AromaNodeType node_type, AromaNode* parent_node, void* node_widget_ptr) {
-    if (!parent_node) {
-        LOG_ERROR("Parent node is NULL.");
-        return NULL;
-    }
-
-    if (parent_node->child_count >= AROMA_MAX_CHILD_NODES) {
-        LOG_WARNING("Parent node has reached maximum child nodes.");
-        return NULL;
-    }
-
-    AromaNode* new_node = __create_node(node_type, parent_node, node_widget_ptr);
-    if (!new_node) {
-        LOG_ERROR("Failed to create child node.");
-        return NULL;
-    }
-
-    parent_node->child_nodes[parent_node->child_count++] = new_node;
-    LOG_INFO("Added child node ID: %llu to parent ID: %llu",
-              new_node->node_id, parent_node->node_id);
-
-    return new_node;
-}
-
-AromaNode* __remove_child_node(AromaNode* parent_node, uint64_t node_id) {
-    if (!parent_node) {
-        LOG_ERROR("Parent node is NULL.");
-        return NULL;
-    }
-
-    for (uint64_t i = 0; i < parent_node->child_count; ++i) {
-        if (parent_node->child_nodes[i] && parent_node->child_nodes[i]->node_id == node_id) {
-            AromaNode* removed_node = parent_node->child_nodes[i];
-
-            for (uint64_t j = i; j < parent_node->child_count - 1; ++j) {
-                parent_node->child_nodes[j] = parent_node->child_nodes[j + 1];
-            }
-
-            parent_node->child_nodes[parent_node->child_count - 1] = NULL;
-            parent_node->child_count--;
-
-            LOG_INFO("Removed child node ID: %llu from parent ID: %llu",
-                      node_id, parent_node->node_id);
-            return removed_node;
-        }
-    }
-
-    LOG_WARNING("Child node with ID %llu not found in parent ID %llu.",
-                node_id, parent_node->node_id);
-    return NULL;
-}
-
-void __destroy_node(AromaNode* node) {
-    if (!node) {
-        LOG_WARNING("Attempted to destroy NULL node.");
-        return;
-    }
-
-    /* FIX: invoke destroy_cb but let THIS function handle tree teardown.
-     * The old code returned immediately after cb(), so children and the
-     * widget pointer were never freed when a destroy_cb was present. */
-    if (node->destroy_cb) {
-        void (*cb)(AromaNode*) = node->destroy_cb;
-        node->destroy_cb = NULL; /* prevent re-entry */
-        cb(node);
-        /* cb() is responsible only for widget-specific cleanup;
-         * fall through so we still unlink, recurse, and free. */
-    }
-
-    if (node->parent_node) {
-        __remove_child_node(node->parent_node, node->node_id);
-    }
-
-    /* Recurse into children before freeing this node */
-    for (uint64_t i = 0; i < node->child_count; i++) {
-        if (node->child_nodes[i]) {
-            node->child_nodes[i]->parent_node = NULL;
-            __destroy_node(node->child_nodes[i]);
-        }
-    }
-
-    if (node->node_widget_ptr) {
-        aroma_widget_free(node->node_widget_ptr);
-    }
-
-    uint64_t destroyed_id = node->node_id;
-
+static void free_node(AromaNode* node)
+{
 #ifdef ESP32
     __slab_pool_free(&global_memory_system.node_pool, node);
 #else
     free(node);
 #endif
-
-    LOG_INFO("Destroyed node ID: %llu", destroyed_id);
 }
 
-void __destroy_node_tree(AromaNode* root_node) {
-    if (!root_node) {
-        LOG_WARNING("Attempted to destroy NULL root node.");
-        return;
+static void dirty_list_remove(AromaNode* node)
+{
+    for (size_t i = 0; i < s_dirty_count; i++) {
+        if (s_dirty_nodes[i] == node) {
+            s_dirty_nodes[i] = s_dirty_nodes[--s_dirty_count];
+            s_dirty_nodes[s_dirty_count] = NULL;
+            return;
+        }
+    }
+}
+
+static const char* node_type_str(AromaNodeType t)
+{
+    static const char* const names[] = { "ROOT", "CONTAINER", "WIDGET" };
+    return (unsigned)t < 3 ? names[t] : "UNKNOWN";
+}
+
+static void print_tree_r(const AromaNode* node, int depth)
+{
+    if (!node) return;
+    for (int i = 0; i < depth; i++) fputs("  ", stdout);
+    printf("├─ [ID:%" PRIu64 " | %s | children:%" PRIu64 "]\n",
+           node->node_id, node_type_str(node->node_type), node->child_count);
+    for (uint64_t i = 0; i < node->child_count; i++)
+        print_tree_r(node->child_nodes[i], depth + 1);
+}
+
+
+void __node_system_init(void)
+{
+    aroma_memory_system_init();
+    atomic_store(&s_node_id_counter, 1);
+    aroma_dirty_list_init();
+    LOG_INFO("Node system initialised.");
+}
+
+void __node_system_destroy(void)
+{
+    atomic_store(&s_node_id_counter, 1);
+    LOG_INFO("Node system destroyed.");
+}
+
+void              __reset_node_id_counter(void)     { atomic_store(&s_node_id_counter, 1); }
+uint64_t          __get_current_node_id_counter(void){ return atomic_load(&s_node_id_counter); }
+uint64_t          __generate_node_id(void)           { return next_node_id(); }
+
+
+AromaNode* __create_node(AromaNodeType node_type,
+                         AromaNode*    parent_node,
+                         void*         node_widget_ptr)
+{
+    if (node_type > NODE_TYPE_WIDGET) {
+        LOG_ERROR("Invalid node type: %d", node_type);
+        return NULL;
     }
 
+    if (node_type == NODE_TYPE_ROOT && parent_node) {
+        LOG_ERROR("Root node cannot have a parent.");
+        return NULL;
+    }
+    if (node_type != NODE_TYPE_ROOT && !parent_node) {
+        LOG_ERROR("Non-root node requires a parent.");
+        return NULL;
+    }
+
+    if (node_type != NODE_TYPE_ROOT && !node_widget_ptr) {
+        LOG_ERROR("Non-root node requires a widget pointer.");
+        return NULL;
+    }
+
+    if (parent_node && parent_node->child_count >= AROMA_MAX_CHILD_NODES) {
+        LOG_WARNING("Parent %" PRIu64 " is at child capacity (%d).",
+                    parent_node->node_id, AROMA_MAX_CHILD_NODES);
+        return NULL;
+    }
+
+    AromaNode* n = alloc_node();
+    if (!n) {
+        LOG_CRITICAL("Out of memory allocating AromaNode.");
+        return NULL;
+    }
+
+    n->node_id         = next_node_id();
+    n->node_type       = node_type;
+    n->parent_node     = parent_node;
+    n->node_widget_ptr = node_widget_ptr;
+    n->opacity         = 1.0f;
+    n->propagate_dirty = true;
+
+    LOG_INFO("Created node ID:%" PRIu64 " type:%s", n->node_id, node_type_str(node_type));
+    return n;
+}
+
+AromaNode* __add_child_node(AromaNodeType node_type,
+                            AromaNode*    parent_node,
+                            void*         node_widget_ptr)
+{
+    if (!parent_node) {
+        LOG_ERROR("__add_child_node: parent is NULL.");
+        return NULL;
+    }
+
+    AromaNode* child = __create_node(node_type, parent_node, node_widget_ptr);
+    if (!child) return NULL;
+
+    parent_node->child_nodes[parent_node->child_count++] = child;
+    LOG_INFO("Node %" PRIu64 " added as child of %" PRIu64 ".",
+             child->node_id, parent_node->node_id);
+    return child;
+}
+
+AromaNode* __remove_child_node(AromaNode* parent_node, uint64_t node_id)
+{
+    if (!parent_node) {
+        LOG_ERROR("__remove_child_node: parent is NULL.");
+        return NULL;
+    }
+
+    for (uint64_t i = 0; i < parent_node->child_count; i++) {
+        if (!parent_node->child_nodes[i]) continue;
+        if (parent_node->child_nodes[i]->node_id != node_id) continue;
+
+        AromaNode* removed = parent_node->child_nodes[i];
+
+        int64_t last = (int64_t)parent_node->child_count - 1;
+        for (int64_t j = (int64_t)i; j < last; j++)
+            parent_node->child_nodes[j] = parent_node->child_nodes[j + 1];
+
+        parent_node->child_nodes[--parent_node->child_count] = NULL;
+
+        LOG_INFO("Removed node %" PRIu64 " from parent %" PRIu64 ".",
+                 node_id, parent_node->node_id);
+        return removed;
+    }
+
+    LOG_WARNING("Node %" PRIu64 " not found in parent %" PRIu64 ".",
+                node_id, parent_node->node_id);
+    return NULL;
+}
+
+
+void __destroy_node(AromaNode* node)
+{
+    if (!node) return;
+
+    if (node->destroy_cb) {
+        void (*cb)(struct AromaNode*) = node->destroy_cb;
+        node->destroy_cb = NULL;
+        cb(node);
+    }
+
+    if (node->parent_node)
+        __remove_child_node(node->parent_node, node->node_id);
+
+    uint64_t count = node->child_count;
+    for (uint64_t i = 0; i < count; i++) {
+        AromaNode* child = node->child_nodes[i];
+        if (!child) continue;
+        child->parent_node = NULL;
+        __destroy_node(child);
+    }
+
+    if (node->node_widget_ptr)
+        aroma_widget_free(node->node_widget_ptr);
+
+    dirty_list_remove(node);
+
+    uint64_t id = node->node_id;
+    free_node(node);
+    LOG_INFO("Destroyed node %" PRIu64 ".", id);
+}
+
+void __destroy_node_tree(AromaNode* root_node)
+{
+    if (!root_node) return;
     __destroy_node(root_node);
-    LOG_INFO("Destroyed entire node tree");
+    LOG_INFO("Destroyed node tree.");
 }
 
-AromaNode* __find_node_by_id(AromaNode* root, uint64_t node_id) {
+
+AromaNode* __find_node_by_id(AromaNode* root, uint64_t node_id)
+{
     if (!root) return NULL;
-
-    if (root->node_id == node_id) {
-        return root;
-    }
-
+    if (root->node_id == node_id) return root;
     for (uint64_t i = 0; i < root->child_count; i++) {
         AromaNode* found = __find_node_by_id(root->child_nodes[i], node_id);
         if (found) return found;
     }
-
     return NULL;
 }
 
-static const char* __node_type_to_string(AromaNodeType type) {
-    switch (type) {
-        case NODE_TYPE_ROOT:      return "ROOT";
-        case NODE_TYPE_CONTAINER: return "CONTAINER";
-        case NODE_TYPE_WIDGET:    return "WIDGET";
-        default:                  return "UNKNOWN";
-    }
+void __print_node_info(AromaNode* node)
+{
+    if (!node) { puts("[NULL NODE]"); return; }
+    printf("ID:%" PRIu64 " | %s | z:%d | children:%" PRIu64 " | widget:%p\n",
+           node->node_id, node_type_str(node->node_type),
+           node->z_index, node->child_count, (void*)node->node_widget_ptr);
 }
 
-void __print_node_info(AromaNode* node) {
-    if (!node) {
-        printf("[NULL NODE]\n");
-        return;
-    }
-    printf("Node ID: %" PRIu64 " | Type: %s | z:%d | Children: %" PRIu64 " | Widget: %p\n",
-           node->node_id,
-           __node_type_to_string(node->node_type),
-           node->z_index,
-           node->child_count,
-           node->node_widget_ptr);
+void __print_node_tree(AromaNode* root_node)
+{
+    if (!root_node) { puts("[ERROR] root is NULL"); return; }
+    puts("\n========== AROMA SCENE GRAPH ==========");
+    printf("Root ID: %" PRIu64 "\n\n", root_node->node_id);
+    print_tree_r(root_node, 0);
+    puts("=======================================\n");
 }
 
-static void __print_node_tree_recursive(AromaNode* node, int depth) {
-    if (!node) return;
 
-    for (int i = 0; i < depth; i++) printf("  ");
+void    aroma_node_set_z_index(AromaNode* node, int32_t z) { if (node) node->z_index = z; }
+int32_t aroma_node_get_z_index(AromaNode* node)            { return node ? node->z_index : 0; }
 
-    printf("├─ [ID: %" PRIu64 " | Type: %s | Children: %" PRIu64 "]\n",
-           node->node_id,
-           __node_type_to_string(node->node_type),
-           node->child_count);
-
-    for (uint64_t i = 0; i < node->child_count; i++) {
-        if (node->child_nodes[i]) {
-            __print_node_tree_recursive(node->child_nodes[i], depth + 1);
-        }
-    }
-}
-
-void __print_node_tree(AromaNode* root_node) {
-    if (!root_node) {
-        printf("[ERROR] Scene graph root is NULL\n");
-        return;
-    }
-
-    printf("\n========== AROMA SCENE GRAPH TREE ==========\n");
-    printf("Root Node ID: %" PRIu64 "\n", root_node->node_id);
-    printf("\nHierarchy:\n");
-    __print_node_tree_recursive(root_node, 0);
-    printf("==========================================\n\n");
-}
-
-void aroma_node_set_z_index(AromaNode* node, int32_t z_index) {
-    if (!node) return;
-    node->z_index = z_index;
-}
-
-int32_t aroma_node_get_z_index(AromaNode* node) {
-    if (!node) return 0;
-    return node->z_index;
-}
-
-AromaNode* aroma_node_get_window(AromaNode* node) {
+AromaNode* aroma_node_get_window(AromaNode* node)
+{
     if (!node) return NULL;
-    AromaNode* current = node;
-    while (current->parent_node) {
-        current = current->parent_node;
-    }
-    return current;
+    while (node->parent_node) node = node->parent_node;
+    return node;
 }
 
-void aroma_node_invalidate(AromaNode* node) {
-    /* FIX: alignment check used sizeof(void*)-1 as mask which only catches
-     * misalignment by pointer-word size.  Use _Alignof(AromaNode) instead,
-     * which is what WASM actually requires for the struct members. */
+void aroma_node_set_draw_cb(AromaNode* node, AromaNodeDrawFn cb) { if (node) node->draw_cb = cb; }
+AromaNodeDrawFn aroma_node_get_draw_cb(AromaNode* node)          { return node ? node->draw_cb : NULL; }
+
+void aroma_node_set_hidden(AromaNode* node, bool hidden)
+{
+    if (!node || node->is_hidden == hidden) return;
+    node->is_hidden = hidden;
+    if (node->parent_node)
+        aroma_node_invalidate(node->parent_node);
+}
+
+bool aroma_node_is_hidden(AromaNode* node) { return node ? node->is_hidden : true; }
+
+
+void aroma_dirty_list_init(void)
+{
+    s_dirty_count  = 0;
+    s_frame_number = 0;
+    memset(s_dirty_nodes, 0, sizeof(s_dirty_nodes));
+}
+
+void aroma_dirty_list_add(AromaNode* node)
+{
     if (!node) return;
-    if (((uintptr_t)node % _Alignof(AromaNode)) != 0) return;
-    if (node->is_dirty) return;
+    if (s_dirty_count >= AROMA_MAX_DIRTY_NODES) {
+        LOG_WARNING("Dirty list full — dropping node %" PRIu64 ".", node->node_id);
+        return;
+    }
+    s_dirty_nodes[s_dirty_count++] = node;
+}
+
+void aroma_dirty_list_clear(void)
+{
+    for (size_t i = 0; i < s_dirty_count; i++) {
+        AromaNode* n = s_dirty_nodes[i];
+        if (!n) continue;
+
+        n->is_dirty      = false;
+        n->subtree_dirty = false;
+
+        AromaNode* p = n->parent_node;
+        while (p) {
+            if (!p->subtree_dirty) break;
+            p->subtree_dirty = false;
+            p = p->parent_node;
+        }
+
+        s_dirty_nodes[i] = NULL;
+    }
+    s_dirty_count = 0;
+}
+
+AromaNode** aroma_dirty_list_get(size_t* count)
+{
+    if (count) *count = s_dirty_count;
+    return s_dirty_nodes;
+}
+
+bool aroma_dirty_list_has_entries(void) { return s_dirty_count > 0; }
+
+void aroma_node_invalidate(AromaNode* node)
+{
+    if (!node || node->is_dirty) return;
 
     node->is_dirty    = true;
-    node->dirty_frame = g_frame_number;
+    node->dirty_frame = s_frame_number;
     aroma_dirty_list_add(node);
 
-    /* Walk ancestors and set subtree_dirty.  Parents are NOT marked
-     * is_dirty — only the node that actually changed needs redrawing. */
-    AromaNode* parent = node->parent_node;
-    while (parent) {
-        if (((uintptr_t)parent % _Alignof(AromaNode)) != 0) break;
-        if (parent->subtree_dirty) break; /* already flagged — ancestors above are too */
-        parent->subtree_dirty = true;
-        parent = parent->parent_node;
+    if (!node->propagate_dirty) return;
+    AromaNode* p = node->parent_node;
+    while (p) {
+        if (p->subtree_dirty) break;
+        p->subtree_dirty = true;
+        p = p->parent_node;
     }
 }
 
-void aroma_node_invalidate_tree(AromaNode* root) {
-    if (!root) return;
-
-    aroma_node_invalidate(root);
-
-    for (uint64_t i = 0; i < root->child_count; i++) {
-        if (root->child_nodes[i]) {
-            aroma_node_invalidate_tree(root->child_nodes[i]);
-        }
-    }
-}
-
-bool aroma_node_is_dirty(AromaNode* node) {
-    return node ? node->is_dirty : false;
-}
-
-void aroma_node_mark_clean(AromaNode* node) {
-    if (node) {
-        node->is_dirty = false;
-    }
-}
-
-void aroma_node_set_draw_cb(AromaNode* node, AromaNodeDrawFn draw_cb) {
-    if (!node) return;
-    node->draw_cb = draw_cb;
-}
-
-AromaNodeDrawFn aroma_node_get_draw_cb(AromaNode* node) {
-    return node ? node->draw_cb : NULL;
-}
-
-void aroma_node_set_hidden(AromaNode* node, bool hidden) {
-    if (!node) return;
-    if (node->is_hidden != hidden) {
-        node->is_hidden = hidden;
-        if (node->parent_node) {
-            aroma_node_invalidate(node->parent_node);
-        }
-    }
-}
-
-bool aroma_node_is_hidden(AromaNode* node) {
-    return node ? node->is_hidden : true;
-}
-
-void aroma_dirty_list_init(void) {
-    g_dirty_count = 0;
-    g_frame_number = 0;
-    memset(g_dirty_nodes, 0, sizeof(g_dirty_nodes));
-}
-
-/* Validate a node pointer is non-null and naturally aligned for AromaNode.
- * Used in dirty-list walks where we follow parent_node chains that may
- * contain stale or garbage values after a node is freed mid-frame. */
-static inline bool dirty_node_valid(const AromaNode* p)
+void aroma_node_invalidate_tree(AromaNode* root)
 {
-    if (!p) return false;
-    if (((uintptr_t)p % _Alignof(AromaNode)) != 0) return false;
-    return true;
+    if (!root) return;
+    aroma_node_invalidate(root);
+    for (uint64_t i = 0; i < root->child_count; i++)
+        aroma_node_invalidate_tree(root->child_nodes[i]);
 }
 
-void aroma_dirty_list_clear(void) {
-    /* Pass 1: clear is_dirty on every node in the list.
-     * Validate the pointer before touching any member — a node may have
-     * been freed between being added to the dirty list and this call. */
-    for (size_t i = 0; i < g_dirty_count; i++) {
-        AromaNode* n = g_dirty_nodes[i];
-        if (!dirty_node_valid(n)) continue;
-        n->is_dirty = false;
-    }
+bool aroma_node_is_dirty(AromaNode* node)  { return node && node->is_dirty; }
 
-    /* Pass 2: walk each node's ancestor chain and clear subtree_dirty.
-     * We MUST validate every pointer before dereferencing it — this is
-     * the line that was faulting in WASM.  parent_node is stored as a raw
-     * pointer and can be stale if the parent was destroyed first. */
-    for (size_t i = 0; i < g_dirty_count; i++) {
-        AromaNode* n = g_dirty_nodes[i];
-        if (!dirty_node_valid(n)) continue;
-
-        /* Read parent_node once from validated n, then validate p itself
-         * before touching p->subtree_dirty or p->parent_node. */
-        AromaNode* p = n->parent_node;
-        while (dirty_node_valid(p)) {
-            if (!p->subtree_dirty) break; /* already cleared — ancestors above are too */
-            p->subtree_dirty = false;
-            /* Read next pointer before we potentially invalidate p */
-            AromaNode* next = p->parent_node;
-            p = next;
-        }
-    }
-
-    g_dirty_count = 0;
-}
-
-AromaNode** aroma_dirty_list_get(size_t* count) {
-    if (count) *count = g_dirty_count;
-    return g_dirty_nodes;
-}
-
-bool aroma_dirty_list_has_entries(void) {
-    return g_dirty_count > 0;
-}
-
-void aroma_dirty_list_add(AromaNode* node) {
+void aroma_node_mark_clean(AromaNode* node)
+{
     if (!node) return;
-
-    /* FIX: the old duplicate check compared dirty_frame == g_frame_number
-     * which is unreliable on frame 0 (every node matches) and still fell
-     * through to an O(n) scan anyway.  is_dirty is set before this function
-     * is called from aroma_node_invalidate, so a plain is_dirty check is
-     * the correct O(1) guard.  We keep a belt-and-suspenders linear scan
-     * only in debug/WASM builds. */
-    if (node->is_dirty && g_dirty_count > 0) {
-#ifdef __EMSCRIPTEN__
-        for (size_t i = 0; i < g_dirty_count; i++) {
-            if (g_dirty_nodes[i] == node) return;
-        }
-#else
-        /* On non-WASM trust is_dirty as the single source of truth */
-        return;
-#endif
-    }
-
-    if (g_dirty_count >= AROMA_MAX_DIRTY_NODES) {
-        LOG_WARNING("aroma_dirty_list_add: dirty list full, dropping node %llu",
-                    (unsigned long long)node->node_id);
-        return;
-    }
-    g_dirty_nodes[g_dirty_count++] = node;
+    node->is_dirty    = false;
+    node->dirty_frame = s_frame_number;
 }
 
-uint64_t aroma_frame_number(void) {
-    return g_frame_number;
-}
 
-void aroma_frame_advance(void) {
-    g_frame_number++;
-}
+uint64_t aroma_frame_number(void)  { return s_frame_number; }
+void     aroma_frame_advance(void) { s_frame_number++;       }

@@ -138,7 +138,13 @@ typedef struct
     AromaNode *setup_overlay;
     AromaNode *battery_button;
 
+    AromaNode *bt_container;
+    
+    
     AromaTheme theme;
+
+
+
 
     bool map_panel_open;
     bool settings_panel_open;
