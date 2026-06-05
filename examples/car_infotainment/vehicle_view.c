@@ -360,6 +360,8 @@ static void battery_diagnostics(void *user_data)
     aroma_image_set_source(state.overlay,
 #ifdef __EMSCRIPTEN__
                            "/assets/car_battery.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/car_battery.png"
 #else
                            "../assets/car_battery.png"
 #endif
@@ -402,6 +404,8 @@ void build_vehicle_view(AromaNode *window)
         state.vehicle_view_root,
 #ifdef __EMSCRIPTEN__
         "/assets/backroad_blur.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/backroad_blur.png"
 #else
         "../assets/backroad_blur.png"
 #endif
@@ -413,6 +417,8 @@ void build_vehicle_view(AromaNode *window)
         state.vehicle_view_root,
 #ifdef __EMSCRIPTEN__
         "/assets/car.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/car.png"
 #else
         "../assets/car.png"
 #endif
@@ -546,6 +552,8 @@ void build_vehicle_view(AromaNode *window)
         state.vehicle_view_root,
 #ifdef __EMSCRIPTEN__
         "/assets/charging.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/charging.png"
 #else
         "../assets/charging.png"
 #endif
@@ -612,6 +620,8 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *high_beams = aroma_ui_image(icons_col,
 #ifdef __EMSCRIPTEN__
                                            "/assets/high_beams.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/high_beams.png"
 #else
                                            "../assets/high_beams.png"
 #endif
@@ -622,6 +632,8 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *low_beams = aroma_ui_image(icons_col,
 #ifdef __EMSCRIPTEN__
                                           "/assets/low_beams.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/low_beams.png"
 #else
                                           "../assets/low_beams.png"
 #endif
@@ -632,6 +644,8 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *abs_icon = aroma_ui_image(icons_col,
 #ifdef __EMSCRIPTEN__
                                          "/assets/abs_indicator.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/abs_indicator.png"
 #else
                                          "../assets/abs_indicator.png"
 #endif
@@ -642,6 +656,8 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *brake_icon = aroma_ui_image(icons_col,
 #ifdef __EMSCRIPTEN__
                                            "/assets/brake_indicator.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/brake_indicator.png"
 #else
                                            "../assets/brake_indicator.png"
 #endif
@@ -656,6 +672,8 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *maps_app_icon = aroma_ui_image(bottom_bar,
 #ifdef __EMSCRIPTEN__
                                               "/assets/maps_app.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/maps_app.png"
 #else
                                               "../assets/maps_app.png"
 #endif
@@ -665,6 +683,8 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *phone_app_icon = aroma_ui_image(bottom_bar,
 #ifdef __EMSCRIPTEN__
                                                "/assets/phone_app.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/phone_app.png"
 #else
                                                "../assets/phone_app.png"
 #endif
@@ -675,6 +695,8 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *music_app_icon = aroma_ui_image(bottom_bar,
 #ifdef __EMSCRIPTEN__
                                                "/assets/music_app.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/music_app.png"
 #else
                                                "../assets/music_app.png"
 #endif
