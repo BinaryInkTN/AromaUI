@@ -190,6 +190,8 @@ static void monitor_avrcp_changes(internal_app_t *app);
 static void check_reconnection(internal_app_t *app);
 static bool verify_player_functional(internal_app_t *app);
 static void dump_all_objects(internal_app_t *app);
+static void setup_pulseaudio_null_sink(void);
+static void route_bt_audio_to_hardware(void);
 
 static void log_msg(internal_app_t *app, const char *level, const char *fmt, ...)
 {
@@ -212,6 +214,74 @@ static void log_msg(internal_app_t *app, const char *level, const char *fmt, ...
         strftime(tb, sizeof(tb), "%H:%M:%S", ti);
         printf("[%s] [%s] %s\n", tb, level, buf);
         fflush(stdout);
+    }
+}static void setup_pulseaudio_null_sink(void)
+{
+    if (!g_app.pa_ctx || !g_app.pa_ready)
+        return;
+
+    pa_operation *op;
+    
+    // Only create null sink if it doesn't exist
+    op = pa_context_load_module(g_app.pa_ctx, "module-null-sink",
+                                "sink_name=bt_speaker_sink sink_properties=device.description=Bluetooth_Speaker",
+                                NULL, NULL);
+    if (op)
+    {
+        pa_operation_unref(op);
+        log_msg(&g_app, "INFO", "Created Bluetooth speaker sink");
+    }
+
+    usleep(500000);
+
+    // Route to hardware only once
+    route_bt_audio_to_hardware();
+}
+
+static void route_bt_audio_to_hardware(void)
+{
+    if (!g_app.pa_ctx || !g_app.pa_ready)
+        return;
+
+    pa_operation *op;
+
+    // Only try the most common RPi4 outputs
+    const char *sink_names[] = {
+        "alsa_output.platform-bcm2835_audio.stereo-fallback",
+        NULL
+    };
+
+    // Try headphone jack first
+    op = pa_context_load_module(g_app.pa_ctx, "module-loopback",
+                                "source=bt_speaker_sink.monitor sink=alsa_output.platform-bcm2835_audio.stereo-fallback",
+                                NULL, NULL);
+    if (!op)
+    {
+        // Fallback to default
+        op = pa_context_load_module(g_app.pa_ctx, "module-loopback",
+                                    "source=bt_speaker_sink.monitor",
+                                    NULL, NULL);
+    }
+    
+    if (op)
+    {
+        pa_operation_unref(op);
+        log_msg(&g_app, "INFO", "Audio routing configured");
+    }
+}
+
+static void load_pa_bt_modules(internal_app_t *app)
+{
+    if (!app->pa_ready)
+        return;
+    
+    // Only load bluetooth-discover, skip policy and bluez5-discover
+    pa_operation *op;
+    op = pa_context_load_module(app->pa_ctx, "module-bluetooth-discover", NULL, NULL, NULL);
+    if (op)
+    {
+        pa_operation_unref(op);
+        log_msg(app, "INFO", "Loaded Bluetooth discover module");
     }
 }
 
@@ -509,9 +579,7 @@ static bool configure_adapter(internal_app_t *app)
 
     set_prop_bool(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                   BLUEZ_ADAPTER_IFACE, "Powered", TRUE);
-    sleep(1);
-      set_prop_str(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
-                 BLUEZ_ADAPTER_IFACE, "SecureConnections", "false");
+    sleep(2);
 
     set_prop_str(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                  BLUEZ_ADAPTER_IFACE, "Alias", app->device_name);
@@ -531,7 +599,7 @@ static bool configure_adapter(internal_app_t *app)
 
     dbus_connection_flush(app->bus);
 
-    log_msg(app, "INFO", "Adapter ready -- look for '%s' on your phone", app->device_name);
+    log_msg(app, "INFO", "Adapter ready -- look for '%s' on your phone (PIN: 0000)", app->device_name);
     return true;
 }
 
@@ -1960,6 +2028,7 @@ static DBusHandlerResult avrcp_handler(DBusConnection *conn, DBusMessage *msg, v
 
 static const DBusObjectPathVTable avrcp_vtable = {
     .message_function = avrcp_handler};
+
 static DBusHandlerResult agent_handler(DBusConnection *conn,
                                        DBusMessage *msg, void *data)
 {
@@ -1970,47 +2039,48 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         app->agent_registered = false;
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestPinCode"))
     {
+        const char *device_path = NULL;
+        dbus_message_get_args(msg, NULL, DBUS_TYPE_OBJECT_PATH, &device_path, DBUS_TYPE_INVALID);
+        log_msg(app, "INFO", "Device %s requesting PIN - sending 0000", device_path ? device_path : "unknown");
+        
+        if (device_path)
+        {
+            set_prop_bool(app->bus, BLUEZ_BUS_NAME, device_path,
+                          BLUEZ_DEVICE_IFACE, "Trusted", TRUE);
+        }
+        
         const char *pin = "0000";
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_message_append_args(r, DBUS_TYPE_STRING, &pin, DBUS_TYPE_INVALID);
         dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "DisplayPinCode"))
     {
+        const char *device_path = NULL;
+        const char *pin = NULL;
+        dbus_message_get_args(msg, NULL, DBUS_TYPE_OBJECT_PATH, &device_path, DBUS_TYPE_STRING, &pin, DBUS_TYPE_INVALID);
+        log_msg(app, "INFO", "PIN for %s is: %s", device_path ? device_path : "unknown", pin ? pin : "0000");
+        
+        if (device_path)
+        {
+            set_prop_bool(app->bus, BLUEZ_BUS_NAME, device_path,
+                          BLUEZ_DEVICE_IFACE, "Trusted", TRUE);
+            safe_strncpy(app->connected_device_path, device_path, sizeof(app->connected_device_path));
+            app->connected_time = time(NULL);
+            set_state(app, BT_STATE_CONNECTED);
+        }
+        
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
-        dbus_message_unref(r);
-        return DBUS_HANDLER_RESULT_HANDLED;
-    }
-
-    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestPasskey"))
-    {
-        dbus_uint32_t pk = 0;
-        DBusMessage *r = dbus_message_new_method_return(msg);
-        dbus_message_append_args(r, DBUS_TYPE_UINT32, &pk, DBUS_TYPE_INVALID);
-        dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
-        dbus_message_unref(r);
-        return DBUS_HANDLER_RESULT_HANDLED;
-    }
-
-    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "DisplayPasskey"))
-    {
-        DBusMessage *r = dbus_message_new_method_return(msg);
-        dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
@@ -2018,77 +2088,31 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestConfirmation"))
     {
         const char *device_path = NULL;
-        dbus_uint32_t passkey = 0;
-        dbus_message_get_args(msg, NULL,
-                              DBUS_TYPE_OBJECT_PATH, &device_path,
-                              DBUS_TYPE_UINT32, &passkey,
-                              DBUS_TYPE_INVALID);
-
+        dbus_message_get_args(msg, NULL, DBUS_TYPE_OBJECT_PATH, &device_path, DBUS_TYPE_INVALID);
+        log_msg(app, "INFO", "Confirming connection from %s", device_path ? device_path : "unknown");
+        
         if (device_path)
         {
             set_prop_bool(app->bus, BLUEZ_BUS_NAME, device_path,
                           BLUEZ_DEVICE_IFACE, "Trusted", TRUE);
-
-            get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
-                            BLUEZ_DEVICE_IFACE, "Address",
-                            app->connected_device_address, sizeof(app->connected_device_address));
-
-            if (!get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
-                                 BLUEZ_DEVICE_IFACE, "Name",
-                                 app->connected_device_name, sizeof(app->connected_device_name)))
-            {
-                get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
-                                BLUEZ_DEVICE_IFACE, "Alias",
-                                app->connected_device_name, sizeof(app->connected_device_name));
-            }
-
-            if (app->connected_device_name[0] == '\0' && app->connected_device_address[0] != '\0')
-            {
-                snprintf(app->connected_device_name, sizeof(app->connected_device_name),
-                         "Device (%s)", app->connected_device_address);
-            }
-
-            pthread_mutex_lock(&app->lock);
-            safe_strncpy(app->connected_device_path, device_path,
-                         sizeof(app->connected_device_path));
-            safe_strncpy(app->device_path, device_path, sizeof(app->device_path));
+            safe_strncpy(app->connected_device_path, device_path, sizeof(app->connected_device_path));
             app->connected_time = time(NULL);
-            set_state_locked(app, BT_STATE_CONNECTED);
-            pthread_mutex_unlock(&app->lock);
-            
-            usleep(500000);
-            check_transport_state();
-            usleep(500000);
-            find_player_path(app);
-            monitor_avrcp_changes(app);
-            query_device_name();
+            set_state(app, BT_STATE_CONNECTED);
         }
-
+        
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
         dbus_message_unref(r);
-
-        if (device_path)
-            notify_device_event(app, true);
-
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestAuthorization"))
     {
         const char *device_path = NULL;
-        dbus_message_get_args(msg, NULL,
-                              DBUS_TYPE_OBJECT_PATH, &device_path,
-                              DBUS_TYPE_INVALID);
-        if (device_path)
-        {
-            set_prop_bool(app->bus, BLUEZ_BUS_NAME, device_path,
-                          BLUEZ_DEVICE_IFACE, "Trusted", TRUE);
-        }
+        dbus_message_get_args(msg, NULL, DBUS_TYPE_OBJECT_PATH, &device_path, DBUS_TYPE_INVALID);
+        log_msg(app, "INFO", "Authorizing %s", device_path ? device_path : "unknown");
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
@@ -2097,7 +2121,6 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
     {
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
@@ -2106,13 +2129,13 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
     {
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
-        dbus_connection_flush(conn);
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
+
 static const DBusObjectPathVTable agent_vtable = {
     .message_function = agent_handler};
 
@@ -2121,23 +2144,30 @@ static bool register_agent(internal_app_t *app)
     unregister_agent(app);
 
     if (!dbus_connection_register_object_path(app->bus, AGENT_PATH, &agent_vtable, app))
+    {
+        log_msg(app, "ERROR", "Failed to register agent object path");
         return false;
+    }
 
     DBusMessage *msg = dbus_message_new_method_call(BLUEZ_BUS_NAME, "/org/bluez",
                                                     BLUEZ_AGENT_MGR_IFACE, "RegisterAgent");
     if (!msg)
     {
         dbus_connection_unregister_object_path(app->bus, AGENT_PATH);
+        log_msg(app, "ERROR", "Failed to create RegisterAgent message");
         return false;
     }
 
-const char *path = AGENT_PATH, *cap = "KeyboardDisplay";
+    const char *path = AGENT_PATH;
+    const char *cap = "KeyboardDisplay";
     dbus_message_append_args(msg, DBUS_TYPE_OBJECT_PATH, &path,
                              DBUS_TYPE_STRING, &cap, DBUS_TYPE_INVALID);
+    
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply = dbus_connection_send_with_reply_and_block(app->bus, msg, 5000, &err);
     dbus_message_unref(msg);
+    
     if (dbus_error_is_set(&err))
     {
         log_msg(app, "ERROR", "RegisterAgent failed: %s", err.message);
@@ -2145,8 +2175,10 @@ const char *path = AGENT_PATH, *cap = "KeyboardDisplay";
         dbus_connection_unregister_object_path(app->bus, AGENT_PATH);
         return false;
     }
+    
     if (reply)
         dbus_message_unref(reply);
+    log_msg(app, "INFO", "Agent registered as KeyboardDisplay");
 
     msg = dbus_message_new_method_call(BLUEZ_BUS_NAME, "/org/bluez",
                                        BLUEZ_AGENT_MGR_IFACE, "RequestDefaultAgent");
@@ -2167,6 +2199,7 @@ const char *path = AGENT_PATH, *cap = "KeyboardDisplay";
 
     dbus_connection_flush(app->bus);
     app->agent_registered = true;
+    log_msg(app, "INFO", "Agent setup complete - PIN is 0000");
     return true;
 }
 
@@ -2439,20 +2472,6 @@ static bool init_pulseaudio(internal_app_t *app)
     return app->pa_ready;
 }
 
-static void load_pa_bt_modules(internal_app_t *app)
-{
-    if (!app->pa_ready)
-        return;
-    pa_operation *op;
-    op = pa_context_load_module(app->pa_ctx, "module-bluetooth-discover", NULL, NULL, NULL);
-    if (op)
-        pa_operation_unref(op);
-    op = pa_context_load_module(app->pa_ctx, "module-bluetooth-policy",
-                                "auto_switch=true", NULL, NULL);
-    if (op)
-        pa_operation_unref(op);
-}
-
 static void *main_loop_thread(void *arg)
 {
     internal_app_t *app = (internal_app_t *)arg;
@@ -2487,6 +2506,7 @@ static void *main_loop_thread(void *arg)
     time_t last_transport_check = 0;
     time_t last_avrcp_poll = 0;
     time_t last_reconnect_check = 0;
+    time_t last_agent_retry = 0;
 
     while (app->running)
     {
@@ -2512,6 +2532,13 @@ static void *main_loop_thread(void *arg)
         }
 
         time_t now = time(NULL);
+        
+        if (now - last_agent_retry > 10 && !app->agent_registered)
+        {
+            log_msg(app, "WARN", "Agent not registered, retrying...");
+            register_agent(app);
+            last_agent_retry = now;
+        }
         
         if (now - last_transport_check > 2 && 
             (app->state == BT_STATE_CONNECTED || app->state == BT_STATE_PLAYING)) {
@@ -2679,12 +2706,14 @@ int bt_speaker_init(const bt_config_t *config)
 
     if (!register_agent(&g_app))
     {
-        set_error(&g_app, BT_ERROR_AGENT_FAILED, "Failed to register pairing agent");
-        return -1;
+        log_msg(&g_app, "WARN", "Initial agent registration failed, will retry");
     }
 
     if (init_pulseaudio(&g_app))
+    {
         load_pa_bt_modules(&g_app);
+        setup_pulseaudio_null_sink();
+    }
 
     g_app.initialized = true;
     set_state(&g_app, BT_STATE_ADVERTISING);
