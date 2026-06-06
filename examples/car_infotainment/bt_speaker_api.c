@@ -510,6 +510,8 @@ static bool configure_adapter(internal_app_t *app)
     set_prop_bool(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                   BLUEZ_ADAPTER_IFACE, "Powered", TRUE);
     sleep(1);
+      set_prop_str(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
+                 BLUEZ_ADAPTER_IFACE, "SecureConnections", "false");
 
     set_prop_str(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                  BLUEZ_ADAPTER_IFACE, "Alias", app->device_name);
@@ -1958,7 +1960,6 @@ static DBusHandlerResult avrcp_handler(DBusConnection *conn, DBusMessage *msg, v
 
 static const DBusObjectPathVTable avrcp_vtable = {
     .message_function = avrcp_handler};
-
 static DBusHandlerResult agent_handler(DBusConnection *conn,
                                        DBusMessage *msg, void *data)
 {
@@ -1985,11 +1986,29 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
+    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "DisplayPinCode"))
+    {
+        DBusMessage *r = dbus_message_new_method_return(msg);
+        dbus_connection_send(conn, r, NULL);
+        dbus_connection_flush(conn);
+        dbus_message_unref(r);
+        return DBUS_HANDLER_RESULT_HANDLED;
+    }
+
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestPasskey"))
     {
         dbus_uint32_t pk = 0;
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_message_append_args(r, DBUS_TYPE_UINT32, &pk, DBUS_TYPE_INVALID);
+        dbus_connection_send(conn, r, NULL);
+        dbus_connection_flush(conn);
+        dbus_message_unref(r);
+        return DBUS_HANDLER_RESULT_HANDLED;
+    }
+
+    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "DisplayPasskey"))
+    {
+        DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
         dbus_connection_flush(conn);
         dbus_message_unref(r);
@@ -2083,9 +2102,7 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         return DBUS_HANDLER_RESULT_HANDLED;
     }
 
-    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "DisplayPinCode") ||
-        dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "DisplayPasskey") ||
-        dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "Cancel"))
+    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "Cancel"))
     {
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
@@ -2096,7 +2113,6 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
 
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
-
 static const DBusObjectPathVTable agent_vtable = {
     .message_function = agent_handler};
 
@@ -2115,7 +2131,7 @@ static bool register_agent(internal_app_t *app)
         return false;
     }
 
-    const char *path = AGENT_PATH, *cap = "DisplayYesNo";
+const char *path = AGENT_PATH, *cap = "KeyboardDisplay";
     dbus_message_append_args(msg, DBUS_TYPE_OBJECT_PATH, &path,
                              DBUS_TYPE_STRING, &cap, DBUS_TYPE_INVALID);
     DBusError err;
