@@ -43,7 +43,10 @@ bool init_fonts(void)
     
     state.settings_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 18, "settings_font");
     if (!state.settings_font) success = false;
-        
+   
+    state.big_icon_font = create_font_safe(icon_ttf, icon_ttf_len, 64, "big_icon_font");
+    if (!state.big_icon_font) success = false;
+
     state.ac_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 36, "ac_font");
     if (!state.ac_font) success = false;
     return success;
@@ -81,6 +84,10 @@ void cleanup_fonts(void)
         state.ui_font = NULL;
     }
 
+    if(state.big_icon_font) {
+        aroma_ui_unload_font(state.big_icon_font);
+        state.big_icon_font = NULL;
+    }
        if (state.ac_font) {
         aroma_ui_unload_font(state.ac_font);
         state.ac_font = NULL;

@@ -711,24 +711,27 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
     int y_offset = 10;
 
     bt_ui.status_card = aroma_ui_card(parent, 10, y_offset,
-                                      card_width, 100, CARD_TYPE_ELEVATED);
+                                      card_width, 100, CARD_TYPE_GLASS);
     if (!bt_ui.status_card)
     {
         return NULL;
     }
 
-    bt_ui.status_icon = aroma_ui_icon(bt_ui.status_card, AROMA_ICON_BLUETOOTH,
-                                      20, 20, 48, 0xFF607D8B, state.icon_font);
+    AromaNode* small_bg_card_for_status_icon = aroma_ui_card(bt_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
+  
+
+    bt_ui.status_icon = aroma_ui_icon(small_bg_card_for_status_icon, AROMA_ICON_BLUETOOTH,
+                                      28, 5, 32, 0xFF607D8B, state.big_icon_font);
 
     bt_ui.status_label = aroma_ui_label(bt_ui.status_card, "Ready to Connect",
-                                        85, 20, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+                                        85, 25, LABEL_STYLE_LABEL_LARGE, state.settings_font);
 
     bt_ui.stats_label = aroma_ui_label(bt_ui.status_card, "No device connected",
-                                       85, 55, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+                                       85, 50, LABEL_STYLE_LABEL_SMALL, state.settings_font);
 
     y_offset += 110;
     bt_ui.device_info_card = aroma_ui_card(parent, 10, y_offset,
-                                           card_width, 130, CARD_TYPE_ELEVATED);
+                                           card_width, 130, CARD_TYPE_GLASS);
     if (bt_ui.device_info_card)
     {
         aroma_ui_label(bt_ui.device_info_card, "Device Information", 16, 16,
@@ -746,30 +749,10 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
         aroma_node_set_hidden(bt_ui.device_info_card, true);
     }
 
-    y_offset += 140;
-    bt_ui.media_info_card = aroma_ui_card(parent, 10, y_offset,
-                                          card_width, 130, CARD_TYPE_ELEVATED);
-    if (bt_ui.media_info_card)
-    {
-        AromaNode *media_header = aroma_ui_label(bt_ui.media_info_card, "Now Playing", 16, 16,
-                                                 LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-        aroma_label_set_color(media_header, 0xFF00BCD4);
-
-        bt_ui.media_title_label = aroma_ui_label(bt_ui.media_info_card, "No track playing",
-                                                 16, 45, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-
-        bt_ui.media_artist_label = aroma_ui_label(bt_ui.media_info_card, "Artist: None",
-                                                  16, 70, LABEL_STYLE_LABEL_SMALL, state.settings_font);
-
-        bt_ui.media_album_label = aroma_ui_label(bt_ui.media_info_card, "Album: None",
-                                                 16, 95, LABEL_STYLE_LABEL_SMALL, state.settings_font);
-
-        aroma_node_set_hidden(bt_ui.media_info_card, true);
-    }
-
+   
     y_offset += 140;
     AromaNode *control_card = aroma_ui_card(parent, 10, y_offset,
-                                            card_width, 80, CARD_TYPE_ELEVATED);
+                                            card_width, 80, CARD_TYPE_GLASS);
     if (control_card)
     {
         aroma_ui_label(control_card, "Audio Control", 16, 16,
@@ -779,10 +762,16 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
                                                   16, 50, LABEL_STYLE_LABEL_SMALL, state.settings_font);
 
         bt_ui.disconnect_button = aroma_ui_button(
-            control_card, "Disconnect", card_width - 120, 45, 100, 30,
+            control_card, "Disconnect", card_width - 120, 10, 100, 40,
             on_bt_disconnect_click, NULL, state.settings_font);
+        aroma_button_set_colors(bt_ui.disconnect_button, 0xFFF44336, 0xFFFFFFFF, 0xFFB71C1C, 0xFFFFFFFF);
         aroma_node_set_hidden(bt_ui.disconnect_button, true);
     }
+    AromaNode *info_label1 = aroma_ui_label(parent, "Car Bluetooth Name: Aroma Speaker" , 10, y_offset + 100,
+                                                        LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    AromaNode* info_label2 = aroma_ui_label(parent, "PIN Code: 0000 (if asked)" , 10, y_offset + 130,
+                                                        LABEL_STYLE_LABEL_SMALL, state.settings_font);
+
 
     return bt_ui.status_card;
 }

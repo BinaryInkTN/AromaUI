@@ -139,11 +139,13 @@ typedef struct
     AromaNode *battery_button;
 
     AromaNode *bt_container;
+    AromaNode* range_card;
     
-    
+    AromaNode* bottom_bar;
     AromaTheme theme;
 
 
+    AromaFont *big_icon_font;
 
 
     bool map_panel_open;
