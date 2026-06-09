@@ -256,7 +256,7 @@ static void load_pa_bt_modules(internal_app_t *app)
     else
     {
         log_msg(app, "ERROR",
-                "Failed to load module-bluez5-discover — BT audio will not work. "
+                "Failed to load module-bluez5-discover BT audio will not work. "
                 "Check that pulseaudio-module-bluetooth is installed.");
     }
 
@@ -2591,7 +2591,7 @@ int bt_speaker_init(const bt_config_t *config)
         load_pa_bt_modules(&g_app);
     else
         log_msg(&g_app, "WARN",
-                "PulseAudio init failed — audio routing may not work");
+                "PulseAudio init failed audio routing may not work");
 
     g_app.initialized = true;
     set_state(&g_app, BT_STATE_ADVERTISING);

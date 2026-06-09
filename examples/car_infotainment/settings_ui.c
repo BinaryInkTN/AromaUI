@@ -696,7 +696,7 @@ static bool on_bt_disconnect_click(AromaNode *node, void *user_data)
 
     usleep(500000);
     init_bluetooth_async();
-  
+
     return true;
 }
 
@@ -717,8 +717,7 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
         return NULL;
     }
 
-    AromaNode* small_bg_card_for_status_icon = aroma_ui_card(bt_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
-  
+    AromaNode *small_bg_card_for_status_icon = aroma_ui_card(bt_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
 
     bt_ui.status_icon = aroma_ui_icon(small_bg_card_for_status_icon, AROMA_ICON_BLUETOOTH,
                                       28, 5, 32, 0xFF607D8B, state.big_icon_font);
@@ -734,22 +733,33 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
                                            card_width, 130, CARD_TYPE_GLASS);
     if (bt_ui.device_info_card)
     {
-        aroma_ui_label(bt_ui.device_info_card, "Device Information", 16, 16,
+        AromaNode *device_image = aroma_ui_image(bt_ui.device_info_card,
+
+#ifdef __EMSCRIPTEN__
+                                                 "/assets/smartphone.png"
+#elif defined(__arm__) || defined(__aarch64__)
+                                                 "/usr/share/infotainment/assets/smartphone.png"
+#else
+                                                 "../assets/smartphone.png"
+#endif
+
+                                                 ,
+                                                 10, 15, 96, 96);
+        aroma_ui_label(bt_ui.device_info_card, "Device Information", 120, 16,
                        LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
 
         bt_ui.device_name_label = aroma_ui_label(bt_ui.device_info_card, "Name: None",
-                                                 16, 45, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+                                                 120, 45, LABEL_STYLE_LABEL_SMALL, state.settings_font);
 
         bt_ui.device_address_label = aroma_ui_label(bt_ui.device_info_card, "Address: None",
-                                                    16, 70, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+                                                    120, 70, LABEL_STYLE_LABEL_SMALL, state.settings_font);
 
         bt_ui.device_manufacturer_label = aroma_ui_label(bt_ui.device_info_card, "Type: None",
-                                                         16, 95, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+                                                         120, 95, LABEL_STYLE_LABEL_SMALL, state.settings_font);
 
         aroma_node_set_hidden(bt_ui.device_info_card, true);
     }
 
-   
     y_offset += 140;
     AromaNode *control_card = aroma_ui_card(parent, 10, y_offset,
                                             card_width, 80, CARD_TYPE_GLASS);
@@ -767,11 +777,10 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
         aroma_button_set_colors(bt_ui.disconnect_button, 0xFFF44336, 0xFFFFFFFF, 0xFFB71C1C, 0xFFFFFFFF);
         aroma_node_set_hidden(bt_ui.disconnect_button, true);
     }
-    AromaNode *info_label1 = aroma_ui_label(parent, "Car Bluetooth Name: Aroma Speaker" , 10, y_offset + 100,
-                                                        LABEL_STYLE_LABEL_SMALL, state.settings_font);
-    AromaNode* info_label2 = aroma_ui_label(parent, "PIN Code: 0000 (if asked)" , 10, y_offset + 130,
-                                                        LABEL_STYLE_LABEL_SMALL, state.settings_font);
-
+    AromaNode *info_label1 = aroma_ui_label(parent, "Car Bluetooth Name: Aroma Speaker", 10, y_offset + 100,
+                                            LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    AromaNode *info_label2 = aroma_ui_label(parent, "PIN Code: 0000 (if asked)", 10, y_offset + 130,
+                                            LABEL_STYLE_LABEL_SMALL, state.settings_font);
 
     return bt_ui.status_card;
 }
@@ -1242,6 +1251,12 @@ void build_settings_ui(AromaNode *window)
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
 
+    AromaNode *label = aroma_ui_label(state.settings_panel_node, "Settings", 20, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    AromaNode *divider = aroma_ui_divider(state.settings_panel_node, 0, 50, SETTINGS_PANEL_W, DIVIDER_ORIENTATION_HORIZONTAL);
+    AromaNode *canvas = aroma_canvas_create(state.settings_panel_node, 0, 0, SETTINGS_PANEL_W, 50);
+    aroma_canvas_draw_rect(canvas, 0, 0, SETTINGS_PANEL_W, 50, false, true, 0xFFFFFF);
+    aroma_node_set_z_index(label, Z_LAYER_SETTINGS_PANEL + 2);
+    // header material blue
     if (!state.settings_panel_node)
     {
         return;
@@ -1252,7 +1267,7 @@ void build_settings_ui(AromaNode *window)
     state.settings_panel_open = false;
 
     state.settings_root = aroma_container_create(
-        state.settings_panel_node, 10, 10, area_w, area_h);
+        state.settings_panel_node, 10, 60, area_w, area_h);
 
     if (!state.settings_root)
     {
@@ -1272,7 +1287,7 @@ void build_settings_ui(AromaNode *window)
     const int num_sections = 7;
 
     state.sidebar = aroma_ui_sidebar_with_icons(
-        state.settings_root, 0, 0, sidebar_w, area_h,
+        state.settings_root, 0, 10, sidebar_w, 330,
         labels, icons, num_sections,
         NULL, NULL, state.settings_font, state.icon_font);
 
@@ -1397,5 +1412,4 @@ void build_settings_ui(AromaNode *window)
     {
         aroma_sidebar_set_selected(state.sidebar, 0);
     }
-    
 }

@@ -201,9 +201,10 @@ static void update_media_ui(void)
         pthread_mutex_unlock(&media_ui.lock);
         return;
     }
-    static bool first_update = true;
-    if (first_update)    {
-        first_update = false;
+    
+    static bool first_update = false;
+    if (!first_update)    {
+        first_update = true;
     if(state.bottom_bar){
         AromaAnimation * anim = aroma_animation_start(state.bottom_bar, AROMA_ANIM_SLIDE_X, 230, 460, 1200);
         aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);    
