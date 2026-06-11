@@ -48,6 +48,7 @@ void safe_strncpy(char *dest, const char *src, size_t n)
 
 #define AGENT_PATH "/com/btspeaker/agent"
 #define ENDPOINT_PATH "/com/btspeaker/endpoint/a2dp_sink"
+#define PROFILE_PATH "/com/btspeaker/profile/a2dp_sink"
 #define PLAYER_PATH "/com/btspeaker/player"
 
 #define A2DP_CODEC_SBC 0x00
@@ -56,6 +57,11 @@ void safe_strncpy(char *dest, const char *src, size_t n)
 #define AVRCP_CONTROLLER_UUID "0000110E-0000-1000-8000-00805F9B34FB"
 
 #define BT_CLASS_AUDIO_SPEAKER 0x240404u
+
+#define ALSA_HW_DEVICE "hw:1,0"
+#define ALSA_SINK_NAME "alsa_output.hw1"
+#define ALSA_SINK_RATE "44100"
+#define ALSA_SINK_CHANNELS "2"
 
 typedef struct
 {
@@ -110,6 +116,10 @@ typedef struct
     pa_context *pa_ctx;
     bool pa_ready;
 
+    bool pa_bluez_module_loaded;
+    bool pa_alsa_module_loaded;
+    uint32_t pa_alsa_module_idx;
+
     bt_state_t state;
     char connected_device_path[128];
     char connected_device_name[64];
@@ -163,11 +173,12 @@ static internal_app_t g_app = {
     .player_verified = false,
     .pending_player_find = false,
     .pending_avrcp_monitor = false,
+
+    .pa_bluez_module_loaded = false,
+    .pa_alsa_module_loaded = false,
+    .pa_alsa_module_idx = PA_INVALID_INDEX,
 };
-#define AGENT_PATH "/com/btspeaker/agent"
-#define ENDPOINT_PATH "/com/btspeaker/endpoint/a2dp_sink"
-#define PROFILE_PATH "/com/btspeaker/profile/a2dp_sink"
-#define PLAYER_PATH "/com/btspeaker/player"
+
 static void *main_loop_thread(void *arg);
 static void set_state_locked(internal_app_t *app, bt_state_t s);
 static void set_state(internal_app_t *app, bt_state_t s);
@@ -195,7 +206,8 @@ static void check_reconnection(internal_app_t *app);
 static bool verify_player_functional(internal_app_t *app);
 static void dump_all_objects(internal_app_t *app);
 
-static void log_msg(internal_app_t *app, const char *level, const char *fmt, ...)
+static void log_msg(internal_app_t *app, const char *level,
+                    const char *fmt, ...)
 {
     if (!app->log_cb && !app->verbose)
         return;
@@ -219,25 +231,54 @@ static void log_msg(internal_app_t *app, const char *level, const char *fmt, ...
     }
 }
 
-static void pa_sink_info_cb(pa_context *c, const pa_sink_info *info,
-                            int eol, void *ud)
+static void pa_set_sink_default_by_name_cb(pa_context *c,
+                                           const pa_sink_info *info,
+                                           int eol, void *ud)
 {
     if (eol || !info)
         return;
-
-    if (strstr(info->name, "bluez") != NULL)
-        return;
-    if (strstr(info->name, "null") != NULL)
-        return;
-    if (strstr(info->name, "auto_null") != NULL)
-        return;
-
-    log_msg((internal_app_t *)ud, "INFO",
-            "Setting default PA sink: %s", info->name);
-
+    internal_app_t *app = (internal_app_t *)ud;
+    log_msg(app, "INFO", "Setting default PA sink -> %s", info->name);
     pa_operation *op = pa_context_set_default_sink(c, info->name, NULL, NULL);
     if (op)
         pa_operation_unref(op);
+}
+
+static void pa_alsa_module_loaded_cb(pa_context *c, uint32_t idx, void *ud)
+{
+    internal_app_t *app = (internal_app_t *)ud;
+    if (idx == PA_INVALID_INDEX)
+    {
+        log_msg(app, "ERROR",
+                "module-alsa-sink load failed for " ALSA_HW_DEVICE
+                " – check your ALSA card/device numbers with `aplay -l`");
+        return;
+    }
+    app->pa_alsa_module_idx = idx;
+    log_msg(app, "INFO",
+            "module-alsa-sink loaded (idx=%u) for " ALSA_HW_DEVICE, idx);
+
+    pa_operation *op = pa_context_get_sink_info_by_name(
+        c, ALSA_SINK_NAME, pa_set_sink_default_by_name_cb, app);
+    if (op)
+        pa_operation_unref(op);
+}
+
+typedef struct
+{
+    internal_app_t *app;
+    bool found;
+} bluez_check_t;
+
+static void pa_module_check_cb(pa_context *c, const pa_module_info *info,
+                               int eol, void *ud)
+{
+    (void)c;
+    bluez_check_t *chk = (bluez_check_t *)ud;
+    if (eol)
+        return;
+    if (info && strstr(info->name, "module-bluez5-discover"))
+        chk->found = true;
 }
 
 static void load_pa_bt_modules(internal_app_t *app)
@@ -245,24 +286,87 @@ static void load_pa_bt_modules(internal_app_t *app)
     if (!app->pa_ready)
         return;
 
-    pa_operation *op =
-        pa_context_load_module(app->pa_ctx, "module-bluez5-discover",
-                               NULL, NULL, NULL);
-    if (op)
+    if (!app->pa_alsa_module_loaded)
     {
-        pa_operation_unref(op);
-        log_msg(app, "INFO", "Loaded module-bluez5-discover");
+        char alsa_args[256];
+        snprintf(alsa_args, sizeof(alsa_args),
+                 "device=" ALSA_HW_DEVICE
+                 " sink_name=" ALSA_SINK_NAME
+                 " rate=" ALSA_SINK_RATE
+                 " channels=" ALSA_SINK_CHANNELS
+                 " tsched=0");
+
+        pa_operation *op = pa_context_load_module(
+            app->pa_ctx, "module-alsa-sink",
+            alsa_args, pa_alsa_module_loaded_cb, app);
+        if (op)
+        {
+            pa_operation_unref(op);
+            app->pa_alsa_module_loaded = true;
+        }
+        else
+        {
+            log_msg(app, "ERROR",
+                    "pa_context_load_module(module-alsa-sink) returned NULL – "
+                    "is libasound / alsa-plugins installed?");
+        }
     }
     else
     {
-        log_msg(app, "ERROR",
-                "Failed to load module-bluez5-discover BT audio will not work. "
-                "Check that pulseaudio-module-bluetooth is installed.");
+        log_msg(app, "INFO",
+                "module-alsa-sink already loaded (idx=%u), skipping",
+                app->pa_alsa_module_idx);
+
+        pa_operation *op = pa_context_get_sink_info_by_name(
+            app->pa_ctx, ALSA_SINK_NAME,
+            pa_set_sink_default_by_name_cb, app);
+        if (op)
+            pa_operation_unref(op);
     }
 
-    op = pa_context_get_sink_info_list(app->pa_ctx, pa_sink_info_cb, app);
-    if (op)
-        pa_operation_unref(op);
+    if (!app->pa_bluez_module_loaded)
+    {
+        bluez_check_t chk = {.app = app, .found = false};
+        pa_operation *op = pa_context_get_module_info_list(
+            app->pa_ctx, pa_module_check_cb, &chk);
+        if (op)
+        {
+
+            while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+                pa_mainloop_iterate(app->pa_ml, 1, NULL);
+            pa_operation_unref(op);
+        }
+
+        if (chk.found)
+        {
+            log_msg(app, "INFO",
+                    "module-bluez5-discover already loaded by PA, skipping");
+            app->pa_bluez_module_loaded = true;
+        }
+        else
+        {
+            op = pa_context_load_module(app->pa_ctx,
+                                        "module-bluez5-discover",
+                                        NULL, NULL, NULL);
+            if (op)
+            {
+                pa_operation_unref(op);
+                app->pa_bluez_module_loaded = true;
+                log_msg(app, "INFO", "Loaded module-bluez5-discover");
+            }
+            else
+            {
+                log_msg(app, "ERROR",
+                        "Failed to load module-bluez5-discover. "
+                        "Is pulseaudio-module-bluetooth installed?");
+            }
+        }
+    }
+    else
+    {
+        log_msg(app, "INFO",
+                "module-bluez5-discover already loaded, skipping");
+    }
 }
 
 static void pa_state_cb(pa_context *ctx, void *ud)
@@ -272,6 +376,10 @@ static void pa_state_cb(pa_context *ctx, void *ud)
     {
     case PA_CONTEXT_READY:
         app->pa_ready = true;
+        break;
+    case PA_CONTEXT_FAILED:
+    case PA_CONTEXT_TERMINATED:
+        app->pa_ready = false;
         break;
     default:
         break;
@@ -291,8 +399,13 @@ static bool init_pulseaudio(internal_app_t *app)
 
     pa_context_set_state_callback(app->pa_ctx, pa_state_cb, app);
 
-    if (pa_context_connect(app->pa_ctx, NULL, PA_CONTEXT_NOFLAGS, NULL) < 0)
+    if (pa_context_connect(app->pa_ctx, NULL,
+                           PA_CONTEXT_NOFAIL, NULL) < 0)
+    {
+        log_msg(app, "ERROR", "pa_context_connect failed: %s",
+                pa_strerror(pa_context_errno(app->pa_ctx)));
         return false;
+    }
 
     int retries = 0;
     while (!app->pa_ready && retries++ < 50)
@@ -300,6 +413,11 @@ static bool init_pulseaudio(internal_app_t *app)
         pa_mainloop_iterate(app->pa_ml, 0, NULL);
         usleep(20000);
     }
+
+    if (!app->pa_ready)
+        log_msg(app, "WARN",
+                "PulseAudio not READY after 1s – audio routing may be delayed");
+
     return app->pa_ready;
 }
 
@@ -315,13 +433,11 @@ static bool get_prop_string(DBusConnection *bus, const char *dest,
                              DBUS_TYPE_STRING, &iface,
                              DBUS_TYPE_STRING, &prop,
                              DBUS_TYPE_INVALID);
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(bus, msg, 3000, &err);
     dbus_message_unref(msg);
-
     if (!reply || dbus_error_is_set(&err))
     {
         dbus_error_free(&err);
@@ -329,7 +445,6 @@ static bool get_prop_string(DBusConnection *bus, const char *dest,
             dbus_message_unref(reply);
         return false;
     }
-
     DBusMessageIter iter, var;
     dbus_message_iter_init(reply, &iter);
     if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_VARIANT)
@@ -359,13 +474,11 @@ static bool get_prop_bool(DBusConnection *bus, const char *dest,
                              DBUS_TYPE_STRING, &iface,
                              DBUS_TYPE_STRING, &prop,
                              DBUS_TYPE_INVALID);
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(bus, msg, 3000, &err);
     dbus_message_unref(msg);
-
     if (!reply || dbus_error_is_set(&err))
     {
         dbus_error_free(&err);
@@ -373,7 +486,6 @@ static bool get_prop_bool(DBusConnection *bus, const char *dest,
             dbus_message_unref(reply);
         return false;
     }
-
     DBusMessageIter iter, var;
     dbus_message_iter_init(reply, &iter);
     if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_VARIANT)
@@ -401,7 +513,6 @@ static bool set_prop_bool(DBusConnection *bus, const char *dest,
     dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "b", &var);
     dbus_message_iter_append_basic(&var, DBUS_TYPE_BOOLEAN, &val);
     dbus_message_iter_close_container(&it, &var);
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *r =
@@ -432,7 +543,6 @@ static bool set_prop_str(DBusConnection *bus, const char *dest,
     dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "s", &var);
     dbus_message_iter_append_basic(&var, DBUS_TYPE_STRING, &val);
     dbus_message_iter_close_container(&it, &var);
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *r =
@@ -463,7 +573,6 @@ static bool set_prop_uint32(DBusConnection *bus, const char *dest,
     dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, "u", &var);
     dbus_message_iter_append_basic(&var, DBUS_TYPE_UINT32, &val);
     dbus_message_iter_close_container(&it, &var);
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *r =
@@ -537,19 +646,16 @@ static bool find_adapter(internal_app_t *app)
                                                     "GetManagedObjects");
     if (!msg)
         return false;
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(app->bus, msg, 5000, &err);
     dbus_message_unref(msg);
-
     if (!reply || dbus_error_is_set(&err))
     {
         dbus_error_free(&err);
         return false;
     }
-
     DBusMessageIter iter, dict;
     dbus_message_iter_init(reply, &iter);
     if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_ARRAY)
@@ -558,7 +664,6 @@ static bool find_adapter(internal_app_t *app)
         return false;
     }
     dbus_message_iter_recurse(&iter, &dict);
-
     bool found = false;
     while (!found &&
            dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
@@ -599,32 +704,25 @@ static bool find_adapter(internal_app_t *app)
 static bool configure_adapter(internal_app_t *app)
 {
     log_msg(app, "INFO", "Configuring adapter: %s", app->adapter_path);
-
     set_prop_bool(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                   BLUEZ_ADAPTER_IFACE, "Powered", TRUE);
     sleep(2);
-
     set_prop_str(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                  BLUEZ_ADAPTER_IFACE, "Alias", app->device_name);
-
     set_prop_uint32(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                     BLUEZ_ADAPTER_IFACE, "Class",
                     (dbus_uint32_t)BT_CLASS_AUDIO_SPEAKER);
-
     set_prop_bool(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                   BLUEZ_ADAPTER_IFACE, "Pairable", TRUE);
     set_prop_uint32(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                     BLUEZ_ADAPTER_IFACE, "PairableTimeout", 0);
-
     set_prop_bool(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                   BLUEZ_ADAPTER_IFACE, "Discoverable", TRUE);
     set_prop_uint32(app->bus, BLUEZ_BUS_NAME, app->adapter_path,
                     BLUEZ_ADAPTER_IFACE, "DiscoverableTimeout", 0);
-
     dbus_connection_flush(app->bus);
-
     log_msg(app, "INFO",
-            "Adapter ready -- look for '%s' on your phone (PIN: %s)",
+            "Adapter ready – look for '%s' on your phone (PIN: %s)",
             app->device_name, app->pin_code);
     return true;
 }
@@ -705,21 +803,18 @@ static DBusHandlerResult endpoint_handler(DBusConnection *conn,
         dbus_message_iter_init(msg, &iter);
         if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_OBJECT_PATH)
             dbus_message_iter_get_basic(&iter, &transport);
-
         if (transport)
         {
             pthread_mutex_lock(&app->lock);
             safe_strncpy(app->transport_path, transport,
                          sizeof(app->transport_path));
             app->audio_start_time = time(NULL);
-
             app->pending_player_find = true;
             app->pending_avrcp_monitor = true;
             set_state_locked(app, BT_STATE_PLAYING);
             pthread_mutex_unlock(&app->lock);
             notify_audio_event(app, true);
         }
-
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
         dbus_connection_flush(conn);
@@ -737,7 +832,6 @@ static DBusHandlerResult endpoint_handler(DBusConnection *conn,
         cfg.allocation_method = SBC_ALLOC_LOUDNESS;
         cfg.min_bitpool = 2;
         cfg.max_bitpool = 53;
-
         DBusMessage *r = dbus_message_new_method_return(msg);
         DBusMessageIter ri, ra;
         dbus_message_iter_init_append(r, &ri);
@@ -766,7 +860,6 @@ static DBusHandlerResult endpoint_handler(DBusConnection *conn,
             set_state_locked(app, BT_STATE_CONNECTED);
         pthread_mutex_unlock(&app->lock);
         notify_audio_event(app, false);
-
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
         dbus_connection_flush(conn);
@@ -794,7 +887,6 @@ static bool register_endpoint(internal_app_t *app)
         dbus_connection_unregister_object_path(app->bus, ENDPOINT_PATH);
         return false;
     }
-
     DBusMessageIter iter, props, entry, var, arr;
     dbus_message_iter_init_append(msg, &iter);
     const char *ep = ENDPOINT_PATH;
@@ -842,7 +934,6 @@ static bool register_endpoint(internal_app_t *app)
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(app->bus, msg, 5000, &err);
     dbus_message_unref(msg);
-
     if (dbus_error_is_set(&err))
     {
         log_msg(app, "ERROR", "RegisterEndpoint failed: %s", err.message);
@@ -870,7 +961,6 @@ static bool register_a2dp_profile(internal_app_t *app)
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_OBJECT_PATH, &profile_path);
     const char *uuid = A2DP_SINK_UUID;
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &uuid);
-
     dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
                                      DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
                                          DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
@@ -924,7 +1014,6 @@ static bool register_a2dp_profile(internal_app_t *app)
 
 static bool register_avrcp_profile(internal_app_t *app)
 {
-
     DBusMessage *msg =
         dbus_message_new_method_call(BLUEZ_BUS_NAME, "/org/bluez",
                                      BLUEZ_PROFILE_MGR_IFACE, "RegisterProfile");
@@ -937,7 +1026,6 @@ static bool register_avrcp_profile(internal_app_t *app)
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_OBJECT_PATH, &profile_path);
     const char *uuid = AVRCP_TARGET_UUID;
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &uuid);
-
     dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
                                      DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
                                          DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
@@ -983,11 +1071,9 @@ static bool register_avrcp_profile(internal_app_t *app)
     {
         DBusMessageIter iter2, opts2, entry2, var2;
         dbus_message_iter_init_append(msg, &iter2);
-        dbus_message_iter_append_basic(&iter2, DBUS_TYPE_OBJECT_PATH,
-                                       &profile_path);
+        dbus_message_iter_append_basic(&iter2, DBUS_TYPE_OBJECT_PATH, &profile_path);
         const char *uuid_ct = AVRCP_CONTROLLER_UUID;
         dbus_message_iter_append_basic(&iter2, DBUS_TYPE_STRING, &uuid_ct);
-
         dbus_message_iter_open_container(&iter2, DBUS_TYPE_ARRAY,
                                          DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
                                              DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
@@ -1050,7 +1136,6 @@ static bool verify_player_functional(internal_app_t *app)
         notify_avrcp_event(app, &app->current_media);
         return true;
     }
-
     dbus_bool_t can_ctrl = FALSE;
     if (get_prop_bool(app->bus, BLUEZ_BUS_NAME, app->player_path,
                       BLUEZ_MEDIA_PLAYER_IFACE, "CanControl", &can_ctrl) &&
@@ -1060,7 +1145,6 @@ static bool verify_player_functional(internal_app_t *app)
                 app->player_path);
         return true;
     }
-
     log_msg(app, "WARN", "Player at %s not responsive", app->player_path);
     pthread_mutex_lock(&app->lock);
     app->player_path[0] = '\0';
@@ -1099,13 +1183,11 @@ static void find_player_path(internal_app_t *app)
                                      DBUS_OBJMGR_IFACE, "GetManagedObjects");
     if (!msg)
         return;
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(app->bus, msg, 3000, &err);
     dbus_message_unref(msg);
-
     if (!reply || dbus_error_is_set(&err))
     {
         dbus_error_free(&err);
@@ -1113,7 +1195,6 @@ static void find_player_path(internal_app_t *app)
             dbus_message_unref(reply);
         return;
     }
-
     DBusMessageIter iter, dict;
     dbus_message_iter_init(reply, &iter);
     if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_ARRAY)
@@ -1130,14 +1211,15 @@ static void find_player_path(internal_app_t *app)
         const char *obj_path = NULL;
         if (dbus_message_iter_get_arg_type(&entry) == DBUS_TYPE_OBJECT_PATH)
             dbus_message_iter_get_basic(&entry, &obj_path);
-
         dbus_message_iter_next(&entry);
-        if (dbus_message_iter_get_arg_type(&entry) != DBUS_TYPE_ARRAY || !obj_path || !strstr(obj_path, app->connected_device_path) || !strstr(obj_path, "/player"))
+        if (dbus_message_iter_get_arg_type(&entry) != DBUS_TYPE_ARRAY ||
+            !obj_path ||
+            !strstr(obj_path, app->connected_device_path) ||
+            !strstr(obj_path, "/player"))
         {
             dbus_message_iter_next(&dict);
             continue;
         }
-
         dbus_message_iter_recurse(&entry, &ifaces);
         while (dbus_message_iter_get_arg_type(&ifaces) == DBUS_TYPE_DICT_ENTRY)
         {
@@ -1146,12 +1228,10 @@ static void find_player_path(internal_app_t *app)
             const char *iface = NULL;
             if (dbus_message_iter_get_arg_type(&ie) == DBUS_TYPE_STRING)
                 dbus_message_iter_get_basic(&ie, &iface);
-
             if (iface && strcmp(iface, BLUEZ_MEDIA_PLAYER_IFACE) == 0)
             {
                 pthread_mutex_lock(&app->lock);
-                safe_strncpy(app->player_path, obj_path,
-                             sizeof(app->player_path));
+                safe_strncpy(app->player_path, obj_path, sizeof(app->player_path));
                 app->player_verified = false;
                 pthread_mutex_unlock(&app->lock);
                 log_msg(app, "INFO", "Found player: %s", obj_path);
@@ -1190,7 +1270,6 @@ static void find_player_path(internal_app_t *app)
             return;
         }
     }
-
     log_msg(app, "WARN", "No AVRCP player found for device: %s",
             app->connected_device_path);
 }
@@ -1201,89 +1280,82 @@ static void parse_avrcp_metadata(DBusMessageIter *iter, bt_media_info_t *media)
         return;
     if (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_ARRAY)
         return;
-
     DBusMessageIter dict;
     dbus_message_iter_recurse(iter, &dict);
-
     while (dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
     {
         DBusMessageIter entry;
         dbus_message_iter_recurse(&dict, &entry);
-
         const char *key = NULL;
         if (dbus_message_iter_get_arg_type(&entry) == DBUS_TYPE_STRING)
             dbus_message_iter_get_basic(&entry, &key);
-
         if (!key || !dbus_message_iter_has_next(&entry))
         {
             dbus_message_iter_next(&dict);
             continue;
         }
         dbus_message_iter_next(&entry);
-
         if (dbus_message_iter_get_arg_type(&entry) != DBUS_TYPE_VARIANT)
         {
             dbus_message_iter_next(&dict);
             continue;
         }
-
         DBusMessageIter var;
         dbus_message_iter_recurse(&entry, &var);
-        int var_type = dbus_message_iter_get_arg_type(&var);
+        int vt = dbus_message_iter_get_arg_type(&var);
 
-        if (strcmp(key, "Title") == 0 && var_type == DBUS_TYPE_STRING)
+        if (strcmp(key, "Title") == 0 && vt == DBUS_TYPE_STRING)
         {
-            const char *val = NULL;
-            dbus_message_iter_get_basic(&var, &val);
-            if (val)
-                safe_strncpy(media->title, val, sizeof(media->title));
+            const char *v = NULL;
+            dbus_message_iter_get_basic(&var, &v);
+            if (v)
+                safe_strncpy(media->title, v, sizeof(media->title));
         }
-        else if (strcmp(key, "Artist") == 0 && var_type == DBUS_TYPE_STRING)
+        else if (strcmp(key, "Artist") == 0 && vt == DBUS_TYPE_STRING)
         {
-            const char *val = NULL;
-            dbus_message_iter_get_basic(&var, &val);
-            if (val)
-                safe_strncpy(media->artist, val, sizeof(media->artist));
+            const char *v = NULL;
+            dbus_message_iter_get_basic(&var, &v);
+            if (v)
+                safe_strncpy(media->artist, v, sizeof(media->artist));
         }
-        else if (strcmp(key, "Album") == 0 && var_type == DBUS_TYPE_STRING)
+        else if (strcmp(key, "Album") == 0 && vt == DBUS_TYPE_STRING)
         {
-            const char *val = NULL;
-            dbus_message_iter_get_basic(&var, &val);
-            if (val)
-                safe_strncpy(media->album, val, sizeof(media->album));
+            const char *v = NULL;
+            dbus_message_iter_get_basic(&var, &v);
+            if (v)
+                safe_strncpy(media->album, v, sizeof(media->album));
         }
-        else if (strcmp(key, "Genre") == 0 && var_type == DBUS_TYPE_STRING)
+        else if (strcmp(key, "Genre") == 0 && vt == DBUS_TYPE_STRING)
         {
-            const char *val = NULL;
-            dbus_message_iter_get_basic(&var, &val);
-            if (val)
-                safe_strncpy(media->genre, val, sizeof(media->genre));
+            const char *v = NULL;
+            dbus_message_iter_get_basic(&var, &v);
+            if (v)
+                safe_strncpy(media->genre, v, sizeof(media->genre));
         }
-        else if (strcmp(key, "Duration") == 0 && var_type == DBUS_TYPE_UINT32)
+        else if (strcmp(key, "Duration") == 0 && vt == DBUS_TYPE_UINT32)
         {
-            dbus_uint32_t val = 0;
-            dbus_message_iter_get_basic(&var, &val);
-            media->duration = val;
+            dbus_uint32_t v = 0;
+            dbus_message_iter_get_basic(&var, &v);
+            media->duration = v;
         }
-        else if (strcmp(key, "TrackNumber") == 0 && var_type == DBUS_TYPE_UINT32)
+        else if (strcmp(key, "TrackNumber") == 0 && vt == DBUS_TYPE_UINT32)
         {
-            dbus_uint32_t val = 0;
-            dbus_message_iter_get_basic(&var, &val);
-            media->track_number = val;
+            dbus_uint32_t v = 0;
+            dbus_message_iter_get_basic(&var, &v);
+            media->track_number = v;
         }
-        else if (strcmp(key, "NumberOfTracks") == 0 && var_type == DBUS_TYPE_UINT32)
+        else if (strcmp(key, "NumberOfTracks") == 0 && vt == DBUS_TYPE_UINT32)
         {
-            dbus_uint32_t val = 0;
-            dbus_message_iter_get_basic(&var, &val);
-            media->total_tracks = val;
+            dbus_uint32_t v = 0;
+            dbus_message_iter_get_basic(&var, &v);
+            media->total_tracks = v;
         }
-        else if (strcmp(key, "Position") == 0 && var_type == DBUS_TYPE_UINT32)
+        else if (strcmp(key, "Position") == 0 && vt == DBUS_TYPE_UINT32)
         {
-            dbus_uint32_t val = 0;
-            dbus_message_iter_get_basic(&var, &val);
-            media->position = val;
+            dbus_uint32_t v = 0;
+            dbus_message_iter_get_basic(&var, &v);
+            media->position = v;
         }
-
         else if (strcmp(key, "Metadata") == 0)
         {
             DBusMessageIter inner;
@@ -1291,7 +1363,6 @@ static void parse_avrcp_metadata(DBusMessageIter *iter, bt_media_info_t *media)
             if (dbus_message_iter_get_arg_type(&inner) == DBUS_TYPE_ARRAY)
                 parse_avrcp_metadata(&inner, media);
         }
-
         dbus_message_iter_next(&dict);
     }
 }
@@ -1310,16 +1381,13 @@ static void monitor_avrcp_changes(internal_app_t *app)
                                      DBUS_PROPS_IFACE, "GetAll");
     if (!msg)
         return;
-
     const char *iface = BLUEZ_MEDIA_PLAYER_IFACE;
     dbus_message_append_args(msg, DBUS_TYPE_STRING, &iface, DBUS_TYPE_INVALID);
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(app->bus, msg, 2000, &err);
     dbus_message_unref(msg);
-
     if (!reply || dbus_error_is_set(&err))
     {
         if (dbus_error_is_set(&err))
@@ -1328,39 +1396,33 @@ static void monitor_avrcp_changes(internal_app_t *app)
             dbus_message_unref(reply);
         return;
     }
-
     DBusMessageIter reply_iter;
-    if (!dbus_message_iter_init(reply, &reply_iter) || dbus_message_iter_get_arg_type(&reply_iter) != DBUS_TYPE_ARRAY)
+    if (!dbus_message_iter_init(reply, &reply_iter) ||
+        dbus_message_iter_get_arg_type(&reply_iter) != DBUS_TYPE_ARRAY)
     {
         dbus_message_unref(reply);
         return;
     }
-
     DBusMessageIter dict;
     dbus_message_iter_recurse(&reply_iter, &dict);
-
     while (dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
     {
         DBusMessageIter entry;
         dbus_message_iter_recurse(&dict, &entry);
-
         const char *key = NULL;
         if (dbus_message_iter_get_arg_type(&entry) == DBUS_TYPE_STRING)
             dbus_message_iter_get_basic(&entry, &key);
-
         if (!key || !dbus_message_iter_has_next(&entry))
         {
             dbus_message_iter_next(&dict);
             continue;
         }
         dbus_message_iter_next(&entry);
-
         if (dbus_message_iter_get_arg_type(&entry) != DBUS_TYPE_VARIANT)
         {
             dbus_message_iter_next(&dict);
             continue;
         }
-
         DBusMessageIter var;
         dbus_message_iter_recurse(&entry, &var);
 
@@ -1375,7 +1437,8 @@ static void monitor_avrcp_changes(internal_app_t *app)
             pthread_mutex_unlock(&app->lock);
             notify_avrcp_event(app, &app->current_media);
         }
-        else if (strcmp(key, "Status") == 0 && dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRING)
+        else if (strcmp(key, "Status") == 0 &&
+                 dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRING)
         {
             const char *status = NULL;
             dbus_message_iter_get_basic(&var, &status);
@@ -1388,7 +1451,8 @@ static void monitor_avrcp_changes(internal_app_t *app)
                 notify_avrcp_event(app, &app->current_media);
             }
         }
-        else if (strcmp(key, "Position") == 0 && dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_UINT32)
+        else if (strcmp(key, "Position") == 0 &&
+                 dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_UINT32)
         {
             dbus_uint32_t pos = 0;
             dbus_message_iter_get_basic(&var, &pos);
@@ -1397,7 +1461,6 @@ static void monitor_avrcp_changes(internal_app_t *app)
             pthread_mutex_unlock(&app->lock);
             notify_avrcp_event(app, &app->current_media);
         }
-
         dbus_message_iter_next(&dict);
     }
     dbus_message_unref(reply);
@@ -1410,7 +1473,6 @@ static void send_avrcp_command(const char *command)
         log_msg(&g_app, "ERROR", "No D-Bus connection");
         return;
     }
-
     if (!g_app.player_path[0] || !g_app.player_verified)
     {
         find_player_path(&g_app);
@@ -1423,33 +1485,26 @@ static void send_avrcp_command(const char *command)
         const char *iface;
         const char *method;
     } method_try_t;
-    method_try_t tries[2];
-    int num_tries = 0;
-
-    tries[num_tries++] = (method_try_t){BLUEZ_MEDIA_PLAYER_IFACE, command};
-    tries[num_tries++] = (method_try_t){BLUEZ_MEDIA_CONTROL_IFACE, command};
-
+    method_try_t tries[2] = {
+        {BLUEZ_MEDIA_PLAYER_IFACE, command},
+        {BLUEZ_MEDIA_CONTROL_IFACE, command},
+    };
     bool success = false;
 
     if (g_app.player_path[0] && g_app.player_verified)
     {
-        for (int i = 0; i < num_tries && !success; i++)
+        for (int i = 0; i < 2 && !success; i++)
         {
             DBusMessage *msg =
-                dbus_message_new_method_call(BLUEZ_BUS_NAME,
-                                             g_app.player_path,
-                                             tries[i].iface,
-                                             tries[i].method);
+                dbus_message_new_method_call(BLUEZ_BUS_NAME, g_app.player_path,
+                                             tries[i].iface, tries[i].method);
             if (!msg)
                 continue;
-
             DBusError err;
             dbus_error_init(&err);
             DBusMessage *reply =
-                dbus_connection_send_with_reply_and_block(
-                    g_app.bus, msg, 5000, &err);
+                dbus_connection_send_with_reply_and_block(g_app.bus, msg, 5000, &err);
             dbus_message_unref(msg);
-
             if (!dbus_error_is_set(&err))
             {
                 log_msg(&g_app, "INFO", "AVRCP %s OK via %s (player)",
@@ -1472,15 +1527,13 @@ static void send_avrcp_command(const char *command)
         DBusMessage *msg =
             dbus_message_new_method_call(BLUEZ_BUS_NAME,
                                          g_app.connected_device_path,
-                                         BLUEZ_MEDIA_CONTROL_IFACE,
-                                         command);
+                                         BLUEZ_MEDIA_CONTROL_IFACE, command);
         if (msg)
         {
             DBusError err;
             dbus_error_init(&err);
             DBusMessage *reply =
-                dbus_connection_send_with_reply_and_block(
-                    g_app.bus, msg, 3000, &err);
+                dbus_connection_send_with_reply_and_block(g_app.bus, msg, 3000, &err);
             dbus_message_unref(msg);
             if (!dbus_error_is_set(&err))
             {
@@ -1490,7 +1543,8 @@ static void send_avrcp_command(const char *command)
             }
             else
             {
-                log_msg(&g_app, "ERROR", "All AVRCP attempts for %s failed: %s",
+                log_msg(&g_app, "ERROR",
+                        "All AVRCP attempts for %s failed: %s",
                         command, err.message);
                 dbus_error_free(&err);
             }
@@ -1522,13 +1576,11 @@ static void check_transport_state(void)
                                      DBUS_OBJMGR_IFACE, "GetManagedObjects");
     if (!msg)
         return;
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(g_app.bus, msg, 3000, &err);
     dbus_message_unref(msg);
-
     if (!reply || dbus_error_is_set(&err))
     {
         dbus_error_free(&err);
@@ -1536,7 +1588,6 @@ static void check_transport_state(void)
             dbus_message_unref(reply);
         return;
     }
-
     DBusMessageIter iter, dict;
     dbus_message_iter_init(reply, &iter);
     if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_ARRAY)
@@ -1553,7 +1604,6 @@ static void check_transport_state(void)
         const char *obj_path = NULL;
         if (dbus_message_iter_get_arg_type(&entry) == DBUS_TYPE_OBJECT_PATH)
             dbus_message_iter_get_basic(&entry, &obj_path);
-
         dbus_message_iter_next(&entry);
         if (dbus_message_iter_get_arg_type(&entry) != DBUS_TYPE_ARRAY)
         {
@@ -1569,8 +1619,9 @@ static void check_transport_state(void)
             const char *iface = NULL;
             if (dbus_message_iter_get_arg_type(&ie) == DBUS_TYPE_STRING)
                 dbus_message_iter_get_basic(&ie, &iface);
-
-            if (iface && strcmp(iface, BLUEZ_MEDIA_TRANSPORT_IFACE) == 0 && obj_path && strstr(obj_path, g_app.connected_device_path))
+            if (iface &&
+                strcmp(iface, BLUEZ_MEDIA_TRANSPORT_IFACE) == 0 &&
+                obj_path && strstr(obj_path, g_app.connected_device_path))
             {
                 dbus_bool_t connected = FALSE;
                 if (get_prop_bool(g_app.bus, BLUEZ_BUS_NAME, obj_path,
@@ -1607,7 +1658,6 @@ static void query_device_name(void)
 {
     if (!g_app.bus || !g_app.connected_device_path[0])
         return;
-
     char name[128] = {0};
     if (get_prop_string(g_app.bus, BLUEZ_BUS_NAME,
                         g_app.connected_device_path,
@@ -1627,19 +1677,16 @@ static void check_reconnection(internal_app_t *app)
 {
     if (!app->bus || !app->adapter_path[0])
         return;
-
     DBusMessage *msg =
         dbus_message_new_method_call(BLUEZ_BUS_NAME, "/",
                                      DBUS_OBJMGR_IFACE, "GetManagedObjects");
     if (!msg)
         return;
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(app->bus, msg, 3000, &err);
     dbus_message_unref(msg);
-
     if (!reply || dbus_error_is_set(&err))
     {
         dbus_error_free(&err);
@@ -1647,7 +1694,6 @@ static void check_reconnection(internal_app_t *app)
             dbus_message_unref(reply);
         return;
     }
-
     DBusMessageIter iter, dict;
     dbus_message_iter_init(reply, &iter);
     if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_ARRAY)
@@ -1658,14 +1704,14 @@ static void check_reconnection(internal_app_t *app)
     dbus_message_iter_recurse(&iter, &dict);
 
     bool found_reconnect = false;
-    while (!found_reconnect && dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
+    while (!found_reconnect &&
+           dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
     {
         DBusMessageIter entry, ifaces;
         dbus_message_iter_recurse(&dict, &entry);
         const char *obj_path = NULL;
         if (dbus_message_iter_get_arg_type(&entry) == DBUS_TYPE_OBJECT_PATH)
             dbus_message_iter_get_basic(&entry, &obj_path);
-
         dbus_message_iter_next(&entry);
         if (dbus_message_iter_get_arg_type(&entry) != DBUS_TYPE_ARRAY || !obj_path)
         {
@@ -1713,8 +1759,8 @@ static void check_reconnection(internal_app_t *app)
                                         BLUEZ_DEVICE_IFACE, "Alias",
                                         app->connected_device_name,
                                         sizeof(app->connected_device_name));
-
-                    if (!app->connected_device_name[0] && app->connected_device_address[0])
+                    if (!app->connected_device_name[0] &&
+                        app->connected_device_address[0])
                         snprintf(app->connected_device_name,
                                  sizeof(app->connected_device_name),
                                  "Device (%s)", app->connected_device_address);
@@ -1746,13 +1792,11 @@ static void dump_all_objects(internal_app_t *app)
 {
     if (!app->bus || !app->verbose)
         return;
-
     DBusMessage *msg =
         dbus_message_new_method_call(BLUEZ_BUS_NAME, "/",
                                      DBUS_OBJMGR_IFACE, "GetManagedObjects");
     if (!msg)
         return;
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
@@ -1765,12 +1809,10 @@ static void dump_all_objects(internal_app_t *app)
             dbus_message_unref(reply);
         return;
     }
-
     log_msg(app, "DEBUG", "=== BLUEZ OBJECTS ===");
     DBusMessageIter iter, dict;
     dbus_message_iter_init(reply, &iter);
     dbus_message_iter_recurse(&iter, &dict);
-
     while (dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
     {
         DBusMessageIter entry, ifaces;
@@ -1779,7 +1821,6 @@ static void dump_all_objects(internal_app_t *app)
         dbus_message_iter_get_basic(&entry, &obj_path);
         dbus_message_iter_next(&entry);
         dbus_message_iter_recurse(&entry, &ifaces);
-
         while (dbus_message_iter_get_arg_type(&ifaces) == DBUS_TYPE_DICT_ENTRY)
         {
             DBusMessageIter ie;
@@ -1806,7 +1847,12 @@ static DBusHandlerResult avrcp_handler(DBusConnection *conn,
 
     bool handled = false;
 
-    if (dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Play") || dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Pause") || dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Next") || dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Previous") || dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "VolumeUp") || dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "VolumeDown"))
+    if (dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Play") ||
+        dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Pause") ||
+        dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Next") ||
+        dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "Previous") ||
+        dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "VolumeUp") ||
+        dbus_message_is_method_call(msg, BLUEZ_MEDIA_CONTROL_IFACE, "VolumeDown"))
     {
         log_msg(app, "INFO", "Remote AVRCP command: %s", member);
         send_avrcp_command(member);
@@ -1838,7 +1884,6 @@ static DBusHandlerResult avrcp_handler(DBusConnection *conn,
         dbus_message_iter_close_container(&entry, &var);
         dbus_message_iter_close_container(&dict, &entry);
         dbus_message_iter_close_container(&iter, &dict);
-
         dbus_connection_send(conn, reply, NULL);
         dbus_message_unref(reply);
         handled = true;
@@ -1856,7 +1901,6 @@ static DBusHandlerResult avrcp_handler(DBusConnection *conn,
                                          &dict);
 
         pthread_mutex_lock(&app->lock);
-
         struct
         {
             const char *key;
@@ -1875,7 +1919,6 @@ static DBusHandlerResult avrcp_handler(DBusConnection *conn,
             dbus_message_iter_close_container(&entry, &var);
             dbus_message_iter_close_container(&dict, &entry);
         }
-
         const char *dk = "Duration";
         dbus_message_iter_open_container(&dict, DBUS_TYPE_DICT_ENTRY, NULL, &entry);
         dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &dk);
@@ -1884,7 +1927,6 @@ static DBusHandlerResult avrcp_handler(DBusConnection *conn,
                                        &app->current_media.duration);
         dbus_message_iter_close_container(&entry, &var);
         dbus_message_iter_close_container(&dict, &entry);
-
         pthread_mutex_unlock(&app->lock);
         dbus_message_iter_close_container(&iter, &dict);
 
@@ -1905,7 +1947,6 @@ static void unregister_agent(internal_app_t *app)
 {
     if (!app->agent_registered || !app->bus)
         return;
-
     DBusMessage *msg =
         dbus_message_new_method_call(BLUEZ_BUS_NAME, "/org/bluez",
                                      BLUEZ_AGENT_MGR_IFACE, "UnregisterAgent");
@@ -1940,7 +1981,6 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
-
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestPinCode"))
     {
         const char *device_path = NULL;
@@ -1958,7 +1998,6 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
-
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "DisplayPinCode"))
     {
         const char *device_path = NULL, *pin = NULL;
@@ -1984,7 +2023,6 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
-
     if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestConfirmation"))
     {
         const char *device_path = NULL;
@@ -2008,15 +2046,15 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
-
-    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestAuthorization") || dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "AuthorizeService") || dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "Cancel"))
+    if (dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "RequestAuthorization") ||
+        dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "AuthorizeService") ||
+        dbus_message_is_method_call(msg, BLUEZ_AGENT_IFACE, "Cancel"))
     {
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
         dbus_message_unref(r);
         return DBUS_HANDLER_RESULT_HANDLED;
     }
-
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
@@ -2026,14 +2064,12 @@ static const DBusObjectPathVTable agent_vtable = {
 static bool register_agent(internal_app_t *app)
 {
     unregister_agent(app);
-
     if (!dbus_connection_register_object_path(app->bus, AGENT_PATH,
                                               &agent_vtable, app))
     {
         log_msg(app, "ERROR", "Failed to register agent object path");
         return false;
     }
-
     DBusMessage *msg =
         dbus_message_new_method_call(BLUEZ_BUS_NAME, "/org/bluez",
                                      BLUEZ_AGENT_MGR_IFACE, "RegisterAgent");
@@ -2042,20 +2078,17 @@ static bool register_agent(internal_app_t *app)
         dbus_connection_unregister_object_path(app->bus, AGENT_PATH);
         return false;
     }
-
     const char *path = AGENT_PATH;
     const char *cap = "KeyboardDisplay";
     dbus_message_append_args(msg,
                              DBUS_TYPE_OBJECT_PATH, &path,
                              DBUS_TYPE_STRING, &cap,
                              DBUS_TYPE_INVALID);
-
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply =
         dbus_connection_send_with_reply_and_block(app->bus, msg, 5000, &err);
     dbus_message_unref(msg);
-
     if (dbus_error_is_set(&err))
     {
         log_msg(app, "ERROR", "RegisterAgent failed: %s", err.message);
@@ -2085,7 +2118,6 @@ static bool register_agent(internal_app_t *app)
             dbus_error_free(&err);
         }
     }
-
     dbus_connection_flush(app->bus);
     app->agent_registered = true;
     log_msg(app, "INFO", "Agent ready (PIN: %s)", app->pin_code);
@@ -2099,8 +2131,8 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
     const char *path = dbus_message_get_path(msg);
     if (!iface || !member)
         return;
-
-    if (strcmp(member, "PropertiesChanged") != 0 || strcmp(iface, DBUS_PROPS_IFACE) != 0)
+    if (strcmp(member, "PropertiesChanged") != 0 ||
+        strcmp(iface, DBUS_PROPS_IFACE) != 0)
         return;
 
     DBusMessageIter iter;
@@ -2117,7 +2149,6 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
         dbus_message_iter_next(&iter);
         DBusMessageIter dict;
         dbus_message_iter_recurse(&iter, &dict);
-
         while (dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
         {
             DBusMessageIter e, v;
@@ -2131,7 +2162,6 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
             {
                 dbus_bool_t connected = FALSE;
                 dbus_message_iter_get_basic(&v, &connected);
-
                 if (connected)
                 {
                     get_prop_string(app->bus, BLUEZ_BUS_NAME, path,
@@ -2146,11 +2176,11 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
                                         BLUEZ_DEVICE_IFACE, "Alias",
                                         app->connected_device_name,
                                         sizeof(app->connected_device_name));
-                    if (!app->connected_device_name[0] && app->connected_device_address[0])
+                    if (!app->connected_device_name[0] &&
+                        app->connected_device_address[0])
                         snprintf(app->connected_device_name,
                                  sizeof(app->connected_device_name),
                                  "Device (%s)", app->connected_device_address);
-
                     pthread_mutex_lock(&app->lock);
                     safe_strncpy(app->connected_device_path, path,
                                  sizeof(app->connected_device_path));
@@ -2159,7 +2189,6 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
                     app->connected_time = time(NULL);
                     if (app->state != BT_STATE_PLAYING)
                         set_state_locked(app, BT_STATE_CONNECTED);
-
                     app->pending_player_find = true;
                     app->pending_avrcp_monitor = true;
                     pthread_mutex_unlock(&app->lock);
@@ -2185,15 +2214,14 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
                     notify_audio_event(app, false);
                 }
             }
-
             if (prop && (strcmp(prop, "Name") == 0 || strcmp(prop, "Alias") == 0))
             {
-                DBusMessageIter var;
-                dbus_message_iter_recurse(&v, &var);
-                if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRING)
+                DBusMessageIter var2;
+                dbus_message_iter_recurse(&v, &var2);
+                if (dbus_message_iter_get_arg_type(&var2) == DBUS_TYPE_STRING)
                 {
                     const char *val = NULL;
-                    dbus_message_iter_get_basic(&var, &val);
+                    dbus_message_iter_get_basic(&var2, &val);
                     if (val && val[0])
                     {
                         pthread_mutex_lock(&app->lock);
@@ -2214,7 +2242,6 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
         dbus_message_iter_next(&iter);
         DBusMessageIter dict;
         dbus_message_iter_recurse(&iter, &dict);
-
         while (dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
         {
             DBusMessageIter e, v;
@@ -2227,11 +2254,11 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
             if (prop && strcmp(prop, "Connected") == 0)
             {
                 dbus_bool_t connected = FALSE;
-                DBusMessageIter var;
-                dbus_message_iter_recurse(&v, &var);
-                if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_BOOLEAN)
+                DBusMessageIter var2;
+                dbus_message_iter_recurse(&v, &var2);
+                if (dbus_message_iter_get_arg_type(&var2) == DBUS_TYPE_BOOLEAN)
                 {
-                    dbus_message_iter_get_basic(&var, &connected);
+                    dbus_message_iter_get_basic(&var2, &connected);
                     pthread_mutex_lock(&app->lock);
                     if (connected && app->state != BT_STATE_PLAYING)
                     {
@@ -2261,13 +2288,13 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
 
     if (strcmp(changed_iface, BLUEZ_MEDIA_PLAYER_IFACE) == 0)
     {
-        if (!path || !app->player_path[0] || strcmp(path, app->player_path) != 0)
+        if (!path || !app->player_path[0] ||
+            strcmp(path, app->player_path) != 0)
             return;
 
         dbus_message_iter_next(&iter);
         DBusMessageIter dict;
         dbus_message_iter_recurse(&iter, &dict);
-
         while (dbus_message_iter_get_arg_type(&dict) == DBUS_TYPE_DICT_ENTRY)
         {
             DBusMessageIter e;
@@ -2275,7 +2302,6 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
             const char *prop = NULL;
             if (dbus_message_iter_get_arg_type(&e) == DBUS_TYPE_STRING)
                 dbus_message_iter_get_basic(&e, &prop);
-
             if (!prop || !dbus_message_iter_has_next(&e))
             {
                 dbus_message_iter_next(&dict);
@@ -2296,12 +2322,12 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
             }
             else if (strcmp(prop, "Status") == 0)
             {
-                DBusMessageIter var;
-                dbus_message_iter_recurse(&e, &var);
-                if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_STRING)
+                DBusMessageIter var2;
+                dbus_message_iter_recurse(&e, &var2);
+                if (dbus_message_iter_get_arg_type(&var2) == DBUS_TYPE_STRING)
                 {
                     const char *status = NULL;
-                    dbus_message_iter_get_basic(&var, &status);
+                    dbus_message_iter_get_basic(&var2, &status);
                     if (status)
                     {
                         pthread_mutex_lock(&app->lock);
@@ -2314,12 +2340,12 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
             }
             else if (strcmp(prop, "Position") == 0)
             {
-                DBusMessageIter var;
-                dbus_message_iter_recurse(&e, &var);
-                if (dbus_message_iter_get_arg_type(&var) == DBUS_TYPE_UINT32)
+                DBusMessageIter var2;
+                dbus_message_iter_recurse(&e, &var2);
+                if (dbus_message_iter_get_arg_type(&var2) == DBUS_TYPE_UINT32)
                 {
                     dbus_uint32_t pos = 0;
-                    dbus_message_iter_get_basic(&var, &pos);
+                    dbus_message_iter_get_basic(&var2, &pos);
                     pthread_mutex_lock(&app->lock);
                     app->current_media.position = pos;
                     pthread_mutex_unlock(&app->lock);
@@ -2334,7 +2360,6 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
 static void *main_loop_thread(void *arg)
 {
     internal_app_t *app = (internal_app_t *)arg;
-
     DBusError err;
 
     const char *matches[] = {
@@ -2361,7 +2386,6 @@ static void *main_loop_thread(void *arg)
     while (app->running)
     {
         dbus_connection_read_write(app->bus, 10);
-
         DBusDispatchStatus ds;
         do
         {
@@ -2406,13 +2430,15 @@ static void *main_loop_thread(void *arg)
             monitor_avrcp_changes(app);
         }
 
-        if (now - last_transport_check > 2 && (app->state == BT_STATE_CONNECTED || app->state == BT_STATE_PLAYING))
+        if (now - last_transport_check > 2 &&
+            (app->state == BT_STATE_CONNECTED || app->state == BT_STATE_PLAYING))
         {
             check_transport_state();
             last_transport_check = now;
         }
 
-        if (now - last_avrcp_poll > 5 && (app->state == BT_STATE_CONNECTED || app->state == BT_STATE_PLAYING))
+        if (now - last_avrcp_poll > 5 &&
+            (app->state == BT_STATE_CONNECTED || app->state == BT_STATE_PLAYING))
         {
             find_player_path(app);
             if (app->player_verified)
@@ -2420,7 +2446,9 @@ static void *main_loop_thread(void *arg)
             last_avrcp_poll = now;
         }
 
-        if (now - last_reconnect_check > 3 && app->connected_device_path[0] == '\0' && app->state == BT_STATE_ADVERTISING)
+        if (now - last_reconnect_check > 3 &&
+            app->connected_device_path[0] == '\0' &&
+            app->state == BT_STATE_ADVERTISING)
         {
             check_reconnection(app);
             last_reconnect_check = now;
@@ -2462,6 +2490,8 @@ static void cleanup(internal_app_t *app)
         pa_mainloop_free(app->pa_ml);
         app->pa_ml = NULL;
     }
+    app->pa_ready = false;
+
     if (app->bus)
     {
         dbus_connection_unref(app->bus);
@@ -2473,17 +2503,26 @@ static void cleanup(internal_app_t *app)
 
 int bt_speaker_init(const bt_config_t *config)
 {
-
     if (g_app.running)
     {
         set_error(&g_app, BT_ERROR_ALREADY_RUNNING, "Already running");
         return -1;
     }
+
+    bool saved_bluez_loaded = g_app.pa_bluez_module_loaded;
+    bool saved_alsa_loaded = g_app.pa_alsa_module_loaded;
+    uint32_t saved_alsa_idx = g_app.pa_alsa_module_idx;
+
     if (g_app.initialized)
         pthread_mutex_destroy(&g_app.lock);
 
     memset(&g_app, 0, sizeof(g_app));
     g_app.transport_fd = -1;
+
+    g_app.pa_bluez_module_loaded = saved_bluez_loaded;
+    g_app.pa_alsa_module_loaded = saved_alsa_loaded;
+    g_app.pa_alsa_module_idx = saved_alsa_idx;
+
     pthread_mutex_init(&g_app.lock, NULL);
 
     safe_strncpy(g_app.device_name, "Aroma Speaker", sizeof(g_app.device_name));
@@ -2591,7 +2630,8 @@ int bt_speaker_init(const bt_config_t *config)
         load_pa_bt_modules(&g_app);
     else
         log_msg(&g_app, "WARN",
-                "PulseAudio init failed audio routing may not work");
+                "PulseAudio init failed – audio routing may not work. "
+                "Ensure pulseaudio is running and the pulse user has D-Bus access.");
 
     g_app.initialized = true;
     set_state(&g_app, BT_STATE_ADVERTISING);
@@ -2611,8 +2651,7 @@ int bt_speaker_start(void)
     if (pthread_create(&g_app.main_thread, NULL, main_loop_thread, &g_app) != 0)
     {
         g_app.running = false;
-        set_error(&g_app, BT_ERROR_CONFIG_FAILED,
-                  "Failed to create main thread");
+        set_error(&g_app, BT_ERROR_CONFIG_FAILED, "Failed to create main thread");
         return -1;
     }
     return 0;
@@ -2635,8 +2674,17 @@ void bt_speaker_cleanup(void)
     else if (g_app.initialized)
         cleanup(&g_app);
     pthread_mutex_destroy(&g_app.lock);
+
+    bool saved_bluez = g_app.pa_bluez_module_loaded;
+    bool saved_alsa = g_app.pa_alsa_module_loaded;
+    uint32_t saved_idx = g_app.pa_alsa_module_idx;
+
     memset(&g_app, 0, sizeof(g_app));
     g_app.transport_fd = -1;
+
+    g_app.pa_bluez_module_loaded = saved_bluez;
+    g_app.pa_alsa_module_loaded = saved_alsa;
+    g_app.pa_alsa_module_idx = saved_idx;
 }
 
 bt_state_t bt_speaker_get_state(void)
@@ -2674,7 +2722,6 @@ bt_device_info_t bt_speaker_get_device_info(void)
 {
     bt_device_info_t info = {0};
     pthread_mutex_lock(&g_app.lock);
-
     if (g_app.connected_device_path[0] && !g_app.connected_device_name[0])
     {
         if (!get_prop_string(g_app.bus, BLUEZ_BUS_NAME,
@@ -2688,13 +2735,9 @@ bt_device_info_t bt_speaker_get_device_info(void)
                             g_app.connected_device_name,
                             sizeof(g_app.connected_device_name));
     }
-
-    safe_strncpy(info.name, g_app.connected_device_name,
-                 sizeof(info.name));
-    safe_strncpy(info.path, g_app.connected_device_path,
-                 sizeof(info.path));
-    safe_strncpy(info.address, g_app.connected_device_address,
-                 sizeof(info.address));
+    safe_strncpy(info.name, g_app.connected_device_name, sizeof(info.name));
+    safe_strncpy(info.path, g_app.connected_device_path, sizeof(info.path));
+    safe_strncpy(info.address, g_app.connected_device_address, sizeof(info.address));
     info.connected = (g_app.connected_device_path[0] != '\0');
     pthread_mutex_unlock(&g_app.lock);
     return info;
