@@ -216,6 +216,17 @@ static void update_media_ui(void)
                 aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);    
 
     }
+
+    if(state.bluetooth_icon)
+    {
+        aroma_node_set_hidden(state.bluetooth_icon, false);
+        AromaAnimation * anim = aroma_animation_start(state.status_card, AROMA_ANIM_SCALE_X, 175, 205, 1200);
+
+                aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+
+        
+     }
+    
 }
 
     
@@ -372,6 +383,22 @@ static void ac_temp_down_callback(void *user_data)
     aroma_label_set_text(state.ac_temp_label, buf);
 }
 
+static void car_frontdoor_open(void *user_data)
+{
+    (void)user_data;
+    aroma_image_set_source(state.overlay,
+#ifdef __EMSCRIPTEN__
+                            "/assets/car_frontdoor.png"
+#elif defined(__arm__) || defined(__aarch64__)
+        "/usr/share/infotainment/assets/car_frontdoor.png"
+#else                           
+ "../assets/car_frontdoor.png"
+#endif
+    );
+    AromaNode *warning_icon = aroma_ui_icon(state.window, AROMA_ICON_WARNING, 710, 460, 40, 0xFFFF0000, state.icon_font);
+    aroma_node_set_z_index(warning_icon, Z_LAYER_VEHICLE_OVERLAYS + 1);
+}
+
 static void battery_diagnostics(void *user_data)
 {
     (void)user_data;
@@ -385,6 +412,7 @@ static void battery_diagnostics(void *user_data)
                            "../assets/car_battery.png"
 #endif
     );
+    //aroma_node_set_hidden(state.car_img, true);
     AromaAnimation *anim = aroma_animation_start(
         state.overlay, AROMA_ANIM_SLIDE_Y, 900, 250, 400);
     aroma_animation_set_easing(anim, AROMA_EASE_OUT_ELASTIC);
@@ -419,6 +447,7 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_z_index(state.vehicle_view_root, Z_LAYER_BACKGROUND);
 
+
     AromaNode *backroad = aroma_ui_image(
         state.vehicle_view_root,
 #ifdef __EMSCRIPTEN__
@@ -432,7 +461,7 @@ void build_vehicle_view(AromaNode *window)
         0, 0, WIN_W, WIN_H);
     aroma_node_set_z_index(backroad, Z_LAYER_BACKGROUND);
 
-    AromaNode *car_img = aroma_ui_image(
+    state.car_img = aroma_ui_image(
         state.vehicle_view_root,
 #ifdef __EMSCRIPTEN__
         "/assets/car.png"
@@ -443,7 +472,7 @@ void build_vehicle_view(AromaNode *window)
 #endif
         ,
         250, 250, 700, 405);
-    aroma_node_set_z_index(car_img, Z_LAYER_VEHICLE_IMAGE);
+    aroma_node_set_z_index(state.car_img, Z_LAYER_VEHICLE_IMAGE);
 
     state.overlay = aroma_ui_image(state.vehicle_view_root, NULL, 250, 250, 700, 405);
     aroma_node_set_z_index(state.overlay, Z_LAYER_VEHICLE_OVERLAYS);
@@ -516,7 +545,7 @@ void build_vehicle_view(AromaNode *window)
     state.vehicle_view_lock_divider = aroma_ui_divider(
         state.vehicle_view_root, 700, 260, 80, DIVIDER_ORIENTATION_VERTICAL);
     aroma_node_set_z_index(state.vehicle_view_lock_divider, Z_LAYER_VEHICLE_OVERLAYS + 1);
-
+    
     state.vehicle_view_lock_icon = aroma_ui_icon(
         state.vehicle_view_root, AROMA_ICON_LOCK, 712, 220, 24,
         state.theme.colors.primary, state.icon_font);
@@ -699,6 +728,8 @@ void build_vehicle_view(AromaNode *window)
                                               ,
                                               30, 15, 48, 48);
     aroma_node_set_z_index(maps_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
+
     AromaNode *phone_app_icon = aroma_ui_image(state.bottom_bar ,
 #ifdef __EMSCRIPTEN__
                                                "/assets/phone_app.png"
@@ -738,7 +769,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 90, 1200);
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 40, 1200);
-
+    car_frontdoor_open(NULL);
     media_ui.monitor_running = true;
     pthread_create(&media_ui.monitor_thread, NULL, media_monitor_thread_func, NULL);
 }

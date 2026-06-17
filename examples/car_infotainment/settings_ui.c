@@ -720,7 +720,7 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
     AromaNode *small_bg_card_for_status_icon = aroma_ui_card(bt_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
 
     bt_ui.status_icon = aroma_ui_icon(small_bg_card_for_status_icon, AROMA_ICON_BLUETOOTH,
-                                      28, 5, 32, 0xFF607D8B, state.big_icon_font);
+                                      28, 5, 32, 0xFF607D8B, state.icon_font);
 
     bt_ui.status_label = aroma_ui_label(bt_ui.status_card, "Ready to Connect",
                                         85, 25, LABEL_STYLE_LABEL_LARGE, state.settings_font);
@@ -1251,7 +1251,12 @@ void build_settings_ui(AromaNode *window)
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
 
-    AromaNode *label = aroma_ui_label(state.settings_panel_node, "Settings", 20, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    AromaNode *icon = aroma_ui_icon(state.settings_panel_node, AROMA_ICON_SETTINGS, 45, 25, 8, 0xFF2196F3, state.icon_font);
+    aroma_node_set_z_index(icon, Z_LAYER_SETTINGS_PANEL + 2);
+    AromaNode *label = aroma_ui_label(state.settings_panel_node, "Settings", 50, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    AromaNode *debug_build_number = aroma_ui_label(state.settings_panel_node, "Build: " __DATE__ " " __TIME__, 550, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    aroma_node_set_z_index(debug_build_number, Z_LAYER_SETTINGS_PANEL + 2);
+    aroma_label_set_color(debug_build_number, 0xFF9E9E9E);
     AromaNode *divider = aroma_ui_divider(state.settings_panel_node, 0, 50, SETTINGS_PANEL_W, DIVIDER_ORIENTATION_HORIZONTAL);
     AromaNode *canvas = aroma_canvas_create(state.settings_panel_node, 0, 0, SETTINGS_PANEL_W, 50);
     aroma_canvas_draw_rect(canvas, 0, 0, SETTINGS_PANEL_W, 50, false, true, 0xFFFFFF);

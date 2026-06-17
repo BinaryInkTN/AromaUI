@@ -8,7 +8,7 @@ void animate_node_x(AromaNode *node, int from, int to)
     AromaAnimation *anim = aroma_animation_start(
         node, AROMA_ANIM_SLIDE_X, from, to, SETTINGS_ANIM_MS);
     if (anim)
-        aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+        aroma_animation_set_easing(anim, AROMA_EASE_OUT_QUAD);
 }
 
 int get_node_x(AromaNode *node)

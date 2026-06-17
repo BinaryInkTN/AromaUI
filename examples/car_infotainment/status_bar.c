@@ -20,7 +20,7 @@ void build_status_bar(void)
     aroma_node_set_hidden(state.time_label, true);
 
     state.status_card = aroma_ui_card(
-        (AromaNode *)state.window, WIN_W - 235, 18, 200, 50, CARD_TYPE_FILLED);
+        (AromaNode *)state.window, WIN_W - 235, 18, 175, 50, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.status_card, Z_LAYER_STATUS_BAR);
 
     state.signal_icon = aroma_ui_icon(
@@ -31,14 +31,14 @@ void build_status_bar(void)
         WIN_W - 80, 30, 24, state.theme.colors.text_primary, state.icon_font);
     state.battery_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_BATTERY_FULL, 
-        WIN_W - 40, 30, 24, state.theme.colors.text_primary, state.icon_font);
+        WIN_W - 200, 30, 24, state.theme.colors.text_primary, state.icon_font);
     state.gps_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_GPS_FIXED, 
         WIN_W - 160, 30, 24, state.theme.colors.text_primary, state.icon_font);
     state.bluetooth_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO, 
-        WIN_W - 200, 30, 24, state.theme.colors.text_primary, state.icon_font);
-
+        WIN_W - 40, 30, 24, state.theme.colors.text_primary, state.icon_font);
+    aroma_node_set_hidden(state.bluetooth_icon, true);
     AromaNode *status_icons[] = {
         state.signal_icon, state.wifi_icon, state.battery_icon,
         state.gps_icon, state.bluetooth_icon

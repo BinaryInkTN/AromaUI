@@ -27,7 +27,7 @@
 #define MAP_PANEL_WIDTH WIN_W
 #define MAP_PANEL_OFFSET 0
 #define SETTINGS_PANEL_W 800
-#define SETTINGS_ANIM_MS 350
+#define SETTINGS_ANIM_MS 200
 
 #define MAX_STRING_LEN 256
 #define MAX_PATH_LEN 512
@@ -69,7 +69,7 @@ typedef struct
     AromaNode *vehicle_view_root;
     AromaNode *tabs;
     AromaNode *sidebar;
-
+    AromaNode *car_img;
     AromaNode *time_label;
     AromaNode *location_label;
     AromaNode *status_card;
@@ -140,6 +140,8 @@ typedef struct
 
     AromaNode *bt_container;
     AromaNode* range_card;
+    AromaNode* secondary_notification_card;
+    
     
     AromaNode* bottom_bar;
     AromaTheme theme;
