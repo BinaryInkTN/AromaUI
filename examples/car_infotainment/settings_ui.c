@@ -47,6 +47,10 @@
 #define EASTER_EGG_CLICKS 7
 #define EASTER_EGG_VOICE_THRESHOLD 2
 #define BT_MONITOR_INTERVAL_US 200000
+#define MAX_SERVICE_NAME_LEN 128
+#define MAX_SERVICE_STATUS_LEN 64
+#define MAX_SERVICE_DESC_LEN 256
+#define SERVICES_REFRESH_INTERVAL_US 2000000
 
 typedef void (*item_action_fn)(void);
 
@@ -85,6 +89,47 @@ typedef struct
     pthread_cond_t update_cond;
 } BluetoothUI;
 
+typedef struct
+{
+    char name[MAX_SERVICE_NAME_LEN];
+    char load_state[MAX_SERVICE_STATUS_LEN];
+    char active_state[MAX_SERVICE_STATUS_LEN];
+    char sub_state[MAX_SERVICE_STATUS_LEN];
+    uint32_t main_pid;
+    uint64_t memory_current;
+    uint64_t cpu_usage;
+    uint64_t active_enter_timestamp;
+    bool is_active;
+    bool is_running;
+} ServiceStatus;
+
+typedef struct
+{
+    AromaNode *status_card;
+    AromaNode *status_icon;
+    AromaNode *status_label;
+    AromaNode *detail_card;
+    AromaNode *pid_label;
+    AromaNode *memory_label;
+    AromaNode *cpu_label;
+    AromaNode *load_state_label;
+    AromaNode *active_state_label;
+    AromaNode *sub_state_label;
+    AromaNode *uptime_label;
+    AromaNode *start_button;
+    AromaNode *stop_button;
+    AromaNode *restart_button;
+    AromaNode *enable_button;
+    AromaNode *disable_button;
+    ServiceStatus current_status;
+    bool initialized;
+    bool monitor_running;
+    bool ui_needs_update;
+    pthread_mutex_t lock;
+    pthread_t monitor_thread;
+    pthread_cond_t update_cond;
+} ServicesUI;
+
 static BluetoothUI bt_ui = {
     .current_state = BT_STATE_IDLE,
     .initialized = false,
@@ -92,6 +137,14 @@ static BluetoothUI bt_ui = {
     .monitor_running = false,
     .ui_needs_update = false,
     .current_media = {0},
+    .lock = PTHREAD_MUTEX_INITIALIZER,
+    .update_cond = PTHREAD_COND_INITIALIZER};
+
+static ServicesUI svc_ui = {
+    .initialized = false,
+    .monitor_running = false,
+    .ui_needs_update = false,
+    .current_status = {0},
     .lock = PTHREAD_MUTEX_INITIALIZER,
     .update_cond = PTHREAD_COND_INITIALIZER};
 
@@ -133,6 +186,18 @@ static AromaNode *build_bluetooth_page(AromaNode *parent, int panel_w, int area_
 static void *bt_init_thread_func(void *arg);
 static void *bt_monitor_thread_func(void *arg);
 static void schedule_ui_update(void);
+static void init_services_async(void);
+static void update_services_ui(void);
+static void *services_monitor_thread_func(void *arg);
+static void schedule_services_ui_update(void);
+static AromaNode *build_services_page(AromaNode *parent, int panel_w, int area_h);
+static bool on_service_start_click(AromaNode *node, void *user_data);
+static bool on_service_stop_click(AromaNode *node, void *user_data);
+static bool on_service_restart_click(AromaNode *node, void *user_data);
+static bool on_service_enable_click(AromaNode *node, void *user_data);
+static bool on_service_disable_click(AromaNode *node, void *user_data);
+static void execute_service_command(const char *command);
+static void refresh_service_status(void);
 
 static void schedule_ui_update(void)
 {
@@ -141,6 +206,452 @@ static void schedule_ui_update(void)
     pthread_cond_signal(&bt_ui.update_cond);
     pthread_mutex_unlock(&bt_ui.lock);
 }
+
+static void schedule_services_ui_update(void)
+{
+    pthread_mutex_lock(&svc_ui.lock);
+    svc_ui.ui_needs_update = true;
+    pthread_cond_signal(&svc_ui.update_cond);
+    pthread_mutex_unlock(&svc_ui.lock);
+}
+
+static void execute_service_command(const char *command)
+{
+    char cmd[MAX_ERROR_MSG_LEN];
+    snprintf(cmd, sizeof(cmd), "systemctl %s swupdate.service 2>&1", command);
+    
+    FILE *fp = popen(cmd, "r");
+    if (fp)
+    {
+        char output[MAX_ERROR_MSG_LEN];
+        while (fgets(output, sizeof(output), fp))
+        {
+            printf("[SERVICE] %s: %s", command, output);
+        }
+        pclose(fp);
+    }
+    
+    schedule_services_ui_update();
+}
+
+static bool on_service_start_click(AromaNode *node, void *user_data)
+{
+    UNUSED(node);
+    UNUSED(user_data);
+    execute_service_command("start");
+    return true;
+}
+
+static bool on_service_stop_click(AromaNode *node, void *user_data)
+{
+    UNUSED(node);
+    UNUSED(user_data);
+    execute_service_command("stop");
+    return true;
+}
+
+static bool on_service_restart_click(AromaNode *node, void *user_data)
+{
+    UNUSED(node);
+    UNUSED(user_data);
+    execute_service_command("restart");
+    return true;
+}
+
+static bool on_service_enable_click(AromaNode *node, void *user_data)
+{
+    UNUSED(node);
+    UNUSED(user_data);
+    execute_service_command("enable");
+    return true;
+}
+
+static bool on_service_disable_click(AromaNode *node, void *user_data)
+{
+    UNUSED(node);
+    UNUSED(user_data);
+    execute_service_command("disable");
+    return true;
+}
+
+static void refresh_service_status(void)
+{
+    ServiceStatus status;
+    memset(&status, 0, sizeof(status));
+    safe_strncpy(status.name, "swupdate.service", MAX_SERVICE_NAME_LEN);
+    
+    FILE *fp = popen("systemctl show -p LoadState -p ActiveState -p SubState -p MainPID -p MemoryCurrent -p ActiveEnterTimestamp swupdate.service 2>/dev/null", "r");
+    if (fp)
+    {
+        char line[MAX_ERROR_MSG_LEN];
+        while (fgets(line, sizeof(line), fp))
+        {
+            if (strncmp(line, "LoadState=", 10) == 0)
+            {
+                safe_strncpy(status.load_state, line + 10, MAX_SERVICE_STATUS_LEN);
+                char *nl = strchr(status.load_state, '\n');
+                if (nl) *nl = '\0';
+            }
+            else if (strncmp(line, "ActiveState=", 12) == 0)
+            {
+                safe_strncpy(status.active_state, line + 12, MAX_SERVICE_STATUS_LEN);
+                char *nl = strchr(status.active_state, '\n');
+                if (nl) *nl = '\0';
+                status.is_active = (strcmp(status.active_state, "active") == 0);
+                status.is_running = status.is_active;
+            }
+            else if (strncmp(line, "SubState=", 9) == 0)
+            {
+                safe_strncpy(status.sub_state, line + 9, MAX_SERVICE_STATUS_LEN);
+                char *nl = strchr(status.sub_state, '\n');
+                if (nl) *nl = '\0';
+            }
+            else if (strncmp(line, "MainPID=", 8) == 0)
+            {
+                status.main_pid = (uint32_t)strtoul(line + 8, NULL, 10);
+            }
+            else if (strncmp(line, "MemoryCurrent=", 14) == 0)
+            {
+                status.memory_current = strtoull(line + 14, NULL, 10);
+            }
+            else if (strncmp(line, "ActiveEnterTimestamp=", 21) == 0)
+            {
+                status.active_enter_timestamp = strtoull(line + 21, NULL, 10);
+            }
+        }
+        pclose(fp);
+    }
+    else
+    {
+        safe_strncpy(status.load_state, "unknown", MAX_SERVICE_STATUS_LEN);
+        safe_strncpy(status.active_state, "unknown", MAX_SERVICE_STATUS_LEN);
+        safe_strncpy(status.sub_state, "unknown", MAX_SERVICE_STATUS_LEN);
+    }
+    
+    pthread_mutex_lock(&svc_ui.lock);
+    svc_ui.current_status = status;
+    pthread_mutex_unlock(&svc_ui.lock);
+}
+
+static void update_services_ui(void)
+{
+    if (!svc_ui.status_label || !svc_ui.status_icon || !svc_ui.status_card)
+    {
+        return;
+    }
+    
+    refresh_service_status();
+    
+    pthread_mutex_lock(&svc_ui.lock);
+    ServiceStatus status = svc_ui.current_status;
+    pthread_mutex_unlock(&svc_ui.lock);
+    
+    if (status.is_running)
+    {
+        aroma_label_set_text(svc_ui.status_label, "Running");
+        aroma_icon_set_text(svc_ui.status_icon, AROMA_ICON_CHECK_CIRCLE, state.icon_font);
+        aroma_icon_set_color(svc_ui.status_icon, 0xFF4CAF50);
+    }
+    else
+    {
+        aroma_label_set_text(svc_ui.status_label, "Stopped");
+        aroma_icon_set_text(svc_ui.status_icon, AROMA_ICON_ERROR, state.icon_font);
+        aroma_icon_set_color(svc_ui.status_icon, 0xFFF44336);
+    }
+    
+    if (svc_ui.pid_label)
+    {
+        char pid_text[MAX_INFO_STR_LEN];
+        if (status.main_pid > 0)
+        {
+            snprintf(pid_text, sizeof(pid_text), "PID: %u", status.main_pid);
+        }
+        else
+        {
+            snprintf(pid_text, sizeof(pid_text), "PID: N/A");
+        }
+        aroma_label_set_text(svc_ui.pid_label, pid_text);
+    }
+    
+    if (svc_ui.memory_label)
+    {
+        char mem_text[MAX_INFO_STR_LEN];
+        if (status.memory_current > 0)
+        {
+            snprintf(mem_text, sizeof(mem_text), "Memory: %.2f MB", 
+                     (double)status.memory_current / (1024.0 * 1024.0));
+        }
+        else
+        {
+            snprintf(mem_text, sizeof(mem_text), "Memory: N/A");
+        }
+        aroma_label_set_text(svc_ui.memory_label, mem_text);
+    }
+    
+    if (svc_ui.cpu_label)
+    {
+        char cpu_text[MAX_INFO_STR_LEN];
+        snprintf(cpu_text, sizeof(cpu_text), "CPU: Monitoring...");
+        aroma_label_set_text(svc_ui.cpu_label, cpu_text);
+    }
+    
+    if (svc_ui.load_state_label)
+    {
+        char load_text[MAX_INFO_STR_LEN];
+        snprintf(load_text, sizeof(load_text), "Load: %s", status.load_state);
+        aroma_label_set_text(svc_ui.load_state_label, load_text);
+    }
+    
+    if (svc_ui.active_state_label)
+    {
+        char active_text[MAX_INFO_STR_LEN];
+        snprintf(active_text, sizeof(active_text), "Active: %s", status.active_state);
+        aroma_label_set_text(svc_ui.active_state_label, active_text);
+    }
+    
+    if (svc_ui.sub_state_label)
+    {
+        char sub_text[MAX_INFO_STR_LEN];
+        snprintf(sub_text, sizeof(sub_text), "Sub: %s", status.sub_state);
+        aroma_label_set_text(svc_ui.sub_state_label, sub_text);
+    }
+    
+    if (svc_ui.uptime_label)
+    {
+        char uptime_text[MAX_INFO_STR_LEN];
+        if (status.active_enter_timestamp > 0 && status.is_active)
+        {
+            uint64_t now = (uint64_t)time(NULL) * 1000000;
+            uint64_t diff = now - status.active_enter_timestamp;
+            unsigned long minutes = diff / 60000000;
+            unsigned long hours = minutes / 60;
+            minutes = minutes % 60;
+            if (hours > 0)
+            {
+                snprintf(uptime_text, sizeof(uptime_text), "Uptime: %luh %lumin", hours, minutes);
+            }
+            else
+            {
+                snprintf(uptime_text, sizeof(uptime_text), "Uptime: %lumin", minutes);
+            }
+        }
+        else
+        {
+            snprintf(uptime_text, sizeof(uptime_text), "Uptime: N/A");
+        }
+        aroma_label_set_text(svc_ui.uptime_label, uptime_text);
+    }
+    
+    if (svc_ui.start_button)
+    {
+        aroma_node_set_hidden(svc_ui.start_button, status.is_running);
+    }
+    if (svc_ui.stop_button)
+    {
+        aroma_node_set_hidden(svc_ui.stop_button, !status.is_running);
+    }
+    if (svc_ui.restart_button)
+    {
+        aroma_node_set_hidden(svc_ui.restart_button, !status.is_running);
+    }
+}
+
+static void *services_monitor_thread_func(void *arg)
+{
+    UNUSED(arg);
+    
+    printf("[SERVICES MONITOR] Monitor thread started\n");
+    
+    while (svc_ui.monitor_running)
+    {
+        pthread_mutex_lock(&svc_ui.lock);
+        
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_nsec += SERVICES_REFRESH_INTERVAL_US * 1000;
+        if (ts.tv_nsec >= 1000000000)
+        {
+            ts.tv_sec += 1;
+            ts.tv_nsec -= 1000000000;
+        }
+        
+        pthread_cond_timedwait(&svc_ui.update_cond, &svc_ui.lock, &ts);
+        
+        if (svc_ui.ui_needs_update)
+        {
+            svc_ui.ui_needs_update = false;
+            pthread_mutex_unlock(&svc_ui.lock);
+            update_services_ui();
+        }
+        else
+        {
+            pthread_mutex_unlock(&svc_ui.lock);
+        }
+    }
+    
+    printf("[SERVICES MONITOR] Monitor thread stopped\n");
+    return NULL;
+}
+
+static void init_services_async(void)
+{
+    pthread_mutex_lock(&svc_ui.lock);
+    
+    if (svc_ui.monitor_running)
+    {
+        pthread_mutex_unlock(&svc_ui.lock);
+        return;
+    }
+    
+    svc_ui.monitor_running = true;
+    pthread_mutex_unlock(&svc_ui.lock);
+    
+    refresh_service_status();
+    schedule_services_ui_update();
+    
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&svc_ui.monitor_thread, &attr, services_monitor_thread_func, NULL);
+    pthread_attr_destroy(&attr);
+}
+
+static AromaNode *create_services_page_content(AromaNode *parent, int panel_w)
+{
+    if (!parent)
+    {
+        return NULL;
+    }
+    
+    int card_width = panel_w - 20;
+    int y_offset = 10;
+    
+    svc_ui.status_card = aroma_ui_card(parent, 10, y_offset,
+                                        card_width, 100, CARD_TYPE_GLASS);
+    if (!svc_ui.status_card)
+    {
+        return NULL;
+    }
+    
+    AromaNode *small_bg_card_for_status_icon = aroma_ui_card(svc_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
+    
+    svc_ui.status_icon = aroma_ui_icon(small_bg_card_for_status_icon, AROMA_ICON_INFO,
+                                        28, 5, 32, 0xFF607D8B, state.icon_font);
+    
+    svc_ui.status_label = aroma_ui_label(svc_ui.status_card, "Checking...",
+                                          85, 25, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    
+    svc_ui.pid_label = aroma_ui_label(svc_ui.status_card, "PID: N/A",
+                                       85, 50, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    
+    aroma_ui_label(svc_ui.status_card, "swupdate.service",
+                   85, 72, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    
+    y_offset += 110;
+    
+    svc_ui.detail_card = aroma_ui_card(parent, 10, y_offset,
+                                        card_width, 180, CARD_TYPE_GLASS);
+    if (svc_ui.detail_card)
+    {
+        aroma_ui_label(svc_ui.detail_card, "Service Details", 16, 10,
+                       LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+        
+        svc_ui.load_state_label = aroma_ui_label(svc_ui.detail_card, "Load: N/A",
+                                                  16, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        svc_ui.active_state_label = aroma_ui_label(svc_ui.detail_card, "Active: N/A",
+                                                    16, 65, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        svc_ui.sub_state_label = aroma_ui_label(svc_ui.detail_card, "Sub: N/A",
+                                                 16, 90, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        svc_ui.memory_label = aroma_ui_label(svc_ui.detail_card, "Memory: N/A",
+                                              200, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        svc_ui.cpu_label = aroma_ui_label(svc_ui.detail_card, "CPU: Monitoring...",
+                                           200, 65, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        svc_ui.uptime_label = aroma_ui_label(svc_ui.detail_card, "Uptime: N/A",
+                                              200, 90, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    }
+    
+    y_offset += 190;
+    
+    AromaNode *control_card = aroma_ui_card(parent, 10, y_offset,
+                                             card_width, 100, CARD_TYPE_GLASS);
+    if (control_card)
+    {
+        aroma_ui_label(control_card, "Service Control", 16, 16,
+                       LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+        
+        svc_ui.start_button = aroma_ui_button(
+            control_card, "Start", 16, 50, 80, 40,
+            on_service_start_click, NULL, state.settings_font);
+        aroma_button_set_colors(svc_ui.start_button, 0xFF4CAF50, 0xFFFFFFFF, 0xFF388E3C, 0xFFFFFFFF);
+        
+        svc_ui.stop_button = aroma_ui_button(
+            control_card, "Stop", 106, 50, 80, 40,
+            on_service_stop_click, NULL, state.settings_font);
+        aroma_button_set_colors(svc_ui.stop_button, 0xFFF44336, 0xFFFFFFFF, 0xFFD32F2F, 0xFFFFFFFF);
+        aroma_node_set_hidden(svc_ui.stop_button, true);
+        
+        svc_ui.restart_button = aroma_ui_button(
+            control_card, "Restart", 196, 50, 80, 40,
+            on_service_restart_click, NULL, state.settings_font);
+        aroma_button_set_colors(svc_ui.restart_button, 0xFFFFC107, 0xFF000000, 0xFFFFA000, 0xFF000000);
+        aroma_node_set_hidden(svc_ui.restart_button, true);
+        
+        svc_ui.enable_button = aroma_ui_button(
+            control_card, "Enable", 286, 50, 80, 40,
+            on_service_enable_click, NULL, state.settings_font);
+        aroma_button_set_colors(svc_ui.enable_button, 0xFF2196F3, 0xFFFFFFFF, 0xFF1976D2, 0xFFFFFFFF);
+        
+        svc_ui.disable_button = aroma_ui_button(
+            control_card, "Disable", 376, 50, 80, 40,
+            on_service_disable_click, NULL, state.settings_font);
+        aroma_button_set_colors(svc_ui.disable_button, 0xFF9E9E9E, 0xFFFFFFFF, 0xFF757575, 0xFFFFFFFF);
+    }
+    
+    y_offset += 110;
+    
+    aroma_ui_label(parent, "SWUpdate manages over-the-air (OTA)", 10, y_offset + 10,
+                   LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    aroma_ui_label(parent, "software updates for the infotainment system.", 10, y_offset + 30,
+                   LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    aroma_ui_label(parent, "Keep this service running for automatic updates.", 10, y_offset + 50,
+                   LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    
+    return svc_ui.status_card;
+}
+
+static AromaNode *build_services_page(AromaNode *parent, int panel_w, int area_h)
+{
+    if (!parent)
+    {
+        return NULL;
+    }
+    
+    AromaNode *scroll_container = aroma_container_create(
+        parent, 230, 0, panel_w, area_h);
+    
+    if (!scroll_container)
+    {
+        return NULL;
+    }
+    
+    aroma_container_set_scrollable(scroll_container, true);
+    
+    AromaNode *content = create_services_page_content(scroll_container, panel_w);
+    if (!content)
+    {
+        return scroll_container;
+    }
+    
+    init_services_async();
+    
+    return scroll_container;
+}
+
 static void *bt_monitor_thread_func(void *arg)
 {
     UNUSED(arg);
@@ -173,14 +684,11 @@ static void *bt_monitor_thread_func(void *arg)
             bt_state_t current = bt_speaker_get_state();
             bt_stats_t stats = bt_speaker_get_stats();
             bt_media_info_t media = bt_speaker_get_media_info();
-            printf("[BT MONITOR] Monitor thread exiting. Final state: %d, Media: %s - %s (%s)\n",
-                   bt_ui.current_state, media.artist, media.title, media.status);
 
             bool media_changed = (strcmp(bt_ui.current_media.title, media.title) != 0 ||
                                   strcmp(bt_ui.current_media.artist, media.artist) != 0 ||
                                   strcmp(bt_ui.current_media.status, media.status) != 0);
 
-            // Audio is active if we're playing OR if media info exists AND audio time > 0
             bool audio_actually_active = (current == BT_STATE_PLAYING) ||
                                          (media.title[0] != '\0' && stats.audio_active);
 
@@ -194,7 +702,6 @@ static void *bt_monitor_thread_func(void *arg)
             else if (media_changed)
             {
                 bt_ui.current_media = media;
-                // If we have media info and we're in CONNECTED state, switch to PLAYING
                 if (bt_ui.current_state == BT_STATE_CONNECTED &&
                     (media.title[0] != '\0' || media.artist[0] != '\0'))
                 {
@@ -224,6 +731,7 @@ static void *bt_monitor_thread_func(void *arg)
     printf("[BT MONITOR] Monitor thread stopped\n");
     return NULL;
 }
+
 static void *bt_init_thread_func(void *arg)
 {
     UNUSED(arg);
@@ -339,6 +847,7 @@ static void bt_device_callback(const bt_device_info_t *device, bool connected, v
 
     schedule_ui_update();
 }
+
 static void bt_avrcp_callback(const bt_media_info_t *media, void *user_data)
 {
     UNUSED(user_data);
@@ -351,7 +860,6 @@ static void bt_avrcp_callback(const bt_media_info_t *media, void *user_data)
         pthread_mutex_lock(&bt_ui.lock);
         bt_ui.current_media = *media;
 
-        // Update state based on media status
         if (strcmp(media->status, "playing") == 0)
         {
             bt_ui.current_state = BT_STATE_PLAYING;
@@ -364,7 +872,6 @@ static void bt_avrcp_callback(const bt_media_info_t *media, void *user_data)
         }
         else if (media->title[0] != '\0' || media->artist[0] != '\0')
         {
-            // If we have media info but status is unknown, assume playing
             if (bt_ui.current_state == BT_STATE_CONNECTED)
             {
                 bt_ui.current_state = BT_STATE_PLAYING;
@@ -377,6 +884,7 @@ static void bt_avrcp_callback(const bt_media_info_t *media, void *user_data)
         schedule_ui_update();
     }
 }
+
 static void bt_error_handler(bt_error_t error, const char *message, void *user_data)
 {
     UNUSED(error);
@@ -480,6 +988,7 @@ static bool is_playback_active(bt_state_t state)
 {
     return (state == BT_STATE_PLAYING);
 }
+
 static void update_bluetooth_ui(void)
 {
     if (!bt_ui.status_label || !bt_ui.status_icon || !bt_ui.status_card)
@@ -494,7 +1003,6 @@ static void update_bluetooth_ui(void)
     bt_media_info_t current_media = bt_ui.current_media;
     pthread_mutex_unlock(&bt_ui.lock);
 
-    // Also check actual state from API to ensure consistency
     bt_state_t actual_state = bt_speaker_get_state();
     if (actual_state != current_state && actual_state != BT_STATE_ERROR)
     {
@@ -593,7 +1101,6 @@ static void update_bluetooth_ui(void)
         }
     }
 
-    // Improved audio status detection
     if (bt_ui.audio_status_label)
     {
         if (current_state == BT_STATE_PLAYING)
@@ -603,18 +1110,16 @@ static void update_bluetooth_ui(void)
         }
         else if (current_state == BT_STATE_CONNECTED)
         {
-            // Check if there's media info - might indicate music is playing but state not updated
             if (current_media.title[0] != '\0' || current_media.artist[0] != '\0')
             {
                 aroma_label_set_text(bt_ui.audio_status_label, "Audio: Playing (AVRCP active)");
                 aroma_label_set_color(bt_ui.audio_status_label, 0xFF4CAF50);
-                // Force state to PLAYING if media info is present
                 if (current_state == BT_STATE_CONNECTED && (current_media.title[0] != '\0' || current_media.artist[0] != '\0'))
                 {
                     pthread_mutex_lock(&bt_ui.lock);
                     bt_ui.current_state = BT_STATE_PLAYING;
                     pthread_mutex_unlock(&bt_ui.lock);
-                    bt_speaker_set_state_callback(NULL, NULL); // This will trigger UI update
+                    bt_speaker_set_state_callback(NULL, NULL);
                 }
             }
             else
@@ -675,6 +1180,7 @@ static void update_bluetooth_ui(void)
         aroma_node_set_hidden(bt_ui.disconnect_button, !show_button);
     }
 }
+
 static bool on_bt_disconnect_click(AromaNode *node, void *user_data)
 {
     UNUSED(node);
@@ -1254,14 +1760,14 @@ void build_settings_ui(AromaNode *window)
     AromaNode *icon = aroma_ui_icon(state.settings_panel_node, AROMA_ICON_SETTINGS, 45, 25, 8, 0xFF2196F3, state.icon_font);
     aroma_node_set_z_index(icon, Z_LAYER_SETTINGS_PANEL + 2);
     AromaNode *label = aroma_ui_label(state.settings_panel_node, "Settings", 50, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
-    AromaNode *debug_build_number = aroma_ui_label(state.settings_panel_node, "Debug Build: " __DATE__ " " __TIME__, 540, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    AromaNode *debug_build_number = aroma_ui_label(state.settings_panel_node, "Debug Build: " __DATE__ " " __TIME__, 500, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(debug_build_number, Z_LAYER_SETTINGS_PANEL + 2);
     aroma_label_set_color(debug_build_number, 0xFF9E9E9E);
     AromaNode *divider = aroma_ui_divider(state.settings_panel_node, 0, 50, SETTINGS_PANEL_W, DIVIDER_ORIENTATION_HORIZONTAL);
     AromaNode *canvas = aroma_canvas_create(state.settings_panel_node, 0, 0, SETTINGS_PANEL_W, 50);
     aroma_canvas_draw_rect(canvas, 0, 0, SETTINGS_PANEL_W, 50, false, true, 0xFFFFFF);
     aroma_node_set_z_index(label, Z_LAYER_SETTINGS_PANEL + 2);
-    // header material blue
+
     if (!state.settings_panel_node)
     {
         return;
@@ -1284,15 +1790,15 @@ void build_settings_ui(AromaNode *window)
     const char *labels[] = {
         "Bluetooth", "Display & Theme", "Sound & Media",
         "Navigation", "Vehicle & Climate", "Behaviors",
-        "System & About"};
+        "System & About", "Services"};
     const char *icons[] = {
         AROMA_ICON_BLUETOOTH, AROMA_ICON_BRIGHTNESS_HIGH, AROMA_ICON_VOLUME_UP,
         AROMA_ICON_MAP, AROMA_ICON_DIRECTIONS_CAR, AROMA_ICON_SETTINGS,
-        AROMA_ICON_INFO};
-    const int num_sections = 7;
+        AROMA_ICON_INFO, AROMA_ICON_SETTINGS};
+    const int num_sections = 8;
 
     state.sidebar = aroma_ui_sidebar_with_icons(
-        state.settings_root, 0, 10, sidebar_w, 330,
+        state.settings_root, 0, 10, sidebar_w, 400,
         labels, icons, num_sections,
         NULL, NULL, state.settings_font, state.icon_font);
 
@@ -1403,6 +1909,8 @@ void build_settings_ui(AromaNode *window)
     {
         state.listview_containers[6] = NULL;
     }
+
+    state.listview_containers[7] = build_services_page(state.settings_root, panel_w, area_h);
 
     for (int i = 0; i < num_sections; i++)
     {
