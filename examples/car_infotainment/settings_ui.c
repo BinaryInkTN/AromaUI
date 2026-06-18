@@ -1254,7 +1254,7 @@ void build_settings_ui(AromaNode *window)
     AromaNode *icon = aroma_ui_icon(state.settings_panel_node, AROMA_ICON_SETTINGS, 45, 25, 8, 0xFF2196F3, state.icon_font);
     aroma_node_set_z_index(icon, Z_LAYER_SETTINGS_PANEL + 2);
     AromaNode *label = aroma_ui_label(state.settings_panel_node, "Settings", 50, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
-    AromaNode *debug_build_number = aroma_ui_label(state.settings_panel_node, "Build: " __DATE__ " " __TIME__, 550, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    AromaNode *debug_build_number = aroma_ui_label(state.settings_panel_node, "Debug Build: " __DATE__ " " __TIME__, 540, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(debug_build_number, Z_LAYER_SETTINGS_PANEL + 2);
     aroma_label_set_color(debug_build_number, 0xFF9E9E9E);
     AromaNode *divider = aroma_ui_divider(state.settings_panel_node, 0, 50, SETTINGS_PANEL_W, DIVIDER_ORIENTATION_HORIZONTAL);
