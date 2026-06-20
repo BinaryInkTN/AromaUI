@@ -38,7 +38,6 @@
         } else {
             printf("Widget with ID 'tab1' not found\n");
         }
-        IncenseFreeRegistry(registry);
         
         
         printf("Starting main loop...\n");
@@ -58,6 +57,8 @@
         aroma_font_destroy(icon_font);
         aroma_ui_destroy_window(window);
         aroma_ui_shutdown();
+                IncenseFreeRegistry(registry);
+
         printf("Done!\n");
         return 0;
     }

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 static char *incense_strip_comments(const char *src)
 {
@@ -50,11 +51,13 @@ static char *incense_strdup(const char *s)
     return copy;
 }
 
-static IncenseNode *incense_node_new(IncenseNodeType type, const char *name, const char *value)
+static IncenseNode *incense_node_new(IncenseNodeType type, const char *name, const char *value, int line, int column)
 {
     IncenseNode *n = calloc(1, sizeof(IncenseNode));
     if (!n) return NULL;
     n->type = type;
+    n->line = line;
+    n->column = column;
     n->name = incense_strdup(name);
     n->value = incense_strdup(value);
     return n;
@@ -85,44 +88,73 @@ static void incense_node_destroy(IncenseNode *node)
     free(node);
 }
 
-static IncenseNode *build_node(mpc_ast_t *ast);
 
-static IncenseNode *build_object(mpc_ast_t *ast)
+
+static IncenseNode *build_node(mpc_ast_t *ast, const char *source);
+
+static IncenseNode *build_object(mpc_ast_t *ast, const char *source)
 {
     const char *type_name = NULL;
+    int line = 0, column = 0;
+    
     for (int i = 0; i < ast->children_num; i++) {
         mpc_ast_t *ch = ast->children[i];
         if (strstr(ch->tag, "typename") && ch->contents && ch->contents[0]) {
             type_name = ch->contents;
+            if (ch->state.pos) {
+                line = ch->state.row;
+                column = ch->state.col;
+            }
             break;
         }
         if (!type_name && ch->contents && ch->contents[0] >= 'A' && ch->contents[0] <= 'Z') {
             type_name = ch->contents;
+            if (ch->state.pos) {
+                line = ch->state.row;
+                column = ch->state.col;
+            }
         }
     }
     if (!type_name) type_name = "(unknown)";
 
-    IncenseNode *obj = incense_node_new(INCENSE_OBJECT, type_name, NULL);
+    if (line == 0) {
+        for (int i = 0; i < ast->children_num; i++) {
+            mpc_ast_t *ch = ast->children[i];
+            if (ch->state.pos) {
+                line = ch->state.row;
+                column = ch->state.col;
+                break;
+            }
+        }
+    }
+
+    IncenseNode *obj = incense_node_new(INCENSE_OBJECT, type_name, NULL, line, column);
     if (!obj) return NULL;
 
     for (int i = 0; i < ast->children_num; i++) {
         mpc_ast_t *ch = ast->children[i];
         if (strstr(ch->tag, "item") || strstr(ch->tag, "object") || strstr(ch->tag, "property")) {
-            IncenseNode *child_node = build_node(ch);
+            IncenseNode *child_node = build_node(ch, source);
             if (child_node) incense_node_append_child(obj, child_node);
         }
     }
     return obj;
 }
 
-static IncenseNode *build_property(mpc_ast_t *ast)
+static IncenseNode *build_property(mpc_ast_t *ast, const char *source)
 {
     const char *key = NULL;
     const char *value = NULL;
+    int line = 0, column = 0;
+    
     for (int i = 0; i < ast->children_num; i++) {
         mpc_ast_t *ch = ast->children[i];
         if (strstr(ch->tag, "ident") && !key) {
             key = ch->contents;
+            if (ch->state.pos) {
+                line = ch->state.row;
+                column = ch->state.col;
+            }
         } else if (strstr(ch->tag, "value") && !value) {
             if (ch->children_num > 0 && ch->children[0]->contents) {
                 value = ch->children[0]->contents;
@@ -132,17 +164,27 @@ static IncenseNode *build_property(mpc_ast_t *ast)
         }
     }
     if (!key) return NULL;
-    return incense_node_new(INCENSE_PROPERTY, key, value ? value : "");
+    if (line == 0) {
+        for (int i = 0; i < ast->children_num; i++) {
+            mpc_ast_t *ch = ast->children[i];
+            if (ch->state.pos) {
+                line = ch->state.row;
+                column = ch->state.col;
+                break;
+            }
+        }
+    }
+    return incense_node_new(INCENSE_PROPERTY, key, value ? value : "", line, column);
 }
 
-static IncenseNode *build_node(mpc_ast_t *ast)
+static IncenseNode *build_node(mpc_ast_t *ast, const char *source)
 {
     if (!ast) return NULL;
-    if (strstr(ast->tag, "object")) return build_object(ast);
-    if (strstr(ast->tag, "property")) return build_property(ast);
+    if (strstr(ast->tag, "object")) return build_object(ast, source);
+    if (strstr(ast->tag, "property")) return build_property(ast, source);
     if (strstr(ast->tag, "item")) {
         for (int i = 0; i < ast->children_num; i++) {
-            IncenseNode *n = build_node(ast->children[i]);
+            IncenseNode *n = build_node(ast->children[i], source);
             if (n) return n;
         }
     }
@@ -207,7 +249,7 @@ static int incense_parsers_init(void)
     return 1;
 }
 
-static IncenseDocument *incense_from_result(mpc_result_t *r, int ok)
+static IncenseDocument *incense_from_result(mpc_result_t *r, int ok, const char *source)
 {
     if (!ok) {
         mpc_err_print(r->error);
@@ -226,7 +268,7 @@ static IncenseDocument *incense_from_result(mpc_result_t *r, int ok)
 
     IncenseDocument *doc = NULL;
     if (obj_ast) {
-        IncenseNode *root = build_object(obj_ast);
+        IncenseNode *root = build_object(obj_ast, source);
         if (root) {
             doc = calloc(1, sizeof(IncenseDocument));
             if (doc) doc->root = root;
@@ -245,8 +287,9 @@ IncenseDocument *IncenseParseString(const char *source)
     if (!clean) return NULL;
     mpc_result_t r;
     int ok = mpc_parse("<string>", clean, p_Document, &r);
+    IncenseDocument *doc = incense_from_result(&r, ok, clean);
     free(clean);
-    return incense_from_result(&r, ok);
+    return doc;
 }
 
 IncenseDocument *IncenseParseFile(const char *path)
@@ -274,9 +317,9 @@ static void incense_print_node(const IncenseNode *node, int depth)
 {
     for (int i = 0; i < depth; i++) printf("  ");
     if (node->type == INCENSE_OBJECT) {
-        printf("%s {\n", node->name);
+        printf("%s [%d:%d] {\n", node->name, node->line, node->column);
     } else {
-        printf("%s: %s\n", node->name, node->value ? node->value : "");
+        printf("%s [%d:%d]: %s\n", node->name, node->line, node->column, node->value ? node->value : "");
     }
     const IncenseNode *child = node->first_child;
     while (child) {

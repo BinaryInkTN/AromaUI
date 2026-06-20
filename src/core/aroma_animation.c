@@ -14,9 +14,6 @@
 static AromaAnimation* animation_list = NULL;
 static AromaTimer*     anim_timer     = NULL;
 
-/* -------------------------------------------------------------------------
- * Easing
- * ---------------------------------------------------------------------- */
 
 static float apply_easing(AromaEasingType easing, float t)
 {
@@ -43,16 +40,11 @@ static float apply_easing(AromaEasingType easing, float t)
     }
 }
 
-/* -------------------------------------------------------------------------
- * Timer callback — runs every 16 ms unconditionally (no start/stop API).
- * Must be a true no-op when idle so it never causes spurious redraws.
- * ---------------------------------------------------------------------- */
 
 static void update_animations(void* arg)
 {
     (void)arg;
 
-    /* True idle fast-path: no allocations, no invalidations, no redraws. */
     if (!animation_list) return;
 
     uint64_t        now          = aroma_time_now_ms();
@@ -62,13 +54,6 @@ static void update_animations(void* arg)
 
     while (curr) {
 
-        /* --- Remove finished entries ---
-         * We save target BEFORE freeing so mark_clean is never called on
-         * freed memory.  We do NOT call mark_clean at all: the final
-         * invalidate from the last active tick already put the node in the
-         * dirty list; dirty_list_clear() will handle it normally.
-         * Calling mark_clean here would clear is_dirty without removing the
-         * node from the dirty list, leaving a dangling-flag inconsistency. */
         if (!curr->is_running) {
             if (prev) prev->next = curr->next;
             else      animation_list = curr->next;
@@ -78,7 +63,6 @@ static void update_animations(void* arg)
             continue;
         }
 
-        /* --- Compute progress (guard against zero duration) --- */
         float progress = (curr->duration_ms > 0)
             ? (float)(now - curr->start_time) / (float)curr->duration_ms
             : 1.0f;
@@ -86,7 +70,6 @@ static void update_animations(void* arg)
         bool finished = (progress >= 1.0f);
         if (finished) progress = 1.0f;
 
-        /* --- Apply eased value --- */
         float ease        = apply_easing(curr->easing, progress);
         curr->current_val = curr->start_val
                           + (curr->end_val - curr->start_val) * ease;
@@ -110,17 +93,11 @@ static void update_animations(void* arg)
             curr->custom_cb(curr->target, curr->current_val, curr->user_data);
         }
 
-        /* Invalidate and request redraw only while the animation is live.
-         * On the final tick (finished == true) we invalidate once more so
-         * the renderer sees the exact end value, then mark it done.
-         * The entry is removed on the NEXT tick — by that point the dirty
-         * list has been cleared by the renderer and no extra redraws occur. */
         aroma_node_invalidate(curr->target);
         needs_redraw = true;
 
         if (finished) {
             curr->is_running = false;
-            /* Don't advance prev — this entry will be removed next tick. */
         }
 
         prev = curr;
@@ -132,9 +109,6 @@ static void update_animations(void* arg)
     }
 }
 
-/* =========================================================================
- * Public API
- * ====================================================================== */
 
 void aroma_animation_manager_init(void)
 {
@@ -151,7 +125,7 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
 {
     if (!target) return NULL;
 
-    aroma_animation_stop(target);   /* cancel any existing animation on node */
+    aroma_animation_stop(target);
 
     AromaAnimation* anim = (AromaAnimation*)calloc(1, sizeof(AromaAnimation));
     if (!anim) return NULL;

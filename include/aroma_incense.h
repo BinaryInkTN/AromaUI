@@ -18,7 +18,8 @@ typedef enum {
 typedef struct IncenseNode {
     IncenseNodeType    type;
       int               id; 
-
+    int line;
+    int column;
     char              *name;
     char              *value;
     struct IncenseNode *first_child;

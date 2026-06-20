@@ -2,6 +2,7 @@ Window {
     width: 800
     height: 600
     title: "My Aroma Application"
+    Button{}
 
 
     Tabs {
