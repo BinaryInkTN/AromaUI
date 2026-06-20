@@ -2,1537 +2,563 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>AromaUI · Widget Reference</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/editor/editor.main.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AromaUI</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --md-sys-color-primary: #6750A4;
-      --md-sys-color-on-primary: #FFFFFF;
-      --md-sys-color-primary-container: #EADDFF;
-      --md-sys-color-on-primary-container: #21005D;
-      --md-sys-color-secondary: #625B71;
-      --md-sys-color-on-secondary: #FFFFFF;
-      --md-sys-color-secondary-container: #E8DEF8;
-      --md-sys-color-on-secondary-container: #1D192B;
-      --md-sys-color-tertiary: #7D5260;
-      --md-sys-color-on-tertiary: #FFFFFF;
-      --md-sys-color-tertiary-container: #FFD8E4;
-      --md-sys-color-on-tertiary-container: #31111D;
-      --md-sys-color-surface: #FFFBFE;
-      --md-sys-color-on-surface: #1C1B1F;
-      --md-sys-color-surface-variant: #E7E0EC;
-      --md-sys-color-on-surface-variant: #49454F;
-      --md-sys-color-outline: #79747E;
-      --md-sys-color-outline-variant: #CAC4D0;
-      --md-sys-color-background: #FFFBFE;
-      --md-sys-color-on-background: #1C1B1F;
-      --md-sys-color-error: #BA1A1A;
-      --md-sys-color-error-container: #FFDAD6;
-      --md-sys-color-on-error-container: #410002;
-      --md-sys-shape-corner-none: 0;
-      --md-sys-shape-corner-extra-small: 4px;
-      --md-sys-shape-corner-small: 8px;
-      --md-sys-shape-corner-medium: 12px;
-      --md-sys-shape-corner-large: 16px;
-      --md-sys-shape-corner-extra-large: 28px;
-      --md-sys-shape-corner-full: 100px;
-      --md-sys-elevation-0: none;
-      --md-sys-elevation-1: 0px 1px 2px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
-      --md-sys-elevation-2: 0px 1px 2px rgba(0,0,0,0.3), 0px 2px 6px 2px rgba(0,0,0,0.15);
-      --md-sys-elevation-3: 0px 4px 8px 3px rgba(0,0,0,0.15), 0px 1px 3px rgba(0,0,0,0.3);
-      --md-sys-elevation-4: 0px 6px 10px 4px rgba(0,0,0,0.15), 0px 2px 3px rgba(0,0,0,0.3);
-      --md-sys-elevation-5: 0px 8px 12px 6px rgba(0,0,0,0.15), 0px 4px 4px rgba(0,0,0,0.3);
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--md-sys-color-background);
-      color: var(--md-sys-color-on-background);
-      line-height: 1.5;
-      display: flex;
-      min-height: 100vh;
-      letter-spacing: 0.01em;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .sidebar {
-      width: 320px;
-      background: var(--md-sys-color-surface);
-      border-right: 1px solid var(--md-sys-color-outline-variant);
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      display: flex;
-      flex-direction: column;
-      z-index: 200;
-      overflow-y: auto;
-      transition: width 0.2s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    .sidebar-header {
-      padding: 28px 24px 16px;
-      background: var(--md-sys-color-surface);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      border-bottom: 1px solid transparent;
-      transition: border-color 0.2s;
-    }
-
-    .sidebar-header.scrolled {
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    .logo {
-      font-size: 26px;
-      font-weight: 400;
-      color: var(--md-sys-color-on-surface);
-      letter-spacing: -0.5px;
-      margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      line-height: 1.2;
-    }
-
-    .logo span {
-      color: var(--md-sys-color-primary);
-      font-weight: 500;
-    }
-
-    .version-tag {
-      font-size: 11px;
-      font-weight: 500;
-      background: var(--md-sys-color-secondary-container);
-      color: var(--md-sys-color-on-secondary-container);
-      padding: 2px 8px;
-      border-radius: var(--md-sys-shape-corner-small);
-      margin-left: 8px;
-      letter-spacing: 0.03em;
-    }
-
-    .search-box {
-      width: 100%;
-      padding: 12px 20px;
-      border: 1px solid var(--md-sys-color-outline);
-      border-radius: var(--md-sys-shape-corner-full);
-      font-size: 14px;
-      background: var(--md-sys-color-surface-variant);
-      color: var(--md-sys-color-on-surface);
-      outline: none;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-      font-family: inherit;
-      letter-spacing: 0.01em;
-    }
-
-    .search-box:hover {
-      background: var(--md-sys-color-surface);
-      border-color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .search-box:focus {
-      border-color: var(--md-sys-color-primary);
-      background: var(--md-sys-color-surface);
-      box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
-    }
-
-    .search-box::placeholder {
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .search-results-count {
-      font-size: 12px;
-      color: var(--md-sys-color-on-surface-variant);
-      padding: 8px 24px 0;
-      display: none;
-      letter-spacing: 0.02em;
-    }
-
-    .search-results-count.visible {
-      display: block;
-    }
-
-    .sidebar-nav {
-      flex: 1;
-      padding: 4px 0 16px;
-      overflow-y: auto;
-    }
-
-    .nav-category {
-      padding: 20px 24px 6px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 24px;
-      margin: 2px 16px 2px 8px;
-      cursor: pointer;
-      font-size: 14px;
-      color: var(--md-sys-color-on-surface-variant);
-      transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
-      border: none;
-      background: none;
-      width: calc(100% - 24px);
-      text-align: left;
-      font-family: inherit;
-      border-radius: 0 var(--md-sys-shape-corner-full) var(--md-sys-shape-corner-full) 0;
-      font-weight: 400;
-      position: relative;
-    }
-
-    .nav-item::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 8px;
-      bottom: 8px;
-      width: 3px;
-      border-radius: 0 3px 3px 0;
-      background: transparent;
-      transition: background 0.2s;
-    }
-
-    .nav-item:hover {
-      background: var(--md-sys-color-surface-variant);
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .nav-item.active {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
-      font-weight: 500;
-    }
-
-    .nav-item.active::before {
-      background: var(--md-sys-color-primary);
-    }
-
-    .nav-item.hidden {
-      display: none;
-    }
-
-    .nav-badge {
-      font-size: 11px;
-      background: var(--md-sys-color-secondary-container);
-      padding: 2px 10px;
-      border-radius: var(--md-sys-shape-corner-full);
-      color: var(--md-sys-color-on-secondary-container);
-      font-weight: 500;
-      letter-spacing: 0.02em;
-    }
-
-    .main-content {
-      margin-left: 320px;
-      flex: 1;
-      min-height: 100vh;
-      background: var(--md-sys-color-background);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .top-bar {
-      background: var(--md-sys-color-surface);
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
-      padding: 0 48px;
-      height: 72px;
-      display: flex;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      gap: 24px;
-    }
-
-    .page-title {
-      font-size: 22px;
-      font-weight: 400;
-      color: var(--md-sys-color-on-surface);
-      letter-spacing: -0.2px;
-    }
-
-    .breadcrumb {
-      font-size: 13px;
-      color: var(--md-sys-color-on-surface-variant);
-      font-weight: 400;
-      letter-spacing: 0.01em;
-    }
-
-    .top-bar nav {
-      margin-left: auto;
-      display: flex;
-      gap: 4px;
-    }
-
-    .top-bar nav a {
-      text-decoration: none;
-      color: var(--md-sys-color-primary);
-      padding: 10px 20px;
-      border-radius: var(--md-sys-shape-corner-full);
-      font-weight: 500;
-      font-size: 14px;
-      transition: background 0.2s;
-      letter-spacing: 0.02em;
-    }
-
-    .top-bar nav a:hover {
-      background: var(--md-sys-color-primary-container);
-    }
-
-    .hero {
-      padding: 80px 48px 64px;
-      background: linear-gradient(180deg, var(--md-sys-color-primary-container) 0%, var(--md-sys-color-background) 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 500px;
-      height: 500px;
-      border-radius: 50%;
-      background: var(--md-sys-color-tertiary-container);
-      opacity: 0.3;
-      filter: blur(80px);
-    }
-
-    .hero h1 {
-      font-size: 57px;
-      font-weight: 400;
-      letter-spacing: -0.25px;
-      color: var(--md-sys-color-on-primary-container);
-      margin-bottom: 16px;
-      position: relative;
-      line-height: 1.1;
-    }
-
-    .hero p {
-      font-size: 16px;
-      color: var(--md-sys-color-on-surface-variant);
-      max-width: 520px;
-      margin-bottom: 40px;
-      position: relative;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 15px;
       line-height: 1.6;
+      color: #111;
+      background: #fff;
     }
+
+    a { color: #111; }
+    a:hover { opacity: 0.6; }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 32px;
+      height: 52px;
+      border-bottom: 1px solid #111;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 50;
+    }
+
+    .brand { font-weight: 600; text-decoration: none; font-size: 15px; }
+    .version { font-size: 11px; color: #999; margin-left: 6px; font-weight: 400; }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a { font-size: 14px; text-decoration: none; color: #555; }
+    .nav-links a:hover { color: #111; opacity: 1; }
+
+    .page { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+
+    .hero { padding: 56px 0 48px; border-bottom: 1px solid #e0e0e0; }
+    .hero h1 { font-size: 34px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 12px; }
+    .hero p { font-size: 15px; color: #555; max-width: 480px; margin-bottom: 24px; }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
     .btn {
-      padding: 14px 28px;
-      border-radius: var(--md-sys-shape-corner-full);
+      font-family: inherit;
+      font-size: 13px;
       font-weight: 500;
-      font-size: 14px;
+      padding: 9px 20px;
+      border: 1px solid #111;
+      background: none;
+      color: #111;
+      cursor: pointer;
       text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      display: inline-block;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn:hover { background: #111; color: #fff; opacity: 1; }
+    .btn.filled { background: #111; color: #fff; }
+    .btn.filled:hover { background: #333; }
+
+    .section { padding: 48px 0; border-bottom: 1px solid #e0e0e0; }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #999; margin-bottom: 4px; }
+    .section h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .section-sub { font-size: 14px; color: #666; margin-bottom: 24px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: #e0e0e0; border: 1px solid #e0e0e0; }
+    .feature-card {
+      background: #fff;
+      padding: 24px 22px;
       cursor: pointer;
-      border: none;
-      font-family: inherit;
-      letter-spacing: 0.02em;
-      position: relative;
-      z-index: 1;
-    }
-
-    .btn-filled {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .btn-filled:hover {
-      background: #7C6BC0;
-      box-shadow: var(--md-sys-elevation-2);
-    }
-
-    .btn-filled:active {
-      background: #5B4A99;
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .btn-outlined {
-      border: 1px solid var(--md-sys-color-outline);
-      color: var(--md-sys-color-primary);
-      background: transparent;
-    }
-
-    .btn-outlined:hover {
-      background: rgba(103, 80, 164, 0.08);
-      border-color: var(--md-sys-color-primary);
-    }
-
-    .btn-outlined:active {
-      background: rgba(103, 80, 164, 0.12);
-    }
-
-    .btn-tonal {
-      background: var(--md-sys-color-secondary-container);
-      color: var(--md-sys-color-on-secondary-container);
-    }
-
-    .btn-tonal:hover {
-      background: #D8CEE8;
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .cta-group {
+      transition: background 0.1s;
       display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 1;
+      flex-direction: column;
+      gap: 6px;
     }
+    .feature-card:hover { background: #f7f7f7; }
+    .feature-card h3 { font-size: 14px; font-weight: 600; }
+    .feature-card p { font-size: 13px; color: #666; line-height: 1.5; }
+    .feature-card .arrow { font-size: 12px; color: #bbb; margin-top: auto; padding-top: 10px; }
 
-    .section {
-      padding: 64px 48px;
-    }
+    .widget-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
 
-    .section-header {
-      margin-bottom: 40px;
-    }
-
-    .section h2 {
-      font-size: 36px;
-      font-weight: 400;
-      letter-spacing: -0.25px;
-      margin-bottom: 8px;
-      color: var(--md-sys-color-on-surface);
-      line-height: 1.2;
-    }
-
-    .section .subtitle {
-      font-size: 16px;
-      color: var(--md-sys-color-on-surface-variant);
-      line-height: 1.6;
-    }
-
-    .widget-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
-      gap: 16px;
-    }
-
-    .widget-item {
-      background: var(--md-sys-color-surface);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      border-radius: var(--md-sys-shape-corner-large);
-      padding: 24px 16px;
-      text-align: center;
+    .search-wrap { position: relative; flex: 1; max-width: 300px; }
+    .search-wrap::before { content: '⌕'; position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 15px; pointer-events: none; }
+    .search-input {
+      font-family: inherit;
       font-size: 14px;
-      font-weight: 500;
-      color: var(--md-sys-color-on-surface);
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-      letter-spacing: 0.01em;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .widget-item::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--md-sys-color-primary);
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .widget-item:hover {
-      border-color: var(--md-sys-color-primary);
-      box-shadow: var(--md-sys-elevation-2);
-      transform: translateY(-2px);
-    }
-
-    .widget-item:active {
-      box-shadow: var(--md-sys-elevation-1);
-      transform: translateY(0);
-    }
-
-    .widget-item:active::after {
-      opacity: 0.08;
-    }
-
-    .widget-detail {
-      display: none;
-      padding: 64px 48px;
-      background: var(--md-sys-color-background);
-    }
-
-    .widget-detail.active {
-      display: block;
-    }
-
-    .widget-detail-header {
-      margin-bottom: 48px;
-    }
-
-    .widget-detail h2 {
-      font-size: 36px;
-      font-weight: 400;
-      letter-spacing: -0.25px;
-      margin-bottom: 4px;
-      line-height: 1.2;
-    }
-
-    .widget-category {
-      font-size: 13px;
-      color: var(--md-sys-color-primary);
-      font-weight: 500;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .widget-detail-description {
-      font-size: 16px;
-      color: var(--md-sys-color-on-surface-variant);
-      max-width: 680px;
-      line-height: 1.7;
-      margin-bottom: 48px;
-    }
-
-    .code-section {
-      margin-bottom: 48px;
-    }
-
-    .code-section h3 {
-      font-size: 20px;
-      font-weight: 500;
-      margin-bottom: 16px;
-      letter-spacing: -0.1px;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .code-container {
-      border-radius: var(--md-sys-shape-corner-large);
-      overflow: hidden;
-      border: 1px solid var(--md-sys-color-outline-variant);
-      background: var(--md-sys-color-surface);
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .code-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--md-sys-color-surface-variant);
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    .code-header span {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--md-sys-color-on-surface-variant);
-      letter-spacing: 0.02em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .code-header span::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--md-sys-color-primary);
-    }
-
-    .copy-btn {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
-      border: none;
-      padding: 8px 20px;
-      border-radius: var(--md-sys-shape-corner-full);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      letter-spacing: 0.03em;
-    }
-
-    .copy-btn:hover {
-      background: #7C6BC0;
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .copy-btn:active {
-      background: #5B4A99;
-    }
-
-    .copy-btn.copied {
-      background: #34A853;
-    }
-
-    .editor-container {
-      height: 320px;
-    }
-
-    .props-table-container {
-      border-radius: var(--md-sys-shape-corner-large);
-      overflow: hidden;
-      border: 1px solid var(--md-sys-color-outline-variant);
-      box-shadow: var(--md-sys-elevation-1);
-      background: var(--md-sys-color-surface);
-    }
-
-    .props-table {
+      padding: 9px 12px 9px 32px;
+      border: 1px solid #ccc;
+      background: #fff;
+      color: #111;
+      outline: none;
       width: 100%;
-      border-collapse: collapse;
     }
+    .search-input:focus { border-color: #111; }
+    .search-input::placeholder { color: #bbb; }
 
-    .props-table th {
-      background: var(--md-sys-color-surface-variant);
-      padding: 16px 20px;
-      text-align: left;
+    .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill {
+      font-family: inherit;
       font-size: 12px;
-      font-weight: 600;
-      color: var(--md-sys-color-on-surface-variant);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    .props-table td {
-      padding: 14px 20px;
-      font-size: 14px;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .props-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .props-table td:first-child {
       font-weight: 500;
-      color: var(--md-sys-color-primary);
-      font-family: 'Roboto Mono', monospace;
+      padding: 5px 12px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    .pill:hover { border-color: #111; color: #111; }
+    .pill.active { background: #111; color: #fff; border-color: #111; }
+
+    .result-count { font-size: 13px; color: #999; white-space: nowrap; }
+
+    .widget-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #e0e0e0; border: 1px solid #e0e0e0; }
+
+    .widget-card {
+      background: #fff;
+      padding: 20px 18px;
+      cursor: pointer;
+      transition: background 0.1s;
+      display: flex;
+      flex-direction: column;
+    }
+    .widget-card:hover { background: #f7f7f7; }
+    .cat-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #bbb; margin-bottom: 6px; }
+    .widget-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .widget-card p { font-size: 13px; color: #777; line-height: 1.4; }
+
+    #detail { display: none; }
+    #detail.active { display: block; }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 52px);
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .detail-sidebar {
+      border-right: 1px solid #e0e0e0;
+      padding: 28px 0;
+      position: sticky;
+      top: 52px;
+      height: calc(100vh - 52px);
+      overflow-y: auto;
+    }
+
+    .sidebar-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 13px;
+      color: #555;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0 20px;
+      margin-bottom: 24px;
+      width: 100%;
+      text-align: left;
     }
+    .sidebar-back:hover { color: #111; }
 
-    .props-table td:nth-child(2) {
-      font-family: 'Roboto Mono', monospace;
-      font-size: 13px;
-      color: var(--md-sys-color-tertiary);
+    .sidebar-group-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #bbb;
+      padding: 0 20px;
+      margin-bottom: 4px;
+      margin-top: 20px;
     }
+    .sidebar-group-label:first-of-type { margin-top: 0; }
 
-    .props-table td:nth-child(3) {
-      font-family: 'Roboto Mono', monospace;
-      font-size: 13px;
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .no-results {
-      text-align: center;
-      padding: 48px 24px;
-      color: var(--md-sys-color-on-surface-variant);
-      display: none;
-      font-size: 15px;
-    }
-
-    .no-results.visible {
+    .sidebar-item {
       display: block;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      font-size: 13px;
+      color: #555;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 7px 20px;
+      transition: background 0.1s, color 0.1s;
     }
+    .sidebar-item:hover { background: #f5f5f5; color: #111; }
+    .sidebar-item.active { background: #f0f0f0; color: #111; font-weight: 600; }
+
+    .detail-content { padding: 36px 40px; max-width: 680px; }
+
+    .detail-cat { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #999; margin-bottom: 4px; }
+    .detail-content h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 10px; }
+    .detail-desc { font-size: 14px; color: #555; max-width: 500px; margin-bottom: 36px; line-height: 1.65; }
+
+    .block-label { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+    .code-block { background: #f7f7f7; border: 1px solid #e0e0e0; margin-bottom: 36px; }
+    .code-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: #efefef;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .code-filename { font-size: 12px; color: #888; font-family: 'SFMono-Regular', 'Menlo', 'Consolas', monospace; }
+    .copy-btn {
+      font-family: inherit;
+      font-size: 12px;
+      color: #555;
+      background: none;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      padding: 4px 12px;
+      transition: all 0.1s;
+    }
+    .copy-btn:hover { border-color: #111; color: #111; }
+    .copy-btn.copied { color: #2a9d5c; border-color: #2a9d5c; }
+    .editor-container { height: 260px; }
+
+    .props-block { margin-bottom: 32px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #999;
+      padding: 10px 14px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #f7f7f7;
+    }
+    tbody tr { border-bottom: 1px solid #f0f0f0; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+    tbody td { padding: 10px 14px; color: #333; vertical-align: top; }
+    tbody td:first-child { font-family: 'SFMono-Regular','Menlo','Consolas',monospace; font-size: 12px; color: #111; font-weight: 500; white-space: nowrap; }
+    tbody td:nth-child(2) { font-family: 'SFMono-Regular','Menlo','Consolas',monospace; font-size: 12px; color: #777; white-space: nowrap; }
+    tbody td:nth-child(3) { font-family: 'SFMono-Regular','Menlo','Consolas',monospace; font-size: 12px; color: #aaa; white-space: nowrap; }
 
     footer {
-      background: var(--md-sys-color-surface-variant);
-      padding: 40px 48px;
-      border-top: 1px solid var(--md-sys-color-outline-variant);
-      margin-top: auto;
-    }
-
-    .footer-content {
+      border-top: 1px solid #e0e0e0;
+      padding: 20px 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 32px;
-    }
-
-    .footer-links a {
-      color: var(--md-sys-color-on-surface-variant);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: var(--md-sys-color-primary);
-    }
-
-    .copyright {
       font-size: 13px;
-      color: var(--md-sys-color-on-surface-variant);
+      color: #aaa;
     }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { color: #aaa; text-decoration: none; }
+    .footer-links a:hover { color: #111; opacity: 1; }
 
-    @media (max-width: 1024px) {
-      .sidebar {
-        width: 280px;
-      }
-      .main-content {
-        margin-left: 280px;
-      }
-      .hero {
-        padding: 64px 32px 48px;
-      }
-      .hero h1 {
-        font-size: 45px;
-      }
-      .section {
-        padding: 48px 32px;
-      }
-      .widget-detail {
-        padding: 48px 32px;
-      }
-      .top-bar {
-        padding: 0 32px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      body {
-        flex-direction: column;
-      }
-      .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        border-right: none;
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
-        max-height: 40vh;
-      }
-      .main-content {
-        margin-left: 0;
-      }
-      .hero {
-        padding: 48px 24px 40px;
-      }
-      .hero h1 {
-        font-size: 36px;
-      }
-      .section {
-        padding: 40px 24px;
-      }
-      .widget-detail {
-        padding: 40px 24px;
-      }
-      .top-bar {
-        padding: 0 24px;
-        height: 64px;
-      }
-      .widget-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 12px;
-      }
-      .props-table th,
-      .props-table td {
-        padding: 12px 16px;
-      }
+    @media (max-width: 720px) {
+      nav { padding: 0 16px; }
+      .page { padding: 0 16px; }
+      .hero h1 { font-size: 26px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .widget-grid { grid-template-columns: repeat(2, 1fr); }
+      .detail-layout { grid-template-columns: 1fr; }
+      .detail-sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid #e0e0e0; padding: 16px 0; }
+      .detail-content { padding: 24px 16px; }
+      footer { padding: 16px; flex-direction: column; gap: 8px; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header" id="sidebarHeader">
-      <div class="logo">AromaSDK<span class="version-tag">v0.1</span></div>
-      <input type="text" class="search-box" id="widgetSearch" placeholder="Search widgets" oninput="filterWidgets()" aria-label="Search widgets">
-      <div class="search-results-count" id="searchCount"></div>
+
+  <nav>
+    <a class="brand" href="#">AromaUI <span class="version">v0.1</span></a>
+    <div class="nav-links">
+      <a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">GitHub</a>
+      <a href="#">API Docs</a>
     </div>
-    <nav class="sidebar-nav" id="sidebarNav">
-      <div class="nav-category">Core</div>
-      <button class="nav-item" data-widget="window" onclick="showWidget('window')">Window</button>
-      <button class="nav-item" data-widget="button" onclick="showWidget('button')">Button</button>
-      <button class="nav-item" data-widget="label" onclick="showWidget('label')">Label</button>
-      <button class="nav-item" data-widget="container" onclick="showWidget('container')">Container</button>
-      <button class="nav-item" data-widget="scrollview" onclick="showWidget('scrollview')">ScrollView</button>
-      <button class="nav-item" data-widget="card" onclick="showWidget('card')">Card</button>
-      <button class="nav-item" data-widget="divider" onclick="showWidget('divider')">Divider</button>
+  </nav>
 
-      <div class="nav-category">Input</div>
-      <button class="nav-item" data-widget="textbox" onclick="showWidget('textbox')">Textbox</button>
-      <button class="nav-item" data-widget="checkbox" onclick="showWidget('checkbox')">Checkbox</button>
-      <button class="nav-item" data-widget="switch" onclick="showWidget('switch')">Switch</button>
-      <button class="nav-item" data-widget="slider" onclick="showWidget('slider')">Slider</button>
-      <button class="nav-item" data-widget="radiobutton" onclick="showWidget('radiobutton')">RadioButton</button>
-      <button class="nav-item" data-widget="dropdown" onclick="showWidget('dropdown')">Dropdown</button>
+  <div id="mainContent">
+    <div class="page">
 
-      <div class="nav-category">Actions</div>
-      <button class="nav-item" data-widget="fab" onclick="showWidget('fab')">FAB</button>
-      <button class="nav-item" data-widget="iconbutton" onclick="showWidget('iconbutton')">IconButton</button>
-      <button class="nav-item" data-widget="menu" onclick="showWidget('menu')">Menu</button>
-      <button class="nav-item" data-widget="snackbar" onclick="showWidget('snackbar')">Snackbar</button>
-      <button class="nav-item" data-widget="dialog" onclick="showWidget('dialog')">Dialog</button>
-      <button class="nav-item" data-widget="tooltip" onclick="showWidget('tooltip')">Tooltip</button>
-
-      <div class="nav-category">Navigation</div>
-      <button class="nav-item" data-widget="tabs" onclick="showWidget('tabs')">Tabs</button>
-      <button class="nav-item" data-widget="sidebar" onclick="showWidget('sidebar')">Sidebar</button>
-      <button class="nav-item" data-widget="listview" onclick="showWidget('listview')">ListView</button>
-      <button class="nav-item" data-widget="table" onclick="showWidget('table')">Table</button>
-
-      <div class="nav-category">Media</div>
-      <button class="nav-item" data-widget="image" onclick="showWidget('image')">Image</button>
-      <button class="nav-item" data-widget="icon" onclick="showWidget('icon')">Icon</button>
-      <button class="nav-item" data-widget="gif" onclick="showWidget('gif')">GIF</button>
-      <button class="nav-item" data-widget="canvas" onclick="showWidget('canvas')">Canvas</button>
-      <button class="nav-item" data-widget="map" onclick="showWidget('map')">Map</button>
-
-      <div class="nav-category">Feedback</div>
-      <button class="nav-item" data-widget="progressbar" onclick="showWidget('progressbar')">ProgressBar</button>
-      <button class="nav-item" data-widget="loading" onclick="showWidget('loading')">Loading</button>
-      <button class="nav-item" data-widget="debugoverlay" onclick="showWidget('debugoverlay')">DebugOverlay</button>
-    </nav>
-    <div class="no-results" id="noResults">No widgets found matching your search.</div>
-  </aside>
-
-  <main class="main-content">
-    <header class="top-bar">
-      <span class="breadcrumb" id="breadcrumb">Widgets</span>
-      <span class="page-title" id="pageTitle">Reference</span>
-      <nav>
-        <a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">GitHub</a>
-        <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started" class="btn btn-tonal" style="padding: 8px 20px; font-size: 13px;">API Docs</a>
-      </nav>
-    </header>
-
-    <section class="hero" id="heroSection">
-      <h1>Separate UI and Logic</h1>
-      <p>A comprehensive guide to every AromaSDK widget. Browse the catalog, view properties, and copy ready-to-use Incense markup.</p>
-      <div class="cta-group">
-        <a href="#" class="btn btn-filled" onclick="showWidget('button')">Get started</a>
-        <a href="#" class="btn btn-outlined" onclick="document.getElementById('widgetsOverview').scrollIntoView({behavior:'smooth'})">Browse all</a>
+      <div class="hero">
+          <h1>Separate UI and Logic</h1>
+        <p>Use Incense to define your UI declaratively, keeping the logic separate and maintainable.</p>
+        <div class="hero-actions">
+          <a class="btn filled" href="#" onclick="scrollTo('featuresSection');return false;">Explore Features</a>
+          <a class="btn" href="#" onclick="scrollTo('widgetsSection');return false;">Widget Library</a>
+        </div>
       </div>
-    </section>
 
-    <section class="section" id="widgetsOverview">
-      <div class="section-header">
-        <h2>All widgets</h2>
-        <p class="subtitle">Select a widget to explore its documentation, properties, and code examples.</p>
+      <div class="section" id="featuresSection">
+        <p class="section-label">Features</p>
+        <h2>Key Features</h2>
+        <p class="section-sub">C performance with declarative UI design.</p>
+        <div class="feature-grid" id="featureGrid"></div>
       </div>
-      <div class="widget-grid" id="widgetGrid"></div>
-    </section>
 
-    <article class="widget-detail" id="widgetDetail">
-      <div class="widget-detail-header">
-        <span class="widget-category" id="detailCategory"></span>
+      <div class="section" id="widgetsSection">
+        <p class="section-label">Components</p>
+        <h2>Widget Library</h2>
+        <p class="section-sub">30+ widgets ready to use in any Incense file.</p>
+        <div class="widget-controls">
+          <div class="search-wrap">
+            <input type="text" class="search-input" id="widgetSearch" placeholder="Search…" oninput="filterWidgets()" autocomplete="off">
+          </div>
+          <div class="filter-pills" id="filterPills"></div>
+          <span class="result-count" id="resultCount"></span>
+        </div>
+        <div class="widget-grid" id="widgetGrid"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="detail">
+    <div class="detail-layout">
+
+      <div class="detail-sidebar" id="detailSidebar">
+        <button class="sidebar-back" onclick="backToOverview()">← All widgets</button>
+        <div id="sidebarNav"></div>
+      </div>
+
+      <div class="detail-content">
+        <p class="detail-cat" id="detailCategory"></p>
         <h2 id="detailTitle"></h2>
-        <p class="widget-detail-description" id="detailDescription"></p>
-      </div>
+        <p class="detail-desc" id="detailDescription"></p>
 
-      <div class="code-section">
-        <h3>Incense markup</h3>
-        <div class="code-container">
-          <div class="code-header">
-            <span>example.aroma</span>
-            <button class="copy-btn" id="copyBtn1" onclick="copyCode('editor1', 'copyBtn1')">Copy</button>
+        <p class="block-label">Example</p>
+        <div class="code-block">
+          <div class="code-top">
+            <span class="code-filename">example.aroma</span>
+            <button class="copy-btn" id="copyBtn1" onclick="copyCode('editor1','copyBtn1')">Copy</button>
           </div>
           <div class="editor-container" id="editor1"></div>
         </div>
-      </div>
 
-      <div class="code-section">
-        <h3>C integration</h3>
-        <div class="code-container">
-          <div class="code-header">
-            <span>main.c</span>
-            <button class="copy-btn" id="copyBtn2" onclick="copyCode('editor2', 'copyBtn2')">Copy</button>
-          </div>
-          <div class="editor-container" id="editor2"></div>
-        </div>
-      </div>
-
-      <div class="code-section">
-        <h3>Properties</h3>
-        <div class="props-table-container">
-          <table class="props-table" id="propsTable">
-            <thead>
-              <tr>
-                <th>Property</th>
-                <th>Type</th>
-                <th>Default</th>
-                <th>Description</th>
-              </tr>
-            </thead>
+        <div class="props-block">
+          <p class="block-label">Properties</p>
+          <table>
+            <thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
             <tbody id="propsBody"></tbody>
           </table>
         </div>
       </div>
-    </article>
 
-    <footer>
-      <div class="footer-content">
-        <div class="footer-links">
-          <a href="https://github.com/BinaryInkTN/AromaUI">GitHub</a>
-          <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Getting%20Started">Documentation</a>
-        </div>
-        <span class="copyright">AromaUI · BinaryInkTN</span>
-      </div>
-    </footer>
-  </main>
+    </div>
+  </div>
+
+  <footer>
+    <span>AromaUI - BinaryInkTN</span>
+    <div class="footer-links">
+      <a href="https://github.com/BinaryInkTN/AromaUI">GitHub</a>
+    </div>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
   <script>
-    const widgetData = {
-      window: {
-        name: 'Window',
-        category: 'Core',
-        description: 'The root container for an AromaUI application. Every Incense document must have exactly one Window. It creates the native OS window with specified dimensions and title.',
-        incense: `Window {\n    width: 800\n    height: 600\n    title: "My Application"\n\n    Label {\n        x: 20\n        y: 20\n        text: "Hello, AromaUI!"\n        style: "large"\n    }\n\n    Button {\n        x: 20\n        y: 80\n        width: 150\n        height: 40\n        text: "Click Me"\n        on_click: "myCallback"\n    }\n}`,
-        cCode: `#include <aroma.h>\n#include <aroma_incense_loader.h>\n\nvoid my_callback(void *userdata) {\n    printf("Clicked!\\n");\n}\n\nint main() {\n    aroma_ui_init();\n    \n    AromaFont *font = aroma_font_create_from_memory(\n        aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);\n    \n    IncenseRegisterCallback("myCallback",\n        INCENSE_CALLBACK_VOID_PTR, my_callback, NULL);\n    \n    AromaWindow *window = IncenseLoadFile(\n        "ui.aroma", font, NULL);\n    \n    while (aroma_ui_is_running()) {\n        aroma_ui_process_events();\n        aroma_ui_render(window);\n    }\n    \n    aroma_ui_shutdown();\n    return 0;\n}`,
-        props: [
-          ['width', 'int', '800', 'Window width in pixels'],
-          ['height', 'int', '600', 'Window height in pixels'],
-          ['title', 'string', '"Incense App"', 'Window title bar text']
-        ]
-      },
-      button: {
-        name: 'Button',
-        category: 'Core',
-        description: 'A Material Design button that triggers an action when clicked. Supports standard, filled, and tonal variants through the AromaUI theming system.',
-        incense: `Button {\n    x: 20\n    y: 20\n    width: 150\n    height: 40\n    text: "Click Me"\n    on_click: "onButtonClick"\n}`,
-        cCode: `void on_button_click(void *userdata) {\n    printf("Button clicked!\\n");\n}\n\nIncenseRegisterCallback("onButtonClick",\n    INCENSE_CALLBACK_VOID_PTR, on_button_click, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '120', 'Button width'],
-          ['height', 'int', '40', 'Button height'],
-          ['text', 'string', '"Button"', 'Button label text'],
-          ['on_click', 'callback', 'null', 'Click event callback']
-        ]
-      },
-      label: {
-        name: 'Label',
-        category: 'Core',
-        description: 'Displays text with configurable styling. Supports three sizes: large, medium, and small.',
-        incense: `Label {\n    x: 20\n    y: 20\n    text: "Hello World"\n    style: "large"\n}`,
-        cCode: `Labels are passive widgets with no callbacks.\nThey inherit the font from the parent context.\nUse style to control text size and appearance.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['text', 'string', '""', 'Text content'],
-          ['style', 'string', '"large"', 'large, medium, or small']
-        ]
-      },
-      container: {
-        name: 'Container',
-        category: 'Core',
-        description: 'A layout container that holds child widgets. Supports flexbox layout with configurable direction and alignment.',
-        incense: `Container {\n    x: 20\n    y: 60\n    width: 400\n    height: 200\n    layout: "flex"\n    direction: "row"\n\n    Label { x: 10 y: 10 text: "Item 1" }\n    Label { x: 10 y: 10 text: "Item 2" }\n    Label { x: 10 y: 10 text: "Item 3" }\n}`,
-        cCode: `Containers manage child layout automatically.\nUse layout: "flex" for flexbox behavior.\nUse direction: "row" or "column" for axis control.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Container width'],
-          ['height', 'int', '200', 'Container height'],
-          ['layout', 'string', '"none"', 'none or flex'],
-          ['direction', 'string', '"column"', 'row or column']
-        ]
-      },
-      scrollview: {
-        name: 'ScrollView',
-        category: 'Core',
-        description: 'A scrollable container that allows content to exceed its visible bounds. Supports vertical, horizontal, or bidirectional scrolling.',
-        incense: `ScrollView {\n    x: 20\n    y: 60\n    width: 400\n    height: 300\n    direction: "vertical"\n\n    Label { x: 10 y: 10 text: "Top" }\n    Label { x: 10 y: 200 text: "Middle" }\n    Label { x: 10 y: 500 text: "Bottom" }\n    Label { x: 10 y: 800 text: "Way down" }\n}`,
-        cCode: `ScrollView uses aroma_container internally.\nSet direction to "vertical", "horizontal", or "both".\nContent size is auto-calculated from children.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Viewport width'],
-          ['height', 'int', '200', 'Viewport height'],
-          ['direction', 'string', '"vertical"', 'vertical, horizontal, or both']
-        ]
-      },
-      card: {
-        name: 'Card',
-        category: 'Core',
-        description: 'A Material Design card component with elevated, outlined, or filled styling. Cards can contain any child widgets.',
-        incense: `Card {\n    x: 20\n    y: 60\n    width: 280\n    height: 180\n    type: "elevated"\n\n    Label {\n        x: 20\n        y: 20\n        text: "Card Title"\n        style: "medium"\n    }\n    Label {\n        x: 20\n        y: 50\n        text: "Card content here."\n        style: "small"\n    }\n    Button {\n        x: 20\n        y: 120\n        width: 100\n        height: 32\n        text: "Action"\n        on_click: "onButtonClick"\n    }\n}`,
-        cCode: `Cards are container widgets that can hold children.\nUse type to control visual style.\nChildren are positioned relative to the card.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Card width'],
-          ['height', 'int', '120', 'Card height'],
-          ['type', 'string', '"elevated"', 'elevated, outlined, or filled']
-        ]
-      },
-      divider: {
-        name: 'Divider',
-        category: 'Core',
-        description: 'A visual separator line used to divide content sections. Can be horizontal or vertical.',
-        incense: `Divider {\n    x: 20\n    y: 100\n    length: 400\n    orientation: "horizontal"\n}`,
-        cCode: `Dividers are decorative elements.\nUse orientation to switch between horizontal and vertical.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['length', 'int', '100', 'Length in pixels'],
-          ['orientation', 'string', '"horizontal"', 'horizontal or vertical']
-        ]
-      },
-      textbox: {
-        name: 'Textbox',
-        category: 'Input',
-        description: 'A single-line text input field with placeholder support and change/submit callbacks.',
-        incense: `Textbox {\n    x: 20\n    y: 60\n    width: 300\n    height: 36\n    placeholder: "Enter your name..."\n    on_change: "onTextboxChange"\n}`,
-        cCode: `void on_textbox_change(AromaNode *node, const char *text, void *userdata) {\n    printf("Text changed: %s\\n", text);\n}\n\nIncenseRegisterCallback("onTextboxChange",\n    INCENSE_CALLBACK_NODE_STRING_PTR, on_textbox_change, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Input width'],
-          ['height', 'int', '36', 'Input height'],
-          ['placeholder', 'string', '""', 'Placeholder text'],
-          ['on_change', 'callback', 'null', 'Text change callback'],
-          ['on_submit', 'callback', 'null', 'Submit callback']
-        ]
-      },
-      checkbox: {
-        name: 'Checkbox',
-        category: 'Input',
-        description: 'A Material Design checkbox with label. Fires a callback with the checked state.',
-        incense: `Checkbox {\n    x: 20\n    y: 60\n    width: 200\n    height: 32\n    label: "Accept Terms"\n    on_change: "onCheckboxChange"\n}`,
-        cCode: `void on_checkbox_change(bool checked, void *userdata) {\n    printf("Checkbox: %s\\n", checked ? "true" : "false");\n}\n\nIncenseRegisterCallback("onCheckboxChange",\n    INCENSE_CALLBACK_BOOL_BOOL_PTR, on_checkbox_change, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '160', 'Checkbox width'],
-          ['height', 'int', '32', 'Checkbox height'],
-          ['label', 'string', '""', 'Label text'],
-          ['on_change', 'callback', 'null', 'State change callback']
-        ]
-      },
-      switch: {
-        name: 'Switch',
-        category: 'Input',
-        description: 'A Material Design toggle switch with on/off state.',
-        incense: `Switch {\n    x: 20\n    y: 60\n    width: 56\n    height: 28\n    value: true\n    on_change: "onSwitchChange"\n}`,
-        cCode: `void on_switch_change(AromaNode *node, void *userdata) {\n    printf("Switch toggled!\\n");\n}\n\nIncenseRegisterCallback("onSwitchChange",\n    INCENSE_CALLBACK_BOOL_PTR, on_switch_change, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '56', 'Switch width'],
-          ['height', 'int', '28', 'Switch height'],
-          ['value', 'bool', 'false', 'Initial state'],
-          ['on_change', 'callback', 'null', 'State change callback']
-        ]
-      },
-      slider: {
-        name: 'Slider',
-        category: 'Input',
-        description: 'A Material Design slider for selecting a value within a range.',
-        incense: `Slider {\n    x: 20\n    y: 60\n    width: 200\n    height: 24\n    min: 0\n    max: 100\n    value: 50\n    on_change: "onSliderChange"\n}`,
-        cCode: `void on_slider_change(AromaNode *node, void *userdata) {\n    printf("Slider changed!\\n");\n}\n\nIncenseRegisterCallback("onSliderChange",\n    INCENSE_CALLBACK_BOOL_PTR, on_slider_change, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Slider width'],
-          ['height', 'int', '24', 'Slider height'],
-          ['min', 'int', '0', 'Minimum value'],
-          ['max', 'int', '100', 'Maximum value'],
-          ['value', 'int', '0', 'Initial value'],
-          ['on_change', 'callback', 'null', 'Value change callback']
-        ]
-      },
-      radiobutton: {
-        name: 'RadioButton',
-        category: 'Input',
-        description: 'A Material Design radio button for single selection within a group.',
-        incense: `RadioButton {\n    x: 20\n    y: 60\n    width: 200\n    height: 32\n    label: "Option A"\n    group: 1\n    selected: true\n    on_click: "onRadioClick"\n}\n\nRadioButton {\n    x: 20\n    y: 100\n    width: 200\n    height: 32\n    label: "Option B"\n    group: 1\n    on_click: "onRadioClick"\n}`,
-        cCode: `void on_radio_click(void *userdata) {\n    printf("Radio clicked!\\n");\n}\n\nIncenseRegisterCallback("onRadioClick",\n    INCENSE_CALLBACK_VOID_PTR, on_radio_click, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '160', 'Width'],
-          ['height', 'int', '32', 'Height'],
-          ['label', 'string', '""', 'Label text'],
-          ['group', 'int', '0', 'Radio group ID'],
-          ['selected', 'bool', 'false', 'Initially selected'],
-          ['on_click', 'callback', 'null', 'Click callback']
-        ]
-      },
-      dropdown: {
-        name: 'Dropdown',
-        category: 'Input',
-        description: 'A Material Design dropdown menu for selecting from a list of options.',
-        incense: `Dropdown {\n    x: 20\n    y: 60\n    width: 250\n    height: 36\n    on_change: "onDropdownChange"\n\n    Option { text: "United States" }\n    Option { text: "United Kingdom" }\n    Option { text: "Canada" }\n    Option { text: "Australia" }\n}`,
-        cCode: `void on_dropdown_change(int index, const char *option, void *userdata) {\n    printf("Selected: %s (index: %d)\\n", option, index);\n}\n\nIncenseRegisterCallback("onDropdownChange",\n    INCENSE_CALLBACK_INT_STRING_PTR, on_dropdown_change, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Dropdown width'],
-          ['height', 'int', '36', 'Dropdown height'],
-          ['on_change', 'callback', 'null', 'Selection change callback']
-        ]
-      },
-      fab: {
-        name: 'FAB',
-        category: 'Actions',
-        description: 'A Material Design Floating Action Button with configurable size.',
-        incense: `FAB {\n    x: 20\n    y: 20\n    icon: "AROMA_ICON_ADD"\n    size: "normal"\n    on_click: "onFABClick"\n}`,
-        cCode: `void on_fab_click(void *userdata) {\n    printf("FAB clicked!\\n");\n}\n\nIncenseRegisterCallback("onFABClick",\n    INCENSE_CALLBACK_VOID_PTR, on_fab_click, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['icon', 'string', '"+"', 'Icon identifier'],
-          ['size', 'string', '"normal"', 'small, normal, or large'],
-          ['on_click', 'callback', 'null', 'Click callback']
-        ]
-      },
-      iconbutton: {
-        name: 'IconButton',
-        category: 'Actions',
-        description: 'A Material Design icon button with standard, filled, tonal, or outlined variants.',
-        incense: `IconButton {\n    x: 20\n    y: 20\n    icon: "AROMA_ICON_FAVORITE"\n    size: 40\n    variant: "filled"\n    on_click: "onIconButtonClick"\n}`,
-        cCode: `void on_icon_button_click(void *userdata) {\n    printf("Icon button clicked!\\n");\n}\n\nIncenseRegisterCallback("onIconButtonClick",\n    INCENSE_CALLBACK_VOID_PTR, on_icon_button_click, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['icon', 'string', '""', 'Icon identifier'],
-          ['size', 'int', '40', 'Button size'],
-          ['variant', 'string', '"standard"', 'standard, filled, tonal, or outlined'],
-          ['on_click', 'callback', 'null', 'Click callback']
-        ]
-      },
-      menu: {
-        name: 'Menu',
-        category: 'Actions',
-        description: 'A Material Design dropdown menu with items, icons, and separators.',
-        incense: `Menu {\n    x: 20\n    y: 60\n\n    MenuItem {\n        text: "New"\n        icon: "AROMA_ICON_NOTE_ADD"\n        on_click: "onMenuItemClick"\n    }\n    MenuItem {\n        text: "Open"\n        icon: "AROMA_ICON_FOLDER_OPEN"\n        on_click: "onMenuItemClick"\n    }\n    Separator {}\n    MenuItem {\n        text: "Exit"\n        on_click: "onMenuItemClick"\n    }\n}`,
-        cCode: `void on_menu_item_click(void *userdata) {\n    printf("Menu item clicked!\\n");\n}\n\nIncenseRegisterCallback("onMenuItemClick",\n    INCENSE_CALLBACK_VOID_PTR, on_menu_item_click, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position']
-        ]
-      },
-      snackbar: {
-        name: 'Snackbar',
-        category: 'Actions',
-        description: 'A Material Design snackbar for displaying brief messages at the bottom of the screen.',
-        incense: `Snackbar {\n    x: 20\n    y: 560\n    message: "Operation completed!"\n    duration: 3000\n}`,
-        cCode: `Snackbars auto-dismiss after the specified duration.\nNo callback is required for basic usage.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['message', 'string', '""', 'Message text'],
-          ['duration', 'int', '3000', 'Display duration in ms']
-        ]
-      },
-      dialog: {
-        name: 'Dialog',
-        category: 'Actions',
-        description: 'A Material Design dialog for important prompts and decisions.',
-        incense: `Dialog {\n    x: 200\n    y: 150\n    width: 320\n    height: 200\n    title: "Confirm"\n    message: "Are you sure?"\n    type: "basic"\n}`,
-        cCode: `Dialogs can be basic or fullscreen.\nUse the type property to switch between modes.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '320', 'Dialog width'],
-          ['height', 'int', '200', 'Dialog height'],
-          ['title', 'string', '"Dialog"', 'Dialog title'],
-          ['message', 'string', '""', 'Dialog message'],
-          ['type', 'string', '"basic"', 'basic or fullscreen']
-        ]
-      },
-      tooltip: {
-        name: 'Tooltip',
-        category: 'Actions',
-        description: 'A Material Design tooltip for displaying contextual help text.',
-        incense: `Tooltip {\n    x: 20\n    y: 20\n    text: "This is helpful information."\n    position: "top"\n}`,
-        cCode: `Tooltips display on hover or tap.\nPosition can be top, bottom, left, or right.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['text', 'string', '""', 'Tooltip text'],
-          ['position', 'string', '"top"', 'top, bottom, left, or right']
-        ]
-      },
-      tabs: {
-        name: 'Tabs',
-        category: 'Navigation',
-        description: 'A Material Design tab bar for switching between content panels. Supports up to 8 tabs with icons and content.',
-        incense: `Tabs {\n    x: 0\n    y: 0\n    width: 800\n    height: 48\n    on_change: "onTabChanged"\n\n    Tab {\n        text: "Home"\n        icon: "AROMA_ICON_HOME"\n        Label { x: 20 y: 100 text: "Home content" }\n    }\n    Tab {\n        text: "Settings"\n        icon: "AROMA_ICON_SETTINGS"\n        Label { x: 20 y: 100 text: "Settings content" }\n    }\n    Tab {\n        text: "About"\n        Label { x: 20 y: 100 text: "About content" }\n    }\n}`,
-        cCode: `void on_tab_change(AromaNode *node, int index, void *userdata) {\n    printf("Tab changed to: %d\\n", index);\n}\n\nIncenseRegisterCallback("onTabChanged",\n    INCENSE_CALLBACK_NODE_INT_PTR, on_tab_change, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '400', 'Tabs width'],
-          ['height', 'int', '48', 'Tabs height'],
-          ['on_change', 'callback', 'null', 'Tab change callback']
-        ]
-      },
-      sidebar: {
-        name: 'Sidebar',
-        category: 'Navigation',
-        description: 'A Material Design navigation sidebar with items, icons, and content panels.',
-        incense: `Sidebar {\n    x: 20\n    y: 60\n    width: 250\n    height: 500\n    on_select: "onSidebarSelect"\n\n    Item {\n        text: "Dashboard"\n        icon: "AROMA_ICON_DASHBOARD"\n        Label { x: 10 y: 10 text: "Dashboard view" }\n    }\n    Item {\n        text: "Profile"\n        icon: "AROMA_ICON_PERSON"\n        Label { x: 10 y: 10 text: "Profile view" }\n    }\n    Item {\n        text: "Settings"\n        icon: "AROMA_ICON_SETTINGS"\n        Label { x: 10 y: 10 text: "Settings view" }\n    }\n}`,
-        cCode: `void on_sidebar_select(AromaNode *node, int index, void *userdata) {\n    printf("Sidebar item: %d\\n", index);\n}\n\nIncenseRegisterCallback("onSidebarSelect",\n    INCENSE_CALLBACK_NODE_INT_PTR, on_sidebar_select, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Sidebar width'],
-          ['height', 'int', '400', 'Sidebar height'],
-          ['on_select', 'callback', 'null', 'Selection callback']
-        ]
-      },
-      listview: {
-        name: 'ListView',
-        category: 'Navigation',
-        description: 'A scrollable list view for displaying items with selection support.',
-        incense: `ListView {\n    x: 20\n    y: 60\n    width: 300\n    height: 400\n    on_select: "onListSelect"\n}`,
-        cCode: `void on_list_select(int index, void *userdata) {\n    printf("List item: %d\\n", index);\n}\n\nIncenseRegisterCallback("onListSelect",\n    INCENSE_CALLBACK_INT_PTR, on_list_select, NULL);`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'List width'],
-          ['height', 'int', '300', 'List height'],
-          ['on_select', 'callback', 'null', 'Selection callback']
-        ]
-      },
-      table: {
-        name: 'Table',
-        category: 'Navigation',
-        description: 'A data table with configurable columns for displaying structured data.',
-        incense: `Table {\n    x: 20\n    y: 60\n    width: 600\n    height: 300\n    columns: 3\n\n    Column { header: "Name"  width: 200 }\n    Column { header: "Age"   width: 100 }\n    Column { header: "Email" width: 300 }\n}`,
-        cCode: `Tables display structured data with headers.\nUse Column children to define the table structure.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '400', 'Table width'],
-          ['height', 'int', '300', 'Table height'],
-          ['columns', 'int', '1', 'Number of columns']
-        ]
-      },
-      image: {
-        name: 'Image',
-        category: 'Media',
-        description: 'Displays an image from a file path.',
-        incense: `Image {\n    x: 20\n    y: 60\n    width: 300\n    height: 200\n    src: "image.png"\n}`,
-        cCode: `Images load from the specified file path.\nSupported formats depend on the backend.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '100', 'Image width'],
-          ['height', 'int', '100', 'Image height'],
-          ['src', 'string', '""', 'Image file path']
-        ]
-      },
-      icon: {
-        name: 'Icon',
-        category: 'Media',
-        description: 'Displays an icon from the Material Icons set or a custom image.',
-        incense: `Icon {\n    x: 20\n    y: 60\n    size: 32\n    text: "AROMA_ICON_HOME"\n    color: "#000000"\n}`,
-        cCode: `Icons use Material Design icon codepoints.\nUse AROMA_ICON_* constants or custom text.\nSet color using hex format.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['size', 'int', '24', 'Icon size'],
-          ['text', 'string', 'null', 'Icon text/codepoint'],
-          ['src', 'string', 'null', 'Image path (alternative)'],
-          ['color', 'color', '"#000000"', 'Icon color']
-        ]
-      },
-      gif: {
-        name: 'GIF',
-        category: 'Media',
-        description: 'Displays and controls animated GIF images.',
-        incense: `GIF {\n    x: 20\n    y: 60\n    width: 150\n    height: 150\n    src: "animation.gif"\n    autoplay: true\n}`,
-        cCode: `GIFs support autoplay control.\nUse autoplay: true to start playing immediately.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '100', 'GIF width'],
-          ['height', 'int', '100', 'GIF height'],
-          ['src', 'string', '""', 'GIF file path'],
-          ['autoplay', 'bool', 'true', 'Auto-play on load']
-        ]
-      },
-      canvas: {
-        name: 'Canvas',
-        category: 'Media',
-        description: 'A drawing surface for custom rendering and graphics.',
-        incense: `Canvas {\n    x: 20\n    y: 60\n    width: 500\n    height: 300\n}`,
-        cCode: `Canvas provides a raw drawing surface.\nUse the C API to draw shapes, text, and images.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Canvas width'],
-          ['height', 'int', '200', 'Canvas height']
-        ]
-      },
-      map: {
-        name: 'Map',
-        category: 'Media',
-        description: 'An interactive map with markers, popups, and icon support.',
-        incense: `Map {\n    x: 20\n    y: 60\n    width: 600\n    height: 400\n    lat: 48.8566\n    lon: 2.3522\n    zoom: 12\n    attribution: true\n\n    Marker {\n        lat: 48.8566\n        lon: 2.3522\n        color: "#FF0000"\n        popup: "Paris"\n    }\n}`,
-        cCode: `Maps support multiple markers with popups.\nUse lat/lon for positioning and zoom for detail level.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '300', 'Map width'],
-          ['height', 'int', '300', 'Map height'],
-          ['lat', 'float', '0.0', 'Latitude'],
-          ['lon', 'float', '0.0', 'Longitude'],
-          ['zoom', 'int', '4', 'Zoom level'],
-          ['attribution', 'bool', 'true', 'Show attribution']
-        ]
-      },
-      progressbar: {
-        name: 'ProgressBar',
-        category: 'Feedback',
-        description: 'A Material Design progress indicator with determinate and indeterminate modes.',
-        incense: `ProgressBar {\n    x: 20\n    y: 60\n    width: 400\n    height: 8\n    value: 0.65\n    type: "determinate"\n}`,
-        cCode: `Determinate bars show progress from 0.0 to 1.0.\nIndeterminate bars animate continuously.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Bar width'],
-          ['height', 'int', '8', 'Bar height'],
-          ['value', 'float', '0.0', 'Progress (0.0-1.0)'],
-          ['type', 'string', '"determinate"', 'determinate or indeterminate']
-        ]
-      },
-      loading: {
-        name: 'Loading',
-        category: 'Feedback',
-        description: 'A Material Design loading spinner with configurable radius and color.',
-        incense: `Loading {\n    x: 40\n    y: 100\n    radius: 24\n    thickness: 3\n    color: "#4285F4"\n}`,
-        cCode: `Loading spinners animate automatically.\nCustomize radius, thickness, and color.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['radius', 'int', '16', 'Spinner radius'],
-          ['thickness', 'int', '3', 'Stroke thickness'],
-          ['color', 'color', '"#000000"', 'Spinner color']
-        ]
-      },
-      debugoverlay: {
-        name: 'DebugOverlay',
-        category: 'Feedback',
-        description: 'An overlay that displays debug information such as FPS and frame times.',
-        incense: `DebugOverlay {\n    x: 20\n    y: 440\n    width: 300\n    visible: true\n}`,
-        cCode: `Debug overlays show performance metrics.\nToggle visibility with the visible property.`,
-        props: [
-          ['x', 'int', '0', 'Horizontal position'],
-          ['y', 'int', '0', 'Vertical position'],
-          ['width', 'int', '200', 'Overlay width'],
-          ['visible', 'bool', 'true', 'Show/hide overlay']
-        ]
-      }
+    const featureData = {
+      incense:   { name:'Incense DSL',    category:'Core', description:'A declarative, C-like DSL for defining UI layouts. Separates UI definition from application logic.', code:`Window {\n    width: 800\n    height: 600\n    title: "My Application"\n\n    Label {\n        x: 20\n        y: 20\n        text: "Hello, AromaUI!"\n        style: "large"\n    }\n\n    Button {\n        x: 20\n        y: 80\n        width: 150\n        height: 40\n        text: "Click Me"\n        on_click: "myCallback"\n    }\n}`, props:[['Declarative','Syntax','Yes','Define UI without code'],['Type-safe','Validation','Yes','Type checking at load time'],['Hot-reload','Feature','Yes','Live UI updates']] },
+      embed:     { name:'@embed System',  category:'Core', description:'Include external Incense files into your UI definitions. Perfect for component reuse and modular design.', code:`Window {\n    width: 800\n    height: 600\n\n    Tabs {\n        x: 0  y: 0\n        width: 800  height: 50\n\n        Tab {\n            text: "Home"\n            @embed "home.aroma"\n        }\n        Tab {\n            text: "Settings"\n            @embed "settings.aroma"\n        }\n    }\n}`, props:[['Modular','Feature','Yes','Split UI into manageable files'],['Circular detection','Safety','Yes','Prevents infinite recursion'],['Depth limiting','Safety','Yes','64-level max depth']] },
+      widgets:   { name:'Widget Library', category:'Core', description:'30+ Material Design widgets including buttons, inputs, navigation, media, and feedback components.', code:`Window {\n    width: 800\n    height: 600\n\n    Button    { x: 20 y: 20  text: "Click" }\n    Label     { x: 20 y: 80  text: "Hello" }\n    Container { x: 20 y: 140 layout: "flex" }\n    Card      { x: 20 y: 200 type: "elevated" }\n\n    Checkbox  { x: 20 y: 300 label: "Accept" }\n    Switch    { x: 20 y: 340 value: true }\n    Slider    { x: 20 y: 380 min: 0 max: 100 }\n}`, props:[['Core','Widgets','6','Window, Label, Button, Container, Card, Divider'],['Input','Widgets','6','Checkbox, Switch, Slider, Textbox, Dropdown, RadioButton'],['Navigation','Widgets','4','Tabs, Sidebar, ListView, Table'],['Media','Widgets','5','Image, Icon, GIF, Canvas, Map'],['Actions','Widgets','6','FAB, IconButton, Menu, Snackbar, Dialog, Tooltip']] },
+      callbacks: { name:'Callbacks',      category:'Core', description:'Connect UI events to C functions. Supports multiple callback signatures for all interaction types.', code:`Button {\n    x: 20  y: 20\n    text: "Click Me"\n    on_click: "onButtonClick"\n}\n\nTextbox {\n    x: 20  y: 80\n    width: 300  height: 36\n    placeholder: "Enter text..."\n    on_change: "onTextChange"\n}`, props:[['void cb','Type','void (*)(void*)','No return, void pointer userdata'],['bool cb','Type','void (*)(bool, void*)','Boolean state'],['int cb','Type','void (*)(int, void*)','Integer value'],['string cb','Type','void (*)(const char*, void*)','String value'],['node cb','Type','void (*)(AromaNode*, void*)','Node reference']] }
     };
 
-    let editors = {};
+    const widgetData = {
+      window:      { name:'Window',      category:'Core',       desc:'Root container. Creates the native OS window.',           code:`Window {\n    width: 800\n    height: 600\n    title: "My App"\n\n    Label { x: 20 y: 20 text: "Hello!" style: "large" }\n}`, props:[['width','int','800','Window width'],['height','int','600','Window height'],['title','string','"Incense App"','Window title']] },
+      button:      { name:'Button',      category:'Core',       desc:'Triggers an action on click.',                            code:`Button {\n    x: 20  y: 20\n    width: 150  height: 40\n    text: "Click Me"\n    on_click: "onButtonClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','120','Width'],['height','int','40','Height'],['text','string','"Button"','Label'],['on_click','callback','null','Click handler']] },
+      label:       { name:'Label',       category:'Core',       desc:'Displays text in large, medium, or small style.',         code:`Label {\n    x: 20  y: 20\n    text: "Hello World"\n    style: "large"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['text','string','""','Text content'],['style','string','"large"','large, medium, or small']] },
+      card:        { name:'Card',        category:'Core',       desc:'Container with elevated, outlined, or filled styling.',   code:`Card {\n    x: 20  y: 60\n    width: 280  height: 180\n    type: "elevated"\n\n    Label  { x: 20 y: 20 text: "Card Title" style: "medium" }\n    Button { x: 20 y: 120 width: 100 height: 32 text: "Action" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','120','Height'],['type','string','"elevated"','elevated, outlined, or filled']] },
+      divider:     { name:'Divider',     category:'Core',       desc:'Visual separator, horizontal or vertical.',               code:`Divider {\n    x: 20  y: 100\n    length: 400\n    orientation: "horizontal"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['length','int','100','Length in px'],['orientation','string','"horizontal"','horizontal or vertical']] },
+      container:   { name:'Container',   category:'Layout',     desc:'Layout container with optional flexbox.',                 code:`Container {\n    x: 20  y: 60\n    width: 400  height: 200\n    layout: "flex"\n    direction: "row"\n\n    Label { x: 10 y: 10 text: "Item 1" }\n    Label { x: 10 y: 10 text: "Item 2" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','200','Height'],['layout','string','"none"','none or flex'],['direction','string','"column"','row or column']] },
+      scrollview:  { name:'ScrollView',  category:'Layout',     desc:'Scrollable container.',                                   code:`ScrollView {\n    x: 20  y: 60\n    width: 400  height: 300\n    direction: "vertical"\n\n    Label { x: 10 y: 10   text: "Top" }\n    Label { x: 10 y: 500  text: "Bottom" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Viewport width'],['height','int','200','Viewport height'],['direction','string','"vertical"','vertical, horizontal, or both']] },
+      checkbox:    { name:'Checkbox',    category:'Input',      desc:'Checkbox with label.',                                    code:`Checkbox {\n    x: 20  y: 60\n    width: 200  height: 32\n    label: "Accept Terms"\n    on_change: "onCheckboxChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','160','Width'],['height','int','32','Height'],['label','string','""','Label text'],['on_change','callback','null','Change handler']] },
+      switch:      { name:'Switch',      category:'Input',      desc:'Toggle switch.',                                          code:`Switch {\n    x: 20  y: 60\n    width: 56  height: 28\n    value: true\n    on_change: "onSwitchChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','56','Width'],['height','int','28','Height'],['value','bool','false','Initial state'],['on_change','callback','null','Change handler']] },
+      slider:      { name:'Slider',      category:'Input',      desc:'Value selector within a range.',                         code:`Slider {\n    x: 20  y: 60\n    width: 200  height: 24\n    min: 0  max: 100  value: 50\n    on_change: "onSliderChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','24','Height'],['min','int','0','Minimum'],['max','int','100','Maximum'],['value','int','0','Initial value'],['on_change','callback','null','Change handler']] },
+      textbox:     { name:'Textbox',     category:'Input',      desc:'Single-line text input.',                                 code:`Textbox {\n    x: 20  y: 60\n    width: 300  height: 36\n    placeholder: "Enter your name..."\n    on_change: "onTextboxChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','36','Height'],['placeholder','string','""','Placeholder text'],['on_change','callback','null','Change handler'],['on_submit','callback','null','Submit handler']] },
+      dropdown:    { name:'Dropdown',    category:'Input',      desc:'Select from a list of options.',                         code:`Dropdown {\n    x: 20  y: 60\n    width: 250  height: 36\n    on_change: "onDropdownChange"\n\n    Option { text: "United States" }\n    Option { text: "United Kingdom" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','36','Height'],['on_change','callback','null','Change handler']] },
+      radiobutton: { name:'RadioButton', category:'Input',      desc:'Single selection within a group.',                       code:`RadioButton {\n    x: 20  y: 60\n    width: 200  height: 32\n    label: "Option A"\n    group: 1\n    selected: true\n    on_click: "onRadioClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','160','Width'],['height','int','32','Height'],['label','string','""','Label'],['group','int','0','Group ID'],['selected','bool','false','Initially selected'],['on_click','callback','null','Click handler']] },
+      tabs:        { name:'Tabs',        category:'Navigation', desc:'Tab bar with content panels.',                            code:`Tabs {\n    x: 0  y: 0\n    width: 800  height: 48\n    on_change: "onTabChanged"\n\n    Tab { text: "Home" icon: "AROMA_ICON_HOME"\n        Label { x: 20 y: 100 text: "Home content" }\n    }\n    Tab { text: "Settings" icon: "AROMA_ICON_SETTINGS" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','400','Width'],['height','int','48','Height'],['on_change','callback','null','Change handler']] },
+      sidebar:     { name:'Sidebar',     category:'Navigation', desc:'Navigation sidebar with items.',                          code:`Sidebar {\n    x: 20  y: 60\n    width: 250  height: 500\n    on_select: "onSidebarSelect"\n\n    Item { text: "Dashboard" icon: "AROMA_ICON_DASHBOARD" }\n    Item { text: "Profile"   icon: "AROMA_ICON_PERSON" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','400','Height'],['on_select','callback','null','Select handler']] },
+      listview:    { name:'ListView',    category:'Navigation', desc:'Scrollable selection list.',                              code:`ListView {\n    x: 20  y: 60\n    width: 300  height: 400\n    on_select: "onListSelect"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','300','Height'],['on_select','callback','null','Select handler']] },
+      table:       { name:'Table',       category:'Navigation', desc:'Data table with configurable columns.',                  code:`Table {\n    x: 20  y: 60\n    width: 600  height: 300\n    columns: 3\n\n    Column { header: "Name" width: 200 }\n    Column { header: "Age"  width: 100 }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','400','Width'],['height','int','300','Height'],['columns','int','1','Column count']] },
+      image:       { name:'Image',       category:'Media',      desc:'Displays an image from a file path.',                    code:`Image {\n    x: 20  y: 60\n    width: 300  height: 200\n    src: "image.png"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','100','Width'],['height','int','100','Height'],['src','string','""','File path']] },
+      icon:        { name:'Icon',        category:'Media',      desc:'Material icon from the built-in set.',                   code:`Icon {\n    x: 20  y: 60\n    size: 32\n    text: "AROMA_ICON_HOME"\n    color: "#111"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['size','int','24','Size in px'],['text','string','null','Icon codepoint'],['src','string','null','Image path (alternative)'],['color','color','"#000000"','Icon color']] },
+      gif:         { name:'GIF',         category:'Media',      desc:'Animated GIF display.',                                  code:`GIF {\n    x: 20  y: 60\n    width: 150  height: 150\n    src: "animation.gif"\n    autoplay: true\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','100','Width'],['height','int','100','Height'],['src','string','""','File path'],['autoplay','bool','true','Auto-play on load']] },
+      canvas:      { name:'Canvas',      category:'Media',      desc:'Custom drawing surface.',                                code:`Canvas {\n    x: 20  y: 60\n    width: 500  height: 300\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','200','Height']] },
+      map:         { name:'Map',         category:'Media',      desc:'Interactive map with markers.',                          code:`Map {\n    x: 20  y: 60\n    width: 600  height: 400\n    lat: 48.8566  lon: 2.3522\n    zoom: 12\n    attribution: true\n\n    Marker { lat: 48.8566 lon: 2.3522 color: "#111" popup: "Paris" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','300','Width'],['height','int','300','Height'],['lat','float','0.0','Latitude'],['lon','float','0.0','Longitude'],['zoom','int','4','Zoom level'],['attribution','bool','true','Show attribution']] },
+      fab:         { name:'FAB',         category:'Actions',    desc:'Floating Action Button.',                                code:`FAB {\n    x: 20  y: 20\n    icon: "AROMA_ICON_ADD"\n    size: "normal"\n    on_click: "onFABClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['icon','string','"+"','Icon'],['size','string','"normal"','small, normal, or large'],['on_click','callback','null','Click handler']] },
+      iconbutton:  { name:'IconButton',  category:'Actions',    desc:'Icon-only button.',                                      code:`IconButton {\n    x: 20  y: 20\n    icon: "AROMA_ICON_FAVORITE"\n    size: 40\n    variant: "filled"\n    on_click: "onIconButtonClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['icon','string','""','Icon'],['size','int','40','Size in px'],['variant','string','"standard"','standard, filled, tonal, or outlined'],['on_click','callback','null','Click handler']] },
+      menu:        { name:'Menu',        category:'Actions',    desc:'Dropdown menu with items and separators.',               code:`Menu {\n    x: 20  y: 60\n\n    MenuItem { text: "New"  icon: "AROMA_ICON_ADD"         on_click: "onNew" }\n    MenuItem { text: "Open" icon: "AROMA_ICON_FOLDER_OPEN" on_click: "onOpen" }\n    Separator {}\n    MenuItem { text: "Exit" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position']] },
+      snackbar:    { name:'Snackbar',    category:'Actions',    desc:'Brief message at the bottom of the screen.',            code:`Snackbar {\n    x: 20  y: 560\n    message: "Operation completed!"\n    duration: 3000\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['message','string','""','Message text'],['duration','int','3000','Duration in ms']] },
+      dialog:      { name:'Dialog',      category:'Actions',    desc:'Modal dialog, basic or fullscreen.',                    code:`Dialog {\n    x: 200  y: 150\n    width: 320  height: 200\n    title: "Confirm"\n    message: "Are you sure?"\n    type: "basic"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','320','Width'],['height','int','200','Height'],['title','string','"Dialog"','Title'],['message','string','""','Body text'],['type','string','"basic"','basic or fullscreen']] },
+      tooltip:     { name:'Tooltip',     category:'Actions',    desc:'Contextual help text on hover.',                        code:`Tooltip {\n    x: 20  y: 20\n    text: "This is helpful information."\n    position: "top"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['text','string','""','Tooltip text'],['position','string','"top"','top, bottom, left, or right']] },
+      progressbar: { name:'ProgressBar', category:'Feedback',   desc:'Determinate or indeterminate progress indicator.',      code:`ProgressBar {\n    x: 20  y: 60\n    width: 400  height: 8\n    value: 0.65\n    type: "determinate"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','8','Height'],['value','float','0.0','Progress 0.0–1.0'],['type','string','"determinate"','determinate or indeterminate']] },
+      loading:     { name:'Loading',     category:'Feedback',   desc:'Spinning progress indicator.',                          code:`Loading {\n    x: 40  y: 100\n    radius: 24\n    thickness: 3\n    color: "#111"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['radius','int','16','Radius in px'],['thickness','int','3','Stroke thickness'],['color','color','"#000000"','Color']] },
+      debugoverlay:{ name:'DebugOverlay',category:'Feedback',   desc:'FPS and frame time overlay.',                           code:`DebugOverlay {\n    x: 20  y: 440\n    width: 300\n    visible: true\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['visible','bool','true','Visible']] },
+    };
 
-    function buildWidgetGrid() {
-      const grid = document.getElementById('widgetGrid');
-      if (!grid) return;
-      const keys = Object.keys(widgetData);
-      grid.innerHTML = keys.map(key => {
-        const w = widgetData[key];
-        return `<div class="widget-item" onclick="showWidget('${key}')" role="button" tabindex="0">${w.name}</div>`;
+    const categoryOrder = ['Core','Layout','Input','Navigation','Media','Actions','Feedback'];
+
+    function buildFeatureGrid() {
+      const g = document.getElementById('featureGrid');
+      if (!g) return;
+      g.innerHTML = Object.keys(featureData).map(k => {
+        const f = featureData[k];
+        return `<div class="feature-card" onclick="showDetail('${k}','feature')" role="button" tabindex="0">
+          <h3>${f.name}</h3>
+          <p>${f.description}</p>
+          <span class="arrow">View →</span>
+        </div>`;
       }).join('');
     }
 
-    buildWidgetGrid();
+    function buildWidgetGrid() {
+      const g = document.getElementById('widgetGrid');
+      if (!g) return;
+      g.innerHTML = Object.keys(widgetData).map(k => {
+        const w = widgetData[k];
+        return `<div class="widget-card" onclick="showDetail('${k}','widget')" role="button" tabindex="0" data-category="${w.category}">
+          <span class="cat-tag">${w.category}</span>
+          <h3>${w.name}</h3>
+          <p>${w.desc}</p>
+        </div>`;
+      }).join('');
+    }
 
-    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
-    require(['vs/editor/editor.main'], function() {
-      monaco.editor.defineTheme('aromaTheme', {
-        base: 'vs',
-        inherit: true,
-        rules: [
-          { token: 'keyword', foreground: '6750A4', fontStyle: 'bold' },
-          { token: 'string', foreground: '7D5260' },
-          { token: 'number', foreground: '625B71' },
-          { token: 'comment', foreground: '938F99', fontStyle: 'italic' },
-          { token: 'type', foreground: '1C1B1F', fontStyle: 'bold' },
-          { token: 'identifier', foreground: '1C1B1F' }
-        ],
-        colors: {
-          'editor.background': '#FFFBFE',
-          'editor.foreground': '#1C1B1F',
-          'editor.lineHighlightBackground': '#EADDFF40',
-          'editor.selectionBackground': '#EADDFF80',
-          'editorCursor.foreground': '#6750A4',
-          'editorLineNumber.foreground': '#938F99'
-        }
+    function buildFilterPills() {
+      const wrap = document.getElementById('filterPills');
+      if (!wrap) return;
+      const cats = ['All', ...categoryOrder];
+      wrap.innerHTML = cats.map(c =>
+        `<button class="pill${c==='All'?' active':''}" onclick="setFilter('${c}')">${c}</button>`
+      ).join('');
+    }
+
+    let activeFilter = 'All';
+
+    function setFilter(cat) {
+      activeFilter = cat;
+      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.textContent === cat));
+      filterWidgets();
+    }
+
+    function filterWidgets() {
+      const q = document.getElementById('widgetSearch').value.toLowerCase();
+      const cards = document.querySelectorAll('.widget-card');
+      let count = 0;
+      cards.forEach(c => {
+        const matchCat  = activeFilter === 'All' || c.dataset.category === activeFilter;
+        const matchText = !q || c.textContent.toLowerCase().includes(q);
+        const show = matchCat && matchText;
+        c.style.display = show ? '' : 'none';
+        if (show) count++;
+      });
+      const total = Object.keys(widgetData).length;
+      document.getElementById('resultCount').textContent = (q || activeFilter !== 'All') ? `${count} of ${total}` : '';
+    }
+
+    function buildSidebarNav(currentKey) {
+      const nav = document.getElementById('sidebarNav');
+      if (!nav) return;
+
+      const groups = {};
+      categoryOrder.forEach(c => groups[c] = []);
+      Object.keys(widgetData).forEach(k => {
+        const cat = widgetData[k].category;
+        if (groups[cat]) groups[cat].push(k);
       });
 
-      const editor1El = document.getElementById('editor1');
-      const editor2El = document.getElementById('editor2');
-      
-      if (editor1El && editor2El) {
-        editors.editor1 = monaco.editor.create(editor1El, {
-          value: 'Select a widget to see example code',
-          language: 'plaintext',
-          theme: 'aromaTheme',
-          minimap: { enabled: false },
-          lineNumbers: 'on',
-          readOnly: true,
-          scrollBeyondLastLine: false,
-          fontSize: 13,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          padding: { top: 16, bottom: 16 },
-          automaticLayout: true
+      let html = '';
+      categoryOrder.forEach(cat => {
+        if (!groups[cat].length) return;
+        html += `<div class="sidebar-group-label">${cat}</div>`;
+        groups[cat].forEach(k => {
+          const active = k === currentKey ? ' active' : '';
+          html += `<button class="sidebar-item${active}" onclick="showDetail('${k}','widget')">${widgetData[k].name}</button>`;
         });
+      });
+      nav.innerHTML = html;
+    }
 
-        editors.editor2 = monaco.editor.create(editor2El, {
-          value: 'Select a widget to see C integration code',
-          language: 'c',
-          theme: 'aromaTheme',
-          minimap: { enabled: false },
-          lineNumbers: 'on',
-          readOnly: true,
-          scrollBeyondLastLine: false,
-          fontSize: 13,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          padding: { top: 16, bottom: 16 },
-          automaticLayout: true
-        });
-      }
+    buildFeatureGrid();
+    buildWidgetGrid();
+    buildFilterPills();
+
+    let editors = {};
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+    require(['vs/editor/editor.main'], function() {
+      const el = document.getElementById('editor1');
+      if (!el) return;
+      editors.editor1 = monaco.editor.create(el, {
+        value: '// Select a widget or feature to see the example',
+        language: 'plaintext',
+        theme: 'vs',
+        minimap: { enabled: false },
+        lineNumbers: 'on',
+        readOnly: true,
+        scrollBeyondLastLine: false,
+        fontSize: 13,
+        fontFamily: "'SFMono-Regular', 'Menlo', 'Consolas', monospace",
+        padding: { top: 14, bottom: 14 },
+        automaticLayout: true,
+        renderLineHighlight: 'none',
+        scrollbar: { verticalScrollbarSize: 4 }
+      });
     });
 
     function copyCode(editorId, btnId) {
       if (!editors[editorId]) return;
       const code = editors[editorId].getValue();
-      navigator.clipboard.writeText(code).then(() => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-          btn.textContent = 'Copied';
-          btn.classList.add('copied');
-          setTimeout(() => {
-            btn.textContent = 'Copy';
-            btn.classList.remove('copied');
-          }, 2000);
-        }
-      }).catch(() => {
-        const textarea = document.createElement('textarea');
-        textarea.value = code;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        const btn = document.getElementById(btnId);
-        if (btn) {
-          btn.textContent = 'Copied';
-          btn.classList.add('copied');
-          setTimeout(() => {
-            btn.textContent = 'Copy';
-            btn.classList.remove('copied');
-          }, 2000);
-        }
-      });
+      const btn = document.getElementById(btnId);
+      const done = () => {
+        if (!btn) return;
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      };
+      navigator.clipboard ? navigator.clipboard.writeText(code).then(done).catch(done) : done();
     }
 
-    function showWidget(key) {
-      const w = widgetData[key];
-      if (!w) return;
+    function showDetail(key, type) {
+      const data = type === 'feature' ? featureData[key] : widgetData[key];
+      if (!data) return;
 
-      document.getElementById('heroSection').style.display = 'none';
-      document.getElementById('widgetsOverview').style.display = 'none';
-      const detail = document.getElementById('widgetDetail');
-      detail.classList.add('active');
-      document.getElementById('pageTitle').textContent = w.name;
-      document.getElementById('breadcrumb').textContent = 'Widgets / ' + w.category;
+      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('detail').classList.add('active');
 
-      document.getElementById('detailTitle').textContent = w.name;
-      document.getElementById('detailCategory').textContent = w.category;
-      document.getElementById('detailDescription').textContent = w.description;
+      document.getElementById('detailCategory').textContent = data.category;
+      document.getElementById('detailTitle').textContent = data.name;
+      document.getElementById('detailDescription').textContent = data.desc || data.description;
 
-      if (editors.editor1 && editors.editor2) {
-        editors.editor1.setValue(w.incense);
-        editors.editor2.setValue(w.cCode);
-        setTimeout(() => {
-          if (editors.editor1) editors.editor1.layout();
-          if (editors.editor2) editors.editor2.layout();
-        }, 100);
+      if (editors.editor1) {
+        editors.editor1.setValue(data.code);
+        setTimeout(() => editors.editor1 && editors.editor1.layout(), 80);
       }
 
-      const propsBody = document.getElementById('propsBody');
-      if (propsBody) {
-        propsBody.innerHTML = w.props.map(p =>
-          `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td></tr>`
-        ).join('');
-      }
+      const body = document.getElementById('propsBody');
+      if (body) body.innerHTML = data.props.map(p =>
+        `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td></tr>`
+      ).join('');
 
-      document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.widget === key) item.classList.add('active');
-      });
-
-      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      buildSidebarNav(key);
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
-    function filterWidgets() {
-      const query = document.getElementById('widgetSearch').value.toLowerCase();
-      const items = document.querySelectorAll('.nav-item');
-      const categories = document.querySelectorAll('.nav-category');
-      let visibleCount = 0;
-
-      items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        const widget = item.dataset.widget;
-        const w = widgetData[widget];
-        const match = !query || text.includes(query) || (w && w.category.toLowerCase().includes(query));
-        item.classList.toggle('hidden', !match);
-        if (match) visibleCount++;
-      });
-
-      categories.forEach(cat => {
-        let hasVisible = false;
-        let next = cat.nextElementSibling;
-        while (next && next.classList.contains('nav-item')) {
-          if (!next.classList.contains('hidden')) hasVisible = true;
-          next = next.nextElementSibling;
-        }
-        cat.style.display = hasVisible || !query ? '' : 'none';
-      });
-
-      const countEl = document.getElementById('searchCount');
-      const noResults = document.getElementById('noResults');
-      if (query) {
-        countEl.textContent = `${visibleCount} widget${visibleCount !== 1 ? 's' : ''} found`;
-        countEl.classList.add('visible');
-        noResults.classList.toggle('visible', visibleCount === 0);
-      } else {
-        countEl.classList.remove('visible');
-        noResults.classList.remove('visible');
-      }
+    function backToOverview() {
+      document.getElementById('detail').classList.remove('active');
+      document.getElementById('mainContent').style.display = '';
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
-    const sidebar = document.getElementById('sidebar');
-    const sidebarHeader = document.getElementById('sidebarHeader');
-    if (sidebar && sidebarHeader) {
-      sidebar.addEventListener('scroll', () => {
-        if (sidebar.scrollTop > 10) {
-          sidebarHeader.classList.add('scrolled');
-        } else {
-          sidebarHeader.classList.remove('scrolled');
-        }
-      });
+    function scrollTo(id) {
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
     }
   </script>
 </body>
