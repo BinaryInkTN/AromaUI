@@ -27,7 +27,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "FATAL: Failed to initialize application state\n");
         return EXIT_FAILURE;
     }
- 
 
  
     aroma_animation_manager_init();
@@ -123,4 +122,5 @@ int main(int argc, char **argv)
 
     telemetry_bridge_close(&telemetry_bridge);
     return EXIT_SUCCESS;
+
 }

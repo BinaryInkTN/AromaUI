@@ -1,0 +1,303 @@
+#include "aroma_incense.h"
+#include "utils/mpc.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static char *incense_strip_comments(const char *src)
+{
+    size_t len = strlen(src);
+    char  *out = malloc(len + 1);
+    if (!out) return NULL;
+
+    size_t i = 0, j = 0;
+    while (i < len) {
+        if (src[i] == '/' && i + 1 < len && src[i + 1] == '/') {
+            while (i < len && src[i] != '\n') i++;
+            continue;
+        }
+        if (src[i] == '/' && i + 1 < len && src[i + 1] == '*') {
+            i += 2;
+            while (i + 1 < len) {
+                if (src[i] == '*' && src[i + 1] == '/') { i += 2; break; }
+                if (src[i] == '\n') out[j++] = '\n';
+                i++;
+            }
+            continue;
+        }
+        if (src[i] == '"') {
+            out[j++] = src[i++];
+            while (i < len && src[i] != '"') {
+                if (src[i] == '\\' && i + 1 < len) out[j++] = src[i++];
+                out[j++] = src[i++];
+            }
+            if (i < len) out[j++] = src[i++];
+            continue;
+        }
+        out[j++] = src[i++];
+    }
+    out[j] = '\0';
+    return out;
+}
+
+static char *incense_strdup(const char *s)
+{
+    if (!s) return NULL;
+    size_t len = strlen(s);
+    char  *copy = malloc(len + 1);
+    if (copy) memcpy(copy, s, len + 1);
+    return copy;
+}
+
+static IncenseNode *incense_node_new(IncenseNodeType type, const char *name, const char *value)
+{
+    IncenseNode *n = calloc(1, sizeof(IncenseNode));
+    if (!n) return NULL;
+    n->type = type;
+    n->name = incense_strdup(name);
+    n->value = incense_strdup(value);
+    return n;
+}
+
+static void incense_node_append_child(IncenseNode *parent, IncenseNode *child)
+{
+    if (!parent->first_child) {
+        parent->first_child = child;
+        return;
+    }
+    IncenseNode *cur = parent->first_child;
+    while (cur->next_sibling) cur = cur->next_sibling;
+    cur->next_sibling = child;
+}
+
+static void incense_node_destroy(IncenseNode *node)
+{
+    if (!node) return;
+    IncenseNode *child = node->first_child;
+    while (child) {
+        IncenseNode *next = child->next_sibling;
+        incense_node_destroy(child);
+        child = next;
+    }
+    free(node->name);
+    free(node->value);
+    free(node);
+}
+
+static IncenseNode *build_node(mpc_ast_t *ast);
+
+static IncenseNode *build_object(mpc_ast_t *ast)
+{
+    const char *type_name = NULL;
+    for (int i = 0; i < ast->children_num; i++) {
+        mpc_ast_t *ch = ast->children[i];
+        if (strstr(ch->tag, "typename") && ch->contents && ch->contents[0]) {
+            type_name = ch->contents;
+            break;
+        }
+        if (!type_name && ch->contents && ch->contents[0] >= 'A' && ch->contents[0] <= 'Z') {
+            type_name = ch->contents;
+        }
+    }
+    if (!type_name) type_name = "(unknown)";
+
+    IncenseNode *obj = incense_node_new(INCENSE_OBJECT, type_name, NULL);
+    if (!obj) return NULL;
+
+    for (int i = 0; i < ast->children_num; i++) {
+        mpc_ast_t *ch = ast->children[i];
+        if (strstr(ch->tag, "item") || strstr(ch->tag, "object") || strstr(ch->tag, "property")) {
+            IncenseNode *child_node = build_node(ch);
+            if (child_node) incense_node_append_child(obj, child_node);
+        }
+    }
+    return obj;
+}
+
+static IncenseNode *build_property(mpc_ast_t *ast)
+{
+    const char *key = NULL;
+    const char *value = NULL;
+    for (int i = 0; i < ast->children_num; i++) {
+        mpc_ast_t *ch = ast->children[i];
+        if (strstr(ch->tag, "ident") && !key) {
+            key = ch->contents;
+        } else if (strstr(ch->tag, "value") && !value) {
+            if (ch->children_num > 0 && ch->children[0]->contents) {
+                value = ch->children[0]->contents;
+            } else if (ch->contents && ch->contents[0]) {
+                value = ch->contents;
+            }
+        }
+    }
+    if (!key) return NULL;
+    return incense_node_new(INCENSE_PROPERTY, key, value ? value : "");
+}
+
+static IncenseNode *build_node(mpc_ast_t *ast)
+{
+    if (!ast) return NULL;
+    if (strstr(ast->tag, "object")) return build_object(ast);
+    if (strstr(ast->tag, "property")) return build_property(ast);
+    if (strstr(ast->tag, "item")) {
+        for (int i = 0; i < ast->children_num; i++) {
+            IncenseNode *n = build_node(ast->children[i]);
+            if (n) return n;
+        }
+    }
+    return NULL;
+}
+
+static mpc_parser_t *p_Ident = NULL;
+static mpc_parser_t *p_TypeName = NULL;
+static mpc_parser_t *p_Integer = NULL;
+static mpc_parser_t *p_Float_ = NULL;
+static mpc_parser_t *p_Boolean = NULL;
+static mpc_parser_t *p_Color = NULL;
+static mpc_parser_t *p_String = NULL;
+static mpc_parser_t *p_Value = NULL;
+static mpc_parser_t *p_Property = NULL;
+static mpc_parser_t *p_Object = NULL;
+static mpc_parser_t *p_Item = NULL;
+static mpc_parser_t *p_Document = NULL;
+static int g_parsers_ready = 0;
+
+static int incense_parsers_init(void)
+{
+    if (g_parsers_ready) return 1;
+
+    p_Ident = mpc_new("ident");
+    p_TypeName = mpc_new("typename");
+    p_Integer = mpc_new("integer");
+    p_Float_ = mpc_new("float_");
+    p_Boolean = mpc_new("boolean");
+    p_Color = mpc_new("color");
+    p_String = mpc_new("string");
+    p_Value = mpc_new("value");
+    p_Property = mpc_new("property");
+    p_Object = mpc_new("object");
+    p_Item = mpc_new("item");
+    p_Document = mpc_new("document");
+
+    mpc_err_t *err = mpca_lang(MPCA_LANG_DEFAULT,
+        " ident    : /[a-z_][A-Za-z0-9_]*/ ;                      "
+        " typename : /[A-Z][A-Za-z0-9_]*/ ;                        "
+        " integer  : /-?[0-9]+/ ;                                   "
+        " float_   : /-?[0-9]+\\.[0-9]+/ ;                         "
+        " boolean  : \"true\" | \"false\" ;                         "
+        " color    : /#[0-9A-Fa-f]+/ ;                              "
+        " string   : /\\\"(\\\\\\\\.|[^\\\"])*\\\"/ ;               "
+        " value    : <float_> | <integer> | <boolean>               "
+        "           | <color>  | <string> ;                         "
+        " property : <ident> \":\" <value> ;                        "
+        " object   : <typename> \"{\" <item>* \"}\" ;              "
+        " item     : <object> | <property> ;                        "
+        " document : /^/ <object> /$/ ;                             ",
+        p_Ident, p_TypeName, p_Integer, p_Float_, p_Boolean, p_Color, p_String,
+        p_Value, p_Property, p_Object, p_Item, p_Document, NULL);
+
+    if (err) {
+        fprintf(stderr, "incense: grammar error:\n");
+        mpc_err_print(err);
+        mpc_err_delete(err);
+        return 0;
+    }
+    g_parsers_ready = 1;
+    return 1;
+}
+
+static IncenseDocument *incense_from_result(mpc_result_t *r, int ok)
+{
+    if (!ok) {
+        mpc_err_print(r->error);
+        mpc_err_delete(r->error);
+        return NULL;
+    }
+    mpc_ast_t *ast = (mpc_ast_t *)r->output;
+    mpc_ast_t *obj_ast = NULL;
+    for (int i = 0; i < ast->children_num; i++) {
+        if (strstr(ast->children[i]->tag, "object")) {
+            obj_ast = ast->children[i];
+            break;
+        }
+    }
+    if (!obj_ast && strstr(ast->tag, "object")) obj_ast = ast;
+
+    IncenseDocument *doc = NULL;
+    if (obj_ast) {
+        IncenseNode *root = build_object(obj_ast);
+        if (root) {
+            doc = calloc(1, sizeof(IncenseDocument));
+            if (doc) doc->root = root;
+            else incense_node_destroy(root);
+        }
+    }
+    mpc_ast_delete(ast);
+    return doc;
+}
+
+IncenseDocument *IncenseParseString(const char *source)
+{
+    if (!source) return NULL;
+    if (!incense_parsers_init()) return NULL;
+    char *clean = incense_strip_comments(source);
+    if (!clean) return NULL;
+    mpc_result_t r;
+    int ok = mpc_parse("<string>", clean, p_Document, &r);
+    free(clean);
+    return incense_from_result(&r, ok);
+}
+
+IncenseDocument *IncenseParseFile(const char *path)
+{
+    if (!path) return NULL;
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
+        fprintf(stderr, "incense: cannot open '%s'\n", path);
+        return NULL;
+    }
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    rewind(fp);
+    char *buf = malloc((size_t)size + 1);
+    if (!buf) { fclose(fp); return NULL; }
+    fread(buf, 1, (size_t)size, fp);
+    buf[size] = '\0';
+    fclose(fp);
+    IncenseDocument *doc = IncenseParseString(buf);
+    free(buf);
+    return doc;
+}
+
+static void incense_print_node(const IncenseNode *node, int depth)
+{
+    for (int i = 0; i < depth; i++) printf("  ");
+    if (node->type == INCENSE_OBJECT) {
+        printf("%s {\n", node->name);
+    } else {
+        printf("%s: %s\n", node->name, node->value ? node->value : "");
+    }
+    const IncenseNode *child = node->first_child;
+    while (child) {
+        incense_print_node(child, depth + 1);
+        child = child->next_sibling;
+    }
+    if (node->type == INCENSE_OBJECT) {
+        for (int i = 0; i < depth; i++) printf("  ");
+        printf("}\n");
+    }
+}
+
+void IncensePrintTree(const IncenseDocument *doc)
+{
+    if (!doc || !doc->root) return;
+    incense_print_node(doc->root, 0);
+}
+
+void IncenseDestroy(IncenseDocument *doc)
+{
+    if (!doc) return;
+    incense_node_destroy(doc->root);
+    free(doc);
+}

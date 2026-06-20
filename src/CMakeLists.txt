@@ -14,6 +14,9 @@ add_library(aroma
     core/aroma_timer.c
     core/aroma_drawlist.c
     core/aroma_native_utils.c
+    core/utils/mpc.c
+    core/aroma_incense.c
+    core/aroma_incense_loader.c
 
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c

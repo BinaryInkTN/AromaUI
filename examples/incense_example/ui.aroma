@@ -1,0 +1,923 @@
+Window {
+    width: 1200
+    height: 800
+    title: "AromaUI Test Suite"
+
+    Tabs {
+        x: 0
+        y: 0
+        width: 1200
+        height: 48
+        on_change: "onTabChanged"
+
+        Tab {
+            text: "Buttons"
+            
+            ScrollView {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "Standard Buttons"
+                    style: "large"
+                }
+
+                Button {
+                    x: 20
+                    y: 60
+                    width: 160
+                    height: 40
+                    text: "Click Me"
+                    on_click: "onButtonClick"
+                }
+
+                Button {
+                    x: 200
+                    y: 60
+                    width: 160
+                    height: 40
+                    text: "Another Button"
+                    on_click: "onButtonClick"
+                }
+
+                Label {
+                    x: 20
+                    y: 130
+                    text: "FAB Buttons"
+                    style: "large"
+                }
+
+                FAB {
+                    x: 20
+                    y: 170
+                    icon: "AROMA_ICON_ADD"
+                    size: "normal"
+                    on_click: "onFABClick"
+                }
+
+                FAB {
+                    x: 90
+                    y: 170
+                    icon: "AROMA_ICON_EDIT"
+                    size: "small"
+                    on_click: "onFABClick"
+                }
+
+                FAB {
+                    x: 140
+                    y: 170
+                    icon: "AROMA_ICON_FAVORITE"
+                    size: "large"
+                    on_click: "onFABClick"
+                }
+
+                Label {
+                    x: 20
+                    y: 250
+                    text: "Icon Buttons"
+                    style: "large"
+                }
+
+                IconButton {
+                    x: 20
+                    y: 290
+                    icon: "AROMA_ICON_HOME"
+                    size: 40
+                    variant: "standard"
+                    on_click: "onIconButtonClick"
+                }
+
+                IconButton {
+                    x: 80
+                    y: 290
+                    icon: "AROMA_ICON_SETTINGS"
+                    size: 40
+                    variant: "filled"
+                    on_click: "onIconButtonClick"
+                }
+
+                IconButton {
+                    x: 140
+                    y: 290
+                    icon: "AROMA_ICON_SEARCH"
+                    size: 40
+                    variant: "tonal"
+                    on_click: "onIconButtonClick"
+                }
+
+                IconButton {
+                    x: 200
+                    y: 290
+                    icon: "AROMA_ICON_DELETE"
+                    size: 40
+                    variant: "outlined"
+                    on_click: "onIconButtonClick"
+                }
+            }
+        }
+
+        Tab {
+            text: "Forms"
+            
+            ScrollView {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "Checkboxes"
+                    style: "large"
+                }
+
+                Checkbox {
+                    x: 20
+                    y: 60
+                    width: 220
+                    height: 32
+                    label: "Enable notifications"
+                    on_change: "onCheckboxChange"
+                }
+
+                Checkbox {
+                    x: 20
+                    y: 100
+                    width: 220
+                    height: 32
+                    label: "Dark mode"
+                    on_change: "onCheckboxChange"
+                }
+
+                Checkbox {
+                    x: 20
+                    y: 140
+                    width: 220
+                    height: 32
+                    label: "Auto-save"
+                    on_change: "onCheckboxChange"
+                }
+
+                Label {
+                    x: 300
+                    y: 20
+                    text: "Switches"
+                    style: "large"
+                }
+
+                Switch {
+                    x: 300
+                    y: 60
+                    width: 56
+                    height: 28
+                    value: true
+                    on_change: "onSwitchChange"
+                }
+
+                Switch {
+                    x: 380
+                    y: 60
+                    width: 56
+                    height: 28
+                    value: false
+                    on_change: "onSwitchChange"
+                }
+
+                Label {
+                    x: 20
+                    y: 200
+                    text: "Sliders"
+                    style: "large"
+                }
+
+                Slider {
+                    x: 20
+                    y: 240
+                    width: 300
+                    height: 24
+                    min: 0
+                    max: 100
+                    value: 50
+                    on_change: "onSliderChange"
+                }
+
+                Slider {
+                    x: 20
+                    y: 280
+                    width: 300
+                    height: 24
+                    min: 0
+                    max: 100
+                    value: 25
+                    on_change: "onSliderChange"
+                }
+
+                Label {
+                    x: 20
+                    y: 340
+                    text: "Radio Buttons"
+                    style: "large"
+                }
+
+                RadioButton {
+                    x: 20
+                    y: 380
+                    width: 200
+                    height: 32
+                    label: "Option Alpha"
+                    group: 1
+                    selected: true
+                    on_click: "onRadioClick"
+                }
+
+                RadioButton {
+                    x: 20
+                    y: 420
+                    width: 200
+                    height: 32
+                    label: "Option Beta"
+                    group: 1
+                    on_click: "onRadioClick"
+                }
+
+                RadioButton {
+                    x: 20
+                    y: 460
+                    width: 200
+                    height: 32
+                    label: "Option Gamma"
+                    group: 1
+                    on_click: "onRadioClick"
+                }
+            }
+        }
+
+        Tab {
+            text: "Input"
+            
+            ScrollView {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "Text Input Fields"
+                    style: "large"
+                }
+
+                Textbox {
+                    x: 20
+                    y: 60
+                    width: 400
+                    height: 36
+                    placeholder: "Enter your name..."
+                    on_change: "onTextboxChange"
+                }
+
+                Textbox {
+                    x: 20
+                    y: 110
+                    width: 400
+                    height: 36
+                    placeholder: "Enter your email..."
+                    on_change: "onTextboxChange"
+                }
+
+                Label {
+                    x: 20
+                    y: 180
+                    text: "Dropdown Menus"
+                    style: "large"
+                }
+
+                Dropdown {
+                    x: 20
+                    y: 220
+                    width: 250
+                    height: 36
+                    on_change: "onDropdownChange"
+
+                    Option { text: "United States" }
+                    Option { text: "United Kingdom" }
+                    Option { text: "Canada" }
+                    Option { text: "Australia" }
+                    Option { text: "Germany" }
+                }
+
+                Dropdown {
+                    x: 290
+                    y: 220
+                    width: 250
+                    height: 36
+                    on_change: "onDropdownChange"
+
+                    Option { text: "English" }
+                    Option { text: "Spanish" }
+                    Option { text: "French" }
+                    Option { text: "German" }
+                }
+
+                Label {
+                    x: 20
+                    y: 300
+                    text: "Progress Indicators"
+                    style: "large"
+                }
+
+                ProgressBar {
+                    x: 20
+                    y: 340
+                    width: 400
+                    height: 8
+                    value: 0.75
+                    type: "determinate"
+                }
+
+                Label {
+                    x: 20
+                    y: 360
+                    text: "75% Complete"
+                    style: "small"
+                }
+
+                ProgressBar {
+                    x: 20
+                    y: 390
+                    width: 400
+                    height: 8
+                    type: "indeterminate"
+                }
+
+                Label {
+                    x: 20
+                    y: 410
+                    text: "Loading..."
+                    style: "small"
+                }
+            }
+        }
+
+        Tab {
+            text: "Lists"
+            
+            Container {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "List View"
+                    style: "large"
+                }
+
+                ListView {
+                    x: 20
+                    y: 60
+                    width: 350
+                    height: 400
+                    on_select: "onListSelect"
+                }
+
+                Label {
+                    x: 400
+                    y: 20
+                    text: "Data Table"
+                    style: "large"
+                }
+
+                Table {
+                    x: 400
+                    y: 60
+                    width: 700
+                    height: 400
+                    columns: 4
+
+                    Column {
+                        header: "ID"
+                        width: 80
+                    }
+                    Column {
+                        header: "Name"
+                        width: 200
+                    }
+                    Column {
+                        header: "Role"
+                        width: 200
+                    }
+                    Column {
+                        header: "Status"
+                        width: 220
+                    }
+                }
+            }
+        }
+
+        Tab {
+            text: "Cards"
+            
+            ScrollView {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "Card Types"
+                    style: "large"
+                }
+
+                Card {
+                    x: 20
+                    y: 60
+                    width: 280
+                    height: 180
+                    type: "elevated"
+
+                    Label {
+                        x: 20
+                        y: 20
+                        text: "Elevated Card"
+                        style: "medium"
+                    }
+                    Label {
+                        x: 20
+                        y: 50
+                        text: "This card has a shadow effect for depth."
+                        style: "small"
+                    }
+                    Button {
+                        x: 20
+                        y: 120
+                        width: 100
+                        height: 32
+                        text: "Action"
+                        on_click: "onButtonClick"
+                    }
+                }
+
+                Card {
+                    x: 330
+                    y: 60
+                    width: 280
+                    height: 180
+                    type: "outlined"
+
+                    Label {
+                        x: 20
+                        y: 20
+                        text: "Outlined Card"
+                        style: "medium"
+                    }
+                    Label {
+                        x: 20
+                        y: 50
+                        text: "This card has an outline border."
+                        style: "small"
+                    }
+                    Button {
+                        x: 20
+                        y: 120
+                        width: 100
+                        height: 32
+                        text: "Action"
+                        on_click: "onButtonClick"
+                    }
+                }
+
+                Card {
+                    x: 640
+                    y: 60
+                    width: 280
+                    height: 180
+                    type: "filled"
+
+                    Label {
+                        x: 20
+                        y: 20
+                        text: "Filled Card"
+                        style: "medium"
+                    }
+                    Label {
+                        x: 20
+                        y: 50
+                        text: "This card has a filled background."
+                        style: "small"
+                    }
+                    Button {
+                        x: 20
+                        y: 120
+                        width: 100
+                        height: 32
+                        text: "Action"
+                        on_click: "onButtonClick"
+                    }
+                }
+
+                Label {
+                    x: 20
+                    y: 280
+                    text: "Dividers"
+                    style: "large"
+                }
+
+                Divider {
+                    x: 20
+                    y: 320
+                    length: 500
+                    orientation: "horizontal"
+                }
+
+                Label {
+                    x: 20
+                    y: 340
+                    text: "Section A"
+                    style: "medium"
+                }
+
+                Divider {
+                    x: 20
+                    y: 380
+                    length: 500
+                    orientation: "horizontal"
+                }
+
+                Label {
+                    x: 20
+                    y: 400
+                    text: "Section B"
+                    style: "medium"
+                }
+            }
+        }
+
+        Tab {
+            text: "Media"
+            
+            ScrollView {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "Icons"
+                    style: "large"
+                }
+
+                Icon {
+                    x: 20
+                    y: 60
+                    size: 32
+                    text: "AROMA_ICON_HOME"
+                    color: "#000000"
+                }
+
+                Icon {
+                    x: 70
+                    y: 60
+                    size: 32
+                    text: "AROMA_ICON_FAVORITE"
+                    color: "#FF0000"
+                }
+
+                Icon {
+                    x: 120
+                    y: 60
+                    size: 32
+                    text: "AROMA_ICON_SETTINGS"
+                    color: "#0000FF"
+                }
+
+                Icon {
+                    x: 170
+                    y: 60
+                    size: 32
+                    text: "AROMA_ICON_STAR"
+                    color: "#FFD700"
+                }
+
+                Label {
+                    x: 20
+                    y: 130
+                    text: "Loading Spinners"
+                    style: "large"
+                }
+
+                Loading {
+                    x: 40
+                    y: 180
+                    radius: 24
+                    thickness: 3
+                    color: "#4285F4"
+                }
+
+                Loading {
+                    x: 120
+                    y: 180
+                    radius: 16
+                    thickness: 2
+                    color: "#EA4335"
+                }
+
+                Loading {
+                    x: 180
+                    y: 180
+                    radius: 32
+                    thickness: 4
+                    color: "#34A853"
+                }
+
+                Label {
+                    x: 20
+                    y: 260
+                    text: "Image"
+                    style: "large"
+                }
+
+                Image {
+                    x: 20
+                    y: 300
+                    width: 200
+                    height: 200
+                    src: "test_image.png"
+                }
+
+                Label {
+                    x: 250
+                    y: 260
+                    text: "GIF"
+                    style: "large"
+                }
+
+                GIF {
+                    x: 250
+                    y: 300
+                    width: 150
+                    height: 150
+                    src: "test_animation.gif"
+                    autoplay: true
+                }
+            }
+        }
+
+        Tab {
+            text: "Navigation"
+            
+            Container {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "Sidebar"
+                    style: "large"
+                }
+
+                Sidebar {
+                    x: 20
+                    y: 60
+                    width: 250
+                    height: 500
+                    on_select: "onSidebarSelect"
+
+                    Item {
+                        text: "Dashboard"
+                        icon: "AROMA_ICON_DASHBOARD"
+                        
+                        Container {
+                            x: 270
+                            y: 60
+                            width: 800
+                            height: 500
+                            
+                            Label {
+                                x: 20
+                                y: 20
+                                text: "Dashboard View"
+                                style: "large"
+                            }
+                            Label {
+                                x: 20
+                                y: 60
+                                text: "Welcome to the dashboard!"
+                                style: "medium"
+                            }
+                        }
+                    }
+                    Item {
+                        text: "Profile"
+                        icon: "AROMA_ICON_PERSON"
+                        
+                        Container {
+                            x: 270
+                            y: 60
+                            width: 800
+                            height: 500
+                            
+                            Label {
+                                x: 20
+                                y: 20
+                                text: "Profile View"
+                                style: "large"
+                            }
+                            Label {
+                                x: 20
+                                y: 60
+                                text: "User profile information here."
+                                style: "medium"
+                            }
+                        }
+                    }
+                    Item {
+                        text: "Settings"
+                        icon: "AROMA_ICON_SETTINGS"
+                        
+                        Container {
+                            x: 270
+                            y: 60
+                            width: 800
+                            height: 500
+                            
+                            Label {
+                                x: 20
+                                y: 20
+                                text: "Settings View"
+                                style: "large"
+                            }
+                            Label {
+                                x: 20
+                                y: 60
+                                text: "Application settings here."
+                                style: "medium"
+                            }
+                        }
+                    }
+                }
+
+                Label {
+                    x: 300
+                    y: 20
+                    text: "Menu"
+                    style: "large"
+                }
+
+                Menu {
+                    x: 300
+                    y: 60
+
+                    MenuItem {
+                        text: "New File"
+                        icon: "AROMA_ICON_NOTE_ADD"
+                        on_click: "onMenuItemClick"
+                    }
+                    MenuItem {
+                        text: "Open File"
+                        icon: "AROMA_ICON_FOLDER_OPEN"
+                        on_click: "onMenuItemClick"
+                    }
+                    Separator {}
+                    MenuItem {
+                        text: "Save"
+                        icon: "AROMA_ICON_SAVE"
+                        on_click: "onMenuItemClick"
+                    }
+                    MenuItem {
+                        text: "Exit"
+                        on_click: "onMenuItemClick"
+                    }
+                }
+
+                Label {
+                    x: 300
+                    y: 250
+                    text: "Tooltips"
+                    style: "large"
+                }
+
+                Tooltip {
+                    x: 300
+                    y: 290
+                    text: "This is a helpful tooltip message."
+                    position: "top"
+                }
+
+                Tooltip {
+                    x: 300
+                    y: 330
+                    text: "This tooltip appears at the bottom."
+                    position: "bottom"
+                }
+            }
+        }
+
+        Tab {
+            text: "Advanced"
+            
+            ScrollView {
+                x: 20
+                y: 60
+                width: 1160
+                height: 700
+
+                Label {
+                    x: 20
+                    y: 20
+                    text: "Canvas Drawing"
+                    style: "large"
+                }
+
+                Canvas {
+                    x: 20
+                    y: 60
+                    width: 500
+                    height: 300
+                }
+
+                Label {
+                    x: 550
+                    y: 20
+                    text: "Map View"
+                    style: "large"
+                }
+
+                Map {
+                    x: 550
+                    y: 60
+                    width: 550
+                    height: 300
+                    lat: 48.8566
+                    lon: 2.3522
+                    zoom: 12
+                    attribution: true
+
+                    Marker {
+                        lat: 48.8566
+                        lon: 2.3522
+                        color: "#FF0000"
+                        popup: "Paris, France"
+                    }
+
+                    Marker {
+                        lat: 48.8600
+                        lon: 2.3400
+                        color: "#0000FF"
+                        popup: "Louvre Museum"
+                    }
+                }
+
+                Label {
+                    x: 20
+                    y: 400
+                    text: "Debug Overlay"
+                    style: "large"
+                }
+
+                DebugOverlay {
+                    x: 20
+                    y: 440
+                    width: 400
+                    visible: true
+                }
+
+                Label {
+                    x: 20
+                    y: 520
+                    text: "Snackbar Notifications"
+                    style: "large"
+                }
+
+                Snackbar {
+                    x: 20
+                    y: 560
+                    message: "All operations completed successfully!"
+                    duration: 3000
+                }
+
+                Snackbar {
+                    x: 20
+                    y: 600
+                    message: "This is another notification message."
+                    duration: 5000
+                }
+            }
+        }
+    }
+}
