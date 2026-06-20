@@ -1,43 +1,35 @@
-
 #ifndef AROMA_INCENSE_H
 #define AROMA_INCENSE_H
-
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 typedef enum {
-    INCENSE_OBJECT   = 0,
-    INCENSE_PROPERTY = 1
+    INCENSE_OBJECT,
+    INCENSE_PROPERTY
 } IncenseNodeType;
 
-
 typedef struct IncenseNode {
-    IncenseNodeType    type;
-      int               id; 
+    IncenseNodeType type;
+    char *name;
+    char *value;
     int line;
     int column;
-    char              *name;
-    char              *value;
+    int is_embed;
+    int id;
     struct IncenseNode *first_child;
     struct IncenseNode *next_sibling;
 } IncenseNode;
 
-
 typedef struct {
     IncenseNode *root;
+    char *base_path;
 } IncenseDocument;
 
-
 IncenseDocument *IncenseParseString(const char *source);
-
 IncenseDocument *IncenseParseFile(const char *path);
-
 void IncensePrintTree(const IncenseDocument *doc);
-
 void IncenseDestroy(IncenseDocument *doc);
 
 #ifdef __cplusplus

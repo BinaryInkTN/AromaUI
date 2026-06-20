@@ -23,7 +23,7 @@
         IncenseRegistry *registry = NULL;
     
         printf("Loading UI from test.aroma...\n");
-        AromaWindow *window = IncenseLoadFileEx("../ui.aroma", text_font, icon_font, &registry);
+        AromaWindow *window = IncenseLoadFileEx("../test.aroma", text_font, icon_font, &registry);
         if (!window) {
             printf("Failed to load test.aroma\n");
             aroma_font_destroy(text_font);
@@ -34,7 +34,7 @@
         AromaNode* tab1_widget = IncenseFindWidget(registry, "tab1");
         if(tab1_widget) {
             printf("Found widget with ID 'tab1'\n");
-            aroma_tabs_set_selected(tab1_widget, 1);
+            aroma_tabs_set_selected(tab1_widget, 0);
         } else {
             printf("Widget with ID 'tab1' not found\n");
         }
