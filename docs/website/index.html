@@ -472,6 +472,9 @@
     }
     .editor-container {
       height: 260px;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      overflow: hidden;
     }
 
     .props-block {
@@ -677,7 +680,7 @@
   <script>
     const featureData = {
       incense:   { name:'Incense DSL',    category:'Core', description:'A declarative, C-like DSL for defining UI layouts. Separates UI definition from application logic.', code:`Window {\n    width: 800\n    height: 600\n    title: "My Application"\n\n    Label {\n        x: 20\n        y: 20\n        text: "Hello, AromaUI!"\n        style: "large"\n    }\n\n    Button {\n        x: 20\n        y: 80\n        width: 150\n        height: 40\n        text: "Click Me"\n        on_click: "myCallback"\n    }\n}`, props:[['Declarative','Syntax','Yes','Define UI without code'],['Type-safe','Validation','Yes','Type checking at load time'],['Hot-reload','Feature','Yes','Live UI updates']] },
-      embed:     { name:'@embed System',  category:'Core', description:'Include external Incense files into your UI definitions. Perfect for component reuse and modular design.', code:`Window {\n    width: 800\n    height: 600\n\n    Tabs {\n        x: 0  y: 0\n        width: 800  height: 50\n\n        Tab {\n            text: "Home"\n            @embed "home.aroma"\n        }\n        Tab {\n            text: "Settings"\n            @embed "settings.aroma"\n        }\n    }\n}`, props:[['Modular','Feature','Yes','Split UI into manageable files'],['Circular detection','Safety','Yes','Prevents infinite recursion'],['Depth limiting','Safety','Yes','64-level max depth']] },
+      embed:     { name:'@embed System',  category:'Core', description:'Include external Incense files into your UI definitions. Perfect for component reuse and modular design.', code:`Window {\n    width: 800\n    height: 600\n\n    Tabs {\n        x: 0  y: 0\n        width: 800  height: 50\n\n        Tab {\n            text: "Home"\n            embed "home.aroma"\n        }\n        Tab {\n            text: "Settings"\n            embed "settings.aroma"\n        }\n    }\n}`, props:[['Modular','Feature','Yes','Split UI into manageable files'],['Circular detection','Safety','Yes','Prevents infinite recursion'],['Depth limiting','Safety','Yes','64-level max depth']] },
       widgets:   { name:'Widget Library', category:'Core', description:'30+ Material Design widgets including buttons, inputs, navigation, media, and feedback components.', code:`Window {\n    width: 800\n    height: 600\n\n    Button    { x: 20 y: 20  text: "Click" }\n    Label     { x: 20 y: 80  text: "Hello" }\n    Container { x: 20 y: 140 layout: "flex" }\n    Card      { x: 20 y: 200 type: "elevated" }\n\n    Checkbox  { x: 20 y: 300 label: "Accept" }\n    Switch    { x: 20 y: 340 value: true }\n    Slider    { x: 20 y: 380 min: 0 max: 100 }\n}`, props:[['Core','Widgets','6','Window, Label, Button, Container, Card, Divider'],['Input','Widgets','6','Checkbox, Switch, Slider, Textbox, Dropdown, RadioButton'],['Navigation','Widgets','4','Tabs, Sidebar, ListView, Table'],['Media','Widgets','5','Image, Icon, GIF, Canvas, Map'],['Actions','Widgets','6','FAB, IconButton, Menu, Snackbar, Dialog, Tooltip']] },
       callbacks: { name:'Callbacks',      category:'Core', description:'Connect UI events to C functions. Supports multiple callback signatures for all interaction types.', code:`Button {\n    x: 20  y: 20\n    text: "Click Me"\n    on_click: "onButtonClick"\n}\n\nTextbox {\n    x: 20  y: 80\n    width: 300  height: 36\n    placeholder: "Enter text..."\n    on_change: "onTextChange"\n}`, props:[['void cb','Type','void (*)(void*)','No return, void pointer userdata'],['bool cb','Type','void (*)(bool, void*)','Boolean state'],['int cb','Type','void (*)(int, void*)','Integer value'],['string cb','Type','void (*)(const char*, void*)','String value'],['node cb','Type','void (*)(AromaNode*, void*)','Node reference']] }
     };
@@ -804,25 +807,71 @@
     buildFilterPills();
 
     let editors = {};
-    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+
+    require.config({
+      paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }
+    });
+
     require(['vs/editor/editor.main'], function() {
-      const el = document.getElementById('editor1');
-      if (!el) return;
-      editors.editor1 = monaco.editor.create(el, {
-        value: '// Select a widget or feature to see the example',
-        language: 'plaintext',
-        theme: 'vs-dark',
-        minimap: { enabled: false },
-        lineNumbers: 'on',
-        readOnly: true,
-        scrollBeyondLastLine: false,
-        fontSize: 13,
-        fontFamily: "'SFMono-Regular', 'Menlo', 'Consolas', monospace",
-        padding: { top: 14, bottom: 14 },
-        automaticLayout: true,
-        renderLineHighlight: 'none',
-        scrollbar: { verticalScrollbarSize: 4 }
+      monaco.languages.register({ id: 'aroma' });
+
+      monaco.languages.setMonarchTokensProvider('aroma', {
+        tokenizer: {
+          root: [
+            [/\b(Window|Label|Button|Container|Card|Divider|Checkbox|Switch|Slider|Textbox|Dropdown|RadioButton|Tabs|Tab|Sidebar|Item|ListView|Table|Column|Image|Icon|GIF|Canvas|Map|Marker|FAB|IconButton|Menu|MenuItem|Separator|Snackbar|Dialog|Tooltip|ProgressBar|Loading|DebugOverlay|ScrollView|Option)\b/, 'type'],
+            [/\b(width|height|title|text|x|y|style|on_click|layout|direction|type|length|orientation|label|on_change|value|min|max|placeholder|on_submit|group|selected|icon|size|variant|message|duration|columns|header|src|autoplay|lat|lon|zoom|attribution|color|popup|radius|thickness|visible|on_select|embed)\b/, 'keyword'],
+            [/\b(true|false)\b/, 'number'],
+            [/\b\d+(\.\d+)?\b/, 'number'],
+            [/"([^"\\]|\\.)*"/, 'string'],
+            [/\/\/.*$/, 'comment'],
+            [/[{}]/, 'delimiter'],
+          ]
+        }
       });
+
+      monaco.editor.defineTheme('aromaDark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'type', foreground: '4EC9B0', fontStyle: 'bold' },
+          { token: 'keyword', foreground: '9CDCFE' },
+          { token: 'number', foreground: 'B5CEA8' },
+          { token: 'string', foreground: 'CE9178' },
+          { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
+          { token: 'delimiter', foreground: '808080' },
+        ],
+        colors: {
+          'editor.background': '#121218',
+          'editor.foreground': '#D4D4D4',
+          'editor.lineHighlightBackground': '#1a1a24',
+          'editor.selectionBackground': '#264F78',
+          'editorCursor.foreground': '#AEAFAD',
+          'editorLineNumber.foreground': '#858585',
+          'editorLineNumber.activeForeground': '#C6C6C6',
+        }
+      });
+
+      const el = document.getElementById('editor1');
+      if (el) {
+        editors.editor1 = monaco.editor.create(el, {
+          value: 'Window {\n    width: 800\n    height: 600\n    title: "AromaUI"\n}',
+          language: 'aroma',
+          theme: 'aromaDark',
+          minimap: { enabled: false },
+          lineNumbers: 'on',
+          readOnly: true,
+          scrollBeyondLastLine: false,
+          fontSize: 13,
+          fontFamily: "'SFMono-Regular', 'Menlo', 'Consolas', monospace",
+          padding: { top: 14, bottom: 14 },
+          automaticLayout: true,
+          renderLineHighlight: 'none',
+          scrollbar: {
+            vertical: 'visible',
+            verticalScrollbarSize: 6,
+          }
+        });
+      }
     });
 
     function copyCode(editorId, btnId) {
@@ -835,7 +884,11 @@
         btn.classList.add('copied');
         setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
       };
-      navigator.clipboard ? navigator.clipboard.writeText(code).then(done).catch(done) : done();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done).catch(done);
+      } else {
+        done();
+      }
     }
 
     function showDetail(key, type) {
@@ -851,7 +904,9 @@
 
       if (editors.editor1) {
         editors.editor1.setValue(data.code);
-        setTimeout(() => editors.editor1 && editors.editor1.layout(), 80);
+        setTimeout(() => {
+          if (editors.editor1) editors.editor1.layout();
+        }, 100);
       }
 
       const body = document.getElementById('propsBody');
@@ -867,10 +922,6 @@
       document.getElementById('detail').classList.remove('active');
       document.getElementById('mainContent').style.display = '';
       window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-
-    function scrollTo(id) {
-      document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
     }
   </script>
 </body>
