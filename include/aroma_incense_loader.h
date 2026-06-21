@@ -69,6 +69,16 @@ AromaWindow *IncenseLoadStringEx(const char *source,
                                  AromaFont *font, AromaFont *icon_font,
                                  IncenseRegistry **out_registry);
 
+int IncenseHotReloadStart(const char *path, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry);
+int IncenseHotReloadCheck(void);
+bool IncenseHotReloadForce(int watcher_index);
+int IncenseHotReloadForceAll(void);
+AromaWindow *IncenseHotReloadGetWindow(int watcher_index);
+void IncenseHotReloadSetCallback(int watcher_index, void (*on_reload)(AromaWindow *));
+void IncenseHotReloadSetErrorCallback(int watcher_index, void (*on_error)(const char *));
+void IncenseHotReloadStop(int watcher_index);
+void IncenseHotReloadStopAll(void);
+
 #ifdef __cplusplus
 }
 #endif

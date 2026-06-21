@@ -1,286 +1,379 @@
 Window {
-    title: "Instrument Cluster"
-    width: 1280
-    height: 800
+    title:  "Instrument Cluster"
+    width:  1280
+    height: 400
 
     Container {
-        id: "root_bg"
-        x: 0
-        y: 0
-        width: 1280
-        height: 800
+        id:     "status_bar"
+        x:      40
+        y:      16
+        width:  1200
+        height: 28
+
+        Label {
+            id:    "outside_temp"
+            x:     0
+            y:     2
+            text:  "18°C"
+            style: "medium"
+        }
+
+        Card {
+            x:     900
+            y:     0
+            height: 30
+            width: 220
+            type: "filled"
+
+            Icon {
+                x: 30
+                y: 3
+                text: "AROMA_ICON_PERSON"
+                color: "#FFFFFF"
+            }
+            
+            Label {
+                y: 5
+                x: 45
+                text: "Welcome back, Yassine!"
+                style: "small"
+            }
+        }
+
+        Label {
+            id:    "clock_value"
+            x:     1140
+            y:     2
+            text:  "14:23"
+            style: "medium"
+        }
+    }
+
+    Divider {
+        x:           40
+        y:           56
+        length:      1200
+        orientation: "horizontal"
+    }
+
+    Container {
+        id:     "main_area"
+        x:      40
+        y:      72
+        width:  1200
+        height: 312
 
         Container {
-            id: "center_pod"
-            x: 340
-            y: 0
-            width: 600
-            height: 800
+            id:     "speed_section"
+            x:      0
+            y:      36
+            width:  240
+            height: 240
 
             Label {
-                id: "speed_value"
-                x: 180
-                y: 260
-                text: "82"
+                id:    "speed_value"
+                x:     20
+                y:     0
+                text:  "82"
                 style: "large"
-                font: "big_font"
+                font:  "big_font"
             }
             Label {
-                id: "speed_unit"
-                x: 240
-                y: 380
-                text: "km/h"
-                style: "medium"
+                x:     140
+                y:     50
+                text:  "km/h"
+                style: "small"
             }
 
-            Container {
-                id: "gear_row"
-                x: 220
-                y: 440
-                width: 160
-                height: 36
+            Card {
+                id:     "gear_selector"
+                type:   "outlined"
+                x:      0
+                y:      130
+                width:  240
+                height: 40
+                z_index: 0
+
+                Card {
+                    id:     "gear_active"
+                    x:      3
+                    y:      3
+                    width:  42
+                    height: 34
+                    type:   "filled"
+                    z_index: 1
+                }
 
                 Label {
-                    x: 0
-                    y: 4
-                    text: "P"
-                    style: "small"
-                }
-                Label {
-                    x: 40
-                    y: 4
-                    text: "R"
-                    style: "small"
-                }
-                Label {
-                    x: 80
-                    y: 4
-                    text: "N"
-                    style: "small"
-                }
-                Label {
-                    id: "gear_d"
-                    x: 120
-                    y: 0
-                    text: "D"
+                    x:     18
+                    y:     7
+                    text:  "P"
                     style: "large"
+                    z_index: 2
+                }
+                Label {
+                    x:     78
+                    y:     7
+                    text:  "R"
+                    style: "large"
+                    z_index: 2
+                }
+                Label {
+                    x:     138
+                    y:     7
+                    text:  "N"
+                    style: "large"
+                    z_index: 2
+                }
+                Label {
+                    x:     198
+                    y:     7
+                    text:  "D"
+                    style: "large"
+                    z_index: 2
                 }
             }
+        }
 
-            ProgressBar {
-                id: "speed_gauge"
-                x: 140
-                y: 520
-                width: 320
-                height: 8
-                type: "determinate"
-                value: 0.41
-            }
-            Label {
-                x: 140
-                y: 536
-                text: "0"
-                style: "small"
-            }
-            Label {
-                x: 444
-                y: 536
-                text: "200"
-                style: "small"
-            }
+        Divider {
+            x:           280
+            y:           30
+            length:      252
+            orientation: "vertical"
+        }
 
-            ProgressBar {
-                id: "rpm_gauge"
-                x: 140
-                y: 580
-                width: 320
-                height: 8
-                type: "determinate"
-                value: 0.35
-            }
-            Label {
-                x: 140
-                y: 596
-                text: "RPM"
-                style: "small"
+        Container {
+            id:     "center_section"
+            x:      320
+            y:      0
+            width:  560
+            height: 312
+
+            Tabs {
+                id:     "center_tabs"
+                x:      0
+                y:      250
+                width:  560
+                height: 50
+                hidden: true
+   Tab {
+                    id:      "car_view_tab"
+                    text:   "Car View"
+                    Container {
+                        width:  560
+                        height: 272
+                        Label {
+                            text: "Tire 1"
+                            x: 130
+                            y: 40
+                        }
+
+                           Label {
+                            text: "Tire 2"
+                            x: 365
+                            y: 40
+                        }
+                        Label {
+                            text: "Tire 3"
+                            x: 130
+                            y: 255
+                        }
+
+                           Label {
+                            text: "Tire 4"
+                            x: 365
+                            y: 255
+                        }
+                        Image {
+                            x:      63
+                            y:      60
+                            width:  424 
+                            height: 202 
+                            src: "../assets/topview_car.png"
+                            animation: "fade"
+                            animation_start_val: 0
+                            animation_end_val: 1
+                            animation_duration: 4500
+                        }
+                    }
+                }
+                Tab {
+                    id:      "vehicle_tab"
+                    text:   "Vehicle"
+                    
+                    Container {
+                        width:  560
+                        height: 272
+
+                        Card {
+                            id:     "motor_card"
+                            type:   "outlined"
+                            x:      0
+                            y:      100
+                            width:  274
+                            height: 168
+                            animation: "slide_y"
+                            animation_start_val: -1000
+                            animation_end_val: 100
+                            animation_duration: 1200
+
+                            Card {
+                                x:      20
+                                y:      24
+                                width:  40
+                                height: 40
+                                type:   "filled"
+
+                                Icon {
+                                    x:     26
+                                    y:     8
+                                    size:  24
+                                    text:  "AROMA_ICON_SETTINGS"
+                                    color: "#FFFFFF"
+                                }
+                            }
+
+                            Label {
+                                x:     20
+                                y:      80
+                                text:  "Motor"
+                                style: "medium"
+                            }
+
+                            Label {
+                                id:    "motor_temp"
+                                x:     20
+                                y:      110
+                                text:  "50°C"
+                                style: "large"
+                            }
+
+                            Label {
+                                id:    "motor_rpm"
+                                x:     140
+                                y:     114
+                                text:  "4,200 rpm"
+                                style: "medium"
+                            }
+                        }
+
+                        Card {
+                            id:     "efficiency_card"
+                            type:   "elevated"
+                            x:      286
+                            y:      100
+                            width:  274
+                            height: 168
+                            animation: "slide_y"
+                            animation_start_val: 800
+                            animation_end_val: 100
+                            animation_duration: 1200
+
+                            Card {
+                                x:      20
+                                y:      24
+                                width:  40
+                                height: 40
+                                type:   "filled"
+
+                                Icon {
+                                    x:     25
+                                    y:     8
+                                    size:  24
+                                    text:  "AROMA_ICON_TRENDING_UP"
+                                    color: "#FFFFFF"
+                                }
+                            }
+
+                            Label {
+                                x:     20
+                                y:      80
+                                text:  "Efficiency"
+                                style: "medium"
+                            }
+
+                            Label {
+                                id:    "efficiency_value"
+                                x:     20
+                                y:      110
+                                text:  "156 Wh/km"
+                                style: "large"
+                            }
+
+                            Label {
+                                id:    "regen_value"
+                                x:     20
+                                y:      140
+                                text:  "2.4 kWh"
+                                style: "medium"
+                            }
+                        }
+                    }
+                }
+
+             
             }
         }
 
-        Card {
-            id: "left_pod"
-            type: "filled"
-            x: 24
-            y: 40
-            width: 290
-            height: 720
-
-            Label {
-                id: "range_value"
-                x: 24
-                y: 40
-                text: "412 km"
-                style: "large"
-            }
-            Label {
-                x: 24
-                y: 76
-                text: "Range"
-                style: "small"
-            }
-            Divider {
-                x: 24
-                y: 108
-                length: 242
-                orientation: "horizontal"
-            }
-
-            Label {
-                id: "outside_temp"
-                x: 24
-                y: 132
-                text: "18°C"
-                style: "large"
-            }
-            Label {
-                x: 24
-                y: 168
-                text: "Outside"
-                style: "small"
-            }
-            Divider {
-                x: 24
-                y: 200
-                length: 242
-                orientation: "horizontal"
-            }
-
-            Label {
-                x: 24
-                y: 224
-                text: "FUEL"
-                style: "small"
-            }
-            ProgressBar {
-                id: "fuel_bar"
-                x: 24
-                y: 248
-                width: 242
-                height: 8
-                type: "determinate"
-                value: 0.62
-            }
-
-            Divider {
-                x: 24
-                y: 296
-                length: 242
-                orientation: "horizontal"
-            }
-
-            Label {
-                id: "clock_value"
-                x: 24
-                y: 320
-                text: "14:23"
-                style: "large"
-            }
-            Label {
-                x: 24
-                y: 356
-                text: "Sun, Jun 21"
-                style: "small"
-            }
+        Divider {
+            x:           900
+            y:           30
+            length:      252
+            orientation: "vertical"
         }
 
-        Card {
-            id: "right_pod"
-            type: "filled"
-            x: 966
-            y: 40
-            width: 290
-            height: 720
+        Container {
+            id:     "range_section"
+            x:      920
+            y:      0
+            width:  280
+            height: 312
 
             Label {
-                id: "trip_value"
-                x: 24
-                y: 40
-                text: "128.4 km"
-                style: "large"
-            }
-            Label {
-                x: 24
-                y: 76
-                text: "Trip A"
-                style: "small"
-            }
-            Divider {
-                x: 24
-                y: 108
-                length: 242
-                orientation: "horizontal"
-            }
-
-            Label {
-                id: "battery_value"
-                x: 24
-                y: 132
-                text: "76%"
-                style: "large"
-            }
-            Label {
-                x: 24
-                y: 168
-                text: "Battery"
-                style: "small"
-            }
-            ProgressBar {
-                id: "battery_bar"
-                x: 24
-                y: 196
-                width: 242
-                height: 8
-                type: "determinate"
-                value: 0.76
-            }
-            Divider {
-                x: 24
-                y: 236
-                length: 242
-                orientation: "horizontal"
-            }
-
-            Label {
-                id: "tire_value"
-                x: 24
-                y: 260
-                text: "32 psi"
-                style: "large"
-            }
-            Label {
-                x: 24
-                y: 296
-                text: "Tire pressure"
-                style: "small"
-            }
-
-            Divider {
-                x: 24
-                y: 336
-                length: 242
-                orientation: "horizontal"
-            }
-
-            Label {
-                id: "media_title"
-                x: 24
-                y: 360
-                text: "Night Drive"
+                x:     20
+                y:     20
+                text:  "Range"
                 style: "medium"
             }
+
             Label {
-                x: 24
-                y: 392
-                text: "Now playing"
+                id:    "range_value"
+                x:     20
+                y:     25
+                text:  "412"
+                style: "large"
+                font:  "big_font"
+            }
+            
+            Label {
+                x:     160
+                y:     90
+                text:  "km"
+                style: "small"
+            }
+
+            ProgressBar {
+                id:     "range_bar"
+                x:      20
+                y:      130
+                width:  240
+                height: 6
+                type:   "determinate"
+                value:  0.76
+            }
+
+            Label {
+                id:    "battery_percent"
+                x:     20
+                y:      150
+                text:  "76%"
+                style: "large"
+            }
+            
+            Label {
+                x:     20
+                y:      178
+                text:  "State of Charge"
                 style: "small"
             }
         }
