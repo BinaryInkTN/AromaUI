@@ -3,14 +3,12 @@ Window {
     height: 600
     title: "My Aroma Application"
 
-
     Tabs {
         x: 0
         y: 0
         width: 800
         height: 50
         id: "tab1"
-
         Tab {
             text: "hello"
             Button {
