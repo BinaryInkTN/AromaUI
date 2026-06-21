@@ -1,0 +1,288 @@
+Window {
+    title: "Instrument Cluster"
+    width: 1280
+    height: 800
+
+    Container {
+        id: "root_bg"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+
+        Container {
+            id: "center_pod"
+            x: 340
+            y: 0
+            width: 600
+            height: 800
+
+            Label {
+                id: "speed_value"
+                x: 180
+                y: 260
+                text: "82"
+                style: "large"
+                font: "big_font"
+            }
+            Label {
+                id: "speed_unit"
+                x: 240
+                y: 380
+                text: "km/h"
+                style: "medium"
+            }
+
+            Container {
+                id: "gear_row"
+                x: 220
+                y: 440
+                width: 160
+                height: 36
+
+                Label {
+                    x: 0
+                    y: 4
+                    text: "P"
+                    style: "small"
+                }
+                Label {
+                    x: 40
+                    y: 4
+                    text: "R"
+                    style: "small"
+                }
+                Label {
+                    x: 80
+                    y: 4
+                    text: "N"
+                    style: "small"
+                }
+                Label {
+                    id: "gear_d"
+                    x: 120
+                    y: 0
+                    text: "D"
+                    style: "large"
+                }
+            }
+
+            ProgressBar {
+                id: "speed_gauge"
+                x: 140
+                y: 520
+                width: 320
+                height: 8
+                type: "determinate"
+                value: 0.41
+            }
+            Label {
+                x: 140
+                y: 536
+                text: "0"
+                style: "small"
+            }
+            Label {
+                x: 444
+                y: 536
+                text: "200"
+                style: "small"
+            }
+
+            ProgressBar {
+                id: "rpm_gauge"
+                x: 140
+                y: 580
+                width: 320
+                height: 8
+                type: "determinate"
+                value: 0.35
+            }
+            Label {
+                x: 140
+                y: 596
+                text: "RPM"
+                style: "small"
+            }
+        }
+
+        Card {
+            id: "left_pod"
+            type: "filled"
+            x: 24
+            y: 40
+            width: 290
+            height: 720
+
+            Label {
+                id: "range_value"
+                x: 24
+                y: 40
+                text: "412 km"
+                style: "large"
+            }
+            Label {
+                x: 24
+                y: 76
+                text: "Range"
+                style: "small"
+            }
+            Divider {
+                x: 24
+                y: 108
+                length: 242
+                orientation: "horizontal"
+            }
+
+            Label {
+                id: "outside_temp"
+                x: 24
+                y: 132
+                text: "18°C"
+                style: "large"
+            }
+            Label {
+                x: 24
+                y: 168
+                text: "Outside"
+                style: "small"
+            }
+            Divider {
+                x: 24
+                y: 200
+                length: 242
+                orientation: "horizontal"
+            }
+
+            Label {
+                x: 24
+                y: 224
+                text: "FUEL"
+                style: "small"
+            }
+            ProgressBar {
+                id: "fuel_bar"
+                x: 24
+                y: 248
+                width: 242
+                height: 8
+                type: "determinate"
+                value: 0.62
+            }
+
+            Divider {
+                x: 24
+                y: 296
+                length: 242
+                orientation: "horizontal"
+            }
+
+            Label {
+                id: "clock_value"
+                x: 24
+                y: 320
+                text: "14:23"
+                style: "large"
+            }
+            Label {
+                x: 24
+                y: 356
+                text: "Sun, Jun 21"
+                style: "small"
+            }
+        }
+
+        Card {
+            id: "right_pod"
+            type: "filled"
+            x: 966
+            y: 40
+            width: 290
+            height: 720
+
+            Label {
+                id: "trip_value"
+                x: 24
+                y: 40
+                text: "128.4 km"
+                style: "large"
+            }
+            Label {
+                x: 24
+                y: 76
+                text: "Trip A"
+                style: "small"
+            }
+            Divider {
+                x: 24
+                y: 108
+                length: 242
+                orientation: "horizontal"
+            }
+
+            Label {
+                id: "battery_value"
+                x: 24
+                y: 132
+                text: "76%"
+                style: "large"
+            }
+            Label {
+                x: 24
+                y: 168
+                text: "Battery"
+                style: "small"
+            }
+            ProgressBar {
+                id: "battery_bar"
+                x: 24
+                y: 196
+                width: 242
+                height: 8
+                type: "determinate"
+                value: 0.76
+            }
+            Divider {
+                x: 24
+                y: 236
+                length: 242
+                orientation: "horizontal"
+            }
+
+            Label {
+                id: "tire_value"
+                x: 24
+                y: 260
+                text: "32 psi"
+                style: "large"
+            }
+            Label {
+                x: 24
+                y: 296
+                text: "Tire pressure"
+                style: "small"
+            }
+
+            Divider {
+                x: 24
+                y: 336
+                length: 242
+                orientation: "horizontal"
+            }
+
+            Label {
+                id: "media_title"
+                x: 24
+                y: 360
+                text: "Night Drive"
+                style: "medium"
+            }
+            Label {
+                x: 24
+                y: 392
+                text: "Now playing"
+                style: "small"
+            }
+        }
+    }
+}

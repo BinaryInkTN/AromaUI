@@ -14,6 +14,8 @@
 
     int main()
     {
+                set_minimum_log_level(DEBUG_LEVEL_WARNING);
+
         printf("Initializing UI system...\n");
         aroma_ui_init();
         
@@ -31,14 +33,12 @@
             aroma_ui_shutdown();
             return 1;
         }
-        AromaNode* tab1_widget = IncenseFindWidget(registry, "tab1");
-        if(tab1_widget) {
-            printf("Found widget with ID 'tab1'\n");
-            aroma_tabs_set_selected(tab1_widget, 0);
+        AromaNode* label_settings = IncenseFindWidget(registry, "label_settings");
+        if(label_settings) {
+            aroma_label_set_text(label_settings, "Settings (updated from C callback)");
         } else {
-            printf("Widget with ID 'tab1' not found\n");
+            printf("label_settings widget not found\n");
         }
-        
         
         printf("Starting main loop...\n");
         while (aroma_ui_is_running())
