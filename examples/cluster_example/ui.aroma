@@ -66,30 +66,30 @@ Window {
         Container {
             id:     "speed_section"
             x:      0
-            y:      36
+            y:      60
             width:  240
             height: 240
 
             Label {
                 id:    "speed_value"
-                x:     20
-                y:     0
+                x:     150
+                y:     10
                 text:  "82"
                 style: "large"
                 font:  "big_font"
             }
             Label {
-                x:     140
-                y:     50
+                x:     190
+                y:     110
                 text:  "km/h"
-                style: "small"
+                style: "large"
             }
 
             Card {
                 id:     "gear_selector"
                 type:   "outlined"
                 x:      0
-                y:      130
+                y:      150
                 width:  240
                 height: 40
                 z_index: 0
@@ -159,28 +159,32 @@ Window {
    Tab {
                     id:      "car_view_tab"
                     text:   "Car View"
+                    Label {
+                        text: "Tire Pressure"
+                    }
+        
                     Container {
                         width:  560
                         height: 272
                         Label {
-                            text: "Tire 1"
+                            text: "2.4 bar"
                             x: 130
                             y: 40
                         }
 
                            Label {
-                            text: "Tire 2"
+                            text: "2.3 bar"
                             x: 365
                             y: 40
                         }
                         Label {
-                            text: "Tire 3"
+                            text: "2.4 bar"
                             x: 130
                             y: 255
                         }
 
                            Label {
-                            text: "Tire 4"
+                            text: "2.5 bar"
                             x: 365
                             y: 255
                         }
@@ -193,7 +197,7 @@ Window {
                             animation: "fade"
                             animation_start_val: 0
                             animation_end_val: 1
-                            animation_duration: 4500
+                            animation_duration: 4000
                         }
                     }
                 }
@@ -325,31 +329,31 @@ Window {
         Container {
             id:     "range_section"
             x:      920
-            y:      0
+            y:      50
             width:  280
             height: 312
 
             Label {
                 x:     20
                 y:     20
-                text:  "Range"
-                style: "medium"
+                text:  "State of Charge"
+                style: "large"
             }
 
             Label {
                 id:    "range_value"
                 x:     20
                 y:     25
-                text:  "412"
+                text:  "76"
                 style: "large"
                 font:  "big_font"
             }
             
             Label {
-                x:     160
+                x:     130
                 y:     90
-                text:  "km"
-                style: "small"
+                text:  "%"
+                style: "large"
             }
 
             ProgressBar {
@@ -366,15 +370,15 @@ Window {
                 id:    "battery_percent"
                 x:     20
                 y:      150
-                text:  "76%"
+                text:  "412km"
                 style: "large"
             }
             
             Label {
                 x:     20
                 y:      178
-                text:  "State of Charge"
-                style: "small"
+                text:  "Range Left"
+                style: "medium"
             }
         }
     }
