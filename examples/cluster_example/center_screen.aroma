@@ -1,0 +1,180 @@
+
+        Container {
+            id:     "center_section"
+            x:      320
+            y:      0
+            width:  560
+            height: 312
+
+            Tabs {
+                id:     "center_tabs"
+                x:      0
+                y:      250
+                width:  560
+                height: 50
+                hidden: true
+   Tab {
+                    id:      "car_view_tab"
+                    text:   "Car View"
+                    Label {
+                        text: "Tire Pressure"
+                    }
+        
+                    Container {
+                        width:  560
+                        height: 272
+                        Label {
+                            text: "2.4 bar"
+                            x: 130
+                            y: 40
+                        }
+
+                           Label {
+                            text: "2.4 bar"
+                            x: 365
+                            y: 40
+                        }
+                        Label {
+                            text: "2.4 bar"
+                            x: 130
+                            y: 255
+                        }
+
+                           Label {
+                            text: "2.5 bar"
+                            x: 365
+                            y: 255
+                        }
+                      
+                        Image {
+                            x:      63
+                            y:      60
+                            width:  424 
+                            height: 202 
+                            src: "../assets/topview_car.png"
+                            animation: "slide_x"
+                            animation_start_val: 3000
+                            animation_end_val: 425
+                            animation_duration: 3000
+                            animation_easing: "ease_out_cubic"
+                            z_index: 9999
+                        }
+                    }
+                }
+                Tab {
+                    id:      "vehicle_tab"
+                    text:   "Vehicle"
+                    
+                    Container {
+                        width:  560
+                        height: 272
+
+                        Card {
+                            id:     "motor_card"
+                            type:   "outlined"
+                            x:      0
+                            y:      100
+                            width:  274
+                            height: 168
+                            animation: "slide_y"
+                            animation_start_val: -1000
+                            animation_end_val: 100
+                            animation_duration: 1200
+
+                            Card {
+                                x:      20
+                                y:      24
+                                width:  40
+                                height: 40
+                                type:   "filled"
+
+                                Icon {
+                                    x:     26
+                                    y:     8
+                                    size:  24
+                                    text:  "AROMA_ICON_SETTINGS"
+                                    color: "#FFFFFF"
+                                }
+                            }
+
+                            Label {
+                                x:     20
+                                y:      80
+                                text:  "Motor"
+                                style: "medium"
+                            }
+
+                            Label {
+                                id:    "motor_temp"
+                                x:     20
+                                y:      110
+                                text:  "50°C"
+                                style: "large"
+                            }
+
+                            Label {
+                                id:    "motor_rpm"
+                                x:     140
+                                y:     114
+                                text:  "4,200 rpm"
+                                style: "medium"
+                            }
+                        }
+
+                        Card {
+                            id:     "efficiency_card"
+                            type:   "elevated"
+                            x:      286
+                            y:      100
+                            width:  274
+                            height: 168
+                            animation: "slide_y"
+                            animation_start_val: 800
+                            animation_end_val: 100
+                            animation_duration: 1200
+
+                            Card {
+                                x:      20
+                                y:      24
+                                width:  40
+                                height: 40
+                                type:   "filled"
+
+                                Icon {
+                                    x:     25
+                                    y:     8
+                                    size:  24
+                                    text:  "AROMA_ICON_TRENDING_UP"
+                                    color: "#FFFFFF"
+                                }
+                            }
+
+                            Label {
+                                x:     20
+                                y:      80
+                                text:  "Efficiency"
+                                style: "medium"
+                            }
+
+                            Label {
+                                id:    "efficiency_value"
+                                x:     20
+                                y:      110
+                                text:  "156 Wh/km"
+                                style: "large"
+                            }
+
+                            Label {
+                                id:    "regen_value"
+                                x:     20
+                                y:      140
+                                text:  "2.4 kWh"
+                                style: "medium"
+                            }
+                        }
+                    }
+                }
+
+             
+            }
+        }

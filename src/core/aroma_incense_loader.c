@@ -25,6 +25,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <math.h>
+#include <errno.h>
+#include <limits.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -43,11 +45,12 @@
 #define MAX_EMBED_DEPTH 64
 #define MAX_EMBED_PATH_LEN 4096
 #define MAX_EMBED_SIZE (10 * 1024 * 1024)
+#define MAX_LOAD_FILE_SIZE (64 * 1024 * 1024)
 #define MAX_FONTS 32
 #define MAX_HOT_RELOAD_WATCHERS 8
 #define CB_HASH_SIZE 256
 #define WR_HASH_SIZE 512
-#define ICON_HASH_SIZE 1024
+#define ICON_HASH_SIZE 2048
 #define FONT_HASH_SIZE 64
 
 typedef struct { char name[64]; IncenseCallbackType type; void *fn; void *userdata; int next; } CallbackEntry;
@@ -88,12 +91,16 @@ static bool s_cb_init = false;
 static FontRegistry *s_global_font_registry = NULL;
 static HotReloadWatcher s_hot_watchers[MAX_HOT_RELOAD_WATCHERS];
 static int s_hot_watcher_count = 0;
+static bool s_widget_table_disabled = false;
 
 static inline uint32_t fnv1a(const char *s) {
     uint32_t h = 2166136261u;
+    if (!s) return h;
     while (*s) { h ^= (uint8_t)*s++; h *= 16777619u; }
     return h;
 }
+
+static inline const char *safe_str(const char *s) { return s ? s : ""; }
 
 #define COLOR_RED    "\033[1;31m"
 #define COLOR_YELLOW "\033[1;33m"
@@ -103,40 +110,72 @@ static inline uint32_t fnv1a(const char *s) {
 
 static void err_clear(void) { g_err.count = 0; g_err.has_fatal_error = false; }
 
+static void err_log_one(const IncenseError *e) {
+    if (!e) return;
+    switch (e->type) {
+        case INCENSE_ERROR_SYNTAX:
+            LOG_ERROR("%s[%d:%d] SYNTAX ERROR: %s %s", COLOR_RED, e->line, e->column, e->message, COLOR_RESET);
+            break;
+        case INCENSE_ERROR_SEMANTIC:
+            LOG_ERROR("%s[%d:%d] SEMANTIC ERROR: %s %s", COLOR_RED, e->line, e->column, e->message, COLOR_RESET);
+            break;
+        case INCENSE_ERROR_WARNING:
+            LOG_WARNING("%s[%d:%d] WARNING: %s %s", COLOR_YELLOW, e->line, e->column, e->message, COLOR_RESET);
+            break;
+        case INCENSE_ERROR_SUGGESTION:
+            LOG_INFO("%s[%d:%d] SUGGESTION: %s %s", COLOR_CYAN, e->line, e->column, e->message, COLOR_RESET);
+            break;
+        default:
+            LOG_ERROR("%s[%d:%d] UNKNOWN ERROR TYPE: %s %s", COLOR_RED, e->line, e->column, e->message, COLOR_RESET);
+            break;
+    }
+}
+
 static void err_add_ex(IncenseErrorType type, int line, int col, const char *context, const char *fmt, ...) {
-    if (g_err.count >= MAX_ERRORS) return;
+    if (g_err.count < 0) g_err.count = 0;
+    if (g_err.count >= MAX_ERRORS) {
+        if (type == INCENSE_ERROR_SYNTAX || type == INCENSE_ERROR_SEMANTIC) g_err.has_fatal_error = true;
+        return;
+    }
+    if (!fmt) fmt = "(no message)";
     IncenseError *e = &g_err.errors[g_err.count];
-    e->type = type; e->line = line; e->column = col; e->suggestion[0] = '\0';
-    if (context) strncpy(e->context, context, sizeof(e->context) - 1);
-    else e->context[0] = '\0';
-    va_list args; va_start(args, fmt); vsnprintf(e->message, sizeof(e->message), fmt, args); va_end(args);
+    memset(e, 0, sizeof(*e));
+    e->type = type; e->line = line; e->column = col;
+    if (context) { strncpy(e->context, context, sizeof(e->context) - 1); e->context[sizeof(e->context) - 1] = '\0'; }
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(e->message, sizeof(e->message), fmt, args);
+    va_end(args);
+    e->message[sizeof(e->message) - 1] = '\0';
     if (type == INCENSE_ERROR_SYNTAX || type == INCENSE_ERROR_SEMANTIC) g_err.has_fatal_error = true;
     g_err.count++;
-    switch (type) {
-        case INCENSE_ERROR_SYNTAX:    LOG_ERROR(  "%s[%d:%d] SYNTAX ERROR: %s %s",    COLOR_RED,    line, col, e->message, COLOR_RESET); break;
-        case INCENSE_ERROR_SEMANTIC:  LOG_ERROR(  "%s[%d:%d] SEMANTIC ERROR: %s %s",  COLOR_RED,    line, col, e->message, COLOR_RESET); break;
-        case INCENSE_ERROR_WARNING:   LOG_WARNING("%s[%d:%d] WARNING: %s %s",         COLOR_YELLOW, line, col, e->message, COLOR_RESET); break;
-        case INCENSE_ERROR_SUGGESTION:LOG_INFO(   "%s[%d:%d] SUGGESTION: %s %s",      COLOR_CYAN,   line, col, e->message, COLOR_RESET); break;
-    }
+    err_log_one(e);
 }
 
 static void err_add(IncenseErrorType type, int line, int col, const char *fmt, ...) {
-    if (g_err.count >= MAX_ERRORS) return;
+    if (g_err.count < 0) g_err.count = 0;
+    if (g_err.count >= MAX_ERRORS) {
+        if (type == INCENSE_ERROR_SYNTAX || type == INCENSE_ERROR_SEMANTIC) g_err.has_fatal_error = true;
+        return;
+    }
+    if (!fmt) fmt = "(no message)";
     IncenseError *e = &g_err.errors[g_err.count];
-    e->type = type; e->line = line; e->column = col; e->suggestion[0] = '\0'; e->context[0] = '\0';
-    va_list args; va_start(args, fmt); vsnprintf(e->message, sizeof(e->message), fmt, args); va_end(args);
+    memset(e, 0, sizeof(*e));
+    e->type = type; e->line = line; e->column = col;
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(e->message, sizeof(e->message), fmt, args);
+    va_end(args);
+    e->message[sizeof(e->message) - 1] = '\0';
     if (type == INCENSE_ERROR_SYNTAX || type == INCENSE_ERROR_SEMANTIC) g_err.has_fatal_error = true;
     g_err.count++;
-    switch (type) {
-        case INCENSE_ERROR_SYNTAX:    LOG_ERROR(  "%s[%d:%d] SYNTAX ERROR: %s %s",    COLOR_RED,    line, col, e->message, COLOR_RESET); break;
-        case INCENSE_ERROR_SEMANTIC:  LOG_ERROR(  "%s[%d:%d] SEMANTIC ERROR: %s %s",  COLOR_RED,    line, col, e->message, COLOR_RESET); break;
-        case INCENSE_ERROR_WARNING:   LOG_WARNING("%s[%d:%d] WARNING: %s %s",         COLOR_YELLOW, line, col, e->message, COLOR_RESET); break;
-        case INCENSE_ERROR_SUGGESTION:LOG_INFO(   "%s[%d:%d] SUGGESTION: %s %s",      COLOR_CYAN,   line, col, e->message, COLOR_RESET); break;
-    }
+    err_log_one(e);
 }
 
 static void err_add_suggestion(const char *s) {
-    if (!g_err.count) { err_add(INCENSE_ERROR_SUGGESTION, 0, 0, "%s", s); return; }
+    if (!s) return;
+    if (g_err.count <= 0) { err_add(INCENSE_ERROR_SUGGESTION, 0, 0, "%s", s); return; }
+    if (g_err.count > MAX_ERRORS) return;
     IncenseError *e = &g_err.errors[g_err.count - 1];
     strncpy(e->suggestion, s, sizeof(e->suggestion) - 1);
     e->suggestion[sizeof(e->suggestion) - 1] = '\0';
@@ -159,9 +198,9 @@ static void font_registry_init(FontRegistry *reg) {
 }
 
 static void font_registry_register(FontRegistry *reg, const char *name, AromaFont *font) {
-    if (!reg || !name || !font) return;
+    if (!reg || !name || !name[0] || !font) return;
     uint32_t slot = fnv1a(name) & (FONT_HASH_SIZE - 1);
-    for (int i = reg->buckets[slot]; i >= 0; i = reg->items[i].next) {
+    for (int i = reg->buckets[slot]; i >= 0 && i < reg->count; i = reg->items[i].next) {
         if (strcmp(reg->items[i].name, name) == 0) { reg->items[i].font = font; return; }
     }
     if (reg->count >= MAX_FONTS) { LOG_ERROR("Font registry full, cannot register '%s'", name); return; }
@@ -171,17 +210,18 @@ static void font_registry_register(FontRegistry *reg, const char *name, AromaFon
 }
 
 static AromaFont *font_registry_find(const FontRegistry *reg, const char *name) {
-    if (!reg || !name) return NULL;
+    if (!reg || !name || !name[0]) return NULL;
     uint32_t slot = fnv1a(name) & (FONT_HASH_SIZE - 1);
-    for (int i = reg->buckets[slot]; i >= 0; i = reg->items[i].next)
+    for (int i = reg->buckets[slot]; i >= 0 && i < reg->count; i = reg->items[i].next)
         if (strcmp(reg->items[i].name, name) == 0) return reg->items[i].font;
     return NULL;
 }
 
 void IncenseRegisterFont(const char *name, AromaFont *font) {
+    if (!name || !name[0] || !font) { LOG_WARNING("IncenseRegisterFont called with invalid arguments"); return; }
     if (!s_global_font_registry) {
         s_global_font_registry = calloc(1, sizeof(FontRegistry));
-        if (!s_global_font_registry) return;
+        if (!s_global_font_registry) { LOG_ERROR("Failed to allocate global font registry"); return; }
         font_registry_init(s_global_font_registry);
     }
     font_registry_register(s_global_font_registry, name, font);
@@ -196,10 +236,14 @@ void IncenseClearErrors(void)   { err_clear(); }
 static void cb_init_buckets(void) { memset(s_cb_buckets, -1, sizeof(s_cb_buckets)); s_cb_init = true; }
 
 void IncenseRegisterCallback(const char *name, IncenseCallbackType type, void *fn, void *userdata) {
-    if (!name || !fn) return;
+    if (!name || !name[0] || !fn) { LOG_WARNING("IncenseRegisterCallback called with invalid arguments"); return; }
+    if (strlen(name) >= sizeof(s_callbacks[0].name)) {
+        LOG_ERROR("Callback name '%s' too long, maximum %zu characters", name, sizeof(s_callbacks[0].name) - 1);
+        return;
+    }
     if (!s_cb_init) cb_init_buckets();
     uint32_t slot = fnv1a(name) & (CB_HASH_SIZE - 1);
-    for (int i = s_cb_buckets[slot]; i >= 0; i = s_callbacks[i].next) {
+    for (int i = s_cb_buckets[slot]; i >= 0 && i < s_callback_count; i = s_callbacks[i].next) {
         if (strcmp(s_callbacks[i].name, name) == 0) {
             s_callbacks[i].type = type; s_callbacks[i].fn = fn; s_callbacks[i].userdata = userdata; return;
         }
@@ -217,43 +261,50 @@ void IncenseClearCallbacks(void) {
 }
 
 static inline CallbackEntry *callback_find(const char *name) {
-    if (!name || !s_cb_init) return NULL;
+    if (!name || !name[0] || !s_cb_init) return NULL;
     uint32_t slot = fnv1a(name) & (CB_HASH_SIZE - 1);
-    for (int i = s_cb_buckets[slot]; i >= 0; i = s_callbacks[i].next)
+    for (int i = s_cb_buckets[slot]; i >= 0 && i < s_callback_count; i = s_callbacks[i].next)
         if (strcmp(s_callbacks[i].name, name) == 0) return &s_callbacks[i];
     return NULL;
 }
 
-static inline void registry_init(WidgetRegistry *reg) { reg->count = 0; memset(reg->buckets, -1, sizeof(reg->buckets)); }
+static inline void registry_init(WidgetRegistry *reg) {
+    if (!reg) return;
+    reg->count = 0;
+    memset(reg->buckets, -1, sizeof(reg->buckets));
+}
 
 static void registry_register(WidgetRegistry *reg, const char *id, AromaNode *node) {
-    if (!reg || !id || !node) return;
+    if (!reg || !id || !id[0] || !node) return;
+    if (strlen(id) >= sizeof(reg->items[0].id)) {
+        LOG_WARNING("Widget id '%s' too long, maximum %zu characters, truncating", id, sizeof(reg->items[0].id) - 1);
+    }
     uint32_t slot = fnv1a(id) & (WR_HASH_SIZE - 1);
-    for (int i = reg->buckets[slot]; i >= 0; i = reg->items[i].next) {
+    for (int i = reg->buckets[slot]; i >= 0 && i < reg->count; i = reg->items[i].next) {
         if (strcmp(reg->items[i].id, id) == 0) { LOG_WARNING("Duplicate widget id '%s' - overwriting", id); reg->items[i].node = node; return; }
     }
-    if (reg->count >= MAX_NAMED_WIDGETS) return;
+    if (reg->count >= MAX_NAMED_WIDGETS) { LOG_ERROR("Widget registry full, cannot register id '%s'", id); return; }
     NamedWidget *w = &reg->items[reg->count];
     strncpy(w->id, id, sizeof(w->id) - 1); w->id[sizeof(w->id) - 1] = '\0';
     w->node = node; w->next = reg->buckets[slot]; reg->buckets[slot] = reg->count++;
 }
 
 static inline AromaNode *registry_find(const WidgetRegistry *reg, const char *id) {
-    if (!reg || !id) return NULL;
+    if (!reg || !id || !id[0]) return NULL;
     uint32_t slot = fnv1a(id) & (WR_HASH_SIZE - 1);
-    for (int i = reg->buckets[slot]; i >= 0; i = reg->items[i].next)
+    for (int i = reg->buckets[slot]; i >= 0 && i < reg->count; i = reg->items[i].next)
         if (strcmp(reg->items[i].id, id) == 0) return reg->items[i].node;
     return NULL;
 }
 
 AromaNode *IncenseFindWidget(const IncenseRegistry *registry, const char *id) {
-    if (!registry || !id) return NULL;
+    if (!registry || !id || !id[0]) return NULL;
     AromaNode *node = registry_find(&registry->reg, id);
     if (!node) LOG_WARNING("Widget with id '%s' not found in registry", id);
     return node;
 }
 
-void IncenseFreeRegistry(IncenseRegistry *registry) { free(registry); }
+void IncenseFreeRegistry(IncenseRegistry *registry) { if (registry) free(registry); }
 
 typedef struct { const char *name; const char *codepoint; } IconMapping;
 
@@ -1200,16 +1251,17 @@ static const IconMapping ICON_MAP[] = {
 #define ICON_MAP_COUNT (sizeof(ICON_MAP) / sizeof(ICON_MAP[0]) - 1)
 
 typedef struct { int next; int idx; } IconBucket;
-static IconBucket s_icon_buckets[ICON_HASH_SIZE];
+static IconBucket s_icon_entries[ICON_MAP_COUNT > 0 ? ICON_MAP_COUNT : 1];
 static int s_icon_chain[ICON_HASH_SIZE];
 static bool s_icon_init = false;
 
 static void icon_build_table(void) {
     memset(s_icon_chain, -1, sizeof(s_icon_chain));
     for (int i = 0; i < (int)ICON_MAP_COUNT; i++) {
+        if (!ICON_MAP[i].name) continue;
         uint32_t slot = fnv1a(ICON_MAP[i].name) & (ICON_HASH_SIZE - 1);
-        s_icon_buckets[i].idx = i;
-        s_icon_buckets[i].next = s_icon_chain[slot];
+        s_icon_entries[i].idx = i;
+        s_icon_entries[i].next = s_icon_chain[slot];
         s_icon_chain[slot] = i;
     }
     s_icon_init = true;
@@ -1218,31 +1270,44 @@ static void icon_build_table(void) {
 static const char *resolve_icon(const char *name) {
     if (!name) return NULL;
     if (!s_icon_init) icon_build_table();
-    const char *clean = name;
     size_t len = strlen(name);
     char tmp[128];
-    if (len >= 2 && name[0] == '"' && name[len - 1] == '"' && len - 2 < sizeof(tmp)) {
-        memcpy(tmp, name + 1, len - 2); tmp[len - 2] = '\0'; clean = tmp;
+    const char *clean = name;
+    if (len >= 2 && name[0] == '"' && name[len - 1] == '"' && (len - 2) < sizeof(tmp)) {
+        memcpy(tmp, name + 1, len - 2);
+        tmp[len - 2] = '\0';
+        clean = tmp;
     }
+    if (!clean[0]) return name;
     uint32_t slot = fnv1a(clean) & (ICON_HASH_SIZE - 1);
-    for (int i = s_icon_chain[slot]; i >= 0; i = s_icon_buckets[i].next)
-        if (strcmp(ICON_MAP[s_icon_buckets[i].idx].name, clean) == 0)
-            return ICON_MAP[s_icon_buckets[i].idx].codepoint;
+    for (int i = s_icon_chain[slot]; i >= 0 && i < (int)ICON_MAP_COUNT; i = s_icon_entries[i].next) {
+        int idx = s_icon_entries[i].idx;
+        if (idx < 0 || idx >= (int)ICON_MAP_COUNT) break;
+        if (ICON_MAP[idx].name && strcmp(ICON_MAP[idx].name, clean) == 0) return ICON_MAP[idx].codepoint;
+    }
+    LOG_WARNING("Unknown icon name '%s', using literal text as fallback", clean);
     return name;
 }
 
 static void props_collect(IncenseNode *node, PropBag *bag) {
+    if (!bag) return;
     bag->count = 0; bag->node = node;
     if (!node) return;
     for (IncenseNode *cur = node->first_child; cur && bag->count < MAX_PROPS; cur = cur->next_sibling) {
-        if (cur->type != INCENSE_PROPERTY) continue;
+        if (!cur || cur->type != INCENSE_PROPERTY) continue;
+        if (!cur->name) continue;
         const char *v = cur->value;
         char *owned = NULL;
         if (v) {
             size_t len = strlen(v);
             if (len >= 2 && v[0] == '"' && v[len - 1] == '"') {
-                owned = malloc(len - 1); memcpy(owned, v + 1, len - 2); owned[len - 2] = '\0';
-            } else { owned = strdup(v); }
+                owned = malloc(len - 1);
+                if (owned) { memcpy(owned, v + 1, len - 2); owned[len - 2] = '\0'; }
+                else { LOG_ERROR("Out of memory while parsing property value"); continue; }
+            } else {
+                owned = strdup(v);
+                if (!owned) { LOG_ERROR("Out of memory while parsing property value"); continue; }
+            }
         }
         bag->items[bag->count].key = cur->name;
         bag->items[bag->count].value = owned;
@@ -1251,68 +1316,89 @@ static void props_collect(IncenseNode *node, PropBag *bag) {
 }
 
 static inline const char *props_get(const PropBag *bag, const char *key) {
+    if (!bag || !key) return NULL;
     for (int i = 0; i < bag->count; i++)
-        if (strcmp(bag->items[i].key, key) == 0) return bag->items[i].value;
+        if (bag->items[i].key && strcmp(bag->items[i].key, key) == 0) return bag->items[i].value;
     return NULL;
 }
 
 static void props_free(PropBag *bag) {
-    for (int i = 0; i < bag->count; i++) free((void *)bag->items[i].value);
+    if (!bag) return;
+    for (int i = 0; i < bag->count; i++) { free((void *)bag->items[i].value); bag->items[i].value = NULL; }
     bag->count = 0;
 }
 
 static int props_int(const PropBag *bag, const char *key, int def) {
-    const char *v = props_get(bag, key); if (!v) return def;
-    char *end; long val = strtol(v, &end, 10);
-    if (*end) { ERR_SYNTAX_N_CTX(bag->node, key, "Property '%s' value '%s' is not a valid integer", key, v); return def; }
+    const char *v = props_get(bag, key);
+    if (!v || !v[0]) return def;
+    errno = 0;
+    char *end;
+    long val = strtol(v, &end, 10);
+    if (end == v || *end != '\0') { ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is not a valid integer", key, v); return def; }
+    if (errno == ERANGE || val > INT_MAX || val < INT_MIN) { ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is out of integer range", key, v); return def; }
     return (int)val;
 }
 
 static float props_float(const PropBag *bag, const char *key, float def) {
-    const char *v = props_get(bag, key); if (!v) return def;
-    char *end; float val = strtof(v, &end);
-    if (*end) { ERR_SYNTAX_N_CTX(bag->node, key, "Property '%s' value '%s' is not a valid float", key, v); return def; }
+    const char *v = props_get(bag, key);
+    if (!v || !v[0]) return def;
+    errno = 0;
+    char *end;
+    float val = strtof(v, &end);
+    if (end == v || *end != '\0') { ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is not a valid float", key, v); return def; }
+    if (!isfinite(val)) { ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is not finite", key, v); return def; }
     return val;
 }
 
 static bool props_bool(const PropBag *bag, const char *key, bool def) {
-    const char *v = props_get(bag, key); if (!v) return def;
-    if (v[0] == 't' || v[0] == '1') return true;
-    if (v[0] == 'f' || v[0] == '0') return false;
-    ERR_SYNTAX_N_CTX(bag->node, key, "Property '%s' value '%s' is not a valid boolean", key, v);
+    const char *v = props_get(bag, key);
+    if (!v || !v[0]) return def;
+    if (v[0] == 't' || v[0] == 'T' || v[0] == '1') return true;
+    if (v[0] == 'f' || v[0] == 'F' || v[0] == '0') return false;
+    ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is not a valid boolean", key, v);
     return def;
 }
 
 static uint32_t props_color(const PropBag *bag, const char *key, uint32_t def) {
-    const char *v = props_get(bag, key); if (!v) return def;
+    const char *v = props_get(bag, key);
+    if (!v || !v[0]) return def;
     if (v[0] != '#') {
-        ERR_SYNTAX_N_CTX(bag->node, key, "Property '%s' value '%s' is not a valid color", key, v);
-        ERR_SUGGEST("Use #RRGGBB or #AARRGGBB format"); return def;
+        ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is not a valid color", key, v);
+        ERR_SUGGEST("Use #RRGGBB or #AARRGGBB format");
+        return def;
     }
-    char *end; uint32_t val = (uint32_t)strtoul(v + 1, &end, 16);
-    if (*end) { ERR_SYNTAX_N_CTX(bag->node, key, "Property '%s' value '%s' is not a valid hex color", key, v); return def; }
-    return val;
+    errno = 0;
+    char *end;
+    unsigned long val = strtoul(v + 1, &end, 16);
+    if (end == v + 1 || *end != '\0') { ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is not a valid hex color", key, v); return def; }
+    if (errno == ERANGE) { ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is out of range for a color", key, v); return def; }
+    return (uint32_t)val;
 }
 
 static char *props_str_dup(const PropBag *bag, const char *key, const char *def) {
     const char *v = props_get(bag, key);
-    return strdup(v ? v : (def ? def : ""));
+    const char *src = v ? v : (def ? def : "");
+    char *out = strdup(src);
+    if (!out) { LOG_ERROR("Out of memory duplicating property '%s'", safe_str(key)); }
+    return out;
 }
 
 static int match_enum(IncenseNode *node, const PropBag *bag, const char *key, int def,
                        const char *const *names, const int *values, int count,
                        const char *what, const char *valid_list) {
+    if (!names || !values || count <= 0) return def;
     const char *v = props_get(bag, key);
-    if (!v) return def;
+    if (!v || !v[0]) return def;
     for (int i = 0; i < count; i++) {
-        if (strcmp(v, names[i]) == 0) return values[i];
+        if (names[i] && strcmp(v, names[i]) == 0) return values[i];
     }
-    ERR_WARN_N_CTX(node, key, "Unknown %s '%s'", what, v);
-    ERR_SUGGEST("Valid values: %s", valid_list);
+    ERR_WARN_N_CTX(node, key, "Unknown %s '%s'", safe_str(what), v);
+    ERR_SUGGEST("Valid values: %s", safe_str(valid_list));
     return def;
 }
 
 static void validate_properties(IncenseNode *node, const PropBag *bag) {
+    if (!bag) return;
     static const char *const valid[] = {
         "animation","animation_duration","animation_easing","animation_end_val","animation_start_val",
         "attribution","autoplay","color","columns","direction","duration","font","group","header","height",
@@ -1321,25 +1407,32 @@ static void validate_properties(IncenseNode *node, const PropBag *bag) {
         "selected","size","src","style","text","thickness","title","type","value","variant","visible",
         "width","x","y","zoom","z_index",NULL};
     for (int i = 0; i < bag->count; i++) {
+        if (!bag->items[i].key) continue;
         bool found = false;
         for (int j = 0; valid[j] && !found; j++) found = strcmp(bag->items[i].key, valid[j]) == 0;
         if (!found) {
-            ERR_WARN_N_CTX(node, bag->items[i].key, "Unknown property '%s' in widget '%s'", bag->items[i].key, node->name);
+            ERR_WARN_N_CTX(node, bag->items[i].key, "Unknown property '%s' in widget '%s'", bag->items[i].key, node ? safe_str(node->name) : "?");
             ERR_SUGGEST("Check spelling or refer to documentation for valid properties");
         }
     }
 }
 
 static inline CallbackEntry *resolve_callback(IncenseNode *node, const PropBag *bag, const char *prop) {
-    const char *name = props_get(bag, prop); if (!name) return NULL;
+    const char *name = props_get(bag, prop);
+    if (!name || !name[0]) return NULL;
     CallbackEntry *entry = callback_find(name);
-    if (!entry) { ERR_SEMANTIC_N(node, "Callback '%s' referenced by '%s' is not registered", name, prop); ERR_SUGGEST("Call IncenseRegisterCallback() before loading UI"); }
+    if (!entry) {
+        ERR_SEMANTIC_N(node, "Callback '%s' referenced by '%s' is not registered", name, safe_str(prop));
+        ERR_SUGGEST("Call IncenseRegisterCallback() before loading UI");
+    }
     return entry;
 }
 
 static inline AromaNode *resolve_parent(IncenseNode *node, AromaNode *sp, const BuildCtx *ctx) {
+    if (!node || !ctx) return sp;
     for (IncenseNode *cur = node->first_child; cur; cur = cur->next_sibling) {
-        if (cur->type != INCENSE_PROPERTY || strcmp(cur->name, "parent") != 0) continue;
+        if (!cur || cur->type != INCENSE_PROPERTY || !cur->name || strcmp(cur->name, "parent") != 0) continue;
+        if (!cur->value || !cur->value[0]) return sp;
         AromaNode *override = registry_find(ctx->registry, cur->value);
         if (override) return override;
         ERR_SEMANTIC_N(node, "Parent '%s' not found in registry", cur->value);
@@ -1349,7 +1442,8 @@ static inline AromaNode *resolve_parent(IncenseNode *node, AromaNode *sp, const 
 }
 
 static AromaFont *resolve_font(const BuildCtx *ctx, const char *font_name) {
-    if (!font_name || !ctx) return ctx->default_font;
+    if (!ctx) return NULL;
+    if (!font_name || !font_name[0]) return ctx->default_font;
     AromaFont *f;
     if (ctx->font_registry && (f = font_registry_find(ctx->font_registry, font_name))) return f;
     if (s_global_font_registry && (f = font_registry_find(s_global_font_registry, font_name))) return f;
@@ -1358,20 +1452,26 @@ static AromaFont *resolve_font(const BuildCtx *ctx, const char *font_name) {
 }
 
 static void apply_widget_animations(AromaNode *built, const PropBag *bag, IncenseNode *node) {
+    if (!built || !bag) return;
     const char *anim = props_get(bag, "animation");
-    if (!anim) {
-        if (props_bool(bag, "hidden", false) && built) aroma_animation_start(built, AROMA_ANIM_FADE, 1.0f, 0.0f, 0);
+    if (!anim || !anim[0]) {
+        if (props_bool(bag, "hidden", false)) aroma_animation_start(built, AROMA_ANIM_FADE, 1.0f, 0.0f, 0);
         return;
     }
     static const char *const anim_names[]  = {"fade", "slide_x", "slide_y", "scale_x", "scale_y"};
     static const int         anim_values[] = {AROMA_ANIM_FADE, AROMA_ANIM_SLIDE_X, AROMA_ANIM_SLIDE_Y, AROMA_ANIM_SCALE_X, AROMA_ANIM_SCALE_Y};
     int type = match_enum(node, bag, "animation", -1, anim_names, anim_values, 5, "animation type", "fade, slide_x, slide_y, scale_x, scale_y");
-    if (type == -1) return;
+    if (type == -1) {
+        if (props_bool(bag, "hidden", false)) aroma_animation_start(built, AROMA_ANIM_FADE, 1.0f, 0.0f, 0);
+        return;
+    }
     float duration = props_float(bag, "animation_duration", 300);
-    AromaAnimation *anim_obj = aroma_animation_start(built, (AromaAnimationType)type, props_float(bag, "animation_start_val", 0), props_float(bag, "animation_end_val", 0), duration);
+    if (duration < 0) duration = 0;
+    AromaAnimation *anim_obj = aroma_animation_start(built, (AromaAnimationType)type,
+        props_float(bag, "animation_start_val", 0), props_float(bag, "animation_end_val", 0), duration);
     if (anim_obj) {
         const char *ease = props_get(bag, "animation_easing");
-        if (ease) {
+        if (ease && ease[0]) {
             static const struct { const char *name; AromaEasingType e; } ease_map[] = {
                 {"linear", AROMA_EASE_LINEAR}, {"ease_in", AROMA_EASE_IN_QUAD}, {"ease_out", AROMA_EASE_OUT_QUAD},
                 {"ease_in_out", AROMA_EASE_IN_OUT_QUAD}, {"ease_out_cubic", AROMA_EASE_OUT_CUBIC},
@@ -1381,28 +1481,31 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
             }
         }
     }
-    if (props_bool(bag, "hidden", false) && built) aroma_animation_start(built, AROMA_ANIM_FADE, 1.0f, 0.0f, 0);
+    if (props_bool(bag, "hidden", false)) aroma_animation_start(built, AROMA_ANIM_FADE, 1.0f, 0.0f, 0);
 }
 
 static inline void maybe_register(const PropBag *bag, AromaNode *built, BuildCtx *ctx) {
-    if (!built || !ctx->registry) return;
+    if (!built || !ctx || !ctx->registry || !bag) return;
     const char *id = props_get(bag, "id");
     if (id && id[0]) registry_register(ctx->registry, id, built);
 }
 
 static int collect_item_nodes(IncenseNode *node, const char *item_name, IncenseNode *out[], int max_out) {
     int count = 0;
-    for (IncenseNode *cur = node->first_child; cur && count < max_out; cur = cur->next_sibling)
-        if (cur->type == INCENSE_OBJECT && strcmp(cur->name, item_name) == 0) out[count++] = cur;
-    if (!count) ERR_WARN_N(node, "No '%s' items found in widget '%s'", item_name, node->name);
+    if (!node || !item_name || !out || max_out <= 0) return 0;
+    for (IncenseNode *cur = node->first_child; cur && count < max_out; cur = cur->next_sibling) {
+        if (cur && cur->type == INCENSE_OBJECT && cur->name && strcmp(cur->name, item_name) == 0) out[count++] = cur;
+    }
+    if (!count) ERR_WARN_N(node, "No '%s' items found in widget '%s'", item_name, safe_str(node->name));
     return count;
 }
 
 static AromaNode *build_widget(IncenseNode *node, AromaNode *sp, BuildCtx *ctx);
 
 static void build_children(IncenseNode *node, AromaNode *parent, BuildCtx *ctx) {
+    if (!node || !ctx) return;
     for (IncenseNode *c = node->first_child; c; c = c->next_sibling)
-        if (c->type == INCENSE_OBJECT) build_widget(c, parent, ctx);
+        if (c && c->type == INCENSE_OBJECT) build_widget(c, parent, ctx);
 }
 
 static bool bridge_bool_ptr(AromaNode *node, void *ud) {
@@ -1438,38 +1541,48 @@ static void bridge_node_int(AromaNode *node, int index, void *ud) {
     PropBag bag; props_collect((node), &bag); validate_properties((node), &bag); \
     AromaNode *parent = resolve_parent((node), (sp), (ctx)); \
     const char *_font_name = props_get(&bag, "font"); \
-    AromaFont *_widget_font = _font_name ? resolve_font((ctx), _font_name) : (ctx)->default_font
+    AromaFont *_widget_font = _font_name ? resolve_font((ctx), _font_name) : ((ctx) ? (ctx)->default_font : NULL)
 
 #define WIDGET_POSTAMBLE(built, bag, node, ctx) \
-    if (built) { (node)->id = (built)->node_id; int _zi = props_int(&(bag), "z_index", 0); if (_zi) aroma_node_set_z_index((built), _zi); } \
-    else ERR_SYNTAX_N((node), "Failed to create widget"); \
-    apply_widget_animations((built), &(bag), (node)); \
-    maybe_register(&(bag), (built), (ctx)); \
-    build_children((node), (built), (ctx)); \
-    props_free(&(bag)); return (built)
+    do { \
+        if (built) { if (node) (node)->id = (built)->node_id; int _zi = props_int(&(bag), "z_index", 0); if (_zi) aroma_node_set_z_index((built), _zi); } \
+        else ERR_SYNTAX_N((node), "Failed to create widget"); \
+        apply_widget_animations((built), &(bag), (node)); \
+        maybe_register(&(bag), (built), (ctx)); \
+        build_children((node), (built), (ctx)); \
+        props_free(&(bag)); \
+    } while (0); \
+    return (built)
 
 static AromaNode *build_button(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_click = resolve_callback(node, &bag, "on_click");
     char *text = props_str_dup(&bag, "text", "Button");
-    AromaNode *built = aroma_ui_button(parent, text, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
-        props_int(&bag, "width", 120), props_int(&bag, "height", 40), on_click ? bridge_bool_ptr : NULL, on_click, _widget_font);
+    AromaNode *built = NULL;
+    if (text) {
+        built = aroma_ui_button(parent, text, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+            props_int(&bag, "width", 120), props_int(&bag, "height", 40), on_click ? bridge_bool_ptr : NULL, on_click, _widget_font);
+    }
     free(text);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_label(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     char *text = props_str_dup(&bag, "text", "");
     static const char *const style_names[]  = {"large", "medium", "small"};
     static const int         style_values[] = {LABEL_STYLE_LABEL_LARGE, LABEL_STYLE_LABEL_MEDIUM, LABEL_STYLE_LABEL_SMALL};
     AromaLabelStyle style = (AromaLabelStyle)match_enum(node, &bag, "style", LABEL_STYLE_LABEL_LARGE, style_names, style_values, 3, "label style", "large, medium, small");
-    AromaNode *built = aroma_ui_label(parent, text, props_int(&bag, "x", 0), props_int(&bag, "y", 0), style, _widget_font);
+    AromaNode *built = NULL;
+    if (text) built = aroma_ui_label(parent, text, props_int(&bag, "x", 0), props_int(&bag, "y", 0), style, _widget_font);
     free(text);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_container(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     static const char *const layout_names[]  = {"flex"};
     static const int         layout_values[] = {AROMA_LAYOUT_MODE_FLEX};
@@ -1483,6 +1596,7 @@ static AromaNode *build_container(IncenseNode *node, AromaNode *sp, BuildCtx *ct
 }
 
 static AromaNode *build_scrollview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     static const char *const dir_names[]  = {"vertical", "horizontal", "both"};
     static const int         dir_values[] = {AROMA_SCROLL_VERTICAL, AROMA_SCROLL_HORIZONTAL, AROMA_SCROLL_BOTH};
@@ -1490,7 +1604,7 @@ static AromaNode *build_scrollview(IncenseNode *node, AromaNode *sp, BuildCtx *c
     AromaNode *built = aroma_container_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
         props_int(&bag,"width",200), props_int(&bag,"height",200));
     if (!built) { ERR_SYNTAX_N(node, "Failed to create ScrollView"); props_free(&bag); return NULL; }
-    node->id = built->node_id;
+    if (node) node->id = built->node_id;
     aroma_container_set_scrollable(built, true);
     aroma_container_set_scroll_direction(built, dir);
     int zi = props_int(&bag, "z_index", 0); if (zi) aroma_node_set_z_index(built, zi);
@@ -1503,16 +1617,21 @@ static AromaNode *build_scrollview(IncenseNode *node, AromaNode *sp, BuildCtx *c
 }
 
 static AromaNode *build_checkbox(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
     char *label = props_str_dup(&bag, "label", "");
-    AromaNode *built = aroma_ui_checkbox(parent, label, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"width",160), props_int(&bag,"height",32), on_change ? bridge_checkbox_change : NULL, on_change, _widget_font);
+    AromaNode *built = NULL;
+    if (label) {
+        built = aroma_ui_checkbox(parent, label, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"width",160), props_int(&bag,"height",32), on_change ? bridge_checkbox_change : NULL, on_change, _widget_font);
+    }
     free(label);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_switch(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
     AromaNode *built = aroma_ui_switch(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
@@ -1522,6 +1641,7 @@ static AromaNode *build_switch(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) 
 }
 
 static AromaNode *build_slider(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
     int mn = props_int(&bag, "min", 0), mx = props_int(&bag, "max", 100), val = props_int(&bag, "value", 0);
@@ -1533,17 +1653,22 @@ static AromaNode *build_slider(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) 
 }
 
 static AromaNode *build_textbox(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *cb = resolve_callback(node, &bag, "on_change");
     if (!cb) cb = resolve_callback(node, &bag, "on_submit");
     char *ph = props_str_dup(&bag, "placeholder", "");
-    AromaNode *built = aroma_ui_textbox(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"width",200), props_int(&bag,"height",36), ph, cb ? bridge_textbox_change : NULL, cb, _widget_font);
+    AromaNode *built = NULL;
+    if (ph) {
+        built = aroma_ui_textbox(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"width",200), props_int(&bag,"height",36), ph, cb ? bridge_textbox_change : NULL, cb, _widget_font);
+    }
     free(ph);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_progressbar(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     float prog = props_float(&bag, "value", 0.0f);
     if (prog < 0.0f) prog = 0.0f; else if (prog > 1.0f) prog = 1.0f;
@@ -1556,6 +1681,7 @@ static AromaNode *build_progressbar(IncenseNode *node, AromaNode *sp, BuildCtx *
 }
 
 static AromaNode *build_divider(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     int length = props_int(&bag, "length", 100); if (length <= 0) length = 100;
     static const char *const orient_names[]  = {"horizontal", "vertical"};
@@ -1566,6 +1692,7 @@ static AromaNode *build_divider(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 }
 
 static AromaNode *build_card(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     static const char *const type_names[]  = {"elevated", "outlined", "filled"};
     static const int         type_values[] = {CARD_TYPE_ELEVATED, CARD_TYPE_OUTLINED, CARD_TYPE_FILLED};
@@ -1576,45 +1703,61 @@ static AromaNode *build_card(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
 }
 
 static AromaNode *build_fab(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_click = resolve_callback(node, &bag, "on_click");
     const char *ir = props_get(&bag, "icon");
-    char *icon = strdup(ir ? resolve_icon(ir) : "+");
+    const char *resolved = ir ? resolve_icon(ir) : "+";
+    char *icon = strdup(resolved ? resolved : "+");
     static const char *const size_names[]  = {"small", "normal", "large"};
     static const int         size_values[] = {FAB_SIZE_SMALL, FAB_SIZE_NORMAL, FAB_SIZE_LARGE};
     AromaFABSize size = (AromaFABSize)match_enum(node, &bag, "size", FAB_SIZE_NORMAL, size_names, size_values, 3, "FAB size", "small, normal, large");
-    AromaNode *built = aroma_ui_fab(parent, props_int(&bag,"x",0), props_int(&bag,"y",0), size, icon,
-        on_click ? bridge_void_ptr : NULL, on_click, ctx->icon_font ? ctx->icon_font : _widget_font);
+    AromaNode *built = NULL;
+    if (icon) {
+        built = aroma_ui_fab(parent, props_int(&bag,"x",0), props_int(&bag,"y",0), size, icon,
+            on_click ? bridge_void_ptr : NULL, on_click, ctx->icon_font ? ctx->icon_font : _widget_font);
+    }
     free(icon);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_iconbutton(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_click = resolve_callback(node, &bag, "on_click");
     const char *ir = props_get(&bag, "icon");
-    char *icon = strdup(ir ? resolve_icon(ir) : "");
+    const char *resolved = ir ? resolve_icon(ir) : "";
+    char *icon = strdup(resolved ? resolved : "");
     static const char *const variant_names[]  = {"standard", "filled", "tonal", "outlined"};
     static const int         variant_values[] = {ICON_BUTTON_STANDARD, ICON_BUTTON_FILLED, ICON_BUTTON_TONAL, ICON_BUTTON_OUTLINED};
     AromaIconButtonVariant variant = (AromaIconButtonVariant)match_enum(node, &bag, "variant", ICON_BUTTON_STANDARD, variant_names, variant_values, 4, "icon button variant", "standard, filled, tonal, outlined");
-    AromaNode *built = aroma_ui_iconbutton(parent, icon, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"size",40), variant, on_click ? bridge_void_ptr : NULL, on_click,
-        ctx->icon_font ? ctx->icon_font : _widget_font);
+    AromaNode *built = NULL;
+    if (icon) {
+        built = aroma_ui_iconbutton(parent, icon, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"size",40), variant, on_click ? bridge_void_ptr : NULL, on_click,
+            ctx->icon_font ? ctx->icon_font : _widget_font);
+    }
     free(icon);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_icon(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     AromaNode *built = aroma_icon_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0), props_int(&bag,"size",24));
     if (built) {
-        node->id = built->node_id;
+        if (node) node->id = built->node_id;
         const char *tr = props_get(&bag, "text"), *sr = props_get(&bag, "src");
         if (tr) {
-            char *td = strdup(resolve_icon(tr));
-            aroma_icon_set_text(built, td, ctx->icon_font ? ctx->icon_font : _widget_font);
-            free(td);
-        } else if (sr) {
+            const char *resolved = resolve_icon(tr);
+            char *td = strdup(resolved ? resolved : tr);
+            if (td) {
+                aroma_icon_set_text(built, td, ctx->icon_font ? ctx->icon_font : _widget_font);
+                free(td);
+            } else {
+                LOG_ERROR("Out of memory resolving icon text");
+            }
+        } else if (sr && sr[0]) {
             aroma_icon_set_image(built, (char *)sr);
         } else {
             ERR_WARN_N(node, "Icon has neither 'text' nor 'src'");
@@ -1634,15 +1777,18 @@ static AromaNode *build_icon(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
 }
 
 static AromaNode *build_snackbar(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     int dur = props_int(&bag, "duration", 3000); if (dur <= 0) dur = 3000;
     char *msg = props_str_dup(&bag, "message", "");
-    AromaNode *built = aroma_ui_snackbar(parent, msg, dur, _widget_font);
+    AromaNode *built = NULL;
+    if (msg) built = aroma_ui_snackbar(parent, msg, dur, _widget_font);
     free(msg);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_listview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_select = resolve_callback(node, &bag, "on_select");
     AromaNode *built = aroma_ui_listview(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
@@ -1651,27 +1797,36 @@ static AromaNode *build_listview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
 }
 
 static AromaNode *build_dialog(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     char *title = props_str_dup(&bag, "title", "Dialog");
     char *msg   = props_str_dup(&bag, "message", "");
     static const char *const type_names[]  = {"basic", "fullscreen"};
     static const int         type_values[] = {DIALOG_TYPE_BASIC, DIALOG_TYPE_FULL_SCREEN};
     AromaDialogType type = (AromaDialogType)match_enum(node, &bag, "type", DIALOG_TYPE_BASIC, type_names, type_values, 2, "dialog type", "basic, fullscreen");
-    AromaNode *built = aroma_ui_dialog(parent, title, msg, props_int(&bag,"width",320), props_int(&bag,"height",200), type, _widget_font);
+    AromaNode *built = NULL;
+    if (title && msg) {
+        built = aroma_ui_dialog(parent, title, msg, props_int(&bag,"width",320), props_int(&bag,"height",200), type, _widget_font);
+    }
     free(title); free(msg);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_image(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     char *path = props_str_dup(&bag, "src", "");
-    AromaNode *built = aroma_ui_image(parent, path, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"width",100), props_int(&bag,"height",100));
+    AromaNode *built = NULL;
+    if (path) {
+        built = aroma_ui_image(parent, path, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"width",100), props_int(&bag,"height",100));
+    }
     free(path);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_canvas(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     AromaNode *built = aroma_canvas_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
         props_int(&bag,"width",200), props_int(&bag,"height",200));
@@ -1679,10 +1834,11 @@ static AromaNode *build_canvas(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) 
 }
 
 static AromaNode *build_debugoverlay(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     AromaNode *built = aroma_debug_overlay_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0), props_int(&bag,"width",200));
     if (built) {
-        node->id = built->node_id;
+        if (node) node->id = built->node_id;
         aroma_debug_overlay_set_font(built, _widget_font);
         aroma_debug_overlay_set_visible(built, props_bool(&bag, "visible", true));
         int zi = props_int(&bag, "z_index", 0); if (zi) aroma_node_set_z_index(built, zi);
@@ -1695,18 +1851,21 @@ static AromaNode *build_debugoverlay(IncenseNode *node, AromaNode *sp, BuildCtx 
 }
 
 static AromaNode *build_dropdown(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
     AromaNode *built = aroma_dropdown_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
         props_int(&bag,"width",200), props_int(&bag,"height",36));
     if (!built) { ERR_SYNTAX_N(node, "Failed to create Dropdown"); props_free(&bag); return NULL; }
-    node->id = built->node_id;
+    if (node) node->id = built->node_id;
     IncenseNode *items[MAX_ITEM_NODES];
     int n = collect_item_nodes(node, "Option", items, MAX_ITEM_NODES);
     for (int i = 0; i < n; i++) {
         PropBag ob; props_collect(items[i], &ob);
         char *text = props_str_dup(&ob, "text", "");
-        aroma_dropdown_add_option(built, text); free(text); props_free(&ob);
+        if (text) aroma_dropdown_add_option(built, text);
+        free(text);
+        props_free(&ob);
     }
     if (on_change) aroma_dropdown_set_on_change(built, bridge_dropdown_change, on_change);
     aroma_dropdown_setup_events(built, NULL, NULL);
@@ -1720,16 +1879,21 @@ static AromaNode *build_dropdown(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
 }
 
 static AromaNode *build_gif(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     char *path = props_str_dup(&bag, "src", "");
-    AromaNode *built = aroma_gif_create(parent, path, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"width",100), props_int(&bag,"height",100));
-    if (built && props_bool(&bag, "autoplay", true)) aroma_gif_play(built);
+    AromaNode *built = NULL;
+    if (path) {
+        built = aroma_gif_create(parent, path, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"width",100), props_int(&bag,"height",100));
+        if (built && props_bool(&bag, "autoplay", true)) aroma_gif_play(built);
+    }
     free(path);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
 static AromaNode *build_loading(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     int radius = props_int(&bag, "radius", 16); if (radius <= 0) radius = 16;
     int thickness = props_int(&bag, "thickness", 3); if (thickness <= 0) thickness = 3;
@@ -1739,11 +1903,12 @@ static AromaNode *build_loading(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 }
 
 static AromaNode *build_map(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     AromaNode *built = aroma_map_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
         props_int(&bag,"width",300), props_int(&bag,"height",300));
     if (!built) { ERR_SYNTAX_N(node, "Failed to create Map"); props_free(&bag); return NULL; }
-    node->id = built->node_id;
+    if (node) node->id = built->node_id;
     int zoom = props_int(&bag, "zoom", 4); if (zoom < 0) zoom = 4;
     aroma_map_set_center(built, (double)props_float(&bag,"lat",0.0f), (double)props_float(&bag,"lon",0.0f));
     aroma_map_set_zoom(built, zoom);
@@ -1755,9 +1920,17 @@ static AromaNode *build_map(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
         double mlat = (double)props_float(&mb,"lat",0.0f), mlon = (double)props_float(&mb,"lon",0.0f);
         uint32_t mc = props_color(&mb, "color", 0xFF0000FF);
         const char *popup = props_get(&mb, "popup"), *icon = props_get(&mb, "icon");
-        if (popup) { char *p = props_str_dup(&mb,"popup",""); aroma_map_add_popup_marker(built,mlat,mlon,mc,p); free(p); }
-        else if (icon) { char *ic = props_str_dup(&mb,"icon",""); aroma_map_add_icon_marker(built,mlat,mlon,mc,ic); free(ic); }
-        else { aroma_map_add_marker(built, mlat, mlon, mc); }
+        if (popup) {
+            char *p = props_str_dup(&mb,"popup","");
+            if (p) aroma_map_add_popup_marker(built, mlat, mlon, mc, p);
+            free(p);
+        } else if (icon) {
+            char *ic = props_str_dup(&mb,"icon","");
+            if (ic) aroma_map_add_icon_marker(built, mlat, mlon, mc, ic);
+            free(ic);
+        } else {
+            aroma_map_add_marker(built, mlat, mlon, mc);
+        }
         props_free(&mb);
     }
     int zi = props_int(&bag, "z_index", 0); if (zi) aroma_node_set_z_index(built, zi);
@@ -1769,30 +1942,40 @@ static AromaNode *build_map(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
 }
 
 static AromaNode *build_menu(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     AromaNode *built = aroma_menu_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0));
     if (!built) { ERR_SYNTAX_N(node, "Failed to create Menu"); props_free(&bag); return NULL; }
-    node->id = built->node_id;
+    if (node) node->id = built->node_id;
     aroma_menu_set_font(built, _widget_font);
     aroma_menu_set_icon_font(built, ctx->icon_font ? ctx->icon_font : _widget_font);
     int item_count = 0;
-    for (IncenseNode *cur = node->first_child; cur; cur = cur->next_sibling) {
-        if (cur->type != INCENSE_OBJECT) continue;
-        if (strcmp(cur->name, "MenuItem") == 0) {
-            PropBag ib; props_collect(cur, &ib);
-            char *text = props_str_dup(&ib, "text", "");
-            const char *ir = props_get(&ib, "icon");
-            CallbackEntry *oc = resolve_callback(node, &ib, "on_click");
-            if (ir) {
-                char *ic = strdup(resolve_icon(ir));
-                aroma_menu_add_item_with_icon(built, text, ic, oc ? bridge_void_ptr : NULL, oc);
-                free(ic);
-            } else {
-                aroma_menu_add_item(built, text, oc ? bridge_void_ptr : NULL, oc);
+    if (node) {
+        for (IncenseNode *cur = node->first_child; cur; cur = cur->next_sibling) {
+            if (!cur || cur->type != INCENSE_OBJECT || !cur->name) continue;
+            if (strcmp(cur->name, "MenuItem") == 0) {
+                PropBag ib; props_collect(cur, &ib);
+                char *text = props_str_dup(&ib, "text", "");
+                const char *ir = props_get(&ib, "icon");
+                CallbackEntry *oc = resolve_callback(node, &ib, "on_click");
+                if (text) {
+                    if (ir) {
+                        const char *resolved = resolve_icon(ir);
+                        char *ic = strdup(resolved ? resolved : ir);
+                        if (ic) {
+                            aroma_menu_add_item_with_icon(built, text, ic, oc ? bridge_void_ptr : NULL, oc);
+                            free(ic);
+                        }
+                    } else {
+                        aroma_menu_add_item(built, text, oc ? bridge_void_ptr : NULL, oc);
+                    }
+                }
+                free(text);
+                props_free(&ib);
+                item_count++;
+            } else if (strcmp(cur->name, "Separator") == 0) {
+                aroma_menu_add_separator(built);
             }
-            free(text); props_free(&ib); item_count++;
-        } else if (strcmp(cur->name, "Separator") == 0) {
-            aroma_menu_add_separator(built);
         }
     }
     if (!item_count) ERR_WARN_N(node, "Menu has no items");
@@ -1805,18 +1988,24 @@ static AromaNode *build_menu(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
 }
 
 static AromaNode *build_radiobutton(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_click = resolve_callback(node, &bag, "on_click");
     char *label = props_str_dup(&bag, "label", "");
-    AromaNode *built = aroma_radiobutton_create(parent, label, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"width",160), props_int(&bag,"height",32), props_int(&bag,"group",0));
+    AromaNode *built = NULL;
+    if (label) {
+        built = aroma_radiobutton_create(parent, label, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"width",160), props_int(&bag,"height",32), props_int(&bag,"group",0));
+    }
     if (built) {
-        node->id = built->node_id;
+        if (node) node->id = built->node_id;
         aroma_radiobutton_set_font(built, _widget_font);
         if (props_bool(&bag, "selected", false)) aroma_radiobutton_set_selected(built, true);
         if (on_click) aroma_radiobutton_set_callback(built, bridge_void_ptr, on_click);
         int zi = props_int(&bag, "z_index", 0); if (zi) aroma_node_set_z_index(built, zi);
-    } else { ERR_SYNTAX_N(node, "Failed to create RadioButton"); }
+    } else if (label) {
+        ERR_SYNTAX_N(node, "Failed to create RadioButton");
+    }
     free(label);
     apply_widget_animations(built, &bag, node);
     maybe_register(&bag, built, ctx);
@@ -1826,33 +2015,52 @@ static AromaNode *build_radiobutton(IncenseNode *node, AromaNode *sp, BuildCtx *
 }
 
 static AromaNode *build_sidebar(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_select = resolve_callback(node, &bag, "on_select");
     IncenseNode *items[AROMA_SIDEBAR_MAX_ITEMS];
     int n = collect_item_nodes(node, "Item", items, AROMA_SIDEBAR_MAX_ITEMS);
     char *label_bufs[AROMA_SIDEBAR_MAX_ITEMS];
     const char *labels[AROMA_SIDEBAR_MAX_ITEMS];
-    for (int i = 0; i < n; i++) { PropBag ib; props_collect(items[i], &ib); label_bufs[i] = props_str_dup(&ib,"text",""); labels[i] = label_bufs[i]; props_free(&ib); }
-    AromaNode *built = aroma_sidebar_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"width",200), props_int(&bag,"height",400), labels, n);
+    memset(label_bufs, 0, sizeof(label_bufs));
+    memset(labels, 0, sizeof(labels));
+    bool alloc_ok = true;
+    for (int i = 0; i < n; i++) {
+        PropBag ib; props_collect(items[i], &ib);
+        label_bufs[i] = props_str_dup(&ib, "text", "");
+        if (!label_bufs[i]) { alloc_ok = false; label_bufs[i] = strdup(""); }
+        labels[i] = label_bufs[i] ? label_bufs[i] : "";
+        props_free(&ib);
+    }
+    AromaNode *built = NULL;
+    if (alloc_ok || n == 0) {
+        built = aroma_sidebar_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"width",200), props_int(&bag,"height",400), labels, n);
+    } else {
+        ERR_SYNTAX_N(node, "Out of memory building Sidebar labels");
+    }
     for (int i = 0; i < n; i++) free(label_bufs[i]);
-    if (!built) { ERR_SYNTAX_N(node, "Failed to create Sidebar"); props_free(&bag); return NULL; }
-    node->id = built->node_id;
+    if (!built) { props_free(&bag); return NULL; }
+    if (node) node->id = built->node_id;
     aroma_sidebar_set_font(built, _widget_font);
     for (int i = 0; i < n; i++) {
         PropBag ib; props_collect(items[i], &ib);
         const char *ir = props_get(&ib, "icon");
         if (ir) {
-            char *ic = strdup(resolve_icon(ir));
-            aroma_sidebar_set_icon(built, i, ic, ctx->icon_font ? ctx->icon_font : _widget_font);
-            free(ic);
+            const char *resolved = resolve_icon(ir);
+            char *ic = strdup(resolved ? resolved : ir);
+            if (ic) {
+                aroma_sidebar_set_icon(built, i, ic, ctx->icon_font ? ctx->icon_font : _widget_font);
+                free(ic);
+            }
         }
         props_free(&ib);
     }
     for (int i = 0; i < n; i++) {
         AromaNode *cc[MAX_CHILDREN]; int cc_n = 0;
-        for (IncenseNode *ch = items[i]->first_child; ch && cc_n < MAX_CHILDREN; ch = ch->next_sibling)
-            if (ch->type == INCENSE_OBJECT) { AromaNode *bw = build_widget(ch, sp, ctx); if (bw) cc[cc_n++] = bw; }
+        for (IncenseNode *ch = items[i]->first_child; ch && cc_n < MAX_CHILDREN; ch = ch->next_sibling) {
+            if (ch && ch->type == INCENSE_OBJECT) { AromaNode *bw = build_widget(ch, sp, ctx); if (bw) cc[cc_n++] = bw; }
+        }
         if (cc_n) aroma_sidebar_set_content(built, i, cc, cc_n);
     }
     if (on_select) aroma_sidebar_set_on_select(built, bridge_node_int, on_select);
@@ -1864,6 +2072,7 @@ static AromaNode *build_sidebar(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 }
 
 static AromaNode *build_table(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     IncenseNode *columns[MAX_ITEM_NODES];
     int num_cols = collect_item_nodes(node, "Column", columns, MAX_ITEM_NODES);
@@ -1871,12 +2080,13 @@ static AromaNode *build_table(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
     AromaNode *built = aroma_table_create(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
         props_int(&bag,"width",400), props_int(&bag,"height",300), num_cols);
     if (!built) { ERR_SYNTAX_N(node, "Failed to create Table"); props_free(&bag); return NULL; }
-    node->id = built->node_id;
+    if (node) node->id = built->node_id;
     aroma_table_set_font(built, _widget_font);
-    for (int i = 0; i < num_cols; i++) {
+    for (int i = 0; i < num_cols && i < MAX_ITEM_NODES; i++) {
+        if (!columns[i]) continue;
         PropBag cb; props_collect(columns[i], &cb);
         char *hdr = props_str_dup(&cb, "header", "");
-        aroma_table_set_header(built, i, hdr); free(hdr);
+        if (hdr) { aroma_table_set_header(built, i, hdr); free(hdr); }
         int cw = props_int(&cb, "width", 0); if (cw > 0) aroma_table_set_col_width(built, i, cw);
         props_free(&cb);
     }
@@ -1889,32 +2099,52 @@ static AromaNode *build_table(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
 }
 
 static AromaNode *build_tabs(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
     IncenseNode *items[AROMA_TABS_MAX];
     int n = collect_item_nodes(node, "Tab", items, AROMA_TABS_MAX);
-    char *label_bufs[AROMA_TABS_MAX]; const char *labels[AROMA_TABS_MAX];
-    for (int i = 0; i < n; i++) { PropBag ib; props_collect(items[i], &ib); label_bufs[i] = props_str_dup(&ib,"text",""); labels[i] = label_bufs[i]; props_free(&ib); }
-    AromaNode *built = aroma_ui_tabs(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
-        props_int(&bag,"width",400), props_int(&bag,"height",48), labels, n, on_change ? bridge_node_int : NULL, on_change, _widget_font);
+    char *label_bufs[AROMA_TABS_MAX];
+    const char *labels[AROMA_TABS_MAX];
+    memset(label_bufs, 0, sizeof(label_bufs));
+    memset(labels, 0, sizeof(labels));
+    bool alloc_ok = true;
+    for (int i = 0; i < n; i++) {
+        PropBag ib; props_collect(items[i], &ib);
+        label_bufs[i] = props_str_dup(&ib, "text", "");
+        if (!label_bufs[i]) { alloc_ok = false; label_bufs[i] = strdup(""); }
+        labels[i] = label_bufs[i] ? label_bufs[i] : "";
+        props_free(&ib);
+    }
+    AromaNode *built = NULL;
+    if (alloc_ok || n == 0) {
+        built = aroma_ui_tabs(parent, props_int(&bag,"x",0), props_int(&bag,"y",0),
+            props_int(&bag,"width",400), props_int(&bag,"height",48), labels, n, on_change ? bridge_node_int : NULL, on_change, _widget_font);
+    } else {
+        ERR_SYNTAX_N(node, "Out of memory building Tabs labels");
+    }
     for (int i = 0; i < n; i++) free(label_bufs[i]);
-    if (!built) { ERR_SYNTAX_N(node, "Failed to create Tabs"); props_free(&bag); return NULL; }
-    node->id = built->node_id;
+    if (!built) { props_free(&bag); return NULL; }
+    if (node) node->id = built->node_id;
     aroma_tabs_set_font(built, _widget_font);
     for (int i = 0; i < n; i++) {
         PropBag ib; props_collect(items[i], &ib);
         const char *ir = props_get(&ib, "icon");
         if (ir) {
-            char *ic = strdup(resolve_icon(ir));
-            aroma_tabs_set_icon(built, i, ic, ctx->icon_font ? ctx->icon_font : _widget_font);
-            free(ic);
+            const char *resolved = resolve_icon(ir);
+            char *ic = strdup(resolved ? resolved : ir);
+            if (ic) {
+                aroma_tabs_set_icon(built, i, ic, ctx->icon_font ? ctx->icon_font : _widget_font);
+                free(ic);
+            }
         }
         props_free(&ib);
     }
     for (int i = 0; i < n; i++) {
         AromaNode *cc[MAX_CHILDREN]; int cc_n = 0;
-        for (IncenseNode *ch = items[i]->first_child; ch && cc_n < MAX_CHILDREN; ch = ch->next_sibling)
-            if (ch->type == INCENSE_OBJECT) { AromaNode *bw = build_widget(ch, sp, ctx); if (bw) cc[cc_n++] = bw; }
+        for (IncenseNode *ch = items[i]->first_child; ch && cc_n < MAX_CHILDREN; ch = ch->next_sibling) {
+            if (ch && ch->type == INCENSE_OBJECT) { AromaNode *bw = build_widget(ch, sp, ctx); if (bw) cc[cc_n++] = bw; }
+        }
         if (cc_n) aroma_tabs_set_content(built, i, cc, cc_n);
     }
     int zi = props_int(&bag, "z_index", 0); if (zi) aroma_node_set_z_index(built, zi);
@@ -1925,13 +2155,17 @@ static AromaNode *build_tabs(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
 }
 
 static AromaNode *build_tooltip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
+    if (!ctx) return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     char *text = props_str_dup(&bag, "text", "");
     static const char *const pos_names[]  = {"top", "bottom", "left", "right"};
     static const int         pos_values[] = {TOOLTIP_POSITION_TOP, TOOLTIP_POSITION_BOTTOM, TOOLTIP_POSITION_LEFT, TOOLTIP_POSITION_RIGHT};
     AromaTooltipPosition pos = (AromaTooltipPosition)match_enum(node, &bag, "position", TOOLTIP_POSITION_TOP, pos_names, pos_values, 4, "tooltip position", "top, bottom, left, right");
-    AromaNode *built = aroma_tooltip_create(parent, text, props_int(&bag,"x",0), props_int(&bag,"y",0), pos);
-    if (built) aroma_tooltip_set_font(built, _widget_font);
+    AromaNode *built = NULL;
+    if (text) {
+        built = aroma_tooltip_create(parent, text, props_int(&bag,"x",0), props_int(&bag,"y",0), pos);
+        if (built) aroma_tooltip_set_font(built, _widget_font);
+    }
     free(text);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
@@ -1981,25 +2215,37 @@ static const WidgetEntry WIDGET_TABLE[] = {
 #define WIDGET_TABLE_COUNT (sizeof(WIDGET_TABLE) / sizeof(WIDGET_TABLE[0]) - 1)
 
 static int widget_cmp(const void *a, const void *b) {
-    return strcmp((const char *)a, ((const WidgetEntry *)b)->name);
+    if (!a || !b) return 0;
+    const char *key = (const char *)a;
+    const WidgetEntry *entry = (const WidgetEntry *)b;
+    if (!entry->name) return 1;
+    return strcmp(key, entry->name);
 }
 
 static bool s_widget_table_checked = false;
 
-static void verify_widget_table_sorted(void) {
+static bool verify_widget_table_sorted(void) {
     for (size_t i = 1; i < WIDGET_TABLE_COUNT; i++) {
-        if (strcmp(WIDGET_TABLE[i - 1].name, WIDGET_TABLE[i].name) >= 0) {
-            LOG_ERROR("FATAL: WIDGET_TABLE is not sorted: '%s' must come before '%s' for bsearch to work correctly",
-                      WIDGET_TABLE[i].name, WIDGET_TABLE[i - 1].name);
-            abort();
+        if (!WIDGET_TABLE[i - 1].name || !WIDGET_TABLE[i].name ||
+            strcmp(WIDGET_TABLE[i - 1].name, WIDGET_TABLE[i].name) >= 0) {
+            LOG_ERROR("FATAL: WIDGET_TABLE is not sorted: entry %zu ('%s') must come before entry %zu ('%s') for bsearch to work correctly",
+                      i - 1, WIDGET_TABLE[i - 1].name ? WIDGET_TABLE[i - 1].name : "(null)",
+                      i, WIDGET_TABLE[i].name ? WIDGET_TABLE[i].name : "(null)");
+            s_widget_table_disabled = true;
+            return false;
         }
     }
     s_widget_table_checked = true;
+    return true;
 }
 
 static AromaNode *build_widget(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
-    if (!s_widget_table_checked) verify_widget_table_sorted();
-    if (!node || node->type != INCENSE_OBJECT) return NULL;
+    if (!node || node->type != INCENSE_OBJECT || !node->name || !ctx) return NULL;
+    if (!s_widget_table_checked && !s_widget_table_disabled) verify_widget_table_sorted();
+    if (s_widget_table_disabled) {
+        ERR_SYNTAX_N(node, "Widget table is corrupted, cannot build any widgets");
+        return NULL;
+    }
     const WidgetEntry *e = bsearch(node->name, WIDGET_TABLE, WIDGET_TABLE_COUNT, sizeof(WidgetEntry), widget_cmp);
     if (e && e->build) return e->build(node, sp, ctx);
     ERR_SYNTAX_N(node, "Unknown widget type '%s'", node->name);
@@ -2007,11 +2253,34 @@ static AromaNode *build_widget(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) 
     return NULL;
 }
 
+static bool embed_buf_append(char **result, size_t *pos, size_t *cap, const char *data, size_t len) {
+    if (!result || !pos || !cap || !data) return false;
+    if (len == 0) return true;
+    if (*pos + len + 1 > *cap) {
+        size_t new_cap = (*pos + len + 1) * 2;
+        if (new_cap < *cap) new_cap = *cap + len + 4096;
+        char *nr = realloc(*result, new_cap);
+        if (!nr) return false;
+        *result = nr;
+        *cap = new_cap;
+    }
+    memcpy(*result + *pos, data, len);
+    *pos += len;
+    (*result)[*pos] = '\0';
+    return true;
+}
+
+static bool embed_buf_append_str(char **result, size_t *pos, size_t *cap, const char *s) {
+    if (!s) return true;
+    return embed_buf_append(result, pos, cap, s, strlen(s));
+}
+
 static char *incense_resolve_includes_r(const char *source, const char *base_path, EmbedStack *stack) {
-    if (!source) return NULL;
+    if (!source || !stack) return NULL;
     size_t cap = strlen(source) * 2 + 4096;
     char *result = malloc(cap);
-    if (!result) return NULL;
+    if (!result) { LOG_ERROR("Out of memory resolving includes"); return NULL; }
+    result[0] = '\0';
     size_t pos = 0;
     const char *p = source;
 
@@ -2023,41 +2292,42 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                 p = kw + 5;
                 while (*p == ' ' || *p == '\t') p++;
 
-#define EMBED_ERR(msg) do { \
-    size_t _el = strlen(msg); \
-    if (pos + _el + 1 >= cap) { cap = cap * 2 + _el; char *_nr = realloc(result, cap); if (!_nr) { free(result); return NULL; } result = _nr; } \
-    memcpy(result + pos, msg, _el); pos += _el; \
-} while(0)
-
                 if (*p != '"') {
                     while (*p && *p != '\n') p++;
-                    EMBED_ERR("// ERROR: Invalid embed syntax\n");
+                    if (!embed_buf_append_str(&result, &pos, &cap, "// ERROR: Invalid embed syntax\n")) { free(result); return NULL; }
                     continue;
                 }
                 p++;
                 const char *ps = p;
-                while (*p && *p != '"') p++;
+                while (*p && *p != '"' && *p != '\n') p++;
                 if (*p != '"') {
                     while (*p && *p != '\n') p++;
-                    EMBED_ERR("// ERROR: Unterminated embed path\n");
+                    if (!embed_buf_append_str(&result, &pos, &cap, "// ERROR: Unterminated embed path\n")) { free(result); return NULL; }
                     continue;
                 }
-                size_t plen = p - ps;
+                size_t plen = (size_t)(p - ps);
+                if (plen == 0 || plen >= MAX_EMBED_PATH_LEN) {
+                    p++;
+                    if (!embed_buf_append_str(&result, &pos, &cap, "// ERROR: Invalid embed path length\n")) { free(result); return NULL; }
+                    continue;
+                }
                 char *inc_path = malloc(plen + 1);
-                if (!inc_path) { free(result); return NULL; }
+                if (!inc_path) { LOG_ERROR("Out of memory resolving embed path"); free(result); return NULL; }
                 memcpy(inc_path, ps, plen); inc_path[plen] = '\0';
                 p++;
 
                 char *full_path = malloc(MAX_EMBED_PATH_LEN);
-                if (!full_path) { free(inc_path); free(result); return NULL; }
+                if (!full_path) { LOG_ERROR("Out of memory resolving embed path"); free(inc_path); free(result); return NULL; }
+                full_path[0] = '\0';
                 if (base_path) {
                     const char *sep = strrchr(base_path, '/');
-                    if (!sep) sep = strrchr(base_path, '\\');
+                    const char *sep2 = strrchr(base_path, '\\');
+                    if (!sep || (sep2 && sep2 > sep)) sep = sep2;
                     if (sep) {
-                        size_t dl = sep - base_path + 1;
+                        size_t dl = (size_t)(sep - base_path) + 1;
                         if (dl < (size_t)MAX_EMBED_PATH_LEN) {
                             memcpy(full_path, base_path, dl);
-                            snprintf(full_path + dl, MAX_EMBED_PATH_LEN - dl, "%s", inc_path);
+                            snprintf(full_path + dl, (size_t)MAX_EMBED_PATH_LEN - dl, "%s", inc_path);
                         } else {
                             snprintf(full_path, MAX_EMBED_PATH_LEN, "%s", inc_path);
                         }
@@ -2068,10 +2338,11 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                     snprintf(full_path, MAX_EMBED_PATH_LEN, "%s", inc_path);
                 }
                 free(inc_path);
+                full_path[MAX_EMBED_PATH_LEN - 1] = '\0';
 
                 if (stack->depth >= MAX_EMBED_DEPTH) {
                     free(full_path);
-                    EMBED_ERR("// ERROR: Maximum embed depth exceeded\n");
+                    if (!embed_buf_append_str(&result, &pos, &cap, "// ERROR: Maximum embed depth exceeded\n")) { free(result); return NULL; }
                     continue;
                 }
 
@@ -2081,29 +2352,34 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                 }
                 if (circular) {
                     char err_buf[64 + MAX_EMBED_PATH_LEN];
-                    int ebl = snprintf(err_buf, sizeof(err_buf), "// ERROR: Circular embed detected: %s\n", full_path);
-                    if (pos + (size_t)ebl + 1 >= cap) { cap = cap * 2 + ebl; char *nr = realloc(result, cap); if (!nr) { free(result); free(full_path); return NULL; } result = nr; }
-                    memcpy(result + pos, err_buf, ebl); pos += ebl;
+                    snprintf(err_buf, sizeof(err_buf), "// ERROR: Circular embed detected: %s\n", full_path);
+                    bool ok = embed_buf_append_str(&result, &pos, &cap, err_buf);
                     free(full_path);
+                    if (!ok) { free(result); return NULL; }
                     continue;
                 }
 
                 FILE *fp = fopen(full_path, "rb");
                 char *file_content = NULL;
                 if (fp) {
-                    fseek(fp, 0, SEEK_END); long fsz = ftell(fp); rewind(fp);
-                    if (fsz > 0 && fsz <= MAX_EMBED_SIZE) {
-                        file_content = malloc(fsz + 1);
-                        if (file_content) { size_t rd = fread(file_content, 1, fsz, fp); file_content[rd] = '\0'; }
+                    if (fseek(fp, 0, SEEK_END) == 0) {
+                        long fsz = ftell(fp);
+                        if (fsz > 0 && fsz <= MAX_EMBED_SIZE && fseek(fp, 0, SEEK_SET) == 0) {
+                            file_content = malloc((size_t)fsz + 1);
+                            if (file_content) {
+                                size_t rd = fread(file_content, 1, (size_t)fsz, fp);
+                                file_content[rd] = '\0';
+                            }
+                        }
                     }
                     fclose(fp);
                 }
                 if (!file_content) {
                     char err_buf[64 + MAX_EMBED_PATH_LEN];
-                    int ebl = snprintf(err_buf, sizeof(err_buf), "// ERROR: Failed to embed file: %s\n", full_path);
-                    if (pos + (size_t)ebl + 1 >= cap) { cap = cap * 2 + ebl; char *nr = realloc(result, cap); if (!nr) { free(result); free(full_path); return NULL; } result = nr; }
-                    memcpy(result + pos, err_buf, ebl); pos += ebl;
+                    snprintf(err_buf, sizeof(err_buf), "// ERROR: Failed to embed file: %s\n", full_path);
+                    bool ok = embed_buf_append_str(&result, &pos, &cap, err_buf);
                     free(full_path);
+                    if (!ok) { free(result); return NULL; }
                     continue;
                 }
 
@@ -2116,31 +2392,69 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                 free(full_path);
 
                 if (processed) {
-                    size_t pl = strlen(processed);
-                    if (pos + pl + 1 >= cap) { cap = (pos + pl) * 2 + 4096; char *nr = realloc(result, cap); if (!nr) { free(result); free(processed); return NULL; } result = nr; }
-                    memcpy(result + pos, processed, pl); pos += pl; free(processed);
+                    bool ok = embed_buf_append_str(&result, &pos, &cap, processed);
+                    free(processed);
+                    if (!ok) { free(result); return NULL; }
+                } else {
+                    if (!embed_buf_append_str(&result, &pos, &cap, "// ERROR: Failed to process embedded file\n")) { free(result); return NULL; }
                 }
                 continue;
             }
         }
-        if (pos + 1 >= cap) { cap = cap * 2 + 1; char *nr = realloc(result, cap); if (!nr) { free(result); return NULL; } result = nr; }
-        result[pos++] = *p++;
+        if (!embed_buf_append(&result, &pos, &cap, p, 1)) { free(result); return NULL; }
+        p++;
     }
-    result[pos] = '\0';
     return result;
 }
 
 static char *incense_resolve_includes(const char *source, const char *base_path) {
-    EmbedStack stack;
-    stack.depth = 0;
-    return incense_resolve_includes_r(source, base_path, &stack);
+    if (!source) return NULL;
+    EmbedStack *stack = calloc(1, sizeof(EmbedStack));
+    if (!stack) { LOG_ERROR("Out of memory resolving includes"); return NULL; }
+    stack->depth = 0;
+    char *result = incense_resolve_includes_r(source, base_path, stack);
+    free(stack);
+    return result;
 }
 
 static time_t get_file_modified_time(const char *path) {
-    struct stat s; return (stat(path, &s) == 0) ? s.st_mtime : 0;
+    if (!path || !path[0]) return 0;
+    struct stat s;
+    return (stat(path, &s) == 0) ? s.st_mtime : 0;
+}
+
+static bool read_entire_file(const char *path, char **out_data, size_t *out_size) {
+    if (!path || !path[0] || !out_data || !out_size) return false;
+    *out_data = NULL;
+    *out_size = 0;
+    FILE *fp = fopen(path, "rb");
+    if (!fp) return false;
+    if (fseek(fp, 0, SEEK_END) != 0) { fclose(fp); return false; }
+    long size = ftell(fp);
+    if (size < 0) { fclose(fp); return false; }
+    if ((size_t)size > MAX_LOAD_FILE_SIZE) { LOG_ERROR("File '%s' exceeds maximum allowed size", path); fclose(fp); return false; }
+    if (fseek(fp, 0, SEEK_SET) != 0) { fclose(fp); return false; }
+    char *raw = malloc((size_t)size + 1);
+    if (!raw) { LOG_ERROR("Out of memory reading file '%s'", path); fclose(fp); return false; }
+    size_t rd = 0;
+    if (size > 0) {
+        rd = fread(raw, 1, (size_t)size, fp);
+        if (rd != (size_t)size && ferror(fp)) {
+            LOG_ERROR("Error reading file '%s'", path);
+            fclose(fp);
+            free(raw);
+            return false;
+        }
+    }
+    fclose(fp);
+    raw[rd] = '\0';
+    *out_data = raw;
+    *out_size = rd;
+    return true;
 }
 
 static int find_watcher_index(const char *path) {
+    if (!path) return -1;
     for (int i = 0; i < s_hot_watcher_count; i++)
         if (strcmp(s_hot_watchers[i].file_path, path) == 0) return i;
     return -1;
@@ -2153,46 +2467,62 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
         if (watcher->on_error) { char e[1024]; snprintf(e, sizeof(e), "UI file not found: %s", watcher->file_path); watcher->on_error(e); }
         return false;
     }
-    FILE *fp = fopen(watcher->file_path, "rb");
-    if (!fp) {
-        if (watcher->on_error) { char e[1024]; snprintf(e, sizeof(e), "Cannot open UI file: %s", watcher->file_path); watcher->on_error(e); }
+    char *raw = NULL;
+    size_t raw_size = 0;
+    if (!read_entire_file(watcher->file_path, &raw, &raw_size)) {
+        if (watcher->on_error) { char e[1024]; snprintf(e, sizeof(e), "Cannot read UI file: %s", watcher->file_path); watcher->on_error(e); }
         return false;
     }
-    fseek(fp, 0, SEEK_END); long size = ftell(fp); rewind(fp);
-    char *raw = malloc(size + 1);
-    if (!raw) { fclose(fp); return false; }
-    size_t rd = fread(raw, 1, size, fp); raw[rd] = '\0'; fclose(fp);
 
-    char *processed = incense_resolve_includes(raw, watcher->file_path); free(raw);
-    if (!processed) return false;
-    IncenseDocument *doc = IncenseParseString(processed); free(processed);
-    if (!doc) return false;
+    char *processed = incense_resolve_includes(raw, watcher->file_path);
+    free(raw);
+    if (!processed) {
+        if (watcher->on_error) watcher->on_error("Failed to resolve embeds in UI file");
+        return false;
+    }
+    IncenseDocument *doc = IncenseParseString(processed);
+    free(processed);
+    if (!doc) {
+        if (watcher->on_error) watcher->on_error("Failed to parse UI file");
+        return false;
+    }
 
-    err_clear(); aroma_animation_manager_init();
+    err_clear();
+    aroma_animation_manager_init();
     if (!s_icon_init) icon_build_table();
     if (!s_cb_init) cb_init_buckets();
 
-    if (!doc->root || strcmp(doc->root->name, "Window") != 0) {
+    if (!doc->root || !doc->root->name || strcmp(doc->root->name, "Window") != 0) {
         if (watcher->on_error) watcher->on_error("Root object must be 'Window'");
-        IncenseDestroy(doc); return false;
+        IncenseDestroy(doc);
+        return false;
     }
 
     if (watcher->out_registry) {
         if (*watcher->out_registry) IncenseFreeRegistry(*watcher->out_registry);
         *watcher->out_registry = calloc(1, sizeof(IncenseRegistry));
         if (*watcher->out_registry) registry_init(&(*watcher->out_registry)->reg);
+        else LOG_ERROR("Out of memory allocating widget registry during hot reload");
     }
 
     FontRegistry *freg = calloc(1, sizeof(FontRegistry));
     if (freg) {
         font_registry_init(freg);
-        if (s_global_font_registry)
+        if (s_global_font_registry) {
             for (int i = 0; i < s_global_font_registry->count && freg->count < MAX_FONTS; i++)
                 font_registry_register(freg, s_global_font_registry->items[i].name, s_global_font_registry->items[i].font);
+        }
+    } else {
+        LOG_ERROR("Out of memory allocating font registry during hot reload");
     }
 
     AromaNode *root_node = (AromaNode *)watcher->window;
+    if (!root_node) { IncenseDestroy(doc); free(freg); return false; }
     uint64_t child_count = root_node->child_count;
+    if (child_count > AROMA_MAX_CHILD_NODES) {
+        LOG_ERROR("Window child_count (%llu) exceeds maximum, clamping", (unsigned long long)child_count);
+        child_count = AROMA_MAX_CHILD_NODES;
+    }
     AromaNode *child_nodes[AROMA_MAX_CHILD_NODES];
     for (uint64_t i = 0; i < child_count; i++) child_nodes[i] = root_node->child_nodes[i];
     for (uint64_t i = 0; i < child_count; i++) if (child_nodes[i]) __destroy_node_tree(child_nodes[i]);
@@ -2200,15 +2530,15 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
     memset(root_node->child_nodes, 0, sizeof(root_node->child_nodes));
 
     BuildCtx ctx = {
-        .registry     = (watcher->out_registry && *watcher->out_registry) ? &(*watcher->out_registry)->reg : NULL,
+        .registry      = (watcher->out_registry && *watcher->out_registry) ? &(*watcher->out_registry)->reg : NULL,
         .font_registry = freg,
         .default_font  = watcher->font,
         .icon_font     = watcher->icon_font
     };
     for (IncenseNode *child = doc->root->first_child; child; child = child->next_sibling)
-        if (child->type == INCENSE_OBJECT) build_widget(child, root_node, &ctx);
+        if (child && child->type == INCENSE_OBJECT) build_widget(child, root_node, &ctx);
     IncenseDestroy(doc);
-    if (!watcher->out_registry) free(freg);
+    free(freg);
 
     watcher->last_modified = get_file_modified_time(watcher->file_path);
     if (watcher->on_reload) watcher->on_reload(watcher->window);
@@ -2218,86 +2548,123 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
 }
 
 static AromaWindow *IncenseLoadCore(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
-    err_clear(); aroma_animation_manager_init();
+    err_clear();
+    aroma_animation_manager_init();
     if (!s_icon_init) icon_build_table();
     if (!s_cb_init) cb_init_buckets();
+    if (out_registry) *out_registry = NULL;
     if (!doc || !doc->root) { err_add(INCENSE_ERROR_SYNTAX, 0, 0, "Invalid document or missing root node"); return NULL; }
     IncenseNode *root = doc->root;
-    if (strcmp(root->name, "Window") != 0) {
-        ERR_SYNTAX_N(root, "Root object must be 'Window', got '%s'", root->name);
-        ERR_SUGGEST("Wrap your UI in a Window {} block"); return NULL;
+    if (!root->name || strcmp(root->name, "Window") != 0) {
+        ERR_SYNTAX_N(root, "Root object must be 'Window', got '%s'", root->name ? root->name : "(null)");
+        ERR_SUGGEST("Wrap your UI in a Window {} block");
+        return NULL;
     }
     PropBag bag; props_collect(root, &bag); validate_properties(root, &bag);
     int w = props_int(&bag, "width", 800), h = props_int(&bag, "height", 600);
     if (w <= 0 || h <= 0) { w = 800; h = 600; }
     char *title = props_str_dup(&bag, "title", "Incense App");
-    AromaWindow *window = aroma_ui_create_window(title, w, h);
-    free(title); props_free(&bag);
-    if (!window) return NULL;
+    AromaWindow *window = title ? aroma_ui_create_window(title, w, h) : NULL;
+    free(title);
+    props_free(&bag);
+    if (!window) { ERR_SYNTAX_N(root, "Failed to create window"); return NULL; }
 
     IncenseRegistry *ireg = calloc(1, sizeof(IncenseRegistry));
     if (ireg) registry_init(&ireg->reg);
+    else LOG_ERROR("Out of memory allocating widget registry");
+
     FontRegistry *freg = calloc(1, sizeof(FontRegistry));
     if (freg) {
         font_registry_init(freg);
-        if (s_global_font_registry)
+        if (s_global_font_registry) {
             for (int i = 0; i < s_global_font_registry->count && freg->count < MAX_FONTS; i++)
                 font_registry_register(freg, s_global_font_registry->items[i].name, s_global_font_registry->items[i].font);
+        }
+    } else {
+        LOG_ERROR("Out of memory allocating font registry");
     }
 
     AromaNode *root_node = (AromaNode *)window;
     BuildCtx ctx = { .registry = ireg ? &ireg->reg : NULL, .font_registry = freg, .default_font = font, .icon_font = icon_font };
     for (IncenseNode *child = root->first_child; child; child = child->next_sibling)
-        if (child->type == INCENSE_OBJECT) build_widget(child, root_node, &ctx);
+        if (child && child->type == INCENSE_OBJECT) build_widget(child, root_node, &ctx);
 
-    if (!out_registry) { free(freg); free(ireg); }
-    else { free(freg); *out_registry = ireg; }
+    free(freg);
+    if (out_registry) *out_registry = ireg;
+    else if (ireg) free(ireg);
     return window;
 }
 
 static AromaWindow *load_file_core(const char *path, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
-    FILE *fp = fopen(path, "rb"); if (!fp) return NULL;
-    fseek(fp, 0, SEEK_END); long size = ftell(fp); rewind(fp);
-    char *raw = malloc(size + 1); if (!raw) { fclose(fp); return NULL; }
-    size_t rd = fread(raw, 1, size, fp); raw[rd] = '\0'; fclose(fp);
-    char *processed = incense_resolve_includes(raw, path); free(raw); if (!processed) return NULL;
-    IncenseDocument *doc = IncenseParseString(processed); free(processed); if (!doc) return NULL;
+    if (out_registry) *out_registry = NULL;
+    if (!path || !path[0]) { LOG_ERROR("IncenseLoadFile called with invalid path"); return NULL; }
+    char *raw = NULL;
+    size_t raw_size = 0;
+    if (!read_entire_file(path, &raw, &raw_size)) { LOG_ERROR("Failed to read UI file '%s'", path); return NULL; }
+    char *processed = incense_resolve_includes(raw, path);
+    free(raw);
+    if (!processed) { LOG_ERROR("Failed to resolve embeds in '%s'", path); return NULL; }
+    IncenseDocument *doc = IncenseParseString(processed);
+    free(processed);
+    if (!doc) { LOG_ERROR("Failed to parse UI file '%s'", path); return NULL; }
     AromaWindow *win = IncenseLoadCore(doc, font, icon_font, out_registry);
-    IncenseDestroy(doc); return win;
+    IncenseDestroy(doc);
+    return win;
 }
 
 static AromaWindow *load_string_core(const char *source, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
+    if (out_registry) *out_registry = NULL;
+    if (!source) { LOG_ERROR("IncenseLoadString called with NULL source"); return NULL; }
     char *processed = incense_resolve_includes(source, NULL);
-    IncenseDocument *doc = IncenseParseString(processed ? processed : source); free(processed);
-    if (!doc) return NULL;
+    IncenseDocument *doc = IncenseParseString(processed ? processed : source);
+    free(processed);
+    if (!doc) { LOG_ERROR("Failed to parse UI source string"); return NULL; }
     AromaWindow *win = IncenseLoadCore(doc, font, icon_font, out_registry);
-    IncenseDestroy(doc); return win;
+    IncenseDestroy(doc);
+    return win;
 }
 
-AromaWindow *IncenseLoad(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font)
-    { return IncenseLoadCore(doc, font, icon_font, NULL); }
-AromaWindow *IncenseLoadFile(const char *path, AromaFont *font, AromaFont *icon_font)
-    { return load_file_core(path, font, icon_font, NULL); }
-AromaWindow *IncenseLoadString(const char *source, AromaFont *font, AromaFont *icon_font)
-    { return load_string_core(source, font, icon_font, NULL); }
-AromaWindow *IncenseLoadEx(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry)
-    { if (out_registry) *out_registry = NULL; return IncenseLoadCore(doc, font, icon_font, out_registry); }
-AromaWindow *IncenseLoadFileEx(const char *path, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry)
-    { if (out_registry) *out_registry = NULL; return load_file_core(path, font, icon_font, out_registry); }
-AromaWindow *IncenseLoadStringEx(const char *source, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry)
-    { if (out_registry) *out_registry = NULL; return load_string_core(source, font, icon_font, out_registry); }
+AromaWindow *IncenseLoad(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font) {
+    return IncenseLoadCore(doc, font, icon_font, NULL);
+}
+AromaWindow *IncenseLoadFile(const char *path, AromaFont *font, AromaFont *icon_font) {
+    return load_file_core(path, font, icon_font, NULL);
+}
+AromaWindow *IncenseLoadString(const char *source, AromaFont *font, AromaFont *icon_font) {
+    return load_string_core(source, font, icon_font, NULL);
+}
+AromaWindow *IncenseLoadEx(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
+    if (out_registry) *out_registry = NULL;
+    return IncenseLoadCore(doc, font, icon_font, out_registry);
+}
+AromaWindow *IncenseLoadFileEx(const char *path, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
+    if (out_registry) *out_registry = NULL;
+    return load_file_core(path, font, icon_font, out_registry);
+}
+AromaWindow *IncenseLoadStringEx(const char *source, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
+    if (out_registry) *out_registry = NULL;
+    return load_string_core(source, font, icon_font, out_registry);
+}
 
 int IncenseHotReloadStart(const char *path, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
-    if (!path || !font) { LOG_ERROR("Invalid parameters for hot reload"); return -1; }
+    if (!path || !path[0] || !font) { LOG_ERROR("Invalid parameters for hot reload"); return -1; }
+    if (strlen(path) >= sizeof(s_hot_watchers[0].file_path)) {
+        LOG_ERROR("Hot reload path too long, maximum %zu characters", sizeof(s_hot_watchers[0].file_path) - 1);
+        return -1;
+    }
     int existing = find_watcher_index(path);
     if (existing >= 0) { LOG_WARNING("Already watching file: %s", path); return existing; }
     if (s_hot_watcher_count >= MAX_HOT_RELOAD_WATCHERS) { LOG_ERROR("Maximum hot reload watchers reached (%d)", MAX_HOT_RELOAD_WATCHERS); return -1; }
     HotReloadWatcher *watcher = &s_hot_watchers[s_hot_watcher_count];
     memset(watcher, 0, sizeof(HotReloadWatcher));
     strncpy(watcher->file_path, path, sizeof(watcher->file_path) - 1);
-    watcher->font = font; watcher->icon_font = icon_font; watcher->out_registry = out_registry; watcher->active = true;
+    watcher->file_path[sizeof(watcher->file_path) - 1] = '\0';
+    watcher->font = font;
+    watcher->icon_font = icon_font;
+    watcher->out_registry = out_registry;
+    watcher->active = true;
     AromaWindow *window = IncenseLoadFileEx(path, font, icon_font, out_registry);
-    if (!window) { LOG_ERROR("Failed to perform initial load for hot reload: %s", path); return -1; }
+    if (!window) { LOG_ERROR("Failed to perform initial load for hot reload: %s", path); memset(watcher, 0, sizeof(HotReloadWatcher)); return -1; }
     watcher->window = window;
     watcher->last_modified = get_file_modified_time(path);
     int index = s_hot_watcher_count++;
