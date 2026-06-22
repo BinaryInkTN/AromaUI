@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include <stdint.h>
 typedef enum {
     INCENSE_OBJECT,
     INCENSE_PROPERTY
@@ -17,9 +17,9 @@ typedef struct IncenseNode {
     int line;
     int column;
     int is_embed;
-    int id;
     struct IncenseNode *first_child;
     struct IncenseNode *next_sibling;
+    uint64_t id;
 } IncenseNode;
 
 typedef struct {
