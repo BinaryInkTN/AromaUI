@@ -9,6 +9,33 @@
 #define FONT_SIZE_BODY 18
 #define FONT_SIZE_HERO 80
 
+static void set_gear_park(void *userdata) {
+    (void)userdata;
+    IncenseStateSetString("current_gear", "P");
+    IncenseStateSetInt("gear_x_position", 3);
+    IncenseStateSetInt("vehicle_speed", 0);
+}
+
+static void set_gear_reverse(void *userdata) {
+    (void)userdata;
+    IncenseStateSetString("current_gear", "R");
+    IncenseStateSetInt("gear_x_position", 63);
+    IncenseStateSetInt("vehicle_speed", 0);
+}
+
+static void set_gear_neutral(void *userdata) {
+    (void)userdata;
+    IncenseStateSetString("current_gear", "N");
+    IncenseStateSetInt("gear_x_position", 123);
+    IncenseStateSetInt("vehicle_speed", 0);
+}
+
+static void set_gear_drive(void *userdata) {
+    (void)userdata;
+    IncenseStateSetString("current_gear", "D");
+    IncenseStateSetInt("gear_x_position", 183);
+}
+
 int main(void)
 {
     set_minimum_log_level(DEBUG_LEVEL_WARNING);
@@ -32,6 +59,22 @@ int main(void)
     }
 
     IncenseRegisterFont("big_font", big_font);
+
+    IncenseRegisterCallback("set_gear_park", INCENSE_CALLBACK_VOID_PTR, set_gear_park, NULL);
+    IncenseRegisterCallback("set_gear_reverse", INCENSE_CALLBACK_VOID_PTR, set_gear_reverse, NULL);
+    IncenseRegisterCallback("set_gear_neutral", INCENSE_CALLBACK_VOID_PTR, set_gear_neutral, NULL);
+    IncenseRegisterCallback("set_gear_drive", INCENSE_CALLBACK_VOID_PTR, set_gear_drive, NULL);
+
+    IncenseStateSetString("current_time", "14:23");
+    IncenseStateSetString("outside_temp", "18°C");
+    IncenseStateSetString("greeting", "Welcome back, Yassine!");
+    IncenseStateSetInt("vehicle_speed", 82);
+    IncenseStateSetFloat("battery_percent", 76.0f);
+    IncenseStateSetString("range_remaining", "412km");
+    IncenseStateSetString("charging_stations_nearby", "8 stations nearby");
+    IncenseStateSetString("current_gear", "P");
+    IncenseStateSetInt("gear_x_position", 43);
+    IncenseStateSetBool("eco_mode", true);
 
     AromaTheme theme = aroma_theme_create_material_black();
     theme.colors.primary = 0xFF2196F3;

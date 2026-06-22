@@ -99,24 +99,24 @@ static void incense_node_destroy(IncenseNode *node)
 static char *incense_resolve_includes(const char *source, const char *base_path)
 {
     if (!source) return NULL;
-    
+
     size_t cap = strlen(source) * 2 + 4096;
     char *result = malloc(cap);
     if (!result) return NULL;
     result[0] = '\0';
     size_t pos = 0;
     const char *p = source;
-    
+
     while (*p) {
         if (*p == '@') {
             const char *embed_check = p + 1;
-            
+
             while (*embed_check == ' ' || *embed_check == '\t') embed_check++;
-            
+
             if (strncmp(embed_check, "embed", 5) == 0) {
                 p = embed_check + 5;
                 while (*p == ' ' || *p == '\t') p++;
-                
+
                 if (*p != '"') {
                     while (*p && *p != '\n') p++;
                     const char *err = "// ERROR: Invalid embed syntax\n";
@@ -131,11 +131,11 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                     pos += err_len;
                     continue;
                 }
-                
+
                 p++;
                 const char *path_start = p;
                 while (*p && *p != '"') p++;
-                
+
                 if (*p != '"') {
                     while (*p && *p != '\n') p++;
                     const char *err = "// ERROR: Unterminated embed path\n";
@@ -150,14 +150,14 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                     pos += err_len;
                     continue;
                 }
-                
+
                 size_t path_len = p - path_start;
                 char *inc_path = malloc(path_len + 1);
                 if (!inc_path) { free(result); return NULL; }
                 memcpy(inc_path, path_start, path_len);
                 inc_path[path_len] = '\0';
                 p++;
-                
+
                 char full_path[4096];
                 if (base_path) {
                     const char *last_sep = strrchr(base_path, '/');
@@ -176,7 +176,7 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                 } else {
                     snprintf(full_path, sizeof(full_path), "%s", inc_path);
                 }
-                
+
                 if (include_depth >= 64) {
                     const char *err = "// ERROR: Maximum embed depth exceeded\n";
                     size_t err_len = strlen(err);
@@ -191,7 +191,7 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                     free(inc_path);
                     continue;
                 }
-                
+
                 bool circular = false;
                 for (size_t i = 0; i < include_depth; i++) {
                     if (strcmp(include_stack[i].path, full_path) == 0) {
@@ -199,7 +199,7 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                         break;
                     }
                 }
-                
+
                 if (circular) {
                     char *err_buf = malloc(64 + strlen(full_path) + 1);
                     if (!err_buf) { free(result); free(inc_path); return NULL; }
@@ -217,15 +217,15 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                     free(inc_path);
                     continue;
                 }
-                
+
                 FILE *fp = fopen(full_path, "rb");
                 char *file_content = NULL;
-                
+
                 if (fp) {
                     fseek(fp, 0, SEEK_END);
                     long fsize = ftell(fp);
                     rewind(fp);
-                    
+
                     if (fsize > 0 && fsize <= 10 * 1024 * 1024) {
                         file_content = malloc(fsize + 1);
                         if (file_content) {
@@ -235,7 +235,7 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                     }
                     fclose(fp);
                 }
-                
+
                 if (!file_content) {
                     char *err_buf = malloc(64 + strlen(full_path) + 1);
                     if (!err_buf) { free(result); free(inc_path); return NULL; }
@@ -253,23 +253,23 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                     free(inc_path);
                     continue;
                 }
-                
+
                 strncpy(include_stack[include_depth].path, full_path, sizeof(include_stack[0].path) - 1);
                 include_stack[include_depth].path[sizeof(include_stack[0].path) - 1] = '\0';
                 include_depth++;
-                
+
                 char *processed = incense_resolve_includes(file_content, full_path);
-                
+
                 include_depth--;
-                
+
                 if (processed) {
                     size_t proc_len = strlen(processed);
                     if (pos + proc_len + 1 >= cap) {
                         cap = (pos + proc_len) * 2 + 4096;
                         char *new_result = realloc(result, cap);
-                        if (!new_result) { 
-                            free(result); free(processed); free(file_content); free(inc_path); 
-                            return NULL; 
+                        if (!new_result) {
+                            free(result); free(processed); free(file_content); free(inc_path);
+                            return NULL;
                         }
                         result = new_result;
                     }
@@ -277,13 +277,13 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                     pos += proc_len;
                     free(processed);
                 }
-                
+
                 free(file_content);
                 free(inc_path);
                 continue;
             }
         }
-        
+
         if (pos + 1 >= cap) {
             cap = cap * 2 + 1;
             char *new_result = realloc(result, cap);
@@ -292,7 +292,7 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
         }
         result[pos++] = *p++;
     }
-    
+
     result[pos] = '\0';
     return result;
 }
@@ -303,7 +303,7 @@ static IncenseNode *build_object(mpc_ast_t *ast, const char *source)
 {
     const char *type_name = NULL;
     int line = 0, column = 0;
-    
+
     for (int i = 0; i < ast->children_num; i++) {
         mpc_ast_t *ch = ast->children[i];
         if (strstr(ch->tag, "typename") && ch->contents && ch->contents[0]) {
@@ -353,7 +353,7 @@ static IncenseNode *build_property(mpc_ast_t *ast, const char *source)
     const char *key = NULL;
     const char *value = NULL;
     int line = 0, column = 0;
-    
+
     for (int i = 0; i < ast->children_num; i++) {
         mpc_ast_t *ch = ast->children[i];
         if (strstr(ch->tag, "ident") && !key) {
@@ -515,14 +515,14 @@ static IncenseDocument *incense_parse_with_embeds(const char *source, const char
 {
     if (!source) return NULL;
     if (!incense_parsers_init()) return NULL;
-    
+
     char *processed = incense_resolve_includes(source, base_path);
     if (!processed) return NULL;
-    
+
     char *clean = incense_strip_comments(processed);
     free(processed);
     if (!clean) return NULL;
-    
+
     mpc_result_t r;
     int ok = mpc_parse("<string>", clean, p_Document, &r);
     IncenseDocument *doc = incense_from_result(&r, ok, clean, base_path);
@@ -551,7 +551,7 @@ IncenseDocument *IncenseParseFile(const char *path)
     fread(buf, 1, (size_t)size, fp);
     buf[size] = '\0';
     fclose(fp);
-    
+
     char *base_path = incense_strdup(path);
     IncenseDocument *doc = incense_parse_with_embeds(buf, base_path);
     free(buf);

@@ -50,7 +50,8 @@ AromaAnimation* aroma_animation_start(AromaNode* target, AromaAnimationType type
 void aroma_animation_stop(AromaNode* target);
 AromaAnimation* aroma_animation_start_custom(AromaNode* target, float start_val, float end_val, uint32_t duration_ms, AromaAnimationCallback cb, void* user_data);
 void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing);
-
+void aroma_animation_cleanup_node(AromaNode* target);
+void aroma_animation_cleanup_all(void);
 #ifdef __cplusplus
 }
 #endif

@@ -146,7 +146,42 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
     if (!anim_timer) aroma_animation_manager_init();
     return anim;
 }
+static void cleanup_animation_list(void) {
+    AromaAnimation* curr = animation_list;
+    AromaAnimation* prev = NULL;
+    
+    while (curr) {
+        AromaAnimation* next = curr->next;
+        free(curr);
+        curr = next;
+    }
+    animation_list = NULL;
+}
+void aroma_animation_cleanup_all(void) {
+    cleanup_animation_list();
+}
 
+void aroma_animation_cleanup_node(AromaNode* target) {
+    if (!target) return;
+    
+    AromaAnimation* curr = animation_list;
+    AromaAnimation* prev = NULL;
+    
+    while (curr) {
+        AromaAnimation* next = curr->next;
+        if (curr->target == target) {
+            if (prev) {
+                prev->next = next;
+            } else {
+                animation_list = next;
+            }
+            free(curr);
+        } else {
+            prev = curr;
+        }
+        curr = next;
+    }
+}
 void aroma_animation_stop(AromaNode* target)
 {
     AromaAnimation* curr = animation_list;

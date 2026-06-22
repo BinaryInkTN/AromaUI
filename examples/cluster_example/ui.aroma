@@ -13,11 +13,12 @@ Window {
         animation_start_val: -100
         animation_end_val: 15
         animation_duration: 3000
+
         Label {
             id:    "outside_temp"
             x:     0
             y:     2
-            text:  "18°C"
+            text:  "state.outside_temp"
             style: "medium"
         }
 
@@ -38,7 +39,7 @@ Window {
             Label {
                 y: 5
                 x: 45
-                text: "Welcome back, Yassine!"
+                text: "state.greeting"
                 style: "small"
             }
         }
@@ -47,7 +48,7 @@ Window {
             id:    "clock_value"
             x:     1140
             y:     2
-            text:  "14:23"
+            text:  "state.current_time"
             style: "medium"
         }
     }
@@ -77,10 +78,11 @@ Window {
                 id:    "speed_value"
                 x:     150
                 y:     10
-                text:  "82"
+                text:  "state.vehicle_speed"
                 style: "large"
                 font:  "big_font"
             }
+            
             Label {
                 x:     190
                 y:     110
@@ -99,12 +101,16 @@ Window {
 
                 Card {
                     id:     "gear_active"
-                    x:      3
+                    x:      "state.gear_x_position"
                     y:      3
                     width:  42
                     height: 34
                     type:   "filled"
                     z_index: 1
+                    animation: "slide_x"
+                    animation_start_val: 3
+                    animation_end_val: "state.gear_x_position"
+                    animation_duration: 200
                 }
 
                 Label {
@@ -113,6 +119,7 @@ Window {
                     text:  "P"
                     style: "large"
                     z_index: 2
+                    on_click: "set_gear_park"
                 }
                 Label {
                     x:     78
@@ -120,6 +127,7 @@ Window {
                     text:  "R"
                     style: "large"
                     z_index: 2
+                    on_click: "set_gear_reverse"
                 }
                 Label {
                     x:     138
@@ -127,6 +135,7 @@ Window {
                     text:  "N"
                     style: "large"
                     z_index: 2
+                    on_click: "set_gear_neutral"
                 }
                 Label {
                     x:     198
@@ -134,8 +143,10 @@ Window {
                     text:  "D"
                     style: "large"
                     z_index: 2
+                    on_click: "set_gear_drive"
                 }
             }
+
         }
 
         Divider {
@@ -172,7 +183,7 @@ Window {
                 id:    "range_value"
                 x:     20
                 y:     25
-                text:  "76"
+                text:  "state.battery_percent"
                 style: "large"
                 font:  "big_font"
             }
@@ -191,14 +202,14 @@ Window {
                 width:  240
                 height: 6
                 type:   "determinate"
-                value:  0.76
+                value:  "state.battery_percent"
             }
 
             Label {
                 id:    "battery_percent"
                 x:     20
                 y:      150
-                text:  "412km"
+                text:  "state.range_remaining"
                 style: "large"
             }
             
@@ -207,6 +218,52 @@ Window {
                 y:      178
                 text:  "Range Left"
                 style: "medium"
+            }
+
+            If {
+                condition: "state.battery_percent < 20"
+                Then {
+                    Container {
+                        x:      0
+                        y:      210
+                        width:  280
+                        height: 60
+                        animation: "fade"
+                        animation_start_val: 0
+                        animation_end_val: 1
+                        animation_duration: 500
+
+                        Card {
+                            x:      0
+                            y:      0
+                            width:  280
+                            height: 60
+                            type:   "filled"
+                            
+                            Icon {
+                                x:      10
+                                y:      15
+                                text:   "AROMA_ICON_BATTERY_ALERT"
+                                color:  "#FFAA00"
+                                size:   30
+                            }
+                            
+                            Label {
+                                x:      50
+                                y:      5
+                                text:   "Low Battery"
+                                style:  "medium"
+                            }
+                            
+                            Label {
+                                x:      50
+                                y:      30
+                                text:   "state.charging_stations_nearby"
+                                style:  "small"
+                            }
+                        }
+                    }
+                }
             }
         }
     }

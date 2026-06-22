@@ -36,22 +36,25 @@
 #include <unistd.h>
 #endif
 
-#define MAX_CALLBACKS 128
-#define MAX_NAMED_WIDGETS 256
-#define MAX_PROPS 64
-#define MAX_CHILDREN 64
-#define MAX_ITEM_NODES 64
-#define MAX_ERRORS 256
-#define MAX_EMBED_DEPTH 64
-#define MAX_EMBED_PATH_LEN 4096
-#define MAX_EMBED_SIZE (10 * 1024 * 1024)
-#define MAX_LOAD_FILE_SIZE (64 * 1024 * 1024)
-#define MAX_FONTS 32
+#define MAX_CALLBACKS           128
+#define MAX_NAMED_WIDGETS       256
+#define MAX_PROPS               64
+#define MAX_CHILDREN            64
+#define MAX_ITEM_NODES          64
+#define MAX_ERRORS              256
+#define MAX_EMBED_DEPTH         64
+#define MAX_EMBED_PATH_LEN      4096
+#define MAX_EMBED_SIZE          (10 * 1024 * 1024)
+#define MAX_LOAD_FILE_SIZE      (64 * 1024 * 1024)
+#define MAX_FONTS               32
 #define MAX_HOT_RELOAD_WATCHERS 8
-#define CB_HASH_SIZE 256
-#define WR_HASH_SIZE 512
-#define ICON_HASH_SIZE 2048
-#define FONT_HASH_SIZE 64
+#define CB_HASH_SIZE            256
+#define WR_HASH_SIZE            512
+#define ICON_HASH_SIZE          2048
+#define FONT_HASH_SIZE          64
+#define MAX_STATE_ENTRIES       256
+#define STATE_HASH_SIZE         256
+#define MAX_STATE_OBSERVERS     64
 
 typedef struct { char name[64]; IncenseCallbackType type; void *fn; void *userdata; int next; } CallbackEntry;
 typedef struct { char id[64]; AromaNode *node; int next; } NamedWidget;
@@ -64,11 +67,12 @@ typedef struct { FontEntry items[MAX_FONTS]; int count; int buckets[FONT_HASH_SI
 typedef struct { WidgetRegistry *registry; FontRegistry *font_registry; AromaFont *default_font; AromaFont *icon_font; } BuildCtx;
 typedef AromaNode *(*WidgetBuilder)(IncenseNode *, AromaNode *, BuildCtx *);
 typedef struct { const char *name; WidgetBuilder build; } WidgetEntry;
-
+static void build_children(IncenseNode *node, AromaNode *parent, BuildCtx *ctx);
 typedef struct {
     char file_path[512];
     time_t last_modified;
     bool active;
+    bool reload_in_progress;
     AromaWindow *window;
     AromaFont *font;
     AromaFont *icon_font;
@@ -82,6 +86,19 @@ typedef struct {
     size_t depth;
 } EmbedStack;
 
+typedef struct {
+    IncenseStateEntry entries[MAX_STATE_ENTRIES];
+    int count;
+    int buckets[STATE_HASH_SIZE];
+    int next_idx[MAX_STATE_ENTRIES];
+} StateStore;
+
+typedef struct {
+    IncenseStateObserverEntry observers[MAX_STATE_OBSERVERS];
+    bool active[MAX_STATE_OBSERVERS];
+    int count;
+} ObserverStore;
+
 static struct { IncenseError errors[MAX_ERRORS]; int count; bool has_fatal_error; bool verbose; } g_err;
 
 static CallbackEntry s_callbacks[MAX_CALLBACKS];
@@ -92,6 +109,11 @@ static FontRegistry *s_global_font_registry = NULL;
 static HotReloadWatcher s_hot_watchers[MAX_HOT_RELOAD_WATCHERS];
 static int s_hot_watcher_count = 0;
 static bool s_widget_table_disabled = false;
+
+static StateStore    s_state;
+static bool          s_state_init = false;
+static ObserverStore s_observers;
+static bool          s_observers_init = false;
 
 static inline uint32_t fnv1a(const char *s) {
     uint32_t h = 2166136261u;
@@ -190,6 +212,224 @@ static void err_add_suggestion(const char *s) {
 #define ERR_WARN_N(n, ...)           err_add(INCENSE_ERROR_WARNING,   ND_LINE(n), ND_COL(n), __VA_ARGS__)
 #define ERR_WARN_N_CTX(n,ctx,...)   err_add_ex(INCENSE_ERROR_WARNING, ND_LINE(n), ND_COL(n), ctx, __VA_ARGS__)
 #define ERR_SUGGEST(fmt, ...) do { char _s[256]; snprintf(_s, sizeof(_s), fmt, ##__VA_ARGS__); err_add_suggestion(_s); } while(0)
+
+static void state_init_once(void) {
+    if (s_state_init) return;
+    memset(&s_state, 0, sizeof(s_state));
+    memset(s_state.buckets, -1, sizeof(s_state.buckets));
+    memset(s_state.next_idx, -1, sizeof(s_state.next_idx));
+    s_state_init = true;
+}
+
+static void observers_init_once(void) {
+    if (s_observers_init) return;
+    memset(&s_observers, 0, sizeof(s_observers));
+    s_observers_init = true;
+}
+
+static IncenseStateEntry *state_find(const char *key) {
+    if (!key || !key[0]) return NULL;
+    state_init_once();
+    uint32_t slot = fnv1a(key) & (STATE_HASH_SIZE - 1);
+    int idx = s_state.buckets[slot];
+    while (idx >= 0 && idx < s_state.count) {
+        if (strcmp(s_state.entries[idx].key, key) == 0) return &s_state.entries[idx];
+        idx = s_state.next_idx[idx];
+    }
+    return NULL;
+}
+
+static IncenseStateEntry *state_get_or_create(const char *key) {
+    if (!key || !key[0] || strlen(key) >= 64) return NULL;
+    state_init_once();
+    IncenseStateEntry *existing = state_find(key);
+    if (existing) return existing;
+    if (s_state.count >= MAX_STATE_ENTRIES) {
+        LOG_ERROR("State store full, cannot add key '%s'", key);
+        return NULL;
+    }
+    IncenseStateEntry *e = &s_state.entries[s_state.count];
+    memset(e, 0, sizeof(*e));
+    strncpy(e->key, key, sizeof(e->key) - 1);
+    uint32_t slot = fnv1a(key) & (STATE_HASH_SIZE - 1);
+    s_state.next_idx[s_state.count] = s_state.buckets[slot];
+    s_state.buckets[slot] = s_state.count;
+    s_state.count++;
+    return e;
+}
+
+static void state_notify_observers(const char *key, const IncenseStateEntry *entry) {
+    observers_init_once();
+    for (int i = 0; i < s_observers.count; i++) {
+        if (!s_observers.active[i]) continue;
+        IncenseStateObserverEntry *obs = &s_observers.observers[i];
+        if (obs->key[0] == '\0' || strcmp(obs->key, key) == 0) {
+            if (obs->fn) obs->fn(key, entry, obs->userdata);
+        }
+    }
+}
+
+void IncenseStateSetInt(const char *key, int value) {
+    IncenseStateEntry *e = state_get_or_create(key);
+    if (!e) return;
+    e->type  = INCENSE_STATE_INT;
+    e->val.i = value;
+    state_notify_observers(key, e);
+}
+
+void IncenseStateSetFloat(const char *key, float value) {
+    IncenseStateEntry *e = state_get_or_create(key);
+    if (!e) return;
+    e->type  = INCENSE_STATE_FLOAT;
+    e->val.f = value;
+    state_notify_observers(key, e);
+}
+
+void IncenseStateSetBool(const char *key, bool value) {
+    IncenseStateEntry *e = state_get_or_create(key);
+    if (!e) return;
+    e->type  = INCENSE_STATE_BOOL;
+    e->val.b = value ? 1 : 0;
+    state_notify_observers(key, e);
+}
+
+void IncenseStateSetString(const char *key, const char *value) {
+    IncenseStateEntry *e = state_get_or_create(key);
+    if (!e) return;
+    e->type = INCENSE_STATE_STRING;
+    if (value) {
+        strncpy(e->val.s, value, sizeof(e->val.s) - 1);
+        e->val.s[sizeof(e->val.s) - 1] = '\0';
+    } else {
+        e->val.s[0] = '\0';
+    }
+    state_notify_observers(key, e);
+}
+
+bool IncenseStateGetInt(const char *key, int *out) {
+    IncenseStateEntry *e = state_find(key);
+    if (!e || !out) return false;
+    if (e->type == INCENSE_STATE_INT)   { *out = e->val.i; return true; }
+    if (e->type == INCENSE_STATE_BOOL)  { *out = e->val.b; return true; }
+    if (e->type == INCENSE_STATE_FLOAT) { *out = (int)e->val.f; return true; }
+    return false;
+}
+
+bool IncenseStateGetFloat(const char *key, float *out) {
+    IncenseStateEntry *e = state_find(key);
+    if (!e || !out) return false;
+    if (e->type == INCENSE_STATE_FLOAT) { *out = e->val.f; return true; }
+    if (e->type == INCENSE_STATE_INT)   { *out = (float)e->val.i; return true; }
+    if (e->type == INCENSE_STATE_BOOL)  { *out = (float)e->val.b; return true; }
+    return false;
+}
+
+bool IncenseStateGetBool(const char *key, bool *out) {
+    IncenseStateEntry *e = state_find(key);
+    if (!e || !out) return false;
+    if (e->type == INCENSE_STATE_BOOL)  { *out = e->val.b != 0; return true; }
+    if (e->type == INCENSE_STATE_INT)   { *out = e->val.i != 0; return true; }
+    if (e->type == INCENSE_STATE_FLOAT) { *out = e->val.f != 0.0f; return true; }
+    if (e->type == INCENSE_STATE_STRING){ *out = e->val.s[0] != '\0'; return true; }
+    return false;
+}
+
+bool IncenseStateGetString(const char *key, char *out, size_t out_len) {
+    IncenseStateEntry *e = state_find(key);
+    if (!e || !out || out_len == 0) return false;
+    if (e->type == INCENSE_STATE_STRING) {
+        strncpy(out, e->val.s, out_len - 1);
+        out[out_len - 1] = '\0';
+        return true;
+    }
+    if (e->type == INCENSE_STATE_INT) {
+        snprintf(out, out_len, "%d", e->val.i);
+        return true;
+    }
+    if (e->type == INCENSE_STATE_FLOAT) {
+        snprintf(out, out_len, "%g", e->val.f);
+        return true;
+    }
+    if (e->type == INCENSE_STATE_BOOL) {
+        strncpy(out, e->val.b ? "true" : "false", out_len - 1);
+        out[out_len - 1] = '\0';
+        return true;
+    }
+    return false;
+}
+
+bool IncenseStateExists(const char *key) {
+    return state_find(key) != NULL;
+}
+
+void IncenseStateDelete(const char *key) {
+    if (!key || !key[0]) return;
+    state_init_once();
+    uint32_t slot = fnv1a(key) & (STATE_HASH_SIZE - 1);
+    int *prev_next = &s_state.buckets[slot];
+    int idx = *prev_next;
+    while (idx >= 0 && idx < s_state.count) {
+        if (strcmp(s_state.entries[idx].key, key) == 0) {
+            *prev_next = s_state.next_idx[idx];
+            int last = s_state.count - 1;
+            if (idx != last) {
+                s_state.entries[idx] = s_state.entries[last];
+                s_state.next_idx[idx] = s_state.next_idx[last];
+                uint32_t moved_slot = fnv1a(s_state.entries[idx].key) & (STATE_HASH_SIZE - 1);
+                int *mp = &s_state.buckets[moved_slot];
+                while (*mp >= 0 && *mp != last) mp = &s_state.next_idx[*mp];
+                if (*mp == last) *mp = idx;
+            }
+            s_state.count--;
+            return;
+        }
+        prev_next = &s_state.next_idx[idx];
+        idx = *prev_next;
+    }
+}
+
+void IncenseStateClear(void) {
+    memset(&s_state, 0, sizeof(s_state));
+    memset(s_state.buckets, -1, sizeof(s_state.buckets));
+    memset(s_state.next_idx, -1, sizeof(s_state.next_idx));
+    s_state_init = true;
+}
+
+int IncenseStateAddObserver(const char *key, IncenseStateObserver fn, void *userdata) {
+    if (!fn) return -1;
+    observers_init_once();
+    for (int i = 0; i < s_observers.count; i++) {
+        if (!s_observers.active[i]) {
+            s_observers.observers[i].fn = fn;
+            s_observers.observers[i].userdata = userdata;
+            if (key) { strncpy(s_observers.observers[i].key, key, 63); s_observers.observers[i].key[63] = '\0'; }
+            else s_observers.observers[i].key[0] = '\0';
+            s_observers.active[i] = true;
+            return i;
+        }
+    }
+    if (s_observers.count >= MAX_STATE_OBSERVERS) {
+        LOG_ERROR("Observer store full");
+        return -1;
+    }
+    int id = s_observers.count++;
+    s_observers.observers[id].fn = fn;
+    s_observers.observers[id].userdata = userdata;
+    if (key) { strncpy(s_observers.observers[id].key, key, 63); s_observers.observers[id].key[63] = '\0'; }
+    else s_observers.observers[id].key[0] = '\0';
+    s_observers.active[id] = true;
+    return id;
+}
+
+void IncenseStateRemoveObserver(int observer_id) {
+    if (observer_id < 0 || observer_id >= s_observers.count) return;
+    s_observers.active[observer_id] = false;
+}
+
+void IncenseStateClearObservers(void) {
+    memset(&s_observers, 0, sizeof(s_observers));
+    s_observers_init = true;
+}
 
 static void font_registry_init(FontRegistry *reg) {
     if (!reg) return;
@@ -1289,6 +1529,110 @@ static const char *resolve_icon(const char *name) {
     return name;
 }
 
+static bool eval_condition(const char *cond) {
+    if (!cond || !cond[0]) return false;
+    while (*cond == ' ' || *cond == '\t') cond++;
+
+    if (strncmp(cond, "state.", 6) == 0) {
+        const char *key_start = cond + 6;
+        while (*key_start == ' ' || *key_start == '\t') key_start++;
+        
+        const char *eq = strstr(key_start, "==");
+        const char *neq = strstr(key_start, "!=");
+        const char *gte = strstr(key_start, ">=");
+        const char *lte = strstr(key_start, "<=");
+        const char *gt = strchr(key_start, '>');
+        const char *lt = strchr(key_start, '<');
+
+        char key[64];
+        memset(key, 0, sizeof(key));
+        
+        const char *ops[] = {neq, gte, lte, eq, gt, lt};
+        const char *op_names[] = {"!=", ">=", "<=", "==", ">", "<"};
+        const char *selected_op = NULL;
+        const char *selected_name = NULL;
+        
+        for (int i = 0; i < 6; i++) {
+            if (ops[i]) {
+                bool is_first = true;
+                for (int j = 0; j < i; j++) {
+                    if (ops[j] && ops[j] < ops[i]) {
+                        is_first = false;
+                        break;
+                    }
+                }
+                if (is_first) {
+                    selected_op = ops[i];
+                    selected_name = op_names[i];
+                    break;
+                }
+            }
+        }
+        
+        if (!selected_op) {
+            size_t klen = strlen(key_start);
+            if (klen >= sizeof(key)) return false;
+            memcpy(key, key_start, klen); key[klen] = '\0';
+            char *end = key + strlen(key) - 1;
+            while (end > key && (*end == ' ' || *end == '\t')) *end-- = '\0';
+            bool bv = false;
+            IncenseStateGetBool(key, &bv);
+            return bv;
+        }
+        
+        size_t klen = (size_t)(selected_op - key_start);
+        while (klen > 0 && (key_start[klen-1] == ' ' || key_start[klen-1] == '\t')) klen--;
+        if (klen >= sizeof(key)) return false;
+        memcpy(key, key_start, klen); key[klen] = '\0';
+        
+        const char *rhs = selected_op + strlen(selected_name);
+        while (*rhs == ' ' || *rhs == '\t') rhs++;
+        
+        IncenseStateEntry *e = state_find(key);
+        if (!e) return false;
+        
+        if (strcmp(selected_name, "!=") == 0) {
+            if (e->type == INCENSE_STATE_INT)    { int v; IncenseStateGetInt(key, &v);    return v != atoi(rhs); }
+            if (e->type == INCENSE_STATE_BOOL)   { bool v; IncenseStateGetBool(key, &v);  return v != (strcmp(rhs,"true")==0 || strcmp(rhs,"1")==0); }
+            if (e->type == INCENSE_STATE_FLOAT)  { float v; IncenseStateGetFloat(key, &v); return v != strtof(rhs, NULL); }
+            if (e->type == INCENSE_STATE_STRING) { char sv[256]; IncenseStateGetString(key, sv, sizeof(sv)); return strcmp(sv, rhs) != 0; }
+            return false;
+        }
+        if (strcmp(selected_name, ">=") == 0) {
+            if (e->type == INCENSE_STATE_INT)    { int v; IncenseStateGetInt(key, &v);    return v >= atoi(rhs); }
+            if (e->type == INCENSE_STATE_FLOAT)  { float v; IncenseStateGetFloat(key, &v); return v >= strtof(rhs, NULL); }
+            return false;
+        }
+        if (strcmp(selected_name, "<=") == 0) {
+            if (e->type == INCENSE_STATE_INT)    { int v; IncenseStateGetInt(key, &v);    return v <= atoi(rhs); }
+            if (e->type == INCENSE_STATE_FLOAT)  { float v; IncenseStateGetFloat(key, &v); return v <= strtof(rhs, NULL); }
+            return false;
+        }
+        if (strcmp(selected_name, "==") == 0) {
+            if (e->type == INCENSE_STATE_INT)    { int v; IncenseStateGetInt(key, &v);    return v == atoi(rhs); }
+            if (e->type == INCENSE_STATE_BOOL)   { bool v; IncenseStateGetBool(key, &v);  return v == (strcmp(rhs,"true")==0 || strcmp(rhs,"1")==0); }
+            if (e->type == INCENSE_STATE_FLOAT)  { float v; IncenseStateGetFloat(key, &v); return v == strtof(rhs, NULL); }
+            if (e->type == INCENSE_STATE_STRING) { char sv[256]; IncenseStateGetString(key, sv, sizeof(sv)); return strcmp(sv, rhs) == 0; }
+            return false;
+        }
+        if (strcmp(selected_name, ">") == 0) {
+            if (e->type == INCENSE_STATE_INT)    { int v; IncenseStateGetInt(key, &v);    return v > atoi(rhs); }
+            if (e->type == INCENSE_STATE_FLOAT)  { float v; IncenseStateGetFloat(key, &v); return v > strtof(rhs, NULL); }
+            return false;
+        }
+        if (strcmp(selected_name, "<") == 0) {
+            if (e->type == INCENSE_STATE_INT)    { int v; IncenseStateGetInt(key, &v);    return v < atoi(rhs); }
+            if (e->type == INCENSE_STATE_FLOAT)  { float v; IncenseStateGetFloat(key, &v); return v < strtof(rhs, NULL); }
+            return false;
+        }
+        return false;
+    }
+
+    if (strcmp(cond, "true") == 0)  return true;
+    if (strcmp(cond, "false") == 0) return false;
+    return false;
+}
+
 static void props_collect(IncenseNode *node, PropBag *bag) {
     if (!bag) return;
     bag->count = 0; bag->node = node;
@@ -1331,6 +1675,12 @@ static void props_free(PropBag *bag) {
 static int props_int(const PropBag *bag, const char *key, int def) {
     const char *v = props_get(bag, key);
     if (!v || !v[0]) return def;
+    const char *check = v;
+    if (strncmp(check, "state.", 6) == 0) {
+        int out = def;
+        IncenseStateGetInt(check + 6, &out);
+        return out;
+    }
     errno = 0;
     char *end;
     long val = strtol(v, &end, 10);
@@ -1342,6 +1692,11 @@ static int props_int(const PropBag *bag, const char *key, int def) {
 static float props_float(const PropBag *bag, const char *key, float def) {
     const char *v = props_get(bag, key);
     if (!v || !v[0]) return def;
+    if (strncmp(v, "state.", 6) == 0) {
+        float out = def;
+        IncenseStateGetFloat(v + 6, &out);
+        return out;
+    }
     errno = 0;
     char *end;
     float val = strtof(v, &end);
@@ -1353,6 +1708,11 @@ static float props_float(const PropBag *bag, const char *key, float def) {
 static bool props_bool(const PropBag *bag, const char *key, bool def) {
     const char *v = props_get(bag, key);
     if (!v || !v[0]) return def;
+    if (strncmp(v, "state.", 6) == 0) {
+        bool out = def;
+        IncenseStateGetBool(v + 6, &out);
+        return out;
+    }
     if (v[0] == 't' || v[0] == 'T' || v[0] == '1') return true;
     if (v[0] == 'f' || v[0] == 'F' || v[0] == '0') return false;
     ERR_SYNTAX_N_CTX(bag ? bag->node : NULL, key, "Property '%s' value '%s' is not a valid boolean", key, v);
@@ -1377,6 +1737,14 @@ static uint32_t props_color(const PropBag *bag, const char *key, uint32_t def) {
 
 static char *props_str_dup(const PropBag *bag, const char *key, const char *def) {
     const char *v = props_get(bag, key);
+    if (v && strncmp(v, "state.", 6) == 0) {
+        char sbuf[256];
+        if (IncenseStateGetString(v + 6, sbuf, sizeof(sbuf))) {
+            char *out = strdup(sbuf);
+            if (!out) LOG_ERROR("Out of memory duplicating state property '%s'", safe_str(key));
+            return out;
+        }
+    }
     const char *src = v ? v : (def ? def : "");
     char *out = strdup(src);
     if (!out) { LOG_ERROR("Out of memory duplicating property '%s'", safe_str(key)); }
@@ -1401,11 +1769,11 @@ static void validate_properties(IncenseNode *node, const PropBag *bag) {
     if (!bag) return;
     static const char *const valid[] = {
         "animation","animation_duration","animation_easing","animation_end_val","animation_start_val",
-        "attribution","autoplay","color","columns","direction","duration","font","group","header","height",
-        "hidden","icon","id","label","lat","layout","length","lon","max","message","min","on_change",
-        "on_click","on_select","on_submit","orientation","parent","placeholder","position","radius",
-        "selected","size","src","style","text","thickness","title","type","value","variant","visible",
-        "width","x","y","zoom","z_index",NULL};
+        "attribution","autoplay","color","columns","condition","direction","duration","font","group",
+        "header","height","hidden","icon","id","label","lat","layout","length","lon","max","message",
+        "min","on_change","on_click","on_select","on_submit","orientation","parent","placeholder",
+        "position","radius","selected","size","src","style","text","thickness","title","type","value",
+        "variant","visible","width","x","y","zoom","z_index",NULL};
     for (int i = 0; i < bag->count; i++) {
         if (!bag->items[i].key) continue;
         bool found = false;
@@ -1487,7 +1855,20 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
 static inline void maybe_register(const PropBag *bag, AromaNode *built, BuildCtx *ctx) {
     if (!built || !ctx || !ctx->registry || !bag) return;
     const char *id = props_get(bag, "id");
-    if (id && id[0]) registry_register(ctx->registry, id, built);
+    if (id && id[0]) {
+        uint32_t slot = fnv1a(id) & (WR_HASH_SIZE - 1);
+        int *prev_next = &ctx->registry->buckets[slot];
+        int idx = *prev_next;
+        while (idx >= 0 && idx < ctx->registry->count) {
+            if (strcmp(ctx->registry->items[idx].id, id) == 0) {
+                *prev_next = ctx->registry->items[idx].next;
+                break;
+            }
+            prev_next = &ctx->registry->items[idx].next;
+            idx = *prev_next;
+        }
+        registry_register(ctx->registry, id, built);
+    }
 }
 
 static int collect_item_nodes(IncenseNode *node, const char *item_name, IncenseNode *out[], int max_out) {
@@ -1501,37 +1882,130 @@ static int collect_item_nodes(IncenseNode *node, const char *item_name, IncenseN
 }
 
 static AromaNode *build_widget(IncenseNode *node, AromaNode *sp, BuildCtx *ctx);
+typedef struct {
+    IncenseNode *node;
+    AromaNode *parent;
+    BuildCtx ctx;
+    char condition[256];
+    bool last_result;
+} ConditionalState;
+
+#define MAX_CONDITIONAL_STATES 64
+static ConditionalState s_conditional_states[MAX_CONDITIONAL_STATES];
+static int s_conditional_count = 0;
+
+static void rebuild_conditional(ConditionalState *cs) {
+    if (!cs || !cs->parent || !cs->node) return;
+    
+    bool passes = eval_condition(cs->condition);
+    if (passes == cs->last_result) return;
+    cs->last_result = passes;
+    
+    AromaNode *parent = cs->parent;
+    IncenseNode *node = cs->node;
+    BuildCtx *ctx = &cs->ctx;
+    
+    for (IncenseNode *child = node->first_child; child; child = child->next_sibling) {
+        if (!child || child->type != INCENSE_OBJECT || !child->name) continue;
+        if (strcmp(child->name, "Then") == 0 && passes) {
+            build_children(child, parent, ctx);
+            aroma_node_invalidate_tree(parent);
+            return;
+        }
+        if (strcmp(child->name, "Else") == 0 && !passes) {
+            build_children(child, parent, ctx);
+            aroma_node_invalidate_tree(parent);
+            return;
+        }
+    }
+}
+
+static void on_conditional_state_change(const char *key, const IncenseStateEntry *entry, void *userdata) {
+    (void)key;
+    (void)entry;
+    ConditionalState *cs = (ConditionalState *)userdata;
+    if (cs) rebuild_conditional(cs);
+}
 
 static void build_children(IncenseNode *node, AromaNode *parent, BuildCtx *ctx) {
     if (!node || !ctx) return;
-    for (IncenseNode *c = node->first_child; c; c = c->next_sibling)
-        if (c && c->type == INCENSE_OBJECT) build_widget(c, parent, ctx);
+    for (IncenseNode *c = node->first_child; c; c = c->next_sibling) {
+        if (!c) continue;
+        if (c->type == INCENSE_OBJECT) {
+            if (c->name && strcmp(c->name, "If") == 0) {
+                PropBag cb; props_collect(c, &cb);
+                const char *cond_str = props_get(&cb, "condition");
+                bool passes = cond_str ? eval_condition(cond_str) : false;
+                
+                if (cond_str && s_conditional_count < MAX_CONDITIONAL_STATES) {
+                    ConditionalState *cs = &s_conditional_states[s_conditional_count++];
+                    memset(cs, 0, sizeof(*cs));
+                    cs->node = c;
+                    cs->parent = parent;
+                    cs->ctx = *ctx;
+                    strncpy(cs->condition, cond_str, sizeof(cs->condition) - 1);
+                    cs->last_result = passes;
+                    
+                    if (strncmp(cond_str, "state.", 6) == 0) {
+                        char key_copy[256];
+                        strncpy(key_copy, cond_str, sizeof(key_copy) - 1);
+                        key_copy[sizeof(key_copy) - 1] = '\0';
+                        char *key_start = key_copy + 6;
+                        char *op = strpbrk(key_start, "=!><");
+                        if (op) *op = '\0';
+                        char *end = key_start + strlen(key_start) - 1;
+                        while (end > key_start && (*end == ' ' || *end == '\t')) *end-- = '\0';
+                        IncenseStateAddObserver(key_start, on_conditional_state_change, cs);
+                    }
+                }
+                
+                props_free(&cb);
+                if (passes) {
+                    for (IncenseNode *child = c->first_child; child; child = child->next_sibling)
+                        if (child && child->type == INCENSE_OBJECT && child->name && strcmp(child->name, "Then") == 0)
+                            build_children(child, parent, ctx);
+                } else {
+                    for (IncenseNode *child = c->first_child; child; child = child->next_sibling)
+                        if (child && child->type == INCENSE_OBJECT && child->name && strcmp(child->name, "Else") == 0)
+                            build_children(child, parent, ctx);
+                }
+            } else {
+                build_widget(c, parent, ctx);
+            }
+        }
+    }
 }
 
 static bool bridge_bool_ptr(AromaNode *node, void *ud) {
     CallbackEntry *e = ud;
     return (e && e->fn && e->type == INCENSE_CALLBACK_BOOL_PTR) ? ((bool(*)(AromaNode*,void*))e->fn)(node, e->userdata) : false;
 }
+
 static void bridge_void_ptr(void *ud) {
     CallbackEntry *e = ud;
     if (e && e->fn && e->type == INCENSE_CALLBACK_VOID_PTR) ((void(*)(void*))e->fn)(e->userdata);
 }
+
 static void bridge_dropdown_change(int index, const char *option, void *ud) {
     CallbackEntry *e = ud;
     if (e && e->fn && e->type == INCENSE_CALLBACK_INT_STRING_PTR) ((void(*)(int,const char*,void*))e->fn)(index, option, e->userdata);
 }
+
 static void bridge_checkbox_change(bool checked, void *ud) {
     CallbackEntry *e = ud;
     if (e && e->fn && e->type == INCENSE_CALLBACK_BOOL_BOOL_PTR) ((void(*)(bool,void*))e->fn)(checked, e->userdata);
 }
+
 static bool bridge_textbox_change(AromaNode *node, const char *text, void *ud) {
     CallbackEntry *e = ud;
     return (e && e->fn && e->type == INCENSE_CALLBACK_NODE_STRING_PTR) ? ((bool(*)(AromaNode*,const char*,void*))e->fn)(node, text, e->userdata) : false;
 }
+
 static void bridge_listview_select(int index, void *ud) {
     CallbackEntry *e = ud;
     if (e && e->fn && e->type == INCENSE_CALLBACK_INT_PTR) ((void(*)(int,void*))e->fn)(index, e->userdata);
 }
+
 static void bridge_node_int(AromaNode *node, int index, void *ud) {
     CallbackEntry *e = ud;
     if (e && e->fn && e->type == INCENSE_CALLBACK_NODE_INT_PTR) ((void(*)(AromaNode*,int,void*))e->fn)(node, index, e->userdata);
@@ -2241,6 +2715,13 @@ static bool verify_widget_table_sorted(void) {
 
 static AromaNode *build_widget(IncenseNode *node, AromaNode *sp, BuildCtx *ctx) {
     if (!node || node->type != INCENSE_OBJECT || !node->name || !ctx) return NULL;
+    
+    if (strcmp(node->name, "If") == 0 || 
+        strcmp(node->name, "Then") == 0 || 
+        strcmp(node->name, "Else") == 0) {
+        return NULL;
+    }
+    
     if (!s_widget_table_checked && !s_widget_table_disabled) verify_widget_table_sorted();
     if (s_widget_table_disabled) {
         ERR_SYNTAX_N(node, "Widget table is corrupted, cannot build any widgets");
@@ -2459,9 +2940,9 @@ static int find_watcher_index(const char *path) {
         if (strcmp(s_hot_watchers[i].file_path, path) == 0) return i;
     return -1;
 }
-
 static bool reload_hot_window(HotReloadWatcher *watcher) {
     if (!watcher || !watcher->active || !watcher->window) return false;
+    
     struct stat buffer;
     if (stat(watcher->file_path, &buffer) != 0) {
         if (watcher->on_error) { char e[1024]; snprintf(e, sizeof(e), "UI file not found: %s", watcher->file_path); watcher->on_error(e); }
@@ -2486,7 +2967,12 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
         if (watcher->on_error) watcher->on_error("Failed to parse UI file");
         return false;
     }
-
+    
+    // Clear conditional state observers and states
+    IncenseStateClearObservers();
+    s_conditional_count = 0;
+    memset(s_conditional_states, 0, sizeof(s_conditional_states));
+    
     err_clear();
     aroma_animation_manager_init();
     if (!s_icon_init) icon_build_table();
@@ -2497,12 +2983,13 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
         IncenseDestroy(doc);
         return false;
     }
-
     if (watcher->out_registry) {
-        if (*watcher->out_registry) IncenseFreeRegistry(*watcher->out_registry);
-        *watcher->out_registry = calloc(1, sizeof(IncenseRegistry));
-        if (*watcher->out_registry) registry_init(&(*watcher->out_registry)->reg);
-        else LOG_ERROR("Out of memory allocating widget registry during hot reload");
+        if (*watcher->out_registry) {
+            registry_init(&(*watcher->out_registry)->reg);
+        } else {
+            *watcher->out_registry = calloc(1, sizeof(IncenseRegistry));
+            if (*watcher->out_registry) registry_init(&(*watcher->out_registry)->reg);
+        }
     }
 
     FontRegistry *freg = calloc(1, sizeof(FontRegistry));
@@ -2518,6 +3005,10 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
 
     AromaNode *root_node = (AromaNode *)watcher->window;
     if (!root_node) { IncenseDestroy(doc); free(freg); return false; }
+    
+    // CRITICAL: Clean up all animations before destroying nodes
+    aroma_animation_cleanup_all();
+
     uint64_t child_count = root_node->child_count;
     if (child_count > AROMA_MAX_CHILD_NODES) {
         LOG_ERROR("Window child_count (%llu) exceeds maximum, clamping", (unsigned long long)child_count);
@@ -2525,7 +3016,11 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
     }
     AromaNode *child_nodes[AROMA_MAX_CHILD_NODES];
     for (uint64_t i = 0; i < child_count; i++) child_nodes[i] = root_node->child_nodes[i];
-    for (uint64_t i = 0; i < child_count; i++) if (child_nodes[i]) __destroy_node_tree(child_nodes[i]);
+    for (uint64_t i = 0; i < child_count; i++) {
+        if (child_nodes[i]) {
+            __destroy_node_tree(child_nodes[i]);
+        }
+    }
     root_node->child_count = 0;
     memset(root_node->child_nodes, 0, sizeof(root_node->child_nodes));
 
@@ -2535,8 +3030,7 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
         .default_font  = watcher->font,
         .icon_font     = watcher->icon_font
     };
-    for (IncenseNode *child = doc->root->first_child; child; child = child->next_sibling)
-        if (child && child->type == INCENSE_OBJECT) build_widget(child, root_node, &ctx);
+    build_children(doc->root, root_node, &ctx);
     IncenseDestroy(doc);
     free(freg);
 
@@ -2550,6 +3044,8 @@ static bool reload_hot_window(HotReloadWatcher *watcher) {
 static AromaWindow *IncenseLoadCore(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
     err_clear();
     aroma_animation_manager_init();
+    s_conditional_count = 0;
+    memset(s_conditional_states, 0, sizeof(s_conditional_states));
     if (!s_icon_init) icon_build_table();
     if (!s_cb_init) cb_init_buckets();
     if (out_registry) *out_registry = NULL;
@@ -2586,8 +3082,7 @@ static AromaWindow *IncenseLoadCore(const IncenseDocument *doc, AromaFont *font,
 
     AromaNode *root_node = (AromaNode *)window;
     BuildCtx ctx = { .registry = ireg ? &ireg->reg : NULL, .font_registry = freg, .default_font = font, .icon_font = icon_font };
-    for (IncenseNode *child = root->first_child; child; child = child->next_sibling)
-        if (child && child->type == INCENSE_OBJECT) build_widget(child, root_node, &ctx);
+    build_children(root, root_node, &ctx);
 
     free(freg);
     if (out_registry) *out_registry = ireg;
@@ -2627,20 +3122,25 @@ static AromaWindow *load_string_core(const char *source, AromaFont *font, AromaF
 AromaWindow *IncenseLoad(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font) {
     return IncenseLoadCore(doc, font, icon_font, NULL);
 }
+
 AromaWindow *IncenseLoadFile(const char *path, AromaFont *font, AromaFont *icon_font) {
     return load_file_core(path, font, icon_font, NULL);
 }
+
 AromaWindow *IncenseLoadString(const char *source, AromaFont *font, AromaFont *icon_font) {
     return load_string_core(source, font, icon_font, NULL);
 }
+
 AromaWindow *IncenseLoadEx(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
     if (out_registry) *out_registry = NULL;
     return IncenseLoadCore(doc, font, icon_font, out_registry);
 }
+
 AromaWindow *IncenseLoadFileEx(const char *path, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
     if (out_registry) *out_registry = NULL;
     return load_file_core(path, font, icon_font, out_registry);
 }
+
 AromaWindow *IncenseLoadStringEx(const char *source, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry) {
     if (out_registry) *out_registry = NULL;
     return load_string_core(source, font, icon_font, out_registry);
