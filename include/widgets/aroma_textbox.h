@@ -120,8 +120,7 @@ static inline void aroma_ui_textbox_set_text(AromaTextbox* textbox, const char* 
     AromaNode* textbox_node = (AromaNode*)textbox;
     struct AromaTextbox* tb = (struct AromaTextbox*)textbox_node->node_widget_ptr;
     if (tb) {
-        strncpy(tb->text, text, AROMA_TEXTBOX_MAX_LENGTH - 1);
-        tb->text[AROMA_TEXTBOX_MAX_LENGTH - 1] = '\0';
+        snprintf(tb->text, AROMA_TEXTBOX_MAX_LENGTH, "%s", text);
         tb->text_length = strlen(tb->text);
         aroma_node_invalidate(textbox_node);
     }
