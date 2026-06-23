@@ -11,6 +11,7 @@
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
       font-family: -apple-system, 'Inter', 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
       background: #0a0a0b;
@@ -19,7 +20,14 @@
       -webkit-font-smoothing: antialiased;
       display: flex;
       min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
     }
+
+    body.light-mode {
+      background: #f8f9fa;
+      color: #1a1a1a;
+    }
+
     .sidebar {
       width: 240px;
       min-width: 240px;
@@ -30,23 +38,85 @@
       top: 0;
       height: 100vh;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.3s ease, border-color 0.3s ease;
     }
+
+    body.light-mode .sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e0e0e0;
+    }
+
     .sidebar-header {
       padding: 0 18px 16px;
       border-bottom: 1px solid #1e1e22;
       margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.3s ease;
     }
+
+    body.light-mode .sidebar-header {
+      border-bottom: 1px solid #e0e0e0;
+    }
+
     .sidebar-logo {
       font-weight: 650;
       font-size: 17px;
       color: #f0f0f0;
       text-decoration: none;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .sidebar-logo {
+      color: #1a1a1a;
+    }
+
     .sidebar-version {
       font-size: 11px;
       color: #7a7a80;
       font-weight: 400;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .sidebar-version {
+      color: #6c757d;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid #2e2e38;
+      color: #c0c0c8;
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .theme-toggle:hover {
+      background: #1a1a20;
+      border-color: #44445a;
+      color: #f0f0f4;
+    }
+
+    body.light-mode .theme-toggle {
+      border-color: #d0d0d0;
+      color: #333;
+    }
+
+    body.light-mode .theme-toggle:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+      color: #000;
+    }
+
     .sidebar-label {
       font-size: 10px;
       font-weight: 600;
@@ -54,7 +124,13 @@
       text-transform: uppercase;
       color: #7a7a80;
       padding: 10px 18px 4px;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .sidebar-label {
+      color: #6c757d;
+    }
+
     .sidebar-link {
       display: flex;
       align-items: center;
@@ -65,39 +141,71 @@
       text-decoration: none;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.1s;
+      transition: background 0.1s, color 0.3s ease;
     }
+
     .sidebar-link:hover {
       background: #1a1a20;
       color: #e8e8ec;
     }
+
+    body.light-mode .sidebar-link {
+      color: #495057;
+    }
+
+    body.light-mode .sidebar-link:hover {
+      background: #f1f3f5;
+      color: #000;
+    }
+
     .sidebar-link i {
       width: 16px;
       font-size: 12px;
       color: #7a7a80;
       text-align: center;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .sidebar-link i {
+      color: #6c757d;
+    }
+
     .main-content {
       flex: 1;
       max-width: 960px;
     }
+
     .section {
       padding: 40px 48px;
       border-bottom: 1px solid #1e1e22;
+      transition: border-color 0.3s ease;
     }
+
+    body.light-mode .section {
+      border-bottom: 1px solid #e0e0e0;
+    }
+
     .section:last-child {
       border-bottom: none;
     }
+
     .hero-section {
       display: flex;
       gap: 60px;
       align-items: center;
       padding: 56px 48px;
       border-bottom: 1px solid #1e1e22;
+      transition: border-color 0.3s ease;
     }
+
+    body.light-mode .hero-section {
+      border-bottom: 1px solid #e0e0e0;
+    }
+
     .hero-text {
       flex: 1;
     }
+
     .hero-preview {
       flex-shrink: 0;
       display: flex;
@@ -105,6 +213,7 @@
       align-items: center;
       gap: 12px;
     }
+
     .watch-frame {
       width: 380px;
       height: 380px;
@@ -112,22 +221,37 @@
       border-radius: 40px;
       border: 3px solid #2e2e3a;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 0 2px #252532;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 2px #252532;
       position: relative;
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
+
+    body.light-mode .watch-frame {
+      background: #ffffff;
+      border: 3px solid #dee2e6;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), inset 0 0 0 2px #f1f3f5;
+    }
+
     .watch-frame iframe {
       width: 100%;
       height: 100%;
       border: none;
       border-radius: 37px;
     }
+
     .watch-label {
       font-size: 11px;
       color: #6a6a74;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       font-weight: 500;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .watch-label {
+      color: #6c757d;
+    }
+
     .eyebrow {
       font-size: 11px;
       font-weight: 600;
@@ -135,33 +259,63 @@
       text-transform: uppercase;
       color: #7a7a80;
       margin-bottom: 4px;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .eyebrow {
+      color: #6c757d;
+    }
+
     h1 {
       font-size: 36px;
       font-weight: 650;
       letter-spacing: -0.02em;
       margin-bottom: 8px;
       color: #f0f0f4;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode h1 {
+      color: #1a1a1a;
+    }
+
     h2 {
       font-size: 28px;
       font-weight: 600;
       letter-spacing: -0.015em;
       margin-bottom: 6px;
       color: #e8e8ec;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode h2 {
+      color: #212529;
+    }
+
     h3 {
       font-size: 17px;
       font-weight: 600;
       margin: 20px 0 8px;
       color: #e0e0e4;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode h3 {
+      color: #343a40;
+    }
+
     .intro {
       font-size: 15px;
       color: #9898a0;
       max-width: 560px;
       margin-bottom: 20px;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .intro {
+      color: #495057;
+    }
+
     .btn {
       font-family: inherit;
       font-size: 13px;
@@ -176,51 +330,103 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      transition: all 0.15s;
+      transition: all 0.15s, background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
       margin-right: 8px;
     }
+
     .btn:hover {
       background: #22222c;
       border-color: #44445a;
       color: #f0f0f4;
     }
+
+    body.light-mode .btn {
+      background: #e9ecef;
+      border-color: #ced4da;
+      color: #212529;
+    }
+
+    body.light-mode .btn:hover {
+      background: #dee2e6;
+      border-color: #adb5bd;
+      color: #000;
+    }
+
     .btn.filled {
       background: #e0e0e0;
       color: #0a0a0b;
       border-color: #e0e0e0;
     }
+
     .btn.filled:hover {
       background: #ffffff;
       border-color: #ffffff;
     }
+
+    body.light-mode .btn.filled {
+      background: #212529;
+      color: #ffffff;
+      border-color: #212529;
+    }
+
+    body.light-mode .btn.filled:hover {
+      background: #000;
+      border-color: #000;
+    }
+
     .grid-3 {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
     }
+
     .card {
       background: #111115;
       border-radius: 12px;
       padding: 18px 16px;
       border: 1px solid #1e1e26;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.15s, background 0.3s ease, border-color 0.3s ease;
     }
+
     .card:hover {
       background: #18181f;
       border-color: #2a2a38;
     }
+
+    body.light-mode .card {
+      background: #ffffff;
+      border-color: #dee2e6;
+    }
+
+    body.light-mode .card:hover {
+      background: #f8f9fa;
+      border-color: #adb5bd;
+    }
+
     .card h3 {
       font-size: 15px;
       margin: 0 0 4px;
       font-weight: 600;
       color: #e8e8ec;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .card h3 {
+      color: #212529;
+    }
+
     .card p {
       font-size: 13px;
       color: #90909a;
       margin: 0;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .card p {
+      color: #495057;
+    }
+
     .card .cat {
       font-size: 10px;
       font-weight: 600;
@@ -228,14 +434,28 @@
       text-transform: uppercase;
       color: #7a7a80;
       margin-bottom: 4px;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .card .cat {
+      color: #6c757d;
+    }
+
     .code-block {
       background: #0d0d12;
       border-radius: 10px;
       margin: 12px 0 20px;
       overflow: hidden;
       border: 1px solid #1e1e26;
+      transition: background 0.3s ease, border-color 0.3s ease;
+      position: relative;
     }
+
+    body.light-mode .code-block {
+      background: #f8f9fa;
+      border-color: #dee2e6;
+    }
+
     .code-header {
       display: flex;
       justify-content: space-between;
@@ -243,12 +463,25 @@
       padding: 8px 14px;
       background: #14141c;
       border-bottom: 1px solid #1e1e26;
+      transition: background 0.3s ease, border-color 0.3s ease;
     }
+
+    body.light-mode .code-header {
+      background: #e9ecef;
+      border-bottom: 1px solid #dee2e6;
+    }
+
     .code-filename {
       font-size: 11px;
       color: #7a7a84;
       font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .code-filename {
+      color: #6c757d;
+    }
+
     .copy-btn {
       font-size: 11px;
       color: #d0d0d8;
@@ -260,11 +493,23 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      transition: background 0.15s;
+      transition: background 0.15s, color 0.3s ease;
+      font-family: inherit;
     }
+
     .copy-btn:hover {
       background: #2a2a38;
     }
+
+    body.light-mode .copy-btn {
+      color: #212529;
+      background: #dee2e6;
+    }
+
+    body.light-mode .copy-btn:hover {
+      background: #ced4da;
+    }
+
     .code-body {
       padding: 16px 20px;
       font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
@@ -273,31 +518,79 @@
       color: #d4d4d4;
       white-space: pre;
       overflow-x: auto;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .code-body {
+      color: #212529;
+    }
+
     .kw {
       color: #9CDCFE;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .kw {
+      color: #0d6efd;
+    }
+
     .ty {
       color: #4EC9B0;
       font-weight: bold;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .ty {
+      color: #198754;
+    }
+
     .str {
       color: #CE9178;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .str {
+      color: #d63384;
+    }
+
     .num {
       color: #B5CEA8;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .num {
+      color: #0d6efd;
+    }
+
     .cm {
       color: #6A9955;
       font-style: italic;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .cm {
+      color: #198754;
+    }
+
     .vr {
       color: #DCDCAA;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .vr {
+      color: #dc3545;
+    }
+
     .an {
       color: #C586C0;
       font-weight: bold;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode .an {
+      color: #6f42c1;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -306,7 +599,13 @@
       border-radius: 8px;
       overflow: hidden;
       margin-top: 8px;
+      transition: background 0.3s ease;
     }
+
+    body.light-mode table {
+      background: #ffffff;
+    }
+
     thead th {
       text-align: left;
       font-size: 10px;
@@ -317,21 +616,74 @@
       padding: 10px 14px;
       border-bottom: 1px solid #1e1e26;
       background: #111118;
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
+
+    body.light-mode thead th {
+      color: #495057;
+      border-bottom: 1px solid #dee2e6;
+      background: #f8f9fa;
+    }
+
     tbody td {
       padding: 8px 14px;
       border-bottom: 1px solid #1a1a22;
       color: #c0c0ca;
+      transition: border-color 0.3s ease, color 0.3s ease;
     }
+
+    body.light-mode tbody td {
+      border-bottom: 1px solid #dee2e6;
+      color: #212529;
+    }
+
     tbody tr:last-child td {
       border-bottom: none;
     }
+
     tbody td:first-child {
       font-family: 'SF Mono', 'Menlo', monospace;
       font-size: 11px;
       font-weight: 500;
       color: #d4d4dc;
+      transition: color 0.3s ease;
     }
+
+    body.light-mode tbody td:first-child {
+      color: #212529;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1e1e28;
+      color: #d0d0d8;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s, transform 0.2s;
+      border: 1px solid #2e2e38;
+      pointer-events: none;
+    }
+
+    body.light-mode .toast {
+      background: #ffffff;
+      color: #212529;
+      border-color: #dee2e6;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     @media (max-width: 800px) {
       body {
         flex-direction: column;
@@ -353,6 +705,7 @@
         border-bottom: none;
         padding: 0;
         margin: 0;
+        width: auto;
       }
       .sidebar-label {
         display: none;
@@ -390,9 +743,15 @@
   </style>
 </head>
 <body>
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
   <aside class="sidebar">
     <div class="sidebar-header">
       <a class="sidebar-logo" href="#" onclick="scrollToSection('overview')">AromaUI <span class="sidebar-version">v0.1</span></a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <i class="fas fa-sun"></i> <span id="themeText">Light</span>
+      </button>
     </div>
     <div class="sidebar-label">Getting Started</div>
     <a class="sidebar-link" onclick="scrollToSection('overview')"><i class="fas fa-book-open"></i> Overview</a>
@@ -443,306 +802,415 @@
     <a class="sidebar-link" onclick="scrollToSection('widget-loading')"><i class="fas fa-circle-notch"></i> Loading</a>
     <a class="sidebar-link" onclick="scrollToSection('widget-debugoverlay')"><i class="fas fa-bug"></i> DebugOverlay</a>
   </aside>
+
   <main class="main-content">
-    <section class="hero-section" id="overview">
-      <div class="hero-text">
-        <h1>Separate Interface from Logic</h1>
-        <p class="intro">AromaUI separates interface from logic using a custom markup language. Build reactive, animated interfaces with real-time state and hot reloading.</p>
-        <a class="btn filled" href="https://github.com/BinaryInkTN/AromaUI" target="_blank"><i class="fab fa-github"></i> GitHub</a>
-        <a class="btn" href="https://binaryinktn.github.io/AromaUI/" target="_blank"><i class="fas fa-cube"></i> Full API Docs</a>
-      </div>
-      <div class="hero-preview">
-        <div class="watch-frame">
-          <iframe src="smartwatch.html" title="Smartwatch preview"></iframe>
-        </div>
-      </div>
-    </section>
     <div id="widgetDetails"></div>
   </main>
+
   <script>
-    const featureData = {
-      incense: {
-        name: 'Incense DSL',
-        desc: 'Declarative markup language for defining UI layouts.',
-        code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" style: "large" }\n    Button { x: 20 y: 80 width: 150 height: 40 text: "Click" on_click: "myCallback" }\n}',
-        props: [
-          ['Comments', 'Syntax', '// or /* */', 'Single and multi-line'],
-          ['Objects', 'Syntax', 'TypeName { }', 'Uppercase with braces'],
-          ['Properties', 'Syntax', 'key: value', 'Lowercase with colon'],
-          ['Strings', 'Type', '"text"', 'Double-quoted'],
-          ['Integers', 'Type', '42, -10', 'Whole numbers'],
-          ['Floats', 'Type', '3.14', 'Decimal numbers'],
-          ['Booleans', 'Type', 'true, false', 'Boolean literals'],
-          ['Colors', 'Type', '#FF0000', 'Hex RRGGBB']
-        ]
-      },
-      embed: {
-        name: 'Embed System',
-        desc: 'Include external Aroma files with property passing.',
-        code: 'Window {\n    width: 800\n    height: 600\n    Tabs {\n        Tab { text: "Home" @embed "home.aroma" }\n        Tab { text: "Settings" @embed "settings.aroma" { theme: "dark" } }\n    }\n}',
-        props: [
-          ['@embed', 'Directive', 'file inclusion', 'Includes external file'],
-          ['Props', 'Feature', '{ key: value }', 'Pass properties'],
-          ['Depth limit', 'Safety', '64 levels', 'Max nesting depth']
-        ]
-      },
-      state: {
-        name: 'State Management',
-        desc: 'Reactive state with typed values for automatic UI updates.',
-        code: 'Label { x: 20 y: 20 text: "state.battery_percent" style: "large" }\nIf { condition: "state.battery_percent < 20"\n    Then { Icon { text: "AROMA_ICON_BATTERY_ALERT" color: "#FF0000" } }\n}',
-        props: [
-          ['SetInt', 'API', 'key, int', 'Set integer'],
-          ['SetFloat', 'API', 'key, float', 'Set float'],
-          ['SetBool', 'API', 'key, bool', 'Set boolean'],
-          ['SetString', 'API', 'key, string', 'Set string'],
-          ['Observers', 'Feature', 'callback', 'React to changes']
-        ]
-      },
-      callbacks: {
-        name: 'Callback System',
-        desc: 'Connect UI events to C functions with type-safe registration.',
-        code: 'Button { x: 20 y: 20 text: "Click" on_click: "onButtonClick" }\nTextbox { x: 20 y: 80 width: 300 height: 36 placeholder: "Enter text" on_change: "onTextChange" }',
-        props: [
-          ['BOOL_PTR', 'Type', 'bool(*)(AromaNode*,void*)', 'Button, Switch'],
-          ['VOID_PTR', 'Type', 'void(*)(void*)', 'FAB, IconButton'],
-          ['INT_STRING_PTR', 'Type', 'void(*)(int,const char*,void*)', 'Dropdown']
-        ]
-      },
-      hotreload: {
-        name: 'Hot Reloading',
-        desc: 'Edit Aroma files and see changes instantly.',
-        code: 'int watcher = IncenseHotReloadStart("ui.aroma", font, icon_font, &registry);\nIncenseHotReloadCheck();\nIncenseHotReloadForce(watcher);',
-        props: [
-          ['Start', 'API', 'path, fonts, registry', 'Begin watching'],
-          ['Check', 'API', 'none', 'Poll for changes'],
-          ['Force', 'API', 'watcher index', 'Force reload'],
-          ['Stop', 'API', 'watcher index', 'Stop watcher']
-        ]
-      },
-      animations: {
-        name: 'Animation System',
-        desc: 'Fade, slide, and scale animations with easing curves.',
-        code: 'Container { animation: "slide_y" animation_duration: 500 animation_easing: "ease_out_cubic" hidden: false\n    Label { text: "Animated!" }\n}',
-        props: [
-          ['animation', 'Property', '"none"', 'fade, slide_x, slide_y, scale'],
-          ['animation_duration', 'Property', '300', 'Milliseconds'],
-          ['animation_easing', 'Property', '"linear"', 'ease_in, ease_out, etc.'],
-          ['hidden', 'Property', 'false', 'Start hidden']
-        ]
-      },
-      conditional: {
-        name: 'Conditional Rendering',
-        desc: 'Show/hide UI based on state with If/Then/Else.',
-        code: 'If { condition: "state.battery_percent < 20"\n    Then { Card { Label { text: "Low Battery" } } }\n    Else { Label { text: "Battery OK" } }\n}',
-        props: [
-          ['If', 'Block', 'condition', 'Conditional container'],
-          ['Then', 'Block', 'child content', 'Shown when true'],
-          ['Else', 'Block', 'child content', 'Shown when false']
-        ]
+    (function() {
+      // Store all code snippets in a map for easy retrieval
+      const codeMap = {};
+
+      const featureData = {
+        incense: {
+          name: 'Incense DSL',
+          desc: 'Declarative markup language for defining UI layouts.',
+          code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" style: "large" }\n    Button { x: 20 y: 80 width: 150 height: 40 text: "Click" on_click: "myCallback" }\n}',
+          props: [
+            ['Comments', 'Syntax', '// or /* */', 'Single and multi-line'],
+            ['Objects', 'Syntax', 'TypeName { }', 'Uppercase with braces'],
+            ['Properties', 'Syntax', 'key: value', 'Lowercase with colon'],
+            ['Strings', 'Type', '"text"', 'Double-quoted'],
+            ['Integers', 'Type', '42, -10', 'Whole numbers'],
+            ['Floats', 'Type', '3.14', 'Decimal numbers'],
+            ['Booleans', 'Type', 'true, false', 'Boolean literals'],
+            ['Colors', 'Type', '#FF0000', 'Hex RRGGBB']
+          ]
+        },
+        embed: {
+          name: 'Embed System',
+          desc: 'Include external Aroma files with property passing.',
+          code: 'Window {\n    width: 800\n    height: 600\n    Tabs {\n        Tab { text: "Home" @embed "home.aroma" }\n        Tab { text: "Settings" @embed "settings.aroma" { theme: "dark" } }\n    }\n}',
+          props: [
+            ['@embed', 'Directive', 'file inclusion', 'Includes external file'],
+            ['Props', 'Feature', '{ key: value }', 'Pass properties'],
+            ['Depth limit', 'Safety', '64 levels', 'Max nesting depth']
+          ]
+        },
+        state: {
+          name: 'State Management',
+          desc: 'Reactive state with typed values for automatic UI updates.',
+          code: 'Label { x: 20 y: 20 text: "state.battery_percent" style: "large" }\nIf { condition: "state.battery_percent < 20"\n    Then { Icon { text: "AROMA_ICON_BATTERY_ALERT" color: "#FF0000" } }\n}',
+          props: [
+            ['SetInt', 'API', 'key, int', 'Set integer'],
+            ['SetFloat', 'API', 'key, float', 'Set float'],
+            ['SetBool', 'API', 'key, bool', 'Set boolean'],
+            ['SetString', 'API', 'key, string', 'Set string'],
+            ['Observers', 'Feature', 'callback', 'React to changes']
+          ]
+        },
+        callbacks: {
+          name: 'Callback System',
+          desc: 'Connect UI events to C functions with type-safe registration.',
+          code: 'Button { x: 20 y: 20 text: "Click" on_click: "onButtonClick" }\nTextbox { x: 20 y: 80 width: 300 height: 36 placeholder: "Enter text" on_change: "onTextChange" }',
+          props: [
+            ['BOOL_PTR', 'Type', 'bool(*)(AromaNode*,void*)', 'Button, Switch'],
+            ['VOID_PTR', 'Type', 'void(*)(void*)', 'FAB, IconButton'],
+            ['INT_STRING_PTR', 'Type', 'void(*)(int,const char*,void*)', 'Dropdown']
+          ]
+        },
+        hotreload: {
+          name: 'Hot Reloading',
+          desc: 'Edit Aroma files and see changes instantly.',
+          code: 'int watcher = IncenseHotReloadStart("ui.aroma", font, icon_font, &registry);\nIncenseHotReloadCheck();\nIncenseHotReloadForce(watcher);',
+          props: [
+            ['Start', 'API', 'path, fonts, registry', 'Begin watching'],
+            ['Check', 'API', 'none', 'Poll for changes'],
+            ['Force', 'API', 'watcher index', 'Force reload'],
+            ['Stop', 'API', 'watcher index', 'Stop watcher']
+          ]
+        },
+        animations: {
+          name: 'Animation System',
+          desc: 'Fade, slide, and scale animations with easing curves.',
+          code: 'Container { animation: "slide_y" animation_duration: 500 animation_easing: "ease_out_cubic" hidden: false\n    Label { text: "Animated!" }\n}',
+          props: [
+            ['animation', 'Property', '"none"', 'fade, slide_x, slide_y, scale'],
+            ['animation_duration', 'Property', '300', 'Milliseconds'],
+            ['animation_easing', 'Property', '"linear"', 'ease_in, ease_out, etc.'],
+            ['hidden', 'Property', 'false', 'Start hidden']
+          ]
+        },
+        conditional: {
+          name: 'Conditional Rendering',
+          desc: 'Show/hide UI based on state with If/Then/Else.',
+          code: 'If { condition: "state.battery_percent < 20"\n    Then { Card { Label { text: "Low Battery" } } }\n    Else { Label { text: "Battery OK" } }\n}',
+          props: [
+            ['If', 'Block', 'condition', 'Conditional container'],
+            ['Then', 'Block', 'child content', 'Shown when true'],
+            ['Else', 'Block', 'child content', 'Shown when false']
+          ]
+        }
+      };
+
+      const widgetData = {
+        window: {
+          name: 'Window', category: 'Core', desc: 'Root container that creates the native OS window.',
+          code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" }\n}',
+          props: [['width', 'int', '800', 'Window width'], ['height', 'int', '600', 'Window height'], ['title', 'string', '"Incense App"', 'Title bar text']]
+        },
+        container: {
+          name: 'Container', category: 'Layout', desc: 'Flexible layout container with optional flexbox.',
+          code: 'Container {\n    x: 20 y: 60\n    width: 400 height: 200\n    layout: "flex"\n    direction: "row"\n    Label { text: "Item 1" }\n    Label { text: "Item 2" }\n}',
+          props: [['x', 'int', '0', 'Horizontal position'], ['y', 'int', '0', 'Vertical position'], ['width', 'int', '200', 'Width'], ['height', 'int', '200', 'Height'], ['layout', 'string', '"none"', 'none or flex'], ['direction', 'string', '"column"', 'row or column']]
+        },
+        scrollview: {
+          name: 'ScrollView', category: 'Layout', desc: 'Scrollable container.',
+          code: 'ScrollView {\n    x: 20 y: 60\n    width: 400 height: 300\n    direction: "vertical"\n    Label { x: 10 y: 500 text: "Bottom" }\n}',
+          props: [['direction', 'string', '"vertical"', 'vertical, horizontal, both']]
+        },
+        label: {
+          name: 'Label', category: 'Core', desc: 'Displays text in large, medium, or small style.',
+          code: 'Label {\n    x: 20 y: 20\n    text: "Hello World"\n    style: "large"\n}',
+          props: [['text', 'string', '""', 'Text content'], ['style', 'string', '"large"', 'large, medium, small']]
+        },
+        button: {
+          name: 'Button', category: 'Core', desc: 'Clickable button that triggers a callback.',
+          code: 'Button {\n    x: 20 y: 20\n    width: 150 height: 40\n    text: "Click Me"\n    on_click: "onButtonClick"\n}',
+          props: [['text', 'string', '"Button"', 'Label text'], ['on_click', 'callback', 'null', 'Click handler']]
+        },
+        card: {
+          name: 'Card', category: 'Core', desc: 'Container with elevated, outlined, or filled style.',
+          code: 'Card {\n    x: 20 y: 60\n    width: 280 height: 180\n    type: "elevated"\n    Label { text: "Card Title" }\n}',
+          props: [['type', 'string', '"elevated"', 'elevated, outlined, filled']]
+        },
+        divider: {
+          name: 'Divider', category: 'Core', desc: 'Visual separator line.',
+          code: 'Divider {\n    x: 20 y: 100\n    length: 400\n    orientation: "horizontal"\n}',
+          props: [['orientation', 'string', '"horizontal"', 'horizontal or vertical']]
+        },
+        checkbox: {
+          name: 'Checkbox', category: 'Input', desc: 'Toggleable checkbox with label.',
+          code: 'Checkbox {\n    x: 20 y: 60\n    label: "Accept Terms"\n    on_change: "onCheckboxChange"\n}',
+          props: [['label', 'string', '""', 'Label text'], ['on_change', 'callback', 'null', 'Change handler']]
+        },
+        switch_w: {
+          name: 'Switch', category: 'Input', desc: 'Toggle switch with boolean value.',
+          code: 'Switch {\n    x: 20 y: 60\n    value: true\n    on_change: "onSwitchChange"\n}',
+          props: [['value', 'bool', 'false', 'Initial state'], ['on_change', 'callback', 'null', 'Change handler']]
+        },
+        slider: {
+          name: 'Slider', category: 'Input', desc: 'Value selector with min/max range.',
+          code: 'Slider {\n    x: 20 y: 60\n    width: 200 height: 24\n    min: 0 max: 100 value: 50\n}',
+          props: [['min', 'int', '0', 'Minimum'], ['max', 'int', '100', 'Maximum'], ['value', 'int', '0', 'Initial value']]
+        },
+        textbox: {
+          name: 'Textbox', category: 'Input', desc: 'Single-line text input.',
+          code: 'Textbox {\n    x: 20 y: 60\n    width: 300 height: 36\n    placeholder: "Enter name..."\n}',
+          props: [['placeholder', 'string', '""', 'Placeholder text'], ['on_change', 'callback', 'null', 'Change handler']]
+        },
+        dropdown: {
+          name: 'Dropdown', category: 'Input', desc: 'Select from a list of options.',
+          code: 'Dropdown {\n    x: 20 y: 60\n    width: 250 height: 36\n    Option { text: "United States" }\n    Option { text: "Canada" }\n}',
+          props: [['on_change', 'callback', 'null', 'Change handler']]
+        },
+        radiobutton: {
+          name: 'RadioButton', category: 'Input', desc: 'Single selection within a group.',
+          code: 'RadioButton {\n    x: 20 y: 60\n    label: "Option A"\n    group: 1\n    selected: true\n}',
+          props: [['label', 'string', '""', 'Label text'], ['group', 'int', '0', 'Group ID'], ['selected', 'bool', 'false', 'Initially selected']]
+        },
+        tabs: {
+          name: 'Tabs', category: 'Navigation', desc: 'Tab bar with labeled tabs.',
+          code: 'Tabs {\n    x: 0 y: 0\n    width: 800 height: 48\n    Tab { text: "Home" icon: "AROMA_ICON_HOME" }\n    Tab { text: "Settings" icon: "AROMA_ICON_SETTINGS" }\n}',
+          props: [['on_change', 'callback', 'null', 'Tab change handler']]
+        },
+        sidebar_w: {
+          name: 'Sidebar', category: 'Navigation', desc: 'Navigation sidebar with icons.',
+          code: 'Sidebar {\n    x: 20 y: 60\n    width: 250 height: 500\n    Item { text: "Dashboard" icon: "AROMA_ICON_DASHBOARD" }\n    Item { text: "Profile" icon: "AROMA_ICON_PERSON" }\n}',
+          props: [['on_select', 'callback', 'null', 'Select handler']]
+        },
+        listview: {
+          name: 'ListView', category: 'Navigation', desc: 'Scrollable selection list.',
+          code: 'ListView {\n    x: 20 y: 60\n    width: 300 height: 400\n    on_select: "onListSelect"\n}',
+          props: [['on_select', 'callback', 'null', 'Select handler']]
+        },
+        table: {
+          name: 'Table', category: 'Navigation', desc: 'Data table with columns.',
+          code: 'Table {\n    x: 20 y: 60\n    width: 600 height: 300\n    columns: 3\n    Column { header: "Name" width: 200 }\n    Column { header: "Age" width: 100 }\n}',
+          props: [['columns', 'int', '1', 'Number of columns']]
+        },
+        image: {
+          name: 'Image', category: 'Media', desc: 'Displays an image from file.',
+          code: 'Image {\n    x: 20 y: 60\n    width: 300 height: 200\n    src: "image.png"\n}',
+          props: [['src', 'string', '""', 'Image path']]
+        },
+        icon: {
+          name: 'Icon', category: 'Media', desc: 'Material Design icon.',
+          code: 'Icon {\n    x: 20 y: 60\n    size: 32\n    text: "AROMA_ICON_HOME"\n    color: "#111111"\n}',
+          props: [['size', 'int', '24', 'Icon size'], ['text', 'string', 'null', 'Icon codepoint'], ['color', 'color', '"#000000"', 'Icon color']]
+        },
+        gif: {
+          name: 'GIF', category: 'Media', desc: 'Animated GIF display.',
+          code: 'GIF {\n    x: 20 y: 60\n    width: 150 height: 150\n    src: "animation.gif"\n    autoplay: true\n}',
+          props: [['src', 'string', '""', 'GIF path'], ['autoplay', 'bool', 'true', 'Auto-play']]
+        },
+        canvas: {
+          name: 'Canvas', category: 'Media', desc: 'Custom drawing surface.',
+          code: 'Canvas {\n    x: 20 y: 60\n    width: 500 height: 300\n}',
+          props: []
+        },
+        map: {
+          name: 'Map', category: 'Media', desc: 'Interactive map with markers.',
+          code: 'Map {\n    x: 20 y: 60\n    width: 600 height: 400\n    lat: 48.8566 lon: 2.3522\n    zoom: 12\n    Marker { lat: 48.8566 lon: 2.3522 popup: "Paris" }\n}',
+          props: [['lat', 'float', '0.0', 'Center latitude'], ['lon', 'float', '0.0', 'Center longitude'], ['zoom', 'int', '4', 'Zoom level']]
+        },
+        fab: {
+          name: 'FAB', category: 'Actions', desc: 'Floating Action Button.',
+          code: 'FAB {\n    x: 20 y: 20\n    icon: "AROMA_ICON_ADD"\n    size: "normal"\n    on_click: "onFABClick"\n}',
+          props: [['icon', 'string', '"+"', 'Icon'], ['size', 'string', '"normal"', 'small, normal, large'], ['on_click', 'callback', 'null', 'Click handler']]
+        },
+        iconbutton: {
+          name: 'IconButton', category: 'Actions', desc: 'Icon-only button with variants.',
+          code: 'IconButton {\n    x: 20 y: 20\n    icon: "AROMA_ICON_FAVORITE"\n    size: 40\n    variant: "filled"\n    on_click: "onIconButtonClick"\n}',
+          props: [['icon', 'string', '""', 'Icon'], ['size', 'int', '40', 'Size in pixels'], ['variant', 'string', '"standard"', 'standard, filled, tonal, outlined'], ['on_click', 'callback', 'null', 'Click handler']]
+        },
+        menu: {
+          name: 'Menu', category: 'Actions', desc: 'Dropdown menu with items.',
+          code: 'Menu {\n    x: 20 y: 60\n    MenuItem { text: "New" icon: "AROMA_ICON_ADD" on_click: "onNew" }\n    MenuItem { text: "Open" icon: "AROMA_ICON_FOLDER_OPEN" }\n    Separator {}\n    MenuItem { text: "Exit" }\n}',
+          props: []
+        },
+        snackbar: {
+          name: 'Snackbar', category: 'Actions', desc: 'Brief message toast.',
+          code: 'Snackbar {\n    x: 20 y: 560\n    message: "Operation completed!"\n    duration: 3000\n}',
+          props: [['message', 'string', '""', 'Message text'], ['duration', 'int', '3000', 'Display duration ms']]
+        },
+        dialog: {
+          name: 'Dialog', category: 'Actions', desc: 'Modal dialog window.',
+          code: 'Dialog {\n    x: 200 y: 150\n    width: 320 height: 200\n    title: "Confirm"\n    message: "Are you sure?"\n    type: "basic"\n}',
+          props: [['title', 'string', '"Dialog"', 'Title text'], ['message', 'string', '""', 'Body text'], ['type', 'string', '"basic"', 'basic or fullscreen']]
+        },
+        tooltip: {
+          name: 'Tooltip', category: 'Actions', desc: 'Contextual help text.',
+          code: 'Tooltip {\n    x: 20 y: 20\n    text: "Helpful information"\n    position: "top"\n}',
+          props: [['text', 'string', '""', 'Tooltip text'], ['position', 'string', '"top"', 'top, bottom, left, right']]
+        },
+        progressbar: {
+          name: 'ProgressBar', category: 'Feedback', desc: 'Progress indicator.',
+          code: 'ProgressBar {\n    x: 20 y: 60\n    width: 400 height: 8\n    value: 0.65\n    type: "determinate"\n}',
+          props: [['value', 'float', '0.0', '0.0 to 1.0'], ['type', 'string', '"determinate"', 'determinate or indeterminate']]
+        },
+        loading: {
+          name: 'Loading', category: 'Feedback', desc: 'Spinning circular indicator.',
+          code: 'Loading {\n    x: 40 y: 100\n    radius: 24\n    thickness: 3\n    color: "#111111"\n}',
+          props: [['radius', 'int', '16', 'Radius in pixels'], ['thickness', 'int', '3', 'Stroke thickness'], ['color', 'color', '"#000000"', 'Spinner color']]
+        },
+        debugoverlay: {
+          name: 'DebugOverlay', category: 'Feedback', desc: 'FPS and performance overlay.',
+          code: 'DebugOverlay {\n    x: 20 y: 440\n    width: 300\n    visible: true\n}',
+          props: [['visible', 'bool', 'true', 'Show or hide']]
+        }
+      };
+
+      function highlightCode(code) {
+        return code
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/(\/\/.*$)/gm, '<span class="cm">$1</span>')
+          .replace(/("(?:[^"\\]|\\.)*")/g, '<span class="str">$1</span>')
+          .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="num">$1</span>')
+          .replace(/\b(true|false)\b/g, '<span class="num">$1</span>')
+          .replace(/\b(Window|Label|Button|Container|Card|Divider|Checkbox|Switch|Slider|Textbox|Dropdown|RadioButton|Tabs|Tab|Sidebar|Item|ListView|Table|Column|Image|Icon|GIF|Canvas|Map|Marker|FAB|IconButton|Menu|MenuItem|Separator|Snackbar|Dialog|Tooltip|ProgressBar|Loading|DebugOverlay|ScrollView|Option|If|Then|Else)\b/g, '<span class="ty">$1</span>')
+          .replace(/\b(width|height|title|text|x|y|style|on_click|layout|direction|type|length|orientation|label|on_change|value|min|max|placeholder|on_submit|group|selected|icon|size|variant|message|duration|columns|header|src|autoplay|lat|lon|zoom|attribution|color|popup|radius|thickness|visible|on_select|condition|animation|animation_duration|animation_start_val|animation_end_val|animation_easing|hidden|font|z_index|id)\b/g, '<span class="kw">$1</span>')
+          .replace(/\b(state\.\w+)\b/g, '<span class="vr">$1</span>')
+          .replace(/(@embed)\b/g, '<span class="an">$1</span>');
       }
-    };
-    const widgetData = {
-      window: {
-        name: 'Window', category: 'Core', desc: 'Root container that creates the native OS window.',
-        code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" }\n}',
-        props: [['width', 'int', '800', 'Window width'], ['height', 'int', '600', 'Window height'], ['title', 'string', '"Incense App"', 'Title bar text']]
-      },
-      container: {
-        name: 'Container', category: 'Layout', desc: 'Flexible layout container with optional flexbox.',
-        code: 'Container {\n    x: 20 y: 60\n    width: 400 height: 200\n    layout: "flex"\n    direction: "row"\n    Label { text: "Item 1" }\n    Label { text: "Item 2" }\n}',
-        props: [['x', 'int', '0', 'Horizontal position'], ['y', 'int', '0', 'Vertical position'], ['width', 'int', '200', 'Width'], ['height', 'int', '200', 'Height'], ['layout', 'string', '"none"', 'none or flex'], ['direction', 'string', '"column"', 'row or column']]
-      },
-      scrollview: {
-        name: 'ScrollView', category: 'Layout', desc: 'Scrollable container.',
-        code: 'ScrollView {\n    x: 20 y: 60\n    width: 400 height: 300\n    direction: "vertical"\n    Label { x: 10 y: 500 text: "Bottom" }\n}',
-        props: [['direction', 'string', '"vertical"', 'vertical, horizontal, both']]
-      },
-      label: {
-        name: 'Label', category: 'Core', desc: 'Displays text in large, medium, or small style.',
-        code: 'Label {\n    x: 20 y: 20\n    text: "Hello World"\n    style: "large"\n}',
-        props: [['text', 'string', '""', 'Text content'], ['style', 'string', '"large"', 'large, medium, small']]
-      },
-      button: {
-        name: 'Button', category: 'Core', desc: 'Clickable button that triggers a callback.',
-        code: 'Button {\n    x: 20 y: 20\n    width: 150 height: 40\n    text: "Click Me"\n    on_click: "onButtonClick"\n}',
-        props: [['text', 'string', '"Button"', 'Label text'], ['on_click', 'callback', 'null', 'Click handler']]
-      },
-      card: {
-        name: 'Card', category: 'Core', desc: 'Container with elevated, outlined, or filled style.',
-        code: 'Card {\n    x: 20 y: 60\n    width: 280 height: 180\n    type: "elevated"\n    Label { text: "Card Title" }\n}',
-        props: [['type', 'string', '"elevated"', 'elevated, outlined, filled']]
-      },
-      divider: {
-        name: 'Divider', category: 'Core', desc: 'Visual separator line.',
-        code: 'Divider {\n    x: 20 y: 100\n    length: 400\n    orientation: "horizontal"\n}',
-        props: [['orientation', 'string', '"horizontal"', 'horizontal or vertical']]
-      },
-      checkbox: {
-        name: 'Checkbox', category: 'Input', desc: 'Toggleable checkbox with label.',
-        code: 'Checkbox {\n    x: 20 y: 60\n    label: "Accept Terms"\n    on_change: "onCheckboxChange"\n}',
-        props: [['label', 'string', '""', 'Label text'], ['on_change', 'callback', 'null', 'Change handler']]
-      },
-      switch_w: {
-        name: 'Switch', category: 'Input', desc: 'Toggle switch with boolean value.',
-        code: 'Switch {\n    x: 20 y: 60\n    value: true\n    on_change: "onSwitchChange"\n}',
-        props: [['value', 'bool', 'false', 'Initial state'], ['on_change', 'callback', 'null', 'Change handler']]
-      },
-      slider: {
-        name: 'Slider', category: 'Input', desc: 'Value selector with min/max range.',
-        code: 'Slider {\n    x: 20 y: 60\n    width: 200 height: 24\n    min: 0 max: 100 value: 50\n}',
-        props: [['min', 'int', '0', 'Minimum'], ['max', 'int', '100', 'Maximum'], ['value', 'int', '0', 'Initial value']]
-      },
-      textbox: {
-        name: 'Textbox', category: 'Input', desc: 'Single-line text input.',
-        code: 'Textbox {\n    x: 20 y: 60\n    width: 300 height: 36\n    placeholder: "Enter name..."\n}',
-        props: [['placeholder', 'string', '""', 'Placeholder text'], ['on_change', 'callback', 'null', 'Change handler']]
-      },
-      dropdown: {
-        name: 'Dropdown', category: 'Input', desc: 'Select from a list of options.',
-        code: 'Dropdown {\n    x: 20 y: 60\n    width: 250 height: 36\n    Option { text: "United States" }\n    Option { text: "Canada" }\n}',
-        props: [['on_change', 'callback', 'null', 'Change handler']]
-      },
-      radiobutton: {
-        name: 'RadioButton', category: 'Input', desc: 'Single selection within a group.',
-        code: 'RadioButton {\n    x: 20 y: 60\n    label: "Option A"\n    group: 1\n    selected: true\n}',
-        props: [['label', 'string', '""', 'Label text'], ['group', 'int', '0', 'Group ID'], ['selected', 'bool', 'false', 'Initially selected']]
-      },
-      tabs: {
-        name: 'Tabs', category: 'Navigation', desc: 'Tab bar with labeled tabs.',
-        code: 'Tabs {\n    x: 0 y: 0\n    width: 800 height: 48\n    Tab { text: "Home" icon: "AROMA_ICON_HOME" }\n    Tab { text: "Settings" icon: "AROMA_ICON_SETTINGS" }\n}',
-        props: [['on_change', 'callback', 'null', 'Tab change handler']]
-      },
-      sidebar: {
-        name: 'Sidebar', category: 'Navigation', desc: 'Navigation sidebar with icons.',
-        code: 'Sidebar {\n    x: 20 y: 60\n    width: 250 height: 500\n    Item { text: "Dashboard" icon: "AROMA_ICON_DASHBOARD" }\n    Item { text: "Profile" icon: "AROMA_ICON_PERSON" }\n}',
-        props: [['on_select', 'callback', 'null', 'Select handler']]
-      },
-      listview: {
-        name: 'ListView', category: 'Navigation', desc: 'Scrollable selection list.',
-        code: 'ListView {\n    x: 20 y: 60\n    width: 300 height: 400\n    on_select: "onListSelect"\n}',
-        props: [['on_select', 'callback', 'null', 'Select handler']]
-      },
-      table: {
-        name: 'Table', category: 'Navigation', desc: 'Data table with columns.',
-        code: 'Table {\n    x: 20 y: 60\n    width: 600 height: 300\n    columns: 3\n    Column { header: "Name" width: 200 }\n    Column { header: "Age" width: 100 }\n}',
-        props: [['columns', 'int', '1', 'Number of columns']]
-      },
-      image: {
-        name: 'Image', category: 'Media', desc: 'Displays an image from file.',
-        code: 'Image {\n    x: 20 y: 60\n    width: 300 height: 200\n    src: "image.png"\n}',
-        props: [['src', 'string', '""', 'Image path']]
-      },
-      icon: {
-        name: 'Icon', category: 'Media', desc: 'Material Design icon.',
-        code: 'Icon {\n    x: 20 y: 60\n    size: 32\n    text: "AROMA_ICON_HOME"\n    color: "#111111"\n}',
-        props: [['size', 'int', '24', 'Icon size'], ['text', 'string', 'null', 'Icon codepoint'], ['color', 'color', '"#000000"', 'Icon color']]
-      },
-      gif: {
-        name: 'GIF', category: 'Media', desc: 'Animated GIF display.',
-        code: 'GIF {\n    x: 20 y: 60\n    width: 150 height: 150\n    src: "animation.gif"\n    autoplay: true\n}',
-        props: [['src', 'string', '""', 'GIF path'], ['autoplay', 'bool', 'true', 'Auto-play']]
-      },
-      canvas: {
-        name: 'Canvas', category: 'Media', desc: 'Custom drawing surface.',
-        code: 'Canvas {\n    x: 20 y: 60\n    width: 500 height: 300\n}',
-        props: []
-      },
-      map: {
-        name: 'Map', category: 'Media', desc: 'Interactive map with markers.',
-        code: 'Map {\n    x: 20 y: 60\n    width: 600 height: 400\n    lat: 48.8566 lon: 2.3522\n    zoom: 12\n    Marker { lat: 48.8566 lon: 2.3522 popup: "Paris" }\n}',
-        props: [['lat', 'float', '0.0', 'Center latitude'], ['lon', 'float', '0.0', 'Center longitude'], ['zoom', 'int', '4', 'Zoom level']]
-      },
-      fab: {
-        name: 'FAB', category: 'Actions', desc: 'Floating Action Button.',
-        code: 'FAB {\n    x: 20 y: 20\n    icon: "AROMA_ICON_ADD"\n    size: "normal"\n    on_click: "onFABClick"\n}',
-        props: [['icon', 'string', '"+"', 'Icon'], ['size', 'string', '"normal"', 'small, normal, large'], ['on_click', 'callback', 'null', 'Click handler']]
-      },
-      iconbutton: {
-        name: 'IconButton', category: 'Actions', desc: 'Icon-only button with variants.',
-        code: 'IconButton {\n    x: 20 y: 20\n    icon: "AROMA_ICON_FAVORITE"\n    size: 40\n    variant: "filled"\n    on_click: "onIconButtonClick"\n}',
-        props: [['icon', 'string', '""', 'Icon'], ['size', 'int', '40', 'Size in pixels'], ['variant', 'string', '"standard"', 'standard, filled, tonal, outlined'], ['on_click', 'callback', 'null', 'Click handler']]
-      },
-      menu: {
-        name: 'Menu', category: 'Actions', desc: 'Dropdown menu with items.',
-        code: 'Menu {\n    x: 20 y: 60\n    MenuItem { text: "New" icon: "AROMA_ICON_ADD" on_click: "onNew" }\n    MenuItem { text: "Open" icon: "AROMA_ICON_FOLDER_OPEN" }\n    Separator {}\n    MenuItem { text: "Exit" }\n}',
-        props: []
-      },
-      snackbar: {
-        name: 'Snackbar', category: 'Actions', desc: 'Brief message toast.',
-        code: 'Snackbar {\n    x: 20 y: 560\n    message: "Operation completed!"\n    duration: 3000\n}',
-        props: [['message', 'string', '""', 'Message text'], ['duration', 'int', '3000', 'Display duration ms']]
-      },
-      dialog: {
-        name: 'Dialog', category: 'Actions', desc: 'Modal dialog window.',
-        code: 'Dialog {\n    x: 200 y: 150\n    width: 320 height: 200\n    title: "Confirm"\n    message: "Are you sure?"\n    type: "basic"\n}',
-        props: [['title', 'string', '"Dialog"', 'Title text'], ['message', 'string', '""', 'Body text'], ['type', 'string', '"basic"', 'basic or fullscreen']]
-      },
-      tooltip: {
-        name: 'Tooltip', category: 'Actions', desc: 'Contextual help text.',
-        code: 'Tooltip {\n    x: 20 y: 20\n    text: "Helpful information"\n    position: "top"\n}',
-        props: [['text', 'string', '""', 'Tooltip text'], ['position', 'string', '"top"', 'top, bottom, left, right']]
-      },
-      progressbar: {
-        name: 'ProgressBar', category: 'Feedback', desc: 'Progress indicator.',
-        code: 'ProgressBar {\n    x: 20 y: 60\n    width: 400 height: 8\n    value: 0.65\n    type: "determinate"\n}',
-        props: [['value', 'float', '0.0', '0.0 to 1.0'], ['type', 'string', '"determinate"', 'determinate or indeterminate']]
-      },
-      loading: {
-        name: 'Loading', category: 'Feedback', desc: 'Spinning circular indicator.',
-        code: 'Loading {\n    x: 40 y: 100\n    radius: 24\n    thickness: 3\n    color: "#111111"\n}',
-        props: [['radius', 'int', '16', 'Radius in pixels'], ['thickness', 'int', '3', 'Stroke thickness'], ['color', 'color', '"#000000"', 'Spinner color']]
-      },
-      debugoverlay: {
-        name: 'DebugOverlay', category: 'Feedback', desc: 'FPS and performance overlay.',
-        code: 'DebugOverlay {\n    x: 20 y: 440\n    width: 300\n    visible: true\n}',
-        props: [['visible', 'bool', 'true', 'Show or hide']]
+
+      // Show toast message
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2000);
       }
-    };
-    function highlightCode(code) {
-      return code
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/(\/\/.*$)/gm, '<span class="cm">$1</span>')
-        .replace(/("(?:[^"\\]|\\.)*")/g, '<span class="str">$1</span>')
-        .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="num">$1</span>')
-        .replace(/\b(true|false)\b/g, '<span class="num">$1</span>')
-        .replace(/\b(Window|Label|Button|Container|Card|Divider|Checkbox|Switch|Slider|Textbox|Dropdown|RadioButton|Tabs|Tab|Sidebar|Item|ListView|Table|Column|Image|Icon|GIF|Canvas|Map|Marker|FAB|IconButton|Menu|MenuItem|Separator|Snackbar|Dialog|Tooltip|ProgressBar|Loading|DebugOverlay|ScrollView|Option|If|Then|Else)\b/g, '<span class="ty">$1</span>')
-        .replace(/\b(width|height|title|text|x|y|style|on_click|layout|direction|type|length|orientation|label|on_change|value|min|max|placeholder|on_submit|group|selected|icon|size|variant|message|duration|columns|header|src|autoplay|lat|lon|zoom|attribution|color|popup|radius|thickness|visible|on_select|condition|animation|animation_duration|animation_start_val|animation_end_val|animation_easing|hidden|font|z_index|id)\b/g, '<span class="kw">$1</span>')
-        .replace(/\b(state\.\w+)\b/g, '<span class="vr">$1</span>')
-        .replace(/(@embed)\b/g, '<span class="an">$1</span>');
-    }
-    function copyCode(btn, code) {
-      navigator.clipboard?.writeText(code).then(() => {
-        btn.innerHTML = '<i class="fas fa-check"></i> Copied';
-        setTimeout(() => btn.innerHTML = '<i class="far fa-copy"></i> Copy', 1500);
-      }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = code;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        btn.innerHTML = '<i class="fas fa-check"></i> Copied';
-        setTimeout(() => btn.innerHTML = '<i class="far fa-copy"></i> Copy', 1500);
-      });
-    }
-    function scrollToSection(id) {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    function buildAllDetails() {
-      const detailsDiv = document.getElementById('widgetDetails');
-      let html = '';
-      Object.keys(featureData).forEach(k => {
-        const f = featureData[k];
-        html += `<section class="section" id="feature-${k}"><p class="eyebrow">Feature</p><h2>${f.name}</h2><p class="intro">${f.desc}</p><h3>Example</h3><div class="code-block"><div class="code-header"><span class="code-filename">example.aroma</span><button class="copy-btn" onclick="copyCode(this, \`${f.code.replace(/`/g,'\\`')}\`)"><i class="far fa-copy"></i> Copy</button></div><div class="code-body">${highlightCode(f.code)}</div></div><h3>Properties</h3><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>${f.props.map(p => `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td></tr>`).join('')}</tbody></table></section>`;
-      });
-      Object.keys(widgetData).forEach(k => {
-        const w = widgetData[k];
-        html += `<section class="section" id="widget-${k}"><p class="eyebrow">${w.category}</p><h2>${w.name}</h2><p class="intro">${w.desc}</p><h3>Example</h3><div class="code-block"><div class="code-header"><span class="code-filename">example.aroma</span><button class="copy-btn" onclick="copyCode(this, \`${w.code.replace(/`/g,'\\`')}\`)"><i class="far fa-copy"></i> Copy</button></div><div class="code-body">${highlightCode(w.code)}</div></div>${w.props.length ? `<h3>Properties</h3><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>${w.props.map(p => `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td></tr>`).join('')}</tbody></table>` : ''}</section>`;
-      });
-      detailsDiv.innerHTML = html;
-    }
-    buildAllDetails();
+
+      // Copy function using data attributes
+      function copyCode(codeKey) {
+        const code = codeMap[codeKey];
+        if (!code) {
+          showToast('Error: Code not found');
+          return;
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(() => {
+            showToast('✓ Copied to clipboard!');
+          }).catch(() => {
+            fallbackCopy(code);
+          });
+        } else {
+          fallbackCopy(code);
+        }
+      }
+
+      function fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          showToast('✓ Copied to clipboard!');
+        } catch (err) {
+          showToast('⚠ Failed to copy');
+        }
+        document.body.removeChild(textarea);
+      }
+
+      // Expose to global scope
+      window.copyCode = copyCode;
+
+      window.scrollToSection = function(id) {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+
+      window.toggleTheme = function() {
+        document.body.classList.toggle('light-mode');
+        const themeText = document.getElementById('themeText');
+        const icon = document.querySelector('.theme-toggle i');
+        if (document.body.classList.contains('light-mode')) {
+          themeText.textContent = 'Dark';
+          icon.className = 'fas fa-moon';
+        } else {
+          themeText.textContent = 'Light';
+          icon.className = 'fas fa-sun';
+        }
+      };
+
+      function buildAllDetails() {
+        const detailsDiv = document.getElementById('widgetDetails');
+        let html = '';
+        let idCounter = 0;
+
+        // Features
+        for (const k in featureData) {
+          if (featureData.hasOwnProperty(k)) {
+            const f = featureData[k];
+            const codeKey = 'feature-' + k;
+            codeMap[codeKey] = f.code;
+            html += '<section class="section" id="feature-' + k + '">';
+            html += '<p class="eyebrow">Feature</p>';
+            html += '<h2>' + f.name + '</h2>';
+            html += '<p class="intro">' + f.desc + '</p>';
+            html += '<h3>Example</h3>';
+            html += '<div class="code-block">';
+            html += '<div class="code-header">';
+            html += '<span class="code-filename">example.aroma</span>';
+            html += '<button class="copy-btn" data-code="' + codeKey + '"><i class="far fa-copy"></i> Copy</button>';
+            html += '</div>';
+            html += '<div class="code-body">' + highlightCode(f.code) + '</div>';
+            html += '</div>';
+            html += '<h3>Properties</h3>';
+            html += '<table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>';
+            for (const p of f.props) {
+              html += '<tr><td>' + p[0] + '</td><td>' + p[1] + '</td><td>' + p[2] + '</td><td>' + p[3] + '</td></tr>';
+            }
+            html += '</tbody></table></section>';
+          }
+        }
+
+        // Widgets
+        for (const k in widgetData) {
+          if (widgetData.hasOwnProperty(k)) {
+            const w = widgetData[k];
+            const codeKey = 'widget-' + k;
+            codeMap[codeKey] = w.code;
+            html += '<section class="section" id="widget-' + k + '">';
+            html += '<p class="eyebrow">' + w.category + '</p>';
+            html += '<h2>' + w.name + '</h2>';
+            html += '<p class="intro">' + w.desc + '</p>';
+            html += '<h3>Example</h3>';
+            html += '<div class="code-block">';
+            html += '<div class="code-header">';
+            html += '<span class="code-filename">example.aroma</span>';
+            html += '<button class="copy-btn" data-code="' + codeKey + '"><i class="far fa-copy"></i> Copy</button>';
+            html += '</div>';
+            html += '<div class="code-body">' + highlightCode(w.code) + '</div>';
+            html += '</div>';
+            if (w.props.length) {
+              html += '<h3>Properties</h3>';
+              html += '<table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>';
+              for (const p of w.props) {
+                html += '<tr><td>' + p[0] + '</td><td>' + p[1] + '</td><td>' + p[2] + '</td><td>' + p[3] + '</td></tr>';
+              }
+              html += '</tbody></table>';
+            }
+            html += '</section>';
+          }
+        }
+
+        detailsDiv.innerHTML = html;
+
+        // Add event listeners to all copy buttons using event delegation
+        detailsDiv.addEventListener('click', function(e) {
+          const copyBtn = e.target.closest('.copy-btn');
+          if (copyBtn) {
+            const codeKey = copyBtn.getAttribute('data-code');
+            if (codeKey) {
+              copyCode(codeKey);
+            }
+          }
+        });
+      }
+
+      // Initialize
+      buildAllDetails();
+    })();
   </script>
 </body>
 </html>
