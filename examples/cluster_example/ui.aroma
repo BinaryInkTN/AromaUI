@@ -156,9 +156,7 @@ Window {
             orientation: "vertical"
         }
 
-        @embed "center_screen.aroma" { 
-            test_text: "hello world!"
-             }
+        @embed "center_screen.aroma" 
 
         Divider {
             x:           900
@@ -223,7 +221,7 @@ Window {
             }
 
             If {
-                condition: "state.battery_percent < 77"
+                condition: "state.battery_percent < 20"
                 Then {
                     Container {
                         x:      0

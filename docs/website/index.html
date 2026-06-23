@@ -2,927 +2,748 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>AromaUI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>AromaUI — Documentation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      font-size: 15px;
-      line-height: 1.6;
-      background: #0b0b0e;
+      font-family: -apple-system, 'Inter', 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0b;
       color: #e0e0e0;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
       min-height: 100vh;
     }
-
-    a {
-      color: #e0e0e0;
-      text-decoration: none;
-    }
-    a:hover {
-      opacity: 0.8;
-    }
-
-    nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 32px;
-      height: 56px;
-      border-bottom: 1px solid #2c2c34;
+    .sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: #0d0d0f;
+      border-right: 1px solid #1e1e22;
+      padding: 20px 0;
       position: sticky;
       top: 0;
-      background: #0b0b0e;
-      backdrop-filter: blur(10px);
-      z-index: 50;
+      height: 100vh;
+      overflow-y: auto;
     }
-
-    .brand {
-      font-weight: 600;
-      font-size: 16px;
-      letter-spacing: -0.2px;
-      color: #f5f5f5;
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
+    .sidebar-header {
+      padding: 0 18px 16px;
+      border-bottom: 1px solid #1e1e22;
+      margin-bottom: 8px;
     }
-    .version {
-      font-size: 11px;
-      color: #7e7e8c;
-      font-weight: 400;
-      margin-left: 2px;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 28px;
-      align-items: center;
-    }
-    .nav-links a {
-      font-size: 14px;
-      font-weight: 450;
-      color: #b0b0c0;
-      transition: color 0.15s;
-    }
-    .nav-links a:hover {
+    .sidebar-logo {
+      font-weight: 650;
+      font-size: 17px;
       color: #f0f0f0;
-      opacity: 1;
+      text-decoration: none;
     }
-
-    .page {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 0 32px;
+    .sidebar-version {
+      font-size: 11px;
+      color: #7a7a80;
+      font-weight: 400;
     }
-
-    .hero {
-      padding: 64px 0 52px;
-      border-bottom: 1px solid #2c2c34;
-    }
-    .hero h1 {
-      font-size: 38px;
+    .sidebar-label {
+      font-size: 10px;
       font-weight: 600;
-      letter-spacing: -0.7px;
-      line-height: 1.15;
-      margin-bottom: 16px;
-      color: #f2f2f5;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #7a7a80;
+      padding: 10px 18px 4px;
     }
-    .hero p {
-      font-size: 15px;
-      color: #a0a0b0;
-      max-width: 500px;
-      margin-bottom: 28px;
-    }
-    .hero-actions {
+    .sidebar-link {
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      font-size: 13px;
+      color: #c0c0c8;
+      text-decoration: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.1s;
     }
-
+    .sidebar-link:hover {
+      background: #1a1a20;
+      color: #e8e8ec;
+    }
+    .sidebar-link i {
+      width: 16px;
+      font-size: 12px;
+      color: #7a7a80;
+      text-align: center;
+    }
+    .main-content {
+      flex: 1;
+      max-width: 960px;
+    }
+    .section {
+      padding: 40px 48px;
+      border-bottom: 1px solid #1e1e22;
+    }
+    .section:last-child {
+      border-bottom: none;
+    }
+    .hero-section {
+      display: flex;
+      gap: 60px;
+      align-items: center;
+      padding: 56px 48px;
+      border-bottom: 1px solid #1e1e22;
+    }
+    .hero-text {
+      flex: 1;
+    }
+    .hero-preview {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .watch-frame {
+      width: 380px;
+      height: 380px;
+      background: #1a1a24;
+      border-radius: 40px;
+      border: 3px solid #2e2e3a;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 0 2px #252532;
+      position: relative;
+    }
+    .watch-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 37px;
+    }
+    .watch-label {
+      font-size: 11px;
+      color: #6a6a74;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #7a7a80;
+      margin-bottom: 4px;
+    }
+    h1 {
+      font-size: 36px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      color: #f0f0f4;
+    }
+    h2 {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      margin-bottom: 6px;
+      color: #e8e8ec;
+    }
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin: 20px 0 8px;
+      color: #e0e0e4;
+    }
+    .intro {
+      font-size: 15px;
+      color: #9898a0;
+      max-width: 560px;
+      margin-bottom: 20px;
+    }
     .btn {
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 9px 22px;
-      border: 1px solid #4a4a5a;
-      background: none;
-      color: #d0d0e0;
+      padding: 8px 18px;
+      border-radius: 18px;
+      background: #1a1a22;
+      border: 1px solid #2e2e38;
+      color: #d0d0d8;
       cursor: pointer;
       text-decoration: none;
-      display: inline-block;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+      margin-right: 8px;
     }
     .btn:hover {
-      background: #2a2a36;
-      border-color: #6a6a7a;
-      color: #ffffff;
-      opacity: 1;
+      background: #22222c;
+      border-color: #44445a;
+      color: #f0f0f4;
     }
     .btn.filled {
       background: #e0e0e0;
-      color: #0b0b0e;
+      color: #0a0a0b;
       border-color: #e0e0e0;
-      font-weight: 500;
     }
     .btn.filled:hover {
       background: #ffffff;
       border-color: #ffffff;
     }
-
-    .section {
-      padding: 48px 0;
-      border-bottom: 1px solid #2c2c34;
-    }
-    .section-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #7e7e8c;
-      margin-bottom: 6px;
-    }
-    .section h2 {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #f0f0f3;
-    }
-    .section-sub {
-      font-size: 14px;
-      color: #9a9aa8;
-      margin-bottom: 28px;
-    }
-
-    .feature-grid {
+    .grid-3 {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1px;
-      background: #2c2c34;
-      border: 1px solid #2c2c34;
-      border-radius: 8px;
-      overflow: hidden;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
     }
-    .feature-card {
-      background: #121218;
-      padding: 28px 24px;
-      cursor: pointer;
-      transition: background 0.15s;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .feature-card:hover {
-      background: #1c1c24;
-    }
-    .feature-card h3 {
-      font-size: 15px;
-      font-weight: 600;
-      color: #f2f2f5;
-    }
-    .feature-card p {
-      font-size: 13px;
-      color: #aaaab8;
-      line-height: 1.5;
-    }
-    .feature-card .arrow {
-      font-size: 12px;
-      color: #6a6a7a;
-      margin-top: auto;
-      padding-top: 12px;
-    }
-
-    .widget-controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-
-    .search-wrap {
-      position: relative;
-      flex: 1;
-      max-width: 300px;
-    }
-    .search-wrap::before {
-      content: '⌕';
-      position: absolute;
-      left: 13px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #7a7a8a;
-      font-size: 16px;
-      pointer-events: none;
-    }
-    .search-input {
-      font-family: inherit;
-      font-size: 14px;
-      padding: 9px 14px 9px 36px;
-      border: 1px solid #3a3a44;
-      background: #121218;
-      color: #e0e0e0;
-      outline: none;
-      width: 100%;
-      border-radius: 6px;
-    }
-    .search-input:focus {
-      border-color: #808090;
-    }
-    .search-input::placeholder {
-      color: #6a6a7a;
-    }
-
-    .filter-pills {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .pill {
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 5px 14px;
-      border: 1px solid #3a3a44;
-      background: #121218;
-      color: #b0b0c0;
+    .card {
+      background: #111115;
+      border-radius: 12px;
+      padding: 18px 16px;
+      border: 1px solid #1e1e26;
       cursor: pointer;
       transition: all 0.15s;
-      border-radius: 6px;
     }
-    .pill:hover {
-      border-color: #6a6a7a;
-      color: #e0e0e0;
+    .card:hover {
+      background: #18181f;
+      border-color: #2a2a38;
     }
-    .pill.active {
-      background: #e0e0e0;
-      color: #0b0b0e;
-      border-color: #e0e0e0;
+    .card h3 {
+      font-size: 15px;
+      margin: 0 0 4px;
+      font-weight: 600;
+      color: #e8e8ec;
     }
-
-    .result-count {
+    .card p {
       font-size: 13px;
-      color: #7a7a8a;
-      white-space: nowrap;
+      color: #90909a;
+      margin: 0;
     }
-
-    .widget-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: #2c2c34;
-      border: 1px solid #2c2c34;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .widget-card {
-      background: #121218;
-      padding: 24px 20px;
-      cursor: pointer;
-      transition: background 0.15s;
-      display: flex;
-      flex-direction: column;
-    }
-    .widget-card:hover {
-      background: #1c1c24;
-    }
-    .cat-tag {
+    .card .cat {
       font-size: 10px;
       font-weight: 600;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      color: #6e6e7c;
-      margin-bottom: 8px;
-    }
-    .widget-card h3 {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #f0f0f3;
-    }
-    .widget-card p {
-      font-size: 13px;
-      color: #a0a0ae;
-      line-height: 1.4;
-    }
-
-    #detail {
-      display: none;
-    }
-    #detail.active {
-      display: block;
-    }
-
-    .detail-layout {
-      display: grid;
-      grid-template-columns: 230px 1fr;
-      gap: 0;
-      min-height: calc(100vh - 56px);
-      border-top: 1px solid #2c2c34;
-    }
-
-    .detail-sidebar {
-      border-right: 1px solid #2c2c34;
-      padding: 28px 0;
-      position: sticky;
-      top: 56px;
-      height: calc(100vh - 56px);
-      overflow-y: auto;
-      background: #0b0b0e;
-    }
-
-    .sidebar-back {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: #b0b0c0;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: inherit;
-      padding: 0 20px;
-      margin-bottom: 28px;
-      width: 100%;
-      text-align: left;
-    }
-    .sidebar-back:hover {
-      color: #f0f0f0;
-    }
-
-    .sidebar-group-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #6e6e7c;
-      padding: 0 20px;
+      color: #7a7a80;
       margin-bottom: 4px;
-      margin-top: 22px;
     }
-    .sidebar-group-label:first-of-type {
-      margin-top: 0;
-    }
-
-    .sidebar-item {
-      display: block;
-      width: 100%;
-      text-align: left;
-      font-family: inherit;
-      font-size: 13px;
-      color: #a0a0b0;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 8px 20px;
-      transition: background 0.1s, color 0.1s;
-    }
-    .sidebar-item:hover {
-      background: #1e1e26;
-      color: #e0e0e0;
-    }
-    .sidebar-item.active {
-      background: #23232e;
-      color: #f0f0f0;
-      font-weight: 600;
-    }
-
-    .detail-content {
-      padding: 40px 44px;
-      max-width: 720px;
-    }
-
-    .detail-cat {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #7e7e8c;
-      margin-bottom: 6px;
-    }
-    .detail-content h2 {
-      font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -0.4px;
-      margin-bottom: 12px;
-      color: #f0f0f3;
-    }
-    .detail-desc {
-      font-size: 14px;
-      color: #a8a8b8;
-      max-width: 520px;
-      margin-bottom: 40px;
-      line-height: 1.65;
-    }
-
-    .block-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #8a8a98;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 10px;
-    }
-
     .code-block {
-      background: #121218;
-      border: 1px solid #2c2c34;
-      border-radius: 8px;
-      margin-bottom: 40px;
+      background: #0d0d12;
+      border-radius: 10px;
+      margin: 12px 0 20px;
       overflow: hidden;
+      border: 1px solid #1e1e26;
     }
-    .code-top {
+    .code-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 16px;
-      background: #1a1a24;
-      border-bottom: 1px solid #2c2c34;
+      padding: 8px 14px;
+      background: #14141c;
+      border-bottom: 1px solid #1e1e26;
     }
     .code-filename {
-      font-size: 12px;
-      color: #9090a0;
-      font-family: 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
+      font-size: 11px;
+      color: #7a7a84;
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
     }
     .copy-btn {
-      font-family: inherit;
-      font-size: 12px;
-      color: #c0c0d0;
+      font-size: 11px;
+      color: #d0d0d8;
       background: #1e1e28;
-      border: 1px solid #3a3a46;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 12px;
       cursor: pointer;
-      padding: 4px 14px;
-      border-radius: 5px;
-      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
     }
     .copy-btn:hover {
-      border-color: #6a6a7a;
-      background: #2a2a36;
-      color: #f0f0f0;
+      background: #2a2a38;
     }
-    .copy-btn.copied {
-      color: #4ade80;
-      border-color: #4ade80;
+    .code-body {
+      padding: 16px 20px;
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #d4d4d4;
+      white-space: pre;
+      overflow-x: auto;
     }
-    .editor-container {
-      height: 260px;
-      border-bottom-left-radius: 8px;
-      border-bottom-right-radius: 8px;
-      overflow: hidden;
+    .kw {
+      color: #9CDCFE;
     }
-
-    .props-block {
-      margin-bottom: 36px;
+    .ty {
+      color: #4EC9B0;
+      font-weight: bold;
+    }
+    .str {
+      color: #CE9178;
+    }
+    .num {
+      color: #B5CEA8;
+    }
+    .cm {
+      color: #6A9955;
+      font-style: italic;
+    }
+    .vr {
+      color: #DCDCAA;
+    }
+    .an {
+      color: #C586C0;
+      font-weight: bold;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 12px;
+      background: #0d0d12;
       border-radius: 8px;
       overflow: hidden;
+      margin-top: 8px;
     }
     thead th {
       text-align: left;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      color: #8a8a98;
-      padding: 12px 16px;
-      border-bottom: 1px solid #2c2c34;
-      background: #121218;
-    }
-    tbody tr {
-      border-bottom: 1px solid #1e1e28;
-    }
-    tbody tr:last-child {
-      border-bottom: none;
-    }
-    tbody tr:hover {
-      background: #1a1a24;
+      color: #7a7a84;
+      padding: 10px 14px;
+      border-bottom: 1px solid #1e1e26;
+      background: #111118;
     }
     tbody td {
-      padding: 12px 16px;
-      color: #c0c0d0;
-      vertical-align: top;
+      padding: 8px 14px;
+      border-bottom: 1px solid #1a1a22;
+      color: #c0c0ca;
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
     }
     tbody td:first-child {
-      font-family: 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
-      font-size: 12px;
-      color: #e0e0e0;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 11px;
       font-weight: 500;
-      white-space: nowrap;
+      color: #d4d4dc;
     }
-    tbody td:nth-child(2) {
-      font-family: 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
-      font-size: 12px;
-      color: #9a9aa8;
-      white-space: nowrap;
-    }
-    tbody td:nth-child(3) {
-      font-family: 'SFMono-Regular', 'Menlo', 'Consolas', monospace;
-      font-size: 12px;
-      color: #7a7a8a;
-      white-space: nowrap;
-    }
-
-    footer {
-      border-top: 1px solid #2c2c34;
-      padding: 22px 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      color: #6e6e7c;
-    }
-    .footer-links {
-      display: flex;
-      gap: 24px;
-    }
-    .footer-links a {
-      color: #7a7a8a;
-      text-decoration: none;
-    }
-    .footer-links a:hover {
-      color: #d0d0e0;
-      opacity: 1;
-    }
-
-    @media (max-width: 720px) {
-      nav {
-        padding: 0 16px;
+    @media (max-width: 800px) {
+      body {
+        flex-direction: column;
       }
-      .page {
-        padding: 0 16px;
-      }
-      .hero h1 {
-        font-size: 28px;
-      }
-      .feature-grid {
-        grid-template-columns: 1fr;
-      }
-      .widget-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .detail-layout {
-        grid-template-columns: 1fr;
-      }
-      .detail-sidebar {
-        position: static;
+      .sidebar {
+        width: 100%;
+        min-width: 100%;
         height: auto;
+        position: static;
         border-right: none;
-        border-bottom: 1px solid #2c2c34;
-        padding: 16px 0;
+        border-bottom: 1px solid #1e1e22;
+        padding: 8px 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
       }
-      .detail-content {
+      .sidebar-header {
+        border-bottom: none;
+        padding: 0;
+        margin: 0;
+      }
+      .sidebar-label {
+        display: none;
+      }
+      .sidebar-link {
+        font-size: 11px;
+        padding: 4px 8px;
+      }
+      .hero-section {
+        flex-direction: column;
+        padding: 32px 20px;
+        gap: 32px;
+      }
+      .watch-frame {
+        width: 300px;
+        height: 300px;
+        border-radius: 32px;
+      }
+      .watch-frame iframe {
+        border-radius: 29px;
+      }
+      .section {
         padding: 24px 16px;
       }
-      footer {
-        padding: 16px;
-        flex-direction: column;
-        gap: 8px;
-        align-items: flex-start;
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 28px;
+      }
+      h2 {
+        font-size: 22px;
       }
     }
   </style>
 </head>
 <body>
-
-  <nav>
-    <a class="brand" href="#">AromaUI <span class="version">v0.1</span></a>
-    <div class="nav-links">
-      <a href="https://github.com/BinaryInkTN/AromaUI" target="_blank">GitHub</a>
-      <a href="https://binaryinktn.github.io/AromaUI/index.html#/category/Overview/page/getting-started">API Docs</a>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="#" onclick="scrollToSection('overview')">AromaUI <span class="sidebar-version">v0.1</span></a>
     </div>
-  </nav>
-
-  <div id="mainContent">
-    <div class="page">
-
-      <div class="hero">
-        <h1>Separate UI and Logic</h1>
-        <p>Use Incense to define your UI declaratively, keeping the logic separate and maintainable.</p>
-        <button class="btn filled" onclick="document.getElementById('widgetsSection').scrollIntoView({ behavior: 'smooth' })">Explore Widgets</button>
+    <div class="sidebar-label">Getting Started</div>
+    <a class="sidebar-link" onclick="scrollToSection('overview')"><i class="fas fa-book-open"></i> Overview</a>
+    <div class="sidebar-label">Features</div>
+    <a class="sidebar-link" onclick="scrollToSection('feature-incense')"><i class="fas fa-code"></i> Incense DSL</a>
+    <a class="sidebar-link" onclick="scrollToSection('feature-embed')"><i class="fas fa-puzzle-piece"></i> Embed System</a>
+    <a class="sidebar-link" onclick="scrollToSection('feature-state')"><i class="fas fa-database"></i> State Management</a>
+    <a class="sidebar-link" onclick="scrollToSection('feature-callbacks')"><i class="fas fa-plug"></i> Callback System</a>
+    <a class="sidebar-link" onclick="scrollToSection('feature-hotreload')"><i class="fas fa-sync-alt"></i> Hot Reloading</a>
+    <a class="sidebar-link" onclick="scrollToSection('feature-animations')"><i class="fas fa-film"></i> Animation System</a>
+    <a class="sidebar-link" onclick="scrollToSection('feature-conditional')"><i class="fas fa-code-branch"></i> Conditional Rendering</a>
+    <div class="sidebar-label">Core</div>
+    <a class="sidebar-link" onclick="scrollToSection('widget-window')"><i class="fas fa-window-maximize"></i> Window</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-label')"><i class="fas fa-font"></i> Label</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-button')"><i class="fas fa-hand-pointer"></i> Button</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-card')"><i class="fas fa-credit-card"></i> Card</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-divider')"><i class="fas fa-grip-lines"></i> Divider</a>
+    <div class="sidebar-label">Layout</div>
+    <a class="sidebar-link" onclick="scrollToSection('widget-container')"><i class="fas fa-layer-group"></i> Container</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-scrollview')"><i class="fas fa-scroll"></i> ScrollView</a>
+    <div class="sidebar-label">Input</div>
+    <a class="sidebar-link" onclick="scrollToSection('widget-checkbox')"><i class="fas fa-check-square"></i> Checkbox</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-switch_w')"><i class="fas fa-toggle-on"></i> Switch</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-slider')"><i class="fas fa-sliders-h"></i> Slider</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-textbox')"><i class="fas fa-i-cursor"></i> Textbox</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-dropdown')"><i class="fas fa-chevron-down"></i> Dropdown</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-radiobutton')"><i class="fas fa-dot-circle"></i> RadioButton</a>
+    <div class="sidebar-label">Navigation</div>
+    <a class="sidebar-link" onclick="scrollToSection('widget-tabs')"><i class="fas fa-folder"></i> Tabs</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-sidebar')"><i class="fas fa-bars"></i> Sidebar</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-listview')"><i class="fas fa-list"></i> ListView</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-table')"><i class="fas fa-table"></i> Table</a>
+    <div class="sidebar-label">Media</div>
+    <a class="sidebar-link" onclick="scrollToSection('widget-image')"><i class="fas fa-image"></i> Image</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-icon')"><i class="fas fa-icons"></i> Icon</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-gif')"><i class="fas fa-film"></i> GIF</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-canvas')"><i class="fas fa-paint-brush"></i> Canvas</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-map')"><i class="fas fa-map"></i> Map</a>
+    <div class="sidebar-label">Actions</div>
+    <a class="sidebar-link" onclick="scrollToSection('widget-fab')"><i class="fas fa-plus-circle"></i> FAB</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-iconbutton')"><i class="fas fa-circle"></i> IconButton</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-menu')"><i class="fas fa-ellipsis-v"></i> Menu</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-snackbar')"><i class="fas fa-info-circle"></i> Snackbar</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-dialog')"><i class="fas fa-window-restore"></i> Dialog</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-tooltip')"><i class="fas fa-comment-dots"></i> Tooltip</a>
+    <div class="sidebar-label">Feedback</div>
+    <a class="sidebar-link" onclick="scrollToSection('widget-progressbar')"><i class="fas fa-spinner"></i> ProgressBar</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-loading')"><i class="fas fa-circle-notch"></i> Loading</a>
+    <a class="sidebar-link" onclick="scrollToSection('widget-debugoverlay')"><i class="fas fa-bug"></i> DebugOverlay</a>
+  </aside>
+  <main class="main-content">
+    <section class="hero-section" id="overview">
+      <div class="hero-text">
+        <p class="eyebrow">AromaUI v0.1</p>
+        <h1>Separate Interface from Logic</h1>
+        <p class="intro">AromaUI separates interface from logic using a custom markup language. Build reactive, animated interfaces with real-time state and hot reloading. Targets desktop and embedded platforms including smartwatches.</p>
+        <a class="btn filled" href="https://github.com/BinaryInkTN/AromaUI" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+        <a class="btn" href="https://binaryinktn.github.io/AromaUI/" target="_blank"><i class="fas fa-cube"></i> Full API Docs</a>
       </div>
-
-      <div class="section" id="featuresSection">
-        <p class="section-label">Features</p>
-        <h2>Key Features</h2>
-        <p class="section-sub">C performance with declarative UI design.</p>
-        <div class="feature-grid" id="featureGrid"></div>
-      </div>
-
-      <div class="section" id="widgetsSection">
-        <p class="section-label">Components</p>
-        <h2>Widget Library</h2>
-        <p class="section-sub">30+ widgets ready to use in any Incense file.</p>
-        <div class="widget-controls">
-          <div class="search-wrap">
-            <input type="text" class="search-input" id="widgetSearch" placeholder="Search…" oninput="filterWidgets()" autocomplete="off">
-          </div>
-          <div class="filter-pills" id="filterPills"></div>
-          <span class="result-count" id="resultCount"></span>
-        </div>
-        <div class="widget-grid" id="widgetGrid"></div>
-      </div>
-
-    </div>
-  </div>
-
-  <div id="detail">
-    <div class="detail-layout">
-
-      <div class="detail-sidebar" id="detailSidebar">
-        <button class="sidebar-back" onclick="backToOverview()">← All widgets</button>
-        <div id="sidebarNav"></div>
-      </div>
-
-      <div class="detail-content">
-        <p class="detail-cat" id="detailCategory"></p>
-        <h2 id="detailTitle"></h2>
-        <p class="detail-desc" id="detailDescription"></p>
-
-        <p class="block-label">Example</p>
-        <div class="code-block">
-          <div class="code-top">
-            <span class="code-filename">example.aroma</span>
-            <button class="copy-btn" id="copyBtn1" onclick="copyCode('editor1','copyBtn1')">Copy</button>
-          </div>
-          <div class="editor-container" id="editor1"></div>
-        </div>
-
-        <div class="props-block">
-          <p class="block-label">Properties</p>
-          <table>
-            <thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-            <tbody id="propsBody"></tbody>
-          </table>
+      <div class="hero-preview">
+        <div class="watch-frame">
+          <iframe src="smartwatch.html" title="Smartwatch preview"></iframe>
         </div>
       </div>
-
-    </div>
-  </div>
-
-  <footer>
-    <span>AromaUI - BinaryInkTN</span>
-    <div class="footer-links">
-      <a href="https://github.com/BinaryInkTN/AromaUI">GitHub</a>
-    </div>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+    </section>
+    <div id="widgetDetails"></div>
+  </main>
   <script>
     const featureData = {
-      incense:   { name:'Incense DSL',    category:'Core', description:'A declarative, C-like DSL for defining UI layouts. Separates UI definition from application logic.', code:`Window {\n    width: 800\n    height: 600\n    title: "My Application"\n\n    Label {\n        x: 20\n        y: 20\n        text: "Hello, AromaUI!"\n        style: "large"\n    }\n\n    Button {\n        x: 20\n        y: 80\n        width: 150\n        height: 40\n        text: "Click Me"\n        on_click: "myCallback"\n    }\n}`, props:[['Declarative','Syntax','Yes','Define UI without code'],['Type-safe','Validation','Yes','Type checking at load time'],['Hot-reload','Feature','Yes','Live UI updates']] },
-      embed:     { name:'@embed System',  category:'Core', description:'Include external Incense files into your UI definitions. Perfect for component reuse and modular design.', code:`Window {\n    width: 800\n    height: 600\n\n    Tabs {\n        x: 0  y: 0\n        width: 800  height: 50\n\n        Tab {\n            text: "Home"\n            embed "home.aroma"\n        }\n        Tab {\n            text: "Settings"\n            embed "settings.aroma"\n        }\n    }\n}`, props:[['Modular','Feature','Yes','Split UI into manageable files'],['Circular detection','Safety','Yes','Prevents infinite recursion'],['Depth limiting','Safety','Yes','64-level max depth']] },
-      widgets:   { name:'Widget Library', category:'Core', description:'30+ Material Design widgets including buttons, inputs, navigation, media, and feedback components.', code:`Window {\n    width: 800\n    height: 600\n\n    Button    { x: 20 y: 20  text: "Click" }\n    Label     { x: 20 y: 80  text: "Hello" }\n    Container { x: 20 y: 140 layout: "flex" }\n    Card      { x: 20 y: 200 type: "elevated" }\n\n    Checkbox  { x: 20 y: 300 label: "Accept" }\n    Switch    { x: 20 y: 340 value: true }\n    Slider    { x: 20 y: 380 min: 0 max: 100 }\n}`, props:[['Core','Widgets','6','Window, Label, Button, Container, Card, Divider'],['Input','Widgets','6','Checkbox, Switch, Slider, Textbox, Dropdown, RadioButton'],['Navigation','Widgets','4','Tabs, Sidebar, ListView, Table'],['Media','Widgets','5','Image, Icon, GIF, Canvas, Map'],['Actions','Widgets','6','FAB, IconButton, Menu, Snackbar, Dialog, Tooltip']] },
-      callbacks: { name:'Callbacks',      category:'Core', description:'Connect UI events to C functions. Supports multiple callback signatures for all interaction types.', code:`Button {\n    x: 20  y: 20\n    text: "Click Me"\n    on_click: "onButtonClick"\n}\n\nTextbox {\n    x: 20  y: 80\n    width: 300  height: 36\n    placeholder: "Enter text..."\n    on_change: "onTextChange"\n}`, props:[['void cb','Type','void (*)(void*)','No return, void pointer userdata'],['bool cb','Type','void (*)(bool, void*)','Boolean state'],['int cb','Type','void (*)(int, void*)','Integer value'],['string cb','Type','void (*)(const char*, void*)','String value'],['node cb','Type','void (*)(AromaNode*, void*)','Node reference']] }
+      incense: {
+        name: 'Incense DSL',
+        desc: 'Declarative markup language for defining UI layouts.',
+        code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" style: "large" }\n    Button { x: 20 y: 80 width: 150 height: 40 text: "Click" on_click: "myCallback" }\n}',
+        props: [
+          ['Comments', 'Syntax', '// or /* */', 'Single and multi-line'],
+          ['Objects', 'Syntax', 'TypeName { }', 'Uppercase with braces'],
+          ['Properties', 'Syntax', 'key: value', 'Lowercase with colon'],
+          ['Strings', 'Type', '"text"', 'Double-quoted'],
+          ['Integers', 'Type', '42, -10', 'Whole numbers'],
+          ['Floats', 'Type', '3.14', 'Decimal numbers'],
+          ['Booleans', 'Type', 'true, false', 'Boolean literals'],
+          ['Colors', 'Type', '#FF0000', 'Hex RRGGBB']
+        ]
+      },
+      embed: {
+        name: 'Embed System',
+        desc: 'Include external Aroma files with property passing.',
+        code: 'Window {\n    width: 800\n    height: 600\n    Tabs {\n        Tab { text: "Home" @embed "home.aroma" }\n        Tab { text: "Settings" @embed "settings.aroma" { theme: "dark" } }\n    }\n}',
+        props: [
+          ['@embed', 'Directive', 'file inclusion', 'Includes external file'],
+          ['Props', 'Feature', '{ key: value }', 'Pass properties'],
+          ['Depth limit', 'Safety', '64 levels', 'Max nesting depth']
+        ]
+      },
+      state: {
+        name: 'State Management',
+        desc: 'Reactive state with typed values for automatic UI updates.',
+        code: 'Label { x: 20 y: 20 text: "state.battery_percent" style: "large" }\nIf { condition: "state.battery_percent < 20"\n    Then { Icon { text: "AROMA_ICON_BATTERY_ALERT" color: "#FF0000" } }\n}',
+        props: [
+          ['SetInt', 'API', 'key, int', 'Set integer'],
+          ['SetFloat', 'API', 'key, float', 'Set float'],
+          ['SetBool', 'API', 'key, bool', 'Set boolean'],
+          ['SetString', 'API', 'key, string', 'Set string'],
+          ['Observers', 'Feature', 'callback', 'React to changes']
+        ]
+      },
+      callbacks: {
+        name: 'Callback System',
+        desc: 'Connect UI events to C functions with type-safe registration.',
+        code: 'Button { x: 20 y: 20 text: "Click" on_click: "onButtonClick" }\nTextbox { x: 20 y: 80 width: 300 height: 36 placeholder: "Enter text" on_change: "onTextChange" }',
+        props: [
+          ['BOOL_PTR', 'Type', 'bool(*)(AromaNode*,void*)', 'Button, Switch'],
+          ['VOID_PTR', 'Type', 'void(*)(void*)', 'FAB, IconButton'],
+          ['INT_STRING_PTR', 'Type', 'void(*)(int,const char*,void*)', 'Dropdown']
+        ]
+      },
+      hotreload: {
+        name: 'Hot Reloading',
+        desc: 'Edit Aroma files and see changes instantly.',
+        code: 'int watcher = IncenseHotReloadStart("ui.aroma", font, icon_font, &registry);\nIncenseHotReloadCheck();\nIncenseHotReloadForce(watcher);',
+        props: [
+          ['Start', 'API', 'path, fonts, registry', 'Begin watching'],
+          ['Check', 'API', 'none', 'Poll for changes'],
+          ['Force', 'API', 'watcher index', 'Force reload'],
+          ['Stop', 'API', 'watcher index', 'Stop watcher']
+        ]
+      },
+      animations: {
+        name: 'Animation System',
+        desc: 'Fade, slide, and scale animations with easing curves.',
+        code: 'Container { animation: "slide_y" animation_duration: 500 animation_easing: "ease_out_cubic" hidden: false\n    Label { text: "Animated!" }\n}',
+        props: [
+          ['animation', 'Property', '"none"', 'fade, slide_x, slide_y, scale'],
+          ['animation_duration', 'Property', '300', 'Milliseconds'],
+          ['animation_easing', 'Property', '"linear"', 'ease_in, ease_out, etc.'],
+          ['hidden', 'Property', 'false', 'Start hidden']
+        ]
+      },
+      conditional: {
+        name: 'Conditional Rendering',
+        desc: 'Show/hide UI based on state with If/Then/Else.',
+        code: 'If { condition: "state.battery_percent < 20"\n    Then { Card { Label { text: "Low Battery" } } }\n    Else { Label { text: "Battery OK" } }\n}',
+        props: [
+          ['If', 'Block', 'condition', 'Conditional container'],
+          ['Then', 'Block', 'child content', 'Shown when true'],
+          ['Else', 'Block', 'child content', 'Shown when false']
+        ]
+      }
     };
-
     const widgetData = {
-      window:      { name:'Window',      category:'Core',       desc:'Root container. Creates the native OS window.',           code:`Window {\n    width: 800\n    height: 600\n    title: "My App"\n\n    Label { x: 20 y: 20 text: "Hello!" style: "large" }\n}`, props:[['width','int','800','Window width'],['height','int','600','Window height'],['title','string','"Incense App"','Window title']] },
-      button:      { name:'Button',      category:'Core',       desc:'Triggers an action on click.',                            code:`Button {\n    x: 20  y: 20\n    width: 150  height: 40\n    text: "Click Me"\n    on_click: "onButtonClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','120','Width'],['height','int','40','Height'],['text','string','"Button"','Label'],['on_click','callback','null','Click handler']] },
-      label:       { name:'Label',       category:'Core',       desc:'Displays text in large, medium, or small style.',         code:`Label {\n    x: 20  y: 20\n    text: "Hello World"\n    style: "large"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['text','string','""','Text content'],['style','string','"large"','large, medium, or small']] },
-      card:        { name:'Card',        category:'Core',       desc:'Container with elevated, outlined, or filled styling.',   code:`Card {\n    x: 20  y: 60\n    width: 280  height: 180\n    type: "elevated"\n\n    Label  { x: 20 y: 20 text: "Card Title" style: "medium" }\n    Button { x: 20 y: 120 width: 100 height: 32 text: "Action" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','120','Height'],['type','string','"elevated"','elevated, outlined, or filled']] },
-      divider:     { name:'Divider',     category:'Core',       desc:'Visual separator, horizontal or vertical.',               code:`Divider {\n    x: 20  y: 100\n    length: 400\n    orientation: "horizontal"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['length','int','100','Length in px'],['orientation','string','"horizontal"','horizontal or vertical']] },
-      container:   { name:'Container',   category:'Layout',     desc:'Layout container with optional flexbox.',                 code:`Container {\n    x: 20  y: 60\n    width: 400  height: 200\n    layout: "flex"\n    direction: "row"\n\n    Label { x: 10 y: 10 text: "Item 1" }\n    Label { x: 10 y: 10 text: "Item 2" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','200','Height'],['layout','string','"none"','none or flex'],['direction','string','"column"','row or column']] },
-      scrollview:  { name:'ScrollView',  category:'Layout',     desc:'Scrollable container.',                                   code:`ScrollView {\n    x: 20  y: 60\n    width: 400  height: 300\n    direction: "vertical"\n\n    Label { x: 10 y: 10   text: "Top" }\n    Label { x: 10 y: 500  text: "Bottom" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Viewport width'],['height','int','200','Viewport height'],['direction','string','"vertical"','vertical, horizontal, or both']] },
-      checkbox:    { name:'Checkbox',    category:'Input',      desc:'Checkbox with label.',                                    code:`Checkbox {\n    x: 20  y: 60\n    width: 200  height: 32\n    label: "Accept Terms"\n    on_change: "onCheckboxChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','160','Width'],['height','int','32','Height'],['label','string','""','Label text'],['on_change','callback','null','Change handler']] },
-      switch:      { name:'Switch',      category:'Input',      desc:'Toggle switch.',                                          code:`Switch {\n    x: 20  y: 60\n    width: 56  height: 28\n    value: true\n    on_change: "onSwitchChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','56','Width'],['height','int','28','Height'],['value','bool','false','Initial state'],['on_change','callback','null','Change handler']] },
-      slider:      { name:'Slider',      category:'Input',      desc:'Value selector within a range.',                         code:`Slider {\n    x: 20  y: 60\n    width: 200  height: 24\n    min: 0  max: 100  value: 50\n    on_change: "onSliderChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','24','Height'],['min','int','0','Minimum'],['max','int','100','Maximum'],['value','int','0','Initial value'],['on_change','callback','null','Change handler']] },
-      textbox:     { name:'Textbox',     category:'Input',      desc:'Single-line text input.',                                 code:`Textbox {\n    x: 20  y: 60\n    width: 300  height: 36\n    placeholder: "Enter your name..."\n    on_change: "onTextboxChange"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','36','Height'],['placeholder','string','""','Placeholder text'],['on_change','callback','null','Change handler'],['on_submit','callback','null','Submit handler']] },
-      dropdown:    { name:'Dropdown',    category:'Input',      desc:'Select from a list of options.',                         code:`Dropdown {\n    x: 20  y: 60\n    width: 250  height: 36\n    on_change: "onDropdownChange"\n\n    Option { text: "United States" }\n    Option { text: "United Kingdom" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','36','Height'],['on_change','callback','null','Change handler']] },
-      radiobutton: { name:'RadioButton', category:'Input',      desc:'Single selection within a group.',                       code:`RadioButton {\n    x: 20  y: 60\n    width: 200  height: 32\n    label: "Option A"\n    group: 1\n    selected: true\n    on_click: "onRadioClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','160','Width'],['height','int','32','Height'],['label','string','""','Label'],['group','int','0','Group ID'],['selected','bool','false','Initially selected'],['on_click','callback','null','Click handler']] },
-      tabs:        { name:'Tabs',        category:'Navigation', desc:'Tab bar with content panels.',                            code:`Tabs {\n    x: 0  y: 0\n    width: 800  height: 48\n    on_change: "onTabChanged"\n\n    Tab { text: "Home" icon: "AROMA_ICON_HOME"\n        Label { x: 20 y: 100 text: "Home content" }\n    }\n    Tab { text: "Settings" icon: "AROMA_ICON_SETTINGS" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','400','Width'],['height','int','48','Height'],['on_change','callback','null','Change handler']] },
-      sidebar:     { name:'Sidebar',     category:'Navigation', desc:'Navigation sidebar with items.',                          code:`Sidebar {\n    x: 20  y: 60\n    width: 250  height: 500\n    on_select: "onSidebarSelect"\n\n    Item { text: "Dashboard" icon: "AROMA_ICON_DASHBOARD" }\n    Item { text: "Profile"   icon: "AROMA_ICON_PERSON" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','400','Height'],['on_select','callback','null','Select handler']] },
-      listview:    { name:'ListView',    category:'Navigation', desc:'Scrollable selection list.',                              code:`ListView {\n    x: 20  y: 60\n    width: 300  height: 400\n    on_select: "onListSelect"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','300','Height'],['on_select','callback','null','Select handler']] },
-      table:       { name:'Table',       category:'Navigation', desc:'Data table with configurable columns.',                  code:`Table {\n    x: 20  y: 60\n    width: 600  height: 300\n    columns: 3\n\n    Column { header: "Name" width: 200 }\n    Column { header: "Age"  width: 100 }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','400','Width'],['height','int','300','Height'],['columns','int','1','Column count']] },
-      image:       { name:'Image',       category:'Media',      desc:'Displays an image from a file path.',                    code:`Image {\n    x: 20  y: 60\n    width: 300  height: 200\n    src: "image.png"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','100','Width'],['height','int','100','Height'],['src','string','""','File path']] },
-      icon:        { name:'Icon',        category:'Media',      desc:'Material icon from the built-in set.',                   code:`Icon {\n    x: 20  y: 60\n    size: 32\n    text: "AROMA_ICON_HOME"\n    color: "#111"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['size','int','24','Size in px'],['text','string','null','Icon codepoint'],['src','string','null','Image path (alternative)'],['color','color','"#000000"','Icon color']] },
-      gif:         { name:'GIF',         category:'Media',      desc:'Animated GIF display.',                                  code:`GIF {\n    x: 20  y: 60\n    width: 150  height: 150\n    src: "animation.gif"\n    autoplay: true\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','100','Width'],['height','int','100','Height'],['src','string','""','File path'],['autoplay','bool','true','Auto-play on load']] },
-      canvas:      { name:'Canvas',      category:'Media',      desc:'Custom drawing surface.',                                code:`Canvas {\n    x: 20  y: 60\n    width: 500  height: 300\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','200','Height']] },
-      map:         { name:'Map',         category:'Media',      desc:'Interactive map with markers.',                          code:`Map {\n    x: 20  y: 60\n    width: 600  height: 400\n    lat: 48.8566  lon: 2.3522\n    zoom: 12\n    attribution: true\n\n    Marker { lat: 48.8566 lon: 2.3522 color: "#111" popup: "Paris" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','300','Width'],['height','int','300','Height'],['lat','float','0.0','Latitude'],['lon','float','0.0','Longitude'],['zoom','int','4','Zoom level'],['attribution','bool','true','Show attribution']] },
-      fab:         { name:'FAB',         category:'Actions',    desc:'Floating Action Button.',                                code:`FAB {\n    x: 20  y: 20\n    icon: "AROMA_ICON_ADD"\n    size: "normal"\n    on_click: "onFABClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['icon','string','"+"','Icon'],['size','string','"normal"','small, normal, or large'],['on_click','callback','null','Click handler']] },
-      iconbutton:  { name:'IconButton',  category:'Actions',    desc:'Icon-only button.',                                      code:`IconButton {\n    x: 20  y: 20\n    icon: "AROMA_ICON_FAVORITE"\n    size: 40\n    variant: "filled"\n    on_click: "onIconButtonClick"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['icon','string','""','Icon'],['size','int','40','Size in px'],['variant','string','"standard"','standard, filled, tonal, or outlined'],['on_click','callback','null','Click handler']] },
-      menu:        { name:'Menu',        category:'Actions',    desc:'Dropdown menu with items and separators.',               code:`Menu {\n    x: 20  y: 60\n\n    MenuItem { text: "New"  icon: "AROMA_ICON_ADD"         on_click: "onNew" }\n    MenuItem { text: "Open" icon: "AROMA_ICON_FOLDER_OPEN" on_click: "onOpen" }\n    Separator {}\n    MenuItem { text: "Exit" }\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position']] },
-      snackbar:    { name:'Snackbar',    category:'Actions',    desc:'Brief message at the bottom of the screen.',            code:`Snackbar {\n    x: 20  y: 560\n    message: "Operation completed!"\n    duration: 3000\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['message','string','""','Message text'],['duration','int','3000','Duration in ms']] },
-      dialog:      { name:'Dialog',      category:'Actions',    desc:'Modal dialog, basic or fullscreen.',                    code:`Dialog {\n    x: 200  y: 150\n    width: 320  height: 200\n    title: "Confirm"\n    message: "Are you sure?"\n    type: "basic"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','320','Width'],['height','int','200','Height'],['title','string','"Dialog"','Title'],['message','string','""','Body text'],['type','string','"basic"','basic or fullscreen']] },
-      tooltip:     { name:'Tooltip',     category:'Actions',    desc:'Contextual help text on hover.',                        code:`Tooltip {\n    x: 20  y: 20\n    text: "This is helpful information."\n    position: "top"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['text','string','""','Tooltip text'],['position','string','"top"','top, bottom, left, or right']] },
-      progressbar: { name:'ProgressBar', category:'Feedback',   desc:'Determinate or indeterminate progress indicator.',      code:`ProgressBar {\n    x: 20  y: 60\n    width: 400  height: 8\n    value: 0.65\n    type: "determinate"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['height','int','8','Height'],['value','float','0.0','Progress 0.0–1.0'],['type','string','"determinate"','determinate or indeterminate']] },
-      loading:     { name:'Loading',     category:'Feedback',   desc:'Spinning progress indicator.',                          code:`Loading {\n    x: 40  y: 100\n    radius: 24\n    thickness: 3\n    color: "#111"\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['radius','int','16','Radius in px'],['thickness','int','3','Stroke thickness'],['color','color','"#000000"','Color']] },
-      debugoverlay:{ name:'DebugOverlay',category:'Feedback',   desc:'FPS and frame time overlay.',                           code:`DebugOverlay {\n    x: 20  y: 440\n    width: 300\n    visible: true\n}`, props:[['x','int','0','Horizontal position'],['y','int','0','Vertical position'],['width','int','200','Width'],['visible','bool','true','Visible']] },
+      window: {
+        name: 'Window', category: 'Core', desc: 'Root container that creates the native OS window.',
+        code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" }\n}',
+        props: [['width', 'int', '800', 'Window width'], ['height', 'int', '600', 'Window height'], ['title', 'string', '"Incense App"', 'Title bar text']]
+      },
+      container: {
+        name: 'Container', category: 'Layout', desc: 'Flexible layout container with optional flexbox.',
+        code: 'Container {\n    x: 20 y: 60\n    width: 400 height: 200\n    layout: "flex"\n    direction: "row"\n    Label { text: "Item 1" }\n    Label { text: "Item 2" }\n}',
+        props: [['x', 'int', '0', 'Horizontal position'], ['y', 'int', '0', 'Vertical position'], ['width', 'int', '200', 'Width'], ['height', 'int', '200', 'Height'], ['layout', 'string', '"none"', 'none or flex'], ['direction', 'string', '"column"', 'row or column']]
+      },
+      scrollview: {
+        name: 'ScrollView', category: 'Layout', desc: 'Scrollable container.',
+        code: 'ScrollView {\n    x: 20 y: 60\n    width: 400 height: 300\n    direction: "vertical"\n    Label { x: 10 y: 500 text: "Bottom" }\n}',
+        props: [['direction', 'string', '"vertical"', 'vertical, horizontal, both']]
+      },
+      label: {
+        name: 'Label', category: 'Core', desc: 'Displays text in large, medium, or small style.',
+        code: 'Label {\n    x: 20 y: 20\n    text: "Hello World"\n    style: "large"\n}',
+        props: [['text', 'string', '""', 'Text content'], ['style', 'string', '"large"', 'large, medium, small']]
+      },
+      button: {
+        name: 'Button', category: 'Core', desc: 'Clickable button that triggers a callback.',
+        code: 'Button {\n    x: 20 y: 20\n    width: 150 height: 40\n    text: "Click Me"\n    on_click: "onButtonClick"\n}',
+        props: [['text', 'string', '"Button"', 'Label text'], ['on_click', 'callback', 'null', 'Click handler']]
+      },
+      card: {
+        name: 'Card', category: 'Core', desc: 'Container with elevated, outlined, or filled style.',
+        code: 'Card {\n    x: 20 y: 60\n    width: 280 height: 180\n    type: "elevated"\n    Label { text: "Card Title" }\n}',
+        props: [['type', 'string', '"elevated"', 'elevated, outlined, filled']]
+      },
+      divider: {
+        name: 'Divider', category: 'Core', desc: 'Visual separator line.',
+        code: 'Divider {\n    x: 20 y: 100\n    length: 400\n    orientation: "horizontal"\n}',
+        props: [['orientation', 'string', '"horizontal"', 'horizontal or vertical']]
+      },
+      checkbox: {
+        name: 'Checkbox', category: 'Input', desc: 'Toggleable checkbox with label.',
+        code: 'Checkbox {\n    x: 20 y: 60\n    label: "Accept Terms"\n    on_change: "onCheckboxChange"\n}',
+        props: [['label', 'string', '""', 'Label text'], ['on_change', 'callback', 'null', 'Change handler']]
+      },
+      switch_w: {
+        name: 'Switch', category: 'Input', desc: 'Toggle switch with boolean value.',
+        code: 'Switch {\n    x: 20 y: 60\n    value: true\n    on_change: "onSwitchChange"\n}',
+        props: [['value', 'bool', 'false', 'Initial state'], ['on_change', 'callback', 'null', 'Change handler']]
+      },
+      slider: {
+        name: 'Slider', category: 'Input', desc: 'Value selector with min/max range.',
+        code: 'Slider {\n    x: 20 y: 60\n    width: 200 height: 24\n    min: 0 max: 100 value: 50\n}',
+        props: [['min', 'int', '0', 'Minimum'], ['max', 'int', '100', 'Maximum'], ['value', 'int', '0', 'Initial value']]
+      },
+      textbox: {
+        name: 'Textbox', category: 'Input', desc: 'Single-line text input.',
+        code: 'Textbox {\n    x: 20 y: 60\n    width: 300 height: 36\n    placeholder: "Enter name..."\n}',
+        props: [['placeholder', 'string', '""', 'Placeholder text'], ['on_change', 'callback', 'null', 'Change handler']]
+      },
+      dropdown: {
+        name: 'Dropdown', category: 'Input', desc: 'Select from a list of options.',
+        code: 'Dropdown {\n    x: 20 y: 60\n    width: 250 height: 36\n    Option { text: "United States" }\n    Option { text: "Canada" }\n}',
+        props: [['on_change', 'callback', 'null', 'Change handler']]
+      },
+      radiobutton: {
+        name: 'RadioButton', category: 'Input', desc: 'Single selection within a group.',
+        code: 'RadioButton {\n    x: 20 y: 60\n    label: "Option A"\n    group: 1\n    selected: true\n}',
+        props: [['label', 'string', '""', 'Label text'], ['group', 'int', '0', 'Group ID'], ['selected', 'bool', 'false', 'Initially selected']]
+      },
+      tabs: {
+        name: 'Tabs', category: 'Navigation', desc: 'Tab bar with labeled tabs.',
+        code: 'Tabs {\n    x: 0 y: 0\n    width: 800 height: 48\n    Tab { text: "Home" icon: "AROMA_ICON_HOME" }\n    Tab { text: "Settings" icon: "AROMA_ICON_SETTINGS" }\n}',
+        props: [['on_change', 'callback', 'null', 'Tab change handler']]
+      },
+      sidebar: {
+        name: 'Sidebar', category: 'Navigation', desc: 'Navigation sidebar with icons.',
+        code: 'Sidebar {\n    x: 20 y: 60\n    width: 250 height: 500\n    Item { text: "Dashboard" icon: "AROMA_ICON_DASHBOARD" }\n    Item { text: "Profile" icon: "AROMA_ICON_PERSON" }\n}',
+        props: [['on_select', 'callback', 'null', 'Select handler']]
+      },
+      listview: {
+        name: 'ListView', category: 'Navigation', desc: 'Scrollable selection list.',
+        code: 'ListView {\n    x: 20 y: 60\n    width: 300 height: 400\n    on_select: "onListSelect"\n}',
+        props: [['on_select', 'callback', 'null', 'Select handler']]
+      },
+      table: {
+        name: 'Table', category: 'Navigation', desc: 'Data table with columns.',
+        code: 'Table {\n    x: 20 y: 60\n    width: 600 height: 300\n    columns: 3\n    Column { header: "Name" width: 200 }\n    Column { header: "Age" width: 100 }\n}',
+        props: [['columns', 'int', '1', 'Number of columns']]
+      },
+      image: {
+        name: 'Image', category: 'Media', desc: 'Displays an image from file.',
+        code: 'Image {\n    x: 20 y: 60\n    width: 300 height: 200\n    src: "image.png"\n}',
+        props: [['src', 'string', '""', 'Image path']]
+      },
+      icon: {
+        name: 'Icon', category: 'Media', desc: 'Material Design icon.',
+        code: 'Icon {\n    x: 20 y: 60\n    size: 32\n    text: "AROMA_ICON_HOME"\n    color: "#111111"\n}',
+        props: [['size', 'int', '24', 'Icon size'], ['text', 'string', 'null', 'Icon codepoint'], ['color', 'color', '"#000000"', 'Icon color']]
+      },
+      gif: {
+        name: 'GIF', category: 'Media', desc: 'Animated GIF display.',
+        code: 'GIF {\n    x: 20 y: 60\n    width: 150 height: 150\n    src: "animation.gif"\n    autoplay: true\n}',
+        props: [['src', 'string', '""', 'GIF path'], ['autoplay', 'bool', 'true', 'Auto-play']]
+      },
+      canvas: {
+        name: 'Canvas', category: 'Media', desc: 'Custom drawing surface.',
+        code: 'Canvas {\n    x: 20 y: 60\n    width: 500 height: 300\n}',
+        props: []
+      },
+      map: {
+        name: 'Map', category: 'Media', desc: 'Interactive map with markers.',
+        code: 'Map {\n    x: 20 y: 60\n    width: 600 height: 400\n    lat: 48.8566 lon: 2.3522\n    zoom: 12\n    Marker { lat: 48.8566 lon: 2.3522 popup: "Paris" }\n}',
+        props: [['lat', 'float', '0.0', 'Center latitude'], ['lon', 'float', '0.0', 'Center longitude'], ['zoom', 'int', '4', 'Zoom level']]
+      },
+      fab: {
+        name: 'FAB', category: 'Actions', desc: 'Floating Action Button.',
+        code: 'FAB {\n    x: 20 y: 20\n    icon: "AROMA_ICON_ADD"\n    size: "normal"\n    on_click: "onFABClick"\n}',
+        props: [['icon', 'string', '"+"', 'Icon'], ['size', 'string', '"normal"', 'small, normal, large'], ['on_click', 'callback', 'null', 'Click handler']]
+      },
+      iconbutton: {
+        name: 'IconButton', category: 'Actions', desc: 'Icon-only button with variants.',
+        code: 'IconButton {\n    x: 20 y: 20\n    icon: "AROMA_ICON_FAVORITE"\n    size: 40\n    variant: "filled"\n    on_click: "onIconButtonClick"\n}',
+        props: [['icon', 'string', '""', 'Icon'], ['size', 'int', '40', 'Size in pixels'], ['variant', 'string', '"standard"', 'standard, filled, tonal, outlined'], ['on_click', 'callback', 'null', 'Click handler']]
+      },
+      menu: {
+        name: 'Menu', category: 'Actions', desc: 'Dropdown menu with items.',
+        code: 'Menu {\n    x: 20 y: 60\n    MenuItem { text: "New" icon: "AROMA_ICON_ADD" on_click: "onNew" }\n    MenuItem { text: "Open" icon: "AROMA_ICON_FOLDER_OPEN" }\n    Separator {}\n    MenuItem { text: "Exit" }\n}',
+        props: []
+      },
+      snackbar: {
+        name: 'Snackbar', category: 'Actions', desc: 'Brief message toast.',
+        code: 'Snackbar {\n    x: 20 y: 560\n    message: "Operation completed!"\n    duration: 3000\n}',
+        props: [['message', 'string', '""', 'Message text'], ['duration', 'int', '3000', 'Display duration ms']]
+      },
+      dialog: {
+        name: 'Dialog', category: 'Actions', desc: 'Modal dialog window.',
+        code: 'Dialog {\n    x: 200 y: 150\n    width: 320 height: 200\n    title: "Confirm"\n    message: "Are you sure?"\n    type: "basic"\n}',
+        props: [['title', 'string', '"Dialog"', 'Title text'], ['message', 'string', '""', 'Body text'], ['type', 'string', '"basic"', 'basic or fullscreen']]
+      },
+      tooltip: {
+        name: 'Tooltip', category: 'Actions', desc: 'Contextual help text.',
+        code: 'Tooltip {\n    x: 20 y: 20\n    text: "Helpful information"\n    position: "top"\n}',
+        props: [['text', 'string', '""', 'Tooltip text'], ['position', 'string', '"top"', 'top, bottom, left, right']]
+      },
+      progressbar: {
+        name: 'ProgressBar', category: 'Feedback', desc: 'Progress indicator.',
+        code: 'ProgressBar {\n    x: 20 y: 60\n    width: 400 height: 8\n    value: 0.65\n    type: "determinate"\n}',
+        props: [['value', 'float', '0.0', '0.0 to 1.0'], ['type', 'string', '"determinate"', 'determinate or indeterminate']]
+      },
+      loading: {
+        name: 'Loading', category: 'Feedback', desc: 'Spinning circular indicator.',
+        code: 'Loading {\n    x: 40 y: 100\n    radius: 24\n    thickness: 3\n    color: "#111111"\n}',
+        props: [['radius', 'int', '16', 'Radius in pixels'], ['thickness', 'int', '3', 'Stroke thickness'], ['color', 'color', '"#000000"', 'Spinner color']]
+      },
+      debugoverlay: {
+        name: 'DebugOverlay', category: 'Feedback', desc: 'FPS and performance overlay.',
+        code: 'DebugOverlay {\n    x: 20 y: 440\n    width: 300\n    visible: true\n}',
+        props: [['visible', 'bool', 'true', 'Show or hide']]
+      }
     };
-
-    const categoryOrder = ['Core','Layout','Input','Navigation','Media','Actions','Feedback'];
-
-    function buildFeatureGrid() {
-      const g = document.getElementById('featureGrid');
-      if (!g) return;
-      g.innerHTML = Object.keys(featureData).map(k => {
-        const f = featureData[k];
-        return `<div class="feature-card" onclick="showDetail('${k}','feature')" role="button" tabindex="0">
-          <h3>${f.name}</h3>
-          <p>${f.description}</p>
-          <span class="arrow">View →</span>
-        </div>`;
-      }).join('');
+    function highlightCode(code) {
+      return code
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/(\/\/.*$)/gm, '<span class="cm">$1</span>')
+        .replace(/("(?:[^"\\]|\\.)*")/g, '<span class="str">$1</span>')
+        .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="num">$1</span>')
+        .replace(/\b(true|false)\b/g, '<span class="num">$1</span>')
+        .replace(/\b(Window|Label|Button|Container|Card|Divider|Checkbox|Switch|Slider|Textbox|Dropdown|RadioButton|Tabs|Tab|Sidebar|Item|ListView|Table|Column|Image|Icon|GIF|Canvas|Map|Marker|FAB|IconButton|Menu|MenuItem|Separator|Snackbar|Dialog|Tooltip|ProgressBar|Loading|DebugOverlay|ScrollView|Option|If|Then|Else)\b/g, '<span class="ty">$1</span>')
+        .replace(/\b(width|height|title|text|x|y|style|on_click|layout|direction|type|length|orientation|label|on_change|value|min|max|placeholder|on_submit|group|selected|icon|size|variant|message|duration|columns|header|src|autoplay|lat|lon|zoom|attribution|color|popup|radius|thickness|visible|on_select|condition|animation|animation_duration|animation_start_val|animation_end_val|animation_easing|hidden|font|z_index|id)\b/g, '<span class="kw">$1</span>')
+        .replace(/\b(state\.\w+)\b/g, '<span class="vr">$1</span>')
+        .replace(/(@embed)\b/g, '<span class="an">$1</span>');
     }
-
-    function buildWidgetGrid() {
-      const g = document.getElementById('widgetGrid');
-      if (!g) return;
-      g.innerHTML = Object.keys(widgetData).map(k => {
-        const w = widgetData[k];
-        return `<div class="widget-card" onclick="showDetail('${k}','widget')" role="button" tabindex="0" data-category="${w.category}">
-          <span class="cat-tag">${w.category}</span>
-          <h3>${w.name}</h3>
-          <p>${w.desc}</p>
-        </div>`;
-      }).join('');
-    }
-
-    function buildFilterPills() {
-      const wrap = document.getElementById('filterPills');
-      if (!wrap) return;
-      const cats = ['All', ...categoryOrder];
-      wrap.innerHTML = cats.map(c =>
-        `<button class="pill${c==='All'?' active':''}" onclick="setFilter('${c}')">${c}</button>`
-      ).join('');
-    }
-
-    let activeFilter = 'All';
-
-    function setFilter(cat) {
-      activeFilter = cat;
-      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.textContent === cat));
-      filterWidgets();
-    }
-
-    function filterWidgets() {
-      const q = document.getElementById('widgetSearch').value.toLowerCase();
-      const cards = document.querySelectorAll('.widget-card');
-      let count = 0;
-      cards.forEach(c => {
-        const matchCat  = activeFilter === 'All' || c.dataset.category === activeFilter;
-        const matchText = !q || c.textContent.toLowerCase().includes(q);
-        const show = matchCat && matchText;
-        c.style.display = show ? '' : 'none';
-        if (show) count++;
+    function copyCode(btn, code) {
+      navigator.clipboard?.writeText(code).then(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+        setTimeout(() => btn.innerHTML = '<i class="far fa-copy"></i> Copy', 1500);
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+        setTimeout(() => btn.innerHTML = '<i class="far fa-copy"></i> Copy', 1500);
       });
-      const total = Object.keys(widgetData).length;
-      document.getElementById('resultCount').textContent = (q || activeFilter !== 'All') ? `${count} of ${total}` : '';
     }
-
-    function buildSidebarNav(currentKey) {
-      const nav = document.getElementById('sidebarNav');
-      if (!nav) return;
-
-      const groups = {};
-      categoryOrder.forEach(c => groups[c] = []);
-      Object.keys(widgetData).forEach(k => {
-        const cat = widgetData[k].category;
-        if (groups[cat]) groups[cat].push(k);
-      });
-
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function buildAllDetails() {
+      const detailsDiv = document.getElementById('widgetDetails');
       let html = '';
-      categoryOrder.forEach(cat => {
-        if (!groups[cat].length) return;
-        html += `<div class="sidebar-group-label">${cat}</div>`;
-        groups[cat].forEach(k => {
-          const active = k === currentKey ? ' active' : '';
-          html += `<button class="sidebar-item${active}" onclick="showDetail('${k}','widget')">${widgetData[k].name}</button>`;
-        });
+      Object.keys(featureData).forEach(k => {
+        const f = featureData[k];
+        html += `<section class="section" id="feature-${k}"><p class="eyebrow">Feature</p><h2>${f.name}</h2><p class="intro">${f.desc}</p><h3>Example</h3><div class="code-block"><div class="code-header"><span class="code-filename">example.aroma</span><button class="copy-btn" onclick="copyCode(this, \`${f.code.replace(/`/g,'\\`')}\`)"><i class="far fa-copy"></i> Copy</button></div><div class="code-body">${highlightCode(f.code)}</div></div><h3>Properties</h3><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>${f.props.map(p => `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td></tr>`).join('')}</tbody></table></section>`;
       });
-      nav.innerHTML = html;
-    }
-
-    buildFeatureGrid();
-    buildWidgetGrid();
-    buildFilterPills();
-
-    let editors = {};
-
-    require.config({
-      paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }
-    });
-
-    require(['vs/editor/editor.main'], function() {
-      monaco.languages.register({ id: 'aroma' });
-
-      monaco.languages.setMonarchTokensProvider('aroma', {
-        tokenizer: {
-          root: [
-            [/\b(Window|Label|Button|Container|Card|Divider|Checkbox|Switch|Slider|Textbox|Dropdown|RadioButton|Tabs|Tab|Sidebar|Item|ListView|Table|Column|Image|Icon|GIF|Canvas|Map|Marker|FAB|IconButton|Menu|MenuItem|Separator|Snackbar|Dialog|Tooltip|ProgressBar|Loading|DebugOverlay|ScrollView|Option)\b/, 'type'],
-            [/\b(width|height|title|text|x|y|style|on_click|layout|direction|type|length|orientation|label|on_change|value|min|max|placeholder|on_submit|group|selected|icon|size|variant|message|duration|columns|header|src|autoplay|lat|lon|zoom|attribution|color|popup|radius|thickness|visible|on_select|embed)\b/, 'keyword'],
-            [/\b(true|false)\b/, 'number'],
-            [/\b\d+(\.\d+)?\b/, 'number'],
-            [/"([^"\\]|\\.)*"/, 'string'],
-            [/\/\/.*$/, 'comment'],
-            [/[{}]/, 'delimiter'],
-          ]
-        }
+      Object.keys(widgetData).forEach(k => {
+        const w = widgetData[k];
+        html += `<section class="section" id="widget-${k}"><p class="eyebrow">${w.category}</p><h2>${w.name}</h2><p class="intro">${w.desc}</p><h3>Example</h3><div class="code-block"><div class="code-header"><span class="code-filename">example.aroma</span><button class="copy-btn" onclick="copyCode(this, \`${w.code.replace(/`/g,'\\`')}\`)"><i class="far fa-copy"></i> Copy</button></div><div class="code-body">${highlightCode(w.code)}</div></div>${w.props.length ? `<h3>Properties</h3><table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>${w.props.map(p => `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td></tr>`).join('')}</tbody></table>` : ''}</section>`;
       });
-
-      monaco.editor.defineTheme('aromaDark', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [
-          { token: 'type', foreground: '4EC9B0', fontStyle: 'bold' },
-          { token: 'keyword', foreground: '9CDCFE' },
-          { token: 'number', foreground: 'B5CEA8' },
-          { token: 'string', foreground: 'CE9178' },
-          { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
-          { token: 'delimiter', foreground: '808080' },
-        ],
-        colors: {
-          'editor.background': '#121218',
-          'editor.foreground': '#D4D4D4',
-          'editor.lineHighlightBackground': '#1a1a24',
-          'editor.selectionBackground': '#264F78',
-          'editorCursor.foreground': '#AEAFAD',
-          'editorLineNumber.foreground': '#858585',
-          'editorLineNumber.activeForeground': '#C6C6C6',
-        }
-      });
-
-      const el = document.getElementById('editor1');
-      if (el) {
-        editors.editor1 = monaco.editor.create(el, {
-          value: 'Window {\n    width: 800\n    height: 600\n    title: "AromaUI"\n}',
-          language: 'aroma',
-          theme: 'aromaDark',
-          minimap: { enabled: false },
-          lineNumbers: 'on',
-          readOnly: true,
-          scrollBeyondLastLine: false,
-          fontSize: 13,
-          fontFamily: "'SFMono-Regular', 'Menlo', 'Consolas', monospace",
-          padding: { top: 14, bottom: 14 },
-          automaticLayout: true,
-          renderLineHighlight: 'none',
-          scrollbar: {
-            vertical: 'visible',
-            verticalScrollbarSize: 6,
-          }
-        });
-      }
-    });
-
-    function copyCode(editorId, btnId) {
-      if (!editors[editorId]) return;
-      const code = editors[editorId].getValue();
-      const btn = document.getElementById(btnId);
-      const done = () => {
-        if (!btn) return;
-        btn.textContent = 'Copied';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(done).catch(done);
-      } else {
-        done();
-      }
+      detailsDiv.innerHTML = html;
     }
-
-    function showDetail(key, type) {
-      const data = type === 'feature' ? featureData[key] : widgetData[key];
-      if (!data) return;
-
-      document.getElementById('mainContent').style.display = 'none';
-      document.getElementById('detail').classList.add('active');
-
-      document.getElementById('detailCategory').textContent = data.category;
-      document.getElementById('detailTitle').textContent = data.name;
-      document.getElementById('detailDescription').textContent = data.desc || data.description;
-
-      if (editors.editor1) {
-        editors.editor1.setValue(data.code);
-        setTimeout(() => {
-          if (editors.editor1) editors.editor1.layout();
-        }, 100);
-      }
-
-      const body = document.getElementById('propsBody');
-      if (body) body.innerHTML = data.props.map(p =>
-        `<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td></tr>`
-      ).join('');
-
-      buildSidebarNav(key);
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-
-    function backToOverview() {
-      document.getElementById('detail').classList.remove('active');
-      document.getElementById('mainContent').style.display = '';
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
+    buildAllDetails();
   </script>
 </body>
 </html>

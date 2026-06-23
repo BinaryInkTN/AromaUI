@@ -17,7 +17,7 @@
                     id:      "car_view_tab"
                     text:   "Car View"
                     Label {
-                        text: "embed_test_text"
+                        text: "Tire Pressure"
                     }
         
                     Container {
