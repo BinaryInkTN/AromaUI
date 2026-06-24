@@ -20,6 +20,7 @@
       -webkit-font-smoothing: antialiased;
       display: flex;
       min-height: 100vh;
+      min-width: 100% !important;
       transition: background 0.3s ease, color 0.3s ease;
     }
 
@@ -41,6 +42,7 @@
       display: flex;
       flex-direction: column;
       transition: background 0.3s ease, border-color 0.3s ease;
+      z-index: 10;
     }
 
     body.light-mode .sidebar {
@@ -117,6 +119,75 @@
       color: #000;
     }
 
+    .search-container {
+      padding: 8px 18px 12px;
+      border-bottom: 1px solid #1e1e22;
+      margin-bottom: 8px;
+      transition: border-color 0.3s ease;
+    }
+
+    body.light-mode .search-container {
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      font-size: 11px;
+      color: #7a7a84;
+      pointer-events: none;
+      z-index: 1;
+      transition: color 0.3s ease;
+    }
+
+    body.light-mode .search-icon {
+      color: #6c757d;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 6px 10px 6px 30px;
+      background: #14141c;
+      border: 1px solid #2e2e38;
+      border-radius: 6px;
+      color: #d0d0d8;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.15s, background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+
+    .search-input::placeholder {
+      color: #6a6a74;
+    }
+
+    .search-input:focus {
+      border-color: #4a4a58;
+      background: #1a1a22;
+    }
+
+    body.light-mode .search-input {
+      background: #f1f3f5;
+      border-color: #ced4da;
+      color: #212529;
+    }
+
+    body.light-mode .search-input::placeholder {
+      color: #6c757d;
+    }
+
+    body.light-mode .search-input:focus {
+      border-color: #86b7fe;
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(13,110,253,0.1);
+    }
+
     .sidebar-label {
       font-size: 10px;
       font-weight: 600;
@@ -125,6 +196,7 @@
       color: #7a7a80;
       padding: 10px 18px 4px;
       transition: color 0.3s ease;
+      cursor: pointer;
     }
 
     body.light-mode .sidebar-label {
@@ -170,86 +242,28 @@
       color: #6c757d;
     }
 
+    .sidebar-link.hidden {
+      display: none;
+    }
+
+    .sidebar-label.hidden {
+      display: none;
+    }
+
     .main-content {
       flex: 1;
-      max-width: 960px;
+      max-width: 100%;
+      padding: 40px 48px;
+      overflow-y: auto;
+      height: 100vh;
     }
 
     .section {
-      padding: 40px 48px;
-      border-bottom: 1px solid #1e1e22;
-      transition: border-color 0.3s ease;
+      margin-bottom: 48px;
     }
 
-    body.light-mode .section {
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .section:last-child {
-      border-bottom: none;
-    }
-
-    .hero-section {
-      display: flex;
-      gap: 60px;
-      align-items: center;
-      padding: 56px 48px;
-      border-bottom: 1px solid #1e1e22;
-      transition: border-color 0.3s ease;
-    }
-
-    body.light-mode .hero-section {
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .hero-text {
-      flex: 1;
-    }
-
-    .hero-preview {
-      flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .watch-frame {
-      width: 380px;
-      height: 380px;
-      background: #1a1a24;
-      border-radius: 40px;
-      border: 3px solid #2e2e3a;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 2px #252532;
-      position: relative;
-      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    body.light-mode .watch-frame {
-      background: #ffffff;
-      border: 3px solid #dee2e6;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), inset 0 0 0 2px #f1f3f5;
-    }
-
-    .watch-frame iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      border-radius: 37px;
-    }
-
-    .watch-label {
-      font-size: 11px;
-      color: #6a6a74;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-
-    body.light-mode .watch-label {
-      color: #6c757d;
+    .section.hidden {
+      display: none;
     }
 
     .eyebrow {
@@ -258,7 +272,7 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
       color: #7a7a80;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
       transition: color 0.3s ease;
     }
 
@@ -316,118 +330,89 @@
       color: #495057;
     }
 
-    .btn {
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      padding: 8px 18px;
-      border-radius: 18px;
-      background: #1a1a22;
-      border: 1px solid #2e2e38;
-      color: #d0d0d8;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.15s, background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-      margin-right: 8px;
+    .no-results {
+      padding: 32px 48px;
+      text-align: center;
+      color: #7a7a80;
+      font-size: 15px;
     }
 
-    .btn:hover {
-      background: #22222c;
-      border-color: #44445a;
-      color: #f0f0f4;
+    body.light-mode .no-results {
+      color: #6c757d;
     }
 
-    body.light-mode .btn {
-      background: #e9ecef;
-      border-color: #ced4da;
-      color: #212529;
-    }
-
-    body.light-mode .btn:hover {
-      background: #dee2e6;
-      border-color: #adb5bd;
-      color: #000;
-    }
-
-    .btn.filled {
-      background: #e0e0e0;
-      color: #0a0a0b;
-      border-color: #e0e0e0;
-    }
-
-    .btn.filled:hover {
-      background: #ffffff;
-      border-color: #ffffff;
-    }
-
-    body.light-mode .btn.filled {
-      background: #212529;
-      color: #ffffff;
-      border-color: #212529;
-    }
-
-    body.light-mode .btn.filled:hover {
-      background: #000;
-      border-color: #000;
-    }
-
-    .grid-3 {
+    .widget-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
     }
 
-    .card {
+    .widget-card {
       background: #111115;
       border-radius: 12px;
-      padding: 18px 16px;
+      padding: 16px;
       border: 1px solid #1e1e26;
       cursor: pointer;
-      transition: all 0.15s, background 0.3s ease, border-color 0.3s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, border-color 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
 
-    .card:hover {
+    .widget-card:hover {
       background: #18181f;
       border-color: #2a2a38;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 
-    body.light-mode .card {
+    body.light-mode .widget-card {
       background: #ffffff;
       border-color: #dee2e6;
     }
 
-    body.light-mode .card:hover {
+    body.light-mode .widget-card:hover {
       background: #f8f9fa;
       border-color: #adb5bd;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
 
-    .card h3 {
-      font-size: 15px;
+    .widget-card .card-icon {
+      font-size: 20px;
+      color: #7a7a84;
+      margin-bottom: 8px;
+      transition: color 0.3s ease;
+    }
+
+    body.light-mode .widget-card .card-icon {
+      color: #6c757d;
+    }
+
+    .widget-card h3 {
+      font-size: 14px;
       margin: 0 0 4px;
       font-weight: 600;
       color: #e8e8ec;
       transition: color 0.3s ease;
     }
 
-    body.light-mode .card h3 {
+    body.light-mode .widget-card h3 {
       color: #212529;
     }
 
-    .card p {
-      font-size: 13px;
+    .widget-card .card-desc {
+      font-size: 12px;
       color: #90909a;
       margin: 0;
+      line-height: 1.4;
       transition: color 0.3s ease;
     }
 
-    body.light-mode .card p {
+    body.light-mode .widget-card .card-desc {
       color: #495057;
     }
 
-    .card .cat {
+    .widget-card .card-cat {
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.04em;
@@ -437,8 +422,158 @@
       transition: color 0.3s ease;
     }
 
-    body.light-mode .card .cat {
+    body.light-mode .widget-card .card-cat {
       color: #6c757d;
+    }
+
+    .widget-card.hidden {
+      display: none;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    body.light-mode .overlay {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .popup-dialog {
+      background: #0d0d12;
+      border-radius: 16px;
+      border: 1px solid #2e2e38;
+      width: 90%;
+      max-width: 700px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+      transform: scale(0.9) translateY(20px);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .overlay.active .popup-dialog {
+      transform: scale(1) translateY(0);
+    }
+
+    body.light-mode .popup-dialog {
+      background: #ffffff;
+      border-color: #dee2e6;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+    }
+
+    .popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 24px 24px 16px;
+      border-bottom: 1px solid #1e1e26;
+      position: sticky;
+      top: 0;
+      background: #0d0d12;
+      z-index: 1;
+      border-radius: 16px 16px 0 0;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    body.light-mode .popup-header {
+      background: #ffffff;
+      border-bottom-color: #dee2e6;
+    }
+
+    .popup-header-info {
+      flex: 1;
+    }
+
+    .popup-header .popup-cat {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #7a7a80;
+      margin-bottom: 4px;
+      transition: color 0.3s ease;
+    }
+
+    body.light-mode .popup-header .popup-cat {
+      color: #6c757d;
+    }
+
+    .popup-header h2 {
+      font-size: 22px;
+      margin: 0;
+      color: #e8e8ec;
+      transition: color 0.3s ease;
+    }
+
+    body.light-mode .popup-header h2 {
+      color: #212529;
+    }
+
+    .popup-close {
+      background: #1a1a22;
+      border: 1px solid #2e2e38;
+      color: #c0c0c8;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .popup-close:hover {
+      background: #2a2a38;
+      color: #f0f0f4;
+    }
+
+    body.light-mode .popup-close {
+      background: #e9ecef;
+      border-color: #ced4da;
+      color: #212529;
+    }
+
+    body.light-mode .popup-close:hover {
+      background: #dee2e6;
+      border-color: #adb5bd;
+    }
+
+    .popup-body {
+      padding: 24px;
+    }
+
+    .popup-desc {
+      font-size: 14px;
+      color: #9898a0;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      transition: color 0.3s ease;
+    }
+
+    body.light-mode .popup-desc {
+      color: #495057;
     }
 
     .code-block {
@@ -653,7 +788,6 @@
       color: #212529;
     }
 
-    /* Toast notification */
     .toast {
       position: fixed;
       bottom: 20px;
@@ -714,24 +848,17 @@
         font-size: 11px;
         padding: 4px 8px;
       }
-      .hero-section {
-        flex-direction: column;
-        padding: 32px 20px;
-        gap: 32px;
-      }
-      .watch-frame {
-        width: 300px;
-        height: 300px;
-        border-radius: 32px;
-      }
-      .watch-frame iframe {
-        border-radius: 29px;
-      }
-      .section {
+      .main-content {
         padding: 24px 16px;
+        height: auto;
       }
-      .grid-3 {
-        grid-template-columns: 1fr;
+      .widget-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 8px;
+      }
+      .popup-dialog {
+        width: 95%;
+        max-height: 90vh;
       }
       h1 {
         font-size: 28px;
@@ -743,64 +870,45 @@
   </style>
 </head>
 <body>
-  <!-- Toast notification -->
   <div class="toast" id="toast"></div>
+
+  <div class="overlay" id="overlay">
+    <div class="popup-dialog" id="popupDialog">
+      <div class="popup-header">
+        <div class="popup-header-info">
+          <div class="popup-cat" id="popupCat"></div>
+          <h2 id="popupTitle"></h2>
+        </div>
+        <button class="popup-close" onclick="closePopup()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="popup-body" id="popupBody">
+      </div>
+    </div>
+  </div>
 
   <aside class="sidebar">
     <div class="sidebar-header">
-      <a class="sidebar-logo" href="#" onclick="scrollToSection('overview')">AromaUI <span class="sidebar-version">v0.0.1</span></a>
+      <a class="sidebar-logo" href="#" onclick="showAllWidgets()">AromaUI <span class="sidebar-version">v0.0.1</span></a>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
         <i class="fas fa-sun"></i> <span id="themeText">Light</span>
       </button>
     </div>
-    <div class="sidebar-label">Getting Started</div>
-    <a class="sidebar-link" onclick="scrollToSection('overview')"><i class="fas fa-book-open"></i> Overview</a>
-    <div class="sidebar-label">Features</div>
-    <a class="sidebar-link" onclick="scrollToSection('feature-incense')"><i class="fas fa-code"></i> Incense DSL</a>
-    <a class="sidebar-link" onclick="scrollToSection('feature-embed')"><i class="fas fa-puzzle-piece"></i> Embed System</a>
-    <a class="sidebar-link" onclick="scrollToSection('feature-state')"><i class="fas fa-database"></i> State Management</a>
-    <a class="sidebar-link" onclick="scrollToSection('feature-callbacks')"><i class="fas fa-plug"></i> Callback System</a>
-    <a class="sidebar-link" onclick="scrollToSection('feature-hotreload')"><i class="fas fa-sync-alt"></i> Hot Reloading</a>
-    <a class="sidebar-link" onclick="scrollToSection('feature-animations')"><i class="fas fa-film"></i> Animation System</a>
-    <a class="sidebar-link" onclick="scrollToSection('feature-conditional')"><i class="fas fa-code-branch"></i> Conditional Rendering</a>
-    <div class="sidebar-label">Core</div>
-    <a class="sidebar-link" onclick="scrollToSection('widget-window')"><i class="fas fa-window-maximize"></i> Window</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-label')"><i class="fas fa-font"></i> Label</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-button')"><i class="fas fa-hand-pointer"></i> Button</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-card')"><i class="fas fa-credit-card"></i> Card</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-divider')"><i class="fas fa-grip-lines"></i> Divider</a>
-    <div class="sidebar-label">Layout</div>
-    <a class="sidebar-link" onclick="scrollToSection('widget-container')"><i class="fas fa-layer-group"></i> Container</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-scrollview')"><i class="fas fa-scroll"></i> ScrollView</a>
-    <div class="sidebar-label">Input</div>
-    <a class="sidebar-link" onclick="scrollToSection('widget-checkbox')"><i class="fas fa-check-square"></i> Checkbox</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-switch_w')"><i class="fas fa-toggle-on"></i> Switch</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-slider')"><i class="fas fa-sliders-h"></i> Slider</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-textbox')"><i class="fas fa-i-cursor"></i> Textbox</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-dropdown')"><i class="fas fa-chevron-down"></i> Dropdown</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-radiobutton')"><i class="fas fa-dot-circle"></i> RadioButton</a>
-    <div class="sidebar-label">Navigation</div>
-    <a class="sidebar-link" onclick="scrollToSection('widget-tabs')"><i class="fas fa-folder"></i> Tabs</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-sidebar')"><i class="fas fa-bars"></i> Sidebar</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-listview')"><i class="fas fa-list"></i> ListView</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-table')"><i class="fas fa-table"></i> Table</a>
-    <div class="sidebar-label">Media</div>
-    <a class="sidebar-link" onclick="scrollToSection('widget-image')"><i class="fas fa-image"></i> Image</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-icon')"><i class="fas fa-icons"></i> Icon</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-gif')"><i class="fas fa-film"></i> GIF</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-canvas')"><i class="fas fa-paint-brush"></i> Canvas</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-map')"><i class="fas fa-map"></i> Map</a>
-    <div class="sidebar-label">Actions</div>
-    <a class="sidebar-link" onclick="scrollToSection('widget-fab')"><i class="fas fa-plus-circle"></i> FAB</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-iconbutton')"><i class="fas fa-circle"></i> IconButton</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-menu')"><i class="fas fa-ellipsis-v"></i> Menu</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-snackbar')"><i class="fas fa-info-circle"></i> Snackbar</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-dialog')"><i class="fas fa-window-restore"></i> Dialog</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-tooltip')"><i class="fas fa-comment-dots"></i> Tooltip</a>
-    <div class="sidebar-label">Feedback</div>
-    <a class="sidebar-link" onclick="scrollToSection('widget-progressbar')"><i class="fas fa-spinner"></i> ProgressBar</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-loading')"><i class="fas fa-circle-notch"></i> Loading</a>
-    <a class="sidebar-link" onclick="scrollToSection('widget-debugoverlay')"><i class="fas fa-bug"></i> DebugOverlay</a>
+    <div class="search-container">
+      <div class="input-wrapper">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search widgets..." oninput="handleSearch()">
+      </div>
+    </div>
+    <div class="sidebar-label" onclick="showAllWidgets()">All Widgets</div>
+    <div class="sidebar-label" onclick="filterByCategory('Core')">Core</div>
+    <div class="sidebar-label" onclick="filterByCategory('Layout')">Layout</div>
+    <div class="sidebar-label" onclick="filterByCategory('Input')">Input</div>
+    <div class="sidebar-label" onclick="filterByCategory('Navigation')">Navigation</div>
+    <div class="sidebar-label" onclick="filterByCategory('Media')">Media</div>
+    <div class="sidebar-label" onclick="filterByCategory('Actions')">Actions</div>
+    <div class="sidebar-label" onclick="filterByCategory('Feedback')">Feedback</div>
   </aside>
 
   <main class="main-content">
@@ -809,13 +917,14 @@
 
   <script>
     (function() {
-      // Store all code snippets in a map for easy retrieval
       const codeMap = {};
 
       const featureData = {
         incense: {
           name: 'Incense DSL',
+          category: 'Feature',
           desc: 'Declarative markup language for defining UI layouts.',
+          icon: 'fa-code',
           code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" style: "large" }\n    Button { x: 20 y: 80 width: 150 height: 40 text: "Click" on_click: "myCallback" }\n}',
           props: [
             ['Comments', 'Syntax', '// or /* */', 'Single and multi-line'],
@@ -830,7 +939,9 @@
         },
         embed: {
           name: 'Embed System',
+          category: 'Feature',
           desc: 'Include external Aroma files with property passing.',
+          icon: 'fa-puzzle-piece',
           code: 'Window {\n    width: 800\n    height: 600\n    Tabs {\n        Tab { text: "Home" @embed "home.aroma" }\n        Tab { text: "Settings" @embed "settings.aroma" { theme: "dark" } }\n    }\n}',
           props: [
             ['@embed', 'Directive', 'file inclusion', 'Includes external file'],
@@ -840,7 +951,9 @@
         },
         state: {
           name: 'State Management',
+          category: 'Feature',
           desc: 'Reactive state with typed values for automatic UI updates.',
+          icon: 'fa-database',
           code: 'Label { x: 20 y: 20 text: "state.battery_percent" style: "large" }\nIf { condition: "state.battery_percent < 20"\n    Then { Icon { text: "AROMA_ICON_BATTERY_ALERT" color: "#FF0000" } }\n}',
           props: [
             ['SetInt', 'API', 'key, int', 'Set integer'],
@@ -852,7 +965,9 @@
         },
         callbacks: {
           name: 'Callback System',
+          category: 'Feature',
           desc: 'Connect UI events to C functions with type-safe registration.',
+          icon: 'fa-plug',
           code: 'Button { x: 20 y: 20 text: "Click" on_click: "onButtonClick" }\nTextbox { x: 20 y: 80 width: 300 height: 36 placeholder: "Enter text" on_change: "onTextChange" }',
           props: [
             ['BOOL_PTR', 'Type', 'bool(*)(AromaNode*,void*)', 'Button, Switch'],
@@ -862,7 +977,9 @@
         },
         hotreload: {
           name: 'Hot Reloading',
+          category: 'Feature',
           desc: 'Edit Aroma files and see changes instantly.',
+          icon: 'fa-sync-alt',
           code: 'int watcher = IncenseHotReloadStart("ui.aroma", font, icon_font, &registry);\nIncenseHotReloadCheck();\nIncenseHotReloadForce(watcher);',
           props: [
             ['Start', 'API', 'path, fonts, registry', 'Begin watching'],
@@ -873,7 +990,9 @@
         },
         animations: {
           name: 'Animation System',
+          category: 'Feature',
           desc: 'Fade, slide, and scale animations with easing curves.',
+          icon: 'fa-film',
           code: 'Container { animation: "slide_y" animation_duration: 500 animation_easing: "ease_out_cubic" hidden: false\n    Label { text: "Animated!" }\n}',
           props: [
             ['animation', 'Property', '"none"', 'fade, slide_x, slide_y, scale'],
@@ -884,7 +1003,9 @@
         },
         conditional: {
           name: 'Conditional Rendering',
+          category: 'Feature',
           desc: 'Show/hide UI based on state with If/Then/Else.',
+          icon: 'fa-code-branch',
           code: 'If { condition: "state.battery_percent < 20"\n    Then { Card { Label { text: "Low Battery" } } }\n    Else { Label { text: "Battery OK" } }\n}',
           props: [
             ['If', 'Block', 'condition', 'Conditional container'],
@@ -897,156 +1018,187 @@
       const widgetData = {
         window: {
           name: 'Window', category: 'Core', desc: 'Root container that creates the native OS window.',
+          icon: 'fa-window-maximize',
           code: 'Window {\n    width: 800\n    height: 600\n    title: "My App"\n    Label { x: 20 y: 20 text: "Hello!" }\n}',
           props: [['width', 'int', '800', 'Window width'], ['height', 'int', '600', 'Window height'], ['title', 'string', '"Incense App"', 'Title bar text']]
         },
         container: {
           name: 'Container', category: 'Layout', desc: 'Flexible layout container with optional flexbox.',
+          icon: 'fa-layer-group',
           code: 'Container {\n    x: 20 y: 60\n    width: 400 height: 200\n    layout: "flex"\n    direction: "row"\n    Label { text: "Item 1" }\n    Label { text: "Item 2" }\n}',
           props: [['x', 'int', '0', 'Horizontal position'], ['y', 'int', '0', 'Vertical position'], ['width', 'int', '200', 'Width'], ['height', 'int', '200', 'Height'], ['layout', 'string', '"none"', 'none or flex'], ['direction', 'string', '"column"', 'row or column']]
         },
         scrollview: {
           name: 'ScrollView', category: 'Layout', desc: 'Scrollable container.',
+          icon: 'fa-scroll',
           code: 'ScrollView {\n    x: 20 y: 60\n    width: 400 height: 300\n    direction: "vertical"\n    Label { x: 10 y: 500 text: "Bottom" }\n}',
           props: [['direction', 'string', '"vertical"', 'vertical, horizontal, both']]
         },
         label: {
           name: 'Label', category: 'Core', desc: 'Displays text in large, medium, or small style.',
+          icon: 'fa-font',
           code: 'Label {\n    x: 20 y: 20\n    text: "Hello World"\n    style: "large"\n}',
           props: [['text', 'string', '""', 'Text content'], ['style', 'string', '"large"', 'large, medium, small']]
         },
         button: {
           name: 'Button', category: 'Core', desc: 'Clickable button that triggers a callback.',
+          icon: 'fa-hand-pointer',
           code: 'Button {\n    x: 20 y: 20\n    width: 150 height: 40\n    text: "Click Me"\n    on_click: "onButtonClick"\n}',
           props: [['text', 'string', '"Button"', 'Label text'], ['on_click', 'callback', 'null', 'Click handler']]
         },
         card: {
           name: 'Card', category: 'Core', desc: 'Container with elevated, outlined, or filled style.',
+          icon: 'fa-credit-card',
           code: 'Card {\n    x: 20 y: 60\n    width: 280 height: 180\n    type: "elevated"\n    Label { text: "Card Title" }\n}',
           props: [['type', 'string', '"elevated"', 'elevated, outlined, filled']]
         },
         divider: {
           name: 'Divider', category: 'Core', desc: 'Visual separator line.',
+          icon: 'fa-grip-lines',
           code: 'Divider {\n    x: 20 y: 100\n    length: 400\n    orientation: "horizontal"\n}',
           props: [['orientation', 'string', '"horizontal"', 'horizontal or vertical']]
         },
         checkbox: {
           name: 'Checkbox', category: 'Input', desc: 'Toggleable checkbox with label.',
+          icon: 'fa-check-square',
           code: 'Checkbox {\n    x: 20 y: 60\n    label: "Accept Terms"\n    on_change: "onCheckboxChange"\n}',
           props: [['label', 'string', '""', 'Label text'], ['on_change', 'callback', 'null', 'Change handler']]
         },
         switch_w: {
           name: 'Switch', category: 'Input', desc: 'Toggle switch with boolean value.',
+          icon: 'fa-toggle-on',
           code: 'Switch {\n    x: 20 y: 60\n    value: true\n    on_change: "onSwitchChange"\n}',
           props: [['value', 'bool', 'false', 'Initial state'], ['on_change', 'callback', 'null', 'Change handler']]
         },
         slider: {
           name: 'Slider', category: 'Input', desc: 'Value selector with min/max range.',
+          icon: 'fa-sliders-h',
           code: 'Slider {\n    x: 20 y: 60\n    width: 200 height: 24\n    min: 0 max: 100 value: 50\n}',
           props: [['min', 'int', '0', 'Minimum'], ['max', 'int', '100', 'Maximum'], ['value', 'int', '0', 'Initial value']]
         },
         textbox: {
           name: 'Textbox', category: 'Input', desc: 'Single-line text input.',
+          icon: 'fa-i-cursor',
           code: 'Textbox {\n    x: 20 y: 60\n    width: 300 height: 36\n    placeholder: "Enter name..."\n}',
           props: [['placeholder', 'string', '""', 'Placeholder text'], ['on_change', 'callback', 'null', 'Change handler']]
         },
         dropdown: {
           name: 'Dropdown', category: 'Input', desc: 'Select from a list of options.',
+          icon: 'fa-chevron-down',
           code: 'Dropdown {\n    x: 20 y: 60\n    width: 250 height: 36\n    Option { text: "United States" }\n    Option { text: "Canada" }\n}',
           props: [['on_change', 'callback', 'null', 'Change handler']]
         },
         radiobutton: {
           name: 'RadioButton', category: 'Input', desc: 'Single selection within a group.',
+          icon: 'fa-dot-circle',
           code: 'RadioButton {\n    x: 20 y: 60\n    label: "Option A"\n    group: 1\n    selected: true\n}',
           props: [['label', 'string', '""', 'Label text'], ['group', 'int', '0', 'Group ID'], ['selected', 'bool', 'false', 'Initially selected']]
         },
         tabs: {
           name: 'Tabs', category: 'Navigation', desc: 'Tab bar with labeled tabs.',
+          icon: 'fa-folder',
           code: 'Tabs {\n    x: 0 y: 0\n    width: 800 height: 48\n    Tab { text: "Home" icon: "AROMA_ICON_HOME" }\n    Tab { text: "Settings" icon: "AROMA_ICON_SETTINGS" }\n}',
           props: [['on_change', 'callback', 'null', 'Tab change handler']]
         },
         sidebar_w: {
           name: 'Sidebar', category: 'Navigation', desc: 'Navigation sidebar with icons.',
+          icon: 'fa-bars',
           code: 'Sidebar {\n    x: 20 y: 60\n    width: 250 height: 500\n    Item { text: "Dashboard" icon: "AROMA_ICON_DASHBOARD" }\n    Item { text: "Profile" icon: "AROMA_ICON_PERSON" }\n}',
           props: [['on_select', 'callback', 'null', 'Select handler']]
         },
         listview: {
           name: 'ListView', category: 'Navigation', desc: 'Scrollable selection list.',
+          icon: 'fa-list',
           code: 'ListView {\n    x: 20 y: 60\n    width: 300 height: 400\n    on_select: "onListSelect"\n}',
           props: [['on_select', 'callback', 'null', 'Select handler']]
         },
         table: {
           name: 'Table', category: 'Navigation', desc: 'Data table with columns.',
+          icon: 'fa-table',
           code: 'Table {\n    x: 20 y: 60\n    width: 600 height: 300\n    columns: 3\n    Column { header: "Name" width: 200 }\n    Column { header: "Age" width: 100 }\n}',
           props: [['columns', 'int', '1', 'Number of columns']]
         },
         image: {
           name: 'Image', category: 'Media', desc: 'Displays an image from file.',
+          icon: 'fa-image',
           code: 'Image {\n    x: 20 y: 60\n    width: 300 height: 200\n    src: "image.png"\n}',
           props: [['src', 'string', '""', 'Image path']]
         },
         icon: {
           name: 'Icon', category: 'Media', desc: 'Material Design icon.',
+          icon: 'fa-icons',
           code: 'Icon {\n    x: 20 y: 60\n    size: 32\n    text: "AROMA_ICON_HOME"\n    color: "#111111"\n}',
           props: [['size', 'int', '24', 'Icon size'], ['text', 'string', 'null', 'Icon codepoint'], ['color', 'color', '"#000000"', 'Icon color']]
         },
         gif: {
           name: 'GIF', category: 'Media', desc: 'Animated GIF display.',
+          icon: 'fa-film',
           code: 'GIF {\n    x: 20 y: 60\n    width: 150 height: 150\n    src: "animation.gif"\n    autoplay: true\n}',
           props: [['src', 'string', '""', 'GIF path'], ['autoplay', 'bool', 'true', 'Auto-play']]
         },
         canvas: {
           name: 'Canvas', category: 'Media', desc: 'Custom drawing surface.',
+          icon: 'fa-paint-brush',
           code: 'Canvas {\n    x: 20 y: 60\n    width: 500 height: 300\n}',
           props: []
         },
         map: {
           name: 'Map', category: 'Media', desc: 'Interactive map with markers.',
+          icon: 'fa-map',
           code: 'Map {\n    x: 20 y: 60\n    width: 600 height: 400\n    lat: 48.8566 lon: 2.3522\n    zoom: 12\n    Marker { lat: 48.8566 lon: 2.3522 popup: "Paris" }\n}',
           props: [['lat', 'float', '0.0', 'Center latitude'], ['lon', 'float', '0.0', 'Center longitude'], ['zoom', 'int', '4', 'Zoom level']]
         },
         fab: {
           name: 'FAB', category: 'Actions', desc: 'Floating Action Button.',
+          icon: 'fa-plus-circle',
           code: 'FAB {\n    x: 20 y: 20\n    icon: "AROMA_ICON_ADD"\n    size: "normal"\n    on_click: "onFABClick"\n}',
           props: [['icon', 'string', '"+"', 'Icon'], ['size', 'string', '"normal"', 'small, normal, large'], ['on_click', 'callback', 'null', 'Click handler']]
         },
         iconbutton: {
           name: 'IconButton', category: 'Actions', desc: 'Icon-only button with variants.',
+          icon: 'fa-circle',
           code: 'IconButton {\n    x: 20 y: 20\n    icon: "AROMA_ICON_FAVORITE"\n    size: 40\n    variant: "filled"\n    on_click: "onIconButtonClick"\n}',
           props: [['icon', 'string', '""', 'Icon'], ['size', 'int', '40', 'Size in pixels'], ['variant', 'string', '"standard"', 'standard, filled, tonal, outlined'], ['on_click', 'callback', 'null', 'Click handler']]
         },
         menu: {
           name: 'Menu', category: 'Actions', desc: 'Dropdown menu with items.',
+          icon: 'fa-ellipsis-v',
           code: 'Menu {\n    x: 20 y: 60\n    MenuItem { text: "New" icon: "AROMA_ICON_ADD" on_click: "onNew" }\n    MenuItem { text: "Open" icon: "AROMA_ICON_FOLDER_OPEN" }\n    Separator {}\n    MenuItem { text: "Exit" }\n}',
           props: []
         },
         snackbar: {
           name: 'Snackbar', category: 'Actions', desc: 'Brief message toast.',
+          icon: 'fa-info-circle',
           code: 'Snackbar {\n    x: 20 y: 560\n    message: "Operation completed!"\n    duration: 3000\n}',
           props: [['message', 'string', '""', 'Message text'], ['duration', 'int', '3000', 'Display duration ms']]
         },
         dialog: {
           name: 'Dialog', category: 'Actions', desc: 'Modal dialog window.',
+          icon: 'fa-window-restore',
           code: 'Dialog {\n    x: 200 y: 150\n    width: 320 height: 200\n    title: "Confirm"\n    message: "Are you sure?"\n    type: "basic"\n}',
           props: [['title', 'string', '"Dialog"', 'Title text'], ['message', 'string', '""', 'Body text'], ['type', 'string', '"basic"', 'basic or fullscreen']]
         },
         tooltip: {
           name: 'Tooltip', category: 'Actions', desc: 'Contextual help text.',
+          icon: 'fa-comment-dots',
           code: 'Tooltip {\n    x: 20 y: 20\n    text: "Helpful information"\n    position: "top"\n}',
           props: [['text', 'string', '""', 'Tooltip text'], ['position', 'string', '"top"', 'top, bottom, left, right']]
         },
         progressbar: {
           name: 'ProgressBar', category: 'Feedback', desc: 'Progress indicator.',
+          icon: 'fa-spinner',
           code: 'ProgressBar {\n    x: 20 y: 60\n    width: 400 height: 8\n    value: 0.65\n    type: "determinate"\n}',
           props: [['value', 'float', '0.0', '0.0 to 1.0'], ['type', 'string', '"determinate"', 'determinate or indeterminate']]
         },
         loading: {
           name: 'Loading', category: 'Feedback', desc: 'Spinning circular indicator.',
+          icon: 'fa-circle-notch',
           code: 'Loading {\n    x: 40 y: 100\n    radius: 24\n    thickness: 3\n    color: "#111111"\n}',
           props: [['radius', 'int', '16', 'Radius in pixels'], ['thickness', 'int', '3', 'Stroke thickness'], ['color', 'color', '"#000000"', 'Spinner color']]
         },
         debugoverlay: {
           name: 'DebugOverlay', category: 'Feedback', desc: 'FPS and performance overlay.',
+          icon: 'fa-bug',
           code: 'DebugOverlay {\n    x: 20 y: 440\n    width: 300\n    visible: true\n}',
           props: [['visible', 'bool', 'true', 'Show or hide']]
         }
@@ -1065,7 +1217,6 @@
           .replace(/(@embed)\b/g, '<span class="an">$1</span>');
       }
 
-      // Show toast message
       function showToast(message) {
         const toast = document.getElementById('toast');
         toast.textContent = message;
@@ -1076,7 +1227,6 @@
         }, 2000);
       }
 
-      // Copy function using data attributes
       function copyCode(codeKey) {
         const code = codeMap[codeKey];
         if (!code) {
@@ -1111,13 +1261,7 @@
         document.body.removeChild(textarea);
       }
 
-      // Expose to global scope
       window.copyCode = copyCode;
-
-      window.scrollToSection = function(id) {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      };
 
       window.toggleTheme = function() {
         document.body.classList.toggle('light-mode');
@@ -1132,84 +1276,157 @@
         }
       };
 
-      function buildAllDetails() {
+      window.openPopup = function(dataKey) {
+        let data = widgetData[dataKey];
+        if (!data) data = featureData[dataKey];
+        if (!data) return;
+
+        const codeKey = dataKey.startsWith('feature-') ? dataKey : 'widget-' + dataKey;
+        if (!codeMap[codeKey]) {
+          codeMap[codeKey] = data.code;
+        }
+
+        document.getElementById('popupCat').textContent = data.category;
+        document.getElementById('popupTitle').textContent = data.name;
+
+        let bodyHtml = '';
+        bodyHtml += '<p class="popup-desc">' + data.desc + '</p>';
+        bodyHtml += '<h3>Example</h3>';
+        bodyHtml += '<div class="code-block">';
+        bodyHtml += '<div class="code-header">';
+        bodyHtml += '<span class="code-filename">example.aroma</span>';
+        bodyHtml += '<button class="copy-btn" data-code="' + codeKey + '"><i class="far fa-copy"></i> Copy</button>';
+        bodyHtml += '</div>';
+        bodyHtml += '<div class="code-body">' + highlightCode(data.code) + '</div>';
+        bodyHtml += '</div>';
+
+        if (data.props && data.props.length > 0) {
+          bodyHtml += '<h3>Properties</h3>';
+          bodyHtml += '<table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>';
+          for (const p of data.props) {
+            bodyHtml += '<tr><td>' + p[0] + '</td><td>' + p[1] + '</td><td>' + p[2] + '</td><td>' + p[3] + '</td></tr>';
+          }
+          bodyHtml += '</tbody></table>';
+        }
+
+        document.getElementById('popupBody').innerHTML = bodyHtml;
+
+        document.getElementById('popupBody').addEventListener('click', function(e) {
+          const copyBtn = e.target.closest('.copy-btn');
+          if (copyBtn) {
+            const ck = copyBtn.getAttribute('data-code');
+            if (ck) copyCode(ck);
+          }
+        });
+
+        document.getElementById('overlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+      };
+
+      window.closePopup = function() {
+        document.getElementById('overlay').classList.remove('active');
+        document.body.style.overflow = '';
+      };
+
+      document.getElementById('overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closePopup();
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closePopup();
+        }
+      });
+
+      function escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+
+      let currentFilter = null;
+
+      window.showAllWidgets = function() {
+        currentFilter = null;
+        document.getElementById('searchInput').value = '';
+        renderGrid();
+      };
+
+      window.filterByCategory = function(category) {
+        currentFilter = category;
+        document.getElementById('searchInput').value = '';
+        renderGrid();
+      };
+
+      window.handleSearch = function() {
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        if (!query) {
+          if (currentFilter) {
+            renderGrid();
+          } else {
+            renderGrid();
+          }
+          return;
+        }
+        currentFilter = null;
+        renderGrid(query);
+      };
+
+      function renderGrid(searchQuery) {
         const detailsDiv = document.getElementById('widgetDetails');
         let html = '';
-        let idCounter = 0;
 
-        // Features
-        for (const k in featureData) {
-          if (featureData.hasOwnProperty(k)) {
-            const f = featureData[k];
-            const codeKey = 'feature-' + k;
-            codeMap[codeKey] = f.code;
-            html += '<section class="section" id="feature-' + k + '">';
-            html += '<p class="eyebrow">Feature</p>';
-            html += '<h2>' + f.name + '</h2>';
-            html += '<p class="intro">' + f.desc + '</p>';
-            html += '<h3>Example</h3>';
-            html += '<div class="code-block">';
-            html += '<div class="code-header">';
-            html += '<span class="code-filename">example.aroma</span>';
-            html += '<button class="copy-btn" data-code="' + codeKey + '"><i class="far fa-copy"></i> Copy</button>';
-            html += '</div>';
-            html += '<div class="code-body">' + highlightCode(f.code) + '</div>';
-            html += '</div>';
-            html += '<h3>Properties</h3>';
-            html += '<table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>';
-            for (const p of f.props) {
-              html += '<tr><td>' + p[0] + '</td><td>' + p[1] + '</td><td>' + p[2] + '</td><td>' + p[3] + '</td></tr>';
+        html += '<h1>Widgets</h1>';
+        html += '<p class="intro">Browse all available AromaUI widgets and features. Click any card for details.</p>';
+
+        if (searchQuery) {
+          html += '<p class="intro" style="font-size:13px;color:#7a7a80;">Search results for: "' + searchQuery + '"</p>';
+        } else if (currentFilter) {
+          html += '<p class="intro" style="font-size:13px;color:#7a7a80;">Category: ' + currentFilter + '</p>';
+        }
+
+        html += '<div class="widget-grid">';
+        let anyVisible = false;
+
+        const allItems = { ...featureData, ...widgetData };
+
+        for (const key in allItems) {
+          if (allItems.hasOwnProperty(key)) {
+            const item = allItems[key];
+            let matches = true;
+
+            if (searchQuery) {
+              const nameMatch = item.name.toLowerCase().includes(searchQuery);
+              const descMatch = item.desc.toLowerCase().includes(searchQuery);
+              const catMatch = item.category.toLowerCase().includes(searchQuery);
+              matches = nameMatch || descMatch || catMatch;
+            } else if (currentFilter) {
+              matches = item.category === currentFilter;
             }
-            html += '</tbody></table></section>';
+
+            if (matches) {
+              anyVisible = true;
+              const dataKey = key;
+              html += '<div class="widget-card" onclick="openPopup(\'' + dataKey + '\')">';
+              html += '<div class="card-cat">' + item.category + '</div>';
+              html += '<i class="fas ' + item.icon + ' card-icon"></i>';
+              html += '<h3>' + item.name + '</h3>';
+              html += '<p class="card-desc">' + item.desc + '</p>';
+              html += '</div>';
+            }
           }
         }
 
-        // Widgets
-        for (const k in widgetData) {
-          if (widgetData.hasOwnProperty(k)) {
-            const w = widgetData[k];
-            const codeKey = 'widget-' + k;
-            codeMap[codeKey] = w.code;
-            html += '<section class="section" id="widget-' + k + '">';
-            html += '<p class="eyebrow">' + w.category + '</p>';
-            html += '<h2>' + w.name + '</h2>';
-            html += '<p class="intro">' + w.desc + '</p>';
-            html += '<h3>Example</h3>';
-            html += '<div class="code-block">';
-            html += '<div class="code-header">';
-            html += '<span class="code-filename">example.aroma</span>';
-            html += '<button class="copy-btn" data-code="' + codeKey + '"><i class="far fa-copy"></i> Copy</button>';
-            html += '</div>';
-            html += '<div class="code-body">' + highlightCode(w.code) + '</div>';
-            html += '</div>';
-            if (w.props.length) {
-              html += '<h3>Properties</h3>';
-              html += '<table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody>';
-              for (const p of w.props) {
-                html += '<tr><td>' + p[0] + '</td><td>' + p[1] + '</td><td>' + p[2] + '</td><td>' + p[3] + '</td></tr>';
-              }
-              html += '</tbody></table>';
-            }
-            html += '</section>';
-          }
+        html += '</div>';
+
+        if (!anyVisible) {
+          html += '<div class="no-results">No widgets found matching "' + (searchQuery || currentFilter || '') + '"</div>';
         }
 
         detailsDiv.innerHTML = html;
-
-        // Add event listeners to all copy buttons using event delegation
-        detailsDiv.addEventListener('click', function(e) {
-          const copyBtn = e.target.closest('.copy-btn');
-          if (copyBtn) {
-            const codeKey = copyBtn.getAttribute('data-code');
-            if (codeKey) {
-              copyCode(codeKey);
-            }
-          }
-        });
       }
 
-      // Initialize
-      buildAllDetails();
+      renderGrid();
     })();
   </script>
 </body>
