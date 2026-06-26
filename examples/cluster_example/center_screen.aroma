@@ -13,11 +13,13 @@
                 width:  560
                 height: 50
                 hidden: true
-   Tab {
+                selected: 0
+       Tab {
                     id:      "car_view_tab"
                     text:   "Car View"
+                    
                     Label {
-                        text: "Tire Pressure"
+                        text: "1embed_test"
                     }
         
                     Container {
@@ -41,7 +43,7 @@
                         }
 
                            Label {
-                            text: "2.5 bar"
+                            text: " bar"
                             x: 365
                             y: 255
                         }

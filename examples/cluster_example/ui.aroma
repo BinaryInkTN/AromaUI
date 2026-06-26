@@ -156,7 +156,7 @@ Window {
             orientation: "vertical"
         }
 
-        @embed "center_screen.aroma" 
+        @embed "center_screen.aroma" {test:"1"}
 
         Divider {
             x:           900

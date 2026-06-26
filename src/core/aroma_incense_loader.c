@@ -34,6 +34,7 @@
 #define stat _stat
 #else
 #include <unistd.h>
+#include <ctype.h>
 #endif
 
 #define MAX_CALLBACKS 128
@@ -3642,6 +3643,9 @@ static AromaNode *build_tabs(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
+    int selected = props_int(&bag, "selected", 0);
+    if (selected)
+        aroma_tabs_set_selected(built, selected);
     apply_widget_animations(built, &bag, node);
     maybe_register(&bag, built, ctx);
     props_free(&bag);
@@ -3801,7 +3805,99 @@ static bool embed_buf_append_str(char **result, size_t *pos, size_t *cap, const 
         return true;
     return embed_buf_append(result, pos, cap, s, strlen(s));
 }
-static char *incense_resolve_includes_r(const char *source, const char *base_path, EmbedStack *stack)
+static char *incense_resolve_embed_refs(char *content, EmbedPropStore *props)
+{
+    if (!content || !props || props->count == 0)
+        return content;
+
+    // Calculate maximum possible expansion
+    size_t content_len = strlen(content);
+    size_t max_expanded = content_len * 2 + 4096;
+    char *result = malloc(max_expanded);
+    if (!result)
+    {
+        LOG_ERROR("Out of memory resolving embed references");
+        return content;
+    }
+
+    size_t out_pos = 0;
+    const char *p = content;
+
+    while (*p)
+    {
+        // Check for embed_ pattern anywhere
+        const char *embed_start = strstr(p, "embed_");
+        if (embed_start)
+        {
+            // Copy everything before this match
+            size_t before_len = embed_start - p;
+            memcpy(result + out_pos, p, before_len);
+            out_pos += before_len;
+
+            // Extract the variable name
+            const char *var_start = embed_start + 6; // Skip "embed_"
+            const char *var_end = var_start;
+            while (*var_end && (isalnum((unsigned char)*var_end) || *var_end == '_'))
+            {
+                var_end++;
+            }
+
+            size_t var_len = var_end - var_start;
+            if (var_len > 0 && var_len < 64)
+            {
+                char var_name[64];
+                memcpy(var_name, var_start, var_len);
+                var_name[var_len] = '\0';
+
+                // Look up the prop
+                const char *replacement = NULL;
+                for (int i = 0; i < props->count; i++)
+                {
+                    if (strcmp(props->props[i].key, var_name) == 0)
+                    {
+                        replacement = props->props[i].value;
+                        break;
+                    }
+                }
+
+                if (replacement)
+                {
+                    // Copy replacement value
+                    size_t repl_len = strlen(replacement);
+                    memcpy(result + out_pos, replacement, repl_len);
+                    out_pos += repl_len;
+                }
+                else
+                {
+                    // Keep original text
+                    memcpy(result + out_pos, embed_start, var_end - embed_start);
+                    out_pos += var_end - embed_start;
+                }
+
+                p = var_end;
+            }
+            else
+            {
+                // Invalid variable name, copy embed_ literally
+                result[out_pos++] = *p;
+                p++;
+            }
+        }
+        else
+        {
+            // No more embed_ patterns, copy rest
+            size_t remaining = strlen(p);
+            memcpy(result + out_pos, p, remaining);
+            out_pos += remaining;
+            break;
+        }
+    }
+
+    result[out_pos] = '\0';
+    free(content);
+    return result;
+}
+static char *incense_resolve_includes_r(const char *source, const char *base_path, EmbedStack *stack, EmbedPropStore *props)
 {
     if (!source || !stack)
         return NULL;
@@ -3877,6 +3973,10 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                 inc_path[plen] = '\0';
                 p++;
 
+                // Parse inline props
+                EmbedPropStore inline_props;
+                memset(&inline_props, 0, sizeof(inline_props));
+
                 while (*p == ' ' || *p == '\t' || *p == '\n')
                     p++;
                 if (*p == '{')
@@ -3934,6 +4034,16 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                                 key[key_len] = '\0';
                                 memcpy(value, val_start, val_len);
                                 value[val_len] = '\0';
+
+                                // Add to inline props
+                                if (inline_props.count < MAX_EMBED_PROPS)
+                                {
+                                    strncpy(inline_props.props[inline_props.count].key, key, sizeof(inline_props.props[0].key) - 1);
+                                    strncpy(inline_props.props[inline_props.count].value, value, sizeof(inline_props.props[0].value) - 1);
+                                    inline_props.count++;
+                                }
+
+                                // Also add to global embed props
                                 embed_props_add(key, value);
                             }
                         }
@@ -4053,10 +4163,40 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                     continue;
                 }
 
+                // MERGE PROPS: Global props + inline props (inline override global)
+                EmbedPropStore merged_props = s_embed_props; // Copy global props
+
+                // Add/override with inline props
+                for (int i = 0; i < inline_props.count; i++)
+                {
+                    bool found = false;
+                    for (int j = 0; j < merged_props.count; j++)
+                    {
+                        if (strcmp(merged_props.props[j].key, inline_props.props[i].key) == 0)
+                        {
+                            strncpy(merged_props.props[j].value, inline_props.props[i].value,
+                                    sizeof(merged_props.props[j].value) - 1);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && merged_props.count < MAX_EMBED_PROPS)
+                    {
+                        strncpy(merged_props.props[merged_props.count].key, inline_props.props[i].key,
+                                sizeof(merged_props.props[0].key) - 1);
+                        strncpy(merged_props.props[merged_props.count].value, inline_props.props[i].value,
+                                sizeof(merged_props.props[0].value) - 1);
+                        merged_props.count++;
+                    }
+                }
+
+                // RESOLVE EMBED REFERENCES IN FILE CONTENT
+                file_content = incense_resolve_embed_refs(file_content, &merged_props);
+
                 strncpy(stack->paths[stack->depth], full_path, MAX_EMBED_PATH_LEN - 1);
                 stack->paths[stack->depth][MAX_EMBED_PATH_LEN - 1] = '\0';
                 stack->depth++;
-                char *processed = incense_resolve_includes_r(file_content, full_path, stack);
+                char *processed = incense_resolve_includes_r(file_content, full_path, stack, props);
                 stack->depth--;
                 free(file_content);
                 free(full_path);
@@ -4104,7 +4244,7 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
         return NULL;
     }
     stack->depth = 0;
-    char *result = incense_resolve_includes_r(source, base_path, stack);
+    char *result = incense_resolve_includes_r(source, base_path, stack, &s_embed_props);
     free(stack);
     return result;
 }
