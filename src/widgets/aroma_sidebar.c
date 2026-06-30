@@ -1,4 +1,3 @@
-
 #include "widgets/aroma_sidebar.h"
 #include "core/aroma_common.h"
 #include "core/aroma_event.h"
@@ -29,15 +28,22 @@ struct AromaSidebar
     uint32_t bg_color;
     uint32_t text_color;
     uint32_t selected_color;
+    uint32_t selected_bg_color;
+    uint32_t hover_bg_color;
     void (*on_select)(AromaNode *, int, void *);
     void *user_data;
 
-    // Responsive features
     bool responsive;
     bool is_retracted;
     int full_width;
     int retracted_width;
     int breakpoint;
+
+    bool apple_style;
+    int corner_radius;
+    int item_spacing;
+    int side_margin;
+    int top_padding;
 
     int transition_type;
     uint32_t transition_duration;
@@ -61,13 +67,16 @@ static int __sidebar_index_from_y(AromaSidebar *sidebar, int y)
 {
     if (!sidebar || sidebar->count <= 0)
         return -1;
-    int local_y = y - sidebar->rect.y;
+    int local_y = y - sidebar->rect.y - sidebar->top_padding;
     if (local_y < 0)
         return -1;
-    int index = local_y / sidebar->item_height;
-    if (index < 0)
+    int effective_height = sidebar->item_height + sidebar->item_spacing;
+    int index = local_y / effective_height;
+    if (index < 0 || index >= sidebar->count)
         return -1;
-    if (index >= sidebar->count)
+
+    int item_local_y = local_y - (index * effective_height);
+    if (item_local_y >= sidebar->item_height)
         return -1;
     return index;
 }
@@ -211,9 +220,14 @@ AromaNode *aroma_sidebar_create(AromaNode *parent, int x, int y, int width, int 
     sidebar->count = (count > AROMA_SIDEBAR_MAX_ITEMS) ? AROMA_SIDEBAR_MAX_ITEMS : count;
     sidebar->selected_index = 0;
     sidebar->hovered_index = -1;
-    sidebar->item_height = 44;
+    sidebar->item_height = 52;
 
-    // Responsive defaults
+    sidebar->apple_style = true;
+    sidebar->corner_radius = 13;
+    sidebar->item_spacing = 4;
+    sidebar->side_margin = 10;
+    sidebar->top_padding = 8;
+
     sidebar->responsive = false;
     sidebar->is_retracted = false;
     sidebar->full_width = width;
@@ -224,6 +238,9 @@ AromaNode *aroma_sidebar_create(AromaNode *parent, int x, int y, int width, int 
     sidebar->bg_color = theme.colors.surface;
     sidebar->text_color = theme.colors.text_primary;
     sidebar->selected_color = theme.colors.primary;
+
+    sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, 0xFFFFFFFF, 0.88f);
+    sidebar->hover_bg_color = aroma_color_blend(theme.colors.surface, 0xFF000000, 0.05f);
 
     for (int i = 0; i < sidebar->count; i++)
     {
@@ -363,6 +380,21 @@ void aroma_sidebar_set_icon(AromaNode *sidebar_node, int index, const char *icon
     aroma_node_invalidate(sidebar_node);
 }
 
+void aroma_sidebar_set_style(AromaNode *sidebar_node, bool enable, int corner_radius, int item_spacing, int side_margin)
+{
+    if (!sidebar_node || !sidebar_node->node_widget_ptr)
+        return;
+    AromaSidebar *sidebar = (AromaSidebar *)sidebar_node->node_widget_ptr;
+    sidebar->apple_style = enable;
+    if (corner_radius > 0)
+        sidebar->corner_radius = corner_radius;
+    if (item_spacing >= 0)
+        sidebar->item_spacing = item_spacing;
+    if (side_margin >= 0)
+        sidebar->side_margin = side_margin;
+    aroma_node_invalidate(sidebar_node);
+}
+
 void aroma_sidebar_set_retracted(AromaNode *sidebar_node, bool retracted)
 {
     if (!sidebar_node || !sidebar_node->node_widget_ptr)
@@ -467,69 +499,142 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
     sidebar->bg_color = theme.colors.surface;
     sidebar->text_color = theme.colors.text_primary;
     sidebar->selected_color = theme.colors.primary;
+    sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, 0xFFFFFFFF, 0.88f);
+    sidebar->hover_bg_color = aroma_color_blend(theme.colors.surface, 0xFF000000, 0.05f);
 
+    float bg_radius = sidebar->apple_style ? (float)sidebar->corner_radius : 12.0f;
     gfx->fill_rectangle(window_id, sidebar->rect.x, sidebar->rect.y,
                         sidebar->rect.width, sidebar->rect.height,
-                        sidebar->bg_color, true, 12.0f);
+                        sidebar->bg_color, true, bg_radius);
+
+    int effective_item_height = sidebar->item_height;
+    int spacing = sidebar->apple_style ? sidebar->item_spacing : 0;
+    int margin = sidebar->apple_style ? sidebar->side_margin : 6;
+    int top_pad = sidebar->apple_style ? sidebar->top_padding : 0;
 
     for (int i = 0; i < sidebar->count; i++)
     {
-        int item_y = sidebar->rect.y + i * sidebar->item_height;
-        if (item_y + sidebar->item_height > sidebar->rect.y + sidebar->rect.height)
+        int item_y = sidebar->rect.y + top_pad + i * (effective_item_height + spacing);
+        if (item_y + effective_item_height > sidebar->rect.y + sidebar->rect.height)
             break;
 
         bool selected = (i == sidebar->selected_index);
         bool hovered = (i == sidebar->hovered_index);
-        uint32_t row_color = sidebar->bg_color;
-
-        if (selected)
-        {
-            row_color = aroma_color_blend(sidebar->bg_color, sidebar->selected_color, 0.16f);
-        }
-        else if (hovered)
-        {
-            row_color = aroma_color_blend(sidebar->bg_color, sidebar->selected_color, 0.08f);
-        }
-
-        gfx->fill_rectangle(window_id, sidebar->rect.x + 6, item_y + 4,
-                            sidebar->rect.width - 12, sidebar->item_height - 8,
-                            row_color, true, 10.0f);
 
         if (!sidebar->is_retracted)
         {
-            int content_x = sidebar->rect.x + 14;
-            int icon_w = 0;
-            uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
-
-            if (sidebar->icons[i][0] != '\0' && sidebar->icon_font && gfx->render_text)
+            if (sidebar->apple_style)
             {
-                int icon_line_h = aroma_font_get_line_height(sidebar->icon_font);
-                int icon_y = item_y + (sidebar->item_height - icon_line_h) / 2;
 
-                gfx->render_text(window_id, sidebar->icon_font, sidebar->icons[i],
-                                 content_x, icon_y, text_color, 1.0f);
+                if (selected)
+                {
+                    gfx->fill_rectangle(window_id,
+                                        sidebar->rect.x + margin,
+                                        item_y,
+                                        sidebar->rect.width - margin * 2,
+                                        effective_item_height,
+                                        sidebar->selected_bg_color, true,
+                                        (float)sidebar->corner_radius);
+                }
+                else if (hovered)
+                {
+                    gfx->fill_rectangle(window_id,
+                                        sidebar->rect.x + margin,
+                                        item_y,
+                                        sidebar->rect.width - margin * 2,
+                                        effective_item_height,
+                                        sidebar->hover_bg_color, true,
+                                        (float)sidebar->corner_radius);
+                }
 
-                icon_w = aroma_font_get_px_size(sidebar->icon_font);
-                content_x += icon_w + 12;
+                int item_center_y = item_y + effective_item_height / 2;
+
+                int icon_size = sidebar->icon_font ? aroma_font_get_line_height(sidebar->icon_font) : 24;
+                int text_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 16;
+
+                int content_x = sidebar->rect.x + margin + 16;
+
+                uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
+                uint32_t icon_color = selected ? sidebar->selected_color : aroma_color_blend(sidebar->text_color, 0xFF000000, 0.7f);
+
+                if (sidebar->icons[i][0] != '\0' && sidebar->icon_font && gfx->render_text)
+                {
+                    int icon_y = item_center_y - icon_size / 2;
+                    gfx->render_text(window_id, sidebar->icon_font, sidebar->icons[i],
+                                     content_x, icon_y, icon_color, 1.0f);
+
+                    int icon_w = aroma_font_get_px_size(sidebar->icon_font);
+                    content_x += icon_w + 12;
+                }
+
+                if (sidebar->font && gfx->render_text)
+                {
+                    int text_y = item_center_y - text_height / 2;
+
+                    float text_opacity = selected ? 1.0f : 0.9f;
+                    gfx->render_text(window_id, sidebar->font, sidebar->labels[i],
+                                     content_x, text_y, text_color, text_opacity);
+                }
             }
-
-            if (sidebar->font && gfx->render_text)
+            else
             {
-                int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
-                int text_y = item_y + (sidebar->item_height - line_height) / 2;
-                gfx->render_text(window_id, sidebar->font, sidebar->labels[i], content_x, text_y, text_color, 1.0f);
+
+                int row_margin = 6;
+                uint32_t row_color = sidebar->bg_color;
+                float row_radius = 10.0f;
+
+                if (selected)
+                {
+                    row_color = aroma_color_blend(sidebar->bg_color, sidebar->selected_color, 0.16f);
+                }
+                else if (hovered)
+                {
+                    row_color = aroma_color_blend(sidebar->bg_color, sidebar->selected_color, 0.08f);
+                }
+
+                gfx->fill_rectangle(window_id,
+                                    sidebar->rect.x + row_margin,
+                                    item_y + 4,
+                                    sidebar->rect.width - row_margin * 2,
+                                    effective_item_height - 8,
+                                    row_color, true, row_radius);
+
+                int content_x = sidebar->rect.x + 14;
+                uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
+
+                if (sidebar->icons[i][0] != '\0' && sidebar->icon_font && gfx->render_text)
+                {
+                    int icon_line_h = aroma_font_get_line_height(sidebar->icon_font);
+                    int icon_y = item_y + (effective_item_height - icon_line_h) / 2;
+
+                    gfx->render_text(window_id, sidebar->icon_font, sidebar->icons[i],
+                                     content_x, icon_y, text_color, 1.0f);
+
+                    int icon_w = aroma_font_get_px_size(sidebar->icon_font);
+                    content_x += icon_w + 12;
+                }
+
+                if (sidebar->font && gfx->render_text)
+                {
+                    int line_height = aroma_font_get_line_height(sidebar->font);
+                    int text_y = item_y + (effective_item_height - line_height) / 2;
+                    gfx->render_text(window_id, sidebar->font, sidebar->labels[i],
+                                     content_x, text_y, text_color, 1.0f);
+                }
             }
         }
         else
         {
+
             uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
+            int item_center_y = item_y + effective_item_height / 2;
 
             if (sidebar->icons[i][0] != '\0' && sidebar->icon_font && gfx->render_text)
             {
+                int icon_size = aroma_font_get_line_height(sidebar->icon_font);
                 int w = aroma_font_get_line_width(sidebar->icon_font, sidebar->icons[i]);
                 int icon_x = sidebar->rect.x + (sidebar->rect.width - w) / 2;
-                int icon_line_h = aroma_font_get_line_height(sidebar->icon_font);
-                int icon_y = item_y + (sidebar->item_height - icon_line_h) / 2;
+                int icon_y = item_center_y - icon_size / 2;
 
                 gfx->render_text(window_id, sidebar->icon_font, sidebar->icons[i],
                                  icon_x, icon_y, text_color, 1.0f);
@@ -539,10 +644,10 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
                 char glyph[2] = {sidebar->labels[i][0], '\0'};
                 if (glyph[0] != '\0')
                 {
+                    int text_height = aroma_font_get_line_height(sidebar->font);
                     float w = gfx->measure_text(window_id, sidebar->font, glyph, 1.0f);
                     int text_x = sidebar->rect.x + (sidebar->rect.width - (int)w) / 2;
-                    int line_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 10;
-                    int text_y = item_y + (sidebar->item_height - line_height) / 2;
+                    int text_y = item_center_y - text_height / 2;
                     gfx->render_text(window_id, sidebar->font, glyph, text_x, text_y, text_color, 1.0f);
                 }
             }

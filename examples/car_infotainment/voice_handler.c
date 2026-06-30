@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 
 #include "voice_handler.h"
 #include "app_state.h"

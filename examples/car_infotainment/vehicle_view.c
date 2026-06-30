@@ -395,8 +395,7 @@ static void car_frontdoor_open(void *user_data)
  "../assets/car_frontdoor.png"
 #endif
     );
-    AromaNode *warning_icon = aroma_ui_icon(state.window, AROMA_ICON_WARNING, 710, 460, 40, 0xFFFF0000, state.icon_font);
-    aroma_node_set_z_index(warning_icon, Z_LAYER_VEHICLE_OVERLAYS + 1);
+
 }
 
 static void battery_diagnostics(void *user_data)

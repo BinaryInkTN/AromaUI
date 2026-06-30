@@ -51,6 +51,7 @@
 #define MAX_SERVICE_STATUS_LEN 64
 #define MAX_SERVICE_DESC_LEN 256
 #define SERVICES_REFRESH_INTERVAL_US 2000000
+#define SEAT_REFRESH_INTERVAL_US 500000
 
 typedef void (*item_action_fn)(void);
 
@@ -130,6 +131,48 @@ typedef struct
     pthread_cond_t update_cond;
 } ServicesUI;
 
+typedef struct
+{
+    int16_t position;
+    uint8_t profile;
+    uint8_t occupied;
+} SeatStatus;
+
+typedef struct
+{
+    AromaNode *status_card;
+    AromaNode *status_icon;
+    AromaNode *status_label;
+    AromaNode *driver_position_label;
+    AromaNode *driver_profile_label;
+    AromaNode *driver_occupied_label;
+    AromaNode *passenger_position_label;
+    AromaNode *passenger_profile_label;
+    AromaNode *passenger_occupied_label;
+    AromaNode *driver_slider;
+    AromaNode *passenger_slider;
+    AromaNode *profile1_btn;
+    AromaNode *profile2_btn;
+    AromaNode *profile3_btn;
+    AromaNode *manual_btn;
+    AromaNode *driver_forward_btn;
+    AromaNode *driver_backward_btn;
+    AromaNode *driver_up_btn;
+    AromaNode *driver_down_btn;
+    AromaNode *passenger_forward_btn;
+    AromaNode *passenger_backward_btn;
+    AromaNode *passenger_up_btn;
+    AromaNode *passenger_down_btn;
+    SeatStatus driver_status;
+    SeatStatus passenger_status;
+    bool initialized;
+    bool monitor_running;
+    bool ui_needs_update;
+    pthread_mutex_t lock;
+    pthread_t monitor_thread;
+    pthread_cond_t update_cond;
+} SeatUI;
+
 static BluetoothUI bt_ui = {
     .current_state = BT_STATE_IDLE,
     .initialized = false,
@@ -145,6 +188,15 @@ static ServicesUI svc_ui = {
     .monitor_running = false,
     .ui_needs_update = false,
     .current_status = {0},
+    .lock = PTHREAD_MUTEX_INITIALIZER,
+    .update_cond = PTHREAD_COND_INITIALIZER};
+
+static SeatUI seat_ui = {
+    .initialized = false,
+    .monitor_running = false,
+    .ui_needs_update = false,
+    .driver_status = {85, 1, 1},
+    .passenger_status = {95, 0, 0},
     .lock = PTHREAD_MUTEX_INITIALIZER,
     .update_cond = PTHREAD_COND_INITIALIZER};
 
@@ -198,6 +250,15 @@ static bool on_service_enable_click(AromaNode *node, void *user_data);
 static bool on_service_disable_click(AromaNode *node, void *user_data);
 static void execute_service_command(const char *command);
 static void refresh_service_status(void);
+static void init_seat_async(void);
+static void update_seat_ui(void);
+static void *seat_monitor_thread_func(void *arg);
+static void schedule_seat_ui_update(void);
+static AromaNode *build_seat_page(AromaNode *parent, int panel_w, int area_h);
+static bool on_driver_position_change(AromaNode *node, void *user_data);
+static bool on_passenger_position_change(AromaNode *node, void *user_data);
+static bool on_seat_profile_click(AromaNode *node, void *user_data);
+static void on_seat_nudge_click(void *user_data);
 
 static void schedule_ui_update(void)
 {
@@ -213,6 +274,14 @@ static void schedule_services_ui_update(void)
     svc_ui.ui_needs_update = true;
     pthread_cond_signal(&svc_ui.update_cond);
     pthread_mutex_unlock(&svc_ui.lock);
+}
+
+static void schedule_seat_ui_update(void)
+{
+    pthread_mutex_lock(&seat_ui.lock);
+    seat_ui.ui_needs_update = true;
+    pthread_cond_signal(&seat_ui.update_cond);
+    pthread_mutex_unlock(&seat_ui.lock);
 }
 
 static void execute_service_command(const char *command)
@@ -1319,6 +1388,425 @@ static AromaNode *build_bluetooth_page(AromaNode *parent, int panel_w, int area_
     return scroll_container;
 }
 
+static bool on_driver_position_change(AromaNode *node, void *user_data)
+{
+    UNUSED(user_data);
+    if (!node) return false;
+    
+    int value = aroma_slider_get_value(node);
+    
+    pthread_mutex_lock(&seat_ui.lock);
+    seat_ui.driver_status.position = (int16_t)value;
+    pthread_mutex_unlock(&seat_ui.lock);
+    
+    schedule_seat_ui_update();
+    return true;
+}
+
+static bool on_passenger_position_change(AromaNode *node, void *user_data)
+{
+    UNUSED(user_data);
+    if (!node) return false;
+    
+    int value = aroma_slider_get_value(node);
+    
+    pthread_mutex_lock(&seat_ui.lock);
+    seat_ui.passenger_status.position = (int16_t)value;
+    pthread_mutex_unlock(&seat_ui.lock);
+    
+    schedule_seat_ui_update();
+    return true;
+}
+
+static void on_seat_nudge_click(void *user_data)
+{
+    if (!user_data) return;
+    
+    intptr_t direction = (intptr_t)user_data;
+    
+    pthread_mutex_lock(&seat_ui.lock);
+    
+    if (direction == 0)
+    {
+        if (seat_ui.driver_status.position < 120)
+            seat_ui.driver_status.position += 1;
+    }
+    else if (direction == 1)
+    {
+        if (seat_ui.driver_status.position > 60)
+            seat_ui.driver_status.position -= 1;
+    }
+    else if (direction == 2)
+    {
+        if (seat_ui.passenger_status.position < 120)
+            seat_ui.passenger_status.position += 1;
+    }
+    else if (direction == 3)
+    {
+        if (seat_ui.passenger_status.position > 60)
+            seat_ui.passenger_status.position -= 1;
+    }
+    
+    pthread_mutex_unlock(&seat_ui.lock);
+    
+    if (seat_ui.driver_slider)
+    {
+        aroma_slider_set_value(seat_ui.driver_slider, seat_ui.driver_status.position);
+    }
+    if (seat_ui.passenger_slider)
+    {
+        aroma_slider_set_value(seat_ui.passenger_slider, seat_ui.passenger_status.position);
+    }
+    
+    schedule_seat_ui_update();
+}
+
+static bool on_seat_profile_click(AromaNode *node, void *user_data)
+{
+    UNUSED(user_data);
+    if (!node) return false;
+    
+    pthread_mutex_lock(&seat_ui.lock);
+    
+    if (node == seat_ui.profile1_btn)
+    {
+        seat_ui.driver_status.position = 80;
+        seat_ui.driver_status.profile = 1;
+        seat_ui.passenger_status.position = 90;
+        seat_ui.passenger_status.profile = 1;
+    }
+    else if (node == seat_ui.profile2_btn)
+    {
+        seat_ui.driver_status.position = 95;
+        seat_ui.driver_status.profile = 2;
+        seat_ui.passenger_status.position = 100;
+        seat_ui.passenger_status.profile = 2;
+    }
+    else if (node == seat_ui.profile3_btn)
+    {
+        seat_ui.driver_status.position = 110;
+        seat_ui.driver_status.profile = 3;
+        seat_ui.passenger_status.position = 105;
+        seat_ui.passenger_status.profile = 3;
+    }
+    else if (node == seat_ui.manual_btn)
+    {
+        seat_ui.driver_status.profile = 0;
+        seat_ui.passenger_status.profile = 0;
+    }
+    
+    pthread_mutex_unlock(&seat_ui.lock);
+    
+    if (seat_ui.driver_slider)
+    {
+        aroma_slider_set_value(seat_ui.driver_slider, seat_ui.driver_status.position);
+    }
+    if (seat_ui.passenger_slider)
+    {
+        aroma_slider_set_value(seat_ui.passenger_slider, seat_ui.passenger_status.position);
+    }
+    
+    schedule_seat_ui_update();
+    return true;
+}
+
+static void update_seat_ui(void)
+{
+    if (!seat_ui.status_label || !seat_ui.status_icon || !seat_ui.status_card)
+    {
+        return;
+    }
+    
+    pthread_mutex_lock(&seat_ui.lock);
+    SeatStatus driver = seat_ui.driver_status;
+    SeatStatus passenger = seat_ui.passenger_status;
+    pthread_mutex_unlock(&seat_ui.lock);
+    
+    if (seat_ui.driver_occupied_label)
+    {
+        char occ_text[MAX_INFO_STR_LEN];
+        snprintf(occ_text, sizeof(occ_text), "Driver: %s", driver.occupied ? "Occupied" : "Empty");
+        aroma_label_set_text(seat_ui.driver_occupied_label, occ_text);
+    }
+    
+    if (seat_ui.passenger_occupied_label)
+    {
+        char occ_text[MAX_INFO_STR_LEN];
+        snprintf(occ_text, sizeof(occ_text), "Passenger: %s", passenger.occupied ? "Occupied" : "Empty");
+        aroma_label_set_text(seat_ui.passenger_occupied_label, occ_text);
+    }
+    
+    if (seat_ui.driver_position_label)
+    {
+        char pos_text[MAX_INFO_STR_LEN];
+        snprintf(pos_text, sizeof(pos_text), "Position: %d deg", driver.position);
+        aroma_label_set_text(seat_ui.driver_position_label, pos_text);
+    }
+    
+    if (seat_ui.passenger_position_label)
+    {
+        char pos_text[MAX_INFO_STR_LEN];
+        snprintf(pos_text, sizeof(pos_text), "Position: %d deg", passenger.position);
+        aroma_label_set_text(seat_ui.passenger_position_label, pos_text);
+    }
+    
+    if (seat_ui.driver_profile_label)
+    {
+        char profile_text[MAX_INFO_STR_LEN];
+        if (driver.profile == 0)
+        {
+            snprintf(profile_text, sizeof(profile_text), "Profile: Manual");
+        }
+        else
+        {
+            snprintf(profile_text, sizeof(profile_text), "Profile: %d", driver.profile);
+        }
+        aroma_label_set_text(seat_ui.driver_profile_label, profile_text);
+    }
+    
+    if (seat_ui.passenger_profile_label)
+    {
+        char profile_text[MAX_INFO_STR_LEN];
+        if (passenger.profile == 0)
+        {
+            snprintf(profile_text, sizeof(profile_text), "Profile: Manual");
+        }
+        else
+        {
+            snprintf(profile_text, sizeof(profile_text), "Profile: %d", passenger.profile);
+        }
+        aroma_label_set_text(seat_ui.passenger_profile_label, profile_text);
+    }
+    
+    if (seat_ui.status_label)
+    {
+        aroma_label_set_text(seat_ui.status_label, driver.occupied ? "Driver Present" : "Driver Away");
+    }
+    
+    if (seat_ui.status_icon)
+    {
+        aroma_icon_set_text(seat_ui.status_icon, driver.occupied ? AROMA_ICON_PERSON : AROMA_ICON_EVENT_SEAT, state.icon_font);
+        aroma_icon_set_color(seat_ui.status_icon, driver.occupied ? 0xFF4CAF50 : 0xFF9E9E9E);
+    }
+}
+
+static void *seat_monitor_thread_func(void *arg)
+{
+    UNUSED(arg);
+    
+    printf("[SEAT MONITOR] Monitor thread started\n");
+    
+    while (seat_ui.monitor_running)
+    {
+        pthread_mutex_lock(&seat_ui.lock);
+        
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_nsec += SEAT_REFRESH_INTERVAL_US * 1000;
+        if (ts.tv_nsec >= 1000000000)
+        {
+            ts.tv_sec += 1;
+            ts.tv_nsec -= 1000000000;
+        }
+        
+        pthread_cond_timedwait(&seat_ui.update_cond, &seat_ui.lock, &ts);
+        
+        if (seat_ui.ui_needs_update)
+        {
+            seat_ui.ui_needs_update = false;
+            pthread_mutex_unlock(&seat_ui.lock);
+            update_seat_ui();
+        }
+        else
+        {
+            pthread_mutex_unlock(&seat_ui.lock);
+        }
+    }
+    
+    printf("[SEAT MONITOR] Monitor thread stopped\n");
+    return NULL;
+}
+
+static void init_seat_async(void)
+{
+    pthread_mutex_lock(&seat_ui.lock);
+    
+    if (seat_ui.monitor_running)
+    {
+        pthread_mutex_unlock(&seat_ui.lock);
+        return;
+    }
+    
+    seat_ui.monitor_running = true;
+    pthread_mutex_unlock(&seat_ui.lock);
+    
+    schedule_seat_ui_update();
+    
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&seat_ui.monitor_thread, &attr, seat_monitor_thread_func, NULL);
+    pthread_attr_destroy(&attr);
+}
+
+static AromaNode *create_seat_page_content(AromaNode *parent, int panel_w)
+{
+    if (!parent)
+    {
+        return NULL;
+    }
+    
+    int card_width = panel_w - 20;
+    int y_offset = 10;
+    aroma_ui_image(parent,
+#ifdef __EMSCRIPTEN__
+                                         "/assets/card_background.png"
+#elif defined(__arm__) || defined(__aarch64__)
+                                            "/usr/share/infotainment/assets/card_background.png"            
+#else
+                                            "../assets/card_background.png"
+#endif
+                                         , 10, y_offset, card_width, 100);
+
+    seat_ui.status_card = aroma_ui_card(parent, 10, y_offset,
+                                         card_width, 100, CARD_TYPE_GLASS);
+    aroma_card_set_colors(seat_ui.status_card, aroma_color_rgba(255, 255, 255, 1),  aroma_color_rgba(0, 0, 0, 255));
+    if (!seat_ui.status_card)
+    {
+        return NULL;
+    }
+    AromaNode *small_bg_card_for_status_icon = aroma_ui_card(seat_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
+    aroma_card_set_colors(small_bg_card_for_status_icon, 0xFF607D8B, 0xFF607D8B);
+    seat_ui.status_icon = aroma_ui_icon(small_bg_card_for_status_icon, AROMA_ICON_EVENT_SEAT,
+                                        28, 5, 32, 0xFFFFFFFF, state.icon_font);
+    
+    seat_ui.status_label = aroma_ui_label(seat_ui.status_card, "Driver Present",
+                                          85, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    seat_ui.driver_occupied_label = aroma_ui_label(seat_ui.status_card, "Driver: Occupied",
+                                                    85, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    seat_ui.passenger_occupied_label = aroma_ui_label(seat_ui.status_card, "Passenger: Empty",
+                                                      85, 62, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+
+    y_offset += 110;
+    
+    AromaNode *profile_card = aroma_ui_card(parent, 10, y_offset,
+                                             card_width, 100, CARD_TYPE_GLASS);
+    // primary color
+    aroma_card_set_colors(profile_card, 0xFFFFFF, 0xFF2196F3);
+    if (profile_card)
+    {
+        aroma_ui_label(profile_card, "Seat Profiles", 16, 10,
+                       LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+        
+        seat_ui.profile1_btn = aroma_ui_iconbutton(
+            profile_card, AROMA_ICON_LOOKS_ONE, 16, 42, 42, ICON_BUTTON_FILLED,
+            (void (*)(void *))on_seat_profile_click, NULL, state.icon_font);
+        aroma_iconbutton_set_colors(seat_ui.profile1_btn, 0xFF2196F3, 0xFFFFFFFF);
+        
+        seat_ui.profile2_btn = aroma_ui_iconbutton(
+            profile_card, AROMA_ICON_LOOKS_TWO, 74, 42, 42, ICON_BUTTON_FILLED,
+            (void (*)(void *))on_seat_profile_click, NULL, state.icon_font);
+        aroma_iconbutton_set_colors(seat_ui.profile2_btn, 0xFF2196F3, 0xFFFFFFFF);
+        
+        seat_ui.profile3_btn = aroma_ui_iconbutton(
+            profile_card, AROMA_ICON_LOOKS_3, 132, 42, 42, ICON_BUTTON_FILLED,
+            (void (*)(void *))on_seat_profile_click, NULL, state.icon_font);
+        aroma_iconbutton_set_colors(seat_ui.profile3_btn, 0xFF2196F3, 0xFFFFFFFF);
+        
+        seat_ui.manual_btn = aroma_ui_iconbutton(
+            profile_card, AROMA_ICON_SETTINGS, 190, 42, 42, ICON_BUTTON_OUTLINED,
+            (void (*)(void *))on_seat_profile_click, NULL, state.icon_font);
+        aroma_iconbutton_set_colors(seat_ui.manual_btn, 0xFF9E9E9E, 0xFFFFFFFF);
+    }
+    
+    y_offset += 100;
+    
+    AromaNode *driver_card = aroma_ui_card(parent, 10, y_offset,
+                                            card_width, 170, CARD_TYPE_GLASS);
+    if (driver_card)
+    {
+        aroma_ui_label(driver_card, "Driver Seat", 16, 10,
+                       LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+        
+        seat_ui.driver_position_label = aroma_ui_label(driver_card, "Position: 85 deg",
+                                                       16, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        seat_ui.driver_profile_label = aroma_ui_label(driver_card, "Profile: 1",
+                                                      200, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        seat_ui.driver_slider = aroma_ui_slider(
+            driver_card, 16, 65, card_width - 66, 30,
+            60, 120, 85,
+            on_driver_position_change, NULL);
+        
+
+        aroma_ui_label(driver_card, "60 deg", 16, 105, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        aroma_ui_label(driver_card, "120 deg", card_width - 100, 105, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    }
+    
+    y_offset += 180;
+    
+    AromaNode *passenger_card = aroma_ui_card(parent, 10, y_offset,
+                                               card_width, 170, CARD_TYPE_GLASS);
+    if (passenger_card)
+    {
+        aroma_ui_label(passenger_card, "Passenger Seat", 16, 10,
+                       LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+        
+        seat_ui.passenger_position_label = aroma_ui_label(passenger_card, "Position: 95 deg",
+                                                          16, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        seat_ui.passenger_profile_label = aroma_ui_label(passenger_card, "Profile: Manual",
+                                                         200, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        
+        seat_ui.passenger_slider = aroma_ui_slider(
+            passenger_card, 16, 65, card_width - 66, 30,
+            60, 120, 95,
+            on_passenger_position_change, NULL);
+
+        aroma_ui_label(passenger_card, "60 deg", 16, 105, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+        aroma_ui_label(passenger_card, "120 deg", card_width - 100, 105, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    }
+    
+    y_offset += 180;
+    
+
+    aroma_ui_label(parent, "Seat position range: 60-120 degrees", 10, y_offset + 30,
+                   LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    aroma_ui_label(parent, "Profiles 1-3 store memory positions, Manual allows free adjustment.", 10, y_offset + 50,
+                   LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    
+    return seat_ui.status_card;
+}
+
+static AromaNode *build_seat_page(AromaNode *parent, int panel_w, int area_h)
+{
+    if (!parent)
+    {
+        return NULL;
+    }
+    
+    AromaNode *scroll_container = aroma_container_create(
+        parent, 230, 0, panel_w, area_h);
+    
+    if (!scroll_container)
+    {
+        return NULL;
+    }
+    
+    aroma_container_set_scrollable(scroll_container, true);
+    
+    AromaNode *content = create_seat_page_content(scroll_container, panel_w);
+    if (!content)
+    {
+        return scroll_container;
+    }
+    
+    init_seat_async();
+    
+    return scroll_container;
+}
+
 static void shift_ui_chrome(int dx)
 {
     shift_node(state.overlay, dx);
@@ -1748,7 +2236,7 @@ void build_settings_ui(AromaNode *window)
     const int panel_h = WIN_H - 80;
     const int sidebar_w = 220;
     const int area_w = SETTINGS_PANEL_W - 20;
-    const int area_h = panel_h - 120;
+    const int area_h = panel_h - 60;
     const int panel_x = sidebar_w + 8;
     const int panel_w = area_w - sidebar_w - 8;
 
@@ -1788,17 +2276,15 @@ void build_settings_ui(AromaNode *window)
     aroma_node_set_z_index(state.settings_root, Z_LAYER_SETTINGS_PANEL + 1);
 
     const char *labels[] = {
-        "Bluetooth", "Display & Theme", "Sound & Media",
-        "Navigation", "Vehicle & Climate", "Behaviors",
-        "System & About", "Services"};
+        "Bluetooth", 
+        "System & About", "OS Services", "Seats"};
     const char *icons[] = {
-        AROMA_ICON_BLUETOOTH, AROMA_ICON_BRIGHTNESS_HIGH, AROMA_ICON_VOLUME_UP,
-        AROMA_ICON_MAP, AROMA_ICON_DIRECTIONS_CAR, AROMA_ICON_SETTINGS,
-        AROMA_ICON_INFO, AROMA_ICON_SETTINGS};
-    const int num_sections = 8;
+        AROMA_ICON_BLUETOOTH, 
+        AROMA_ICON_INFO, AROMA_ICON_SETTINGS, AROMA_ICON_EVENT_SEAT};
+    const int num_sections = 4;
 
     state.sidebar = aroma_ui_sidebar_with_icons(
-        state.settings_root, 0, 10, sidebar_w, 400,
+        state.settings_root, 0, 10, sidebar_w, 240,
         labels, icons, num_sections,
         NULL, NULL, state.settings_font, state.icon_font);
 
@@ -1806,17 +2292,17 @@ void build_settings_ui(AromaNode *window)
     {
         return;
     }
+aroma_sidebar_set_style(state.sidebar, true, 13, 4, 10);
 
     aroma_sidebar_set_transition(state.sidebar, AROMA_ANIM_FADE, 200);
 
     state.listview_containers[0] = build_bluetooth_page(state.settings_root, panel_w, area_h);
 
+
     state.listviews[1] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
     if (state.listviews[1])
     {
-        aroma_listview_add_item_with_icon(state.listviews[1], "Brightness level", "Adaptive", AROMA_ICON_BRIGHTNESS_HIGH, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[1], "Dark theme", "Toggle dark/light", AROMA_ICON_INVERT_COLORS, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[1], "Auto-rotate screen", "On", AROMA_ICON_SCREEN_ROTATION, NULL);
+        populate_system_info_list(state.listviews[1]);
         state.listview_containers[1] = aroma_listview_get_scroll_container(state.listviews[1]);
         if (!state.listview_containers[1])
         {
@@ -1828,89 +2314,8 @@ void build_settings_ui(AromaNode *window)
         state.listview_containers[1] = NULL;
     }
 
-    state.listviews[2] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
-    if (state.listviews[2])
-    {
-        aroma_listview_add_item_with_icon(state.listviews[2], "Media volume", "70%", AROMA_ICON_VOLUME_UP, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[2], "Navigation volume", "80%", AROMA_ICON_NAVIGATION, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[2], "System sounds", "On", AROMA_ICON_NOTIFICATIONS, NULL);
-        state.listview_containers[2] = aroma_listview_get_scroll_container(state.listviews[2]);
-        if (!state.listview_containers[2])
-        {
-            state.listview_containers[2] = state.listviews[2];
-        }
-    }
-    else
-    {
-        state.listview_containers[2] = NULL;
-    }
-
-    state.listviews[3] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
-    if (state.listviews[3])
-    {
-        aroma_listview_add_item_with_icon(state.listviews[3], "Location services", "High accuracy", AROMA_ICON_GPS_FIXED, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[3], "Live traffic", "On", AROMA_ICON_DIRECTIONS_CAR, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[3], "Voice guidance", "On", AROMA_ICON_VOLUME_UP, NULL);
-        state.listview_containers[3] = aroma_listview_get_scroll_container(state.listviews[3]);
-        if (!state.listview_containers[3])
-        {
-            state.listview_containers[3] = state.listviews[3];
-        }
-    }
-    else
-    {
-        state.listview_containers[3] = NULL;
-    }
-
-    state.listviews[4] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
-    if (state.listviews[4])
-    {
-        aroma_listview_add_item_with_icon(state.listviews[4], "Climate settings", "Auto mode", AROMA_ICON_DIRECTIONS_CAR, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[4], "Vehicle diagnostics", "All systems normal", AROMA_ICON_INFO, NULL);
-        aroma_listview_add_item_with_icon(state.listviews[4], "Drive mode", "Comfort", AROMA_ICON_DIRECTIONS_CAR, NULL);
-        state.listview_containers[4] = aroma_listview_get_scroll_container(state.listviews[4]);
-        if (!state.listview_containers[4])
-        {
-            state.listview_containers[4] = state.listviews[4];
-        }
-    }
-    else
-    {
-        state.listview_containers[4] = NULL;
-    }
-
-    state.listviews[5] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
-    if (state.listviews[5])
-    {
-        aroma_listview_add_item_with_icon(state.listviews[5], "Tab Transition", "Toggle Fade/Slide", AROMA_ICON_SETTINGS, toggle_tab_animation_cb);
-        aroma_listview_add_item_with_icon(state.listviews[5], "Voice Assistant", "Enable/Disable", AROMA_ICON_VOLUME_UP, toggle_voice_assistant_cb);
-        state.listview_containers[5] = aroma_listview_get_scroll_container(state.listviews[5]);
-        if (!state.listview_containers[5])
-        {
-            state.listview_containers[5] = state.listviews[5];
-        }
-    }
-    else
-    {
-        state.listview_containers[5] = NULL;
-    }
-
-    state.listviews[6] = settings_listview(state.settings_root, panel_x, 0, panel_w, area_h);
-    if (state.listviews[6])
-    {
-        populate_system_info_list(state.listviews[6]);
-        state.listview_containers[6] = aroma_listview_get_scroll_container(state.listviews[6]);
-        if (!state.listview_containers[6])
-        {
-            state.listview_containers[6] = state.listviews[6];
-        }
-    }
-    else
-    {
-        state.listview_containers[6] = NULL;
-    }
-
-    state.listview_containers[7] = build_services_page(state.settings_root, panel_w, area_h);
+    state.listview_containers[2] = build_services_page(state.settings_root, panel_w, area_h);
+    state.listview_containers[3] = build_seat_page(state.settings_root, panel_w, area_h);
 
     for (int i = 0; i < num_sections; i++)
     {
