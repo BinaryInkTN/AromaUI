@@ -6,42 +6,36 @@
 #include "aroma_event.h"
 #include "aroma_font.h"
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-// Material Design 3 Chip variants
-typedef enum {
-    CHIP_TYPE_ASSIST,    // Assist chip
-    CHIP_TYPE_FILTER,    // Filter chip (toggleable)
-    CHIP_TYPE_INPUT,     // Input chip (with close button)
-    CHIP_TYPE_SUGGESTION // Suggestion chip
-} AromaChipType;
 
-typedef struct AromaChip AromaChip;
+    typedef enum
+    {
+        CHIP_TYPE_ASSIST,
+        CHIP_TYPE_FILTER,
+        CHIP_TYPE_INPUT,
+        CHIP_TYPE_SUGGESTION
+    } AromaChipType;
 
-// Create a new chip
-AromaNode* aroma_chip_create(AromaNode* parent, int x, int y, const char* label, AromaChipType type);
+    typedef struct AromaChip AromaChip;
 
-// Set chip callback
-void aroma_chip_set_callback(AromaNode* chip_node, void (*callback)(void* user_data), void* user_data);
+    AromaNode *aroma_chip_create(AromaNode *parent, int x, int y, const char *label, AromaChipType type);
 
-// Set chip selected state (for filter chips)
-void aroma_chip_set_selected(AromaNode* chip_node, bool selected);
+    void aroma_chip_set_callback(AromaNode *chip_node, void (*callback)(void *user_data), void *user_data);
 
-// Set chip font
-void aroma_chip_set_font(AromaNode* chip_node, AromaFont* font);
+    void aroma_chip_set_selected(AromaNode *chip_node, bool selected);
 
-// Set chip icon
-void aroma_chip_set_icon(AromaNode* chip_node, const char* icon, AromaFont* icon_font);
+    void aroma_chip_set_font(AromaNode *chip_node, AromaFont *font);
 
-// Set chip text label
-void aroma_chip_set_text(AromaNode* chip_node, const char* text);
+    void aroma_chip_set_icon(AromaNode *chip_node, const char *icon, AromaFont *icon_font);
 
-// Draw chip
-void aroma_chip_draw(AromaNode* chip_node, size_t window_id);
+    void aroma_chip_set_text(AromaNode *chip_node, const char *text);
 
-// Destroy chip
-void aroma_chip_destroy(AromaNode* chip_node);
+    void aroma_chip_draw(AromaNode *chip_node, size_t window_id);
+
+    void aroma_chip_destroy(AromaNode *chip_node);
 #ifdef __cplusplus
 }
 #endif
-#endif // AROMA_CHIP_H
+#endif

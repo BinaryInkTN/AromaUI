@@ -872,39 +872,6 @@ extern "C"
     }
 
     /**
-     * @brief Create a Floating Action Button (FAB) helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param size FAB size (e.g. AROMA_FAB_SIZE_NORMAL).
-     * @param icon_text Icon text (if using symbol font) or label.
-     * @param callback Click callback.
-     * @param user_data User data.
-     * @param font Font to use.
-     * @return Pointer to the new FAB node.
-     */
-    static inline AromaNode *aroma_ui_fab(
-        AromaNode *parent,
-        int x, int y,
-        AromaFABSize size,
-        const char *icon_text,
-        void (*callback)(void *),
-        void *user_data,
-        AromaFont *font)
-    {
-        AromaNode *fab = aroma_fab_create(parent, x, y, size, icon_text);
-        if (fab)
-        {
-            if (callback)
-                aroma_fab_set_click_callback(fab, callback, user_data);
-            if (font)
-                aroma_fab_set_font(fab, font);
-        }
-        return fab;
-    }
-
-    /**
      * @brief Create an icon button helper.
      *
      * @param parent Parent node.

@@ -43,7 +43,6 @@ add_library(aroma
     widgets/aroma_tooltip.c
     widgets/aroma_card.c
     widgets/aroma_chip.c
-    widgets/aroma_fab.c
     widgets/aroma_snackbar.c
     widgets/aroma_tabs.c
     widgets/aroma_sidebar.c

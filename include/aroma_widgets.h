@@ -29,7 +29,6 @@
 #include "widgets/aroma_tooltip.h"
 #include "widgets/aroma_card.h"
 #include "widgets/aroma_chip.h"
-#include "widgets/aroma_fab.h"
 #include "widgets/aroma_snackbar.h"
 #include "widgets/aroma_tabs.h"
 #include "widgets/aroma_sidebar.h"

@@ -2424,18 +2424,17 @@ static int match_enum(IncenseNode *node, const PropBag *bag, const char *key, in
     ERR_SUGGEST("Valid values: %s", safe_str(valid_list));
     return def;
 }
-
 static void validate_properties(IncenseNode *node, const PropBag *bag)
 {
     if (!bag)
         return;
-    static const char *const valid[] = {
-        "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_start_val",
-        "attribution", "autoplay", "color", "columns", "condition", "direction", "duration", "font", "group",
-        "header", "height", "hidden", "icon", "id", "label", "lat", "layout", "length", "lon", "max", "message",
-        "min", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "placeholder",
-        "position", "radius", "selected", "size", "src", "style", "text", "thickness", "title", "type", "value",
-        "variant", "visible", "width", "x", "y", "zoom", "z_index", NULL};
+  static const char *const valid[] = {
+    "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_start_val",
+    "attribution", "autoplay", "color", "columns", "condition", "direction", "duration", "font", "group",
+    "header", "height", "hidden", "icon", "id", "label", "lat", "layout", "length", "lon", "max", "message",
+    "min", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "placeholder",
+    "position", "radius", "selected", "show", "size", "src", "style", "text", "thickness", "title", "type", "value",
+    "variant", "visible", "width", "x", "y", "zoom", "z_index", NULL};
     for (int i = 0; i < bag->count; i++)
     {
         if (!bag->items[i].key)
@@ -2980,27 +2979,6 @@ static AromaNode *build_card(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
-static AromaNode *build_fab(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
-{
-    if (!ctx)
-        return NULL;
-    WIDGET_PREAMBLE(node, sp, ctx);
-    CallbackEntry *on_click = resolve_callback(node, &bag, "on_click");
-    const char *ir = props_get(&bag, "icon");
-    const char *resolved = ir ? resolve_icon(ir) : "+";
-    char *icon = strdup(resolved ? resolved : "+");
-    static const char *const size_names[] = {"small", "normal", "large"};
-    static const int size_values[] = {FAB_SIZE_SMALL, FAB_SIZE_NORMAL, FAB_SIZE_LARGE};
-    AromaFABSize size = (AromaFABSize)match_enum(node, &bag, "size", FAB_SIZE_NORMAL, size_names, size_values, 3, "FAB size", "small, normal, large");
-    AromaNode *built = NULL;
-    if (icon)
-    {
-        built = aroma_ui_fab(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0), size, icon,
-                             on_click ? bridge_void_ptr : NULL, on_click, ctx->icon_font ? ctx->icon_font : _widget_font);
-    }
-    free(icon);
-    WIDGET_POSTAMBLE(built, bag, node, ctx);
-}
 
 static AromaNode *build_iconbutton(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
@@ -3075,24 +3053,71 @@ static AromaNode *build_icon(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     build_children(node, built, ctx);
     props_free(&bag);
     return built;
-}
-
-static AromaNode *build_snackbar(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
+}static AromaNode *build_snackbar(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
     if (!ctx)
         return NULL;
+
     WIDGET_PREAMBLE(node, sp, ctx);
-    int dur = props_int(&bag, "duration", 3000);
+
+    int dur = props_int(&bag, "duration", 4000);
     if (dur <= 0)
-        dur = 3000;
+        dur = 4000;
+
     char *msg = props_str_dup(&bag, "message", "");
     AromaNode *built = NULL;
-    if (msg)
-        built = aroma_ui_snackbar(parent, msg, dur, _widget_font);
-    free(msg);
-    WIDGET_POSTAMBLE(built, bag, node, ctx);
-}
 
+    if (msg && msg[0])
+    {
+        built = aroma_snackbar_create(parent, msg, dur);
+
+        if (built)
+        {
+            if (node)
+                node->id = built->node_id;
+
+            aroma_snackbar_set_font(built, _widget_font);
+
+            const char *action_text = props_get(&bag, "action");
+            if (action_text && action_text[0])
+            {
+                CallbackEntry *on_action = resolve_callback(node, &bag, "on_click");
+                aroma_snackbar_set_action(built, action_text,
+                                          on_action ? bridge_void_ptr : NULL,
+                                          on_action);
+            }
+
+    
+        int zi = props_int(&bag, "z_index", 0);
+        if (zi)
+            aroma_node_set_z_index(built, zi);
+
+        maybe_register(&bag, built, ctx);
+        build_children(node, built, ctx);
+
+        apply_widget_animations(built, &bag, node);
+
+        bool should_show = props_bool(&bag, "show", true);
+        if (should_show)
+        {
+            aroma_snackbar_show(built);
+        }
+        }
+        else
+        {
+            ERR_SYNTAX_N(node, "Failed to create Snackbar widget");
+        }
+    }
+    else
+    {
+        ERR_WARN_N(node, "Snackbar requires a 'message' property");
+        ERR_SUGGEST("Add 'message' property with snackbar text");
+    }
+
+    free(msg);
+    props_free(&bag);
+    return built;
+}
 static AromaNode *build_listview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
     if (!ctx)
@@ -3671,16 +3696,79 @@ static AromaNode *build_tooltip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     free(text);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
-
 static AromaNode *build_chip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
-    (void)node;
-    (void)sp;
-    (void)ctx;
-    LOG_WARNING("Chip widget is not yet implemented");
-    return NULL;
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    
+    char *label = props_str_dup(&bag, "label", "");
+    const char *icon_raw = props_get(&bag, "icon");
+    char *icon = NULL;
+    
+    if (icon_raw && icon_raw[0])
+    {
+        const char *resolved = resolve_icon(icon_raw);
+        icon = strdup(resolved ? resolved : icon_raw);
+        if (!icon)
+        {
+            LOG_ERROR("Out of memory duplicating icon name");
+            free(label);
+            props_free(&bag);
+            return NULL;
+        }
+    }
+    
+    static const char *const type_names[] = {"assist", "filter", "input", "suggestion"};
+    static const int type_values[] = {CHIP_TYPE_ASSIST, CHIP_TYPE_FILTER, CHIP_TYPE_INPUT, CHIP_TYPE_SUGGESTION};
+    AromaChipType type = (AromaChipType)match_enum(node, &bag, "type", CHIP_TYPE_ASSIST, 
+                                                     type_names, type_values, 4, 
+                                                     "chip type", 
+                                                     "assist, filter, input, suggestion");
+    
+    AromaNode *built = NULL;
+    if (label && label[0])
+    {
+        built = aroma_chip_create(parent, 
+                                  props_int(&bag, "x", 0), 
+                                  props_int(&bag, "y", 0), 
+                                  label, 
+                                  type);
+        
+        if (built)
+        {
+            aroma_chip_set_font(built, _widget_font);
+            
+            if (type == CHIP_TYPE_FILTER && props_bool(&bag, "selected", false))
+            {
+                aroma_chip_set_selected(built, true);
+            }
+            
+            if (icon && icon[0])
+            {
+                aroma_chip_set_icon(built, icon, ctx->icon_font ? ctx->icon_font : _widget_font);
+            }
+            
+            int zi = props_int(&bag, "z_index", 0);
+            if (zi)
+                aroma_node_set_z_index(built, zi);
+        }
+        else
+        {
+            ERR_SYNTAX_N(node, "Failed to create Chip widget");
+        }
+    }
+    else
+    {
+        ERR_WARN_N(node, "Chip requires a 'label' property");
+        ERR_SUGGEST("Add 'label' property with chip text");
+    }
+    
+    free(label);
+    free(icon);
+    
+    WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
-
 static const WidgetEntry WIDGET_TABLE[] = {
     {"Button", build_button},
     {"Canvas", build_canvas},
@@ -3692,7 +3780,6 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Dialog", build_dialog},
     {"Divider", build_divider},
     {"Dropdown", build_dropdown},
-    {"FAB", build_fab},
     {"GIF", build_gif},
     {"Icon", build_icon},
     {"IconButton", build_iconbutton},
