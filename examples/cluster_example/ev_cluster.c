@@ -51,14 +51,17 @@ int main(void)
     AromaFont *big_font = aroma_font_create_from_memory(aroma_ubuntu_ttf,
                                                         aroma_ubuntu_ttf_len,
                                                         FONT_SIZE_HERO);
-
-    if (!font || !icon_font || !big_font)
+    AromaFont *medium_font = aroma_font_create_from_memory(aroma_ubuntu_ttf,
+                                                        aroma_ubuntu_ttf_len,
+                                                        50);
+    if (!font || !icon_font || !big_font || !medium_font)
     {
         aroma_ui_shutdown();
         return 1;
     }
 
     IncenseRegisterFont("big_font", big_font);
+    IncenseRegisterFont("medium_font", medium_font);
 
     IncenseRegisterCallback("set_gear_park", INCENSE_CALLBACK_VOID_PTR, set_gear_park, NULL);
     IncenseRegisterCallback("set_gear_reverse", INCENSE_CALLBACK_VOID_PTR, set_gear_reverse, NULL);
@@ -131,6 +134,7 @@ int main(void)
     aroma_font_destroy(big_font);
     aroma_font_destroy(icon_font);
     aroma_font_destroy(font);
+    aroma_font_destroy(medium_font);
 
     aroma_ui_shutdown();
     return 0;

@@ -14,12 +14,254 @@
                 height: 50
                 hidden: true
                 selected: 0
-       Tab {
+                Tab {
+                    text: "Performance"
+
+                    ScrollView {
+                    width: 560
+                    height: 300
+                    
+                    Label {
+                        style: "large"
+                        text: "Performance Overview"
+                        y: 20
+                    }
+
+
+                    Card {
+                        type: "outlined"
+                        y: 80
+                        x: 280
+                        width: 230
+                        height: 200
+                    Card {
+                        x: 20
+                        y: 20
+                        width: 40
+                        height: 40
+                        type: "filled"
+                        Icon {
+                            x: 26
+                            y: 7
+                            text: "AROMA_ICON_MULTILINE_CHART"
+                            color: "#FFFFFF"
+                        }
+                    }
+
+                    Label {
+                        text: "Average Speed"
+                        x: 70
+                        y: 25
+                    }
+                    Divider{
+                        orientation: "horizontal"
+                           x: 15
+                        y: 80
+                        length: 195 
+
+                    }
+
+                    Label {
+                        text: "60"
+                        font: "medium_font"
+                            x: 55
+                        y: 100
+                                                color: "#FAFAFA"
+
+                    }
+                    Label {
+                        text: "km/h"
+                        color: "#FAFAFA"
+                        y: 135
+                        x: 125
+                    }
+                      
+                    }
+
+
+                    Card {
+                        type: "filled"
+                        y: 520
+                        x: 20
+                        width: 490
+                        height: 100
+                  
+                        Icon {
+                            x: 46
+                            y: 40
+                            text: "AROMA_ICON_FLASH_ON"
+                            color: "#FFFFFF"
+                        }
+                    
+
+                    Label {
+                        text: "Acceleration"
+                        x: 70
+                        y: 39
+                    }
+                 
+
+                    Label {
+                        text: "50"
+                        font: "medium_font"
+                        x: 300
+                        y: 15
+                        color: "#FAFAFA"
+
+                    }
+                    
+                    Label {
+                        text: "m/s²"
+                        color: "#FAFAFA"
+                        y: 50
+                        x: 370                    
+                        }
+                   
+                    }
+
+                    Card {
+                        type: "filled"
+                        y: 410
+                        x: 20
+                        width: 490
+                        height: 100
+                  
+                        Icon {
+                            x: 46
+                            y: 40
+                            text: "AROMA_ICON_TRENDING_UP"
+                            color: "#FFFFFF"
+                        }
+                    
+
+                    Label {
+                        text: "Kinetic Energy"
+                        x: 70
+                        y: 39
+                    }
+                 
+
+                    Label {
+                        text: "2000"
+                        font: "medium_font"
+                        x: 300
+                        y: 15
+                        color: "#FAFAFA"
+
+                    }
+                    
+                    Label {
+                        text: "J"
+                        color: "#FAFAFA"
+                        y: 50
+                        x: 425                    
+                        }
+                   
+                    }
+                    Card {
+                        type: "filled"
+                        y: 300
+                        x: 20
+                        width: 490
+                        height: 100
+                  
+                        Icon {
+                            x: 46
+                            y: 40
+                            text: "AROMA_ICON_WHATSHOT"
+                            color: "#FFFFFF"
+                        }
+                    
+
+                    Label {
+                        text: "Max Speed"
+                        x: 70
+                        y: 39
+                    }
+                 
+
+                    Label {
+                        text: "100"
+                        font: "medium_font"
+                        x: 300
+                        y: 15
+                        color: "#FAFAFA"
+
+                    }
+                    
+                    Label {
+                        text: "km/h"
+                        color: "#FAFAFA"
+                        y: 50
+                        x: 400
+                    }
+                   
+                    }
+
+                    Card {
+                        type: "elevated"
+                        y: 80
+                        x: 20
+                        width: 230
+                        height: 200
+                    Card {
+                        x: 20
+                        y: 20
+                        width: 40
+                        height: 40
+                        type: "filled"
+                        Icon {
+                            x: 26
+                            y: 7
+                            text: "AROMA_ICON_NEAR_ME"
+                            color: "#FFFFFF"
+                        }
+                    }
+
+                    Label {
+                        text: "Distance"
+                        x: 70
+                        y: 25
+                    }
+                    Divider{
+                        orientation: "horizontal"
+                           x: 15
+                        y: 80
+                        length: 195 
+
+                    }
+
+                    Label {
+                        text: "100"
+                        font: "medium_font"
+                            x: 35
+                        y: 100
+                                                color: "#FAFAFA"
+
+                    }
+                    Label {
+                        text: "km"
+                        color: "#FAFAFA"
+                        y: 135
+                        x: 135
+                    }
+                      
+                    }
+                        Icon {
+                            text: "AROMA_ICON_ARROW_DOWNWARD"
+                            color: "#FFFFFF"
+                            size: 30
+                            x: 270
+                            y: 278
+                        }
+                    }
+                }
+                Tab {
                     id:      "car_view_tab"
                     text:   "Car View"
                     
                     Label {
-                        text: "1embed_test"
+                        text: "Tire Pressure"
                     }
         
                     Container {

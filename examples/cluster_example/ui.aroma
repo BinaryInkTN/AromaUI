@@ -3,15 +3,7 @@ Window {
     width:  1280
     height: 400
 
-Snackbar {
-    show: true
-    message: "Network error occurred"
-    animation: "slide_y"
-    animation_start_val: 100
-    animation_end_val: 200
-    animation_duration: 1000
-    animation_easing: "ease_in_out"
-}
+
     Container {
         id:     "status_bar"
         x:      45
@@ -38,7 +30,7 @@ Snackbar {
             height: 30
             width: 220
             type: "filled"
-
+        
             Icon {
                 x: 30
                 y: 3
