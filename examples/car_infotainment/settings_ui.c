@@ -594,7 +594,16 @@ static AromaNode *create_services_page_content(AromaNode *parent, int panel_w)
     
     int card_width = panel_w - 20;
     int y_offset = 10;
-    
+        aroma_ui_image(parent,
+#ifdef __EMSCRIPTEN__
+                                         "/assets/card_background_services.png"
+#elif defined(__arm__) || defined(__aarch64__)
+                                            "/usr/share/infotainment/assets/card_background_services.png"            
+#else
+                                            "../assets/card_background_services.png"
+#endif
+                                         , 10, y_offset, card_width, 100);
+    y_offset += 110;
     svc_ui.status_card = aroma_ui_card(parent, 10, y_offset,
                                         card_width, 100, CARD_TYPE_GLASS);
     if (!svc_ui.status_card)
@@ -1285,6 +1294,21 @@ static AromaNode *create_bluetooth_page_content(AromaNode *parent, int panel_w)
     int card_width = panel_w - 20;
     int y_offset = 10;
 
+    AromaNode *card_header = aroma_ui_image(parent, 
+
+#ifdef __EMSCRIPTEN__
+                                                 "/assets/card_background_bluetooth.png"
+#elif defined(__arm__) || defined(__aarch64__)
+                                                 "/usr/share/infotainment/assets/card_background_bluetooth.png"
+#else
+                                                 "../assets/card_background_bluetooth.png"
+#endif
+
+                                                 ,
+                                                  10, y_offset, card_width, 100);
+
+                                                 y_offset += 110;
+
     bt_ui.status_card = aroma_ui_card(parent, 10, y_offset,
                                       card_width, 100, CARD_TYPE_GLASS);
     if (!bt_ui.status_card)
@@ -1660,34 +1684,34 @@ static AromaNode *create_seat_page_content(AromaNode *parent, int panel_w)
     int y_offset = 10;
     aroma_ui_image(parent,
 #ifdef __EMSCRIPTEN__
-                                         "/assets/card_background.png"
+                                         "/assets/card_background_seats.png"
 #elif defined(__arm__) || defined(__aarch64__)
-                                            "/usr/share/infotainment/assets/card_background.png"            
+                                            "/usr/share/infotainment/assets/card_background_seats.png"            
 #else
-                                            "../assets/card_background.png"
+                                            "../assets/card_background_seats.png"
 #endif
                                          , 10, y_offset, card_width, 100);
+    y_offset += 10;
 
-    seat_ui.status_card = aroma_ui_card(parent, 10, y_offset,
-                                         card_width, 100, CARD_TYPE_GLASS);
-    aroma_card_set_colors(seat_ui.status_card, aroma_color_rgba(255, 255, 255, 1),  aroma_color_rgba(0, 0, 0, 255));
-    if (!seat_ui.status_card)
-    {
-        return NULL;
-    }
-    AromaNode *small_bg_card_for_status_icon = aroma_ui_card(seat_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
-    aroma_card_set_colors(small_bg_card_for_status_icon, 0xFF607D8B, 0xFF607D8B);
-    seat_ui.status_icon = aroma_ui_icon(small_bg_card_for_status_icon, AROMA_ICON_EVENT_SEAT,
-                                        28, 5, 32, 0xFFFFFFFF, state.icon_font);
+//    seat_ui.status_card = aroma_ui_card(parent, 10, y_offset,
+    //                                     card_width, 100, CARD_TYPE_GLASS);
+   // aroma_card_set_colors(seat_ui.status_card, aroma_color_rgba(255, 255, 255, 1),  aroma_color_rgba(0, 0, 0, 255));
+  //  if (!seat_ui.status_card)
+  //  {
+  //      return NULL;
+ //   }
+   // AromaNode *small_bg_card_for_status_icon = aroma_ui_card(seat_ui.status_card, 25, 30, 40, 40, CARD_TYPE_FILLED);
+
+    //seat_ui.status_icon = aroma_ui_icon(small_bg_card_for_status_icon, AROMA_ICON_EVENT_SEAT,
+        //                                28, 5, 32, 0xFFFFFFFF, state.icon_font);
     
-    seat_ui.status_label = aroma_ui_label(seat_ui.status_card, "Driver Present",
-                                          85, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
-    seat_ui.driver_occupied_label = aroma_ui_label(seat_ui.status_card, "Driver: Occupied",
-                                                    85, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
-    seat_ui.passenger_occupied_label = aroma_ui_label(seat_ui.status_card, "Passenger: Empty",
-                                                      85, 62, LABEL_STYLE_LABEL_SMALL, state.settings_font);
-
-    y_offset += 110;
+   // seat_ui.status_label = aroma_ui_label(seat_ui.status_card, "Driver Present",
+   //                                       85, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+  //  seat_ui.driver_occupied_label = aroma_ui_label(seat_ui.status_card, "Driver: Occupied",
+      //                                              85, 40, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+  //  seat_ui.passenger_occupied_label = aroma_ui_label(seat_ui.status_card, "Passenger: Empty",
+    //                                                  85, 62, LABEL_STYLE_LABEL_SMALL, state.settings_font);
+    y_offset += 120;
     
     AromaNode *profile_card = aroma_ui_card(parent, 10, y_offset,
                                              card_width, 100, CARD_TYPE_GLASS);
@@ -1719,7 +1743,7 @@ static AromaNode *create_seat_page_content(AromaNode *parent, int panel_w)
         aroma_iconbutton_set_colors(seat_ui.manual_btn, 0xFF9E9E9E, 0xFFFFFFFF);
     }
     
-    y_offset += 100;
+    y_offset += 110;
     
     AromaNode *driver_card = aroma_ui_card(parent, 10, y_offset,
                                             card_width, 170, CARD_TYPE_GLASS);
