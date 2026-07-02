@@ -516,7 +516,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(lbl_d, Z_LAYER_VEHICLE_OVERLAYS + 5);
 
     char speed_buf[16];
-    snprintf(speed_buf, sizeof(speed_buf), "%.2f", state.vehicle_state.speed);
+    snprintf(speed_buf, sizeof(speed_buf), "%d", state.vehicle_state.speed_filtered);
 
     state.speed_label = aroma_ui_label(
         state.vehicle_view_root, speed_buf,

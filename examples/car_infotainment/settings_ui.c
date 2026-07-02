@@ -2241,7 +2241,6 @@ static void populate_system_info_list(AromaNode *listview)
     aroma_listview_add_item_with_icon(listview, "Current time", time_str, AROMA_ICON_ACCESS_TIME, NULL);
     aroma_listview_add_item_with_icon(listview, "Platform Backend", "GLPS (X11)", AROMA_ICON_VERIFIED_USER, NULL);
     aroma_listview_add_item_with_icon(listview, "Graphics backend", "Vulkan", AROMA_ICON_MEMORY, NULL);
-    aroma_listview_add_item_with_icon(listview, "CAN interface", CAN_INTERFACE, AROMA_ICON_SETTINGS_INPUT_COMPONENT, NULL);
 
 #ifdef AROMA_USE_VOICE_CONTROL
     aroma_listview_add_item_with_icon(listview, "Voice control", "Enabled (compiled)", AROMA_ICON_MIC, NULL);

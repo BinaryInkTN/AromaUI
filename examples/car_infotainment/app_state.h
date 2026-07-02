@@ -36,20 +36,52 @@
 
 typedef struct
 {
-    double speed;
-    int rpm;
-    int gear;
-    double soc;
-    double voltage;
-    double current;
-    double cabin_temp;
-    double target_temp;
-    int hvac_on;
-    int fan_speed;
-    int seat_heaters;
-    int doors;
-    uint32_t fault_code;
-    double range;
+
+    uint8_t  wiper_speed;
+    uint8_t  headlight_state;
+    uint8_t  indicator_left;
+    uint8_t  indicator_right;
+    uint8_t  buzzer;
+    uint8_t  door_locked;
+    uint8_t  interior_light;
+    uint8_t  rain_detected;
+    uint8_t  door_open;
+
+    uint16_t throttle_cmd;
+    uint16_t brake_cmd;
+    uint16_t fsr_value;
+    uint16_t vehicle_speed;
+    uint8_t  crash_detected;
+    uint8_t  airbag_deployed;
+    uint8_t  seatbelt_warn;
+    uint8_t  acm_seat_occupied;
+    uint8_t  acm_system_status;
+
+    int16_t  seat_position_cmd;
+    uint8_t  seat_profile;
+    uint8_t  seat_occupied;
+
+    uint16_t speed_raw;
+    uint16_t speed_filtered;
+    int16_t  acceleration;
+    uint16_t avg_speed;
+    uint16_t max_speed;
+    uint32_t distance;
+    uint32_t kinetic_energy;
+    uint8_t  high_speed_flag;
+    uint8_t  harsh_braking;
+    uint8_t  vss_fault;
+
+    int16_t  temp_c;
+    uint16_t humidity;
+    int16_t  dew_point_c;
+    int16_t  altitude_m;
+    uint32_t pressure_pa;
+    uint8_t  ecs_sensor_fault;
+    uint8_t  comfort_cold;
+    uint8_t  comfort_hot;
+    uint8_t  high_humidity;
+    
 } EVState;
 
 typedef struct

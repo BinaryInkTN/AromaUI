@@ -40,7 +40,6 @@ add_executable(infotainment
         main.c 
        main_loop.c 
        app_state.c 
-       can_handler.c 
        voice_handler.c 
        theme_manager.c 
        font_manager.c 

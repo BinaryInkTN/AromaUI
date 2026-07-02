@@ -1,124 +1,70 @@
-#pragma once
+#ifndef TELEMETRY_BRIDGE_H
+#define TELEMETRY_BRIDGE_H
+
 #include <stdint.h>
-#include <stdatomic.h>
-#include <time.h>
+#include <stdbool.h>
 
-#define TELEMETRY_SHM_NAME  "/telemetry"
+#define SDV_TELEMETRY_VERSION   1u
+#define SDV_TELEMETRY_MAGIC     0xA5u
+#define UART_FRAME_START        0xAAu
+#define SHM_KEY                 0x1234ABCD
 
-/*
- * EV Telemetry wire frame (UART, 32 bytes)
- *
- *  [0]       0xAA          start-of-frame magic
- *  [1]       msg_id        0x01=motion  0x02=battery  0x03=climate  0x04=charge
- *  [2..3]    seq_le        little-endian uint16 sequence counter
- *
- *  --- motion ---
- *  [4..5]    speed_le      vehicle speed × 10  (km/h, uint16 LE)
- *  [6..7]    torque_le     motor torque × 10   (N·m,  uint16 LE)
- *  [8]       throttle_pct  0–100 %
- *  [9]       brake_pct     0–100 %
- *  [10]      regen_pct     0–100 %  (0=none, 100=full regen)
- *
- *  --- battery ---
- *  [11]      soc_pct       state-of-charge 0–100 %
- *  [12..13]  voltage_le    pack voltage in dV (uint16 LE; divide by 10 for V)
- *  [14..15]  current_le    pack current in dA (int16 LE;  divide by 10 for A;
- *                                              negative = regen / charging)
- *  [16]      battery_temp  battery temp °C + 40 offset (uint8, range −40..215)
- *
- *  --- range / charge ---
- *  [17..18]  range_le      estimated range in km (uint16 LE)
- *  [19]      charge_flags  bit0=plug_connected  bit1=charging  bit2=charge_fault
- *                          bit3=dc_fast_charge  bit4=preconditioning
- *
- *  --- climate ---
- *  [20]      temp_cabin    cabin temp °C + 40 offset
- *  [21]      temp_motor    motor temp °C + 40 offset
- *
- *  --- status ---
- *  [22]      flags         bit0=check-system   bit1=low-battery  bit2=door-open
- *                          bit3=ready-to-drive bit4=regen-active
- *
- *  [23..30]  reserved      zero-filled, reserved for future fields
- *  [31]      crc8          CRC-8/MAXIM over bytes [0..30]
- */
+#pragma pack(push, 1)
 
-#define TELEMETRY_FRAME_LEN  32
-#define TELEMETRY_SOF_MAGIC  0xAAu
+typedef struct {
+    uint8_t  magic;
+    uint8_t  version;
+    uint8_t  seq;
+    uint8_t  flags;
+    uint32_t uptime_ms;
 
-/* msg_id values */
-#define TELEMETRY_MSG_MOTION   0x01u
-#define TELEMETRY_MSG_BATTERY  0x02u
-#define TELEMETRY_MSG_CLIMATE  0x03u
-#define TELEMETRY_MSG_CHARGE   0x04u
+    uint8_t  bcm_wiper_speed;
+    uint8_t  bcm_headlight_state;
+    uint8_t  bcm_indicator_left;
+    uint8_t  bcm_indicator_right;
+    uint8_t  bcm_buzzer;
+    uint8_t  bcm_door_locked;
+    uint8_t  bcm_interior_light;
+    uint8_t  bcm_rain_detected;
+    uint8_t  bcm_door_open;
 
-/* charge_flags bits */
-#define CHARGE_FLAG_PLUG_CONNECTED   (1u << 0)
-#define CHARGE_FLAG_CHARGING         (1u << 1)
-#define CHARGE_FLAG_FAULT            (1u << 2)
-#define CHARGE_FLAG_DC_FAST          (1u << 3)
-#define CHARGE_FLAG_PRECONDITIONING  (1u << 4)
+    uint16_t acm_throttle_cmd;
+    uint16_t acm_brake_cmd;
+    uint16_t acm_fsr_value;
+    uint16_t acm_vehicle_speed;
+    uint8_t  acm_crash_detected;
+    uint8_t  acm_airbag_deployed;
+    uint8_t  acm_seatbelt_warn;
+    uint8_t  acm_seat_occupied;
+    uint8_t  acm_system_status;
 
-/* status flags bits */
-#define FLAG_CHECK_SYSTEM    (1u << 0)
-#define FLAG_LOW_BATTERY     (1u << 1)
-#define FLAG_DOOR_OPEN       (1u << 2)
-#define FLAG_READY_TO_DRIVE  (1u << 3)
-#define FLAG_REGEN_ACTIVE    (1u << 4)
+    int16_t  seat_position_cmd;
+    uint8_t  seat_profile;
+    uint8_t  seat_occupied;
 
-/*
- * In-memory decoded frame written by telemetry-bridge, read by consumers.
- *
- * Seqlock protocol (see telemetry_shm_block):
- *   Writer:  fetch_add(&seq_write, 1, release)  → odd (write in progress)
- *            frame = f;
- *            fetch_add(&seq_write, 1, release)  → even (done)
- *
- *   Reader:  do {
- *                s1 = load(&seq_write, acquire);
- *                if (s1 & 1) continue;
- *                local = frame;
- *                s2 = load(&seq_write, acquire);
- *            } while (s1 != s2);
- */
-struct telemetry_frame {
-    /* motion */
-    uint16_t  speed_kmh_x10;       /* ÷10 for km/h                          */
-    uint16_t  motor_torque_nm_x10; /* ÷10 for N·m                           */
-    uint8_t   throttle_pct;        /* 0–100 %                              */
-    uint8_t   brake_pct;           /* 0–100 %                              */
-    uint8_t   regen_pct;           /* 0–100 %                              */
+    uint16_t vss_speed_raw;
+    uint16_t vss_speed_filtered;
+    int16_t  vss_acceleration;
+    uint16_t vss_avg_speed;
+    uint16_t vss_max_speed;
+    uint32_t vss_distance;
+    uint32_t vss_kinetic_energy;
+    uint8_t  vss_high_speed_flag;
+    uint8_t  vss_harsh_braking;
+    uint8_t  vss_sensor_fault;
 
-    /* battery */
-    uint8_t   battery_soc_pct;     /* 0–100 %                              */
-    uint16_t  battery_voltage_dv;  /* pack voltage dV; ÷10 → V            */
-    int16_t   battery_current_da;  /* pack current dA; ÷10 → A; neg=regen */
-    int8_t    battery_temp_c;      /* °C                                   */
+    int16_t  ecs_temp_c;
+    uint16_t ecs_humidity;
+    int16_t  ecs_dew_point_c;
+    int16_t  ecs_altitude_m;
+    uint32_t ecs_pressure_pa;
+    uint8_t  ecs_sensor_fault;
+    uint8_t  ecs_comfort_cold;
+    uint8_t  ecs_comfort_hot;
+    uint8_t  ecs_high_humidity;
 
-    /* range / charge */
-    uint16_t  range_km;            /* estimated remaining range            */
-    uint8_t   charge_flags;        /* CHARGE_FLAG_* bits                   */
+} sdv_telemetry_t;
 
-    /* climate */
-    int8_t    temp_cabin_c;        /* °C                                   */
-    int8_t    temp_motor_c;        /* °C                                   */
+#pragma pack(pop)
 
-    /* status */
-    uint8_t   flags;               /* FLAG_* bits                          */
-
-    /* frame meta */
-    uint16_t  seq;
-    uint8_t   msg_id;              /* TELEMETRY_MSG_* values               */
-
-    uint8_t   _pad[1];          
-
-    /* timestamp of last successful update */
-    struct timespec last_update;   /* CLOCK_MONOTONIC                      */
-};
-
-struct telemetry_shm_block {
-    atomic_uint_fast32_t seq_write; 
-    struct telemetry_frame frame;
-};
-
-#define TELEMETRY_SHM_SIZE  ((size_t)sizeof(struct telemetry_shm_block))
+#endif
