@@ -1,128 +1,201 @@
 #!/usr/bin/env python3
 import argparse
 import getpass
+import json
 import os
 import platform
 import re
+import secrets
 import shutil
 import ssl
+import stat
 import subprocess
 import sys
 import time
 import urllib.request
+import xml.etree.ElementTree as ET
 import zipfile
-from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from urllib.error import URLError, HTTPError
 
 
-class Config:
-    ANDROID_SDK_VERSION = "34"
-    NDK_VERSION = "25.1.8937393"
-    CMAKE_VERSION = "3.22.1"
-    CMDLINE_TOOLS_VERSION = "10406996"
+GRADLE_JAVA_MATRIX = [
+    ("8.12", 17, 24),
+    ("8.11", 17, 24),
+    ("8.10", 17, 24),
+    ("8.9", 17, 24),
+    ("8.8", 17, 23),
+    ("8.7", 17, 23),
+    ("8.6", 17, 22),
+    ("8.5", 17, 22),
+    ("8.4", 17, 21),
+    ("8.3", 17, 20),
+    ("8.2", 17, 20),
+    ("8.1", 17, 20),
+    ("8.0", 17, 20),
+    ("7.6", 11, 20),
+]
 
-    SDK_PACKAGES = [
-        "platform-tools",
-        f"platforms;android-{ANDROID_SDK_VERSION}",
-        f"build-tools;{ANDROID_SDK_VERSION}.0.0",
-        f"ndk;{NDK_VERSION}",
-        f"cmake;{CMAKE_VERSION}",
-    ]
+GRADLE_DOWNLOAD_URL = "https://services.gradle.org/distributions/gradle-{version}-bin.zip"
 
-    COMMON_SDK_PATHS = [
-        os.path.expanduser("~/Android/Sdk"),
-        "/usr/lib/android-sdk",
-        "/Library/Android/sdk",
-    ]
+ANDROID_CMDLINE_TOOLS_URLS = {
+    "Linux": "https://dl.google.com/android/repository/commandlinetools-linux-{version}_latest.zip",
+    "Darwin": "https://dl.google.com/android/repository/commandlinetools-mac-{version}_latest.zip",
+    "Windows": "https://dl.google.com/android/repository/commandlinetools-win-{version}_latest.zip",
+}
+
+ANDROID_PLATFORM_TOOLS_URLS = {
+    "Linux": "https://dl.google.com/android/repository/platform-tools-latest-linux.zip",
+    "Darwin": "https://dl.google.com/android/repository/platform-tools-latest-darwin.zip",
+    "Windows": "https://dl.google.com/android/repository/platform-tools-latest-windows.zip",
+}
+
+JAVA_SEARCH_DIRS = [
+    "/usr/lib/jvm",
+    "/Library/Java/JavaVirtualMachines",
+]
+
+SDK_SEARCH_PATHS = [
+    "~/Android/Sdk",
+    "/usr/lib/android-sdk",
+    "/Library/Android/sdk",
+    "C:\\Android\\Sdk",
+]
+
+
+def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
+    paths = []
+    if config_path:
+        paths.append(config_path)
+    paths.append(os.path.join(os.getcwd(), "aroma.json"))
+    paths.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "aroma.json"))
+    paths.append(os.path.expanduser("~/.config/aroma/config.json"))
+    
+    for path in paths:
+        if path and os.path.exists(path):
+            try:
+                with open(path, 'r') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, IOError):
+                pass
+    
+    return {}
+
+
+def resolve_value(key: str, config: Dict[str, Any], default: Any = None) -> Any:
+    env_key = f"AROMA_{key.upper().replace('.', '_')}"
+    if env_key in os.environ:
+        raw = os.environ[env_key]
+        if isinstance(default, list):
+            return [p.strip() for p in raw.split(',') if p.strip()]
+        if isinstance(default, bool):
+            return raw.lower() in ('1', 'true', 'yes', 'y')
+        if isinstance(default, int):
+            try:
+                return int(raw)
+            except ValueError:
+                return default
+        return raw
+    
+    keys = key.lower().split('.')
+    value = config
+    for k in keys:
+        if isinstance(value, dict) and k in value:
+            value = value[k]
+        else:
+            return default
+    return value
 
 
 class Colors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    
+    @classmethod
+    def disable(cls):
+        for attr in dir(cls):
+            if not attr.startswith('_') and not callable(getattr(cls, attr)):
+                val = getattr(cls, attr)
+                if isinstance(val, str):
+                    setattr(cls, attr, '')
 
 
-def print_step(msg: str) -> None:
-    print(f"{Colors.OKBLUE}==>{Colors.ENDC} {Colors.BOLD}{msg}{Colors.ENDC}")
+class Logger:
+    _verbose = False
+    
+    @classmethod
+    def setup(cls, verbose: bool = False):
+        cls._verbose = verbose
+    
+    @classmethod
+    def step(cls, msg: str):
+        print(f"{Colors.OKBLUE}==>{Colors.ENDC} {Colors.BOLD}{msg}{Colors.ENDC}")
+    
+    @classmethod
+    def success(cls, msg: str):
+        print(f"{Colors.OKGREEN}OK {msg}{Colors.ENDC}")
+    
+    @classmethod
+    def error(cls, msg: str):
+        print(f"{Colors.FAIL}ERROR {msg}{Colors.ENDC}", file=sys.stderr)
+    
+    @classmethod
+    def info(cls, msg: str):
+        if cls._verbose:
+            print(f"{Colors.OKCYAN}INFO {msg}{Colors.ENDC}")
+    
+    @classmethod
+    def warning(cls, msg: str):
+        print(f"{Colors.WARNING}WARN {msg}{Colors.ENDC}")
+    
+    @classmethod
+    def debug(cls, msg: str):
+        if cls._verbose:
+            print(f"{Colors.OKCYAN}DEBUG {msg}{Colors.ENDC}")
 
 
-def print_success(msg: str) -> None:
-    print(f"{Colors.OKGREEN}✓ {msg}{Colors.ENDC}")
-
-
-def print_error(msg: str) -> None:
-    print(f"{Colors.FAIL}✗ {msg}{Colors.ENDC}")
-
-
-def print_info(msg: str) -> None:
-    print(f"{Colors.OKCYAN}i {msg}{Colors.ENDC}")
-
-
-def print_warning(msg: str) -> None:
-    print(f"{Colors.WARNING}⚠ {msg}{Colors.ENDC}")
-
-
-def run_command(
-    cmd: List[str],
-    cwd: str = None,
-    env: Dict = None,
-    capture_output: bool = False,
-    check: bool = False,
-) -> Optional[subprocess.CompletedProcess]:
-    try:
-        if capture_output:
-            return subprocess.run(
-                cmd,
-                cwd=cwd,
-                env=env,
-                check=check,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-        return subprocess.run(cmd, cwd=cwd, env=env, check=check)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        if capture_output:
-            print_error(f"Command failed: {' '.join(cmd)}")
-        return None
-
-
-def get_input(
-    prompt: str, default: str = None, validator=None, error_msg: str = "Invalid input",
-    secret: bool = False
-) -> str:
+def secure_input(prompt: str, default: str = None, validator: Callable = None,
+                 error_msg: str = "Invalid input", secret: bool = False,
+                 min_length: int = 0) -> str:
     while True:
         prompt_str = f"{Colors.BOLD}{prompt}{Colors.ENDC}"
         if default:
             prompt_str += f" [{default}]"
         prompt_str += ": "
-
+        
         try:
             val = getpass.getpass(prompt_str).strip() if secret else input(prompt_str).strip()
         except KeyboardInterrupt:
             print()
             sys.exit(0)
-
+        
         if not val and default is not None:
             return default
-
+        
         if not val:
             continue
-
-        if validator and not validator(val):
-            print_error(error_msg)
+        
+        if min_length and len(val) < min_length:
+            print(f"{Colors.FAIL}Minimum {min_length} characters required{Colors.ENDC}")
             continue
-
+        
+        if validator and not validator(val):
+            print(f"{Colors.FAIL}{error_msg}{Colors.ENDC}")
+            continue
+        
         return val
 
 
 def validate_package_name(name: str) -> bool:
-    return bool(re.match(r"^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$", name))
+    return bool(re.match(r'^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$', name))
 
 
 def validate_int(val: str) -> bool:
@@ -133,1168 +206,1534 @@ def validate_int(val: str) -> bool:
         return False
 
 
-def find_aroma_root() -> str:
-    script_path = os.path.realpath(__file__)
-    return os.path.abspath(os.path.join(os.path.dirname(script_path), "../../"))
+def validate_country_code(code: str) -> bool:
+    return len(code) == 2 and code.isalpha() and code.isupper()
 
 
-AROMA_ROOT = find_aroma_root()
-
-
-class AndroidSDK:
-    def __init__(self):
-        self.sdk_root = os.environ.get(
-            "ANDROID_HOME", os.path.expanduser("~/Android/Sdk")
-        )
-        self.cmdline_tools = os.path.join(self.sdk_root, "cmdline-tools", "latest")
-        self.sdkmanager = os.path.join(self.cmdline_tools, "bin", "sdkmanager")
-        self.avdmanager = os.path.join(self.cmdline_tools, "bin", "avdmanager")
-
-    def is_installed(self) -> bool:
-        return os.path.exists(self.sdkmanager)
-
-    def find_existing(self) -> Optional[str]:
-        for path in Config.COMMON_SDK_PATHS:
-            if os.path.exists(path):
-                self.sdk_root = path
-                self.cmdline_tools = os.path.join(path, "cmdline-tools", "latest")
-                self.sdkmanager = os.path.join(self.cmdline_tools, "bin", "sdkmanager")
-                if os.path.exists(self.sdkmanager):
-                    return path
+def run_command(cmd: List[str], cwd: str = None, env: Dict = None,
+                capture_output: bool = False, check: bool = False,
+                timeout: int = None) -> Optional[subprocess.CompletedProcess]:
+    try:
+        if capture_output:
+            result = subprocess.run(
+                cmd, cwd=cwd, env=env, check=check,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, timeout=timeout
+            )
+            return result
+        result = subprocess.run(cmd, cwd=cwd, env=env, check=check, timeout=timeout)
+        return result
+    except subprocess.TimeoutExpired:
+        Logger.error(f"Command timed out: {' '.join(cmd)}")
+        return None
+    except subprocess.CalledProcessError as e:
+        Logger.debug(f"Command failed: {' '.join(cmd)}")
+        if capture_output:
+            return e
+        return None
+    except FileNotFoundError:
+        Logger.debug(f"Command not found: {cmd[0]}")
         return None
 
-    def install(self) -> bool:
-        print_step(f"Setting up Android SDK at {self.sdk_root}...")
 
-        if not self._install_cmdline_tools():
-            return False
+def find_aroma_root() -> str:
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", ".."))
 
-        if not self._check_java():
-            return False
 
-        self._accept_licenses()
-
-        if not self._install_packages():
-            return False
-
-        print_success("Android SDK & NDK installed successfully!")
+def safe_extract_zip(zip_path: str, extract_dir: str) -> bool:
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            for member in zf.infolist():
+                target = os.path.abspath(os.path.join(extract_dir, member.filename))
+                if not target.startswith(os.path.abspath(extract_dir) + os.sep):
+                    Logger.error(f"Path traversal detected: {member.filename}")
+                    return False
+            zf.extractall(extract_dir)
         return True
-
-    def _install_cmdline_tools(self) -> bool:
-        if os.path.exists(self.sdkmanager):
-            return True
-
-        os.makedirs(os.path.dirname(self.cmdline_tools), exist_ok=True)
-
-        system = platform.system()
-        urls = {
-            "Linux": f"https://dl.google.com/android/repository/commandlinetools-linux-{Config.CMDLINE_TOOLS_VERSION}_latest.zip",
-            "Darwin": f"https://dl.google.com/android/repository/commandlinetools-mac-{Config.CMDLINE_TOOLS_VERSION}_latest.zip",
-        }
-
-        if system not in urls:
-            print_error("Auto-install only supported on Linux/Mac currently.")
-            return False
-
-        url = urls[system]
-        zip_path = os.path.join(self.sdk_root, "cmdline-tools.zip")
-
-        print_info(f"Downloading Command Line Tools...")
-        try:
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-
-            with (
-                urllib.request.urlopen(url, context=ctx) as r,
-                open(zip_path, "wb") as f,
-            ):
-                shutil.copyfileobj(r, f)
-        except Exception as e:
-            print_error(f"Download failed: {e}")
-            return False
-
-        print_info("Extracting...")
-        try:
-            with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                zip_ref.extractall(os.path.dirname(self.cmdline_tools))
-            os.remove(zip_path)
-
-            extracted = os.path.join(
-                os.path.dirname(self.cmdline_tools), "cmdline-tools"
-            )
-            if os.path.exists(extracted):
-                shutil.move(extracted, self.cmdline_tools)
-            os.chmod(self.sdkmanager, 0o755)
-            return True
-        except Exception as e:
-            print_error(f"Extraction failed: {e}")
-            return False
-
-    def _check_java(self) -> bool:
-        if run_command(["which", "java"], capture_output=True) or os.environ.get(
-            "JAVA_HOME"
-        ):
-            return True
-        print_error("Java is required but not found. Please install OpenJDK.")
+    except (zipfile.BadZipFile, IOError) as e:
+        Logger.error(f"Extraction failed: {e}")
         return False
 
-    def _accept_licenses(self) -> None:
+
+def detect_java_version(java_bin: str = "java") -> Optional[Tuple[int, int]]:
+    result = run_command([java_bin, "-version"], capture_output=True)
+    if not result:
+        return None
+    output = result.stderr or result.stdout
+    match = re.search(r'version "(\d+)(?:\.(\d+))?', output)
+    if match:
+        major = int(match.group(1))
+        minor = int(match.group(2)) if match.group(2) else 0
+        if major == 1:
+            return (major, minor)
+        return (major, 0)
+    return None
+
+
+def find_installed_java() -> List[Tuple[str, int]]:
+    found = []
+    
+    for search_dir in JAVA_SEARCH_DIRS:
+        if not os.path.isdir(search_dir):
+            continue
+        for entry in os.listdir(search_dir):
+            java_bin = os.path.join(search_dir, entry, "bin", "java")
+            if os.path.isfile(java_bin):
+                version = detect_java_version(java_bin)
+                if version:
+                    found.append((java_bin, version[0]))
+    
+    sdkman_dir = os.path.expanduser("~/.sdkman/candidates/java")
+    if os.path.isdir(sdkman_dir):
+        for entry in os.listdir(sdkman_dir):
+            java_bin = os.path.join(sdkman_dir, entry, "bin", "java")
+            if os.path.isfile(java_bin):
+                version = detect_java_version(java_bin)
+                if version:
+                    found.append((java_bin, version[0]))
+    
+    system_java = shutil.which("java")
+    if system_java:
+        version = detect_java_version(system_java)
+        if version:
+            found.append((system_java, version[0]))
+    
+    if "JAVA_HOME" in os.environ:
+        java_bin = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
+        if os.path.isfile(java_bin):
+            version = detect_java_version(java_bin)
+            if version:
+                found.append((java_bin, version[0]))
+    
+    return found
+
+
+def find_best_gradle_for_java(java_version: int) -> Optional[str]:
+    for gradle_ver, min_java, max_java in GRADLE_JAVA_MATRIX:
+        if min_java <= java_version <= max_java:
+            return gradle_ver
+    return None
+
+
+def find_java_for_gradle(gradle_version: str) -> Optional[str]:
+    min_java = None
+    max_java = None
+    for gv, mn, mx in GRADLE_JAVA_MATRIX:
+        if gv == gradle_version:
+            min_java = mn
+            max_java = mx
+            break
+    
+    if min_java is None:
+        return None
+    
+    installed = find_installed_java()
+    for java_path, java_ver in installed:
+        if min_java <= java_ver <= max_java:
+            return os.path.dirname(os.path.dirname(java_path))
+    
+    return None
+
+
+def find_gradle_installation() -> Optional[str]:
+    gradle_path = shutil.which("gradle")
+    if gradle_path:
+        return gradle_path
+    
+    search_paths = [
+        os.path.expanduser("~/.sdkman/candidates/gradle/current/bin/gradle"),
+        "/opt/gradle/bin/gradle",
+        "/usr/local/bin/gradle",
+        os.path.expanduser("~/.local/bin/gradle"),
+    ]
+    
+    for path in search_paths:
+        if os.path.isfile(path):
+            return path
+    
+    return None
+
+
+class ADBManager:
+    def __init__(self, sdk_root: str):
+        self.sdk_root = sdk_root
+        self.adb_path = os.path.join(sdk_root, "platform-tools", "adb")
+        if platform.system() == "Windows":
+            self.adb_path += ".exe"
+    
+    def is_installed(self) -> bool:
+        if shutil.which("adb"):
+            return True
+        return os.path.exists(self.adb_path)
+    
+    def install(self) -> bool:
+        Logger.step("Installing ADB and platform tools")
+        
+        if self.is_installed():
+            Logger.success("ADB already installed")
+            return True
+        
+        url = ANDROID_PLATFORM_TOOLS_URLS.get(platform.system())
+        if not url:
+            Logger.error(f"Unsupported platform: {platform.system()}")
+            return False
+        
+        os.makedirs(self.sdk_root, exist_ok=True)
+        zip_path = os.path.join(self.sdk_root, "platform-tools.zip")
+        
+        if not os.path.exists(zip_path):
+            if not self._download(url, zip_path):
+                return False
+        
+        if not os.path.exists(os.path.join(self.sdk_root, "platform-tools")):
+            if not safe_extract_zip(zip_path, self.sdk_root):
+                if os.path.exists(zip_path):
+                    os.remove(zip_path)
+                return False
+        
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+        
+        if os.path.exists(self.adb_path):
+            os.chmod(self.adb_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+        
+        bin_dir = os.path.expanduser("~/.local/bin")
+        os.makedirs(bin_dir, exist_ok=True)
+        adb_link = os.path.join(bin_dir, "adb")
+        if os.path.exists(adb_link):
+            os.remove(adb_link)
         try:
-            cmd = (
-                ["bash", self.sdkmanager, "--licenses"]
-                if platform.system() == "Linux"
-                else [self.sdkmanager, "--licenses"]
-            )
-            p = subprocess.Popen(
-                cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            p.communicate(input=b"y\n" * 50)
-        except Exception:
-            pass
+            os.symlink(self.adb_path, adb_link)
+        except OSError:
+            shutil.copy2(self.adb_path, adb_link)
+        
+        Logger.success("ADB installed")
+        return True
+    
+    def _download(self, url: str, dest: str) -> bool:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        
+        for attempt in range(3):
+            try:
+                Logger.info(f"Downloading (attempt {attempt + 1}/3)")
+                req = urllib.request.Request(url)
+                req.add_header('User-Agent', 'AromaUI-CLI/1.0')
+                with urllib.request.urlopen(req, context=ctx, timeout=300) as resp:
+                    if resp.status != 200:
+                        raise HTTPError(url, resp.status, "Bad status", resp.headers, None)
+                    with open(dest, 'wb') as f:
+                        shutil.copyfileobj(resp, f)
+                return True
+            except (URLError, HTTPError, ssl.SSLError, IOError) as e:
+                Logger.debug(f"Download failed: {e}")
+                if attempt == 2:
+                    Logger.error("Download failed after 3 attempts")
+                    return False
+                time.sleep(2 ** attempt)
+        return False
+    
+    def ensure(self) -> bool:
+        if self.is_installed():
+            return True
+        Logger.info("ADB not found")
+        if secure_input("Install ADB", default="y",
+                       validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
+            return self.install()
+        return False
+    
+    def get_command(self) -> Optional[str]:
+        cmd = shutil.which("adb")
+        if cmd:
+            return cmd
+        if os.path.exists(self.adb_path):
+            return self.adb_path
+        return None
 
-    def _install_packages(self) -> bool:
-        print_info(f"Installing: {', '.join(Config.SDK_PACKAGES)}")
 
-        cmd_prefix = (
-            ["bash", self.sdkmanager]
-            if platform.system() == "Linux"
-            else [self.sdkmanager]
+class GradleManager:
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.cache_dir = os.path.expanduser("~/.cache/aroma/gradle")
+    
+    def resolve_version(self) -> str:
+        configured = resolve_value("android.gradle_version", self.config, None)
+        if configured:
+            return configured
+        
+        java_versions = find_installed_java()
+        if java_versions:
+            java_ver = max(v[1] for v in java_versions)
+            best = find_best_gradle_for_java(java_ver)
+            if best:
+                return best
+        
+        return GRADLE_JAVA_MATRIX[0][0]
+    
+    def find_system_gradle(self) -> Optional[str]:
+        return find_gradle_installation()
+    
+    def find_project_gradlew(self, project_dir: str) -> Optional[str]:
+        gradlew = os.path.join(project_dir, "android", "gradlew")
+        if platform.system() == "Windows":
+            gradlew += ".bat"
+        if os.path.isfile(gradlew):
+            return gradlew
+        return None
+    
+    def get_cached_path(self, version: str) -> Optional[str]:
+        gradle_bin = os.path.join(self.cache_dir, f"gradle-{version}", "bin", "gradle")
+        if platform.system() == "Windows":
+            gradle_bin += ".bat"
+        if os.path.isfile(gradle_bin):
+            return gradle_bin
+        return None
+    
+    def download(self, version: str) -> Optional[str]:
+        Logger.step(f"Installing Gradle {version}")
+        
+        cached = self.get_cached_path(version)
+        if cached:
+            Logger.success(f"Gradle {version} already installed")
+            return cached
+        
+        java_home = find_java_for_gradle(version)
+        if not java_home:
+            Logger.error(f"No compatible Java found for Gradle {version}")
+            return None
+        
+        os.environ["JAVA_HOME"] = java_home
+        os.makedirs(self.cache_dir, exist_ok=True)
+        
+        url = GRADLE_DOWNLOAD_URL.format(version=version)
+        zip_path = os.path.join(self.cache_dir, f"gradle-{version}.zip")
+        
+        if not os.path.exists(zip_path):
+            Logger.info(f"Downloading Gradle {version}")
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = True
+            ctx.verify_mode = ssl.CERT_REQUIRED
+            
+            for attempt in range(3):
+                try:
+                    req = urllib.request.Request(url)
+                    req.add_header('User-Agent', 'AromaUI-CLI/1.0')
+                    with urllib.request.urlopen(req, context=ctx, timeout=300) as resp:
+                        if resp.status != 200:
+                            raise HTTPError(url, resp.status, "Bad status", resp.headers, None)
+                        with open(zip_path, 'wb') as f:
+                            shutil.copyfileobj(resp, f)
+                    break
+                except (URLError, HTTPError, ssl.SSLError, IOError) as e:
+                    Logger.debug(f"Download failed: {e}")
+                    if attempt == 2:
+                        Logger.error("Download failed")
+                        return None
+                    time.sleep(2 ** attempt)
+        
+        if not os.path.exists(os.path.join(self.cache_dir, f"gradle-{version}")):
+            if not safe_extract_zip(zip_path, self.cache_dir):
+                return None
+        
+        gradle_bin = self.get_cached_path(version)
+        if gradle_bin:
+            os.chmod(gradle_bin, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+            
+            bin_dir = os.path.expanduser("~/.local/bin")
+            os.makedirs(bin_dir, exist_ok=True)
+            link = os.path.join(bin_dir, "gradle")
+            if os.path.exists(link):
+                os.remove(link)
+            try:
+                os.symlink(gradle_bin, link)
+            except OSError:
+                shutil.copy2(gradle_bin, link)
+            
+            Logger.success(f"Gradle {version} installed")
+            return gradle_bin
+        
+        return None
+    
+    def ensure(self, project_dir: str) -> Optional[str]:
+        gradlew = self.find_project_gradlew(project_dir)
+        if gradlew:
+            return gradlew
+        
+        system_gradle = self.find_system_gradle()
+        if system_gradle:
+            return system_gradle
+        
+        version = self.resolve_version()
+        Logger.info(f"Gradle not found, will install version {version}")
+        if secure_input("Install Gradle", default="y",
+                       validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
+            return self.download(version)
+        
+        return None
+    
+    def write_wrapper_properties(self, android_dir: str, version: str):
+        wrapper_dir = os.path.join(android_dir, "gradle", "wrapper")
+        os.makedirs(wrapper_dir, exist_ok=True)
+        
+        wrapper_props = os.path.join(wrapper_dir, "gradle-wrapper.properties")
+        expected_url = f"https\\://services.gradle.org/distributions/gradle-{version}-bin.zip"
+        
+        content = f"""distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl={expected_url}
+networkTimeout=10000
+validateDistributionUrl=true
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+"""
+        with open(wrapper_props, 'w') as f:
+            f.write(content)
+    
+    def remove_bad_wrapper_cache(self):
+        gradle_dists = os.path.join(os.path.expanduser("~/.gradle"), "wrapper", "dists")
+        if not os.path.isdir(gradle_dists):
+            return
+        
+        for dist in os.listdir(gradle_dists):
+            dist_path = os.path.join(gradle_dists, dist)
+            if os.path.isdir(dist_path):
+                if "gradle-9." in dist.lower() or "gradle-9" in dist.lower():
+                    Logger.info(f"Removing cached Gradle 9.x: {dist}")
+                    shutil.rmtree(dist_path, ignore_errors=True)
+    
+    def generate_wrapper(self, project_dir: str) -> bool:
+        android_dir = os.path.join(project_dir, "android")
+        version = self.resolve_version()
+        
+        os.makedirs(android_dir, exist_ok=True)
+        
+        self.remove_bad_wrapper_cache()
+        self.write_wrapper_properties(android_dir, version)
+        
+        wrapper_jar = os.path.join(android_dir, "gradle", "wrapper", "gradle-wrapper.jar")
+        gradlew_path = os.path.join(android_dir, "gradlew")
+        gradlew_bat = os.path.join(android_dir, "gradlew.bat")
+        
+        if os.path.exists(wrapper_jar):
+            os.remove(wrapper_jar)
+        if os.path.exists(gradlew_path):
+            os.remove(gradlew_path)
+        if os.path.exists(gradlew_bat):
+            os.remove(gradlew_bat)
+        
+        gradle_cmd = self.ensure(project_dir)
+        if not gradle_cmd:
+            Logger.warning("Cannot generate Gradle wrapper without Gradle")
+            return os.path.exists(gradlew_path)
+        
+        env = os.environ.copy()
+        if "JAVA_HOME" not in env:
+            java_home = find_java_for_gradle(version)
+            if java_home:
+                env["JAVA_HOME"] = java_home
+            else:
+                java_homes = find_installed_java()
+                if java_homes:
+                    env["JAVA_HOME"] = os.path.dirname(os.path.dirname(java_homes[0][0]))
+        
+        Logger.info(f"Generating Gradle wrapper for version {version}")
+        run_command(
+            [gradle_cmd, "wrapper", "--gradle-version", version],
+            cwd=android_dir,
+            timeout=120,
+            env=env
         )
-        res = run_command(cmd_prefix + Config.SDK_PACKAGES)
-
-        return res is not None and res.returncode == 0
-
-    def get_ndk_path(self) -> Optional[str]:
-        ndk_root = os.path.join(self.sdk_root, "ndk")
-        if not os.path.exists(ndk_root):
-            return None
-
-        versions = [
-            d for d in os.listdir(ndk_root) if os.path.isdir(os.path.join(ndk_root, d))
-        ]
-        if not versions:
-            return None
-
-        return os.path.join(ndk_root, sorted(versions)[-1])
+        
+        self.write_wrapper_properties(android_dir, version)
+        
+        if os.path.exists(gradlew_path):
+            os.chmod(gradlew_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+            if os.path.exists(gradlew_bat):
+                os.chmod(gradlew_bat, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+            Logger.success(f"Gradle wrapper {version} ready")
+            return True
+        
+        return False
 
 
-class KeystoreManager:
-    def __init__(self, project_dir: str):
+class SecureKeystoreManager:
+    def __init__(self, project_dir: str, config: Dict[str, Any]):
         self.project_dir = project_dir
+        self.config = config
+        self.signing = {
+            "key_size": int(resolve_value("signing.key_size", config, 2048)),
+            "validity_days": int(resolve_value("signing.validity_days", config, 10000)),
+            "algorithm": resolve_value("signing.algorithm", config, "RSA"),
+        }
+        if self.signing["key_size"] < 2048:
+            self.signing["key_size"] = 2048
+        
         self.android_dir = os.path.join(project_dir, "android")
-        self.keystore_props = os.path.join(self.android_dir, "keystore.properties")
         self.keystore_dir = os.path.join(self.android_dir, "keystore")
-
-    def has_keystore(self) -> bool:
-        return os.path.exists(self.keystore_props) and os.path.exists(
-            os.path.join(self.keystore_dir, "release.keystore")
+        self.keystore_file = os.path.join(self.keystore_dir, "release.keystore")
+        self.props_file = os.path.join(self.android_dir, "keystore.properties")
+    
+    def exists(self) -> bool:
+        return os.path.exists(self.props_file) and os.path.exists(self.keystore_file)
+    
+    def verify(self, password: str) -> bool:
+        result = run_command(
+            ["keytool", "-list", "-keystore", self.keystore_file, "-storepass", password],
+            capture_output=True, timeout=30
         )
-
-    def verify_password(self, keystore_file: str, password: str) -> bool:
-        cmd = [
-            "keytool",
-            "-list",
-            "-keystore",
-            keystore_file,
-            "-storepass",
-            password,
-        ]
-        result = run_command(cmd, capture_output=True)
         return result is not None and result.returncode == 0
-
-    def create_or_update(self) -> Optional[Dict[str, str]]:
-        print_step("Setting up release signing keystore")
-
+    
+    def create(self, alias: str, storepass: str, keypass: str,
+               cn: str, ou: str, o: str, l: str, st: str, c: str) -> bool:
         os.makedirs(self.keystore_dir, exist_ok=True)
-        keystore_file = os.path.join(self.keystore_dir, "release.keystore")
-
-        if os.path.exists(keystore_file):
-            os.remove(keystore_file)
-
-        print_info("Creating new keystore")
-        alias = get_input("Key alias", default="release")
-
-        print_info("Choose a password you'll remember")
-        storepass = get_input(
+        
+        if os.path.exists(self.keystore_file):
+            os.remove(self.keystore_file)
+        
+        dn_parts = []
+        if cn:
+            dn_parts.append(f"CN={cn}")
+        if ou:
+            dn_parts.append(f"OU={ou}")
+        if o:
+            dn_parts.append(f"O={o}")
+        if l:
+            dn_parts.append(f"L={l}")
+        if st:
+            dn_parts.append(f"ST={st}")
+        if c:
+            dn_parts.append(f"C={c}")
+        dname = ",".join(dn_parts)
+        
+        cmd = [
+            "keytool", "-genkey", "-v",
+            "-keystore", self.keystore_file,
+            "-alias", alias,
+            "-keyalg", self.signing["algorithm"],
+            "-keysize", str(self.signing["key_size"]),
+            "-validity", str(self.signing["validity_days"]),
+            "-dname", dname,
+            "-storepass", storepass,
+            "-keypass", keypass,
+            "-storetype", "PKCS12"
+        ]
+        
+        result = run_command(cmd, timeout=60)
+        if result is None or result.returncode != 0:
+            return False
+        
+        os.chmod(self.keystore_file, stat.S_IRUSR | stat.S_IWUSR)
+        return True
+    
+    def save_props(self, alias: str, storepass: str, keypass: str) -> bool:
+        try:
+            with open(self.props_file, 'w') as f:
+                f.write(f"storeFile={self.keystore_file}\n")
+                f.write(f"storePassword={storepass}\n")
+                f.write(f"keyPassword={keypass}\n")
+                f.write(f"keyAlias={alias}\n")
+            os.chmod(self.props_file, stat.S_IRUSR | stat.S_IWUSR)
+            return True
+        except IOError:
+            return False
+    
+    def setup(self) -> bool:
+        Logger.step("Setting up release signing keystore")
+        
+        alias = secure_input("Key alias", default="release")
+        
+        storepass = secure_input(
             "Keystore password",
-            validator=lambda x: len(x) >= 4,
-            error_msg="Password must be at least 4 characters",
+            validator=lambda x: len(x) >= 8,
+            error_msg="Minimum 8 characters",
+            secret=True,
+            min_length=8
         )
-
-        confirm = get_input("Confirm password", secret=True)
-        if confirm != storepass:
-            print_error("Passwords don't match")
-            return None
-
-        use_same = get_input(
-            "Use same password for key?",
-            default="Y",
-            validator=lambda x: x.lower() in ["y", "n"],
-        )
-
-        if use_same.lower() == "y":
+        
+        if secure_input("Confirm keystore password", secret=True) != storepass:
+            Logger.error("Passwords do not match")
+            return False
+        
+        if secure_input("Same password for key", default="y",
+                       validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
             keypass = storepass
         else:
-            keypass = get_input("Key password", validator=lambda x: len(x) >= 4, secret=True)
-            confirm_key = get_input("Confirm key password")
-            if confirm_key != keypass:
-                print_error("Key passwords don't match")
-                return None
+            keypass = secure_input("Key password", validator=lambda x: len(x) >= 8,
+                                   error_msg="Minimum 8 characters", secret=True, min_length=8)
+            if secure_input("Confirm key password", secret=True) != keypass:
+                Logger.error("Key passwords do not match")
+                return False
+        
+        name = secure_input("Name", default="Developer")
+        org_unit = secure_input("Organizational Unit", default="Development")
+        org = secure_input("Organization", default="Personal")
+        city = secure_input("City", default="")
+        state = secure_input("State", default="")
+        country = secure_input("Country Code", default="US",
+                              validator=validate_country_code,
+                              error_msg="2 uppercase letters required")
+        
+        if not self.create(alias, storepass, keypass, name, org_unit, org, city, state, country):
+            Logger.error("Failed to create keystore")
+            return False
+        
+        if not self.save_props(alias, storepass, keypass):
+            Logger.error("Failed to save properties")
+            return False
+        
+        Logger.success(f"Keystore created: {self.keystore_file}")
+        return True
 
-        print_info("Enter certificate details")
-        name = get_input("First and Last Name", default="Developer")
-        org_unit = get_input("Organizational Unit", default="Development")
-        org = get_input("Organization", default="Personal")
-        city = get_input("City", default="")
-        state = get_input("State", default="")
-        country = get_input(
-            "Country Code (2 letters)", default="US", validator=lambda x: len(x) == 2
-        )
 
-        dn_parts = []
-        if name:
-            dn_parts.append(f"CN={name}")
-        if org_unit:
-            dn_parts.append(f"OU={org_unit}")
-        if org:
-            dn_parts.append(f"O={org}")
-        if city:
-            dn_parts.append(f"L={city}")
-        if state:
-            dn_parts.append(f"ST={state}")
-        if country:
-            dn_parts.append(f"C={country}")
-        dname = ",".join(dn_parts)
-
-        cmd = [
-            "keytool",
-            "-genkey",
-            "-v",
-            "-keystore",
-            keystore_file,
-            "-alias",
-            alias,
-            "-keyalg",
-            "RSA",
-            "-keysize",
-            "2048",
-            "-validity",
-            "10000",
-            "-dname",
-            dname,
-            "-storepass",
-            storepass,
-            "-keypass",
-            keypass,
-        ]
-        if not run_command(cmd):
-            print_error("Failed to create keystore")
+class AndroidSDKManager:
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.sdk_version = resolve_value("android.sdk_version", config, "34")
+        self.ndk_version = resolve_value("android.ndk_version", config, "25.1.8937393")
+        self.cmake_version = resolve_value("android.cmake_version", config, "3.22.1")
+        self.cmdline_version = resolve_value("android.cmdline_tools_version", config, "11076708")
+        
+        self.sdk_root = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or os.path.expanduser("~/Android/Sdk")
+        
+        self.cmdline_dir = os.path.join(self.sdk_root, "cmdline-tools", "latest")
+        self.sdkmanager = os.path.join(self.cmdline_dir, "bin", "sdkmanager")
+        self.avdmanager = os.path.join(self.cmdline_dir, "bin", "avdmanager")
+        if platform.system() == "Windows":
+            self.sdkmanager += ".bat"
+            self.avdmanager += ".bat"
+        
+        self.adb = ADBManager(self.sdk_root)
+        self.gradle = GradleManager(config)
+        
+        self.packages = resolve_value("android.sdk_packages", config, [
+            "platform-tools",
+            f"platforms;android-{self.sdk_version}",
+            f"build-tools;{self.sdk_version}.0.0",
+            f"ndk;{self.ndk_version}",
+            f"cmake;{self.cmake_version}",
+            "emulator",
+            f"system-images;android-{self.sdk_version};google_apis;x86_64",
+            f"system-images;android-{self.sdk_version};google_apis;arm64-v8a",
+        ])
+    
+    def find(self) -> Optional[str]:
+        paths = [self.sdk_root]
+        for p in SDK_SEARCH_PATHS:
+            paths.append(os.path.expanduser(p))
+        
+        for path in paths:
+            sm = os.path.join(path, "cmdline-tools", "latest", "bin", "sdkmanager")
+            if platform.system() == "Windows":
+                sm += ".bat"
+            if os.path.exists(sm):
+                self.sdk_root = path
+                self.cmdline_dir = os.path.dirname(os.path.dirname(sm))
+                self.sdkmanager = sm
+                self.avdmanager = os.path.join(self.cmdline_dir, "bin", "avdmanager")
+                if platform.system() == "Windows":
+                    self.avdmanager += ".bat"
+                self.adb = ADBManager(path)
+                return path
+        
+        return None
+    
+    def licenses_accepted(self) -> bool:
+        lic_dir = os.path.join(self.sdk_root, "licenses")
+        if not os.path.isdir(lic_dir):
+            return False
+        return len(os.listdir(lic_dir)) > 0
+    
+    def accept_licenses(self) -> bool:
+        if not os.path.exists(self.sdkmanager):
+            return False
+        
+        if self.licenses_accepted():
+            Logger.success("All licenses accepted")
+            return True
+        
+        Logger.step("Android SDK License Agreement")
+        Logger.info("https://developer.android.com/studio/terms")
+        
+        if not secure_input("Accept all licenses", default="y",
+                           validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
+            Logger.warning("Licenses required to use Android SDK")
+            return False
+        
+        try:
+            env = os.environ.copy()
+            if "JAVA_HOME" not in env:
+                java_homes = find_installed_java()
+                if java_homes:
+                    env["JAVA_HOME"] = os.path.dirname(os.path.dirname(java_homes[0][0]))
+            
+            process = subprocess.Popen(
+                [self.sdkmanager, "--licenses"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, env=env
+            )
+            
+            try:
+                process.communicate(timeout=120)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate()
+                Logger.error("License acceptance timed out")
+                return False
+            
+            if self.licenses_accepted():
+                Logger.success("Licenses accepted")
+                return True
+            
+            Logger.warning("Some licenses may remain unaccepted")
+            return self.licenses_accepted()
+        except Exception as e:
+            Logger.error(f"License acceptance failed: {e}")
+            return False
+    
+    def install_packages(self) -> bool:
+        env = os.environ.copy()
+        if "JAVA_HOME" not in env:
+            java_homes = find_installed_java()
+            if java_homes:
+                env["JAVA_HOME"] = os.path.dirname(os.path.dirname(java_homes[0][0]))
+        
+        for package in self.packages:
+            Logger.info(f"Installing: {package}")
+            result = run_command([self.sdkmanager, package], timeout=600, env=env)
+            if result is None or result.returncode != 0:
+                Logger.error(f"Failed: {package}")
+                return False
+        
+        Logger.success("Packages installed")
+        return True
+    
+    def install_cmdline(self) -> bool:
+        if os.path.exists(self.sdkmanager):
+            return True
+        
+        url_template = ANDROID_CMDLINE_TOOLS_URLS.get(platform.system())
+        if not url_template:
+            Logger.error(f"Unsupported platform: {platform.system()}")
+            return False
+        
+        url = url_template.format(version=self.cmdline_version)
+        os.makedirs(os.path.dirname(self.cmdline_dir), exist_ok=True)
+        zip_path = os.path.join(self.sdk_root, "cmdline-tools.zip")
+        
+        if not os.path.exists(zip_path):
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = True
+            ctx.verify_mode = ssl.CERT_REQUIRED
+            
+            for attempt in range(3):
+                try:
+                    req = urllib.request.Request(url)
+                    req.add_header('User-Agent', 'AromaUI-CLI/1.0')
+                    with urllib.request.urlopen(req, context=ctx, timeout=300) as resp:
+                        if resp.status != 200:
+                            raise HTTPError(url, resp.status, "Bad status", resp.headers, None)
+                        with open(zip_path, 'wb') as f:
+                            shutil.copyfileobj(resp, f)
+                    break
+                except (URLError, HTTPError, ssl.SSLError, IOError) as e:
+                    Logger.debug(f"Download failed: {e}")
+                    if attempt == 2:
+                        Logger.error("Download failed")
+                        return False
+                    time.sleep(2 ** attempt)
+        
+        extracted = os.path.join(os.path.dirname(self.cmdline_dir), "cmdline-tools")
+        if not os.path.exists(self.cmdline_dir) and not os.path.exists(extracted):
+            if not safe_extract_zip(zip_path, os.path.dirname(self.cmdline_dir)):
+                if os.path.exists(zip_path):
+                    os.remove(zip_path)
+                return False
+        
+        if os.path.exists(extracted) and extracted != self.cmdline_dir:
+            if os.path.exists(self.cmdline_dir):
+                shutil.rmtree(self.cmdline_dir)
+            shutil.move(extracted, self.cmdline_dir)
+        
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+        
+        os.chmod(self.sdkmanager, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+        return True
+    
+    def install(self) -> bool:
+        Logger.step("Setting up Android SDK")
+        
+        if not self.install_cmdline():
+            return False
+        
+        if not find_installed_java():
+            Logger.error("Java required but not found")
+            return False
+        
+        if not self.install_packages():
+            return False
+        
+        if not self.accept_licenses():
+            Logger.error("Licenses must be accepted")
+            return False
+        
+        self.adb.ensure()
+        Logger.success("Android SDK setup complete")
+        return True
+    
+    def get_ndk_path(self) -> Optional[str]:
+        ndk_root = os.path.join(self.sdk_root, "ndk")
+        if not os.path.isdir(ndk_root):
             return None
-
-        props = {
-            "storeFile": keystore_file,
-            "storePassword": storepass,
-            "keyPassword": keypass,
-            "keyAlias": alias,
-        }
-
-        with open(self.keystore_props, "w") as f:
-            for key, value in props.items():
-                f.write(f"{key}={value}\n")
-
-        pass_file = os.path.join(self.keystore_dir, "passwords.txt")
-        with open(pass_file, "w") as f:
-            f.write(f"# KEEP THIS FILE SAFE\n")
-            for key, value in props.items():
-                f.write(f"{key}={value}\n")
-
-        print_success(f"Keystore created at: {keystore_file}")
-        print_warning(f"Passwords saved to: {pass_file}")
-
-        return props
-
-    def get_signing_config(self) -> Optional[Dict[str, str]]:
-        if not os.path.exists(self.keystore_props):
+        
+        versions = [d for d in os.listdir(ndk_root)
+                   if os.path.isdir(os.path.join(ndk_root, d)) and d != "sources"]
+        if not versions:
             return None
+        
+        versions.sort()
+        return os.path.join(ndk_root, versions[-1])
 
-        config = {}
-        with open(self.keystore_props, "r") as f:
-            for line in f:
-                if "=" in line:
-                    key, value = line.strip().split("=", 1)
-                    config[key] = value
-        return config if config else None
+
+class BuildSystem:
+    def __init__(self, project_dir: str, config: Dict[str, Any]):
+        self.project_dir = project_dir
+        self.config = config
+        self.android_dir = os.path.join(project_dir, "android")
+        self.build_dir = os.path.join(project_dir, "build")
+        self.web_build_dir = os.path.join(project_dir, "build-web")
+        self.gradle = GradleManager(config)
+    
+    def ensure_sdk(self) -> Optional[AndroidSDKManager]:
+        sdk = AndroidSDKManager(self.config)
+        
+        if sdk.find():
+            os.environ["ANDROID_HOME"] = sdk.sdk_root
+            
+            if not sdk.licenses_accepted():
+                if not sdk.accept_licenses():
+                    Logger.error("Licenses must be accepted")
+                    return None
+            
+            sdk.adb.ensure()
+            
+            local_props = os.path.join(self.android_dir, "local.properties")
+            try:
+                with open(local_props, 'w') as f:
+                    f.write(f"sdk.dir={sdk.sdk_root}\n")
+                    ndk = sdk.get_ndk_path()
+                    if ndk:
+                        f.write(f"ndk.dir={ndk}\n")
+                        os.environ["ANDROID_NDK_HOME"] = ndk
+            except IOError:
+                pass
+            return sdk
+        
+        Logger.info("Android SDK not found")
+        if secure_input("Install Android SDK", default="y",
+                       validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
+            if sdk.install():
+                os.environ["ANDROID_HOME"] = sdk.sdk_root
+                local_props = os.path.join(self.android_dir, "local.properties")
+                try:
+                    with open(local_props, 'w') as f:
+                        f.write(f"sdk.dir={sdk.sdk_root}\n")
+                        ndk = sdk.get_ndk_path()
+                        if ndk:
+                            f.write(f"ndk.dir={ndk}\n")
+                            os.environ["ANDROID_NDK_HOME"] = ndk
+                except IOError:
+                    pass
+                return sdk
+        
+        return None
+    
+    def build_linux(self) -> bool:
+        os.makedirs(self.build_dir, exist_ok=True)
+        
+        if run_command(["cmake", ".."], cwd=self.build_dir) is None:
+            Logger.error("CMake configuration failed")
+            return False
+        
+        if run_command(["make", f"-j{os.cpu_count() or 4}"], cwd=self.build_dir) is None:
+            Logger.error("Build failed")
+            return False
+        
+        Logger.success("Linux build successful")
+        return True
+    
+    def build_android(self, release: bool = False, aab: bool = False) -> bool:
+        if not os.path.exists(self.android_dir):
+            Logger.error("Not an Aroma project")
+            return False
+        
+        sdk = self.ensure_sdk()
+        if not sdk:
+            return False
+        
+        self.gradle.remove_bad_wrapper_cache()
+        version = self.gradle.resolve_version()
+        self.gradle.write_wrapper_properties(self.android_dir, version)
+        
+        if not self.gradle.find_project_gradlew(self.project_dir):
+            if not self.gradle.generate_wrapper(self.project_dir):
+                Logger.warning("Gradle wrapper unavailable, build may fail")
+        
+        if release:
+            keystore = SecureKeystoreManager(self.project_dir, self.config)
+            if not keystore.exists():
+                Logger.info("Release builds require signing")
+                if secure_input("Setup signing", default="y",
+                               validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
+                    if not keystore.setup():
+                        return False
+                else:
+                    Logger.warning("Cannot build release without signing")
+                    return False
+        
+        return self._run_gradle(release, aab)
+    
+    def build_web(self) -> bool:
+        Logger.step("Configuring web build")
+        
+        if not shutil.which("emcmake") or not shutil.which("emmake"):
+            Logger.error("Emscripten tools not found")
+            return False
+        
+        os.makedirs(self.web_build_dir, exist_ok=True)
+        
+        if run_command(["emcmake", "cmake", ".."], cwd=self.web_build_dir) is None:
+            Logger.error("Web CMake configuration failed")
+            return False
+        
+        if run_command(["emmake", "make", f"-j{os.cpu_count() or 4}"], cwd=self.web_build_dir) is None:
+            Logger.error("Web build failed")
+            return False
+        
+        self._generate_web_index()
+        Logger.success("Web build successful")
+        return True
+    
+    def _run_gradle(self, release: bool, aab: bool) -> bool:
+        self.gradle.remove_bad_wrapper_cache()
+        version = self.gradle.resolve_version()
+        self.gradle.write_wrapper_properties(self.android_dir, version)
+        
+        gradle_cmd = self.gradle.find_project_gradlew(self.project_dir)
+        if not gradle_cmd:
+            gradle_cmd = self.gradle.ensure(self.project_dir)
+        
+        if not gradle_cmd:
+            Logger.error("Gradle not available")
+            return False
+        
+        if release and aab:
+            target = "bundleRelease"
+        elif release:
+            target = "assembleRelease"
+        else:
+            target = "assembleDebug"
+        
+        env = os.environ.copy()
+        if "JAVA_HOME" not in env:
+            java_home = find_java_for_gradle(version)
+            if java_home:
+                env["JAVA_HOME"] = java_home
+            else:
+                java_homes = find_installed_java()
+                if java_homes:
+                    env["JAVA_HOME"] = os.path.dirname(os.path.dirname(java_homes[0][0]))
+        
+        Logger.info(f"Running: {gradle_cmd} {target}")
+        result = run_command([gradle_cmd, target], cwd=self.android_dir, timeout=600, env=env)
+        
+        if result is None or result.returncode != 0:
+            Logger.error("Android build failed")
+            return False
+        
+        self._show_output(release, aab)
+        return True
+    
+    def _show_output(self, release: bool, aab: bool):
+        base = os.path.join(self.android_dir, "app", "build", "outputs")
+        paths = []
+        
+        if release and aab:
+            paths = [
+                os.path.join(base, "bundle", "release", "app-release.aab"),
+                os.path.join(base, "bundle", "release", "app.aab"),
+            ]
+        elif release:
+            paths = [
+                os.path.join(base, "apk", "release", "app-release.apk"),
+                os.path.join(base, "apk", "release", "app-release-unsigned.apk"),
+            ]
+        else:
+            paths = [
+                os.path.join(base, "apk", "debug", "app-debug.apk"),
+                os.path.join(base, "apk", "debug", "app-debug-unsigned.apk"),
+            ]
+        
+        for path in paths:
+            if os.path.exists(path):
+                Logger.success(f"Output: {path}")
+                return
+        
+        Logger.error("Build output not found")
+    
+    def _generate_web_index(self):
+        js_files = []
+        for root, _, files in os.walk(self.web_build_dir):
+            for f in files:
+                if f.endswith('.js') and not f.endswith('.worker.js') and not f.endswith('.wasm.js'):
+                    js_files.append(os.path.join(root, f))
+        
+        if not js_files:
+            return
+        
+        js_path = sorted(js_files)[0]
+        js_name = os.path.basename(js_path)
+        project_name = os.path.basename(self.project_dir)
+        
+        html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{project_name}</title>
+    <style>
+        html, body {{ margin: 0; padding: 0; height: 100%; background: #111; }}
+        canvas {{ display: block; width: 100%; height: 100%; }}
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        var Module = {{
+            canvas: document.getElementById('canvas'),
+            onRuntimeInitialized: function() {{
+                var canvas = Module.canvas;
+                function getCoords(e) {{
+                    var rect = canvas.getBoundingClientRect();
+                    return {{
+                        x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                        y: (e.clientY - rect.top) * (canvas.height / rect.height)
+                    }};
+                }}
+                window.addEventListener('mousemove', function(e) {{
+                    var p = getCoords(e);
+                    if (Module._aroma_emscripten_dispatch_mouse) {{
+                        Module._aroma_emscripten_dispatch_mouse(0, p.x, p.y, 0);
+                    }}
+                }});
+            }}
+        }};
+    </script>
+    <script src="{js_name}"></script>
+</body>
+</html>"""
+        
+        with open(os.path.join(self.web_build_dir, "index.html"), 'w') as f:
+            f.write(html)
 
 
 class ProjectCreator:
-    def __init__(self, templates_dir: str):
+    def __init__(self, templates_dir: str, config: Dict[str, Any]):
         self.templates_dir = templates_dir
-
-    def create(self, args) -> bool:
-        print_step("Configure New Project")
-
-        project_name = args.name or get_input(
-            "Project Name", validator=lambda x: len(x) > 0
-        )
+        self.config = config
+        self.gradle_mgr = GradleManager(config)
+    
+    def create(self, name: str = None) -> bool:
+        Logger.step("Create New Project")
+        
+        project_name = name or secure_input("Project Name", min_length=1)
         target_dir = os.path.abspath(project_name)
-
+        
         if os.path.exists(target_dir):
-            print_error(f"Directory '{project_name}' already exists.")
+            Logger.error(f"Directory exists: {project_name}")
             return False
-
-        default_pkg = f"com.example.{project_name.lower().replace('-', '_')}"
-        package = get_input(
-            "Android Package Name", default=default_pkg, validator=validate_package_name
-        )
-        min_sdk = get_input("Min Android SDK", default="24", validator=validate_int)
-        target_sdk = get_input(
-            "Target Android SDK",
-            default=Config.ANDROID_SDK_VERSION,
-            validator=validate_int,
-        )
-        compile_sdk = get_input(
-            "Compile Android SDK",
-            default=Config.ANDROID_SDK_VERSION,
-            validator=validate_int,
-        )
-
-        print("\n" + Colors.BOLD + "Configuration Summary:" + Colors.ENDC)
+        
+        default_pkg = f"com.example.{project_name.lower().replace('-', '')}"
+        package = secure_input("Package Name", default=default_pkg,
+                              validator=validate_package_name,
+                              error_msg="Invalid package name")
+        
+        sdk_ver = resolve_value("android.sdk_version", self.config, "34")
+        
+        min_sdk = int(secure_input("Min SDK", default="24", validator=validate_int))
+        target_sdk = int(secure_input("Target SDK", default=sdk_ver, validator=validate_int))
+        compile_sdk = int(secure_input("Compile SDK", default=sdk_ver, validator=validate_int))
+        
+        if min_sdk > target_sdk:
+            Logger.warning(f"Min SDK ({min_sdk}) > Target SDK ({target_sdk})")
+            if not secure_input("Continue", default="n",
+                               validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
+                return False
+        
+        if compile_sdk < target_sdk:
+            Logger.warning(f"Compile SDK ({compile_sdk}) < Target SDK ({target_sdk})")
+        
+        print(f"\n{Colors.BOLD}Configuration:{Colors.ENDC}")
         print(f"  Name:        {project_name}")
         print(f"  Package:     {package}")
         print(f"  Min SDK:     {min_sdk}")
         print(f"  Target SDK:  {target_sdk}")
         print(f"  Compile SDK: {compile_sdk}")
-
-        if (
-            not get_input(
-                "\nCreate Project?",
-                default="Y",
-                validator=lambda x: x.lower() in ["y", "n"],
-            )
-            .lower()
-            .startswith("y")
-        ):
-            print("Aborted.")
+        
+        if not secure_input("\nCreate Project", default="y",
+                           validator=lambda x: x.lower() in ['y', 'n']).lower().startswith('y'):
             return False
-
-        return self._generate_project(
-            target_dir, project_name, package, min_sdk, target_sdk, compile_sdk
-        )
-
-    def _generate_project(
-        self,
-        target_dir: str,
-        name: str,
-        package: str,
-        min_sdk: str,
-        target_sdk: str,
-        compile_sdk: str,
-    ) -> bool:
-        print_step(f"Creating project {name}...")
-
+        
+        return self._generate(target_dir, project_name, package,
+                             str(min_sdk), str(target_sdk), str(compile_sdk))
+    
+    def _generate(self, target_dir: str, name: str, package: str,
+                  min_sdk: str, target_sdk: str, compile_sdk: str) -> bool:
+        Logger.step(f"Creating {name}")
+        
         try:
-            os.makedirs(target_dir)
-            os.makedirs(os.path.join(target_dir, "src"))
-
+            os.makedirs(target_dir, exist_ok=True)
+            os.makedirs(os.path.join(target_dir, "src"), exist_ok=True)
+            
             replacements = {
                 "{{PROJECT_NAME}}": name,
                 "{{PACKAGE_NAME}}": package,
                 "{{MIN_SDK}}": min_sdk,
                 "{{TARGET_SDK}}": target_sdk,
                 "{{COMPILE_SDK}}": compile_sdk,
-                "{{AROMA_ROOT}}": AROMA_ROOT,
+                "{{AROMA_ROOT}}": find_aroma_root(),
             }
-
-            self._copy_template(
-                "app/main.c.tpl", os.path.join(target_dir, "src/main.c"), replacements
-            )
-         
-            self._copy_template(
-                "app/CMakeLists.txt.tpl",
-                os.path.join(target_dir, "CMakeLists.txt"),
-                replacements,
-            )
-
+            
+            self._copy_tpl("app/main.c.tpl", os.path.join(target_dir, "src", "main.c"), replacements)
+            self._copy_tpl("app/CMakeLists.txt.tpl", os.path.join(target_dir, "CMakeLists.txt"), replacements)
+            
             android_src = os.path.join(self.templates_dir, "android")
             android_dst = os.path.join(target_dir, "android")
-
+            
             if os.path.exists(android_src):
+                if os.path.exists(android_dst):
+                    shutil.rmtree(android_dst)
                 shutil.copytree(android_src, android_dst)
-                self._process_android_templates(android_dst, replacements)
-                self._setup_java_package(android_dst, package, replacements)
-                self._create_local_properties(android_dst)
-
-            print_success(f"Project '{name}' created successfully!")
-            self._show_next_steps(name)
+                self._process_android_files(android_dst, replacements)
+                self._setup_java_pkg(android_dst, package, replacements)
+                self._create_local_props(android_dst)
+            
+            self.gradle_mgr.generate_wrapper(target_dir)
+            
+            Logger.success(f"Project created: {name}")
+            self._show_next(name)
             return True
-
         except Exception as e:
-            print_error(f"Failed to create project: {e}")
+            Logger.error(f"Failed: {e}")
             return False
-
-    def _copy_template(self, src_rel: str, dst: str, replacements: Dict) -> None:
+    
+    def _copy_tpl(self, src_rel: str, dst: str, replacements: Dict[str, str]):
         src = os.path.join(self.templates_dir, src_rel)
-        if os.path.exists(src):
-            with open(src, "r") as f:
-                content = f.read()
-            for k, v in replacements.items():
-                content = content.replace(k, str(v))
-            with open(dst, "w") as f:
-                f.write(content)
-
-    def _process_android_templates(self, android_dir: str, replacements: Dict) -> None:
-        for root, _, files in os.walk(android_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-
-                if file.endswith(".tpl"):
-                    new_path = file_path[:-4]
-                    with open(file_path, "r") as f:
-                        content = f.read()
-                    for k, v in replacements.items():
-                        content = content.replace(k, str(v))
-                    with open(new_path, "w") as f:
-                        f.write(content)
-                    os.remove(file_path)
-                    continue
-
-                if file in ["build.gradle", "AndroidManifest.xml", "settings.gradle"]:
-                    with open(file_path, "r") as f:
-                        content = f.read()
-                    changed = False
-                    for k, v in replacements.items():
-                        if k in content:
-                            content = content.replace(k, str(v))
-                            changed = True
-                    if changed:
-                        with open(file_path, "w") as f:
-                            f.write(content)
-
-    def _setup_java_package(
-        self, android_dir: str, package: str, replacements: Dict
-    ) -> None:
-        helper_tpl = os.path.join(android_dir, "app/src/main/java/AromaHelper.java.tpl")
-        if not os.path.exists(helper_tpl):
+        if not os.path.exists(src):
             return
-
-        package_path = package.replace(".", os.sep)
-        java_dir = os.path.join(android_dir, "app/src/main/java")
-        final_dir = os.path.join(java_dir, package_path)
-        os.makedirs(final_dir, exist_ok=True)
-
-        with open(helper_tpl, "r") as f:
+        
+        with open(src, 'r') as f:
             content = f.read()
         for k, v in replacements.items():
             content = content.replace(k, str(v))
-
-        with open(os.path.join(final_dir, "AromaHelper.java"), "w") as f:
+        
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        with open(dst, 'w') as f:
             f.write(content)
-
-        os.remove(helper_tpl)
-
-        self._remove_empty_dirs(os.path.join(java_dir, "com"))
-
-    def _remove_empty_dirs(self, path: str) -> None:
-        if not os.path.exists(path):
+    
+    def _process_android_files(self, android_dir: str, replacements: Dict[str, str]):
+        process_extensions = ['.gradle', '.gradle.kts', '.xml', '.properties', '.kt', '.java']
+        
+        for root, _, files in os.walk(android_dir):
+            for file in files:
+                path = os.path.join(root, file)
+                
+                if file.endswith('.tpl'):
+                    new_path = path[:-4]
+                    with open(path, 'r') as f:
+                        content = f.read()
+                    for k, v in replacements.items():
+                        content = content.replace(k, str(v))
+                    with open(new_path, 'w') as f:
+                        f.write(content)
+                    os.remove(path)
+                else:
+                    ext = os.path.splitext(file)[1]
+                    if ext in process_extensions or file in ['build.gradle', 'build.gradle.kts',
+                                                              'settings.gradle', 'settings.gradle.kts',
+                                                              'AndroidManifest.xml', 'gradle.properties',
+                                                              'local.properties']:
+                        try:
+                            with open(path, 'r') as f:
+                                content = f.read()
+                            
+                            changed = False
+                            for k, v in replacements.items():
+                                if k in content:
+                                    content = content.replace(k, str(v))
+                                    changed = True
+                            
+                            if changed:
+                                with open(path, 'w') as f:
+                                    f.write(content)
+                        except (IOError, UnicodeDecodeError):
+                            pass
+    
+    def _setup_java_pkg(self, android_dir: str, package: str, replacements: Dict[str, str]):
+        tpl = os.path.join(android_dir, "app", "src", "main", "java", "AromaHelper.java.tpl")
+        if not os.path.exists(tpl):
             return
-        for root, dirs, files in os.walk(path, topdown=False):
-            for dir in dirs:
-                dir_path = os.path.join(root, dir)
-                if not os.listdir(dir_path):
-                    os.rmdir(dir_path)
-
-    def _create_local_properties(self, android_dir: str) -> None:
-        sdk = AndroidSDK()
-        if sdk.find_existing():
-            with open(os.path.join(android_dir, "local.properties"), "w") as f:
+        
+        pkg_path = package.replace('.', os.sep)
+        java_dir = os.path.join(android_dir, "app", "src", "main", "java")
+        final_dir = os.path.join(java_dir, pkg_path)
+        os.makedirs(final_dir, exist_ok=True)
+        
+        with open(tpl, 'r') as f:
+            content = f.read()
+        for k, v in replacements.items():
+            content = content.replace(k, str(v))
+        
+        with open(os.path.join(final_dir, "AromaHelper.java"), 'w') as f:
+            f.write(content)
+        os.remove(tpl)
+        
+        for root, dirs, _ in os.walk(java_dir, topdown=False):
+            for d in dirs:
+                dir_path = os.path.join(root, d)
+                try:
+                    if not os.listdir(dir_path):
+                        os.rmdir(dir_path)
+                except OSError:
+                    pass
+    
+    def _create_local_props(self, android_dir: str):
+        sdk = AndroidSDKManager(self.config)
+        if sdk.find():
+            with open(os.path.join(android_dir, "local.properties"), 'w') as f:
                 f.write(f"sdk.dir={sdk.sdk_root}\n")
                 ndk = sdk.get_ndk_path()
                 if ndk:
                     f.write(f"ndk.dir={ndk}\n")
-
-    def _show_next_steps(self, name: str) -> None:
+    
+    def _show_next(self, name: str):
         print(f"\n{Colors.BOLD}Next steps:{Colors.ENDC}")
         print(f"  cd {name}")
         print(f"  aroma run linux")
         print(f"  aroma run android")
         print(f"  aroma build android --release")
-        print(f"  aroma build android --release --aab")
         print(f"  aroma sign")
 
 
-class BuildSystem:
-    def __init__(self, project_dir: str):
-        self.project_dir = project_dir
-        self.android_dir = os.path.join(project_dir, "android")
-        self.web_build_dir = os.path.join(project_dir, "build-web")
-
-    def build_linux(self) -> bool:
-        build_dir = os.path.join(self.project_dir, "build")
-        os.makedirs(build_dir, exist_ok=True)
-
-        if not run_command(["cmake", ".."], cwd=build_dir):
-            print_error("CMake configuration failed")
-            return False
-
-        if not run_command(["make", "-j4"], cwd=build_dir):
-            print_error("Build failed")
-            return False
-
-        print_success("Linux build successful!")
-        return True
-
-    def build_android(self, release: bool = False, aab: bool = False) -> bool:
-        if not os.path.exists(self.android_dir):
-            print_error("No 'android' directory found. Is this an Aroma project?")
-            return False
-
-        sdk = AndroidSDK()
-        if not self._ensure_sdk(sdk):
-            return False
-
-        if release:
-            keystore = KeystoreManager(self.project_dir)
-            if not keystore.has_keystore():
-                print_info("Release builds require a signing keystore")
-                if (
-                    not get_input(
-                        "Set up signing now?",
-                        default="Y",
-                        validator=lambda x: x.lower() in ["y", "n"],
-                    )
-                    .lower()
-                    .startswith("y")
-                ):
-                    print_warning("Cannot build release without signing")
-                    return False
-                if not keystore.create_or_update():
-                    return False
-
-        return self._run_gradle_build(release, aab)
-
-    def build_web(self) -> bool:
-        print_step("Configuring web build")
-
-        if not shutil.which("emcmake") or not shutil.which("emmake"):
-            print_error("Emscripten tools not found. Source emsdk_env.sh first.")
-            return False
-
-        os.makedirs(self.web_build_dir, exist_ok=True)
-
-        configure = run_command(["emcmake", "cmake", ".."], cwd=self.web_build_dir)
-        if configure is None or configure.returncode != 0:
-            print_error("Web CMake configuration failed")
-            return False
-
-        build = run_command(["emmake", "make", "-j4"], cwd=self.web_build_dir)
-        if build is None or build.returncode != 0:
-            print_error("Web build failed")
-            return False
-
-        self._write_web_index()
-        print_success("Web build successful!")
-        return True
-
-    def _ensure_sdk(self, sdk: AndroidSDK) -> bool:
-        sdk_path = sdk.find_existing()
-        if not sdk_path:
-            print_info("Android SDK not found.")
-            if (
-                not get_input(
-                    "Install Android SDK?",
-                    default="Y",
-                    validator=lambda x: x.lower() in ["y", "n"],
-                )
-                .lower()
-                .startswith("y")
-            ):
-                return False
-            if not sdk.install():
-                return False
-            sdk_path = sdk.sdk_root
-
-        os.environ["ANDROID_HOME"] = sdk_path
-
-        local_prop = os.path.join(self.android_dir, "local.properties")
-        with open(local_prop, "w") as f:
-            f.write(f"sdk.dir={sdk_path}\n")
-            ndk = sdk.get_ndk_path()
-            if ndk:
-                f.write(f"ndk.dir={ndk}\n")
-                os.environ["ANDROID_NDK_HOME"] = ndk
-
-        return True
-
-    def _run_gradle_build(self, release: bool, aab: bool) -> bool:
-        gradlew = os.path.join(self.android_dir, "gradlew")
-        if os.path.exists(gradlew):
-            os.chmod(gradlew, 0o755)
-            cmd_prefix = [gradlew]
-        else:
-            print_info("gradlew not found, using system gradle")
-            cmd_prefix = ["gradle"]
-
-        if release:
-            target = "bundleRelease" if aab else "assembleRelease"
-            output_type = "AAB" if aab else "APK"
-        else:
-            target = "assembleDebug"
-            output_type = "debug APK"
-
-        print_info(f"Running: {' '.join(cmd_prefix + [target])}")
-
-        if not run_command(cmd_prefix + [target], cwd=self.android_dir):
-            print_error(f"Android build failed")
-            return False
-
-        self._show_output_path(release, aab)
-        return True
-
-    def _show_output_path(self, release: bool, aab: bool) -> None:
-        base = os.path.join(self.android_dir, "app/build/outputs")
-
-        if release:
-            if aab:
-                paths = [
-                    os.path.join(base, "bundle/release/app-release.aab"),
-                    os.path.join(base, "bundle/release/app.aab"),
-                ]
-                file_type = "AAB"
-            else:
-                paths = [
-                    os.path.join(base, "apk/release/app-release.apk"),
-                    os.path.join(base, "apk/release/app-release-unsigned.apk"),
-                ]
-                file_type = "APK"
-        else:
-            paths = [os.path.join(base, "apk/debug/app-debug.apk")]
-            file_type = "debug APK"
-
-        for path in paths:
-            if os.path.exists(path):
-                if "unsigned" in path:
-                    print_warning(f"Unsigned {file_type} built at: {path}")
-                    print_warning(
-                        "This file is NOT signed and cannot be installed directly!"
-                    )
-                else:
-                    print_success(f"{file_type} built at: {path}")
-                return
-
-        print_error("Build finished but output file not found.")
-    def _find_web_bundle_js(self) -> Optional[str]:
-        if not os.path.exists(self.web_build_dir):
-            return None
-
-        candidates: List[str] = []
-        for root, _, files in os.walk(self.web_build_dir):
-            for file_name in files:
-                if not file_name.endswith(".js"):
-                    continue
-                if file_name.endswith(".worker.js") or file_name.endswith(".wasm.js"):
-                    continue
-                candidates.append(os.path.join(root, file_name))
-
-        if not candidates:
-            return None
-
-        project_name = os.path.basename(self.project_dir)
-        for candidate in candidates:
-            if os.path.splitext(os.path.basename(candidate))[0] == project_name:
-                return candidate
-
-        return sorted(candidates)[0]
-
-    def _write_web_index(self) -> Optional[str]:
-        js_path = self._find_web_bundle_js()
-        if not js_path:
-            print_error("Web build finished but no JS bundle was found.")
-            return None
-
-        js_name = os.path.basename(js_path)
-        index_path = os.path.join(self.web_build_dir, "index.html")
-        cache_bust = str(int(time.time()))
-        html = f"""<!doctype html>
-<html lang=\"en\">
-<head>
-  <meta charset=\"utf-8\" />
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-  <title>{os.path.basename(self.project_dir)}</title>
-  <style>
-    html, body {{ height: 100%; margin: 0; background: #111318; color: #f2f4f8; font-family: sans-serif; }}
-    canvas {{ width: 100vw; height: 100vh; display: block; background: #111318; }}
-  </style>
-</head>
-<body>
-  <canvas id=\"canvas\"></canvas>
-  <script>
-    window.appLogs = [];
-    window.onerror = function (message, source, lineno, colno, error) {{
-      console.error(message, source, lineno, colno, error);
-    }};
-
-    var Module = {{
-      canvas: document.getElementById('canvas'),
-      print: (...args) => window.appLogs.push(args.join(' ')),
-      printErr: (...args) => window.appLogs.push(args.join(' ')),
-      onRuntimeInitialized: function () {{
-        var canvas = Module.canvas;
-        function toCanvasCoords(event) {{
-          var rect = canvas.getBoundingClientRect();
-          var scaleX = canvas.width / rect.width;
-          var scaleY = canvas.height / rect.height;
-          return {{ x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY }};
-        }}
-        function sendMouse(action, event) {{
-          if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
-          var p = toCanvasCoords(event);
-          Module._aroma_emscripten_dispatch_mouse(action, p.x | 0, p.y | 0, 0);
-        }}
-        window.addEventListener('mousemove', function (event) {{ sendMouse(0, event); }}, {{ passive: true }});
-        window.addEventListener('mousedown', function (event) {{ sendMouse(1, event); event.preventDefault(); }}, {{ passive: false }});
-        window.addEventListener('mouseup', function (event) {{ sendMouse(2, event); event.preventDefault(); }}, {{ passive: false }});
-      }}
-    }};
-  </script>
-  <script src=\"{js_name}?v={cache_bust}\"></script>
-</body>
-</html>
-"""
-
-        with open(index_path, "w") as f:
-            f.write(html)
-
-        return index_path
-
-
-def cmd_doctor(args):
-    print_step("Running Aroma Doctor...")
-
-    print(f"OS: {platform.system()} {platform.release()}")
-
-    tools = [
-        ("CMake", ["cmake", "--version"]),
-        ("Ninja", ["ninja", "--version"]),
-        ("GCC", ["gcc", "--version"]),
-        ("Java", ["java", "-version"]),
-        ("keytool", ["keytool", "-help"]),
-    ]
-
-    for name, cmd in tools:
-        result = run_command(cmd, capture_output=True)
-        if result:
-            if name == "Ninja":
-                print_success(f"{name}: {result.stdout.strip()}")
-            else:
-                print_success(f"{name} installed")
-        else:
-            if name == "Ninja":
-                print_info(f"{name} not found (recommended for fast builds)")
-            else:
-                print_warning(f"{name} not found")
-
-    sdk = AndroidSDK()
-    sdk_path = sdk.find_existing()
-
-    if sdk_path:
-        print_success(f"Android SDK: {sdk_path}")
-        ndk = sdk.get_ndk_path()
-        if ndk:
-            print_success(f"Android NDK: {ndk}")
-        else:
-            print_warning("Android NDK not found")
-            if (
-                get_input(
-                    "Install NDK?",
-                    default="Y",
-                    validator=lambda x: x.lower() in ["y", "n"],
-                ).lower()
-                == "y"
-            ):
-                sdk.install()
-    else:
-        print_warning("Android SDK not found")
-        if (
-            get_input(
-                "Install Android SDK?",
-                default="Y",
-                validator=lambda x: x.lower() in ["y", "n"],
-            ).lower()
-            == "y"
-        ):
-            sdk.install()
-
-    print_step("Doctor summary complete.")
-
-
-def cmd_create(args):
-    templates_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "templates"
-    )
-    creator = ProjectCreator(templates_dir)
-    creator.create(args)
-
-
-def cmd_build(args):
-    print_step(f"Building for {args.platform}...")
-
-    build_system = BuildSystem(os.getcwd())
-
-    if args.platform == "linux":
-        build_system.build_linux()
-    elif args.platform == "android":
-        build_system.build_android(args.release, args.aab)
-    elif args.platform == "web":
-        build_system.build_web()
-
-
-def cmd_run(args):
-    if args.platform == "android" and args.release:
-        print_warning("Release builds are for distribution, not for running.")
-        print_info("Use 'aroma run android' without --release for testing.")
-        return
-
-    build_system = BuildSystem(os.getcwd())
-    if args.platform == "linux":
-        if not build_system.build_linux():
-            return
-    elif args.platform == "android":
-        if not build_system.build_android(False, False):
-            return
-    elif args.platform == "web":
-        if not build_system.build_web():
-            return
-
-    cwd = os.getcwd()
-
-    if args.platform == "linux":
-        _run_linux(cwd)
-    elif args.platform == "android":
-        _run_android(cwd, args.emu)
-    elif args.platform == "web":
-        _run_web(build_system.web_build_dir, args.port)
-
-
-def _run_linux(cwd: str) -> None:
-    project_name = os.path.basename(cwd)
-    exe_path = os.path.join(cwd, "build", project_name)
-
-    if not os.path.exists(exe_path):
-        build_dir = os.path.join(cwd, "build")
-        if os.path.exists(build_dir):
-            files = [
-                f
-                for f in os.listdir(build_dir)
-                if os.access(os.path.join(build_dir, f), os.X_OK)
-                and not f.endswith(".so")
-                and not os.path.isdir(os.path.join(build_dir, f))
-                and f not in ["Makefile", "cmake_install.cmake"]
-            ]
-            if files:
-                exe_path = os.path.join(build_dir, files[0])
-
-    if os.path.exists(exe_path):
-        print_step(f"Launching {exe_path}...")
-        subprocess.run([exe_path])
-    else:
-        print_error("Executable not found. Build may have failed.")
-
-
-def _run_android(cwd: str, use_emu: bool) -> None:
-    if use_emu and not _start_emulator():
-        return
-
-    result = run_command(["adb", "devices"], capture_output=True)
-    if (
-        not result
-        or "device" not in result.stdout.replace("List of devices attached", "").strip()
-    ):
-        print_error("No Android devices connected.")
-
-    apk_path = os.path.join(cwd, "android/app/build/outputs/apk/debug/app-debug.apk")
-    if not os.path.exists(apk_path):
-        print_error("APK not found. Build may have failed.")
-        return
-
-    print_step("Installing to device...")
-    if not run_command(["adb", "install", "-r", apk_path]):
-        print_error("Installation failed.")
-        return
-
-    print_success("Installed.")
-
-    package_name = _find_package_name(cwd)
-    if not package_name:
-        print_info("Could not detect package name. Please launch manually.")
-        return
-
-    print_step(f"Launching {package_name}...")
-    run_command(
-        [
-            "adb",
-            "shell",
-            "am",
-            "start",
-            "-n",
-            f"{package_name}/android.app.NativeActivity",
-        ]
-    )
-
-
-def _run_web(build_dir: str, port: int) -> None:
-    print_step(f"Serving web build at http://localhost:{port}/")
-    print_info("Press Ctrl+C to stop the server.")
-    subprocess.run(
-        ["python3", "-m", "http.server", str(port), "--directory", build_dir],
-        check=False,
-    )
-
-
-def _find_package_name(cwd: str) -> Optional[str]:
-    build_gradle = os.path.join(cwd, "android/app/build.gradle")
-    if not os.path.exists(build_gradle):
-        return None
-
-    with open(build_gradle, "r") as f:
-        for line in f:
-            if "namespace" in line or "applicationId" in line:
-                parts = line.split()
-                for p in parts:
-                    clean = p.strip("'\"")
-                    if "." in clean and not clean.startswith("com.android"):
-                        return clean
+def find_package_name(cwd: str) -> Optional[str]:
+    manifest = os.path.join(cwd, "android", "app", "src", "main", "AndroidManifest.xml")
+    if os.path.exists(manifest):
+        try:
+            tree = ET.parse(manifest)
+            root = tree.getroot()
+            package = root.get('package')
+            if package:
+                return package
+        except ET.ParseError:
+            pass
+    
+    build_gradle = os.path.join(cwd, "android", "app", "build.gradle")
+    if os.path.exists(build_gradle):
+        with open(build_gradle, 'r') as f:
+            for line in f:
+                if 'namespace' in line or 'applicationId' in line:
+                    match = re.search(r'["\']([^"\']+)["\']', line)
+                    if match:
+                        return match.group(1)
     return None
 
 
-def _start_emulator() -> bool:
-    sdk = AndroidSDK()
-    if not sdk.find_existing():
-        print_error("Android SDK not found.")
+def start_emulator(sdk: AndroidSDKManager, adb_cmd: str) -> bool:
+    emulator_path = os.path.join(sdk.sdk_root, "emulator", "emulator")
+    if platform.system() == "Windows":
+        emulator_path += ".exe"
+    
+    if not os.path.exists(emulator_path):
+        Logger.error("Emulator not installed")
         return False
-
-    emulator = os.path.join(sdk.sdk_root, "emulator/emulator")
-    if not os.path.exists(emulator):
-        print_error("Emulator not installed.")
-        return False
-
-    avd_name = "aroma_emu"
-
-    result = run_command(["adb", "devices"], capture_output=True)
+    
+    result = run_command([adb_cmd, "devices"], capture_output=True)
     if result and "emulator-" in result.stdout:
-        print_info("Emulator already running.")
+        Logger.info("Emulator already running")
         return True
-
-    avdmanager = os.path.join(sdk.cmdline_tools, "bin/avdmanager")
-    result = run_command([avdmanager, "list", "avd", "-c"], capture_output=True)
-
-    if avd_name not in (result.stdout.strip().splitlines() if result else []):
-        print_step(f"Creating AVD '{avd_name}'...")
-        img = f"system-images;android-{Config.ANDROID_SDK_VERSION};google_apis;{platform.machine()}"
-        cmd = [avdmanager, "create", "avd", "-n", avd_name, "-k", img, "--force"]
-        p = subprocess.Popen(
-            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    
+    result = run_command([sdk.avdmanager, "list", "avd", "-c"], capture_output=True)
+    avds = []
+    if result and result.returncode == 0:
+        for line in result.stdout.strip().splitlines():
+            line = line.strip()
+            if line and not line.startswith('[') and not line.startswith('*'):
+                avds.append(line)
+    
+    if avds:
+        avd_name = avds[0]
+    else:
+        avd_name = "aroma_emu"
+        Logger.step(f"Creating AVD: {avd_name}")
+        system_image = f"system-images;android-{sdk.sdk_version};google_apis;x86_64"
+        process = subprocess.Popen(
+            [sdk.avdmanager, "create", "avd", "-n", avd_name, "-k", system_image, "--force"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
-        p.communicate(input=b"no\n")
-        if p.returncode != 0:
-            print_error("Failed to create AVD")
+        try:
+            process.communicate(input="no\n", timeout=60)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate()
+        if process.returncode != 0:
+            Logger.error("Failed to create AVD")
             return False
-
-    print_step(f"Starting emulator...")
+    
+    Logger.step("Starting emulator")
     log = open("emulator.log", "w")
-    subprocess.Popen(
-        [emulator, "-avd", avd_name, "-no-snapshot-load"], stdout=log, stderr=log
-    )
-
-    print_info("Waiting for device...")
-    run_command(["adb", "wait-for-device"])
-
-    print_info("Waiting for boot...")
-    while True:
-        result = run_command(
-            ["adb", "shell", "getprop", "sys.boot_completed"], capture_output=True
-        )
+    subprocess.Popen([emulator_path, "-avd", avd_name, "-no-snapshot-load"], stdout=log, stderr=log)
+    
+    run_command([adb_cmd, "wait-for-device"], timeout=120)
+    
+    for _ in range(60):
+        result = run_command([adb_cmd, "shell", "getprop", "sys.boot_completed"], capture_output=True)
         if result and result.stdout.strip() == "1":
             break
         time.sleep(2)
-
-    print_success("Emulator ready.")
+    
+    Logger.success("Emulator ready")
     return True
 
 
-def _add_signing_config_to_gradle(project_dir: str) -> bool:
-    build_gradle = os.path.join(project_dir, "android/app/build.gradle")
+def cmd_doctor(args):
+    Logger.step("System Check")
+    print(f"OS: {platform.system()} {platform.release()}")
+    print(f"Arch: {platform.machine()}")
+    print(f"Python: {sys.version}")
     
-    if not os.path.exists(build_gradle):
-        print_error("app/build.gradle not found")
-        return False
+    config = load_config(getattr(args, 'config', None))
     
-    with open(build_gradle, 'r') as f:
-        content = f.read()
-    
-    if 'signingConfigs {' in content and 'release {' in content:
-        print_info("Signing configuration already exists in build.gradle")
-        return True
-    
-    signing_config = '''
-    signingConfigs {
-        release {
-            def keystorePropertiesFile = rootProject.file("keystore.properties")
-            if (keystorePropertiesFile.exists()) {
-                def keystoreProperties = new Properties()
-                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-            }
-        }
-    }
-'''
-    
-    # Insert signingConfigs after android { line
-    android_start_pattern = r'(android\s*{)'
-    match = re.search(android_start_pattern, content)
-    
-    if match:
-        insert_pos = match.end()
-        new_content = content[:insert_pos] + signing_config + content[insert_pos:]
+    java_list = find_installed_java()
+    if java_list:
+        for path, ver in java_list:
+            Logger.success(f"Java {ver}: {path}")
     else:
-        print_error("Could not find android block in build.gradle")
-        return False
+        Logger.warning("Java: not found")
     
-    # Add release buildType
-    release_block = '''
-        release {
-            signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-'''
-    
-    # Check if buildTypes exists
-    build_types_pattern = r'(buildTypes\s*{.*?})'
-    build_types_match = re.search(build_types_pattern, new_content, re.DOTALL)
-    
-    if build_types_match:
-        # buildTypes exists, add release before the closing }
-        build_types_content = build_types_match.group(1)
-        # Check if release already exists
-        if 'release {' not in build_types_content:
-            # Insert release before the last }
-            modified_build_types = build_types_content.rstrip('}') + release_block + '    }'
-            new_content = new_content.replace(build_types_content, modified_build_types)
-    else:
-        # buildTypes doesn't exist, create it after defaultConfig
-        default_config_pattern = r'(defaultConfig\s*{.*?}\s*\n)'
-        default_config_match = re.search(default_config_pattern, new_content, re.DOTALL)
-        if default_config_match:
-            insert_pos = default_config_match.end()
-            build_types_section = f'''
-    buildTypes {{
-        debug {{
-            debuggable true
-        }}{release_block}
-    }}
-'''
-            new_content = new_content[:insert_pos] + build_types_section + new_content[insert_pos:]
+    tools = ["cmake", "ninja", "gcc", "keytool"]
+    for tool in tools:
+        if shutil.which(tool):
+            Logger.success(f"{tool}: available")
         else:
-            print_error("Could not find defaultConfig block in build.gradle")
-            return False
+            Logger.warning(f"{tool}: not found")
     
-    try:
-        with open(build_gradle, 'w') as f:
-            f.write(new_content)
-        print_success("Updated app/build.gradle with signing configuration")
-        return True
-    except Exception as e:
-        print_error(f"Failed to write build.gradle: {e}")
-        return False
+    system_gradle = find_gradle_installation()
+    if system_gradle:
+        Logger.success(f"Gradle: {system_gradle}")
+    else:
+        Logger.warning("Gradle: not found")
+    
+    sdk = AndroidSDKManager(config)
+    if sdk.find():
+        Logger.success(f"Android SDK: {sdk.sdk_root}")
+        if sdk.adb.is_installed():
+            Logger.success("ADB: available")
+        else:
+            Logger.warning("ADB: not found")
+        ndk = sdk.get_ndk_path()
+        if ndk:
+            Logger.success(f"Android NDK: {ndk}")
+        else:
+            Logger.warning("Android NDK: not found")
+        if sdk.licenses_accepted():
+            Logger.success("Licenses: accepted")
+        else:
+            Logger.warning("Licenses: not accepted")
+            sdk.accept_licenses()
+    else:
+        Logger.warning("Android SDK: not found")
+
+
+def cmd_install_sdk(args):
+    config = load_config(getattr(args, 'config', None))
+    AndroidSDKManager(config).install()
+
+
+def cmd_create(args):
+    config = load_config(getattr(args, 'config', None))
+    templates = os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
+    ProjectCreator(templates, config).create(getattr(args, 'name', None))
+
+
+def cmd_build(args):
+    config = load_config(getattr(args, 'config', None))
+    Logger.step(f"Building for {args.platform}")
+    bs = BuildSystem(os.getcwd(), config)
+    
+    if args.platform == "linux":
+        bs.build_linux()
+    elif args.platform == "android":
+        bs.build_android(args.release, args.aab)
+    elif args.platform == "web":
+        bs.build_web()
+
+
+def cmd_run(args):
+    config = load_config(getattr(args, 'config', None))
+    bs = BuildSystem(os.getcwd(), config)
+    
+    if args.platform == "linux":
+        if not bs.build_linux():
+            return
+        _run_linux(os.getcwd())
+    elif args.platform == "android":
+        if not bs.build_android(False, False):
+            return
+        _run_android(os.getcwd(), args.emu, config)
+    elif args.platform == "web":
+        if not bs.build_web():
+            return
+        _serve_web(bs.web_build_dir, args.port)
+
+
+def _run_linux(cwd: str):
+    exe = os.path.join(cwd, "build", os.path.basename(cwd))
+    if not os.path.exists(exe):
+        build_dir = os.path.join(cwd, "build")
+        if os.path.exists(build_dir):
+            for f in os.listdir(build_dir):
+                fp = os.path.join(build_dir, f)
+                if os.access(fp, os.X_OK) and not f.endswith('.so'):
+                    exe = fp
+                    break
+    
+    if os.path.exists(exe):
+        Logger.step(f"Launching {exe}")
+        subprocess.run([exe])
+    else:
+        Logger.error("Executable not found")
+
+
+def _run_android(cwd: str, use_emu: bool, config: Dict[str, Any]):
+    sdk = AndroidSDKManager(config)
+    if not sdk.find():
+        Logger.error("Android SDK not found")
+        return
+    
+    if not sdk.adb.ensure():
+        return
+    
+    adb_cmd = sdk.adb.get_command()
+    if not adb_cmd:
+        Logger.error("ADB not found")
+        return
+    
+    if use_emu:
+        if not start_emulator(sdk, adb_cmd):
+            return
+    
+    result = run_command([adb_cmd, "devices"], capture_output=True)
+    if not result:
+        return
+    
+    lines = result.stdout.strip().split('\n')
+    devices = [l for l in lines[1:] if l.strip() and not l.startswith('*')]
+    
+    if not devices:
+        Logger.error("No device connected")
+        return
+    
+    authorized = any('\tdevice' in l or ' device' in l for l in devices)
+    if not authorized:
+        Logger.error("No authorized device")
+        return
+    
+    apk = os.path.join(cwd, "android", "app", "build", "outputs", "apk", "debug", "app-debug.apk")
+    if not os.path.exists(apk):
+        Logger.error("APK not found")
+        return
+    
+    Logger.step("Installing")
+    if run_command([adb_cmd, "install", "-r", apk]) is None:
+        Logger.error("Installation failed")
+        return
+    
+    pkg = find_package_name(cwd)
+    if pkg:
+        Logger.step(f"Launching {pkg}")
+        run_command([adb_cmd, "shell", "am", "start", "-n", f"{pkg}/android.app.NativeActivity"])
+
+
+def _serve_web(build_dir: str, port: int):
+    Logger.step(f"Serving at http://localhost:{port}")
+    subprocess.run(["python3", "-m", "http.server", str(port), "--directory", build_dir])
 
 
 def cmd_sign(args):
-    keystore = KeystoreManager(os.getcwd())
-
-    if keystore.create_or_update():
-        if _add_signing_config_to_gradle(os.getcwd()):
-            print_success("Signing configured successfully!")
-            print_info("You can now build release APKs and AABs:")
-            print_info("  aroma build android --release")
-            print_info("  aroma build android --release --aab")
-        else:
-            print_warning("Signing keystore created but couldn't update build.gradle")
+    config = load_config(getattr(args, 'config', None))
+    keystore = SecureKeystoreManager(os.getcwd(), config)
+    
+    if keystore.setup():
+        Logger.success("Signing configured")
+        Logger.info("  aroma build android --release")
+        Logger.info("  aroma build android --release --aab")
     else:
-        print_error("Failed to setup signing.")
+        Logger.error("Failed to setup signing")
 
 
 def main():
     parser = argparse.ArgumentParser(
         prog="aroma",
-        description="AromaUI CLI Tool - Build and manage AromaUI projects",
+        description="AromaUI CLI Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  aroma doctor
-  aroma create myapp
-  aroma build linux
-  aroma build android
-    aroma build web
-  aroma build android --release
-  aroma build android --release --aab
-  aroma sign
-  aroma run linux
-  aroma run android
-    aroma run web
-  aroma run android --emu
-        """,
+        epilog="Examples:\n  aroma doctor\n  aroma create myapp\n  aroma build android\n  aroma run android"
     )
-
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    subparsers.add_parser("doctor", help="Check environment and dependencies")
-    subparsers.add_parser("install-sdk", help="Install Android SDK & NDK")
-
-    create_p = subparsers.add_parser("create", help="Create a new project")
-    create_p.add_argument("name", nargs="?", help="Project name")
-
-    build_p = subparsers.add_parser("build", help="Build the project")
-    build_p.add_argument(
-        "platform", choices=["linux", "android", "web"], default="linux", nargs="?"
-    )
-    build_p.add_argument("--release", action="store_true", help="Build release version")
-    build_p.add_argument("--aab", action="store_true", help="Build Android App Bundle")
-
-    run_p = subparsers.add_parser("run", help="Run the project")
-    run_p.add_argument(
-        "platform", choices=["linux", "android", "web"], default="linux", nargs="?"
-    )
-    run_p.add_argument("--emu", action="store_true", help="Run in emulator")
-    run_p.add_argument("--release", action="store_true", help=argparse.SUPPRESS)
-    run_p.add_argument("--port", type=int, default=8000, help="Web server port")
-
-    sign_p = subparsers.add_parser("sign", help="Setup release signing keystore")
-
+    
+    parser.add_argument("--config", help="Config file path")
+    parser.add_argument("--verbose", "-v", action="store_true")
+    parser.add_argument("--no-color", action="store_true")
+    
+    subparsers = parser.add_subparsers(dest="command")
+    subparsers.add_parser("doctor")
+    subparsers.add_parser("install-sdk")
+    
+    p = subparsers.add_parser("create")
+    p.add_argument("name", nargs="?")
+    
+    p = subparsers.add_parser("build")
+    p.add_argument("platform", choices=["linux", "android", "web"], nargs="?", default="linux")
+    p.add_argument("--release", action="store_true")
+    p.add_argument("--aab", action="store_true")
+    
+    p = subparsers.add_parser("run")
+    p.add_argument("platform", choices=["linux", "android", "web"], nargs="?", default="linux")
+    p.add_argument("--emu", action="store_true")
+    p.add_argument("--port", type=int, default=8000)
+    
+    subparsers.add_parser("sign")
+    
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
-
+    
     args = parser.parse_args()
-
-    commands = {
+    
+    Logger.setup(verbose=args.verbose)
+    if args.no_color:
+        Colors.disable()
+    
+    cmds = {
         "doctor": cmd_doctor,
-        "install-sdk": lambda a: AndroidSDK().install(),
+        "install-sdk": cmd_install_sdk,
         "create": cmd_create,
         "build": cmd_build,
         "run": cmd_run,
         "sign": cmd_sign,
     }
-
-    if args.command in commands:
-        commands[args.command](args)
+    
+    if args.command in cmds:
+        cmds[args.command](args)
     else:
         parser.print_help()
 
