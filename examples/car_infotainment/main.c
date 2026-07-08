@@ -40,7 +40,7 @@ int main(int argc, char **argv)
         cleanup_app_state();
         return EXIT_FAILURE;
     }
-    set_minimum_log_level(DEBUG_LEVEL_ERROR);
+    //set_minimum_log_level(DEBUG_LEVEL_ERROR);
     init_theme();
 
     if (!init_fonts())

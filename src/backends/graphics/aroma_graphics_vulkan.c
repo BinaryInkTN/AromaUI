@@ -303,7 +303,7 @@ static bool create_surface(size_t window_id)
 
     if (platform->create_vulkan_surface)
     {
-        bool ok = platform->create_vulkan_surface(window_id, &vk_ctx.instance, &vk_ctx.surface);
+        bool ok = platform->create_vulkan_surface(window_id, &vk_ctx.instance, (void**) &vk_ctx.surface);
         if (ok)
         {
             LOG_INFO("Vulkan: Surface created via platform backend");

@@ -344,7 +344,7 @@ typedef struct AromaPlatformInterface {
      * @param vk_surface_out Pointer to a VkSurfaceKHR to receive the surface.
      * @return true on success.
      */
-    bool (*create_vulkan_surface)(size_t window_id, void* vk_instance, void* vk_surface_out);
+    bool (*create_vulkan_surface)(size_t window_id, void* vk_instance, void** vk_surface_out);
 
     /**
      * @brief Get the required Vulkan instance extensions for this platform.

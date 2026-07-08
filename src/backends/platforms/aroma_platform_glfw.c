@@ -267,6 +267,8 @@ static bool queue_key_event(AromaEventType type, uint32_t key_value, uint16_t mo
 
 static void glfw_cursor_pos_callback(GLFWwindow *window, double xpos, double ypos)
 {
+        LOG_INFO("Mouse button event: xpos=%f, ypos=%f", xpos, ypos);
+
     bool moved = (xpos != platform_ctx.last_mouse_x) || (ypos != platform_ctx.last_mouse_y);
     if (moved)
     {
@@ -280,6 +282,7 @@ static void glfw_cursor_pos_callback(GLFWwindow *window, double xpos, double ypo
 
 static void glfw_mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
+    LOG_INFO("Mouse button event: button=%d, action=%d, mods=%d", button, action, mods);
     bool state = (action == GLFW_PRESS);
     platform_ctx.mouse_button_down = state;
     AromaEventType type = state ? EVENT_TYPE_MOUSE_CLICK : EVENT_TYPE_MOUSE_RELEASE;
@@ -401,8 +404,11 @@ static int initialize()
     else
     {
         result = initialize_glfw();
+    
     }
-
+    printf("Platform: %s\n", glfwGetPlatform() == GLFW_PLATFORM_WAYLAND ? "Wayland" :
+                         glfwGetPlatform() == GLFW_PLATFORM_X11 ? "X11" :
+                         "Other");
     if (result)
     {
         g_initialized = true;
@@ -687,7 +693,7 @@ static void shutdown()
 }
 
 #ifdef AROMA_HAS_VULKAN
-static int glfw_create_vulkan_surface(void *instance, void **surface)
+static bool glfw_create_vulkan_surface(size_t window_id, void *instance, void **surface)
 {
     if (g_use_surfaceless)
     {

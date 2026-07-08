@@ -12,6 +12,7 @@ endif()
 
 if(NOT ENABLE_GLFW AND NOT EMSCRIPTEN AND NOT ANDROID)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vendors/glps/CMakeLists.txt")
+        message("Choosing GLPS")
         add_subdirectory(vendors/glps)
     else()
         message(FATAL_ERROR "GLPS vendor submodule missing.")
