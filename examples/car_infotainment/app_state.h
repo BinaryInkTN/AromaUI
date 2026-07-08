@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#define WIN_W 1280
-#define WIN_H 800
+#define WIN_W 1024
+#define WIN_H 600
 
 #define Z_LAYER_BACKGROUND 1
 #define Z_LAYER_VEHICLE_IMAGE 2
