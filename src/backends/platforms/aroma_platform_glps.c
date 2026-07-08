@@ -1,4 +1,3 @@
-
 #ifndef ESP32
 #include "aroma_platform_interface.h"
 #ifdef AROMA_HAS_VULKAN
@@ -121,11 +120,11 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
 
     (void)data;
 
-    if (state && (keycode == 0xFFE5 || keycode == 66)) // Added 66 as typical CapsLock for x11
+    if (state && (keycode == 0xFFE5 || keycode == 66))
     {
         platform_ctx.capslock_active = !platform_ctx.capslock_active;
     }
-    if (keycode == 37 || keycode == 105) { // L_Ctrl and R_Ctrl in typical X11
+    if (keycode == 37 || keycode == 105) {
         platform_ctx.ctrl_active = state;
     }
 
@@ -161,7 +160,7 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
         }
     }
     if (modifiers & AROMA_KEY_MOD_CTRL && has_char && (key_value >= 1 && key_value <= 26)) {
-        key_value += 'a' - 1; // convert ctrl-seq like \t (9) to 'i'
+        key_value += 'a' - 1;
     }
 
     else
@@ -177,6 +176,12 @@ static void glps_scroll_callback(size_t window_id, GLPS_SCROLL_AXES axe,
                                  GLPS_SCROLL_SOURCE source, double value,
                                  int discrete, bool is_stopped, void *data)
 {
+    (void)window_id;
+    (void)source;
+    (void)discrete;
+    (void)is_stopped;
+    (void)data;
+
     if (value == 0) return;
     
     float scroll_x = (axe == GLPS_SCROLL_H_AXIS) ? (float)value : 0.0f;
@@ -195,6 +200,48 @@ static void glps_scroll_callback(size_t window_id, GLPS_SCROLL_AXES axe,
     if (ev) aroma_event_queue(ev);
 }
 
+static void glps_touch_callback(size_t window_id, int id, double touch_x,
+                                double touch_y, bool state, double major,
+                                double minor, double orientation, void *data)
+{
+    (void)window_id;
+    (void)id;
+    (void)major;
+    (void)minor;
+    (void)orientation;
+    (void)data;
+    fprintf(stderr, "glps_touch_callback ENTRY: state=%d touch_x=%.1f touch_y=%.1f\n", state, touch_x, touch_y);
+
+    bool moved = (touch_x != platform_ctx.last_mouse_x) || (touch_y != platform_ctx.last_mouse_y);
+
+    if (state)
+    {
+        if (!platform_ctx.mouse_button_down)
+        {
+            platform_ctx.last_mouse_x = touch_x;
+            platform_ctx.last_mouse_y = touch_y;
+            platform_ctx.mouse_button_down = true;
+            queue_mouse_event(EVENT_TYPE_MOUSE_CLICK, touch_x, touch_y, 0);
+            aroma_event_handle_pointer_move((int)touch_x, (int)touch_y, true);
+        }
+        else if (moved)
+        {
+            queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, touch_x, touch_y, 0);
+            aroma_event_handle_pointer_move((int)touch_x, (int)touch_y, true);
+            platform_ctx.last_mouse_x = touch_x;
+            platform_ctx.last_mouse_y = touch_y;
+        }
+    }
+    else
+    {
+        platform_ctx.last_mouse_x = touch_x;
+        platform_ctx.last_mouse_y = touch_y;
+        platform_ctx.mouse_button_down = false;
+        queue_mouse_event(EVENT_TYPE_MOUSE_RELEASE, touch_x, touch_y, 0);
+        aroma_event_handle_pointer_move((int)touch_x, (int)touch_y, false);
+    }
+}
+
 int initialize()
 {
     platform_ctx.wm = glps_wm_init();
@@ -208,6 +255,7 @@ int initialize()
     glps_wm_set_mouse_click_callback(platform_ctx.wm, glps_mouse_click_callback, NULL);
     glps_wm_set_scroll_callback(platform_ctx.wm, glps_scroll_callback, NULL);
     glps_wm_set_keyboard_callback(platform_ctx.wm, glps_keyboard_callback, NULL);
+    glps_wm_set_touch_callback(platform_ctx.wm, glps_touch_callback, NULL);
 
     return 1;
 }
@@ -307,7 +355,7 @@ void shutdown()
 }
 
 #ifdef AROMA_HAS_VULKAN
-static bool glps_create_vulkan_surface(size_t window_id, void *vk_instance, void *vk_surface_out)
+static bool glps_create_vulkan_surface(size_t window_id, void *vk_instance, void **vk_surface_out)
 {
     if (!platform_ctx.wm || !vk_instance || !vk_surface_out)
         return false;
