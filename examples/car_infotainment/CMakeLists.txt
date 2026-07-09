@@ -52,10 +52,6 @@ add_executable(infotainment
        bt_speaker_api.c
 )
 
-if(NOT EMSCRIPTEN)
-    find_package(Vulkan REQUIRED)
-endif()
-
 if(ENABLE_VOICE_CONTROL)
     find_library(VOSK_LIB vosk HINTS "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib")
     if(NOT VOSK_LIB)
