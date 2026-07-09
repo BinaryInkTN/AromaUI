@@ -253,6 +253,7 @@ void aroma_ui_render_all_windows_impl(void)
     {
         window_update_callback(g_windows[0].window_id, NULL);
     }
+    LOG_CRITICAL("Rendered all windows");
 }
 
 void aroma_ui_process_events_impl(void)
