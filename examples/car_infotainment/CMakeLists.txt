@@ -124,7 +124,6 @@ elseif(ENABLE_GLFW)
         asound
         curl
         dbus-1
-        Vulkan::Vulkan
     )
     message(STATUS "Windowing Backend: GLFW (Native)")
 
@@ -135,7 +134,6 @@ else()
         pthread
         asound
         curl
-        Vulkan::Vulkan
     )
     message(STATUS "Windowing Backend: GLPS (Native)")
 endif()
