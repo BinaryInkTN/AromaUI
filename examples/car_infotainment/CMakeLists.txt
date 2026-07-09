@@ -18,12 +18,6 @@ add_executable(infotainment
     main.c
 )
 
-if(NOT EMSCRIPTEN)
-    find_package(Vulkan QUIET)
-    if(NOT Vulkan_FOUND)
-        message(FATAL_ERROR "Vulkan not found.")
-    endif()
-endif()
 
 
 target_include_directories(infotainment PRIVATE
