@@ -14,16 +14,11 @@ if(NOT ENABLE_GLFW AND NOT EMSCRIPTEN AND NOT ANDROID)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vendors/glps/CMakeLists.txt")
         message("Choosing GLPS")
 
-        # Force GLPS (and any of its own add_library() calls that don't
-        # hardcode STATIC/SHARED) to build as a static library, regardless
-        # of the caller's global BUILD_SHARED_LIBS setting.
         set(_aroma_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
         set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
         add_subdirectory(vendors/glps)
 
-        # Ensure the GLPS target itself is static even if its CMakeLists.txt
-        # sets the type explicitly rather than relying on BUILD_SHARED_LIBS.
         if(TARGET GLPS)
             get_target_property(_glps_type GLPS TYPE)
             if(_glps_type STREQUAL "SHARED_LIBRARY")

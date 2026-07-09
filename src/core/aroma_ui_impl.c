@@ -388,7 +388,7 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
         }
 
         aroma_node_invalidate(window);
-       //show_splash_screen(g_windows[idx].window_id, w, h);
+       show_splash_screen(g_windows[idx].window_id, w, h);
     }
 
     aroma_node_invalidate(window);
@@ -904,42 +904,19 @@ static void window_update_callback(size_t window_id, void *data)
     aroma_dirty_list_clear();
     s_in_update = false;
 }
-
 static void show_splash_screen(size_t window_id, int width, int height)
 {
+    (void)width;
+    (void)height;
+
     if (!g_splash_enabled) return;
 
-    LOG_INFO("Showing splash screen...");
+    LOG_INFO("Splash screen stubbed - clearing and swapping only");
 
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx)
     {
         LOG_WARNING("Graphics interface not available for splash screen");
-        return;
-    }
-
-    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
-    if (!platform)
-    {
-        LOG_WARNING("Platform interface not available for splash screen");
-        return;
-    }
-
-    if (!aroma_ubuntu_ttf || aroma_ubuntu_ttf_len == 0)
-    {
-        LOG_ERROR("Splash font data is null or zero-length; skipping splash");
-        return;
-    }
-
-    int splash_font_size = aroma_get_splash_font_size(platform);
-
-    AromaFont *font = aroma_font_create_from_memory(
-        aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, splash_font_size);
-
-    if (!font)
-    {
-        LOG_ERROR("Could not load font for splash screen (size=%d, data_len=%zu)",
-                  splash_font_size, aroma_ubuntu_ttf_len);
         return;
     }
 
@@ -950,89 +927,9 @@ static void show_splash_screen(size_t window_id, int width, int height)
         gfx->clear(window_id, theme.colors.background);
     }
 
-    float title_scale  = 1.0f;
-    float slogan_scale = 0.5f;
-
-    float title_width   = aroma_font_get_line_width(font, g_splash_title)  * title_scale;
-    int   title_height  = (int)(aroma_font_get_line_height(font) * title_scale);
-    float slogan_width  = aroma_font_get_line_width(font, g_splash_slogan) * slogan_scale;
-    int   slogan_height = (int)(aroma_font_get_line_height(font) * slogan_scale);
-
-    if (title_height <= 0 || slogan_height <= 0)
-    {
-        LOG_ERROR("Splash font returned zero line height; skipping splash");
-        aroma_font_destroy(font);
-        return;
-    }
-
-    int gap          = 20;
-    int total_height = title_height + gap + slogan_height;
-    int start_y      = (height - total_height) / 2;
-
-    int title_x  = (width - (int)title_width)  / 2;
-    int title_y  = start_y;
-    int slogan_x = (width - (int)slogan_width) / 2;
-    int slogan_y = title_y + title_height + gap;
-
-    uint64_t start_time = aroma_time_now_ms();
-    float    start_angle = 0.0f;
-
-    while (aroma_time_now_ms() - start_time < 3000)
-    {
-        if (gfx->clear)
-        {
-            gfx->clear(window_id, theme.colors.background);
-        }
-
-        if (gfx->render_text)
-        {
-            gfx->render_text(window_id, font, g_splash_title,  title_x,  title_y,
-                             theme.colors.primary, title_scale);
-            gfx->render_text(window_id, font, g_splash_slogan, slogan_x, slogan_y,
-                             theme.colors.text_secondary, slogan_scale);
-        }
-
-        if (gfx->fill_rectangle)
-        {
-            int spinner_r = 22;
-            int thickness = 5;
-            int cx        = width / 2;
-            int cy        = slogan_y + slogan_height + 40 + spinner_r;
-            int orbit_r   = spinner_r - thickness;
-            if (orbit_r < 1) orbit_r = 1;
-
-            for (int di = 0; di < 4; di++)
-            {
-                float angle     = start_angle - (di * 20.0f);
-                float angle_rad = angle * 3.14159265f / 180.0f;
-                int   dot_size  = (thickness * 2) - di * (thickness / 2);
-                if (dot_size < 2) dot_size = 2;
-
-                int dx = cx + (int)(orbit_r * cosf(angle_rad)) - dot_size / 2;
-                int dy = cy + (int)(orbit_r * sinf(angle_rad)) - dot_size / 2;
-
-                uint32_t color = theme.colors.primary;
-                uint32_t a_ch  = (color >> 24) & 0xFF;
-                if (a_ch == 0) a_ch = 0xFF;
-                a_ch /= (uint32_t)(di + 1);
-                uint32_t c = (a_ch << 24) | (color & 0x00FFFFFF);
-
-                gfx->fill_rectangle(window_id, dx, dy, dot_size, dot_size,
-                                    c, true, dot_size / 2.0f);
-            }
-        }
-
-        start_angle += 10.0f;
-        if (start_angle >= 360.0f) start_angle -= 360.0f;
-
 #ifndef ESP32
-        aroma_graphics_swap_buffers(window_id);
+    aroma_graphics_swap_buffers(window_id);
 #endif
-
-        SLEEP_MS(30);
-    }
-
-    aroma_font_destroy(font);
 }
 void aroma_ui_set_offscreen_mode(bool offscreen) {
     if (aroma_backend_abi.get_platform_interface()->set_offscreen_mode) {

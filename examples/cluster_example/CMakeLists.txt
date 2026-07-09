@@ -4,7 +4,6 @@ project(ev_cluster_display C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" ON)
 
 find_package(PkgConfig REQUIRED)
 find_package(Vulkan QUIET)
@@ -29,9 +28,6 @@ target_compile_options(ev_cluster PRIVATE
     -Wall -Wextra
 )
 
-if(ENABLE_GLFW AND Vulkan_FOUND)
-    target_link_libraries(ev_cluster PRIVATE Vulkan::Vulkan)
-endif()
 
 
 install(TARGETS ev_cluster 

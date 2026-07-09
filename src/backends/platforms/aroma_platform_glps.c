@@ -20,21 +20,25 @@ typedef struct
 {
     glps_WindowManager *wm;
     size_t primary_window_id;
+    bool has_primary_window;
     double last_mouse_x;
     double last_mouse_y;
     bool mouse_button_down;
     bool capslock_active;
     bool ctrl_active;
+    bool frame_rendered;
 } AromaGLPSContext;
 
 static AromaGLPSContext platform_ctx = (AromaGLPSContext){
     .wm = NULL,
     .primary_window_id = 0,
+    .has_primary_window = false,
     .last_mouse_x = 0.0,
     .last_mouse_y = 0.0,
     .mouse_button_down = false,
     .capslock_active = false,
-    .ctrl_active = false};
+    .ctrl_active = false,
+    .frame_rendered = false};
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
@@ -257,6 +261,8 @@ int initialize()
     glps_wm_set_keyboard_callback(platform_ctx.wm, glps_keyboard_callback, NULL);
     glps_wm_set_touch_callback(platform_ctx.wm, glps_touch_callback, NULL);
 
+    platform_ctx.frame_rendered = false;
+
     return 1;
 }
 
@@ -264,16 +270,17 @@ size_t create_window(const char *title, int x, int y, int width, int height)
 {
     size_t window_id = glps_wm_window_create(platform_ctx.wm, title, x, y, width, height);
 
-    if (window_id == 0)
+    if (!platform_ctx.has_primary_window)
     {
         aroma_backend_abi.get_graphics_interface()->setup_shared_window_resources();
     }
 
     aroma_backend_abi.get_graphics_interface()->setup_separate_window_resources(window_id);
 
-    if (platform_ctx.primary_window_id == 0)
+    if (!platform_ctx.has_primary_window)
     {
         platform_ctx.primary_window_id = window_id;
+        platform_ctx.has_primary_window = true;
     }
 
     return window_id;
@@ -307,9 +314,13 @@ bool run_event_loop()
         return false;
     }
 
-    if (platform_ctx.primary_window_id != 0 && aroma_dirty_list_has_entries())
+    if (platform_ctx.has_primary_window)
     {
-        glps_wm_window_update(platform_ctx.wm, platform_ctx.primary_window_id);
+        if (!platform_ctx.frame_rendered || aroma_dirty_list_has_entries())
+        {
+            glps_wm_window_update(platform_ctx.wm, platform_ctx.primary_window_id);
+            platform_ctx.frame_rendered = true;
+        }
     }
     return !glps_wm_should_close(platform_ctx.wm);
 }
@@ -346,12 +357,14 @@ void shutdown()
         LOG_WARNING("TODO: Window manager has no active windows; skipping GLPS destroy to avoid shutdown crash.");
         platform_ctx.wm = NULL;
         platform_ctx.primary_window_id = 0;
+        platform_ctx.has_primary_window = false;
         return;
     }
 
     glps_wm_destroy(platform_ctx.wm);
     platform_ctx.wm = NULL;
     platform_ctx.primary_window_id = 0;
+    platform_ctx.has_primary_window = false;
 }
 
 #ifdef AROMA_HAS_VULKAN
@@ -359,10 +372,10 @@ static bool glps_create_vulkan_surface(size_t window_id, void *vk_instance, void
 {
     if (!platform_ctx.wm || !vk_instance || !vk_surface_out)
         return false;
-    glps_wm_vk_create_surface(platform_ctx.wm, window_id,
-                              (VkInstance *)vk_instance, (VkSurfaceKHR *)vk_surface_out);
-    VkSurfaceKHR surface = *(VkSurfaceKHR *)vk_surface_out;
-    return surface != VK_NULL_HANDLE;
+//    glps_wm_vk_create_surface(platform_ctx.wm, window_id,
+  //                            (VkInstance *)vk_instance, (VkSurfaceKHR *)vk_surface_out);
+   // VkSurfaceKHR surface = *(VkSurfaceKHR *)vk_surface_out;
+    //return surface != VK_NULL_HANDLE;
 }
 
 static const char *glps_vulkan_extensions[] = {
