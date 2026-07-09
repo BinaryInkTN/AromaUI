@@ -1,3 +1,5 @@
+#define LINUX_TOUCHSCREEN
+
 #include "aroma.h"
 #include "aroma_animation.h"
 #include "app_state.h"

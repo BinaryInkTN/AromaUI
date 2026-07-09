@@ -20,24 +20,24 @@ void build_status_bar(void)
     aroma_node_set_hidden(state.time_label, true);
 
     state.status_card = aroma_ui_card(
-        (AromaNode *)state.window, WIN_W - 235, 18, 175, 50, CARD_TYPE_FILLED);
+        (AromaNode *)state.window, WIN_W - 200, 10, 175, 50, CARD_TYPE_FILLED);
     aroma_node_set_z_index(state.status_card, Z_LAYER_STATUS_BAR);
 
     state.signal_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_SIGNAL_CELLULAR_4_BAR, 
-        WIN_W - 120, 30, 24, state.theme.colors.text_primary, state.icon_font);
+        WIN_W - 80, 30, 24, state.theme.colors.text_primary, state.icon_font);
     state.wifi_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_WIFI, 
-        WIN_W - 80, 30, 24, state.theme.colors.text_primary, state.icon_font);
+        WIN_W - 40, 30, 24, state.theme.colors.text_primary, state.icon_font);
     state.battery_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_BATTERY_FULL, 
-        WIN_W - 200, 30, 24, state.theme.colors.text_primary, state.icon_font);
+        WIN_W - 160, 30, 24, state.theme.colors.text_primary, state.icon_font);
     state.gps_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_GPS_FIXED, 
-        WIN_W - 160, 30, 24, state.theme.colors.text_primary, state.icon_font);
+        WIN_W - 120, 30, 24, state.theme.colors.text_primary, state.icon_font);
     state.bluetooth_icon = aroma_ui_icon(
         (AromaNode *)state.window, AROMA_ICON_BLUETOOTH_AUDIO, 
-        WIN_W - 40, 30, 24, state.theme.colors.text_primary, state.icon_font);
+        WIN_W - 200, 30, 24, state.theme.colors.text_primary, state.icon_font);
     aroma_node_set_hidden(state.bluetooth_icon, true);
     AromaNode *status_icons[] = {
         state.signal_icon, state.wifi_icon, state.battery_icon,
@@ -48,13 +48,13 @@ void build_status_bar(void)
 
     state.voice_button = aroma_ui_iconbutton(
         (AromaNode *)state.window, AROMA_ICON_MIC,
-        WIN_W - 290, 22, 40, ICON_BUTTON_FILLED,
+        WIN_W - 250, 22, 40, ICON_BUTTON_FILLED,
         voice_button_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.voice_button, Z_LAYER_STATUS_ICONS);
 
     state.settings_icon = aroma_ui_iconbutton(
         (AromaNode *)state.window, AROMA_ICON_SETTINGS,
-        WIN_W - 345, 22, 40, ICON_BUTTON_OUTLINED,
+        WIN_W - 305, 22, 40, ICON_BUTTON_OUTLINED,
         settings_button_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.settings_icon, Z_LAYER_STATUS_ICONS);
 

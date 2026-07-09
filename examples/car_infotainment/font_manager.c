@@ -35,7 +35,7 @@ bool init_fonts(void)
     state.tab_font = create_font_safe(icon_ttf, icon_ttf_len, 128, "tab_font");
     if (!state.tab_font) success = false;
     
-    state.clock_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 68, "clock_font");
+    state.clock_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 58, "clock_font");
     if (!state.clock_font) success = false;
     
     state.clock_pm_am_font = create_font_safe(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24, "clock_pm_am_font");

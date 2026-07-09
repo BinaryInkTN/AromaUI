@@ -2268,8 +2268,10 @@ void build_settings_ui(AromaNode *window)
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
 
-    AromaNode *icon = aroma_ui_icon(state.settings_panel_node, AROMA_ICON_SETTINGS, 45, 25, 8, 0xFF2196F3, state.icon_font);
-    aroma_node_set_z_index(icon, Z_LAYER_SETTINGS_PANEL + 2);
+    AromaNode *collapse_button = aroma_ui_iconbutton(
+        state.settings_panel_node, AROMA_ICON_CLOSE, 10, 15, 30, ICON_BUTTON_OUTLINED,
+        settings_button_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(collapse_button, Z_LAYER_SETTINGS_PANEL + 2);
     AromaNode *label = aroma_ui_label(state.settings_panel_node, "Settings", 50, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     AromaNode *debug_build_number = aroma_ui_label(state.settings_panel_node, "Debug Build: " __DATE__ " " __TIME__, 500, 15, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(debug_build_number, Z_LAYER_SETTINGS_PANEL + 2);

@@ -230,6 +230,8 @@ static void glps_touch_callback(size_t window_id, int id, double touch_x,
         }
         else if (moved)
         {
+            // temporary workaround: treat touch move as mouse move for now
+            aroma_event_handle_touch( id, (int)touch_x, (int)touch_y, 1);
             queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, touch_x, touch_y, 0);
             aroma_event_handle_pointer_move((int)touch_x, (int)touch_y, true);
             platform_ctx.last_mouse_x = touch_x;
