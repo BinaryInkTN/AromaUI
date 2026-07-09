@@ -16,8 +16,10 @@ static AromaGraphicsInterface* get_real_graphics_interface(void) {
     return &aroma_graphics_tft;
 #else
     AromaGraphicsBackendType type = atomic_load(&current_graphics_backend);
+#ifdef AROMA_HAS_VULKAN
     if (type == GRAPHICS_BACKEND_VULKAN)
         return &aroma_graphics_vulkan;
+#endif
     if (type == GRAPHICS_BACKEND_GLES3)
         return &aroma_graphics_gles3;
 #endif
