@@ -46,8 +46,6 @@ void aroma_android_set_app(struct android_app *state)
 #endif
 
 #define INVALID_INDEX -1
-#define MAX_SPLASH_WAIT_ATTEMPTS 100
-#define SPLASH_WAIT_INTERVAL_MS 20
 #define DEFAULT_WINDOW_WIDTH 800
 #define DEFAULT_WINDOW_HEIGHT 600
 
@@ -60,10 +58,7 @@ AromaNode *g_focused_node = NULL;
 static bool g_immediate_mode = false;
 static bool g_running = true;
 static AromaDrawList *g_window_drawlists[AROMA_MAX_WINDOWS] = {0};
-static bool g_splash_enabled = true;
 static AromaTheme g_default_theme;
-char g_splash_title[64]  = "AromaUI";
-char g_splash_slogan[64] = "Modern UI for Everywhere";
 
 static void window_update_callback(size_t window_id, void *data);
 static int find_window_index_by_id(size_t window_id);
@@ -71,7 +66,6 @@ static int find_window_index_by_node(struct AromaNode *node);
 static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
                                size_t *task_count, size_t max_tasks,
                                const AromaRect *clip);
-static void show_splash_screen(size_t window_id, int width, int height);
 static int draw_task_compare(const void *a, const void *b);
 
 static inline bool is_valid_node_ptr(const AromaNode *node)
@@ -79,41 +73,6 @@ static inline bool is_valid_node_ptr(const AromaNode *node)
     if (!node) return false;
     if (((uintptr_t)node % _Alignof(AromaNode)) != 0) return false;
     return true;
-}
-
-#ifdef __EMSCRIPTEN__
-EM_JS(double, aroma_emscripten_device_pixel_ratio, (void), {
-    return window.devicePixelRatio || 1.0;
-});
-#endif
-
-static int aroma_get_splash_font_size(AromaPlatformInterface *platform)
-{
-    int base = 46;
-#ifdef __EMSCRIPTEN__
-    double dpr = aroma_emscripten_device_pixel_ratio();
-    if (dpr < 1.0) dpr = 1.0;
-    return (int)(base * dpr);
-#else
-    if (platform && platform->android_sp_to_px)
-        return platform->android_sp_to_px(base);
-    return base;
-#endif
-}
-
-void aroma_splash(bool enabled, const char *title, const char *slogan)
-{
-    if (title)
-    {
-        strncpy(g_splash_title, title, sizeof(g_splash_title) - 1);
-        g_splash_title[sizeof(g_splash_title) - 1] = '\0';
-    }
-    if (slogan)
-    {
-        strncpy(g_splash_slogan, slogan, sizeof(g_splash_slogan) - 1);
-        g_splash_slogan[sizeof(g_splash_slogan) - 1] = '\0';
-    }
-    g_splash_enabled = enabled;
 }
 
 void aroma_ui_open_url_impl(const char *url)
@@ -352,44 +311,6 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
     aroma_event_set_root(window);
 
     LOG_INFO("Window %d created: title='%s', size=%dx%d", idx, title, width, height);
-
-    if (g_window_count == 1 && g_splash_enabled)
-    {
-        AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
-
-        int w = 0, h = 0;
-        for (int attempts = 0; attempts < MAX_SPLASH_WAIT_ATTEMPTS; attempts++)
-        {
-            aroma_ui_process_events_impl();
-
-            if (platform && platform->get_window_size)
-            {
-                platform->get_window_size(g_windows[idx].window_id, &w, &h);
-            }
-
-            if (w > 0 && h > 0) break;
-            #ifndef __EMSCRIPTEN__
-            SLEEP_MS(SPLASH_WAIT_INTERVAL_MS);
-            #else 
-            emscripten_sleep(SPLASH_WAIT_INTERVAL_MS);
-            #endif
-        }
-
-        if (platform && platform->make_context_current)
-        {
-            platform->make_context_current(g_windows[idx].window_id);
-        }
-
-        if (w <= 0 || h <= 0)
-        {
-            LOG_WARNING("Timed out waiting for window surface. Using defaults.");
-            w = (width  > 0) ? width  : DEFAULT_WINDOW_WIDTH;
-            h = (height > 0) ? height : DEFAULT_WINDOW_HEIGHT;
-        }
-
-        aroma_node_invalidate(window);
-       show_splash_screen(g_windows[idx].window_id, w, h);
-    }
 
     aroma_node_invalidate(window);
 
@@ -904,33 +825,7 @@ static void window_update_callback(size_t window_id, void *data)
     aroma_dirty_list_clear();
     s_in_update = false;
 }
-static void show_splash_screen(size_t window_id, int width, int height)
-{
-    (void)width;
-    (void)height;
 
-    if (!g_splash_enabled) return;
-
-    LOG_INFO("Splash screen stubbed - clearing and swapping only");
-
-    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
-    if (!gfx)
-    {
-        LOG_WARNING("Graphics interface not available for splash screen");
-        return;
-    }
-
-    AromaTheme theme = aroma_theme_get_global();
-
-    if (gfx->clear)
-    {
-        gfx->clear(window_id, theme.colors.background);
-    }
-
-#ifndef ESP32
-    aroma_graphics_swap_buffers(window_id);
-#endif
-}
 void aroma_ui_set_offscreen_mode(bool offscreen) {
     if (aroma_backend_abi.get_platform_interface()->set_offscreen_mode) {
         aroma_backend_abi.get_platform_interface()->set_offscreen_mode(offscreen);
