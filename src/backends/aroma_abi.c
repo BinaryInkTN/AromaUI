@@ -20,14 +20,6 @@ static AromaGraphicsInterface* get_real_graphics_interface(void) {
         return &aroma_graphics_vulkan;
     if (type == GRAPHICS_BACKEND_GLES3)
         return &aroma_graphics_gles3;
-
-#if defined(AROMA_HAS_VULKAN)
-    atomic_store(&current_graphics_backend, GRAPHICS_BACKEND_VULKAN);
-    return &aroma_graphics_vulkan;
-#else
-    atomic_store(&current_graphics_backend, GRAPHICS_BACKEND_GLES3);
-    return &aroma_graphics_gles3;
-#endif
 #endif
 }
 
