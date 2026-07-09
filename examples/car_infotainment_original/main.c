@@ -29,10 +29,6 @@ int main(int argc, char **argv)
  
     aroma_animation_manager_init();
 
-    char build_info[MAX_STRING_LEN];
-    snprintf(build_info, sizeof(build_info),
-             "AromaOS v0.0.1 - Build: %s %s", __DATE__, __TIME__);
-    aroma_splash(false, "AromaOS", build_info);
 
     if (!aroma_ui_init())
     {

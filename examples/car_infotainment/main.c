@@ -11,7 +11,6 @@ int main()
 
     while (aroma_ui_is_running())
     {
-        aroma_ui_request_redraw(window);
         aroma_ui_process_events();
         aroma_ui_render(window);
 

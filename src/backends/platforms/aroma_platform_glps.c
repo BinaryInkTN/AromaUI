@@ -303,7 +303,7 @@ void set_window_update_callback(void (*callback)(size_t window_id, void *data), 
 
 void request_window_update(size_t window_id)
 {
-    glps_wm_window_update(platform_ctx.wm, window_id);
+    //glps_wm_swap_buffers(platform_ctx.wm, window_id);
 }
 
 bool run_event_loop()
@@ -312,15 +312,6 @@ bool run_event_loop()
     {
         LOG_ERROR("Window manager not initialized. Cannot run event loop.");
         return false;
-    }
-
-    if (platform_ctx.has_primary_window)
-    {
-        if (!platform_ctx.frame_rendered || aroma_dirty_list_has_entries())
-        {
-            glps_wm_window_update(platform_ctx.wm, platform_ctx.primary_window_id);
-            platform_ctx.frame_rendered = true;
-        }
     }
     return !glps_wm_should_close(platform_ctx.wm);
 }
