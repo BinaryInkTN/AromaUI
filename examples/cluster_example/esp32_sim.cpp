@@ -70,6 +70,8 @@ typedef struct
 } sdv_telemetry_t;
 #pragma pack(pop)
 
+static_assert(sizeof(sdv_telemetry_t) <= 255, "sdv_telemetry_t exceeds 255 bytes");
+
 sdv_telemetry_t telemetry;
 uint8_t frame_seq = 0;
 uint32_t start_time;
@@ -103,8 +105,10 @@ void send_telemetry_frame()
     header[0] = UART_FRAME_START;
     header[1] = SDV_TELEMETRY_VERSION;
     header[2] = UART_FRAME_TYPE_TELEMETRY_ALL;
-    header[3] = sizeof(sdv_telemetry_t);
+    header[3] = (uint8_t)sizeof(sdv_telemetry_t);
 
+    telemetry.magic = SDV_TELEMETRY_MAGIC;
+    telemetry.version = SDV_TELEMETRY_VERSION;
     telemetry.seq = frame_seq++;
     telemetry.uptime_ms = millis() - start_time;
     telemetry.run_id++;
@@ -121,7 +125,8 @@ void send_telemetry_frame()
 
     Serial.write(header, sizeof(header));
     Serial.write((uint8_t *)&telemetry, sizeof(telemetry));
-    Serial.write((uint8_t *)&crc, 2);
+    Serial.write((uint8_t)(crc & 0xFF));
+    Serial.write((uint8_t)((crc >> 8) & 0xFF));
 }
 
 const char *get_html_page()
