@@ -15,7 +15,11 @@ if(NOT TARGET aroma)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../.." aroma_root)
 endif()
 
-add_executable(ev_cluster ev_cluster.c)
+add_executable(ev_cluster ev_cluster.c
+    shm_reader.c
+
+
+)
 
 target_link_libraries(ev_cluster PRIVATE
     aroma
