@@ -1,4 +1,3 @@
-
 #include "core/aroma_node.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
@@ -286,14 +285,15 @@ void aroma_dirty_list_init(void)
     memset(s_dirty_nodes, 0, sizeof(s_dirty_nodes));
 }
 
-void aroma_dirty_list_add(AromaNode* node)
+bool aroma_dirty_list_add(AromaNode* node)
 {
-    if (!node) return;
+    if (!node) return false;
     if (s_dirty_count >= AROMA_MAX_DIRTY_NODES) {
         LOG_WARNING("Dirty list full — dropping node %" PRIu64 ".", node->node_id);
-        return;
+        return false;
     }
     s_dirty_nodes[s_dirty_count++] = node;
+    return true;
 }
 
 void aroma_dirty_list_clear(void)
@@ -329,9 +329,10 @@ void aroma_node_invalidate(AromaNode* node)
 {
     if (!node || node->is_dirty) return;
 
+    if (!aroma_dirty_list_add(node)) return;
+
     node->is_dirty    = true;
     node->dirty_frame = s_frame_number;
-    aroma_dirty_list_add(node);
 
     if (!node->propagate_dirty) return;
     AromaNode* p = node->parent_node;

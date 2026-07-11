@@ -204,7 +204,7 @@ bool aroma_node_is_hidden(AromaNode* node);
 void aroma_dirty_list_init(void);
 void aroma_dirty_list_clear(void);
 AromaNode** aroma_dirty_list_get(size_t* count);
-void aroma_dirty_list_add(AromaNode* node);
+bool aroma_dirty_list_add(AromaNode* node);
 bool aroma_dirty_list_has_entries(void);
 
 uint64_t aroma_frame_number(void);
