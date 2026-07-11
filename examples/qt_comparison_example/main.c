@@ -480,7 +480,7 @@ int main(void)
                 run_test_step(window);
 
         aroma_ui_process_events();
-       
+        aroma_node_invalidate((AromaNode *)window);
         aroma_ui_render(window);
         fps_tick();    
         
