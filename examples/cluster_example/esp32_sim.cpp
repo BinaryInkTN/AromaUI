@@ -1,530 +1,266 @@
+#include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
 
-#define SDV_TELEMETRY_VERSION 3u
-#define SDV_TELEMETRY_MAGIC 0xA5u
-
-#define UART_FRAME_START 0xAAu
-#define UART_FRAME_TYPE_TELEMETRY_ALL 0x45u
-
-#define SDV_FAULT_VSS (1u << 0)
-#define SDV_FAULT_BME280 (1u << 1)
-#define SDV_FAULT_GPS (1u << 2)
-#define SDV_GPS_FIX_VALID (1u << 3)
-
-#define SDV_VEH_RAIN (1u << 0)
-#define SDV_VEH_DOOR_OPEN (1u << 1)
-#define SDV_VEH_DOOR_LOCKED (1u << 2)
-#define SDV_VEH_HEADLIGHT (1u << 3)
-#define SDV_VEH_WIPER_ON (1u << 4)
-#define SDV_VEH_INDICATOR_L (1u << 5)
-#define SDV_VEH_INDICATOR_R (1u << 6)
-#define SDV_VEH_CRASH (1u << 7)
-#define SDV_VEH_AIRBAG (1u << 8)
-#define SDV_VEH_SEATBELT_WARN (1u << 9)
-#define SDV_VEH_SEAT_OCCUPIED (1u << 10)
-#define SDV_VEH_HIGH_SPEED (1u << 11)
-#define SDV_VEH_HARSH_BRAKING (1u << 12)
-#define SDV_VEH_BUZZER (1u << 13)
-#define SDV_VEH_INTERIOR_LIGHT (1u << 14)
-
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint16_t resp_max_x10us;
     uint16_t resp_avg_x10us;
     uint16_t exec_count;
     uint16_t deadline_misses;
 } sdv_task_stats_t;
 
-typedef struct
-{
-    uint8_t magic;
-    uint8_t version;
-    uint8_t seq;
-    uint8_t sched_mode;
+typedef struct {
+    uint8_t  magic;
+    uint8_t  version;
+    uint8_t  seq;
+    uint8_t  sched_mode;
     uint16_t run_id;
-    uint8_t num_tasks;
-    uint8_t fault_flags;
+    uint8_t  num_tasks;
+    uint8_t  fault_flags;
     uint32_t uptime_ms;
     uint16_t cpu_load_x100;
     uint16_t total_misses;
     uint16_t veh_flags;
     uint16_t veh_speed_x10;
-    int16_t veh_accel_x100;
-    uint8_t bcm_wiper_speed;
+    int16_t  veh_accel_x100;
+    uint8_t  bcm_wiper_speed;
     uint16_t acm_throttle_x100;
     uint16_t acm_brake_pa;
     uint16_t acm_fsr_raw;
-    uint8_t acm_status;
-    int16_t seat_position_deg;
-    uint8_t seat_profile;
-    int16_t env_temp_x10;
+    uint8_t  acm_status;
+    int16_t  seat_position_deg;
+    uint8_t  seat_profile;
+    int16_t  env_temp_x10;
     uint16_t env_hum_x100;
     uint32_t env_press_pa;
-    int32_t gps_lat_x1e6;
-    int32_t gps_lon_x1e6;
-    int16_t gps_alt_m;
-    uint8_t gps_satellites;
+    int32_t  gps_lat_x1e6;
+    int32_t  gps_lon_x1e6;
+    int16_t  gps_alt_m;
+    uint8_t  gps_satellites;
     sdv_task_stats_t task[4];
 } sdv_telemetry_t;
 #pragma pack(pop)
 
-static_assert(sizeof(sdv_telemetry_t) <= 255, "sdv_telemetry_t exceeds 255 bytes");
+#define MAGIC 0xA5
 
-sdv_telemetry_t telemetry;
-uint8_t frame_seq = 0;
-uint32_t start_time;
-bool auto_increment = false;
-int update_interval_ms = 100;
+const char *AP_SSID = "SDV_Telemetry";
 
-const char *ssid = "SDV_Telemetry_Simulator";
-const char *password = "sdv12345";
 WebServer server(80);
 
-static uint16_t crc16_ibm(const uint8_t *data, size_t len)
-{
-    uint16_t crc = 0x0000u;
-    for (size_t i = 0; i < len; i++)
-    {
-        crc ^= (uint16_t)data[i];
-        for (int bit = 0; bit < 8; bit++)
-        {
-            if (crc & 0x0001u)
-                crc = (uint16_t)((crc >> 1) ^ 0xA001u);
-            else
-                crc = (uint16_t)(crc >> 1);
+uint8_t crc8(const uint8_t *data, size_t len) {
+    uint8_t crc = 0x00;
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (int b = 0; b < 8; b++) {
+            if (crc & 0x80) {
+                crc = (uint8_t)((crc << 1) ^ 0x07);
+            } else {
+                crc = (uint8_t)(crc << 1);
+            }
         }
     }
     return crc;
 }
 
-void send_telemetry_frame()
-{
-    uint8_t header[4];
-    header[0] = UART_FRAME_START;
-    header[1] = SDV_TELEMETRY_VERSION;
-    header[2] = UART_FRAME_TYPE_TELEMETRY_ALL;
-    header[3] = (uint8_t)sizeof(sdv_telemetry_t);
+sdv_telemetry_t pkt;
+uint8_t seq_counter = 0;
+uint32_t cycle_counter = 0;
 
-    telemetry.magic = SDV_TELEMETRY_MAGIC;
-    telemetry.version = SDV_TELEMETRY_VERSION;
-    telemetry.seq = frame_seq++;
-    telemetry.uptime_ms = millis() - start_time;
-    telemetry.run_id++;
+void collect_dummy_data() {
+    pkt.magic       = MAGIC;
+    pkt.version     = 1;
+    pkt.seq         = seq_counter++;
+    pkt.sched_mode  = (uint8_t)(cycle_counter % 3);
+    pkt.run_id      = 1234;
+    pkt.num_tasks   = 4;
+    pkt.fault_flags = (cycle_counter % 50 == 0) ? 0x01 : 0x00;
+    pkt.uptime_ms      = millis();
+    pkt.cpu_load_x100  = (uint16_t)(2000 + (cycle_counter % 60) * 50);
+    pkt.total_misses   = (uint16_t)(cycle_counter / 20);
+    pkt.veh_flags      = (uint16_t)(0x0001 << (cycle_counter % 4));
+    pkt.veh_speed_x10  = (uint16_t)(300 + (cycle_counter % 400));
+    pkt.veh_accel_x100 = (int16_t)(((cycle_counter % 40) - 20) * 5);
+    pkt.bcm_wiper_speed = (uint8_t)(cycle_counter % 3);
+    pkt.acm_throttle_x100 = (uint16_t)((cycle_counter % 100) * 100);
+    pkt.acm_brake_pa      = (uint16_t)((cycle_counter % 20) * 500);
+    pkt.acm_fsr_raw       = (uint16_t)(300 + (cycle_counter % 400));
+    pkt.acm_status        = (uint8_t)(1 + (cycle_counter % 2));
+    pkt.seat_position_deg = (int16_t)(((cycle_counter % 60) - 30));
+    pkt.seat_profile      = (uint8_t)(cycle_counter % 3);
+    pkt.env_temp_x10 = (int16_t)(180 + (cycle_counter % 100));
+    pkt.env_hum_x100 = (uint16_t)(3000 + (cycle_counter % 4000));
+    pkt.env_press_pa = (uint32_t)(100000 + (cycle_counter % 3000));
+    pkt.gps_lat_x1e6 = 37774900 + (int32_t)(cycle_counter % 1000);
+    pkt.gps_lon_x1e6 = -122419400 + (int32_t)(cycle_counter % 1000);
+    pkt.gps_alt_m    = (int16_t)(10 + (cycle_counter % 50));
+    pkt.gps_satellites = (uint8_t)(4 + (cycle_counter % 9));
 
-    if (auto_increment)
-    {
-        telemetry.cpu_load_x100 = (uint16_t)(4000 + random(1000));
-        telemetry.total_misses += random(2);
+    for (int i = 0; i < 4; i++) {
+        pkt.task[i].resp_max_x10us    = (uint16_t)(100 + i + (cycle_counter % 30));
+        pkt.task[i].resp_avg_x10us    = (uint16_t)(50 + i + (cycle_counter % 15));
+        pkt.task[i].exec_count        = (uint16_t)(1000 + i + cycle_counter);
+        pkt.task[i].deadline_misses   = (uint16_t)((cycle_counter / 25) % 5);
     }
 
-    uint16_t crc_header = crc16_ibm(header, sizeof(header));
-    uint16_t crc_payload = crc16_ibm((uint8_t *)&telemetry, sizeof(telemetry));
-    uint16_t crc = crc_header ^ crc_payload;
-
-    Serial.write(header, sizeof(header));
-    Serial.write((uint8_t *)&telemetry, sizeof(telemetry));
-    Serial.write((uint8_t)(crc & 0xFF));
-    Serial.write((uint8_t)((crc >> 8) & 0xFF));
+    cycle_counter++;
 }
 
-const char *get_html_page()
-{
-    return R"rawliteral(
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SDV Telemetry Simulator</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #0a0e27; color: #e0e0e0; padding: 15px; }
-h1 { text-align: center; color: #00d4ff; margin-bottom: 20px; font-size: 1.5em; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
-.card { background: #141b3d; border-radius: 10px; padding: 15px; border: 1px solid #2a3370; }
-.card h2 { color: #00d4ff; font-size: 1.1em; margin-bottom: 10px; border-bottom: 1px solid #2a3370; padding-bottom: 5px; }
-.row { display: flex; align-items: center; margin: 8px 0; }
-.row label { flex: 1; font-size: 0.9em; }
-.row input, .row select { width: 130px; padding: 6px; background: #0d1130; color: #e0e0e0; border: 1px solid #3a4370; border-radius: 5px; font-size: 0.9em; }
-.row input[type="range"] { width: 100px; cursor: pointer; }
-.row .val { width: 50px; text-align: right; font-size: 0.85em; color: #8ecae6; }
-.row input[type="checkbox"] { width: auto; margin-left: auto; }
-.control-bar { display: flex; justify-content: center; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
-.btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 600; color: white; transition: 0.2s; }
-.btn:hover { opacity: 0.85; transform: translateY(-1px); }
-.btn-send { background: #00b4d8; }
-.btn-auto { background: #06d6a0; }
-.btn-auto.stop { background: #ef476f; }
-.btn-reset { background: #ffd166; color: #1a1a2e; }
-.stats { text-align: center; margin: 10px 0; font-size: 0.9em; color: #8ecae6; }
-.stats span { margin: 0 10px; }
-@media (max-width: 600px) {
-    .row label { font-size: 0.8em; }
-    .row input, .row select { width: 100px; }
-}
-</style>
-</head>
-<body>
-<h1>SDV Telemetry Simulator</h1>
-
-<div class="stats">
-    <span>Seq: <b id="seq">0</b></span>
-    <span>Frames: <b id="frames">0</b></span>
-    <span>Interval: <b id="interval">100ms</b></span>
-</div>
-
-<div class="control-bar">
-    <button class="btn btn-send" onclick="sendFrame()">Send Single Frame</button>
-    <button class="btn btn-auto" id="autoBtn" onclick="toggleAuto()">Auto Send</button>
-    <button class="btn btn-reset" onclick="resetAll()">Reset All</button>
-</div>
-
-<div class="grid">
-    <div class="card">
-        <h2>Scheduler & System</h2>
-        <div class="row"><label>Mode</label>
-            <select id="sched_mode">
-                <option value="0">RM</option><option value="1">EDF</option><option value="2">CBS</option>
-            </select></div>
-        <div class="row"><label>CPU Load (x100)</label>
-            <input type="range" id="cpu_load" min="0" max="10000" value="4500" oninput="updateSlider(this)">
-            <span class="val" id="cpu_load_val">45%</span></div>
-        <div class="row"><label>Total Misses</label>
-            <input type="number" id="total_misses" value="0"></div>
-        <div class="row"><label>Fault Flags</label>
-            <select id="fault_flags">
-                <option value="0">None</option><option value="1">VSS</option><option value="2">BME280</option>
-                <option value="4">GPS</option><option value="8">GPS Fix Valid</option>
-            </select></div>
-    </div>
-
-    <div class="card">
-        <h2>Vehicle Dynamics</h2>
-        <div class="row"><label>Speed (km/h x10)</label>
-            <input type="range" id="veh_speed" min="0" max="2500" value="600" oninput="updateSlider(this)">
-            <span class="val" id="veh_speed_val">60.0</span></div>
-        <div class="row"><label>Accel (m/s² x100)</label>
-            <input type="range" id="veh_accel" min="-1500" max="1500" value="0" oninput="updateSlider(this)">
-            <span class="val" id="veh_accel_val">0.00</span></div>
-        <div class="row"><label>Throttle (x100)</label>
-            <input type="range" id="acm_throttle" min="0" max="10000" value="2500" oninput="updateSlider(this)">
-            <span class="val" id="acm_throttle_val">25%</span></div>
-        <div class="row"><label>Brake (Pa)</label>
-            <input type="range" id="acm_brake" min="0" max="20000" value="0" oninput="updateSlider(this)">
-            <span class="val" id="acm_brake_val">0</span></div>
-    </div>
-
-    <div class="card">
-        <h2>Vehicle States</h2>
-        <div class="row"><label>Rain</label><input type="checkbox" id="flag_rain" onchange="toggleFlag('RAIN', this)"></div>
-        <div class="row"><label>Door Open</label><input type="checkbox" id="flag_door_open" onchange="toggleFlag('DOOR_OPEN', this)"></div>
-        <div class="row"><label>Door Locked</label><input type="checkbox" id="flag_door_locked" checked onchange="toggleFlag('DOOR_LOCKED', this)"></div>
-        <div class="row"><label>Headlight</label><input type="checkbox" id="flag_headlight" onchange="toggleFlag('HEADLIGHT', this)"></div>
-        <div class="row"><label>Wiper On</label><input type="checkbox" id="flag_wiper" onchange="toggleFlag('WIPER_ON', this)"></div>
-        <div class="row"><label>Indicator L</label><input type="checkbox" id="flag_ind_l" onchange="toggleFlag('INDICATOR_L', this)"></div>
-        <div class="row"><label>Indicator R</label><input type="checkbox" id="flag_ind_r" onchange="toggleFlag('INDICATOR_R', this)"></div>
-        <div class="row"><label>Crash</label><input type="checkbox" id="flag_crash" onchange="toggleFlag('CRASH', this)"></div>
-        <div class="row"><label>Airbag</label><input type="checkbox" id="flag_airbag" onchange="toggleFlag('AIRBAG', this)"></div>
-        <div class="row"><label>Seatbelt Warn</label><input type="checkbox" id="flag_seatbelt" onchange="toggleFlag('SEATBELT_WARN', this)"></div>
-        <div class="row"><label>Seat Occupied</label><input type="checkbox" id="flag_seat" checked onchange="toggleFlag('SEAT_OCCUPIED', this)"></div>
-        <div class="row"><label>Wiper Speed</label>
-            <select id="wiper_speed">
-                <option value="0">Off</option><option value="1">Slow</option><option value="2">Fast</option>
-            </select></div>
-    </div>
-
-    <div class="card">
-        <h2>Environment (BME280)</h2>
-        <div class="row"><label>Temp (°C x10)</label>
-            <input type="range" id="env_temp" min="-400" max="850" value="250" oninput="updateSlider(this)">
-            <span class="val" id="env_temp_val">25.0°C</span></div>
-        <div class="row"><label>Humidity (% x100)</label>
-            <input type="range" id="env_hum" min="0" max="10000" value="5500" oninput="updateSlider(this)">
-            <span class="val" id="env_hum_val">55%</span></div>
-        <div class="row"><label>Pressure (Pa)</label>
-            <input type="number" id="env_press" value="101325"></div>
-    </div>
-
-    <div class="card">
-        <h2>GPS</h2>
-        <div class="row"><label>Lat (x1e6)</label>
-            <input type="number" id="gps_lat" value="37422390"></div>
-        <div class="row"><label>Lon (x1e6)</label>
-            <input type="number" id="gps_lon" value="-12208402"></div>
-        <div class="row"><label>Alt (m)</label>
-            <input type="number" id="gps_alt" value="20"></div>
-        <div class="row"><label>Satellites</label>
-            <input type="range" id="gps_sats" min="0" max="32" value="12" oninput="updateSlider(this)">
-            <span class="val" id="gps_sats_val">12</span></div>
-    </div>
-
-    <div class="card">
-        <h2>Seat & ACM</h2>
-        <div class="row"><label>Seat Position (°)</label>
-            <input type="range" id="seat_pos" min="-45" max="90" value="15" oninput="updateSlider(this)">
-            <span class="val" id="seat_pos_val">15°</span></div>
-        <div class="row"><label>Seat Profile</label>
-            <select id="seat_profile">
-                <option value="0">Manual</option><option value="1">Profile 1</option>
-                <option value="2">Profile 2</option><option value="3">Profile 3</option>
-            </select></div>
-        <div class="row"><label>FSR Raw</label>
-            <input type="range" id="acm_fsr" min="0" max="4095" value="512" oninput="updateSlider(this)">
-            <span class="val" id="acm_fsr_val">512</span></div>
-        <div class="row"><label>ACM Status</label>
-            <select id="acm_status">
-                <option value="0">OK</option><option value="1">Crash</option><option value="2">Safe Mode</option>
-            </select></div>
-    </div>
-</div>
-
-<script>
-let autoTimer = null;
-let frameCount = 0;
-let seq = 0;
-
-const FLAGS = {
-    RAIN: 0, DOOR_OPEN: 1, DOOR_LOCKED: 2, HEADLIGHT: 3, WIPER_ON: 4,
-    INDICATOR_L: 5, INDICATOR_R: 6, CRASH: 7, AIRBAG: 8, SEATBELT_WARN: 9,
-    SEAT_OCCUPIED: 10
-};
-let vehFlags = (1 << 2) | (1 << 10);
-
-function getEl(id) {
-    return document.getElementById(id);
+void send_packet() {
+    uint8_t crc = crc8((uint8_t*)&pkt, sizeof(pkt));
+    Serial.write((uint8_t*)&pkt, sizeof(pkt));
+    Serial.write(&crc, 1);
 }
 
-function updateSlider(slider) {
-    let valId = slider.id + '_val';
-    let valEl = getEl(valId);
-    if (!valEl) return;
-    let v = parseInt(slider.value);
-    switch(slider.id) {
-        case 'veh_speed': valEl.textContent = (v/10).toFixed(1) + ' km/h'; break;
-        case 'veh_accel': valEl.textContent = (v/100).toFixed(2) + ' m/s²'; break;
-        case 'acm_throttle': valEl.textContent = (v/100).toFixed(0) + '%'; break;
-        case 'acm_brake': valEl.textContent = v + ' Pa'; break;
-        case 'cpu_load': valEl.textContent = (v/100).toFixed(0) + '%'; break;
-        case 'env_temp': valEl.textContent = (v/10).toFixed(1) + '°C'; break;
-        case 'env_hum': valEl.textContent = (v/100).toFixed(0) + '%'; break;
-        case 'gps_sats': valEl.textContent = v; break;
-        case 'seat_pos': valEl.textContent = v + '°'; break;
-        case 'acm_fsr': valEl.textContent = v; break;
-    }
+String arg_or(const String &name, const String &fallback) {
+    if (server.hasArg(name)) return server.arg(name);
+    return fallback;
 }
 
-function toggleFlag(name, cb) {
-    if (cb.checked) vehFlags |= (1 << FLAGS[name]);
-    else vehFlags &= ~(1 << FLAGS[name]);
-}
+void handle_root() {
+    String html = "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'>";
+    html += "<style>";
+    html += "body{background:#f5f5f7;font-family:Roboto,Arial,sans-serif;margin:0;padding:24px;color:#202124}";
+    html += "h1{font-size:20px;font-weight:500;margin:0 0 20px 0}";
+    html += ".card{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);padding:20px;margin-bottom:16px}";
+    html += ".card h2{font-size:14px;font-weight:500;color:#5f6368;margin:0 0 16px 0;text-transform:uppercase;letter-spacing:0.05em}";
+    html += ".row{display:flex;align-items:center;margin-bottom:14px}";
+    html += ".row label{flex:0 0 220px;font-size:14px;color:#3c4043}";
+    html += ".row input{flex:1;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:14px;font-family:inherit}";
+    html += ".row input:focus{outline:none;border-color:#3f51b5;box-shadow:0 0 0 2px rgba(63,81,181,0.15)}";
+    html += "button{background:#3f51b5;color:#fff;border:none;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:500;cursor:pointer;letter-spacing:0.03em}";
+    html += "button:hover{background:#3849a8}";
+    html += ".status{padding:12px 16px;border-radius:4px;font-size:14px;margin-bottom:16px;display:none}";
+    html += ".status.ok{background:#e6f4ea;color:#137333;display:block}";
+    html += "</style></head><body>";
+    html += "<h1>SDV Telemetry Sender</h1>";
+    html += "<div class='status ok' id='status'></div>";
+    html += "<form action='/send' method='POST'>";
 
-function collectData() {
-    return {
-        sched_mode: parseInt(getEl('sched_mode').value),
-        cpu_load: parseInt(getEl('cpu_load').value),
-        total_misses: parseInt(getEl('total_misses').value),
-        fault_flags: parseInt(getEl('fault_flags').value),
-        veh_speed: parseInt(getEl('veh_speed').value),
-        veh_accel: parseInt(getEl('veh_accel').value),
-        acm_throttle: parseInt(getEl('acm_throttle').value),
-        acm_brake: parseInt(getEl('acm_brake').value),
-        veh_flags: vehFlags,
-        wiper_speed: parseInt(getEl('wiper_speed').value),
-        env_temp: parseInt(getEl('env_temp').value),
-        env_hum: parseInt(getEl('env_hum').value),
-        env_press: parseInt(getEl('env_press').value),
-        gps_lat: parseInt(getEl('gps_lat').value),
-        gps_lon: parseInt(getEl('gps_lon').value),
-        gps_alt: parseInt(getEl('gps_alt').value),
-        gps_sats: parseInt(getEl('gps_sats').value),
-        seat_pos: parseInt(getEl('seat_pos').value),
-        seat_profile: parseInt(getEl('seat_profile').value),
-        acm_fsr: parseInt(getEl('acm_fsr').value),
-        acm_status: parseInt(getEl('acm_status').value)
-    };
-}
+    html += "<div class='card'><h2>Frame</h2>";
+    html += "<div class='row'><label>version</label><input type='number' name='version' value='1'></div>";
+    html += "<div class='row'><label>seq</label><input type='number' name='seq' value='0'></div>";
+    html += "<div class='row'><label>sched_mode</label><input type='number' name='sched_mode' value='0'></div>";
+    html += "<div class='row'><label>run_id</label><input type='number' name='run_id' value='1234'></div>";
+    html += "<div class='row'><label>num_tasks</label><input type='number' name='num_tasks' value='4'></div>";
+    html += "<div class='row'><label>fault_flags</label><input type='number' name='fault_flags' value='0'></div>";
+    html += "<div class='row'><label>uptime_ms</label><input type='number' name='uptime_ms' value='0'></div>";
+    html += "</div>";
 
-function sendFrame() {
-    fetch('/update', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(collectData())
-    }).then(r => r.json()).then(data => {
-        frameCount++;
-        seq = data.seq;
-        getEl('seq').textContent = seq;
-        getEl('frames').textContent = frameCount;
-    });
-}
+    html += "<div class='card'><h2>System</h2>";
+    html += "<div class='row'><label>cpu_load_x100</label><input type='number' name='cpu_load_x100' value='2500'></div>";
+    html += "<div class='row'><label>total_misses</label><input type='number' name='total_misses' value='0'></div>";
+    html += "</div>";
 
-function toggleAuto() {
-    let btn = getEl('autoBtn');
-    if (autoTimer) {
-        clearInterval(autoTimer);
-        autoTimer = null;
-        btn.textContent = 'Auto Send';
-        btn.classList.remove('stop');
-        fetch('/auto?enable=0');
-    } else {
-        sendFrame();
-        autoTimer = setInterval(sendFrame, 100);
-        btn.textContent = 'Stop Auto';
-        btn.classList.add('stop');
-        fetch('/auto?enable=1');
-    }
-}
+    html += "<div class='card'><h2>Vehicle</h2>";
+    html += "<div class='row'><label>veh_flags</label><input type='number' name='veh_flags' value='1'></div>";
+    html += "<div class='row'><label>veh_speed_x10</label><input type='number' name='veh_speed_x10' value='500'></div>";
+    html += "<div class='row'><label>veh_accel_x100</label><input type='number' name='veh_accel_x100' value='0'></div>";
+    html += "<div class='row'><label>bcm_wiper_speed</label><input type='number' name='bcm_wiper_speed' value='0'></div>";
+    html += "</div>";
 
-function resetAll() {
-    fetch('/reset', {method: 'POST'}).then(() => location.reload());
-}
+    html += "<div class='card'><h2>ACM</h2>";
+    html += "<div class='row'><label>acm_throttle_x100</label><input type='number' name='acm_throttle_x100' value='0'></div>";
+    html += "<div class='row'><label>acm_brake_pa</label><input type='number' name='acm_brake_pa' value='0'></div>";
+    html += "<div class='row'><label>acm_fsr_raw</label><input type='number' name='acm_fsr_raw' value='0'></div>";
+    html += "<div class='row'><label>acm_status</label><input type='number' name='acm_status' value='1'></div>";
+    html += "</div>";
 
-document.querySelectorAll('input[type="range"]').forEach(s => updateSlider(s));
-</script>
-</body>
-</html>
-)rawliteral";
-}
+    html += "<div class='card'><h2>Seat</h2>";
+    html += "<div class='row'><label>seat_position_deg</label><input type='number' name='seat_position_deg' value='0'></div>";
+    html += "<div class='row'><label>seat_profile</label><input type='number' name='seat_profile' value='0'></div>";
+    html += "</div>";
 
-void handleRoot()
-{
-    server.send(200, "text/html", get_html_page());
-}
+    html += "<div class='card'><h2>Environment</h2>";
+    html += "<div class='row'><label>env_temp_x10</label><input type='number' name='env_temp_x10' value='220'></div>";
+    html += "<div class='row'><label>env_hum_x100</label><input type='number' name='env_hum_x100' value='4500'></div>";
+    html += "<div class='row'><label>env_press_pa</label><input type='number' name='env_press_pa' value='101325'></div>";
+    html += "</div>";
 
-void handleUpdate()
-{
-    if (server.hasArg("plain"))
-    {
-        String json = server.arg("plain");
+    html += "<div class='card'><h2>GPS</h2>";
+    html += "<div class='row'><label>gps_lat_x1e6</label><input type='number' name='gps_lat_x1e6' value='37774900'></div>";
+    html += "<div class='row'><label>gps_lon_x1e6</label><input type='number' name='gps_lon_x1e6' value='-122419400'></div>";
+    html += "<div class='row'><label>gps_alt_m</label><input type='number' name='gps_alt_m' value='10'></div>";
+    html += "<div class='row'><label>gps_satellites</label><input type='number' name='gps_satellites' value='8'></div>";
+    html += "</div>";
 
-        auto getInt = [&](const char *key, int def = 0) -> int
-        {
-            String search = "\"" + String(key) + "\":";
-            int pos = json.indexOf(search);
-            if (pos < 0)
-                return def;
-            pos += search.length();
-            while (pos < json.length() && (json[pos] == ' ' || json[pos] == '\t'))
-                pos++;
-            return json.substring(pos).toInt();
-        };
-
-        telemetry.sched_mode = getInt("sched_mode", 0);
-        telemetry.cpu_load_x100 = getInt("cpu_load", 4500);
-        telemetry.total_misses = getInt("total_misses", 0);
-        telemetry.fault_flags = getInt("fault_flags", 0);
-        telemetry.veh_speed_x10 = getInt("veh_speed", 600);
-        telemetry.veh_accel_x100 = getInt("veh_accel", 0);
-        telemetry.acm_throttle_x100 = getInt("acm_throttle", 2500);
-        telemetry.acm_brake_pa = getInt("acm_brake", 0);
-        telemetry.veh_flags = getInt("veh_flags", 0);
-        telemetry.bcm_wiper_speed = getInt("wiper_speed", 0);
-        telemetry.env_temp_x10 = getInt("env_temp", 250);
-        telemetry.env_hum_x100 = getInt("env_hum", 5500);
-        telemetry.env_press_pa = getInt("env_press", 101325);
-        telemetry.gps_lat_x1e6 = getInt("gps_lat", 37422390);
-        telemetry.gps_lon_x1e6 = getInt("gps_lon", -12208402);
-        telemetry.gps_alt_m = getInt("gps_alt", 20);
-        telemetry.gps_satellites = getInt("gps_sats", 12);
-        telemetry.seat_position_deg = getInt("seat_pos", 15);
-        telemetry.seat_profile = getInt("seat_profile", 0);
-        telemetry.acm_fsr_raw = getInt("acm_fsr", 512);
-        telemetry.acm_status = getInt("acm_status", 0);
+    for (int i = 0; i < 4; i++) {
+        html += "<div class='card'><h2>Task " + String(i) + "</h2>";
+        html += "<div class='row'><label>resp_max_x10us</label><input type='number' name='t" + String(i) + "_resp_max' value='100'></div>";
+        html += "<div class='row'><label>resp_avg_x10us</label><input type='number' name='t" + String(i) + "_resp_avg' value='50'></div>";
+        html += "<div class='row'><label>exec_count</label><input type='number' name='t" + String(i) + "_exec_count' value='1000'></div>";
+        html += "<div class='row'><label>deadline_misses</label><input type='number' name='t" + String(i) + "_deadline_misses' value='0'></div>";
+        html += "</div>";
     }
 
-    send_telemetry_frame();
+    html += "<button type='submit'>Send Packet</button>";
+    html += "</form></body></html>";
 
-    char resp[64];
-    snprintf(resp, sizeof(resp), "{\"seq\":%u,\"status\":\"ok\"}", telemetry.seq);
-    server.send(200, "application/json", resp);
+    server.send(200, "text/html", html);
 }
 
-void handleAuto()
-{
-    if (server.hasArg("enable"))
-    {
-        auto_increment = (server.arg("enable") == "1");
+void handle_send() {
+    pkt.magic       = MAGIC;
+    pkt.version     = (uint8_t)arg_or("version", "1").toInt();
+    pkt.seq         = (uint8_t)arg_or("seq", "0").toInt();
+    pkt.sched_mode  = (uint8_t)arg_or("sched_mode", "0").toInt();
+    pkt.run_id      = (uint16_t)arg_or("run_id", "0").toInt();
+    pkt.num_tasks   = (uint8_t)arg_or("num_tasks", "4").toInt();
+    pkt.fault_flags = (uint8_t)arg_or("fault_flags", "0").toInt();
+    pkt.uptime_ms   = (uint32_t)arg_or("uptime_ms", "0").toInt();
+
+    pkt.cpu_load_x100 = (uint16_t)arg_or("cpu_load_x100", "0").toInt();
+    pkt.total_misses  = (uint16_t)arg_or("total_misses", "0").toInt();
+
+    pkt.veh_flags      = (uint16_t)arg_or("veh_flags", "0").toInt();
+    pkt.veh_speed_x10  = (uint16_t)arg_or("veh_speed_x10", "0").toInt();
+    pkt.veh_accel_x100 = (int16_t)arg_or("veh_accel_x100", "0").toInt();
+    pkt.bcm_wiper_speed = (uint8_t)arg_or("bcm_wiper_speed", "0").toInt();
+
+    pkt.acm_throttle_x100 = (uint16_t)arg_or("acm_throttle_x100", "0").toInt();
+    pkt.acm_brake_pa      = (uint16_t)arg_or("acm_brake_pa", "0").toInt();
+    pkt.acm_fsr_raw       = (uint16_t)arg_or("acm_fsr_raw", "0").toInt();
+    pkt.acm_status        = (uint8_t)arg_or("acm_status", "0").toInt();
+
+    pkt.seat_position_deg = (int16_t)arg_or("seat_position_deg", "0").toInt();
+    pkt.seat_profile      = (uint8_t)arg_or("seat_profile", "0").toInt();
+
+    pkt.env_temp_x10 = (int16_t)arg_or("env_temp_x10", "0").toInt();
+    pkt.env_hum_x100 = (uint16_t)arg_or("env_hum_x100", "0").toInt();
+    pkt.env_press_pa = (uint32_t)arg_or("env_press_pa", "0").toInt();
+
+    pkt.gps_lat_x1e6 = (int32_t)arg_or("gps_lat_x1e6", "0").toInt();
+    pkt.gps_lon_x1e6 = (int32_t)arg_or("gps_lon_x1e6", "0").toInt();
+    pkt.gps_alt_m    = (int16_t)arg_or("gps_alt_m", "0").toInt();
+    pkt.gps_satellites = (uint8_t)arg_or("gps_satellites", "0").toInt();
+
+    for (int i = 0; i < 4; i++) {
+        String p = "t" + String(i) + "_";
+        pkt.task[i].resp_max_x10us  = (uint16_t)arg_or(p + "resp_max", "0").toInt();
+        pkt.task[i].resp_avg_x10us  = (uint16_t)arg_or(p + "resp_avg", "0").toInt();
+        pkt.task[i].exec_count      = (uint16_t)arg_or(p + "exec_count", "0").toInt();
+        pkt.task[i].deadline_misses = (uint16_t)arg_or(p + "deadline_misses", "0").toInt();
     }
-    server.send(200, "text/plain", "ok");
+
+    send_packet();
+    seq_counter = pkt.seq + 1;
+
+    server.sendHeader("Location", "/");
+    server.send(303);
 }
 
-void handleReset()
-{
-    memset(&telemetry, 0, sizeof(telemetry));
-    telemetry.magic = SDV_TELEMETRY_MAGIC;
-    telemetry.version = SDV_TELEMETRY_VERSION;
-    telemetry.num_tasks = 4;
-    telemetry.veh_flags = SDV_VEH_DOOR_LOCKED | SDV_VEH_SEAT_OCCUPIED;
-    telemetry.env_press_pa = 101325;
-    telemetry.env_temp_x10 = 250;
-    telemetry.env_hum_x100 = 5500;
-    telemetry.gps_lat_x1e6 = 37422390;
-    telemetry.gps_lon_x1e6 = -12208402;
-    telemetry.gps_alt_m = 20;
-    telemetry.gps_satellites = 12;
-    telemetry.cpu_load_x100 = 4500;
-    telemetry.seat_position_deg = 15;
-    telemetry.acm_fsr_raw = 512;
-    telemetry.acm_throttle_x100 = 2500;
-    telemetry.sched_mode = 0;
-    frame_seq = 0;
-    start_time = millis();
-    server.send(200, "text/plain", "ok");
-}
-
-void setup()
-{
+void setup() {
     Serial.begin(115200);
+    delay(1000);
+    memset(&pkt, 0, sizeof(pkt));
 
-    memset(&telemetry, 0, sizeof(telemetry));
-    telemetry.magic = SDV_TELEMETRY_MAGIC;
-    telemetry.version = SDV_TELEMETRY_VERSION;
-    telemetry.num_tasks = 4;
-    telemetry.veh_flags = SDV_VEH_DOOR_LOCKED | SDV_VEH_SEAT_OCCUPIED;
-    telemetry.env_press_pa = 101325;
-    telemetry.env_temp_x10 = 250;
-    telemetry.env_hum_x100 = 5500;
-    telemetry.gps_lat_x1e6 = 37422390;
-    telemetry.gps_lon_x1e6 = -12208402;
-    telemetry.gps_alt_m = 20;
-    telemetry.gps_satellites = 12;
-    telemetry.cpu_load_x100 = 4500;
-    telemetry.seat_position_deg = 15;
-    telemetry.acm_fsr_raw = 512;
-    telemetry.acm_throttle_x100 = 2500;
+    WiFi.softAP(AP_SSID);
 
-    for (int i = 0; i < 4; i++)
-    {
-        telemetry.task[i].resp_max_x10us = 1000 + i * 500;
-        telemetry.task[i].resp_avg_x10us = 500 + i * 200;
-        telemetry.task[i].exec_count = 1000 * (i + 1);
-        telemetry.task[i].deadline_misses = i;
-    }
-
-    start_time = millis();
-
-    WiFi.softAP(ssid, password);
-
-    server.on("/", handleRoot);
-    server.on("/update", HTTP_POST, handleUpdate);
-    server.on("/auto", handleAuto);
-    server.on("/reset", HTTP_POST, handleReset);
-
+    server.on("/", HTTP_GET, handle_root);
+    server.on("/send", HTTP_POST, handle_send);
     server.begin();
-
-    pinMode(2, OUTPUT);
 }
 
-void loop()
-{
+void loop() {
     server.handleClient();
-
-    static unsigned long last_send = 0;
-    if (auto_increment && (millis() - last_send >= update_interval_ms))
-    {
-        send_telemetry_frame();
-        last_send = millis();
-        digitalWrite(2, !digitalRead(2));
-    }
 }
