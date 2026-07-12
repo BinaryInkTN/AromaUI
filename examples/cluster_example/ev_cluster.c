@@ -26,7 +26,10 @@ int main ()
             char speed_text[16];
             snprintf(speed_text, sizeof(speed_text), "%d", (int)state.speed_kmh);
             aroma_label_set_text(label_speed, speed_text);
+
         }
+        // workaround
+        aroma_node_invalidate((AromaNode*)window);
 
         aroma_ui_process_events();
         aroma_ui_render(window);

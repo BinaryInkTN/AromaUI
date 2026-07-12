@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 #pragma pack(push, 1)
 typedef struct {
     uint16_t resp_max_x10us;
@@ -43,36 +42,41 @@ typedef struct {
     uint8_t  gps_satellites;
     sdv_task_stats_t task[4];
 } sdv_telemetry_t;
-
-typedef struct {
-    uint32_t          frame_count;
-    uint32_t          error_count;
-    uint32_t          crc_error_count;
-    uint32_t          last_seq;
-    volatile uint32_t write_seq;     
-    sdv_telemetry_t   telemetry;
-} telemetry_shm_t;
 #pragma pack(pop)
 
+typedef struct {
+    volatile uint32_t write_seq;
+    uint32_t frame_count;
+    uint32_t error_count;
+    uint32_t crc_error_count;
+    sdv_telemetry_t telemetry;
+} telemetry_shm_t;
 
 typedef struct {
-    uint8_t  seq;
-    uint8_t  sched_mode;
-    uint16_t run_id;
-    uint8_t  num_tasks;
-    uint8_t  fault_flags;
-    uint32_t uptime_ms;
-    float    cpu_load_pct;
-    uint16_t total_misses;
+    float resp_max_ms;
+    float resp_avg_ms;
+    uint16_t exec_count;
+    uint16_t deadline_misses;
+} task_state_t;
 
-    float    speed_kmh;
-    float    accel_ms2;
-    float    throttle_pct;
+typedef struct {
+    uint8_t seq;
+    uint8_t sched_mode;
+    uint16_t run_id;
+    uint8_t num_tasks;
+    uint8_t fault_flags;
+    uint32_t uptime_ms;
+    float cpu_load_pct;
+    uint16_t total_misses;
+    
+    float speed_kmh;
+    float accel_ms2;
+    float throttle_pct;
     uint16_t brake_pa;
     uint16_t fsr_raw;
-    uint8_t  acm_status;
-    uint8_t  wiper_speed;
-
+    uint8_t acm_status;
+    uint8_t wiper_speed;
+    
     bool rain;
     bool door_open;
     bool door_locked;
@@ -88,57 +92,32 @@ typedef struct {
     bool harsh_braking;
     bool buzzer;
     bool interior_light;
-
-    float    temp_c;
-    float    humidity_pct;
-    float    pressure_hpa;
-
-    double   latitude;
-    double   longitude;
-    int16_t  altitude_m;
-    uint8_t  satellites;
-
-    int16_t  seat_position_deg;
-    uint8_t  seat_profile;
-
-    struct {
-        float    resp_max_ms;
-        float    resp_avg_ms;
-        uint16_t exec_count;
-        uint16_t deadline_misses;
-    } task[4];
-
+    
+    float temp_c;
+    float humidity_pct;
+    float pressure_hpa;
+    
+    double latitude;
+    double longitude;
+    int16_t altitude_m;
+    uint8_t satellites;
+    
+    int16_t seat_position_deg;
+    uint8_t seat_profile;
+    
+    task_state_t task[4];
+    
     uint32_t bridge_frame_count;
     uint32_t bridge_error_count;
     uint32_t bridge_crc_error_count;
-
-    uint32_t state_version; 
+    
+    uint32_t state_version;
 } telemetry_state_t;
-
 
 typedef struct shm_reader shm_reader_t;
 
-
-
-/**
- * @brief  Initialize the reader, attach shared memory, spawn background thread.
- * @param  key  System V shared memory key (e.g. 0x1234ABCD).
- * @return Pointer to reader handle, or NULL on failure.
- */
 shm_reader_t *shm_reader_init(uint32_t key);
-
-/**
- * @brief  Get latest state (non-blocking, thread-safe).
- * @param  reader  Reader handle.
- * @param  out     Output state struct.
- * @return true if new state was available, false otherwise.
- */
 bool shm_reader_get_state(shm_reader_t *reader, telemetry_state_t *out);
-
-/**
- * @brief  Shutdown reader, stop thread, detach shared memory.
- * @param  reader  Reader handle.
- */
 void shm_reader_shutdown(shm_reader_t *reader);
 
 #endif

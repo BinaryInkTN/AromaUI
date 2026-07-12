@@ -8,18 +8,16 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-
 struct shm_reader {
-    telemetry_shm_t   *shm;              
-    pthread_t          thread;            
-    volatile bool      running;           
+    telemetry_shm_t   *shm;
+    pthread_t          thread;
+    volatile bool      running;
 
-    pthread_mutex_t    mutex;             
-    pthread_cond_t     cond;              
-    telemetry_state_t  current_state;     
+    pthread_mutex_t    mutex;
+    pthread_cond_t     cond;
+    telemetry_state_t  current_state;
     volatile bool      new_data_available;
 };
-
 
 static void frame_to_state(const sdv_telemetry_t *frame,
                            uint32_t frame_count, uint32_t error_count,
@@ -28,7 +26,6 @@ static bool shm_read_robust(telemetry_shm_t *shm,
                             sdv_telemetry_t *out_raw,
                             uint32_t *out_fc, uint32_t *out_ec, uint32_t *out_cec);
 static void *reader_thread_fn(void *arg);
-
 
 static void frame_to_state(const sdv_telemetry_t *frame,
                            uint32_t frame_count, uint32_t error_count,
@@ -96,7 +93,6 @@ static void frame_to_state(const sdv_telemetry_t *frame,
     state->state_version++;
 }
 
-
 static bool shm_read_robust(telemetry_shm_t *shm,
                             sdv_telemetry_t *out_raw,
                             uint32_t *out_fc, uint32_t *out_ec, uint32_t *out_cec)
@@ -108,32 +104,28 @@ static bool shm_read_robust(telemetry_shm_t *shm,
     do {
         s1 = shm->write_seq;
 
-       
         if (s1 & 1) {
             usleep(100);
             retry++;
             if (retry > max_retries) {
-                return false; 
+                return false;
             }
             continue;
         }
 
-       
         *out_raw = shm->telemetry;
         *out_fc  = shm->frame_count;
         *out_ec  = shm->error_count;
         *out_cec = shm->crc_error_count;
 
-       
         __sync_synchronize();
 
         s2 = shm->write_seq;
         retry++;
     } while (s1 != s2 && retry <= max_retries);
 
-    return (s1 == s2); 
+    return (s1 == s2);
 }
-
 
 static void *reader_thread_fn(void *arg)
 {
@@ -146,12 +138,8 @@ static void *reader_thread_fn(void *arg)
     printf("[SHM Reader] Thread started\n");
 
     while (reader->running && reader->shm) {
-
         if (shm_read_robust(reader->shm, &raw, &fc, &ec, &cec)) {
-
-           
             if (raw.seq != last_seq || fc != last_fc) {
-
                 pthread_mutex_lock(&reader->mutex);
                 frame_to_state(&raw, fc, ec, cec, &reader->current_state);
                 reader->new_data_available = true;
@@ -162,14 +150,12 @@ static void *reader_thread_fn(void *arg)
                 last_fc  = fc;
             }
         }
-        usleep(20000); 
+        usleep(20000);
     }
 
     printf("[SHM Reader] Thread stopped\n");
     return NULL;
 }
-
-
 
 shm_reader_t *shm_reader_init(uint32_t key)
 {
@@ -179,7 +165,7 @@ shm_reader_t *shm_reader_init(uint32_t key)
         return NULL;
     }
 
-    int shm_id = shmget(key, sizeof(telemetry_shm_t), 0666);
+    int shm_id = shmget((key_t)key, sizeof(telemetry_shm_t), 0666);
     if (shm_id < 0) {
         fprintf(stderr, "[SHM Reader] shmget failed (errno=%d)\n", errno);
         free(reader);
