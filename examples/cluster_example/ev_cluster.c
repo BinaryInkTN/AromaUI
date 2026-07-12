@@ -18,7 +18,7 @@ int main ()
     AromaNode* label_speed = aroma_ui_label((AromaNode*)window, "60", 50, 200, LABEL_STYLE_LABEL_LARGE, text_font);
     AromaNode* left_divider = aroma_ui_divider((AromaNode*)window, 300, 100, 450, DIVIDER_ORIENTATION_VERTICAL );
     AromaNode* right_divider = aroma_ui_divider((AromaNode*)window, 700, 100, 450, DIVIDER_ORIENTATION_VERTICAL );
-    while (aroma_ui_is_running()) {
+    while (true) {
         telemetry_state_t state;
         if (shm_reader_get_state(reader, &state)) {
             printf("Got new telemetry state: seq=%u, speed=%.2f km/h\n",
