@@ -46,80 +46,10 @@ typedef struct {
 } sdv_telemetry_t;
 #pragma pack(pop)
 
-typedef struct {
-    volatile uint32_t write_seq;
-    uint32_t frame_count;
-    uint32_t error_count;
-    uint32_t crc_error_count;
-    sdv_telemetry_t telemetry;
-} telemetry_shm_t;
-
-typedef struct {
-    float resp_max_ms;
-    float resp_avg_ms;
-    uint16_t exec_count;
-    uint16_t deadline_misses;
-} task_state_t;
-
-typedef struct {
-    uint8_t seq;
-    uint8_t sched_mode;
-    uint16_t run_id;
-    uint8_t num_tasks;
-    uint8_t fault_flags;
-    uint32_t uptime_ms;
-    float cpu_load_pct;
-    uint16_t total_misses;
-    
-    float speed_kmh;
-    float accel_ms2;
-    float throttle_pct;
-    uint16_t brake_pa;
-    uint16_t fsr_raw;
-    uint8_t acm_status;
-    uint8_t wiper_speed;
-    
-    bool rain;
-    bool door_open;
-    bool door_locked;
-    bool headlight;
-    bool wiper_on;
-    bool indicator_l;
-    bool indicator_r;
-    bool crash;
-    bool airbag;
-    bool seatbelt_warn;
-    bool seat_occupied;
-    bool high_speed;
-    bool harsh_braking;
-    bool buzzer;
-    bool interior_light;
-    
-    float temp_c;
-    float humidity_pct;
-    float pressure_hpa;
-    
-    double latitude;
-    double longitude;
-    int16_t altitude_m;
-    uint8_t satellites;
-    
-    int16_t seat_position_deg;
-    uint8_t seat_profile;
-    
-    task_state_t task[4];
-    
-    uint32_t bridge_frame_count;
-    uint32_t bridge_error_count;
-    uint32_t bridge_crc_error_count;
-    
-    uint32_t state_version;
-} telemetry_state_t;
-
 typedef struct shm_reader shm_reader_t;
 
 shm_reader_t *shm_reader_init(const char *shm_name);
-bool shm_reader_get_state(shm_reader_t *reader, telemetry_state_t *out);
+bool shm_reader_get_state(shm_reader_t *reader, sdv_telemetry_t *out);
 void shm_reader_shutdown(shm_reader_t *reader);
 
 #endif

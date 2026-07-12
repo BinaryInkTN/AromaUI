@@ -8,95 +8,28 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
+/* Internal: shared memory layout - not exposed in header */
+typedef struct {
+    volatile uint32_t write_seq;
+    sdv_telemetry_t telemetry;
+} shm_layout_t;
+
 struct shm_reader {
     int                shm_fd;
-    telemetry_shm_t   *shm;
+    shm_layout_t      *shm;
     pthread_t          thread;
     volatile bool      running;
 
     pthread_mutex_t    mutex;
     pthread_cond_t     cond;
-    telemetry_state_t  current_state;
+    sdv_telemetry_t    current_state;
     volatile bool      new_data_available;
 };
 
-static void frame_to_state(const sdv_telemetry_t *frame,
-                           uint32_t frame_count, uint32_t error_count,
-                           uint32_t crc_error_count, telemetry_state_t *state);
-static bool shm_read_robust(telemetry_shm_t *shm,
-                            sdv_telemetry_t *out_raw,
-                            uint32_t *out_fc, uint32_t *out_ec, uint32_t *out_cec);
+static bool shm_read_robust(shm_layout_t *shm, sdv_telemetry_t *out_raw);
 static void *reader_thread_fn(void *arg);
 
-static void frame_to_state(const sdv_telemetry_t *frame,
-                           uint32_t frame_count, uint32_t error_count,
-                           uint32_t crc_error_count, telemetry_state_t *state)
-{
-    memset(state, 0, sizeof(*state));
-
-    state->seq          = frame->seq;
-    state->sched_mode   = frame->sched_mode;
-    state->run_id       = frame->run_id;
-    state->num_tasks    = frame->num_tasks;
-    state->fault_flags  = frame->fault_flags;
-    state->uptime_ms    = frame->uptime_ms;
-    state->cpu_load_pct = frame->cpu_load_x100 / 100.0f;
-    state->total_misses = frame->total_misses;
-
-    state->speed_kmh     = frame->veh_speed_x10 / 10.0f;
-    state->accel_ms2     = frame->veh_accel_x100 / 100.0f;
-    state->throttle_pct  = frame->acm_throttle_x100 / 100.0f;
-    state->brake_pa      = frame->acm_brake_pa;
-    state->fsr_raw       = frame->acm_fsr_raw;
-    state->acm_status    = frame->acm_status;
-    state->wiper_speed   = frame->bcm_wiper_speed;
-
-    uint16_t f = frame->veh_flags;
-    state->rain           = (f >> 0) & 1;
-    state->door_open      = (f >> 1) & 1;
-    state->door_locked    = (f >> 2) & 1;
-    state->headlight      = (f >> 3) & 1;
-    state->wiper_on       = (f >> 4) & 1;
-    state->indicator_l    = (f >> 5) & 1;
-    state->indicator_r    = (f >> 6) & 1;
-    state->crash          = (f >> 7) & 1;
-    state->airbag         = (f >> 8) & 1;
-    state->seatbelt_warn  = (f >> 9) & 1;
-    state->seat_occupied  = (f >> 10) & 1;
-    state->high_speed     = (f >> 11) & 1;
-    state->harsh_braking  = (f >> 12) & 1;
-    state->buzzer         = (f >> 13) & 1;
-    state->interior_light = (f >> 14) & 1;
-
-    state->temp_c       = frame->env_temp_x10 / 10.0f;
-    state->humidity_pct = frame->env_hum_x100 / 100.0f;
-    state->pressure_hpa = frame->env_press_pa / 100.0f;
-
-    state->latitude    = frame->gps_lat_x1e6 / 1000000.0;
-    state->longitude   = frame->gps_lon_x1e6 / 1000000.0;
-    state->altitude_m  = frame->gps_alt_m;
-    state->satellites  = frame->gps_satellites;
-
-    state->seat_position_deg = frame->seat_position_deg;
-    state->seat_profile      = frame->seat_profile;
-
-    for (int i = 0; i < 4; i++) {
-        state->task[i].resp_max_ms     = frame->task[i].resp_max_x10us / 100.0f;
-        state->task[i].resp_avg_ms     = frame->task[i].resp_avg_x10us / 100.0f;
-        state->task[i].exec_count      = frame->task[i].exec_count;
-        state->task[i].deadline_misses = frame->task[i].deadline_misses;
-    }
-
-    state->bridge_frame_count    = frame_count;
-    state->bridge_error_count    = error_count;
-    state->bridge_crc_error_count = crc_error_count;
-
-    state->state_version++;
-}
-
-static bool shm_read_robust(telemetry_shm_t *shm,
-                            sdv_telemetry_t *out_raw,
-                            uint32_t *out_fc, uint32_t *out_ec, uint32_t *out_cec)
+static bool shm_read_robust(shm_layout_t *shm, sdv_telemetry_t *out_raw)
 {
     uint32_t s1, s2;
     int retry = 0;
@@ -115,9 +48,6 @@ static bool shm_read_robust(telemetry_shm_t *shm,
         }
 
         *out_raw = shm->telemetry;
-        *out_fc  = shm->frame_count;
-        *out_ec  = shm->error_count;
-        *out_cec = shm->crc_error_count;
 
         __sync_synchronize();
 
@@ -132,23 +62,20 @@ static void *reader_thread_fn(void *arg)
 {
     shm_reader_t *reader = (shm_reader_t *)arg;
     sdv_telemetry_t raw;
-    uint32_t fc, ec, cec;
-    uint32_t last_seq = 0;
-    uint32_t last_fc  = 0;
+    uint8_t last_seq = 0;
 
     printf("[SHM Reader] Thread started\n");
 
     while (reader->running && reader->shm) {
-        if (shm_read_robust(reader->shm, &raw, &fc, &ec, &cec)) {
-            if (raw.seq != last_seq || fc != last_fc) {
+        if (shm_read_robust(reader->shm, &raw)) {
+            if (raw.seq != last_seq) {
                 pthread_mutex_lock(&reader->mutex);
-                frame_to_state(&raw, fc, ec, cec, &reader->current_state);
+                reader->current_state = raw;
                 reader->new_data_available = true;
                 pthread_cond_signal(&reader->cond);
                 pthread_mutex_unlock(&reader->mutex);
 
                 last_seq = raw.seq;
-                last_fc  = fc;
             }
         }
         usleep(20000);
@@ -166,7 +93,6 @@ shm_reader_t *shm_reader_init(const char *shm_name)
         return NULL;
     }
 
-    // Open POSIX shared memory
     reader->shm_fd = shm_open(shm_name, O_RDONLY, 0666);
     if (reader->shm_fd < 0) {
         fprintf(stderr, "[SHM Reader] shm_open failed (errno=%d)\n", errno);
@@ -174,10 +100,9 @@ shm_reader_t *shm_reader_init(const char *shm_name)
         return NULL;
     }
 
-    // Map the shared memory object
-    reader->shm = (telemetry_shm_t *)mmap(NULL, sizeof(telemetry_shm_t), 
-                                           PROT_READ, MAP_SHARED, 
-                                           reader->shm_fd, 0);
+    reader->shm = (shm_layout_t *)mmap(NULL, sizeof(shm_layout_t), 
+                                        PROT_READ, MAP_SHARED, 
+                                        reader->shm_fd, 0);
     if (reader->shm == MAP_FAILED) {
         fprintf(stderr, "[SHM Reader] mmap failed (errno=%d)\n", errno);
         close(reader->shm_fd);
@@ -191,7 +116,7 @@ shm_reader_t *shm_reader_init(const char *shm_name)
 
     if (pthread_create(&reader->thread, NULL, reader_thread_fn, reader) != 0) {
         fprintf(stderr, "[SHM Reader] pthread_create failed\n");
-        munmap(reader->shm, sizeof(telemetry_shm_t));
+        munmap(reader->shm, sizeof(shm_layout_t));
         close(reader->shm_fd);
         pthread_mutex_destroy(&reader->mutex);
         pthread_cond_destroy(&reader->cond);
@@ -203,7 +128,7 @@ shm_reader_t *shm_reader_init(const char *shm_name)
     return reader;
 }
 
-bool shm_reader_get_state(shm_reader_t *reader, telemetry_state_t *out)
+bool shm_reader_get_state(shm_reader_t *reader, sdv_telemetry_t *out)
 {
     if (!reader || !out) return false;
 
@@ -232,7 +157,7 @@ void shm_reader_shutdown(shm_reader_t *reader)
     }
 
     if (reader->shm && reader->shm != MAP_FAILED) {
-        munmap(reader->shm, sizeof(telemetry_shm_t));
+        munmap(reader->shm, sizeof(shm_layout_t));
     }
 
     if (reader->shm_fd >= 0) {
