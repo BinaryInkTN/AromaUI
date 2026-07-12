@@ -13,7 +13,7 @@ int main ()
     AromaWindow *window = aroma_ui_create_window("Telemetry Dashboard", 1024, 600);
     AromaTheme theme = aroma_theme_create_material_black();
     aroma_ui_set_theme(&theme);
-    shm_reader_t *reader = shm_reader_init(0x1234ABCD);
+    shm_reader_t *reader = shm_reader_init("/sdv_telemetry_shm");
     AromaNode* label_speed_header = aroma_ui_label((AromaNode*)window, "Speed", 50, 180, LABEL_STYLE_LABEL_LARGE, small_font);
     AromaNode* label_speed = aroma_ui_label((AromaNode*)window, "60", 50, 200, LABEL_STYLE_LABEL_LARGE, text_font);
     AromaNode* left_divider = aroma_ui_divider((AromaNode*)window, 300, 100, 450, DIVIDER_ORIENTATION_VERTICAL );

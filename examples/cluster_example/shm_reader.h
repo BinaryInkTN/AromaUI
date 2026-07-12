@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define SHM_NAME "/sdv_telemetry_shm"
+
 #pragma pack(push, 1)
 typedef struct {
     uint16_t resp_max_x10us;
@@ -116,7 +118,7 @@ typedef struct {
 
 typedef struct shm_reader shm_reader_t;
 
-shm_reader_t *shm_reader_init(uint32_t key);
+shm_reader_t *shm_reader_init(const char *shm_name);
 bool shm_reader_get_state(shm_reader_t *reader, telemetry_state_t *out);
 void shm_reader_shutdown(shm_reader_t *reader);
 

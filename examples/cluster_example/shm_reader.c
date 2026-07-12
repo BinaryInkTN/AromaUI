@@ -5,10 +5,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 struct shm_reader {
+    int                shm_fd;
     telemetry_shm_t   *shm;
     pthread_t          thread;
     volatile bool      running;
@@ -157,7 +158,7 @@ static void *reader_thread_fn(void *arg)
     return NULL;
 }
 
-shm_reader_t *shm_reader_init(uint32_t key)
+shm_reader_t *shm_reader_init(const char *shm_name)
 {
     shm_reader_t *reader = calloc(1, sizeof(shm_reader_t));
     if (!reader) {
@@ -165,16 +166,21 @@ shm_reader_t *shm_reader_init(uint32_t key)
         return NULL;
     }
 
-    int shm_id = shmget((key_t)key, sizeof(telemetry_shm_t), 0666);
-    if (shm_id < 0) {
-        fprintf(stderr, "[SHM Reader] shmget failed (errno=%d)\n", errno);
+    // Open POSIX shared memory
+    reader->shm_fd = shm_open(shm_name, O_RDONLY, 0666);
+    if (reader->shm_fd < 0) {
+        fprintf(stderr, "[SHM Reader] shm_open failed (errno=%d)\n", errno);
         free(reader);
         return NULL;
     }
 
-    reader->shm = (telemetry_shm_t *)shmat(shm_id, NULL, SHM_RDONLY);
-    if (reader->shm == (void *)-1) {
-        fprintf(stderr, "[SHM Reader] shmat failed (errno=%d)\n", errno);
+    // Map the shared memory object
+    reader->shm = (telemetry_shm_t *)mmap(NULL, sizeof(telemetry_shm_t), 
+                                           PROT_READ, MAP_SHARED, 
+                                           reader->shm_fd, 0);
+    if (reader->shm == MAP_FAILED) {
+        fprintf(stderr, "[SHM Reader] mmap failed (errno=%d)\n", errno);
+        close(reader->shm_fd);
         free(reader);
         return NULL;
     }
@@ -185,14 +191,15 @@ shm_reader_t *shm_reader_init(uint32_t key)
 
     if (pthread_create(&reader->thread, NULL, reader_thread_fn, reader) != 0) {
         fprintf(stderr, "[SHM Reader] pthread_create failed\n");
-        shmdt(reader->shm);
+        munmap(reader->shm, sizeof(telemetry_shm_t));
+        close(reader->shm_fd);
         pthread_mutex_destroy(&reader->mutex);
         pthread_cond_destroy(&reader->cond);
         free(reader);
         return NULL;
     }
 
-    printf("[SHM Reader] Initialized (key=0x%08X)\n", key);
+    printf("[SHM Reader] Initialized (name=%s)\n", shm_name);
     return reader;
 }
 
@@ -224,8 +231,12 @@ void shm_reader_shutdown(shm_reader_t *reader)
         pthread_join(reader->thread, NULL);
     }
 
-    if (reader->shm && reader->shm != (void *)-1) {
-        shmdt(reader->shm);
+    if (reader->shm && reader->shm != MAP_FAILED) {
+        munmap(reader->shm, sizeof(telemetry_shm_t));
+    }
+
+    if (reader->shm_fd >= 0) {
+        close(reader->shm_fd);
     }
 
     pthread_mutex_destroy(&reader->mutex);
