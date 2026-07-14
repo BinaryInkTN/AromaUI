@@ -1,30 +1,54 @@
 Window {
-    width: 800
-    height: 600
-    title: "My Aroma Application"
-   
-    Tabs {
-        x: 0
-        y: 0
-        width: 800
-        height: 50
-        id: "tab1"
-        Tab {
-            text: "hello"
-            Button {
-                x: 20
-                y: 60
-                text: "Hi"
-                animation: "slide_x"
-                animation_start_val: -100
-                animation_end_val: 200
-                animation_duration: 2000
-            }
-        }
+    width: 300
+    height: 300
+    title: "Rainbow Text Showcase"
 
-        Tab {
-            text: "settings"
-            Button {}
-        }
+    Label {
+        text: "Red"
+        color: "#FF0000"
+        x: 20
+        y: 20
+    }
+
+    Label {
+        text: "Orange"
+        color: "#FF7F00"
+        x: 20
+        y: 50
+    }
+
+    Label {
+        text: "Yellow"
+        color: "#FFFF00"
+        x: 20
+        y: 80
+    }
+
+    Label {
+        text: "Green"
+        color: "#00FF00"
+        x: 20
+        y: 110
+    }
+
+    Label {
+        text: "Blue"
+        color: "#0000FF"
+        x: 20
+        y: 140
+    }
+
+    Label {
+        text: "Indigo"
+        color: "#4B0082"
+        x: 20
+        y: 170
+    }
+
+    Label {
+        text: "Violet"
+        color: "#8B00FF"
+        x: 20
+        y: 200
     }
 }

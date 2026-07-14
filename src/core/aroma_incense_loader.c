@@ -2809,10 +2809,14 @@ static AromaNode *build_label(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     static const char *const style_names[] = {"large", "medium", "small"};
     static const int style_values[] = {LABEL_STYLE_LABEL_LARGE, LABEL_STYLE_LABEL_MEDIUM, LABEL_STYLE_LABEL_SMALL};
     AromaLabelStyle style = (AromaLabelStyle)match_enum(node, &bag, "style", LABEL_STYLE_LABEL_LARGE, style_names, style_values, 3, "label style", "large, medium, small");
+
     AromaNode *built = NULL;
     if (text)
         built = aroma_ui_label(parent, text, props_int(&bag, "x", 0), props_int(&bag, "y", 0), style, _widget_font);
-    free(text);
+      const char *cs = props_get(&bag, "color");
+        if (cs)
+            aroma_label_set_color(built, props_color(&bag, "color", 0x000000FF));
+        free(text);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 

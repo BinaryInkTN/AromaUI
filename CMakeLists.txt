@@ -26,7 +26,6 @@ if(NOT ENABLE_GLFW AND NOT EMSCRIPTEN AND NOT ANDROID)
             endif()
         endif()
 
-        # Restore prior setting so it doesn't affect freetype/tests/etc.
         set(BUILD_SHARED_LIBS "${_aroma_saved_build_shared_libs}" CACHE BOOL "" FORCE)
     else()
         message(FATAL_ERROR "GLPS vendor submodule missing.")

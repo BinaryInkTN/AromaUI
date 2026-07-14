@@ -117,10 +117,6 @@ elseif(ENABLE_GLFW)
 else()
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_glps.c)
 
-    # GLPS must be a static library at this point (enforced in the top-level
-    # CMakeLists.txt by forcing BUILD_SHARED_LIBS OFF while GLPS is
-    # configured). Fail loudly here too, in case src/CMakeLists.txt is ever
-    # reused in a context where that guarantee doesn't hold.
     if(TARGET GLPS)
         get_target_property(_glps_type GLPS TYPE)
         if(_glps_type STREQUAL "SHARED_LIBRARY")
