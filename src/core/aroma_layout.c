@@ -346,6 +346,7 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
                               int parent_width, int parent_height) {
     if (!is_valid_node(start_node)) return;
     if (!is_valid_widget_ptr(start_node->node_widget_ptr)) {
+    
         if (start_node->child_count > AROMA_MAX_CHILD_NODES) return;
         for (uint64_t i = 0; i < start_node->child_count; i++) {
             AromaNode* child = start_node->child_nodes[i];

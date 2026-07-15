@@ -202,7 +202,12 @@ void aroma_card_set_click_callback(AromaNode *card_node, void (*callback)(void *
     card->click_callback = callback;
     card->user_data = user_data;
 }
-
+bool aroma_card_is_card(AromaNode *node)
+{
+    if (!node)
+        return false;
+    return card_registry_get(node->node_id) != NULL;
+}
 void aroma_card_destroy(AromaNode *card_node)
 {
     if (!card_node)

@@ -284,7 +284,6 @@ void aroma_ui_render_all_windows_impl(void)
     {
         window_update_callback(g_windows[0].window_id, NULL);
     }
-    LOG_CRITICAL("Rendered all windows");
 }
 
 void aroma_ui_process_events_impl(void)
@@ -726,18 +725,21 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
         }
     }
 
-    if (append_draw_task(node, tasks, task_count, max_tasks) &&
-        aroma_container_is_scrollable(node))
+    append_draw_task(node, tasks, task_count, max_tasks);
+
+    if (aroma_container_is_scrollable(node) && !aroma_card_is_card(node->parent_node))
     {
         return;
     }
 
     for (uint64_t i = 0; i < node->child_count; ++i)
     {
-        collect_draw_tasks(node->child_nodes[i], tasks, task_count, max_tasks, clip);
+        if (node->child_nodes[i])
+        {
+            collect_draw_tasks(node->child_nodes[i], tasks, task_count, max_tasks, clip);
+        }
     }
 }
-
 static void window_update_callback(size_t window_id, void *data)
 {
     (void)data;

@@ -16,7 +16,7 @@ typedef enum {
 } AromaCardType;
 
 typedef struct  AromaCard AromaCard;
-
+bool aroma_card_is_card(AromaNode *node);
 // Create a new card
 AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int height, AromaCardType type);
 

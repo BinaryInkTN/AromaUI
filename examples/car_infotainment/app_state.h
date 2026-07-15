@@ -187,8 +187,10 @@ typedef struct
     AromaNode* range_card;
     AromaNode* secondary_notification_card;
     
-    
+    AromaNode* phone_app_header_bar;
     AromaNode* bottom_bar;
+    AromaNode *phone_app_tabs;
+
     AromaTheme theme;
 
 

@@ -454,7 +454,7 @@ void opening_anim(AromaNode *target, float progress, void *user_data)
     icon_rect->width = rect->width;
     icon_rect->height = rect->height;
 
-    if (progress >= 0.95f)
+    if (progress >= 0.92f)
     {
 
         recently_viewed_rect->x = rect->x + 20;
@@ -478,7 +478,7 @@ bool open_maps(AromaNode *node, void *user_data)
     if (!anim)
         return false;
 
-    aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
 
     aroma_node_set_hidden(state.map_node, false);
     aroma_node_set_hidden(state.map_close_btn, false);
@@ -519,7 +519,7 @@ void closing_anim(AromaNode *target, float progress, void *user_data)
     icon_rect->width = rect->width;
     icon_rect->height = rect->height;
 
-    if (progress >= 0.95f)
+    if (progress >= 0.92f)
     {
         aroma_node_set_z_index(target, 1);
         aroma_node_set_hidden(state.map_close_btn, true);
@@ -558,6 +558,11 @@ void phone_opening_anim(AromaNode *target, float progress, void *user_data)
     if (!icon_rect)
         return;
 
+
+    AromaRect *phone_tabs_rect = aroma_node_get_rect(state.phone_app_tabs);
+    if (!phone_tabs_rect)
+        return;
+
     const int start_x = 330;
     const int start_y = WIN_H - 95;
     const int start_w = 48;
@@ -577,11 +582,14 @@ void phone_opening_anim(AromaNode *target, float progress, void *user_data)
     icon_rect->y = rect->y;
     icon_rect->width = rect->width;
     icon_rect->height = rect->height;
+ 
 
-    if (progress >= 0.95f)
-    {
-        aroma_node_set_hidden(state.phone_content_card, false);
-    }
+    phone_tabs_rect->x = rect->x;
+    phone_tabs_rect->y = rect->y ;
+    phone_tabs_rect->width = rect->width;
+    phone_tabs_rect->height = 100;
+
+  
 
     aroma_node_invalidate(state.phone_node);
     aroma_node_invalidate(state.phone_app_icon);
@@ -600,10 +608,11 @@ bool open_phone(AromaNode *node, void *user_data)
     if (!anim)
         return false;
 
-    aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
 
     aroma_node_set_hidden(state.phone_node, false);
     aroma_node_set_hidden(state.phone_close_btn, false);
+        aroma_node_set_hidden(state.phone_app_tabs, false);
 
     aroma_node_set_z_index(card_node, Z_LAYER_STATUS_BAR + 10);
 
@@ -621,6 +630,11 @@ void phone_closing_anim(AromaNode *target, float progress, void *user_data)
         return;
     AromaRect *icon_rect = aroma_node_get_rect(state.phone_app_icon);
     if (!icon_rect)
+        return;
+
+
+    AromaRect *phone_tabs_rect = aroma_node_get_rect(state.phone_app_tabs);
+    if (!phone_tabs_rect)
         return;
 
     const int end_x = 330;
@@ -643,11 +657,18 @@ void phone_closing_anim(AromaNode *target, float progress, void *user_data)
     icon_rect->width = rect->width;
     icon_rect->height = rect->height;
 
-    if (progress >= 0.95f)
+
+    phone_tabs_rect->x = rect->x;
+    phone_tabs_rect->y = rect->y + 90;
+    phone_tabs_rect->width = rect->width;
+    phone_tabs_rect->height = 100;
+
+    if (progress >= 0.92f)
     {
         aroma_node_set_z_index(target, 1);
         aroma_node_set_hidden(state.phone_close_btn, true);
         aroma_node_set_hidden(state.phone_node, true);
+        
     }
 
     aroma_node_invalidate(state.phone_node);
@@ -663,10 +684,10 @@ void close_phone(void *user_data)
 
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 600, phone_closing_anim, NULL);
+                aroma_node_set_hidden(state.phone_app_tabs, true);
 
     aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
 
-    aroma_node_set_hidden(state.phone_content_card, true);
 }
 
 void music_opening_anim(AromaNode *target, float progress, void *user_data)
@@ -702,7 +723,7 @@ void music_opening_anim(AromaNode *target, float progress, void *user_data)
     icon_rect->width = rect->width;
     icon_rect->height = rect->height;
 
-    if (progress >= 0.95f)
+    if (progress >= 0.92f)
     {
         aroma_node_set_hidden(state.music_content_card, false);
     }
@@ -724,7 +745,7 @@ bool open_music(AromaNode *node, void *user_data)
     if (!anim)
         return false;
 
-    aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
 
     aroma_node_set_hidden(state.music_node, false);
     aroma_node_set_hidden(state.music_close_btn, false);
@@ -767,7 +788,7 @@ void music_closing_anim(AromaNode *target, float progress, void *user_data)
     icon_rect->width = rect->width;
     icon_rect->height = rect->height;
 
-    if (progress >= 0.95f)
+    if (progress >= 0.92f)
     {
         aroma_node_set_z_index(target, 1);
         aroma_node_set_hidden(state.music_close_btn, true);
@@ -1062,7 +1083,7 @@ void build_vehicle_view(AromaNode *window)
                                                ,
                                                100, 15, 48, 48);
     aroma_node_set_z_index(state.phone_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    AromaNode *phone_app_icon_card = aroma_ui_card(state.bottom_bar, 100, 15, 48, 48, CARD_TYPE_FILLED);
+    AromaNode *phone_app_icon_card = aroma_ui_card(state.bottom_bar, 100, 15, 48, 48, CARD_TYPE_OUTLINED);
     aroma_image_set_on_click(state.phone_app_icon, open_phone, phone_app_icon_card);
 
     state.music_app_icon = aroma_ui_image(state.bottom_bar,
@@ -1145,22 +1166,34 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(state.phone_close_btn, Z_LAYER_STATUS_BAR + 12);
     aroma_node_set_hidden(state.phone_close_btn, true);
 
-    state.phone_content_card = aroma_ui_card(phone_app_icon_card, 50, 50, 380, 320, CARD_TYPE_FILLED);
-    aroma_node_set_hidden(state.phone_content_card, true);
-    aroma_node_set_z_index(state.phone_content_card, Z_LAYER_STATUS_BAR + 11);
-    aroma_card_set_colors(state.phone_content_card, 0xCCFFFFFF, 0xCCFFFFFF);
 
-    AromaNode *phone_content_label = aroma_ui_label(
-        state.phone_content_card, "Phone", 16, 12, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(phone_content_label, Z_LAYER_STATUS_BAR + 11);
-    AromaNode *phone_content_icon = aroma_ui_icon(
-        state.phone_content_card, AROMA_ICON_CALL, 340, 20, 24,
-        state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(phone_content_icon, Z_LAYER_STATUS_BAR + 11);
-    AromaNode *phone_content_divider = aroma_ui_divider(
-        state.phone_content_card, 16, 50, 348, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(phone_content_divider, Z_LAYER_STATUS_BAR + 11);
+    AromaNode* aroma_contacts_listview = aroma_ui_listview(
+        phone_app_icon_card, 16, 110, 988, 700,
+NULL, NULL, state.ui_font);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
+        aroma_listview_add_item(aroma_contacts_listview, "John Doe", "555-1234", NULL);
 
+    aroma_node_set_z_index(aroma_contacts_listview, Z_LAYER_STATUS_BAR + 12);
+    state.phone_app_tabs = aroma_ui_tabs_with_icons(
+        phone_app_icon_card, 0, 0, 1024, 50,
+        (const char *[]){"Contacts", "Call History", "Dialer"}, (const char *[]){AROMA_ICON_CONTACTS, AROMA_ICON_CALL, AROMA_ICON_DIALER_SIP}, 3, NULL, NULL, state.settings_font, state.big_icon_font);
+    
+        aroma_node_set_z_index(state.phone_app_tabs, Z_LAYER_STATUS_BAR + 11);
+            aroma_node_set_hidden(state.phone_app_tabs, true);
+        AromaNode* content[] = {aroma_contacts_listview, NULL, NULL}; 
+    aroma_tabs_set_content(state.phone_app_tabs, 0, content, 3);
     state.music_node = aroma_ui_container(
         music_app_icon_card, 0, 0, 48, 48,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW,
