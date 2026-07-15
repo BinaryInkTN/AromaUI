@@ -23,6 +23,7 @@
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_style.h"
+#include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
@@ -35,7 +36,13 @@ typedef struct   AromaImage {
     AromaRect rect;
     unsigned int texture_id;
     char image_path[AROMA_IMAGE_PATH_MAX];
-    bool owns_texture; 
+    bool owns_texture;
+
+    bool (*on_click)(AromaNode*, void*);
+    bool (*on_hover)(AromaNode*, void*);
+    void *user_data;
+    int active_pointer_id;
+    bool events_registered;
 } AromaImage;
 
 static void __image_destroy_texture(AromaImage* image)
@@ -63,6 +70,105 @@ static unsigned int __image_load_texture(const char* image_path)
     }
     
     return gfx->load_image(image_path);
+}
+
+static bool aroma_image_point_in_bounds(AromaImage* image, int x, int y)
+{
+    if (!image) return false;
+    return (x >= image->rect.x && x <= (image->rect.x + image->rect.width) &&
+            y >= image->rect.y && y <= (image->rect.y + image->rect.height));
+}
+
+static bool __image_default_event_handler(AromaEvent* event, void* user_data)
+{
+    if (!event || !event->target_node) return false;
+    AromaImage* image = (AromaImage*)event->target_node->node_widget_ptr;
+    if (!image) return false;
+
+    (void)user_data;
+
+    int x = 0, y = 0;
+    bool is_release = false;
+    bool handle_click = false;
+    bool handle_hover = false;
+
+    switch (event->event_type) {
+        case EVENT_TYPE_MOUSE_CLICK:
+            if (image->active_pointer_id != -1) return false;
+            x = event->data.mouse.x; y = event->data.mouse.y;
+            return aroma_image_point_in_bounds(image, x, y);
+
+        case EVENT_TYPE_MOUSE_RELEASE:
+            if (image->active_pointer_id != -1) return false;
+            x = event->data.mouse.x; y = event->data.mouse.y;
+            is_release = true;
+            handle_click = true;
+            break;
+
+        case EVENT_TYPE_MOUSE_MOVE:
+        case EVENT_TYPE_MOUSE_ENTER:
+            if (image->active_pointer_id != -1) return false;
+            x = event->data.mouse.x; y = event->data.mouse.y;
+            handle_hover = true;
+            break;
+
+        case EVENT_TYPE_MOUSE_EXIT:
+            return false;
+
+        case EVENT_TYPE_TOUCH_DOWN:
+            if (image->active_pointer_id != -1) return false;
+            x = event->data.touch.x; y = event->data.touch.y;
+            if (!aroma_image_point_in_bounds(image, x, y)) return false;
+            image->active_pointer_id = event->data.touch.id;
+            return true;
+
+        case EVENT_TYPE_TOUCH_UP:
+            if (image->active_pointer_id != event->data.touch.id) return false;
+            image->active_pointer_id = -1;
+            x = event->data.touch.x; y = event->data.touch.y;
+            is_release = true;
+            handle_click = true;
+            break;
+
+        case EVENT_TYPE_TOUCH_MOVE:
+            if (image->active_pointer_id != event->data.touch.id) return false;
+            return true;
+
+        default:
+            return false;
+    }
+
+    bool in_bounds = aroma_image_point_in_bounds(image, x, y);
+
+    if (handle_hover && in_bounds && image->on_hover)
+    {
+        LOG_INFO("Image hovered (node_id=%llu)", (unsigned long long)event->target_node->node_id);
+        image->on_hover(event->target_node, image->user_data);
+    }
+
+    if (handle_click && is_release && in_bounds && image->on_click)
+    {
+        LOG_INFO("Image clicked (node_id=%llu)", (unsigned long long)event->target_node->node_id);
+        image->on_click(event->target_node, image->user_data);
+    }
+
+    return in_bounds;
+}
+
+static void __image_ensure_events_registered(AromaNode* image_node, AromaImage* image)
+{
+    if (image->events_registered) return;
+
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_MOUSE_CLICK, __image_default_event_handler, NULL, 90);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_MOUSE_RELEASE, __image_default_event_handler, NULL, 90);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_MOUSE_MOVE, __image_default_event_handler, NULL, 80);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_MOUSE_ENTER, __image_default_event_handler, NULL, 80);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_MOUSE_EXIT, __image_default_event_handler, NULL, 80);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_TOUCH_DOWN, __image_default_event_handler, NULL, 90);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_TOUCH_UP, __image_default_event_handler, NULL, 90);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_TOUCH_MOVE, __image_default_event_handler, NULL, 80);
+
+    image->events_registered = true;
 }
 
 void aroma_image_draw(AromaNode* image_node, size_t window_id)
@@ -134,6 +240,7 @@ AromaNode* aroma_image_create(AromaNode* parent, const char* image_path, int x, 
     image->rect.height = height;
     image->texture_id = 0;
     image->owns_texture = true;
+    image->active_pointer_id = -1;
     
     if (image_path) {
         strncpy(image->image_path, image_path, AROMA_IMAGE_PATH_MAX - 1);
@@ -184,6 +291,7 @@ AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data
     image->rect.height = height;
     image->owns_texture = true;
     image->image_path[0] = '\0'; 
+    image->active_pointer_id = -1;
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx && gfx->load_image_from_memory) {
@@ -235,6 +343,7 @@ AromaNode* aroma_image_create_from_texture(AromaNode* parent, unsigned int textu
     image->texture_id = texture_id;
     image->owns_texture = take_ownership;
     image->image_path[0] = '\0'; 
+    image->active_pointer_id = -1;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, image);
     if (!node) {
@@ -363,6 +472,35 @@ const char* aroma_image_get_source(AromaNode* image_node)
     return image->image_path;
 }
 
+void aroma_image_set_on_click(AromaNode* image_node, bool (*on_click)(AromaNode*, void*), void* user_data)
+{
+    if (!image_node || !image_node->node_widget_ptr) {
+        LOG_ERROR("Invalid image node");
+        return;
+    }
+
+    AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
+    image->on_click = on_click;
+    image->user_data = user_data;
+    __image_ensure_events_registered(image_node, image);
+
+    LOG_INFO("Image click callback registered (node_id=%llu)", (unsigned long long)image_node->node_id);
+}
+
+void aroma_image_set_on_hover(AromaNode* image_node, bool (*on_hover)(AromaNode*, void*), void* user_data)
+{
+    if (!image_node || !image_node->node_widget_ptr) {
+        LOG_ERROR("Invalid image node");
+        return;
+    }
+
+    AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
+    image->on_hover = on_hover;
+    image->user_data = user_data;
+    __image_ensure_events_registered(image_node, image);
+
+    LOG_INFO("Image hover callback registered (node_id=%llu)", (unsigned long long)image_node->node_id);
+}
 
 void aroma_image_destroy(AromaNode* image_node)
 {

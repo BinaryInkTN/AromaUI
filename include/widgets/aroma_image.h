@@ -148,7 +148,8 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id);
  * @param image_node Image node
  */
 void aroma_image_destroy(AromaNode* image_node);
-
+void aroma_image_set_on_click(AromaNode* image_node, bool (*on_click)(AromaNode*, void*), void* user_data);
+void aroma_image_set_on_hover(AromaNode* image_node, bool (*on_hover)(AromaNode*, void*), void* user_data);
 #ifdef __cplusplus
 }
 #endif
