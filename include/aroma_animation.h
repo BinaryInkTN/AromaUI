@@ -27,9 +27,13 @@ typedef enum {
     AROMA_EASE_OUT_ELASTIC
 } AromaEasingType;
 
+// Standard frame-by-frame custom update callback
 typedef void (*AromaAnimationCallback)(AromaNode* target, float current_val, void* user_data);
 
-typedef struct  _AromaAnimation {
+// New completion callback triggered once the animation completes naturally
+typedef void (*AromaAnimationCompleteCallback)(AromaNode* target, void* user_data);
+
+typedef struct _AromaAnimation {
     AromaNode* target;
     AromaAnimationType type;
     float start_val;
@@ -42,6 +46,10 @@ typedef struct  _AromaAnimation {
     AromaEasingType easing;
     AromaAnimationCallback custom_cb;
     void* user_data;
+    
+    // Pointer to completion callback
+    AromaAnimationCompleteCallback on_complete;
+    
     struct _AromaAnimation* next;
 } AromaAnimation;
 
@@ -50,8 +58,12 @@ AromaAnimation* aroma_animation_start(AromaNode* target, AromaAnimationType type
 void aroma_animation_stop(AromaNode* target);
 AromaAnimation* aroma_animation_start_custom(AromaNode* target, float start_val, float end_val, uint32_t duration_ms, AromaAnimationCallback cb, void* user_data);
 void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing);
+
+void aroma_animation_set_on_complete(AromaAnimation* anim, AromaAnimationCompleteCallback cb);
+
 void aroma_animation_cleanup_node(AromaNode* target);
 void aroma_animation_cleanup_all(void);
+
 #ifdef __cplusplus
 }
 #endif

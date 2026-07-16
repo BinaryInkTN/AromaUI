@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-
+#include "bt_speaker_hfp.h"
 #define WIN_W 1024
 #define WIN_H 600
 
@@ -33,55 +33,69 @@
 #define MAX_PATH_LEN 512
 #define MAX_VOICE_TEXT 512
 #define MAX_FAULT_MSG 128
+#define MAX_CONTACTS 100
+typedef struct {
+    char             path[256];  
+    char             number[64];
+    char             name[128];  
+    bt_call_state_t  state;
+    bool             multiparty;
+} CallInfo;
+
+typedef struct
+{
+    char name[128];
+    char number[64];
+} ContactInfo;
 
 typedef struct
 {
 
-    uint8_t  wiper_speed;
-    uint8_t  headlight_state;
-    uint8_t  indicator_left;
-    uint8_t  indicator_right;
-    uint8_t  buzzer;
-    uint8_t  door_locked;
-    uint8_t  interior_light;
-    uint8_t  rain_detected;
-    uint8_t  door_open;
+    uint8_t wiper_speed;
+    uint8_t headlight_state;
+    uint8_t indicator_left;
+    uint8_t indicator_right;
+    uint8_t buzzer;
+    uint8_t door_locked;
+    uint8_t interior_light;
+    uint8_t rain_detected;
+    uint8_t door_open;
 
     uint16_t throttle_cmd;
     uint16_t brake_cmd;
     uint16_t fsr_value;
     uint16_t vehicle_speed;
-    uint8_t  crash_detected;
-    uint8_t  airbag_deployed;
-    uint8_t  seatbelt_warn;
-    uint8_t  acm_seat_occupied;
-    uint8_t  acm_system_status;
+    uint8_t crash_detected;
+    uint8_t airbag_deployed;
+    uint8_t seatbelt_warn;
+    uint8_t acm_seat_occupied;
+    uint8_t acm_system_status;
 
-    int16_t  seat_position_cmd;
-    uint8_t  seat_profile;
-    uint8_t  seat_occupied;
+    int16_t seat_position_cmd;
+    uint8_t seat_profile;
+    uint8_t seat_occupied;
 
     uint16_t speed_raw;
     uint16_t speed_filtered;
-    int16_t  acceleration;
+    int16_t acceleration;
     uint16_t avg_speed;
     uint16_t max_speed;
     uint32_t distance;
     uint32_t kinetic_energy;
-    uint8_t  high_speed_flag;
-    uint8_t  harsh_braking;
-    uint8_t  vss_fault;
+    uint8_t high_speed_flag;
+    uint8_t harsh_braking;
+    uint8_t vss_fault;
 
-    int16_t  temp_c;
+    int16_t temp_c;
     uint16_t humidity;
-    int16_t  dew_point_c;
-    int16_t  altitude_m;
+    int16_t dew_point_c;
+    int16_t altitude_m;
     uint32_t pressure_pa;
-    uint8_t  ecs_sensor_fault;
-    uint8_t  comfort_cold;
-    uint8_t  comfort_hot;
-    uint8_t  high_humidity;
-    
+    uint8_t ecs_sensor_fault;
+    uint8_t comfort_cold;
+    uint8_t comfort_hot;
+    uint8_t high_humidity;
+
 } EVState;
 
 typedef struct
@@ -160,12 +174,13 @@ typedef struct
     AromaNode *phone_node;
     AromaNode *phone_close_btn;
     AromaNode *phone_content_card;
+    AromaNode *call_history_listview;
 
     AromaNode *music_app_icon;
     AromaNode *music_node;
     AromaNode *music_close_btn;
     AromaNode *music_content_card;
-
+    AromaNode *contact_listview;
     AromaNode *settings_panel_node;
     AromaNode *listviews[8];
     AromaNode *listview_containers[8];
@@ -184,18 +199,16 @@ typedef struct
     AromaNode *battery_button;
 
     AromaNode *bt_container;
-    AromaNode* range_card;
-    AromaNode* secondary_notification_card;
-    
-    AromaNode* phone_app_header_bar;
-    AromaNode* bottom_bar;
+    AromaNode *range_card;
+    AromaNode *secondary_notification_card;
+
+    AromaNode *phone_app_header_bar;
+    AromaNode *bottom_bar;
     AromaNode *phone_app_tabs;
 
     AromaTheme theme;
 
-
     AromaFont *big_icon_font;
-
 
     bool map_panel_open;
     bool settings_panel_open;
@@ -222,8 +235,16 @@ typedef struct
     char voice_status_text[MAX_VOICE_TEXT];
     char voice_partial_text[MAX_VOICE_TEXT];
     char voice_nav_dest[MAX_STRING_LEN];
-
+    ContactInfo contacts[MAX_CONTACTS];
+    int contact_count;
+    bool contacts_fetched;
+    // Add to AppState struct:
+    CallInfo call_history[100];
+    int call_history_count;
+    bool call_history_fetched;
 } AppState;
+
+
 
 extern AppState state;
 

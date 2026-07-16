@@ -50,6 +50,7 @@ add_executable(infotainment
        status_bar.c 
        tabs_manager.c
        bt_speaker_api.c
+       bt_speaker_hfp.c
 )
 
 if(ENABLE_VOICE_CONTROL)

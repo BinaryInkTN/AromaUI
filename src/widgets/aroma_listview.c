@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define AROMA_LIST_MAX_ITEMS 16
+#define AROMA_LIST_MAX_ITEMS 256
 #define AROMA_LIST_ITEM_PADDING 12
 #define AROMA_LIST_ICON_PADDING 12
 #define AROMA_LIST_MIN_ITEM_HEIGHT 28
@@ -98,7 +98,6 @@ static bool is_selectable(const AromaListViewInternal *list, int i)
 
 static int item_height_at(const AromaListViewInternal *list, int i)
 {
-
     if (!list)
         return AROMA_LIST_MIN_ITEM_HEIGHT;
     if (!item_in_range(list, i))
@@ -130,6 +129,19 @@ static void update_content_height(AromaListViewInternal *list)
         aroma_container_update_auto_content_size(list->scroll_container);
 }
 
+static int selectable_index(const AromaListViewInternal *list, int raw_index)
+{
+    if (!list || raw_index < 0)
+        return -1;
+    int count = 0;
+    for (int i = 0; i <= raw_index; i++)
+    {
+        if (is_selectable(list, i))
+            count++;
+    }
+    return count - 1;
+}
+
 static int hit_test(const AromaListViewInternal *list, int screen_y)
 {
     int scroll_y = 0;
@@ -142,7 +154,11 @@ static int hit_test(const AromaListViewInternal *list, int screen_y)
     {
         int ih = item_height_at(list, (int)i);
         if (rel_y >= cy && rel_y < cy + ih)
+        {
+            if (is_header(list, (int)i) || is_separator(list, (int)i))
+                return -1;
             return (int)i;
+        }
         cy += ih;
     }
     return -1;
@@ -151,8 +167,11 @@ static int hit_test(const AromaListViewInternal *list, int screen_y)
 static void commit_selection(AromaListViewInternal *list, AromaNode *node, int hit)
 {
     list->selected_index = hit;
-    if (list->callback)
-        list->callback(hit, list->user_data);
+    if (list->callback && is_selectable(list, hit))
+    {
+        int adjusted = selectable_index(list, hit);
+        list->callback(adjusted, list->user_data);
+    }
     AromaPlatformInterface *plat = aroma_backend_abi.get_platform_interface();
     if (plat && plat->android_vibrate)
         plat->android_vibrate(60);
@@ -466,11 +485,27 @@ int aroma_listview_get_selected(AromaNode *n)
     AromaListViewInternal *l = get_internal(n);
     return l ? l->selected_index : -1;
 }
+
 size_t aroma_listview_get_count(AromaNode *n)
 {
     AromaListViewInternal *l = get_internal(n);
     return l ? l->item_count : 0;
 }
+
+size_t aroma_listview_get_selectable_count(AromaNode *n)
+{
+    AromaListViewInternal *l = get_internal(n);
+    if (!l)
+        return 0;
+    size_t count = 0;
+    for (size_t i = 0; i < l->item_count; i++)
+    {
+        if (is_selectable(l, (int)i))
+            count++;
+    }
+    return count;
+}
+
 void *aroma_listview_get_item_data(AromaNode *n, int i)
 {
     AromaListViewInternal *l = get_internal(n);

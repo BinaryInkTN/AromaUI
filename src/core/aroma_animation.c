@@ -98,6 +98,11 @@ static void update_animations(void* arg)
 
         if (finished) {
             curr->is_running = false;
+            
+            // Invoke completion callback if registered
+            if (curr->on_complete) {
+                curr->on_complete(curr->target, curr->user_data);
+            }
         }
 
         prev = curr;
@@ -139,6 +144,7 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
     anim->start_time  = aroma_time_now_ms();
     anim->is_running  = true;
     anim->easing      = AROMA_EASE_OUT_CUBIC;
+    anim->on_complete = NULL; // Initialize safe default
 
     anim->next     = animation_list;
     animation_list = anim;
@@ -146,10 +152,9 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
     if (!anim_timer) aroma_animation_manager_init();
     return anim;
 }
+
 static void cleanup_animation_list(void) {
     AromaAnimation* curr = animation_list;
-    AromaAnimation* prev = NULL;
-    
     while (curr) {
         AromaAnimation* next = curr->next;
         free(curr);
@@ -157,6 +162,7 @@ static void cleanup_animation_list(void) {
     }
     animation_list = NULL;
 }
+
 void aroma_animation_cleanup_all(void) {
     cleanup_animation_list();
 }
@@ -182,6 +188,7 @@ void aroma_animation_cleanup_node(AromaNode* target) {
         curr = next;
     }
 }
+
 void aroma_animation_stop(AromaNode* target)
 {
     AromaAnimation* curr = animation_list;
@@ -210,4 +217,9 @@ AromaAnimation* aroma_animation_start_custom(AromaNode*              target,
 void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing)
 {
     if (anim) anim->easing = easing;
+}
+
+void aroma_animation_set_on_complete(AromaAnimation* anim, AromaAnimationCompleteCallback cb)
+{
+    if (anim) anim->on_complete = cb;
 }

@@ -41,10 +41,8 @@ void apply_theme(bool dark_mode)
             state.theme = new_theme;
         }
     } else {
-        AromaTheme new_theme = aroma_theme_create_high_contrast();
-        new_theme.colors.primary = 0xFF2196F3;
-        new_theme.colors.primary_dark = 0xFF1976D2;
-        new_theme.colors.primary_light = 0xFFBBDEFB;
+        AromaTheme new_theme = aroma_theme_create_material_blue();
+
         state.theme = new_theme;
     }
     
