@@ -221,20 +221,20 @@ void aroma_font_destroy(AromaFont* font) {
 }
 
 int aroma_font_get_line_width(AromaFont* font, const char* text) {
-    if (!font || !text || ((uintptr_t)font & (sizeof(int) - 1)) != 0 || !font->face) return 0;
-
+    if (!font || !text || !font->face) return 0;
+    
     int width = 0;
     FT_GlyphSlot slot = font->face->glyph;
     size_t len = strlen(text);
-
+    
     for (size_t i = 0; i < len; i++) {
-        if (FT_Load_Char(font->face, text[i], FT_LOAD_DEFAULT)) continue;
-        width += slot->advance.x >> 6; 
+        if (FT_Load_Char(font->face, text[i], FT_LOAD_DEFAULT) == 0) {
+            width += slot->advance.x >> 6;
+        }
     }
-
+    
     return width;
 }
-
 
 int aroma_font_get_line_height(AromaFont* font) {
     if (!font || ((uintptr_t)font & (sizeof(int) - 1)) != 0)

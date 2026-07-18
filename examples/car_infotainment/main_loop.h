@@ -3,6 +3,6 @@
 #include "telemetry_shm.h"
 #include "shared_memory_bridge.h"
 
-void main_loop(telemetry_bridge_t *telemetry_bridge);
+void main_loop();
 
 #endif 

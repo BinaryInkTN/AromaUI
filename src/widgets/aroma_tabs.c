@@ -101,10 +101,7 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
             AromaNode* content = tabs->content_nodes[i][j];
             if (!content) continue;
             
-            /* Only toggle the root node — hiding a parent is enough
-             * to prevent collect_draw_tasks from traversing it.
-             * Do NOT recurse, because children may have their own
-             * visibility managed by other widgets (e.g. sidebar). */
+           
             aroma_node_set_hidden(content, hide);
             
             

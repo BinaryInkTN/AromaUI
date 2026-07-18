@@ -265,7 +265,6 @@ extern "C"
 
         size_t dirty_count = 0;
         aroma_dirty_list_get(&dirty_count);
-        printf("Dirty nodes count: %zu\n", dirty_count);
         if (dirty_count == 0 && !aroma_ui_is_immediate_mode())
             return;
 

@@ -57,11 +57,13 @@ void aroma_container_get_content_size(AromaNode* node, int* out_w, int* out_h);
 
 void aroma_container_update_auto_content_size(AromaNode* node);
 
-
 static inline AromaContainer* aroma_container_get(AromaNode* node) {
+    if (!node || node->node_type != NODE_TYPE_CONTAINER) {
+        return NULL;
+    }
     return AROMA_NODE_AS(node, AromaContainer);
 }
-
+ 
 #ifdef __cplusplus
 }
 #endif

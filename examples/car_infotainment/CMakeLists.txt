@@ -7,9 +7,40 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 option(ENABLE_VOICE_CONTROL "Enable voice control (requires libvosk)" OFF)
 option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
 option(ENABLE_BLUETOOTH_SPEAKER "Enable Bluetooth speaker functionality" ON)
+option(ENABLE_ASAN "Build with AddressSanitizer + LeakSanitizer instrumentation" ON)
+option(ENABLE_TSAN "Build with ThreadSanitizer instrumentation (mutually exclusive with ENABLE_ASAN)" OFF)
 
 if(ENABLE_GLFW AND EMSCRIPTEN)
     message(FATAL_ERROR "ENABLE_GLFW and EMSCRIPTEN are mutually exclusive.")
+endif()
+
+if(ENABLE_ASAN AND ENABLE_TSAN)
+    message(FATAL_ERROR "ENABLE_ASAN and ENABLE_TSAN are mutually exclusive - ASan and TSan cannot be combined in one binary.")
+endif()
+
+if((ENABLE_ASAN OR ENABLE_TSAN) AND EMSCRIPTEN)
+    message(WARNING "Sanitizers are not supported for Emscripten builds via this flag - disabling.")
+    set(ENABLE_ASAN OFF)
+    set(ENABLE_TSAN OFF)
+endif()
+
+# Sanitizer flag sets - defined once, applied everywhere below so the
+# instrumentation is consistent across every target (aroma + infotainment).
+# Mixing sanitized and non-sanitized objects in one binary is undefined
+# behavior and a common source of "the sanitizer itself crashed" reports.
+set(SANITIZER_COMPILE_FLAGS "")
+set(SANITIZER_LINK_FLAGS "")
+
+if(ENABLE_ASAN)
+    set(SANITIZER_COMPILE_FLAGS -fsanitize=address -fno-omit-frame-pointer -g -O1)
+    set(SANITIZER_LINK_FLAGS -fsanitize=address)
+    message(STATUS "Sanitizer: AddressSanitizer + LeakSanitizer ENABLED")
+elseif(ENABLE_TSAN)
+    set(SANITIZER_COMPILE_FLAGS -fsanitize=thread -fno-omit-frame-pointer -g -O1)
+    set(SANITIZER_LINK_FLAGS -fsanitize=thread)
+    message(STATUS "Sanitizer: ThreadSanitizer ENABLED")
+else()
+    message(STATUS "Sanitizer: DISABLED")
 endif()
 
 if(NOT TARGET aroma)
@@ -18,6 +49,10 @@ endif()
 
 target_compile_options(aroma PRIVATE 
     -g
+    ${SANITIZER_COMPILE_FLAGS}
+)
+target_link_options(aroma PRIVATE
+    ${SANITIZER_LINK_FLAGS}
 )
 
 # Find required packages for Bluetooth speaker
@@ -51,6 +86,13 @@ add_executable(infotainment
        tabs_manager.c
        bt_speaker_api.c
        bt_speaker_hfp.c
+)
+
+target_compile_options(infotainment PRIVATE
+    ${SANITIZER_COMPILE_FLAGS}
+)
+target_link_options(infotainment PRIVATE
+    ${SANITIZER_LINK_FLAGS}
 )
 
 if(ENABLE_VOICE_CONTROL)
@@ -88,6 +130,7 @@ if(ENABLE_BLUETOOTH_SPEAKER AND NOT EMSCRIPTEN)
     )
     
     target_compile_options(infotainment PRIVATE
+        -g
         ${DBUS_CFLAGS_OTHER}
         ${PULSE_CFLAGS_OTHER}
     )

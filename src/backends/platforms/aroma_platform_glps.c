@@ -91,7 +91,8 @@ static void glps_mouse_move_callback(size_t window_id, double mouse_x, double mo
     (void)window_id;
     (void)data;
     bool moved = (mouse_x != platform_ctx.last_mouse_x) || (mouse_y != platform_ctx.last_mouse_y);
-    if (moved) {
+    if (moved)
+    {
         queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, mouse_x, mouse_y, 0);
     }
 
@@ -115,66 +116,121 @@ static void glps_mouse_click_callback(size_t window_id, bool state, void *data)
         aroma_event_handle_pointer_move((int)platform_ctx.last_mouse_x, (int)platform_ctx.last_mouse_y, false);
     }
 }
-
 static void glps_keyboard_callback(size_t window_id, bool state, const char *value,
                                    unsigned long keycode, void *data)
 {
     (void)window_id;
-    (void)keycode;
-
     (void)data;
 
-    if (state && (keycode == 0xFFE5 || keycode == 66))
+    if (!state)
+    {
+        if (keycode == 37 || keycode == 105)
+        {
+            platform_ctx.ctrl_active = false;
+        }
+        return;
+    }
+
+    if (keycode == 0xFFE5 || keycode == 66)
     {
         platform_ctx.capslock_active = !platform_ctx.capslock_active;
-    }
-    if (keycode == 37 || keycode == 105) {
-        platform_ctx.ctrl_active = state;
+
+        uint16_t modifiers = 0;
+        if (platform_ctx.capslock_active)
+            modifiers |= AROMA_KEY_MOD_CAPSLOCK;
+        if (platform_ctx.ctrl_active)
+            modifiers |= AROMA_KEY_MOD_CTRL;
+
+        queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFFE5, modifiers);
+        return;
     }
 
-    uint32_t key_value = 0;
-    bool has_char = false;
-    if (value && value[0] != '\0')
+    if (keycode == 37 || keycode == 105)
     {
-
-        key_value = (unsigned char)value[0];
-        has_char = true;
-    }
-    else
-    {
-
-        key_value = (uint32_t)keycode;
+        platform_ctx.ctrl_active = true;
+        return;
     }
 
     uint16_t modifiers = 0;
     if (platform_ctx.capslock_active)
-    {
         modifiers |= AROMA_KEY_MOD_CAPSLOCK;
-    }
     if (platform_ctx.ctrl_active)
-    {
         modifiers |= AROMA_KEY_MOD_CTRL;
-    }
 
-    if (has_char && (modifiers & AROMA_KEY_MOD_CAPSLOCK))
+    if (value && value[0] != '\0')
     {
-        if (key_value >= 'a' && key_value <= 'z')
+        if (strcmp(value, "Left") == 0)
         {
-            key_value = (uint32_t)toupper((int)key_value);
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFF51, modifiers);
+            return;
+        }
+        if (strcmp(value, "Right") == 0)
+        {
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFF53, modifiers);
+            return;
+        }
+        if (strcmp(value, "Up") == 0)
+        {
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFF52, modifiers);
+            return;
+        }
+        if (strcmp(value, "Down") == 0)
+        {
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFF54, modifiers);
+            return;
+        }
+        if (strcmp(value, "Home") == 0)
+        {
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFF50, modifiers);
+            return;
+        }
+        if (strcmp(value, "End") == 0)
+        {
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFF57, modifiers);
+            return;
+        }
+        if (strcmp(value, "Delete") == 0 || strcmp(value, "Del") == 0)
+        {
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFFFF, modifiers);
+            return;
+        }
+        if (strcmp(value, "Backspace") == 0)
+        {
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 8, modifiers);
+            return;
         }
     }
-    if (modifiers & AROMA_KEY_MOD_CTRL && has_char && (key_value >= 1 && key_value <= 26)) {
-        key_value += 'a' - 1;
-    }
 
-    else
+    if (value && value[0] != '\0')
     {
+        uint32_t key_value = (unsigned char)value[0];
+
+        if (strlen(value) == 1)
+        {
+            if (platform_ctx.capslock_active)
+            {
+                if (key_value >= 'a' && key_value <= 'z')
+                {
+                    key_value = key_value - 'a' + 'A';
+                }
+            }
+
+            if (platform_ctx.ctrl_active)
+            {
+                if (key_value >= 'a' && key_value <= 'z')
+                {
+                    key_value = key_value - 'a' + 1;
+                }
+                else if (key_value >= 'A' && key_value <= 'Z')
+                {
+                    key_value = key_value - 'A' + 1;
+                }
+            }
+
+            queue_key_event(EVENT_TYPE_KEY_PRESS, key_value, modifiers);
+        }
     }
-
-    AromaEventType type = state ? EVENT_TYPE_KEY_PRESS : EVENT_TYPE_KEY_RELEASE;
-    queue_key_event(type, key_value, modifiers);
 }
-
 
 static void glps_scroll_callback(size_t window_id, GLPS_SCROLL_AXES axe,
                                  GLPS_SCROLL_SOURCE source, double value,
@@ -186,22 +242,25 @@ static void glps_scroll_callback(size_t window_id, GLPS_SCROLL_AXES axe,
     (void)is_stopped;
     (void)data;
 
-    if (value == 0) return;
-    
+    if (value == 0)
+        return;
+
     float scroll_x = (axe == GLPS_SCROLL_H_AXIS) ? (float)value : 0.0f;
     float scroll_y = (axe == GLPS_SCROLL_V_AXIS) ? (float)value : 0.0f;
-    
+
     int mx = (int)platform_ctx.last_mouse_x;
     int my = (int)platform_ctx.last_mouse_y;
-    
+
     AromaNode *root = aroma_event_get_root();
-    if (!root) return;
-    
+    if (!root)
+        return;
+
     AromaNode *target = aroma_event_hit_test(root, mx, my);
     uint64_t node_id = target ? target->node_id : root->node_id;
-    
+
     AromaEvent *ev = aroma_event_create_scroll(node_id, mx, my, scroll_x, scroll_y);
-    if (ev) aroma_event_queue(ev);
+    if (ev)
+        aroma_event_queue(ev);
 }
 
 static void glps_touch_callback(size_t window_id, int id, double touch_x,
@@ -230,8 +289,8 @@ static void glps_touch_callback(size_t window_id, int id, double touch_x,
         }
         else if (moved)
         {
-            // temporary workaround: treat touch move as mouse move for now
-            aroma_event_handle_touch( id, (int)touch_x, (int)touch_y, 1);
+
+            aroma_event_handle_touch(id, (int)touch_x, (int)touch_y, 1);
             queue_mouse_event(EVENT_TYPE_MOUSE_MOVE, touch_x, touch_y, 0);
             aroma_event_handle_pointer_move((int)touch_x, (int)touch_y, true);
             platform_ctx.last_mouse_x = touch_x;
@@ -305,7 +364,6 @@ void set_window_update_callback(void (*callback)(size_t window_id, void *data), 
 
 void request_window_update(size_t window_id)
 {
-    //glps_wm_swap_buffers(platform_ctx.wm, window_id);
 }
 
 bool run_event_loop()
@@ -365,10 +423,6 @@ static bool glps_create_vulkan_surface(size_t window_id, void *vk_instance, void
 {
     if (!platform_ctx.wm || !vk_instance || !vk_surface_out)
         return false;
-//    glps_wm_vk_create_surface(platform_ctx.wm, window_id,
-  //                            (VkInstance *)vk_instance, (VkSurfaceKHR *)vk_surface_out);
-   // VkSurfaceKHR surface = *(VkSurfaceKHR *)vk_surface_out;
-    //return surface != VK_NULL_HANDLE;
 }
 
 static const char *glps_vulkan_extensions[] = {
@@ -392,7 +446,7 @@ static void *glps_get_native_window_ptr(size_t window_id)
     return glps_wm_window_get_native_ptr(platform_ctx.wm, window_id);
 }
 
-static void* glps_get_display()
+static void *glps_get_display()
 {
     return glps_wm_get_display(platform_ctx.wm);
 }
