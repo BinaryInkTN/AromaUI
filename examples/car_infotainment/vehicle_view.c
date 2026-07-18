@@ -13,7 +13,11 @@
 #include <math.h>
 
 void populate_contact_listview(AromaNode *listview);
-
+static void start_navigation(double from_lat, double from_lon, double to_lat, double to_lon);
+static void show_minimap(void);
+static void hide_minimap(void);
+static void update_minimap_display(void);
+bool open_maps(AromaNode *node, void *user_data);
 #define MEDIA_UPDATE_INTERVAL_US 500000
 #define CONTACTS_PER_PAGE 7
 #define MAX_DIALER_DIGITS 32
@@ -23,16 +27,30 @@ void populate_contact_listview(AromaNode *listview);
 
 #define EARTH_RADIUS 6371.0
 
-#define GMAPS_COLOR_PRIMARY        0xFF1A73E8
-#define GMAPS_COLOR_PRIMARY_DARK   0xFF1967D2
-#define GMAPS_COLOR_SURFACE        0xFFFFFFFF
+#define GMAPS_COLOR_PRIMARY 0xFF1A73E8
+#define GMAPS_COLOR_PRIMARY_DARK 0xFF1967D2
+#define GMAPS_COLOR_SURFACE 0xFFFFFFFF
 #define GMAPS_COLOR_SURFACE_VARIANT 0xFFF1F3F4
-#define GMAPS_COLOR_ON_SURFACE     0xFF202124
+#define GMAPS_COLOR_ON_SURFACE 0xFF202124
 #define GMAPS_COLOR_ON_SURFACE_VARIANT 0xFF5F6368
-#define GMAPS_COLOR_OUTLINE        0xFFDADCE0
-#define GMAPS_COLOR_DESTINATION    0xFFEA4335
-#define GMAPS_COLOR_START          0xFF34A853
-#define GMAPS_COLOR_SCRIM          0xDD000000
+#define GMAPS_COLOR_OUTLINE 0xFFDADCE0
+#define GMAPS_COLOR_DESTINATION 0xFFEA4335
+#define GMAPS_COLOR_START 0xFF34A853
+#define GMAPS_COLOR_SCRIM 0xDD000000
+
+static AromaNode *minimap_card = NULL;
+static AromaNode *minimap_node = NULL;
+static AromaNode *minimap_close_btn = NULL;
+static AromaNode *minimap_eta_label = NULL;
+static AromaNode *minimap_distance_label = NULL;
+static AromaNode *minimap_restore_btn = NULL;
+static bool minimap_visible = false;
+
+#define MINIMAP_WIDTH 280
+#define MINIMAP_HEIGHT 220
+#define MINIMAP_X (WIN_W - MINIMAP_WIDTH - 20)
+#define MINIMAP_Y (WIN_H - MINIMAP_HEIGHT - 130)
+#define MINIMAP_Z_INDEX (Z_LAYER_VOICE_CARD + 100)
 
 static bool bottom_bar_app_open = false;
 static pthread_mutex_t app_open_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -68,7 +86,8 @@ typedef struct
     bool first_media_check_done;
 } MediaPlayerUI;
 
-static struct {
+static struct
+{
     bool active;
     double from_lat, from_lon;
     double to_lat, to_lon;
@@ -78,9 +97,9 @@ static struct {
     int eta_minutes;
 } map_nav = {0};
 
-static AromaNode *map_search_surface = NULL;  
+static AromaNode *map_search_surface = NULL;
 static AromaNode *map_search_placeholder_label = NULL;
-static AromaNode *map_search_back_btn = NULL; 
+static AromaNode *map_search_back_btn = NULL;
 static bool map_search_expanded = false;
 
 static AromaNode *map_from_entry = NULL;
@@ -92,7 +111,7 @@ static AromaNode *map_route_sheet = NULL;
 static AromaNode *map_distance_label = NULL;
 static AromaNode *map_time_label = NULL;
 static AromaNode *map_route_dest_label = NULL;
-static AromaNode *map_end_nav_btn = NULL;     
+static AromaNode *map_end_nav_btn = NULL;
 
 static AromaNode *map_search_results_list = NULL;
 static GeocodeResult map_geocode_results[MAX_GEOCODE_RESULTS];
@@ -130,16 +149,14 @@ static AromaNode *next_page_btn = NULL;
 static AromaNode *page_label = NULL;
 static AromaNode *pagination_card = NULL;
 
-static void start_navigation(double from_lat, double from_lon, double to_lat, double to_lon);
-
 static double calculate_distance_km(double lat1, double lon1, double lat2, double lon2)
 {
     double dlat = (lat2 - lat1) * M_PI / 180.0;
     double dlon = (lon2 - lon1) * M_PI / 180.0;
-    double a = sin(dlat/2) * sin(dlat/2) +
+    double a = sin(dlat / 2) * sin(dlat / 2) +
                cos(lat1 * M_PI / 180.0) * cos(lat2 * M_PI / 180.0) *
-               sin(dlon/2) * sin(dlon/2);
-    double c = 2 * atan2(sqrt(a), sqrt(1-a));
+                   sin(dlon / 2) * sin(dlon / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return EARTH_RADIUS * c;
 }
 
@@ -150,9 +167,12 @@ static int estimate_eta_minutes(double distance_km)
 
 static void format_time_string(int minutes, char *buf, size_t size)
 {
-    if (minutes < 60) {
+    if (minutes < 60)
+    {
         snprintf(buf, size, "%d min", minutes);
-    } else {
+    }
+    else
+    {
         int hours = minutes / 60;
         int mins = minutes % 60;
         snprintf(buf, size, "%d hr %d min", hours, mins);
@@ -161,178 +181,227 @@ static void format_time_string(int minutes, char *buf, size_t size)
 
 static void format_distance_string(double km, char *buf, size_t size)
 {
-    if (km < 1.0) {
+    if (km < 1.0)
+    {
         snprintf(buf, size, "%d m", (int)(km * 1000));
-    } else {
+    }
+    else
+    {
         snprintf(buf, size, "%.1f km", km);
     }
 }
 
 static void truncate_for_listview(const char *input, char *output, size_t output_size)
 {
-    if (!input || output_size == 0) {
-        if (output_size > 0) output[0] = '\0';
+    if (!input || output_size == 0)
+    {
+        if (output_size > 0)
+            output[0] = '\0';
         return;
     }
 
     size_t len = strlen(input);
     const size_t ellipsis_len = 3;
-    if (len > output_size - 1 && output_size > ellipsis_len + 1) {
+    if (len > output_size - 1 && output_size > ellipsis_len + 1)
+    {
         size_t cut = output_size - 1 - ellipsis_len;
         memcpy(output, input, cut);
         memcpy(output + cut, "...", ellipsis_len);
         output[cut + ellipsis_len] = '\0';
-    } else {
+    }
+    else
+    {
         strncpy(output, input, output_size - 1);
         output[output_size - 1] = '\0';
     }
 }
 
-static void filter_english_only(const char* input, char* output, size_t output_size)
+static void filter_english_only(const char *input, char *output, size_t output_size)
 {
-    if (!input || !output) {
-        if (output) output[0] = '\0';
+    if (!input || !output)
+    {
+        if (output)
+            output[0] = '\0';
         return;
     }
-    
+
     size_t out_pos = 0;
     size_t in_pos = 0;
     size_t input_len = strlen(input);
     bool has_any_char = false;
-    
-    while (in_pos < input_len && out_pos < output_size - 1) {
+
+    while (in_pos < input_len && out_pos < output_size - 1)
+    {
         unsigned char c = input[in_pos];
-        
-        if (c < 0x80) {
-            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || 
-                (c >= '0' && c <= '9') || c == ' ' || c == '.' || 
+
+        if (c < 0x80)
+        {
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                (c >= '0' && c <= '9') || c == ' ' || c == '.' ||
                 c == ',' || c == '-' || c == '\'' || c == '&' ||
-                c == '(' || c == ')' || c == '!' || c == '?') {
+                c == '(' || c == ')' || c == '!' || c == '?')
+            {
                 output[out_pos++] = c;
                 has_any_char = true;
-            } else if (c == '\n' || c == '\r' || c == '\t') {
-            } else {
+            }
+            else if (c == '\n' || c == '\r' || c == '\t')
+            {
+            }
+            else
+            {
                 output[out_pos++] = ' ';
             }
             in_pos++;
-        } else if ((c & 0xE0) == 0xC0) {
+        }
+        else if ((c & 0xE0) == 0xC0)
+        {
             in_pos += 2;
-        } else if ((c & 0xF0) == 0xE0) {
+        }
+        else if ((c & 0xF0) == 0xE0)
+        {
             in_pos += 3;
-        } else if ((c & 0xF8) == 0xF0) {
+        }
+        else if ((c & 0xF8) == 0xF0)
+        {
             in_pos += 4;
-        } else {
+        }
+        else
+        {
             in_pos++;
         }
     }
     output[out_pos] = '\0';
-    
-    if (!has_any_char) {
+
+    if (!has_any_char)
+    {
         strcpy(output, "Unnamed");
         return;
     }
-    
-    if (out_pos > 0) {
-        char* write_ptr = output;
-        char* read_ptr = output;
+
+    if (out_pos > 0)
+    {
+        char *write_ptr = output;
+        char *read_ptr = output;
         bool space_seen = false;
-        
-        while (*read_ptr == ' ') read_ptr++;
-        
-        while (*read_ptr) {
-            if (*read_ptr == ' ') {
-                if (!space_seen) {
+
+        while (*read_ptr == ' ')
+            read_ptr++;
+
+        while (*read_ptr)
+        {
+            if (*read_ptr == ' ')
+            {
+                if (!space_seen)
+                {
                     *write_ptr++ = *read_ptr;
                     space_seen = true;
                 }
-            } else {
+            }
+            else
+            {
                 *write_ptr++ = *read_ptr;
                 space_seen = false;
             }
             read_ptr++;
         }
         *write_ptr = '\0';
-        
-        if (write_ptr > output && *(write_ptr - 1) == ' ') {
+
+        if (write_ptr > output && *(write_ptr - 1) == ' ')
+        {
             *(write_ptr - 1) = '\0';
         }
-        
-        if (output[0] == '\0') {
+
+        if (output[0] == '\0')
+        {
             strcpy(output, "Unnamed");
         }
     }
 }
 
-static void on_geocode_results(GeocodeResult* results, int count, void* user_data)
+static void on_geocode_results(GeocodeResult *results, int count, void *user_data)
 {
     (void)user_data;
-    
+
     pthread_mutex_lock(&search_mutex);
-    
+
     map_geocode_result_count = count;
-    if (count > MAX_GEOCODE_RESULTS) count = MAX_GEOCODE_RESULTS;
-    
-    for (int i = 0; i < count && i < MAX_GEOCODE_RESULTS; i++) {
+    if (count > MAX_GEOCODE_RESULTS)
+        count = MAX_GEOCODE_RESULTS;
+
+    for (int i = 0; i < count && i < MAX_GEOCODE_RESULTS; i++)
+    {
         map_geocode_results[i] = results[i];
     }
-    
-    if (map_search_results_list) {
+
+    if (map_search_results_list)
+    {
         aroma_listview_clear(map_search_results_list);
-        
-        if (count == 0) {
-            aroma_listview_add_item_with_icon(map_search_results_list, 
-                "No results found", "Try a different search term", 
-                AROMA_ICON_SEARCH, NULL);
-        } else {
-            for (int i = 0; i < count; i++) {
+
+        if (count == 0)
+        {
+            aroma_listview_add_item_with_icon(map_search_results_list,
+                                              "No results found", "Try a different search term",
+                                              AROMA_ICON_SEARCH, NULL);
+        }
+        else
+        {
+            for (int i = 0; i < count; i++)
+            {
                 char display_name[256];
                 char subtitle[256];
-                
+
                 truncate_for_listview(results[i].display_name, display_name, sizeof(display_name));
-                
-                if (results[i].category[0]) {
-                    snprintf(subtitle, sizeof(subtitle), "%s - %s", 
-                        results[i].category, 
-                        results[i].type[0] ? results[i].type : "place");
-                } else {
-                    snprintf(subtitle, sizeof(subtitle), "%s", 
-                        results[i].type[0] ? results[i].type : "place");
+
+                if (results[i].category[0])
+                {
+                    snprintf(subtitle, sizeof(subtitle), "%s - %s",
+                             results[i].category,
+                             results[i].type[0] ? results[i].type : "place");
                 }
-                
-                aroma_listview_add_item_with_icon(map_search_results_list, 
-                    display_name, subtitle, 
-                    AROMA_ICON_PLACE, (void*)(intptr_t)i);
+                else
+                {
+                    snprintf(subtitle, sizeof(subtitle), "%s",
+                             results[i].type[0] ? results[i].type : "place");
+                }
+
+                aroma_listview_add_item_with_icon(map_search_results_list,
+                                                  display_name, subtitle,
+                                                  AROMA_ICON_PLACE, (void *)(intptr_t)i);
             }
         }
-        
+
         aroma_node_set_hidden(map_search_results_list, false);
         search_results_visible = true;
     }
-    
+
     pthread_mutex_unlock(&search_mutex);
 }
 
 static void perform_map_search(const char *query)
 {
-    if (!query || !query[0] || strlen(query) < 2) {
-        if (map_search_results_list) {
+    if (!query || !query[0] || strlen(query) < 2)
+    {
+        if (map_search_results_list)
+        {
             aroma_node_set_hidden(map_search_results_list, true);
             search_results_visible = false;
         }
         return;
     }
-    
-    if (strcmp(query, last_search_query) == 0) {
+
+    if (strcmp(query, last_search_query) == 0)
+    {
         return;
     }
-    
+
     strncpy(last_search_query, query, sizeof(last_search_query) - 1);
     last_search_query[sizeof(last_search_query) - 1] = '\0';
-    
+
     aroma_map_geocode_search(state.map_node, query, on_geocode_results, NULL);
 }
 
-typedef struct {
+typedef struct
+{
     unsigned long generation;
     char query[256];
     int focused_entry;
@@ -345,7 +414,8 @@ static void *debounced_search_thread_func(void *arg)
     pthread_mutex_lock(&debounce_mutex);
     bool still_current = (args->generation == search_generation);
     pthread_mutex_unlock(&debounce_mutex);
-    if (still_current) {
+    if (still_current)
+    {
         focused_entry = args->focused_entry;
         perform_map_search(args->query);
     }
@@ -355,22 +425,26 @@ static void *debounced_search_thread_func(void *arg)
 
 static void perform_map_search_debounced(const char *query, int entry)
 {
-    if (!query) query = "";
+    if (!query)
+        query = "";
     pthread_mutex_lock(&debounce_mutex);
     search_generation++;
     unsigned long my_generation = search_generation;
     snprintf(pending_search_query, sizeof(pending_search_query), "%s", query);
     pending_search_focused_entry = entry;
     pthread_mutex_unlock(&debounce_mutex);
-    if (!query[0] || strlen(query) < 2) {
-        if (map_search_results_list) {
+    if (!query[0] || strlen(query) < 2)
+    {
+        if (map_search_results_list)
+        {
             aroma_node_set_hidden(map_search_results_list, true);
             search_results_visible = false;
         }
         return;
     }
     DebouncedSearchArgs *args = malloc(sizeof(DebouncedSearchArgs));
-    if (!args) {
+    if (!args)
+    {
         focused_entry = entry;
         perform_map_search(query);
         return;
@@ -382,7 +456,8 @@ static void perform_map_search_debounced(const char *query, int entry)
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (pthread_create(&thread, &attr, debounced_search_thread_func, args) != 0) {
+    if (pthread_create(&thread, &attr, debounced_search_thread_func, args) != 0)
+    {
         free(args);
         focused_entry = entry;
         perform_map_search(query);
@@ -410,24 +485,29 @@ static void on_search_result_click(int index, void *user_data)
 {
     (void)user_data;
     pthread_mutex_lock(&search_mutex);
-    if (index >= 0 && index < map_geocode_result_count) {
+    if (index >= 0 && index < map_geocode_result_count)
+    {
         const GeocodeResult *result = &map_geocode_results[index];
         char display_name[256];
         truncate_for_listview(result->display_name, display_name, sizeof(display_name));
-        if (focused_entry == 1) {
+        if (focused_entry == 1)
+        {
             aroma_textbox_set_text(map_to_entry, display_name);
             map_nav.to_lat = result->lat;
             map_nav.to_lon = result->lon;
             strncpy(map_nav.to_text, result->display_name, sizeof(map_nav.to_text) - 1);
             map_nav.to_text[sizeof(map_nav.to_text) - 1] = '\0';
-        } else {
+        }
+        else
+        {
             aroma_textbox_set_text(map_from_entry, display_name);
             map_nav.from_lat = result->lat;
             map_nav.from_lon = result->lon;
             strncpy(map_nav.from_text, result->display_name, sizeof(map_nav.from_text) - 1);
             map_nav.from_text[sizeof(map_nav.from_text) - 1] = '\0';
         }
-        if (map_search_results_list) {
+        if (map_search_results_list)
+        {
             aroma_node_set_hidden(map_search_results_list, true);
             search_results_visible = false;
         }
@@ -437,15 +517,18 @@ static void on_search_result_click(int index, void *user_data)
 
 static void show_route_panel(void)
 {
-    if (map_route_sheet) {
+    if (map_route_sheet)
+    {
         aroma_node_set_hidden(map_route_sheet, false);
         aroma_node_set_hidden(map_end_nav_btn, false);
     }
-    if (map_search_surface) {
+    if (map_search_surface)
+    {
         aroma_node_set_hidden(map_search_surface, true);
         map_search_expanded = false;
     }
-    if (map_search_results_list) {
+    if (map_search_results_list)
+    {
         aroma_node_set_hidden(map_search_results_list, true);
         search_results_visible = false;
     }
@@ -453,13 +536,16 @@ static void show_route_panel(void)
 
 static void hide_route_panel(void)
 {
-    if (map_route_sheet) {
+    if (map_route_sheet)
+    {
         aroma_node_set_hidden(map_route_sheet, true);
     }
-    if (map_end_nav_btn) {
+    if (map_end_nav_btn)
+    {
         aroma_node_set_hidden(map_end_nav_btn, true);
     }
-    if (map_search_surface && !map_nav.active) {
+    if (map_search_surface && !map_nav.active)
+    {
         aroma_node_set_hidden(map_search_surface, false);
         map_search_expanded = true;
     }
@@ -474,30 +560,48 @@ static void start_navigation(double from_lat, double from_lon, double to_lat, do
     map_nav.to_lon = to_lon;
     map_nav.distance_km = calculate_distance_km(from_lat, from_lon, to_lat, to_lon);
     map_nav.eta_minutes = estimate_eta_minutes(map_nav.distance_km);
-    
+
     aroma_map_clear_markers(state.map_node);
     aroma_map_clear_route(state.map_node);
-    
+
     aroma_map_add_popup_marker(state.map_node, from_lat, from_lon, GMAPS_COLOR_START, "Start");
     aroma_map_add_popup_marker(state.map_node, to_lat, to_lon, GMAPS_COLOR_DESTINATION, "Destination");
     aroma_map_set_route(state.map_node, from_lat, from_lon, to_lat, to_lon, GMAPS_COLOR_PRIMARY);
-    
+
     double center_lat = (from_lat + to_lat) / 2.0;
     double center_lon = (from_lon + to_lon) / 2.0;
     aroma_map_set_center(state.map_node, center_lat, center_lon);
     double center_zoom = 15.0 - log2(map_nav.distance_km + 1.0);
-    if (center_zoom < 5.0) center_zoom = 5.0;
-    if (center_zoom > 18.0) center_zoom = 18.0;
+    if (center_zoom < 5.0)
+        center_zoom = 5.0;
+    if (center_zoom > 18.0)
+        center_zoom = 18.0;
     aroma_map_set_zoom(state.map_node, center_zoom);
-    
-    if (map_route_sheet) {
+
+    if (minimap_visible && minimap_node)
+    {
+        aroma_map_clear_markers(minimap_node);
+        aroma_map_clear_route(minimap_node);
+        aroma_map_add_popup_marker(minimap_node, from_lat, from_lon, GMAPS_COLOR_START, "S");
+        aroma_map_add_popup_marker(minimap_node, to_lat, to_lon, GMAPS_COLOR_DESTINATION, "D");
+        aroma_map_set_route(minimap_node, from_lat, from_lon, to_lat, to_lon, GMAPS_COLOR_PRIMARY);
+        aroma_map_set_center(minimap_node, center_lat, center_lon);
+        aroma_map_set_zoom(minimap_node, center_zoom - 2.0);
+        update_minimap_display();
+    }
+
+    if (map_route_sheet)
+    {
         char dist_str[32], time_str[32];
         format_distance_string(map_nav.distance_km, dist_str, sizeof(dist_str));
         format_time_string(map_nav.eta_minutes, time_str, sizeof(time_str));
-        
-        if (map_distance_label) aroma_label_set_text(map_distance_label, dist_str);
-        if (map_time_label) aroma_label_set_text(map_time_label, time_str);
-        if (map_route_dest_label) {
+
+        if (map_distance_label)
+            aroma_label_set_text(map_distance_label, dist_str);
+        if (map_time_label)
+            aroma_label_set_text(map_time_label, time_str);
+        if (map_route_dest_label)
+        {
             char dest_display[288];
             char truncated_dest[40];
             truncate_for_listview(map_nav.to_text, truncated_dest, sizeof(truncated_dest));
@@ -505,7 +609,7 @@ static void start_navigation(double from_lat, double from_lon, double to_lat, do
                      map_nav.to_text[0] ? truncated_dest : "destination");
             aroma_label_set_text(map_route_dest_label, dest_display);
         }
-        
+
         show_route_panel();
     }
 }
@@ -518,6 +622,13 @@ static void clear_navigation(void)
     hide_route_panel();
     aroma_map_set_center(state.map_node, 37.7749, -122.4194);
     aroma_map_set_zoom(state.map_node, 15);
+
+    if (minimap_node)
+    {
+        aroma_map_clear_route(minimap_node);
+        aroma_map_clear_markers(minimap_node);
+    }
+    hide_minimap();
 }
 
 static void on_swap_click(void *user_data)
@@ -529,7 +640,7 @@ static void on_swap_click(void *user_data)
     strncpy(temp_from, from_text ? from_text : "", sizeof(temp_from) - 1);
     temp_from[sizeof(temp_from) - 1] = '\0';
     strncpy(temp_to, to_text ? to_text : "", sizeof(temp_to) - 1);
-    temp_to[sizeof(temp_to) - 1] = '\0';    
+    temp_to[sizeof(temp_to) - 1] = '\0';
     aroma_textbox_set_text(map_from_entry, temp_to);
     aroma_textbox_set_text(map_to_entry, temp_from);
     double temp_lat = map_nav.from_lat;
@@ -545,9 +656,10 @@ static void on_swap_click(void *user_data)
     map_nav.to_lon = temp_lon;
     strncpy(map_nav.to_text, temp_text, sizeof(map_nav.to_text) - 1);
     map_nav.to_text[sizeof(map_nav.to_text) - 1] = '\0';
-    if (map_nav.active) {
-        start_navigation(map_nav.from_lat, map_nav.from_lon, 
-                        map_nav.to_lat, map_nav.to_lon);
+    if (map_nav.active)
+    {
+        start_navigation(map_nav.from_lat, map_nav.from_lon,
+                         map_nav.to_lat, map_nav.to_lon);
     }
 }
 
@@ -557,21 +669,24 @@ static bool on_go_click(AromaNode *node, void *user_data)
     (void)user_data;
     const char *from_text = aroma_textbox_get_text(map_from_entry);
     const char *to_text = aroma_textbox_get_text(map_to_entry);
-    if (map_nav.from_text[0] == '\0') {
+    if (map_nav.from_text[0] == '\0')
+    {
         map_nav.from_lat = 37.7749;
         map_nav.from_lon = -122.4194;
         snprintf(map_nav.from_text, sizeof(map_nav.from_text), "%s",
                  (from_text && from_text[0]) ? from_text : "Current location");
     }
-    if (map_nav.to_text[0] == '\0' || !to_text || !to_text[0]) {
-        if (map_search_placeholder_label) {
+    if (map_nav.to_text[0] == '\0' || !to_text || !to_text[0])
+    {
+        if (map_search_placeholder_label)
+        {
             aroma_label_set_text(map_search_placeholder_label,
-                                  "Pick a destination first");
+                                 "Pick a destination first");
         }
         return true;
     }
     start_navigation(map_nav.from_lat, map_nav.from_lon,
-                    map_nav.to_lat, map_nav.to_lon);
+                     map_nav.to_lat, map_nav.to_lon);
     return true;
 }
 
@@ -585,7 +700,8 @@ static void on_search_pill_click(void *user_data)
 {
     (void)user_data;
     map_search_expanded = !map_search_expanded;
-    if (map_search_surface) {
+    if (map_search_surface)
+    {
         aroma_node_set_hidden(map_search_surface, !map_search_expanded);
     }
 }
@@ -594,10 +710,12 @@ static void on_search_back_click(void *user_data)
 {
     (void)user_data;
     map_search_expanded = false;
-    if (map_search_surface) {
+    if (map_search_surface)
+    {
         aroma_node_set_hidden(map_search_surface, true);
     }
-    if (map_search_results_list) {
+    if (map_search_results_list)
+    {
         aroma_node_set_hidden(map_search_results_list, true);
         search_results_visible = false;
     }
@@ -606,14 +724,17 @@ static void on_search_back_click(void *user_data)
 static void on_accept_call_click(void *user_data)
 {
     (void)user_data;
-    if (current_call_path[0] != '\0') {
+    if (current_call_path[0] != '\0')
+    {
         bt_hfp_answer(current_call_path);
     }
-    if (incoming_call_overlay) {
+    if (incoming_call_overlay)
+    {
         aroma_node_set_hidden(incoming_call_accept_btn, true);
         aroma_node_set_hidden(incoming_call_reject_btn, true);
         aroma_node_set_hidden(incoming_call_end_btn, false);
-        if (incoming_call_name_label) {
+        if (incoming_call_name_label)
+        {
             char display[256];
             snprintf(display, sizeof(display), "Active Call: %s", current_call_name);
             aroma_label_set_text(incoming_call_name_label, display);
@@ -625,10 +746,12 @@ static void on_accept_call_click(void *user_data)
 static void on_reject_call_click(void *user_data)
 {
     (void)user_data;
-    if (current_call_path[0] != '\0') {
+    if (current_call_path[0] != '\0')
+    {
         bt_hfp_hangup(current_call_path);
     }
-    if (incoming_call_overlay) {
+    if (incoming_call_overlay)
+    {
         aroma_node_set_hidden(incoming_call_overlay, true);
     }
     call_overlay_visible = false;
@@ -639,7 +762,8 @@ static void on_end_call_click(void *user_data)
 {
     (void)user_data;
     bt_hfp_hangup_all();
-    if (incoming_call_overlay) {
+    if (incoming_call_overlay)
+    {
         aroma_node_set_hidden(incoming_call_overlay, true);
     }
     call_overlay_visible = false;
@@ -649,23 +773,27 @@ static void on_end_call_click(void *user_data)
 static void on_floating_dialer_click(void *user_data)
 {
     (void)user_data;
-    if (state.phone_app_tabs) {
+    if (state.phone_app_tabs)
+    {
         aroma_tabs_set_selected(state.phone_app_tabs, 1);
     }
 }
 
 void show_incoming_call_screen(const char *name, const char *number, const char *call_path)
 {
-    if (!incoming_call_overlay) return;
+    if (!incoming_call_overlay)
+        return;
     safe_str_copy(current_call_name, name ? name : "Unknown", sizeof(current_call_name));
     safe_str_copy(current_call_number, number ? number : "", sizeof(current_call_number));
     safe_str_copy(current_call_path, call_path ? call_path : "", sizeof(current_call_path));
-    if (incoming_call_name_label) {
+    if (incoming_call_name_label)
+    {
         char display[256];
         snprintf(display, sizeof(display), "Incoming Call: %s", current_call_name);
         aroma_label_set_text(incoming_call_name_label, display);
     }
-    if (incoming_call_number_label) {
+    if (incoming_call_number_label)
+    {
         aroma_label_set_text(incoming_call_number_label, current_call_number);
     }
     aroma_node_set_hidden(incoming_call_accept_btn, false);
@@ -681,26 +809,33 @@ static void *call_monitor_thread_func(void *arg)
     usleep(5000000);
     bt_call_info_t prev_calls[10];
     int prev_count = 0;
-    while (1) {
+    while (1)
+    {
         usleep(1000000);
         bt_call_info_t curr_calls[10];
         int curr_count = bt_hfp_get_active_calls(curr_calls, 10);
-        for (int i = 0; i < curr_count; i++) {
+        for (int i = 0; i < curr_count; i++)
+        {
             bool is_new = true;
-            for (int j = 0; j < prev_count; j++) {
-                if (strcmp(curr_calls[i].path, prev_calls[j].path) == 0) {
+            for (int j = 0; j < prev_count; j++)
+            {
+                if (strcmp(curr_calls[i].path, prev_calls[j].path) == 0)
+                {
                     is_new = false;
                     break;
                 }
             }
-            if (is_new && curr_calls[i].state == BT_CALL_STATE_INCOMING) {
-                show_incoming_call_screen(curr_calls[i].name, 
-                                         curr_calls[i].line_id, 
-                                         curr_calls[i].path);
+            if (is_new && curr_calls[i].state == BT_CALL_STATE_INCOMING)
+            {
+                show_incoming_call_screen(curr_calls[i].name,
+                                          curr_calls[i].line_id,
+                                          curr_calls[i].path);
             }
         }
-        if (curr_count == 0 && call_overlay_visible) {
-            if (incoming_call_overlay) {
+        if (curr_count == 0 && call_overlay_visible)
+        {
+            if (incoming_call_overlay)
+            {
                 aroma_node_set_hidden(incoming_call_overlay, true);
             }
             call_overlay_visible = false;
@@ -711,31 +846,36 @@ static void *call_monitor_thread_func(void *arg)
     return NULL;
 }
 
-static bool on_dialer_delete_click_icon(AromaNode* node, void *user_data)
+static bool on_dialer_delete_click_icon(AromaNode *node, void *user_data)
 {
     (void)node;
     (void)user_data;
     size_t len = strlen(dialer_number);
-    if (len > 0) {
+    if (len > 0)
+    {
         dialer_number[len - 1] = '\0';
-        if (dialer_display_label) {
+        if (dialer_display_label)
+        {
             aroma_label_set_text(dialer_display_label, dialer_number[0] ? dialer_number : "Enter number");
         }
     }
     return true;
 }
 
-static bool on_dialer_call_click_icon(AromaNode* node, void *user_data)
+static bool on_dialer_call_click_icon(AromaNode *node, void *user_data)
 {
     (void)node;
     (void)user_data;
-    if (dialer_number[0] != '\0') {
+    if (dialer_number[0] != '\0')
+    {
         bt_device_info_t device = bt_speaker_get_device_info();
-        if (device.connected) {
+        if (device.connected)
+        {
             bt_hfp_dial(dialer_number);
         }
         dialer_number[0] = '\0';
-        if (dialer_display_label) {
+        if (dialer_display_label)
+        {
             aroma_label_set_text(dialer_display_label, "Enter number");
         }
     }
@@ -746,9 +886,11 @@ static bool on_dialer_button_click(AromaNode *node, void *user_data)
 {
     (void)node;
     const char *digit = (const char *)user_data;
-    if (!digit || strlen(dialer_number) >= MAX_DIALER_DIGITS - 1) return true;
+    if (!digit || strlen(dialer_number) >= MAX_DIALER_DIGITS - 1)
+        return true;
     strcat(dialer_number, digit);
-    if (dialer_display_label) {
+    if (dialer_display_label)
+    {
         aroma_label_set_text(dialer_display_label, dialer_number);
     }
     return true;
@@ -758,16 +900,20 @@ static void on_tab_changed(AromaNode *tabs, int tab_index, void *user_data)
 {
     (void)tabs;
     (void)user_data;
-    if (pagination_card) {
+    if (pagination_card)
+    {
         aroma_node_set_hidden(pagination_card, tab_index != 0);
     }
-    if (dialer_card) {
+    if (dialer_card)
+    {
         aroma_node_set_hidden(dialer_card, tab_index != 1);
     }
-    if (state.contact_listview) {
+    if (state.contact_listview)
+    {
         aroma_node_set_hidden(state.contact_listview, tab_index != 0);
     }
-    if (tab_index == 0) {
+    if (tab_index == 0)
+    {
         contact_page = 0;
         populate_contact_listview(state.contact_listview);
     }
@@ -851,13 +997,17 @@ void populate_contact_listview(AromaNode *listview)
         return;
     }
     int *orig_indices = malloc(sizeof(int) * state.contact_count);
-    for (int i = 0; i < state.contact_count; i++) {
+    for (int i = 0; i < state.contact_count; i++)
+    {
         orig_indices[i] = i;
     }
     memcpy(sorted_contacts, state.contacts, sizeof(ContactInfo) * state.contact_count);
-    for (int i = 0; i < state.contact_count - 1; i++) {
-        for (int j = i + 1; j < state.contact_count; j++) {
-            if (compare_contacts(&sorted_contacts[i], &sorted_contacts[j]) > 0) {
+    for (int i = 0; i < state.contact_count - 1; i++)
+    {
+        for (int j = i + 1; j < state.contact_count; j++)
+        {
+            if (compare_contacts(&sorted_contacts[i], &sorted_contacts[j]) > 0)
+            {
                 ContactInfo temp = sorted_contacts[i];
                 sorted_contacts[i] = sorted_contacts[j];
                 sorted_contacts[j] = temp;
@@ -1157,12 +1307,119 @@ static void on_contact_click(int index, void *user_data)
             if (number[0] != '\0')
             {
                 bt_device_info_t device = bt_speaker_get_device_info();
-                if (device.connected) {
+                if (device.connected)
+                {
                     bt_hfp_dial(number);
                 }
             }
         }
     }
+}
+
+static void update_minimap_display(void)
+{
+    if (!minimap_visible || !minimap_eta_label || !minimap_distance_label)
+        return;
+
+    if (map_nav.active)
+    {
+        char dist_str[32], time_str[32];
+        format_distance_string(map_nav.distance_km, dist_str, sizeof(dist_str));
+        format_time_string(map_nav.eta_minutes, time_str, sizeof(time_str));
+
+        char label_text[64];
+        snprintf(label_text, sizeof(label_text), "%s  %s", time_str, dist_str);
+        aroma_label_set_text(minimap_eta_label, label_text);
+
+        if (minimap_distance_label)
+        {
+            char dest_truncated[40];
+            truncate_for_listview(map_nav.to_text, dest_truncated, sizeof(dest_truncated));
+            aroma_label_set_text(minimap_distance_label, dest_truncated);
+        }
+    }
+    else
+    {
+        aroma_label_set_text(minimap_eta_label, "Searching map...");
+        if (minimap_distance_label)
+        {
+            aroma_label_set_text(minimap_distance_label, "");
+        }
+    }
+}
+
+static void show_minimap(void)
+{
+    if (minimap_visible || !minimap_card)
+        return;
+
+    minimap_visible = true;
+    aroma_node_set_hidden(minimap_card, false);
+    aroma_node_set_hidden(minimap_node, false);
+    aroma_node_set_z_index(minimap_card, MINIMAP_Z_INDEX);
+    aroma_node_set_z_index(minimap_node, MINIMAP_Z_INDEX + 1);
+    aroma_node_set_z_index(minimap_close_btn, MINIMAP_Z_INDEX + 2);
+    aroma_node_set_z_index(minimap_restore_btn, MINIMAP_Z_INDEX + 2);
+    aroma_node_set_z_index(minimap_eta_label, MINIMAP_Z_INDEX + 2);
+    aroma_node_set_z_index(minimap_distance_label, MINIMAP_Z_INDEX + 2);
+
+    if (map_nav.active)
+    {
+        aroma_map_clear_markers(minimap_node);
+        aroma_map_clear_route(minimap_node);
+        aroma_map_add_popup_marker(minimap_node, map_nav.from_lat, map_nav.from_lon, GMAPS_COLOR_START, "S");
+        aroma_map_add_popup_marker(minimap_node, map_nav.to_lat, map_nav.to_lon, GMAPS_COLOR_DESTINATION, "D");
+        aroma_map_set_route(minimap_node, map_nav.from_lat, map_nav.from_lon, map_nav.to_lat, map_nav.to_lon, GMAPS_COLOR_PRIMARY);
+
+        double center_lat = (map_nav.from_lat + map_nav.to_lat) / 2.0;
+        double center_lon = (map_nav.from_lon + map_nav.to_lon) / 2.0;
+        aroma_map_set_center(minimap_node, center_lat, center_lon);
+        double center_zoom = 14.0 - log2(map_nav.distance_km + 1.0);
+        if (center_zoom < 5.0)
+            center_zoom = 5.0;
+        if (center_zoom > 16.0)
+            center_zoom = 16.0;
+        aroma_map_set_zoom(minimap_node, center_zoom);
+    }
+    else
+    {
+        aroma_map_set_center(minimap_node, 37.7749, -122.4194);
+        aroma_map_set_zoom(minimap_node, 14);
+    }
+
+    update_minimap_display();
+
+    AromaAnimation *anim = aroma_animation_start(
+        minimap_card, AROMA_ANIM_SLIDE_Y,
+        MINIMAP_Y + MINIMAP_HEIGHT, MINIMAP_Y, 300);
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+}
+
+static void hide_minimap(void)
+{
+    if (!minimap_visible || !minimap_card)
+        return;
+
+    minimap_visible = false;
+    aroma_node_set_hidden(minimap_card, true);
+    aroma_node_set_hidden(minimap_node, true);
+}
+
+static void on_minimap_click(void *user_data)
+{
+    AromaNode *card_node = (AromaNode *)user_data;
+    if (card_node)
+    {
+        open_maps(NULL, card_node);
+        hide_minimap();
+    }
+}
+
+static void on_minimap_close_click(void *user_data)
+{
+    (void)user_data;
+    clear_navigation();
+    hide_minimap();
 }
 
 static AromaRect maps_icon_anim_start;
@@ -1195,7 +1452,7 @@ void opening_anim(AromaNode *target, float progress, void *user_data)
     icon_rect->y = rect->y;
     icon_rect->width = rect->width;
     icon_rect->height = rect->height;
-    
+
     if (progress >= 0.92f)
     {
         aroma_node_set_hidden(state.map_close_btn, false);
@@ -1212,14 +1469,20 @@ bool open_maps(AromaNode *node, void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return false;
+
+    hide_minimap();
+
     map_geocode_result_count = 0;
     last_search_query[0] = '\0';
     search_results_visible = false;
     focused_entry = 0;
-    if (!map_nav.active) {
+    if (!map_nav.active)
+    {
         memset(&map_nav, 0, sizeof(map_nav));
-        if (map_from_entry) aroma_textbox_set_text(map_from_entry, "");
-        if (map_to_entry) aroma_textbox_set_text(map_to_entry, "");
+        if (map_from_entry)
+            aroma_textbox_set_text(map_from_entry, "");
+        if (map_to_entry)
+            aroma_textbox_set_text(map_to_entry, "");
     }
     AromaRect *icon_rect = aroma_node_get_rect(state.maps_app_icon);
     if (icon_rect)
@@ -1236,10 +1499,12 @@ bool open_maps(AromaNode *node, void *user_data)
     aroma_node_set_hidden(state.map_close_btn, false);
     aroma_node_set_z_index(card_node, Z_LAYER_STATUS_BAR + 10);
     aroma_node_set_z_index(state.maps_app_icon, Z_LAYER_STATUS_BAR + 10);
-    if (map_search_surface) {
+    if (map_search_surface)
+    {
         map_search_expanded = true;
         aroma_node_set_hidden(map_search_surface, false);
-        if (map_search_placeholder_label) {
+        if (map_search_placeholder_label)
+        {
             aroma_label_set_text(map_search_placeholder_label, "Search for a location");
         }
     }
@@ -1284,7 +1549,8 @@ void closing_anim(AromaNode *target, float progress, void *user_data)
         aroma_node_set_hidden(map_route_sheet, true);
         aroma_node_set_hidden(map_end_nav_btn, true);
         aroma_node_set_hidden(state.map_node, true);
-        if (map_search_results_list) {
+        if (map_search_results_list)
+        {
             aroma_node_set_hidden(map_search_results_list, true);
             search_results_visible = false;
         }
@@ -1296,7 +1562,15 @@ void closing_anim(AromaNode *target, float progress, void *user_data)
         restore_icon_and_card(state.maps_app_icon, target, &maps_icon_offset);
         update_media_card_display();
         map_search_expanded = false;
-        clear_navigation();
+
+        if (map_nav.active)
+        {
+            show_minimap();
+        }
+        else
+        {
+            clear_navigation();
+        }
     }
     aroma_node_invalidate(state.map_node);
     aroma_node_invalidate(state.maps_app_icon);
@@ -1560,8 +1834,6 @@ void build_vehicle_view(AromaNode *window)
         WIN_W / 2 - 90, 35, LABEL_STYLE_LABEL_LARGE, state.clock_font);
     aroma_node_set_z_index(state.vehicle_view_large_clock, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
-    
-
     state.vehicle_view_large_clock_pm_am = aroma_ui_label(
         state.vehicle_view_root, "PM",
         WIN_W / 2 + 68, 70, LABEL_STYLE_LABEL_MEDIUM, state.clock_pm_am_font);
@@ -1721,7 +1993,7 @@ void build_vehicle_view(AromaNode *window)
                                          ,
                                          30, 15, 48, 48);
     aroma_node_set_z_index(state.maps_app_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    AromaNode *maps_app_icon_card = aroma_ui_card(state.bottom_bar, 30, 15, 48, 48, CARD_TYPE_FILLED);
+    AromaNode *maps_app_icon_card = aroma_ui_card(state.bottom_bar, 30, 15, 48, 48, CARD_TYPE_ELEVATED);
     aroma_image_set_on_click(state.maps_app_icon, open_maps, maps_app_icon_card);
 
     state.phone_app_icon = aroma_ui_image(state.bottom_bar,
@@ -1749,11 +2021,51 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *ac_plus = aroma_ui_iconbutton(state.bottom_bar, AROMA_ICON_ADD, 300, 25, 30, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
     aroma_node_set_z_index(ac_plus, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
+    minimap_card = aroma_ui_card(
+        state.vehicle_view_root, MINIMAP_X, MINIMAP_Y + MINIMAP_HEIGHT,
+        MINIMAP_WIDTH, MINIMAP_HEIGHT, CARD_TYPE_ELEVATED);
+    aroma_card_set_colors(minimap_card, 0xF8FFFFFF, 0xF8FFFFFF);
+    aroma_node_set_z_index(minimap_card, MINIMAP_Z_INDEX);
+    aroma_node_set_hidden(minimap_card, true);
+
+    minimap_node = aroma_ui_map(
+        minimap_card, 4, 4, MINIMAP_WIDTH - 8, MINIMAP_HEIGHT - 50);
+    aroma_map_set_zoom(minimap_node, 14);
+    aroma_map_set_center(minimap_node, 37.7749, -122.4194);
+    aroma_node_set_z_index(minimap_node, MINIMAP_Z_INDEX + 1);
+    aroma_node_set_hidden(minimap_node, true);
+
+    minimap_eta_label = aroma_ui_label(
+        minimap_card, "-- min  -- km", 8, MINIMAP_HEIGHT - 44,
+        LABEL_STYLE_LABEL_SMALL, state.ui_font);
+    aroma_node_set_z_index(minimap_eta_label, MINIMAP_Z_INDEX + 2);
+    aroma_label_set_color(minimap_eta_label, GMAPS_COLOR_PRIMARY);
+
+    minimap_distance_label = aroma_ui_label(
+        minimap_card, "", 8, MINIMAP_HEIGHT - 28,
+        LABEL_STYLE_LABEL_SMALL, state.ui_font);
+    aroma_node_set_z_index(minimap_distance_label, MINIMAP_Z_INDEX + 2);
+    aroma_label_set_color(minimap_distance_label, GMAPS_COLOR_ON_SURFACE_VARIANT);
+
+    minimap_restore_btn = aroma_ui_iconbutton(
+        minimap_card, AROMA_ICON_FULLSCREEN,
+        MINIMAP_WIDTH - 52, MINIMAP_HEIGHT - 42, 32, ICON_BUTTON_FILLED,
+        on_minimap_click, maps_app_icon_card, state.icon_font);
+    aroma_iconbutton_set_colors(minimap_restore_btn, GMAPS_COLOR_PRIMARY, GMAPS_COLOR_SURFACE);
+    aroma_node_set_z_index(minimap_restore_btn, MINIMAP_Z_INDEX + 2);
+
+    minimap_close_btn = aroma_ui_iconbutton(
+        minimap_card, AROMA_ICON_CLOSE,
+        MINIMAP_WIDTH - 52, 4, 32, ICON_BUTTON_FILLED,
+        on_minimap_close_click, NULL, state.icon_font);
+    aroma_iconbutton_set_colors(minimap_close_btn, GMAPS_COLOR_DESTINATION, GMAPS_COLOR_SURFACE);
+    aroma_node_set_z_index(minimap_close_btn, MINIMAP_Z_INDEX + 2);
+
     state.map_node = aroma_ui_map(maps_app_icon_card, 0, 0, 48, 48);
     aroma_map_set_zoom(state.map_node, 15);
     aroma_map_set_center(state.map_node, 37.7749, -122.4194);
     aroma_node_set_z_index(state.map_node, Z_LAYER_STATUS_BAR + 11);
-    
+
     state.map_close_btn = aroma_ui_iconbutton(maps_app_icon_card, AROMA_ICON_CLOSE, 20, 20, 48, ICON_BUTTON_FILLED, close_maps, maps_app_icon_card, state.icon_font);
     aroma_node_set_z_index(state.map_close_btn, Z_LAYER_STATUS_BAR + 20);
     aroma_node_set_hidden(state.map_node, true);
@@ -1862,12 +2174,12 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(dialer_card, Z_LAYER_STATUS_BAR + 12);
     aroma_node_set_hidden(dialer_card, true);
 
-    dialer_display_label = aroma_ui_label(dialer_card, "Enter number", 
-        430, 50, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    dialer_display_label = aroma_ui_label(dialer_card, "Enter number",
+                                          430, 50, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(dialer_display_label, Z_LAYER_STATUS_BAR + 13);
 
     AromaNode *dialer_grid = aroma_ui_container(
-        dialer_card, (988 - 280)/2, 100, 280, 290,
+        dialer_card, (988 - 280) / 2, 100, 280, 290,
         AROMA_LAYOUT_MODE_GRID, AROMA_FLEX_ROW,
         AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
     aroma_node_set_z_index(dialer_grid, Z_LAYER_STATUS_BAR + 13);
@@ -1878,7 +2190,8 @@ void build_vehicle_view(AromaNode *window)
     const int btn_size = 72;
     const char *dialer_digits[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"};
 
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 12; i++)
+    {
         AromaNode *btn = aroma_ui_button(
             dialer_grid, dialer_digits[i],
             0, 0, btn_size, btn_size,
@@ -1939,36 +2252,36 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(incoming_call_overlay, Z_LAYER_VOICE_CARD);
     aroma_card_set_colors(incoming_call_overlay, 0xDD000000, 0xDD000000);
     aroma_node_set_hidden(incoming_call_overlay, true);
-    
+
     incoming_call_name_label = aroma_ui_label(
-        incoming_call_overlay, "Incoming Call", 
-        WIN_W/2 - 200, 150, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+        incoming_call_overlay, "Incoming Call",
+        WIN_W / 2 - 200, 150, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(incoming_call_name_label, Z_LAYER_VOICE_CONTENT);
     aroma_label_set_color(incoming_call_name_label, 0xFFFFFFFF);
-    
+
     incoming_call_number_label = aroma_ui_label(
-        incoming_call_overlay, "", 
-        WIN_W/2 - 150, 220, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+        incoming_call_overlay, "",
+        WIN_W / 2 - 150, 220, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
     aroma_node_set_z_index(incoming_call_number_label, Z_LAYER_VOICE_CONTENT);
     aroma_label_set_color(incoming_call_number_label, 0xFFAAAAAA);
-    
+
     incoming_call_accept_btn = aroma_ui_iconbutton(
         incoming_call_overlay, AROMA_ICON_CALL,
-        WIN_W/2 - 120, 320, 80, ICON_BUTTON_FILLED,
+        WIN_W / 2 - 120, 320, 80, ICON_BUTTON_FILLED,
         on_accept_call_click, NULL, state.icon_font);
     aroma_node_set_z_index(incoming_call_accept_btn, Z_LAYER_VOICE_CONTENT);
     aroma_iconbutton_set_colors(incoming_call_accept_btn, 0xFF4CAF50, 0xFFFFFFFF);
-    
+
     incoming_call_reject_btn = aroma_ui_iconbutton(
         incoming_call_overlay, AROMA_ICON_CALL_END,
-        WIN_W/2 + 40, 320, 80, ICON_BUTTON_FILLED,
+        WIN_W / 2 + 40, 320, 80, ICON_BUTTON_FILLED,
         on_reject_call_click, NULL, state.icon_font);
     aroma_node_set_z_index(incoming_call_reject_btn, Z_LAYER_VOICE_CONTENT);
     aroma_iconbutton_set_colors(incoming_call_reject_btn, 0xFFF44336, 0xFFFFFFFF);
-    
+
     incoming_call_end_btn = aroma_ui_iconbutton(
         incoming_call_overlay, AROMA_ICON_CALL_END,
-        WIN_W/2 - 40, 320, 80, ICON_BUTTON_FILLED,
+        WIN_W / 2 - 40, 320, 80, ICON_BUTTON_FILLED,
         on_end_call_click, NULL, state.icon_font);
     aroma_node_set_z_index(incoming_call_end_btn, Z_LAYER_VOICE_CONTENT);
     aroma_iconbutton_set_colors(incoming_call_end_btn, 0xFFF44336, 0xFFFFFFFF);
@@ -1980,14 +2293,14 @@ void build_vehicle_view(AromaNode *window)
     aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 20, 1200);
 
     media_ui.ui_initialized = true;
-    
+
     pthread_t media_thread;
     pthread_attr_t media_attr;
     pthread_attr_init(&media_attr);
     pthread_attr_setdetachstate(&media_attr, PTHREAD_CREATE_DETACHED);
     pthread_create(&media_thread, &media_attr, media_monitor_thread_func, NULL);
     pthread_attr_destroy(&media_attr);
-    
+
     pthread_t call_thread;
     pthread_attr_t call_attr;
     pthread_attr_init(&call_attr);

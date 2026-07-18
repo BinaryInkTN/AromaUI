@@ -106,6 +106,7 @@ struct AromaMapExtra {
     pthread_mutex_t route_mutex;
     pthread_mutex_t geocode_mutex;
     bool geocode_loading;
+    bool animations_enabled;
 };
 
 typedef struct {
@@ -675,6 +676,20 @@ static void __map_anim_tick(void* user_data) {
     if (!is_visible) return;
     AromaMap* map = (AromaMap*)extra->node_ptr->node_widget_ptr;
     bool changed = false;
+    if (!extra->animations_enabled) {
+        /* Animations disabled (e.g. embedded/kiosk contexts): snap straight to the
+           target zoom/position instead of easing, and drop any residual velocity
+           so a prior fling can't resume a glide later. */
+        if (extra->display_zoom != extra->zoom) { extra->display_zoom = extra->zoom; changed = true; }
+        if (extra->display_px_x != extra->center_px_x || extra->display_px_y != extra->center_px_y) {
+            extra->display_px_x = extra->center_px_x;
+            extra->display_px_y = extra->center_px_y;
+            changed = true;
+        }
+        if (extra->velocity_x != 0 || extra->velocity_y != 0) { extra->velocity_x = 0; extra->velocity_y = 0; changed = true; }
+        if (changed) aroma_node_invalidate(extra->node_ptr);
+        return;
+    }
     if (fabs(extra->display_zoom - extra->zoom) > 0.001) {
         extra->display_zoom += (extra->zoom - extra->display_zoom) * 0.15;
         changed = true;
@@ -770,8 +785,13 @@ static bool __map_event_handler(AromaEvent* event, void* user_data) {
                 extra->center_px_y -= dy;
                 extra->display_px_x -= dx;
                 extra->display_px_y -= dy;
-                extra->velocity_x = -dx * 0.8;
-                extra->velocity_y = -dy * 0.8;
+                if (extra->animations_enabled) {
+                    extra->velocity_x = -dx * 0.8;
+                    extra->velocity_y = -dy * 0.8;
+                } else {
+                    extra->velocity_x = 0;
+                    extra->velocity_y = 0;
+                }
                 map->last_mouse_x = event->data.mouse.x;
                 map->last_mouse_y = event->data.mouse.y;
                 aroma_node_invalidate(event->target_node);
@@ -1133,6 +1153,29 @@ void aroma_map_pan_to(AromaNode* node, double lat, double lon) {
     aroma_map_set_center(node, lat, lon);
 }
 
+/* Set the map's center immediately, with no pan animation, regardless of
+   whether animations are otherwise enabled. Intended for setting the real
+   starting location right after aroma_map_create() (which always starts at
+   Null Island), or for any other case where a visible glide is unwanted. */
+void aroma_map_set_center_instant(AromaNode* node, double lat, double lon) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+    double lat_rad = lat * M_PI / 180.0;
+    double px_x = (lon + 180.0) / 360.0 * (1 << extra->zoom) * TILE_SIZE;
+    double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << extra->zoom) * TILE_SIZE;
+    extra->center_px_x = px_x;
+    extra->center_px_y = px_y;
+    extra->display_px_x = px_x;
+    extra->display_px_y = px_y;
+    extra->velocity_x = 0;
+    extra->velocity_y = 0;
+    map->center_lat = lat;
+    map->center_lon = lon;
+    aroma_node_invalidate(node);
+}
+
 void aroma_map_set_zoom(AromaNode* node, int zoom) {
     if (!node || !node->node_widget_ptr) return;
     AromaMap* map = (AromaMap*)node->node_widget_ptr;
@@ -1150,6 +1193,35 @@ void aroma_map_set_zoom(AromaNode* node, int zoom) {
     extra->center_px_y = px_y;
     unload_old_zoom_tiles(extra);
     aroma_node_invalidate(node);
+}
+
+/* Enable or disable easing animations for pan/zoom/momentum. When disabled,
+   aroma_map_set_center(), pan_to(), set_zoom(), zoom_in(), zoom_out(), and
+   drag-release momentum all take effect on the next frame with no glide.
+   Useful for embedded/kiosk displays where the flying-map animation is
+   distracting or wastes CPU on constrained hardware. Toggling this off snaps
+   any animation currently in flight to its target immediately. */
+void aroma_map_set_animations_enabled(AromaNode* node, bool enabled) {
+    if (!node || !node->node_widget_ptr) return;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    if (!extra) return;
+    extra->animations_enabled = enabled;
+    if (!enabled) {
+        extra->display_zoom = extra->zoom;
+        extra->display_px_x = extra->center_px_x;
+        extra->display_px_y = extra->center_px_y;
+        extra->velocity_x = 0;
+        extra->velocity_y = 0;
+        aroma_node_invalidate(node);
+    }
+}
+
+bool aroma_map_get_animations_enabled(AromaNode* node) {
+    if (!node || !node->node_widget_ptr) return true;
+    AromaMap* map = (AromaMap*)node->node_widget_ptr;
+    struct AromaMapExtra* extra = (struct AromaMapExtra*)map->extra;
+    return extra ? extra->animations_enabled : true;
 }
 
 void aroma_map_set_show_attribution(AromaNode* node, bool show) {
@@ -1294,10 +1366,17 @@ AromaNode* aroma_map_create(AromaNode* parent, int x, int y, int width, int heig
     extra->route_lats = NULL; extra->route_lons = NULL; extra->route_point_count = 0;
     extra->route_color = 0; extra->route_active = false; extra->route_loading = false;
     extra->geocode_loading = false;
+    /* center_px and display_px start equal (both at Null Island for the default
+       zoom), so there is no initial pan animation on load -- the map simply
+       appears at rest here. Callers that want a different starting location
+       should use aroma_map_set_center_instant() before the first draw, or
+       aroma_map_set_center()/pan_to() if an animated pan to that location is
+       actually desired. */
     extra->center_px_x = 8192.0; extra->center_px_y = 8192.0;
     extra->display_px_x = 8192.0; extra->display_px_y = 8192.0;
     extra->display_zoom = map->zoom;
     extra->velocity_x = 0; extra->velocity_y = 0;
+    extra->animations_enabled = true;
     extra->anim_timer = aroma_timer_create(16, true, __map_anim_tick, extra);
     extra->font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 12);
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, map);

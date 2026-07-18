@@ -44,11 +44,14 @@ static void textbox_insert_char(AromaTextbox *tb, char ch)
     if (!tb || tb->text_length >= AROMA_TEXTBOX_MAX_LENGTH - 1)
         return;
 
+    // Shift characters right from cursor position
     memmove(&tb->text[tb->cursor_pos + 1], &tb->text[tb->cursor_pos],
             tb->text_length - tb->cursor_pos + 1);
     tb->text[tb->cursor_pos] = ch;
     tb->text_length++;
     tb->cursor_pos++;
+    tb->text[tb->text_length] = '\0';
+    
     tb->show_cursor = true;
     tb->cursor_blink_time = textbox_now_ms();
 
@@ -58,13 +61,28 @@ static void textbox_insert_char(AromaTextbox *tb, char ch)
 
 static void textbox_backspace(AromaTextbox *tb)
 {
-    if (!tb || tb->cursor_pos == 0)
+    if (!tb || tb->cursor_pos == 0 || tb->text_length == 0)
         return;
 
+    // Move cursor back one position
     tb->cursor_pos--;
-    memmove(&tb->text[tb->cursor_pos], &tb->text[tb->cursor_pos + 1],
-            tb->text_length - tb->cursor_pos);
+    
+    // If there are characters after the deleted position, shift them left
+    if (tb->cursor_pos < tb->text_length - 1) {
+        memmove(&tb->text[tb->cursor_pos], 
+                &tb->text[tb->cursor_pos + 1], 
+                tb->text_length - tb->cursor_pos - 1);
+    }
+    
+    // Update length and null-terminate
     tb->text_length--;
+    tb->text[tb->text_length] = '\0';
+    
+    // Reset scroll offset if needed
+    if (tb->scroll_offset > tb->cursor_pos)
+        tb->scroll_offset = tb->cursor_pos;
+    
+    // Update cursor display
     tb->show_cursor = true;
     tb->cursor_blink_time = textbox_now_ms();
 
@@ -77,9 +95,18 @@ static void textbox_delete(AromaTextbox *tb)
     if (!tb || tb->cursor_pos >= tb->text_length)
         return;
 
-    memmove(&tb->text[tb->cursor_pos], &tb->text[tb->cursor_pos + 1],
-            tb->text_length - tb->cursor_pos);
+    // If there are characters after the cursor, shift them left
+    if (tb->cursor_pos < tb->text_length - 1) {
+        memmove(&tb->text[tb->cursor_pos], 
+                &tb->text[tb->cursor_pos + 1], 
+                tb->text_length - tb->cursor_pos - 1);
+    }
+    
+    // Update length and null-terminate
     tb->text_length--;
+    tb->text[tb->text_length] = '\0';
+    
+    // Update cursor display
     tb->show_cursor = true;
     tb->cursor_blink_time = textbox_now_ms();
 
@@ -162,6 +189,7 @@ AromaNode *aroma_textbox_create(AromaNode *parent, int x, int y, int width, int 
     data->rect.width = width;
     data->rect.height = height;
     data->text[0] = '\0';
+    data->placeholder[0] = '\0';
     data->show_cursor = true;
     data->cursor_blink_time = textbox_now_ms();
     data->text_scale = 1.0f;
@@ -259,7 +287,6 @@ void aroma_textbox_set_focused(AromaNode *node, bool focused)
 
     if (focused)
     {
-
         if (g_focused_textbox && g_focused_textbox != node)
         {
             AromaTextbox *old = (AromaTextbox *)g_focused_textbox->node_widget_ptr;
@@ -315,6 +342,7 @@ void aroma_textbox_set_focused(AromaNode *node, bool focused)
     if (data->on_focus_changed)
         data->on_focus_changed(node, focused, data->user_data);
 }
+
 bool aroma_textbox_is_focused(AromaNode *node)
 {
     if (!node || !node->node_widget_ptr)
@@ -368,8 +396,11 @@ void aroma_textbox_on_char(AromaNode *node, char character)
     if (!data->is_focused)
         return;
 
-    textbox_insert_char(data, character);
-    aroma_node_invalidate(node);
+    // Filter out control characters
+    if (character >= 32 && character <= 126) {
+        textbox_insert_char(data, character);
+        aroma_node_invalidate(node);
+    }
 }
 
 void aroma_textbox_on_backspace(AromaNode *node)
@@ -468,7 +499,6 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
 
         if (data->is_focused && !showing_placeholder)
         {
-
             textbox_ensure_cursor_visible(data, gfx, window_id, available_width);
 
             size_t start = data->scroll_offset;
@@ -491,7 +521,6 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
         }
         else
         {
-
             strncpy(display_text, text ? text : "", sizeof(display_text) - 1);
             display_text[sizeof(display_text) - 1] = '\0';
 
@@ -501,7 +530,7 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
 
                 if (full_width > (float)available_width)
                 {
-                    const char *ellipsis = "\xE2\x80\xA6";
+                    const char *ellipsis = "...";
                     float ew = gfx->measure_text(window_id, data->font, ellipsis, data->text_scale);
                     size_t len = strlen(display_text);
 
@@ -526,7 +555,6 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
 
     if (data->is_focused)
     {
-
         uint64_t now = textbox_now_ms();
         if (data->cursor_blink_time == 0)
             data->cursor_blink_time = now;
@@ -541,7 +569,6 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
 
         if (data->show_cursor)
         {
-
             int cursor_x = data->text_x;
 
             if (data->font && gfx->measure_text && data->cursor_pos > data->scroll_offset)
@@ -585,6 +612,7 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
 
     data->last_window_id = window_id;
 }
+
 void aroma_textbox_destroy(AromaNode *node)
 {
     if (!node)
@@ -733,52 +761,14 @@ static bool textbox_keyboard_handler(AromaEvent *event, void *user_data)
     if (event->event_type == EVENT_TYPE_KEY_PRESS)
     {
         uint32_t key = event->data.key.key_code;
+        
+        // Debug logging
+        LOG_INFO("Textbox key event: keycode=0x%04X\n", key);
 
-        if (key == 0xFF51 || key == 0xFF52)
+        // Handle backspace (multiple possible keycodes)
+        if (key == 8 || key == 127 || key == 0xFF08 || key == 0x0008 || key == 0x007F)
         {
-            if (tb->cursor_pos > 0)
-            {
-                tb->cursor_pos--;
-                tb->show_cursor = true;
-                tb->cursor_blink_time = textbox_now_ms();
-                aroma_node_invalidate(event->target_node);
-            }
-            return true;
-        }
-
-        if (key == 0xFF53 || key == 0xFF54)
-        {
-            if (tb->cursor_pos < tb->text_length)
-            {
-                tb->cursor_pos++;
-                tb->show_cursor = true;
-                tb->cursor_blink_time = textbox_now_ms();
-                aroma_node_invalidate(event->target_node);
-            }
-            return true;
-        }
-
-        if (key == 0xFF50)
-        {
-            tb->cursor_pos = 0;
-            tb->scroll_offset = 0;
-            tb->show_cursor = true;
-            tb->cursor_blink_time = textbox_now_ms();
-            aroma_node_invalidate(event->target_node);
-            return true;
-        }
-
-        if (key == 0xFF57)
-        {
-            tb->cursor_pos = tb->text_length;
-            tb->show_cursor = true;
-            tb->cursor_blink_time = textbox_now_ms();
-            aroma_node_invalidate(event->target_node);
-            return true;
-        }
-
-        if (key == 8 || key == 127 || key == 0xFF08)
-        {
+            LOG_INFO("Textbox: Backspace pressed\n");
             textbox_backspace(tb);
             aroma_node_invalidate(event->target_node);
             if (user_data)
@@ -789,8 +779,10 @@ static bool textbox_keyboard_handler(AromaEvent *event, void *user_data)
             return true;
         }
 
-        if (key == 0xFFFF || key == 0xFF9F)
+        // Handle delete (multiple possible keycodes)
+        if (key == 0xFFFF || key == 0xFF9F || key == 0x007F || key == 127)
         {
+            LOG_INFO("Textbox: Delete pressed\n");
             textbox_delete(tb);
             aroma_node_invalidate(event->target_node);
             if (user_data)
@@ -801,6 +793,58 @@ static bool textbox_keyboard_handler(AromaEvent *event, void *user_data)
             return true;
         }
 
+        // Handle left arrow
+        if (key == 0xFF51 || key == 0xFF52 || key == 0x0025)
+        {
+            LOG_INFO("Textbox: Left arrow pressed\n");
+            if (tb->cursor_pos > 0)
+            {
+                tb->cursor_pos--;
+                tb->show_cursor = true;
+                tb->cursor_blink_time = textbox_now_ms();
+                aroma_node_invalidate(event->target_node);
+            }
+            return true;
+        }
+
+        // Handle right arrow
+        if (key == 0xFF53 || key == 0xFF54 || key == 0x0027)
+        {
+            LOG_INFO("Textbox: Right arrow pressed\n");
+            if (tb->cursor_pos < tb->text_length)
+            {
+                tb->cursor_pos++;
+                tb->show_cursor = true;
+                tb->cursor_blink_time = textbox_now_ms();
+                aroma_node_invalidate(event->target_node);
+            }
+            return true;
+        }
+
+        // Handle Home key
+        if (key == 0xFF50 || key == 0x0024)
+        {
+            LOG_INFO("Textbox: Home key pressed\n");
+            tb->cursor_pos = 0;
+            tb->scroll_offset = 0;
+            tb->show_cursor = true;
+            tb->cursor_blink_time = textbox_now_ms();
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+
+        // Handle End key
+        if (key == 0xFF57 || key == 0x0023)
+        {
+            LOG_INFO("Textbox: End key pressed\n");
+            tb->cursor_pos = tb->text_length;
+            tb->show_cursor = true;
+            tb->cursor_blink_time = textbox_now_ms();
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+
+        // Handle Caps Lock
         if (key == 0xFFE5)
         {
             tb->caps_lock_on = !tb->caps_lock_on;
@@ -808,9 +852,13 @@ static bool textbox_keyboard_handler(AromaEvent *event, void *user_data)
             return true;
         }
 
+        // Handle printable characters
         if (key >= 32 && key <= 126)
         {
-            textbox_insert_char(tb, (char)(key & 0xFF));
+            char ch = (char)(key & 0xFF);
+            if (tb->caps_lock_on)
+                ch = (char)toupper(ch);
+            textbox_insert_char(tb, ch);
             aroma_node_invalidate(event->target_node);
             if (user_data)
             {
@@ -820,11 +868,12 @@ static bool textbox_keyboard_handler(AromaEvent *event, void *user_data)
             return true;
         }
 
-      if (key == 13 || key == 10)
-{
-    aroma_textbox_set_focused(event->target_node, false);
-    return true;
-}
+        // Handle Enter key
+        if (key == 13 || key == 10 || key == 0xFF0D)
+        {
+            aroma_textbox_set_focused(event->target_node, false);
+            return true;
+        }
     }
 
     return false;
