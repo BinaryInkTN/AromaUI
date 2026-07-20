@@ -702,6 +702,10 @@ static void *bt_monitor_thread_func(void *arg)
             bt_hfp_poll();
             pthread_mutex_lock(&bt_ui.lock);
         }
+     bt_call_info_t active_calls[10];
+int call_count = bt_hfp_get_active_calls(active_calls, 10);
+printf("[BT MONITOR] Active calls: %d\n", call_count);
+fflush(stdout);
         if (!contacts_fetched && bt_ui.initialized && hfp_ready)
         {
             bt_device_info_t device = bt_speaker_get_device_info();

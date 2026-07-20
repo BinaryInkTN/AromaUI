@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 option(ENABLE_VOICE_CONTROL "Enable voice control (requires libvosk)" OFF)
 option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
 option(ENABLE_BLUETOOTH_SPEAKER "Enable Bluetooth speaker functionality" ON)
-option(ENABLE_ASAN "Build with AddressSanitizer + LeakSanitizer instrumentation" ON)
+option(ENABLE_ASAN "Build with AddressSanitizer + LeakSanitizer instrumentation" OFF)
 option(ENABLE_TSAN "Build with ThreadSanitizer instrumentation (mutually exclusive with ENABLE_ASAN)" OFF)
 
 if(ENABLE_GLFW AND EMSCRIPTEN)

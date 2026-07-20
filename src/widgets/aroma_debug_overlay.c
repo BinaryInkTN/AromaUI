@@ -29,7 +29,6 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include <string.h>
-#define _POSIX_C_SOURCE 200809L
 #include <time.h>
 #include <stdio.h>
 

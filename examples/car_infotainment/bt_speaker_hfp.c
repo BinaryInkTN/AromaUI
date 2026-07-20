@@ -42,6 +42,7 @@ typedef struct
 typedef struct
 {
     DBusConnection *session_bus;
+    DBusConnection *obex_bus;
     char modem_path[256];
     tracked_call_t calls[MAX_TRACKED_CALLS];
     bt_call_callback_t call_cb;
@@ -404,6 +405,57 @@ static void hfp_handle_call_props_changed(DBusMessage *msg)
     hfp_notify_call(tc, false);
 }
 
+static void hfp_handle_legacy_call_property_changed(DBusMessage *msg)
+{
+    const char *path = dbus_message_get_path(msg);
+    if (!path)
+        return;
+    tracked_call_t *tc = hfp_find_tracked(path);
+    if (!tc)
+        return;
+
+    DBusMessageIter iter, var;
+    dbus_message_iter_init(msg, &iter);
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING)
+        return;
+    const char *key = NULL;
+    dbus_message_iter_get_basic(&iter, &key);
+    dbus_message_iter_next(&iter);
+    if (!key || dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_VARIANT)
+        return;
+    dbus_message_iter_recurse(&iter, &var);
+    int vt = dbus_message_iter_get_arg_type(&var);
+
+    if (strcmp(key, "State") == 0 && vt == DBUS_TYPE_STRING)
+    {
+        const char *s = NULL;
+        dbus_message_iter_get_basic(&var, &s);
+        tc->state = hfp_parse_call_state(s);
+    }
+    else if (strcmp(key, "LineIdentification") == 0 && vt == DBUS_TYPE_STRING)
+    {
+        const char *s = NULL;
+        dbus_message_iter_get_basic(&var, &s);
+        if (s)
+            safe_strncpy(tc->line_id, s, sizeof(tc->line_id));
+    }
+    else if (strcmp(key, "Name") == 0 && vt == DBUS_TYPE_STRING)
+    {
+        const char *s = NULL;
+        dbus_message_iter_get_basic(&var, &s);
+        if (s)
+            safe_strncpy(tc->name, s, sizeof(tc->name));
+    }
+    else if (strcmp(key, "Multiparty") == 0 && vt == DBUS_TYPE_BOOLEAN)
+    {
+        dbus_bool_t b = FALSE;
+        dbus_message_iter_get_basic(&var, &b);
+        tc->multiparty = b;
+    }
+
+    hfp_notify_call(tc, false);
+}
+
 void bt_hfp_poll(void)
 {
     if (!g_hfp.session_bus)
@@ -436,6 +488,12 @@ void bt_hfp_poll(void)
             {
                 hfp_handle_call_props_changed(m);
             }
+            else if (iface && member &&
+                     strcmp(iface, OFONO_VC_IFACE) == 0 &&
+                     strcmp(member, "PropertyChanged") == 0)
+            {
+                hfp_handle_legacy_call_property_changed(m);
+            }
         }
         dbus_message_unref(m);
     }
@@ -461,10 +519,10 @@ int bt_hfp_init(void)
 
     DBusError err;
     dbus_error_init(&err);
-    g_hfp.session_bus = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
+    g_hfp.session_bus = dbus_bus_get_private(DBUS_BUS_SYSTEM, &err);
     if (!g_hfp.session_bus || dbus_error_is_set(&err))
     {
-        hfp_set_error("Session bus connection failed: %s",
+        hfp_set_error("System bus connection failed: %s",
                       dbus_error_is_set(&err) ? err.message : "unknown");
         if (dbus_error_is_set(&err))
             dbus_error_free(&err);
@@ -472,10 +530,25 @@ int bt_hfp_init(void)
     }
     dbus_connection_set_exit_on_disconnect(g_hfp.session_bus, FALSE);
 
+    dbus_error_init(&err);
+    g_hfp.obex_bus = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
+    if (!g_hfp.obex_bus || dbus_error_is_set(&err))
+    {
+        hfp_set_error("Session bus connection failed (OBEX unavailable): %s",
+                      dbus_error_is_set(&err) ? err.message : "unknown");
+        if (dbus_error_is_set(&err))
+            dbus_error_free(&err);
+    }
+    else
+    {
+        dbus_connection_set_exit_on_disconnect(g_hfp.obex_bus, FALSE);
+    }
+
     const char *matches[] = {
         "type='signal',sender='" OFONO_BUS_NAME "',interface='" OFONO_VCM_IFACE "',member='CallAdded'",
         "type='signal',sender='" OFONO_BUS_NAME "',interface='" OFONO_VCM_IFACE "',member='CallRemoved'",
         "type='signal',interface='" DBUS_PROPS_IFACE "',member='PropertiesChanged'",
+        "type='signal',sender='" OFONO_BUS_NAME "',interface='" OFONO_VC_IFACE "',member='PropertyChanged'",
         NULL};
     for (int i = 0; matches[i]; i++)
     {
@@ -497,6 +570,11 @@ void bt_hfp_cleanup(void)
         dbus_connection_close(g_hfp.session_bus);
         dbus_connection_unref(g_hfp.session_bus);
     }
+    if (g_hfp.obex_bus)
+    {
+        dbus_connection_close(g_hfp.obex_bus);
+        dbus_connection_unref(g_hfp.obex_bus);
+    }
     memset(&g_hfp, 0, sizeof(g_hfp));
 }
 
@@ -507,14 +585,14 @@ int bt_hfp_dial(const char *number)
         hfp_set_error("bt_hfp_dial: empty number");
         return -1;
     }
-    
+
     if (g_hfp.session_bus)
     {
         if (g_hfp.modem_path[0] == '\0')
         {
             hfp_find_modem();
         }
-        
+
         if (g_hfp.modem_path[0] != '\0')
         {
             DBusMessage *msg = dbus_message_new_method_call(
@@ -542,7 +620,7 @@ int bt_hfp_dial(const char *number)
             }
         }
     }
-    
+
     DBusError err;
     dbus_error_init(&err);
     DBusConnection *sys_bus = dbus_bus_get_private(DBUS_BUS_SYSTEM, &err);
@@ -553,7 +631,7 @@ int bt_hfp_dial(const char *number)
         hfp_set_error("Cannot connect to system bus for dial");
         return -1;
     }
-    
+
     char modem_path[256] = {0};
     DBusMessage *modem_msg = dbus_message_new_method_call(
         OFONO_BUS_NAME, "/", OFONO_MANAGER_IFACE, "GetModems");
@@ -563,7 +641,7 @@ int bt_hfp_dial(const char *number)
         DBusMessage *modem_reply = dbus_connection_send_with_reply_and_block(
             sys_bus, modem_msg, 3000, &err);
         dbus_message_unref(modem_msg);
-        
+
         if (modem_reply && !dbus_error_is_set(&err))
         {
             DBusMessageIter iter, arr;
@@ -589,7 +667,7 @@ int bt_hfp_dial(const char *number)
         if (dbus_error_is_set(&err))
             dbus_error_free(&err);
     }
-    
+
     if (modem_path[0] == '\0')
     {
         dbus_connection_close(sys_bus);
@@ -597,7 +675,7 @@ int bt_hfp_dial(const char *number)
         hfp_set_error("No modem found on system bus");
         return -1;
     }
-    
+
     DBusMessage *dial_msg = dbus_message_new_method_call(
         OFONO_BUS_NAME, modem_path, OFONO_VCM_IFACE, "Dial");
     if (!dial_msg)
@@ -607,7 +685,7 @@ int bt_hfp_dial(const char *number)
         hfp_set_error("Failed to create dial message");
         return -1;
     }
-    
+
     const char *hide_callerid = "default";
     dbus_message_append_args(dial_msg,
                              DBUS_TYPE_STRING, &number,
@@ -618,7 +696,7 @@ int bt_hfp_dial(const char *number)
     DBusMessage *dial_reply = dbus_connection_send_with_reply_and_block(
         sys_bus, dial_msg, 10000, &err);
     dbus_message_unref(dial_msg);
-    
+
     int result = 0;
     if (!dial_reply || dbus_error_is_set(&err))
     {
@@ -626,15 +704,15 @@ int bt_hfp_dial(const char *number)
                       dbus_error_is_set(&err) ? err.message : "no reply");
         result = -1;
     }
-    
+
     if (dial_reply)
         dbus_message_unref(dial_reply);
     if (dbus_error_is_set(&err))
         dbus_error_free(&err);
-    
+
     dbus_connection_close(sys_bus);
     dbus_connection_unref(sys_bus);
-    
+
     return result;
 }
 
@@ -885,9 +963,9 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
         hfp_set_error("bt_hfp_fetch_call_history: invalid arguments");
         return -1;
     }
-    if (!g_hfp.session_bus)
+    if (!g_hfp.obex_bus)
     {
-        hfp_set_error("bt_hfp_fetch_call_history: not initialized");
+        hfp_set_error("bt_hfp_fetch_call_history: OBEX not available");
         return -1;
     }
 
@@ -938,7 +1016,7 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply = dbus_connection_send_with_reply_and_block(
-        g_hfp.session_bus, msg, 15000, &err);
+        g_hfp.obex_bus, msg, 15000, &err);
     dbus_message_unref(msg);
     if (!reply) { if(dbus_error_is_set(&err)) dbus_error_free(&err); return -1; }
 
@@ -972,7 +1050,7 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
                                          DBUS_TYPE_STRING, &phonebooks[pb_idx], DBUS_TYPE_INVALID);
                 dbus_error_init(&err);
                 DBusMessage *sel_reply = dbus_connection_send_with_reply_and_block(
-                    g_hfp.session_bus, sel, 10000, &err);
+                    g_hfp.obex_bus, sel, 10000, &err);
                 dbus_message_unref(sel);
                 if (sel_reply) dbus_message_unref(sel_reply);
                 if (dbus_error_is_set(&err)) dbus_error_free(&err);
@@ -995,7 +1073,7 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
 
                 dbus_error_init(&err);
                 DBusMessage *pull_reply = dbus_connection_send_with_reply_and_block(
-                    g_hfp.session_bus, pull, 15000, &err);
+                    g_hfp.obex_bus, pull, 15000, &err);
                 dbus_message_unref(pull);
 
                 char filename[512] = {0};
@@ -1003,7 +1081,7 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
                 {
                     DBusMessageIter pli;
                     dbus_message_iter_init(pull_reply, &pli);
-                    
+
                     const char *tp = NULL;
                     char tpb[256] = {0};
                     if (dbus_message_iter_get_arg_type(&pli) == DBUS_TYPE_OBJECT_PATH)
@@ -1046,7 +1124,7 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
                         for (int i = 0; i < 100; i++)
                         {
                             usleep(200000);
-                            if (hfp_get_prop_string(g_hfp.session_bus, OBEX_BUS_NAME,
+                            if (hfp_get_prop_string(g_hfp.obex_bus, OBEX_BUS_NAME,
                                 tpb, OBEX_TRANSFER_IFACE, "Filename", filename, sizeof(filename))
                                 && filename[0]) break;
                         }
@@ -1056,7 +1134,7 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
                     {
                         printf("[BT HFP] Call history file: %s\n", filename);
                         fflush(stdout);
-                        
+
                         FILE *f = fopen(filename, "r");
                         if (f)
                         {
@@ -1133,7 +1211,7 @@ int bt_hfp_fetch_call_history(const char *device_path, bt_call_info_t *out_calls
             dbus_message_iter_append_basic(&ri, DBUS_TYPE_OBJECT_PATH, &sp);
             dbus_error_init(&err);
             DBusMessage *rmr = dbus_connection_send_with_reply_and_block(
-                g_hfp.session_bus, rm, 5000, &err);
+                g_hfp.obex_bus, rm, 5000, &err);
             if (rmr) dbus_message_unref(rmr);
             if (dbus_error_is_set(&err)) dbus_error_free(&err);
             dbus_message_unref(rm);
@@ -1156,11 +1234,11 @@ int bt_hfp_fetch_contacts(const char *device_path, bt_contact_t *out_contacts,
         hfp_set_error("bt_hfp_fetch_contacts: invalid arguments");
         return -1;
     }
-    if (!g_hfp.session_bus)
+    if (!g_hfp.obex_bus)
     {
-        printf("[BT HFP] No session bus\n");
+        printf("[BT HFP] No OBEX bus\n");
         fflush(stdout);
-        hfp_set_error("bt_hfp_fetch_contacts: not initialized");
+        hfp_set_error("bt_hfp_fetch_contacts: OBEX not available");
         return -1;
     }
 
@@ -1235,7 +1313,7 @@ int bt_hfp_fetch_contacts(const char *device_path, bt_contact_t *out_contacts,
     DBusError err;
     dbus_error_init(&err);
     DBusMessage *reply = dbus_connection_send_with_reply_and_block(
-        g_hfp.session_bus, msg, 15000, &err);
+        g_hfp.obex_bus, msg, 15000, &err);
     dbus_message_unref(msg);
 
     printf("[BT HFP] CreateSession returned: reply=%p\n", (void *)reply);
@@ -1332,7 +1410,7 @@ int bt_hfp_fetch_contacts(const char *device_path, bt_contact_t *out_contacts,
         DBusError sel_err;
         dbus_error_init(&sel_err);
         DBusMessage *sel_reply = dbus_connection_send_with_reply_and_block(
-            g_hfp.session_bus, sel_msg, 10000, &sel_err);
+            g_hfp.obex_bus, sel_msg, 10000, &sel_err);
         dbus_message_unref(sel_msg);
 
         printf("[BT HFP] Select returned: reply=%p\n", (void *)sel_reply);
@@ -1373,7 +1451,7 @@ int bt_hfp_fetch_contacts(const char *device_path, bt_contact_t *out_contacts,
         DBusError pull_err;
         dbus_error_init(&pull_err);
         DBusMessage *pull_reply = dbus_connection_send_with_reply_and_block(
-            g_hfp.session_bus, pull_msg, 15000, &pull_err);
+            g_hfp.obex_bus, pull_msg, 15000, &pull_err);
         dbus_message_unref(pull_msg);
 
         printf("[BT HFP] PullAll returned: reply=%p\n", (void *)pull_reply);
@@ -1499,7 +1577,7 @@ int bt_hfp_fetch_contacts(const char *device_path, bt_contact_t *out_contacts,
                         DBusError st_err;
                         dbus_error_init(&st_err);
                         DBusMessage *st_reply = dbus_connection_send_with_reply_and_block(
-                            g_hfp.session_bus, st_msg, 3000, &st_err);
+                            g_hfp.obex_bus, st_msg, 3000, &st_err);
                         dbus_message_unref(st_msg);
 
                         if (!st_reply)
@@ -1587,7 +1665,7 @@ int bt_hfp_fetch_contacts(const char *device_path, bt_contact_t *out_contacts,
 
             if (!filename[0] && transfer_path_buf[0])
             {
-                if (!hfp_get_prop_string(g_hfp.session_bus, OBEX_BUS_NAME,
+                if (!hfp_get_prop_string(g_hfp.obex_bus, OBEX_BUS_NAME,
                                          transfer_path_buf, OBEX_TRANSFER_IFACE,
                                          "Filename", filename, sizeof(filename)) ||
                     !filename[0])
@@ -1636,7 +1714,7 @@ cleanup_session:
         DBusError rm_err;
         dbus_error_init(&rm_err);
         DBusMessage *rm_reply = dbus_connection_send_with_reply_and_block(
-            g_hfp.session_bus, rm_msg, 5000, &rm_err);
+            g_hfp.obex_bus, rm_msg, 5000, &rm_err);
         dbus_message_unref(rm_msg);
         if (rm_reply)
             dbus_message_unref(rm_reply);

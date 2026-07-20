@@ -1,4 +1,3 @@
-
 #ifndef AROMA_NODE_H
 #define AROMA_NODE_H
 #include "aroma_common.h"
@@ -12,6 +11,7 @@ extern "C" {
 #define AROMA_MAX_CHILD_NODES 64
 #define AROMA_NODE_ID_INVALID 0
 #define AROMA_MAX_DIRTY_NODES 1024
+#define AROMA_CHILD_INITIAL_CAPACITY 4
 
 typedef struct  AromaNode AromaNode;
 
@@ -58,7 +58,7 @@ typedef enum {
 } AromaAlignItems;
 
 typedef struct   {
-    // Self Layout
+    
     AromaLayoutType type;
     int left;
     int top;
@@ -67,25 +67,25 @@ typedef struct   {
     float width_percent;
     float height_percent;
     
-    // Flex Item props
+    
     float flex_grow;
     float flex_shrink;
     int flex_basis;
 
-    // Container Layout
+    
     AromaLayoutMode mode;
     AromaFlexDirection flex_direction;
     AromaJustifyContent justify_content;
     AromaAlignItems align_items;
     int gap;
     
-    // Grid props
+    
     int grid_cols;
     int grid_rows;
     int grid_row_gap;
     int grid_col_gap;
 
-    // Internal: cached position for NONE-mode child offset tracking
+    
     int _cache_x;
     int _cache_y;
 } AromaLayout;
@@ -96,22 +96,23 @@ struct  AromaNode
     uint64_t node_id;
     int32_t z_index;
     float opacity;
-    
+
     AromaNode* parent_node;
-    AromaNode* child_nodes[AROMA_MAX_CHILD_NODES];
+    AromaNode** child_nodes;       
     void *node_widget_ptr;
     AromaNodeDrawFn draw_cb;
     void (*destroy_cb)(struct AromaNode* node);
-    
+
     uint64_t child_count;
+    uint64_t child_capacity;       
     uint64_t dirty_frame;
-    
+
     bool is_dirty;
     bool subtree_dirty;
     bool is_hidden;
     bool propagate_dirty;
     
-    // WASM padding to align layout struct to 8-byte boundary
+    
     uint8_t _padding[4];
     
     AromaLayout layout;
@@ -146,7 +147,7 @@ AromaNode* __find_node_by_id(AromaNode* root, uint64_t node_id);
 uint64_t __generate_node_id(void);
 void __reset_node_id_counter(void);
 
-// Layout Setters
+
 
 void aroma_node_set_layout_anchor(AromaNode* node, int left, int top, int right, int bottom);
 
@@ -154,7 +155,7 @@ void aroma_node_set_layout_fill(AromaNode* node);
 
 void aroma_node_set_layout_center(AromaNode* node);
 
-// Flexbox & Grid helpers
+
 
 void aroma_node_set_layout_mode(AromaNode* node, AromaLayoutMode mode);
 

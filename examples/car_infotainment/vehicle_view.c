@@ -2097,7 +2097,6 @@ void build_vehicle_view(AromaNode *window)
 
     map_from_entry = aroma_ui_textbox(map_search_surface, 44, 72, 232, 40, "Current location", on_map_from_entry_change, NULL, state.ui_font);
     aroma_node_set_z_index(map_from_entry, Z_LAYER_STATUS_BAR + 16);
-
     map_swap_btn = aroma_ui_iconbutton(
         map_search_surface, AROMA_ICON_SWAP_VERT, 284, 76, 28, ICON_BUTTON_FILLED, on_swap_click, NULL, state.icon_font);
     aroma_iconbutton_set_colors(map_swap_btn, GMAPS_COLOR_SURFACE_VARIANT, GMAPS_COLOR_ON_SURFACE_VARIANT);

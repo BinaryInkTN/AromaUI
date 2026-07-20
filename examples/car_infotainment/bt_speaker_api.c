@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "bt_speaker_api.h"
 #include <stdio.h>
 #include <stdlib.h>
