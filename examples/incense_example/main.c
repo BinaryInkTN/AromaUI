@@ -14,7 +14,6 @@
 
     int main()
     {
-                set_minimum_log_level(DEBUG_LEVEL_WARNING);
 
         printf("Initializing UI system...\n");
         aroma_ui_init();

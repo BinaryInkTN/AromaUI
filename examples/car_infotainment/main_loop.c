@@ -95,10 +95,6 @@ void main_loop()
     
         aroma_ui_process_events();
 
-        if (!aroma_ui_is_running())
-        {
-            break;
-        }
 
         aroma_ui_render(state.window);
 

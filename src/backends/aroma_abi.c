@@ -167,10 +167,7 @@ static void drawlist_proxy_graphics_set_sprite_mode(bool enable, void* sprite) {
 
 static int drawlist_proxy_setup_shared_window_resources(void)
 {
-    AromaGraphicsInterface* real = get_real_graphics_interface();
-    if (real && real->setup_shared_window_resources) {
-        return real->setup_shared_window_resources();
-    }
+   
     return 0;
 }
 

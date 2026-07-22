@@ -65,7 +65,6 @@ else()
         pthread
         asound
         curl
-        Vulkan::Vulkan
     )
     message(STATUS "Windowing Backend: GLPS (Native)")
 endif()

@@ -28,13 +28,16 @@ static AromaNode *alloc_node(void)
     AromaNode *n = (AromaNode *)__slab_pool_alloc(&global_memory_system.node_pool);
     if (n)
         memset(n, 0, sizeof(AromaNode));
+    else
+        LOG_CRITICAL("Slab pool exhausted.");
 
     return n;
 }
 
 static void free_node(AromaNode *node)
 {
-    __slab_pool_free(&global_memory_system.node_pool, node);
+    if (node)
+        __slab_pool_free(&global_memory_system.node_pool, node);
 }
 
 static bool ensure_child_capacity(AromaNode *parent, uint64_t needed)
@@ -53,13 +56,24 @@ static bool ensure_child_capacity(AromaNode *parent, uint64_t needed)
 
     uint64_t new_cap = parent->child_capacity == 0
                            ? AROMA_CHILD_INITIAL_CAPACITY
-                           : parent->child_capacity * 2;
+                           : parent->child_capacity;
+    if (new_cap < 64)
+        new_cap *= 2;
+    else
+        new_cap += new_cap / 2;
     if (new_cap < needed)
         new_cap = needed;
     if (new_cap > AROMA_MAX_CHILD_NODES)
         new_cap = AROMA_MAX_CHILD_NODES;
 
-    AromaNode **new_arr = (AromaNode **)realloc(parent->child_nodes, new_cap * sizeof(AromaNode *));
+    if (new_cap > SIZE_MAX / sizeof(AromaNode *))
+    {
+        LOG_CRITICAL("Capacity overflow for parent %" PRIu64 ".", parent->node_id);
+        return false;
+    }
+
+    size_t alloc_size = (size_t)new_cap * sizeof(AromaNode *);
+    AromaNode **new_arr = (AromaNode **)realloc(parent->child_nodes, alloc_size);
     if (!new_arr)
     {
         LOG_CRITICAL("Failed to grow child_nodes for parent %" PRIu64 " to capacity %" PRIu64 ".",
@@ -77,6 +91,8 @@ static bool ensure_child_capacity(AromaNode *parent, uint64_t needed)
 
 static void dirty_list_remove(AromaNode *node)
 {
+    if (!node)
+        return;
     for (size_t i = 0; i < s_dirty_count; i++)
     {
         if (s_dirty_nodes[i] == node)

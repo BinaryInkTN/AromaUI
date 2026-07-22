@@ -1,24 +1,3 @@
-/*
- Copyright (c) 2026 BinaryInkTN
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include "core/aroma_drawlist.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
@@ -98,15 +77,21 @@ static void aroma_drawlist_reserve(AromaDrawList* list, size_t additional)
     size_t required = list->count + additional;
     if (required <= list->capacity) return;
 
-    size_t new_capacity = list->capacity == 0 ? 64 : list->capacity * 2;
-    while (new_capacity < required) {
+    size_t new_capacity = list->capacity == 0 ? 64 : list->capacity;
+    if (new_capacity < 64)
         new_capacity *= 2;
-    }
+    else
+        new_capacity += new_capacity / 2;
+    while (new_capacity < required)
+        new_capacity += new_capacity / 2;
+
+    if (new_capacity > SIZE_MAX / sizeof(AromaDrawCmd))
+        return;
 
     AromaDrawCmd* next = realloc(list->commands, new_capacity * sizeof(AromaDrawCmd));
-    if (!next) {
+    if (!next)
         return;
-    }
+
     list->commands = next;
     list->capacity = new_capacity;
 }
@@ -114,6 +99,8 @@ static void aroma_drawlist_reserve(AromaDrawList* list, size_t additional)
 AromaDrawList* aroma_drawlist_create(void)
 {
     AromaDrawList* list = calloc(1, sizeof(AromaDrawList));
+    if (!list)
+        return NULL;
     return list;
 }
 
@@ -122,6 +109,9 @@ void aroma_drawlist_destroy(AromaDrawList* list)
     if (!list) return;
     aroma_drawlist_reset(list);
     free(list->commands);
+    list->commands = NULL;
+    list->capacity = 0;
+    list->count = 0;
     free(list);
 }
 
@@ -164,6 +154,7 @@ void aroma_drawlist_cmd_clear(AromaDrawList* list, uint32_t color)
     #ifndef ESP32
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_CLEAR;
     cmd->data.clear.color = color;
@@ -176,6 +167,7 @@ void aroma_drawlist_cmd_fill_rect(AromaDrawList* list, int x, int y, int width, 
 {
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_FILL_RECT;
     cmd->data.fill_rect.x = x;
@@ -193,6 +185,7 @@ void aroma_drawlist_cmd_hollow_rect(AromaDrawList* list, int x, int y, int width
 {
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_HOLLOW_RECT;
     cmd->data.hollow_rect.x = x;
@@ -211,6 +204,7 @@ void aroma_drawlist_cmd_arc(AromaDrawList* list, int cx, int cy, int radius,
 {
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_ARC;
     cmd->data.arc.cx = cx;
@@ -227,11 +221,22 @@ void aroma_drawlist_cmd_text(AromaDrawList* list, AromaFont* font, const char* t
                              int x, int y, uint32_t color, float scale)
 {
     if (!list || !text) return;
+
+    char* text_copy = strdup(text);
+    if (!text_copy) {
+        return;
+    }
+
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) {
+        free(text_copy);
+        return;
+    }
+
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_TEXT;
     cmd->data.text.font = font;
-    cmd->data.text.text = strdup(text);
+    cmd->data.text.text = text_copy;
     cmd->data.text.x = x;
     cmd->data.text.y = y;
     cmd->data.text.color = color;
@@ -243,6 +248,7 @@ void aroma_drawlist_cmd_image(AromaDrawList* list, int x, int y, int width, int 
 {
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_IMAGE;
     cmd->data.image.x = x;
@@ -257,6 +263,7 @@ void aroma_drawlist_cmd_scissor_push(AromaDrawList* list, int x, int y, int widt
 {
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_SCISSOR_PUSH;
     cmd->data.scissor.x = x;
@@ -270,6 +277,7 @@ void aroma_drawlist_cmd_scissor_pop(AromaDrawList* list)
 {
     if (!list) return;
     aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
     AromaDrawCmd* cmd = &list->commands[list->count++];
     cmd->type = AROMA_DRAW_CMD_SCISSOR_POP;
     cmd->is_drawn = false;
@@ -371,6 +379,8 @@ static inline bool rect_intersects(
     int ax, int ay, int aw, int ah,
     int bx, int by, int bw, int bh)
 {
+    if (aw <= 0 || ah <= 0 || bw <= 0 || bh <= 0)
+        return false;
     return !(ax + aw <= bx ||
              bx + bw <= ax ||
              ay + ah <= by ||
@@ -382,6 +392,7 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                                 int x, int y, int width, int height)
 {
     if (!list || list->count == 0) return;
+    if (width <= 0 || height <= 0) return;
 
     AromaDrawList* previous = g_active_drawlist;
     g_active_drawlist = NULL;
@@ -449,13 +460,6 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
                 break;
 
             case AROMA_DRAW_CMD_TEXT:
-                /*
-                 * FIX: Never cull text. The old code used a hardcoded 18px
-                 * height window which culled all text with fonts larger than
-                 * ~18px (24px, 36px, 68px etc). Text bounding boxes also
-                 * require knowing the rendered width to cull correctly on X,
-                 * which we don't have cheaply here. Always render text.
-                 */
                 if (gfx->render_text)
                     gfx->render_text(window_id,
                                      cmd->data.text.font,

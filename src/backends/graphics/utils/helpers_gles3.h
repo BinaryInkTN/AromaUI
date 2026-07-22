@@ -17,14 +17,12 @@ typedef struct
     int advance;
 } Character;
 
-
 typedef struct
 {
     float pos[2];
-    float col[4];       /* r, g, b, a */
+    float col[4];
     float texCoord[2];
 } Vertex;
-
 
 #if defined(__EMSCRIPTEN__)
 static const char *rectangle_vertex_shader =
@@ -56,7 +54,6 @@ static const char *rectangle_fragment_shader =
     "uniform float borderWidth;\n"
     "uniform int shapeType;\n"
     "\n"
-    "// Material Design 3 antialiasing edge width\n"
     "const float AA_WIDTH = 1.0;\n"
     "\n"
     "float roundedBoxSDF(vec2 centerPos, vec2 size, float radius) {\n"
@@ -128,12 +125,9 @@ static const char *text_vertex_shader_source =
     "uniform mat4 projection;\n"
     "void main() {\n"
     "    gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);\n"
-    "    TexCoords = vec2(vertex.z, 1.0-vertex.w);\n"
+    "    TexCoords = vec2(vertex.z, vertex.w);\n"
     "}\n";
 
-/* FIX: was sampling .a (alpha channel) but glyph textures are single-channel
- * (GL_LUMINANCE or GL_RED), whose data comes through in .r, not .a.
- * Changed texture2D(...).a  ->  texture2D(...).r  to match the WebGL2 shader. */
 static const char *text_fragment_shader_source =
     "#version 100\n"
     "precision mediump float;\n"
@@ -175,7 +169,6 @@ static const char *rectangle_fragment_shader =
     "uniform float borderWidth;\n"
     "uniform int shapeType;\n"
     "\n"
-    "// Material Design 3 antialiasing edge width\n"
     "const float AA_WIDTH = 1.0;\n"
     "\n"
     "float roundedBoxSDF(vec2 centerPos, vec2 size, float radius) {\n"
@@ -247,7 +240,7 @@ static const char *text_vertex_shader_source =
     "uniform mat4 projection;\n"
     "void main() {\n"
     "    gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);\n"
-    "    TexCoords = vec2(vertex.z, 1.0-vertex.w);\n"
+    "    TexCoords = vec2(vertex.z, vertex.w);\n"
     "}\n";
 
 static const char *text_fragment_shader_source =

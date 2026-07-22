@@ -27,6 +27,9 @@ typedef struct
     bool capslock_active;
     bool ctrl_active;
     bool frame_rendered;
+    bool glps_initialized;
+    void (*frame_update_callback)(size_t window_id, void *data);
+    void *frame_update_data;
 } AromaGLPSContext;
 
 static AromaGLPSContext platform_ctx = (AromaGLPSContext){
@@ -38,7 +41,10 @@ static AromaGLPSContext platform_ctx = (AromaGLPSContext){
     .mouse_button_down = false,
     .capslock_active = false,
     .ctrl_active = false,
-    .frame_rendered = false};
+    .frame_rendered = false,
+    .glps_initialized = false,
+    .frame_update_callback = NULL,
+    .frame_update_data = NULL};
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
@@ -307,13 +313,16 @@ static void glps_touch_callback(size_t window_id, int id, double touch_x,
     }
 }
 
-int initialize()
+static bool ensure_glps_initialized(void)
 {
+    if (platform_ctx.glps_initialized)
+        return true;
+
     platform_ctx.wm = glps_wm_init();
     if (!platform_ctx.wm)
     {
         LOG_CRITICAL("Failed to initialize GLPS' window manager");
-        return 0;
+        return false;
     }
 
     glps_wm_set_mouse_move_callback(platform_ctx.wm, glps_mouse_move_callback, NULL);
@@ -322,13 +331,30 @@ int initialize()
     glps_wm_set_keyboard_callback(platform_ctx.wm, glps_keyboard_callback, NULL);
     glps_wm_set_touch_callback(platform_ctx.wm, glps_touch_callback, NULL);
 
+    if (platform_ctx.frame_update_callback)
+    {
+        glps_wm_window_set_frame_update_callback(platform_ctx.wm, 
+            platform_ctx.frame_update_callback, 
+            platform_ctx.frame_update_data);
+    }
+
+    platform_ctx.glps_initialized = true;
     platform_ctx.frame_rendered = false;
 
+    return true;
+}
+
+int initialize()
+{
+    platform_ctx.frame_rendered = false;
     return 1;
 }
 
 size_t create_window(const char *title, int x, int y, int width, int height)
 {
+    if (!ensure_glps_initialized())
+        return 0;
+
     size_t window_id = glps_wm_window_create(platform_ctx.wm, title, x, y, width, height);
 
     if (!platform_ctx.has_primary_window)
@@ -349,17 +375,27 @@ size_t create_window(const char *title, int x, int y, int width, int height)
 
 void make_context_current(size_t window_id)
 {
+    if (!ensure_glps_initialized())
+        return;
     glps_wm_set_window_ctx_curr(platform_ctx.wm, window_id);
 }
 
 void get_window_size(size_t window_id, int *window_width, int *window_height)
 {
+    if (!ensure_glps_initialized())
+        return;
     glps_wm_window_get_dimensions(platform_ctx.wm, window_id, window_width, window_height);
 }
 
 void set_window_update_callback(void (*callback)(size_t window_id, void *data), void *data)
 {
-    glps_wm_window_set_frame_update_callback(platform_ctx.wm, callback, data);
+    platform_ctx.frame_update_callback = callback;
+    platform_ctx.frame_update_data = data;
+
+    if (platform_ctx.glps_initialized && platform_ctx.wm)
+    {
+        glps_wm_window_set_frame_update_callback(platform_ctx.wm, callback, data);
+    }
 }
 
 void request_window_update(size_t window_id)
@@ -409,6 +445,7 @@ void shutdown()
         platform_ctx.wm = NULL;
         platform_ctx.primary_window_id = 0;
         platform_ctx.has_primary_window = false;
+        platform_ctx.glps_initialized = false;
         return;
     }
 
@@ -416,6 +453,7 @@ void shutdown()
     platform_ctx.wm = NULL;
     platform_ctx.primary_window_id = 0;
     platform_ctx.has_primary_window = false;
+    platform_ctx.glps_initialized = false;
 }
 
 #ifdef AROMA_HAS_VULKAN
@@ -443,11 +481,15 @@ static const char **glps_get_vulkan_instance_extensions(uint32_t *count_out)
 
 static void *glps_get_native_window_ptr(size_t window_id)
 {
+    if (!ensure_glps_initialized())
+        return NULL;
     return glps_wm_window_get_native_ptr(platform_ctx.wm, window_id);
 }
 
 static void *glps_get_display()
 {
+    if (!ensure_glps_initialized())
+        return NULL;
     return glps_wm_get_display(platform_ctx.wm);
 }
 

@@ -148,7 +148,6 @@ void aroma_ui_android_intent_impl(int action, const char *uri, const char *type,
     LOG_WARNING("Android Intent called on non-Android platform");
 #endif
 }
-
 bool aroma_ui_init_impl(void)
 {
     if (g_ui_initialized)
@@ -186,10 +185,6 @@ bool aroma_ui_init_impl(void)
         g_window_drawlists[i] = NULL;
     }
 
-    if (platform && platform->set_window_update_callback)
-    {
-        platform->set_window_update_callback(window_update_callback, NULL);
-    }
 
     g_running = true;
     g_ui_initialized = true;
@@ -342,6 +337,12 @@ AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int heigh
 
     aroma_event_set_root(window);
 
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->set_window_update_callback)
+    {
+        platform->set_window_update_callback(window_update_callback, NULL);
+    }
+
     LOG_INFO("Window %d created: title='%s', size=%dx%d", idx, title, width, height);
 
     aroma_node_invalidate(window);
@@ -373,7 +374,7 @@ void aroma_ui_destroy_window_impl(AromaWindow *window)
                 }
             }
 
-            aroma_window_destroy((AromaNode *)g_windows[i].root_node);
+            __destroy_node((AromaNode *)g_windows[i].root_node);
 
             if (g_window_drawlists[i])
             {
@@ -388,6 +389,13 @@ void aroma_ui_destroy_window_impl(AromaWindow *window)
                         remaining * sizeof(AromaWindowHandle));
                 memmove(&g_window_drawlists[i], &g_window_drawlists[i + 1],
                         remaining * sizeof(AromaDrawList *));
+            }
+            else
+            {
+                g_windows[i].window = NULL;
+                g_windows[i].root_node = NULL;
+                g_windows[i].window_id = 0;
+                g_windows[i].is_active = false;
             }
 
             g_window_count--;
@@ -740,6 +748,7 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
         }
     }
 }
+
 static void window_update_callback(size_t window_id, void *data)
 {
     (void)data;
@@ -853,7 +862,7 @@ void aroma_ui_set_use_surfaceless(bool use_surfaceless)
 
 void aroma_ui_read_pixels(AromaWindow *window, void *buffer, int width, int height)
 {
-    if (!window)
+    if (!window || !buffer || width <= 0 || height <= 0)
         return;
 
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
