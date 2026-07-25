@@ -1,4 +1,3 @@
-#define AROMA_HAS_VULKAN
 #include "aroma.h"
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,3 +1,5 @@
+find_package(Freetype REQUIRED)
+
 add_executable(aroma_tests
     test_main.c
     test_aroma_slab_alloc.c
@@ -10,6 +12,7 @@ target_link_libraries(aroma_tests aroma)
 
 target_include_directories(aroma_tests 
     PRIVATE ${CMAKE_SOURCE_DIR}/include
+    PRIVATE ${CMAKE_SOURCE_DIR}/src/
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
