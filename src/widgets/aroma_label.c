@@ -26,6 +26,9 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_LABEL_TEXT_MAX 96 
 typedef struct   AromaLabel {
@@ -76,6 +79,13 @@ AromaNode* aroma_label_create(AromaNode* parent, const char* text, int x, int y,
         LOG_ERROR("Invalid label parameters");
         return NULL;
     }
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+#endif
+
 
     AromaLabel* label = (AromaLabel*)aroma_widget_alloc(sizeof(AromaLabel));
     if (!label) return NULL;

@@ -28,6 +28,9 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_MENU_MAX_ITEMS 32
 
@@ -73,6 +76,14 @@ static bool __menu_handle_event(AromaEvent* event, void* user_data)
 AromaNode* aroma_menu_create(AromaNode* parent, int x, int y)
 {
     if (!parent) return NULL;
+
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+#endif
+
     AromaMenu* menu = (AromaMenu*)aroma_widget_alloc(sizeof(AromaMenu));
     if (!menu) return NULL;
 

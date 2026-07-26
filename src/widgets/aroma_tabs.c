@@ -12,6 +12,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include "aroma_animation.h"
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_TABS_CONTENT_MAX 8
 #define AROMA_TABS_GAP 8
@@ -180,6 +183,14 @@ AromaNode* aroma_tabs_create(AromaNode* parent, int x, int y, int width, int hei
                              const char** labels, int count)
 {
     if (!parent || !labels || count <= 0) return NULL;
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaTabs* tabs = (AromaTabs*)aroma_widget_alloc(sizeof(AromaTabs));
     if (!tabs) return NULL;

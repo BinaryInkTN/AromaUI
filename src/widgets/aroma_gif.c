@@ -7,6 +7,9 @@
 #include "aroma_time.h"
 #include "backends/graphics/utils/stb_image.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 typedef struct   AromaGif {
     AromaRect rect;
@@ -139,11 +142,20 @@ AromaNode* aroma_gif_create_from_memory(AromaNode* parent, unsigned char* data, 
 AromaNode* aroma_gif_create(AromaNode* parent, const char* gif_path, int x, int y, int width, int height) {
     if (!parent || !gif_path) return NULL;
 
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
+
+
     FILE* f = fopen(gif_path, "rb");
     if (!f) {
         LOG_ERROR("Could not open GIF file: %s", gif_path);
         return NULL;
     }
+
 
     fseek(f, 0, SEEK_END);
     long size = ftell(f);

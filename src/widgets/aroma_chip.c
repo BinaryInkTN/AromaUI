@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include <stdlib.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define MD3_CHIP_HEIGHT 32
 #define MD3_CHIP_MIN_WIDTH 48
@@ -253,7 +256,10 @@ AromaNode *aroma_chip_create(AromaNode *parent, int x, int y, const char *label,
         return NULL;
 
     memset(chip, 0, sizeof(AromaChip));
-
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+#endif
     AromaTheme theme = aroma_theme_get_global();
 
     chip->rect.x = x;

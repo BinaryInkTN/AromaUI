@@ -9,6 +9,9 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_DIALOG_ACTION_MAX 3
 
@@ -19,7 +22,7 @@ typedef struct
     void *user_data;
 } AromaDialogAction;
 
-typedef struct  AromaDialog
+typedef struct AromaDialog
 {
     AromaRect rect;
     int centered_x;
@@ -157,10 +160,14 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
 {
     if (!parent || width <= 0 || height <= 0)
         return NULL;
-
+#ifdef __ANDROID__
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+#endif
     AromaDialog *dlg = (AromaDialog *)aroma_widget_alloc(sizeof(AromaDialog));
     if (!dlg)
         return NULL;
+
     memset(dlg, 0, sizeof(AromaDialog));
 
     dlg->rect.width = width;

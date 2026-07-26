@@ -13,6 +13,9 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_TEXTBOX_PADDING_X 8
 
@@ -174,6 +177,16 @@ AromaNode *aroma_textbox_create(AromaNode *parent, int x, int y, int width, int 
         LOG_ERROR("Invalid textbox parameters\n");
         return NULL;
     }
+
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
+
 
     AromaTextbox *data = (AromaTextbox *)aroma_widget_alloc(sizeof(AromaTextbox));
     if (!data)

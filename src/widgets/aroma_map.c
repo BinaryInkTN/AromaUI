@@ -33,6 +33,9 @@
 #ifndef CLOCK_REALTIME
 #define CLOCK_REALTIME 0
 #endif
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 static bool __map_event_handler_global(AromaEvent *event, void *user_data);
 
@@ -2028,6 +2031,14 @@ void aroma_map_geocode_search(AromaNode *node, const char *query,
 
 AromaNode *aroma_map_create(AromaNode *parent, int x, int y, int width, int height)
 {
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
+
 #ifndef __EMSCRIPTEN__
     if (!curl_initialized)
     {

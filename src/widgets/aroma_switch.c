@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 AromaNode* aroma_switch_create(AromaNode* parent, int x, int y, int width, int height, bool initial_state)
 {
@@ -15,6 +18,14 @@ AromaNode* aroma_switch_create(AromaNode* parent, int x, int y, int width, int h
         LOG_ERROR("Cannot create switch without parent\n");
         return NULL;
     }
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaSwitch* data = (AromaSwitch*)aroma_widget_alloc(sizeof(AromaSwitch));
     if (!data) {

@@ -1,111 +1,135 @@
-#include "aroma.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <aroma.h>
+#include <aroma_animation.h>
+#include <unistd.h>
 
-typedef struct
-{
-    AromaNode *greeting_label;
-    AromaNode *root_container;
-    AromaNode *btn_click;
-    char greeting_text[64];
-    int click_count;
-    AromaFont *title_font;
-    AromaFont *button_font;
-    AromaWindow *window;
-} AppState;
+static bool g_sidebar_open = false;
 
-static bool on_click(AromaNode *btn, void *data)
+void open_sidebar(void *user_data)
 {
-    (void)btn;
-    AppState *state = (AppState *)data;
-    state->click_count++;
-    snprintf(state->greeting_text, sizeof(state->greeting_text),
-             "Hello, World! (%d)", state->click_count);
-    aroma_label_set_text(state->greeting_label, state->greeting_text);
-    return true;
+    AromaNode *sidebar = (AromaNode *)user_data;
+    if (!sidebar)
+        return;
+
+    if (!g_sidebar_open)
+    {
+        AromaAnimation *anim = aroma_animation_start(sidebar, AROMA_ANIM_SLIDE_X, -150.0f, 10.0f, 400);
+        aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+        g_sidebar_open = true;
+    }
+    else
+    {
+        AromaAnimation *anim = aroma_animation_start(sidebar, AROMA_ANIM_SLIDE_X, 10.0f, -150.0f, 400);
+        aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+        g_sidebar_open = false;
+    }
 }
 
-int main(int argc, char **argv)
+int main()
 {
-    if (!aroma_ui_init())
-    {
-        printf("Failed to initialise AromaUI\n");
-        return 1;
-    }
-
+    aroma_ui_init();
+    aroma_animation_manager_init();
     AromaTheme theme = aroma_theme_create_material_blue_dark();
     aroma_ui_set_theme(&theme);
-
-    AppState state = {0};
-    state.window = aroma_ui_create_window("AromaUI Hello World",
-                                          aroma_android_dp_to_px(400),
-                                          aroma_android_dp_to_px(600));
-    if (!state.window)
-    {
-        printf("Failed to create window\n");
-        aroma_ui_shutdown();
-        return 1;
-    }
-
-    aroma_window_set_fullscreen((AromaNode *)state.window, true);
-
-    state.title_font = aroma_font_create_from_memory(
-        aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, aroma_android_sp_to_px(36));
-    state.button_font = aroma_font_create_from_memory(
-        aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, aroma_android_sp_to_px(20));
-
-    if (!state.title_font || !state.button_font)
-    {
-        printf("Failed to load fonts\n");
-        aroma_ui_destroy_window(state.window);
-        aroma_ui_shutdown();
-        return 1;
-    }
-
-    int w, h;
-    aroma_window_get_size(state.window, &w, &h);
-
-    state.root_container = aroma_ui_container(
-        (AromaNode *)state.window, 0, 0, w, h,
-        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN,
+    
+    // Get screen size
+    int screen_width, screen_height;
+    AromaWindow *window = aroma_ui_create_window("Map Example", 400, 600);
+    aroma_window_get_size(window, &screen_width, &screen_height);
+    
+    // Calculate scaling factors based on screen size
+    float scale_x = screen_width / 400.0f;
+    float scale_y = screen_height / 600.0f;
+    float scale = (scale_x < scale_y) ? scale_x : scale_y; // Use the smaller scale to fit
+    
+    // Scale font sizes
+    int text_font_size = (int)(16 * scale);
+    int icon_font_size = (int)(24 * scale);
+    
+    // Ensure minimum font sizes
+    if (text_font_size < 12) text_font_size = 12;
+    if (icon_font_size < 16) icon_font_size = 16;
+    
+    AromaFont *text_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, text_font_size);
+    AromaFont *icon_font = aroma_font_create_from_memory(icon_ttf, icon_ttf_len, icon_font_size);
+    
+    // Scale sidebar dimensions
+    int sidebar_width = (int)(150 * scale);
+    int sidebar_height = (int)(screen_height * 0.7f); // 70% of screen height
+    int sidebar_x = -sidebar_width; // Start off screen
+    int sidebar_y = (int)(60 * scale);
+    
+    // Scale button size
+    int button_size = (int)(34 * scale);
+    int button_x = (int)(10 * scale);
+    int button_y = (int)(40 * scale);
+    
+    // Create containers that fill the screen
+    AromaNode *container1 = aroma_ui_container(
+        (AromaNode *)window, 0, 0, screen_width, screen_height, 
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, 
         AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
-    aroma_node_set_gap(state.root_container, aroma_android_dp_to_px(32));
+    
+    AromaNode *container2 = aroma_ui_container(
+        (AromaNode *)window, 0, 0, screen_width, screen_height, 
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, 
+        AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
+    
+    AromaNode *container3 = aroma_ui_container(
+        (AromaNode *)window, 0, 0, screen_width, screen_height, 
+        AROMA_LAYOUT_MODE_FLEX, AROMA_FLEX_COLUMN, 
+        AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
 
-    state.click_count = 0;
-    snprintf(state.greeting_text, sizeof(state.greeting_text), "Hello, World! (0)");
-    state.greeting_label = aroma_ui_label(
-        state.root_container,
-        state.greeting_text, 0, 0,
-        LABEL_STYLE_LABEL_LARGE, state.title_font);
+    const char *labels[] = {"Page 1", "Page 2", "Page 3"};
+    AromaNode *sidebar = aroma_ui_sidebar(
+        (AromaNode *)window,
+        sidebar_x, sidebar_y, sidebar_width, sidebar_height,
+        labels, 3,
+        NULL, NULL,
+        text_font);
 
-    int btn_width = aroma_android_dp_to_px(160);
-    int btn_height = aroma_android_dp_to_px(48);
-    state.btn_click = aroma_ui_button(
-        state.root_container,
-        "Click me!", 0, 0, btn_width, btn_height,
-        on_click, &state, state.button_font);
+    AromaNode *sidebar_open_button = aroma_ui_iconbutton(
+        (AromaNode *)window,
+        AROMA_ICON_MENU,
+        button_x, button_y, button_size,
+        ICON_BUTTON_STANDARD,
+        open_sidebar, sidebar, icon_font);
+    
+    // Open sidebar initially
+    open_sidebar(sidebar);
+    
+    // Create labels with scaled fonts
+    AromaNode *label1 = aroma_ui_label(
+        (AromaNode *)container1, "Content for Page 1", 0, 0, 
+        LABEL_STYLE_LABEL_LARGE, text_font);
+    
+    AromaNode *label2 = aroma_ui_label(
+        (AromaNode *)container2, "Content for Page 2", 0, 0, 
+        LABEL_STYLE_LABEL_LARGE, text_font);
+    
+    AromaNode *label3 = aroma_ui_label(
+        (AromaNode *)container3, "Content for Page 3", 0, 0, 
+        LABEL_STYLE_LABEL_LARGE, text_font);
+
+    AromaNode *tab1_nodes[] = {container1};
+    AromaNode *tab2_nodes[] = {container2};
+    AromaNode *tab3_nodes[] = {container3};
+
+    aroma_sidebar_set_content(sidebar, 0, tab1_nodes, 1);
+    aroma_sidebar_set_content(sidebar, 1, tab2_nodes, 1);
+    aroma_sidebar_set_content(sidebar, 2, tab3_nodes, 1);
 
     while (aroma_ui_is_running())
     {
         aroma_ui_process_events();
-        aroma_ui_render(state.window);
+        aroma_ui_render(window);
+        usleep(16000);
     }
 
-    if (state.btn_click)
-        aroma_button_destroy(state.btn_click);
-    if (state.greeting_label)
-        aroma_label_destroy(state.greeting_label);
-    if (state.root_container)
-        aroma_container_destroy(state.root_container);
-
-    if (state.title_font)
-        aroma_font_destroy(state.title_font);
-    if (state.button_font)
-        aroma_font_destroy(state.button_font);
-
-    aroma_ui_destroy_window(state.window);
+    aroma_font_destroy(text_font);
+    aroma_font_destroy(icon_font);
+    aroma_ui_destroy_window(window);
     aroma_ui_shutdown();
-
+    
     return 0;
 }
 

@@ -27,6 +27,9 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_TOOLTIP_TEXT_MAX 128
 
@@ -45,6 +48,14 @@ typedef struct   AromaTooltip {
 AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int y, AromaTooltipPosition position)
 {
     if (!parent || !text) return NULL;
+
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+#endif
+
     AromaTooltip* tip = (AromaTooltip*)aroma_widget_alloc(sizeof(AromaTooltip));
     if (!tip) return NULL;
 

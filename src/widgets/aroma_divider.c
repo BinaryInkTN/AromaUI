@@ -27,6 +27,9 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 typedef struct   AromaDivider {
     AromaRect rect;
@@ -44,7 +47,11 @@ AromaNode* aroma_divider_create(
     AromaDividerOrientation orientation)
 {
     if (!parent || length <= 0) return NULL;
-
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    length = aroma_android_dp_to_px(length);
+#endif
     AromaDivider* divider = aroma_widget_alloc(sizeof(AromaDivider));
     if (!divider) return NULL;
 

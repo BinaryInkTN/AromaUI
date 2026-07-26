@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_RADIO_LABEL_MAX 64
 #define AROMA_RADIO_GROUP_MAX_ITEMS 32
@@ -159,6 +162,16 @@ AromaNode* aroma_radio_button_create(AromaNode* parent, AromaRadioGroup* group,
         LOG_ERROR("Invalid radio button parameters");
         return NULL;
     }
+
+
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaRadioButton* data = (AromaRadioButton*)aroma_widget_alloc(sizeof(AromaRadioButton));
     if (!data) {

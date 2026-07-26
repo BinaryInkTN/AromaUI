@@ -2,6 +2,9 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "core/aroma_slab_alloc.h"
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 void aroma_canvas_draw(AromaNode* node, size_t window_id)
 {
@@ -67,6 +70,13 @@ AromaNode* aroma_canvas_create(AromaNode* parent, int x, int y, int width, int h
         LOG_ERROR("Failed to allocate memory for canvas");
         return NULL;
         }
+
+        #ifdef __ANDROID__
+        x = aroma_android_dp_to_px(x);
+        y = aroma_android_dp_to_px(y);
+        width = aroma_android_dp_to_px(width);
+        height = aroma_android_dp_to_px(height);
+        #endif
 
         AromaNode* canvas_node = (AromaNode*)__add_child_node(NODE_TYPE_WIDGET, parent, canvas);
         if (!canvas_node)

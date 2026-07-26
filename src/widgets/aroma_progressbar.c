@@ -4,6 +4,9 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 typedef struct   AromaProgressBar {
     AromaRect rect;
@@ -24,6 +27,14 @@ static void __progressbar_update_fill(AromaProgressBar* bar)
 AromaNode* aroma_progressbar_create(AromaNode* parent, int x, int y, int width, int height, AromaProgressType type)
 {
     if (!parent || width <= 0 || height <= 0) return NULL;
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaProgressBar* bar = (AromaProgressBar*)aroma_widget_alloc(sizeof(AromaProgressBar));
     if (!bar) return NULL;

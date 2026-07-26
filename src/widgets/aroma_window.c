@@ -29,6 +29,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
+
 static bool window_resize_handler(AromaEvent* event, void* user_data) {
     AromaNode* window_node = (AromaNode*)user_data;
     if (event->event_type == EVENT_TYPE_WINDOW_RESIZE) {
@@ -48,6 +52,12 @@ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int h
     {
         return NULL;
     }
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+#endif
     
     AromaNode* scene_node = (AromaNode*) __create_node(NODE_TYPE_ROOT, NULL, node);
     if(!scene_node)

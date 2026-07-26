@@ -11,6 +11,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_SIDEBAR_CONTENT_MAX 8
 
@@ -207,6 +210,14 @@ AromaNode *aroma_sidebar_create(AromaNode *parent, int x, int y, int width, int 
 {
     if (!parent || !labels || count <= 0)
         return NULL;
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaSidebar *sidebar = (AromaSidebar *)aroma_widget_alloc(sizeof(AromaSidebar));
     if (!sidebar)

@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include <stdlib.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define MAX_ROWS 100
 #define MAX_COLS 10
@@ -59,6 +62,14 @@ static bool __table_handle_event(AromaEvent* event, void* user_data) {
 AromaNode* aroma_table_create(AromaNode* parent, int x, int y, int width, int height, int num_cols) {
     if (!parent || num_cols <= 0 || num_cols > MAX_COLS) return NULL;
     
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
+
     AromaTableInternal* t = (AromaTableInternal*)aroma_widget_alloc(sizeof(AromaTableInternal));
     if (!t) return NULL;
     

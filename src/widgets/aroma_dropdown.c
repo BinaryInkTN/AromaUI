@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_MAX_DROPDOWN_OVERLAYS 32
 
@@ -72,6 +75,13 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
         LOG_ERROR("Invalid dropdown parameters");
         return NULL;
     }
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaDropdown* dd = (AromaDropdown*)aroma_widget_alloc(sizeof(AromaDropdown));
     if (!dd) {

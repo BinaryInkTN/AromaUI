@@ -5,6 +5,9 @@
 #include "aroma_timer.h"
 #include "aroma_time.h"
 #include <math.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 typedef struct   {
     AromaRect rect;
@@ -74,6 +77,15 @@ static void loading_timer_cb(void* user_data) {
 }
 
 AromaNode* aroma_loading_create(AromaNode* parent, int x, int y, int radius, int thickness, uint32_t color) {
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+radius = aroma_android_dp_to_px(radius);
+thickness = aroma_android_dp_to_px(thickness);
+#endif
+
+
     AromaLoading* loading = (AromaLoading*)aroma_widget_alloc(sizeof(AromaLoading));
     if (!loading) return NULL;
 

@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 static void __slider_request_redraw(void* user_data)
 {
@@ -23,6 +26,14 @@ AromaNode* aroma_slider_create(AromaNode* parent, int x, int y, int width, int h
         LOG_ERROR("Invalid slider parameters\n");
         return NULL;
     }
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaSlider* data = (AromaSlider*)aroma_widget_alloc(sizeof(AromaSlider));
     if (!data) {

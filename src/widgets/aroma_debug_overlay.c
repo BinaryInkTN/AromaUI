@@ -31,6 +31,9 @@
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 struct AromaDebugOverlay
 {
@@ -166,6 +169,13 @@ AromaNode *aroma_debug_overlay_create(AromaNode *parent, int x, int y, int width
 {
     if (!parent)
         return NULL;
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+#endif
     AromaDebugOverlay *overlay = (AromaDebugOverlay *)aroma_widget_alloc(sizeof(AromaDebugOverlay));
     if (!overlay)
         return NULL;

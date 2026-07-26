@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include <stddef.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_ICON_TEXT_MAX 16
 
@@ -49,8 +52,22 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
         return false;
 
     AromaRect r = btn->rect;
-    bool in_bounds = (event->data.mouse.x >= r.x && event->data.mouse.x <= r.x + r.width &&
-                      event->data.mouse.y >= r.y && event->data.mouse.y <= r.y + r.height);
+    
+    // Get coordinates based on event type
+    int x, y;
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN || 
+        event->event_type == EVENT_TYPE_TOUCH_UP || 
+        event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        x = event->data.touch.x;
+        y = event->data.touch.y;
+    } else {
+        x = event->data.mouse.x;
+        y = event->data.mouse.y;
+    }
+    
+    bool in_bounds = (x >= r.x && x <= r.x + r.width &&
+                      y >= r.y && y <= r.y + r.height);
+                      
     switch (event->event_type)
     {
     case EVENT_TYPE_MOUSE_ENTER:
@@ -58,13 +75,16 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
         aroma_node_invalidate(event->target_node);
         aroma_ui_request_redraw(NULL);
         return true;
+        
     case EVENT_TYPE_MOUSE_EXIT:
         btn->is_hovered = false;
         btn->is_pressed = false;
         aroma_node_invalidate(event->target_node);
         aroma_ui_request_redraw(NULL);
         return false;
+        
     case EVENT_TYPE_MOUSE_CLICK:
+    case EVENT_TYPE_TOUCH_DOWN:
         if (in_bounds)
         {
             btn->is_pressed = true;
@@ -73,7 +93,9 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
             return true;
         }
         break;
+        
     case EVENT_TYPE_MOUSE_RELEASE:
+    case EVENT_TYPE_TOUCH_UP:
         if (btn->is_pressed)
         {
             btn->is_pressed = false;
@@ -84,6 +106,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
             return in_bounds;
         }
         break;
+        
     default:
         break;
     }
@@ -105,6 +128,12 @@ AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int
 {
     if (!parent || size <= 0)
         return NULL;
+
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    size = aroma_android_dp_to_px(size);
+#endif
 
     AromaIconButton *btn = (AromaIconButton *)aroma_widget_alloc(sizeof(AromaIconButton));
     if (!btn)
@@ -153,10 +182,16 @@ AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int
     }
     aroma_node_set_draw_cb(node, aroma_iconbutton_draw);
 
+    // Subscribe to mouse events
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __iconbutton_handle_event, NULL, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __iconbutton_handle_event, NULL, 70);
+    
+    // Subscribe to touch events for Android
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, __iconbutton_handle_event, NULL, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, __iconbutton_handle_event, NULL, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_MOVE, __iconbutton_handle_event, NULL, 60);
 
 #ifdef ESP32
     aroma_node_invalidate(node);

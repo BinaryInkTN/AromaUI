@@ -2,6 +2,9 @@
 #include "core/aroma_node.h"
 #include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "widgets/aroma_button.h"
 #include "core/aroma_style.h"
@@ -74,6 +77,13 @@ AromaNode* aroma_button_create(AromaNode* parent, const char* label, int x, int 
         LOG_ERROR("Invalid button parameters");
         return NULL;
     }
+
+    #ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+    #endif
 
     AromaButton* button = (AromaButton*)aroma_widget_alloc(sizeof(AromaButton));
     if (!button)

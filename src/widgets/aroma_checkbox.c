@@ -8,6 +8,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_CHECKBOX_LABEL_MAX 64
 
@@ -73,6 +76,13 @@ AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
         LOG_ERROR("Invalid checkbox parameters");
         return NULL;
     }
+
+    #ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+    #endif
 
     AromaCheckbox* data = (AromaCheckbox*)aroma_widget_alloc(sizeof(AromaCheckbox));
     if (!data) {

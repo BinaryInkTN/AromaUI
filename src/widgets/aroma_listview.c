@@ -10,6 +10,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_LIST_MAX_ITEMS 12
 #define AROMA_LIST_ITEM_PADDING 12
@@ -152,16 +155,6 @@ static int clamped_scroll_y(const AromaListViewInternal *list)
     if (scroll_y < 0)
         scroll_y = 0;
 
-    /* Upper bound needs the real viewport height, which is NOT
-     * list->rect.height -- that field gets overwritten to equal total
-     * content height by update_content_height() on every mutation, so
-     * content_h - rect.height is always 0 and can't clamp anything.
-     * viewport_height is set at aroma_listview_create() from the
-     * caller's height argument and can be kept in sync afterward via
-     * aroma_listview_set_viewport_height() (e.g. if the scroll
-     * container resizes the visible area). If it's still 0 (should
-     * not happen post-create, but guarded regardless) the upper bound
-     * is skipped rather than clamping to a bogus max of 0. */
     if (list->viewport_height > 0)
     {
         int content_h = total_content_height(list);
@@ -306,6 +299,13 @@ AromaNode *aroma_listview_create(AromaNode *parent, int x, int y,
 {
     if (!parent || width <= 0 || height <= 0)
         return NULL;
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     AromaListViewInternal *list =
         (AromaListViewInternal *)aroma_widget_alloc(sizeof(AromaListViewInternal));
@@ -709,22 +709,11 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
     AromaTheme theme = aroma_theme_get_global();
     int width = list->rect.width;
 
-    /* clamped_scroll_y() keeps layout within valid scroll bounds: no
-     * overshoot past the top (scroll_y < 0), and no overshoot past
-     * the bottom of content as long as viewport_height has been set
-     * (via aroma_listview_create()'s height arg, or updated later
-     * with aroma_listview_set_viewport_height()). hit_test() uses the
-     * same clamp so taps stay aligned with what's drawn. */
     int scroll_y = clamped_scroll_y(list);
 
     int current_y = list->rect.y - scroll_y;
     int primary_lh = aroma_font_get_line_height(list->font);
 
-    /* Clip drawing to the listview's own bounds so items scrolled
-     * above or below the visible window (or any item whose computed
-     * position falls outside rect due to scroll offset) never paint
-     * outside the widget. Falls back to unclipped drawing on backends
-     * that haven't implemented graphics_set_clip / graphics_clear_clip. */
     bool clipping = gfx->graphics_set_clip != NULL && gfx->graphics_clear_clip != NULL;
     if (clipping)
         gfx->graphics_set_clip(list->rect.x, list->rect.y,
@@ -737,10 +726,6 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
     {
         int ih = item_height_at(list, (int)i);
 
-        /* Cull items fully above or fully below the visible window.
-         * Layout is strictly top-to-bottom with monotonically
-         * increasing current_y, so once an item starts at or past
-         * visible_bottom every remaining item is also below it. */
         if (current_y + ih <= visible_top)
         {
             current_y += ih;

@@ -9,6 +9,10 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include <stdlib.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
+
 
 typedef struct   AromaCard
 {
@@ -141,6 +145,13 @@ AromaNode *aroma_card_create(AromaNode *parent, int x, int y, int width, int hei
     aroma_node_set_justify_content(node, 0);
     aroma_node_set_align_items(node, 0);
 
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
+    
 AromaCard *card = (AromaCard *)calloc(1, sizeof(AromaCard));
     if (!card)
         return node;

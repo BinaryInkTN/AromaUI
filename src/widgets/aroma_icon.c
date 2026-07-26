@@ -28,6 +28,10 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
+
 
 #define AROMA_ICON_TEXT_MAX 16
 #define AROMA_ICON_PATH_MAX 64
@@ -71,6 +75,14 @@ static void __icon_cleanup_texture(AromaIcon* icon) {
 AromaNode* aroma_icon_create(AromaNode* parent, int x, int y, int size) {
     if (!parent) return NULL;
     
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+size = aroma_android_dp_to_px(size);
+#endif
+
     AromaIcon* icon = (AromaIcon*)aroma_widget_alloc(sizeof(AromaIcon));
     if (!icon) return NULL;
     

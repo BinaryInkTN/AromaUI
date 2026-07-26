@@ -13,6 +13,10 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include <string.h>
 #include <math.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
+
 
 #define SCROLLBAR_WIDTH 4
 #define SCROLLBAR_MIN_THUMB 24
@@ -783,6 +787,13 @@ AromaNode *aroma_container_create(AromaNode *parent, int x, int y, int width, in
         LOG_ERROR("Failed to allocate memory for container");
         return NULL;
     }
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
 
     memset(container, 0, sizeof(AromaContainer));
     container->rect.x = x;

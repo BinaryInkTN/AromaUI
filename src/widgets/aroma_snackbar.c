@@ -8,6 +8,11 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include <limits.h>
+
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
+
 #define AROMA_SNACKBAR_TEXT_MAX 128
 #define SNACKBAR_HEIGHT 48
 #define SNACKBAR_MARGIN 16

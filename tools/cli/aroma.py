@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 
 import argparse
+import atexit
 import getpass
 import json
 import os
 import platform
 import re
+import select
 import shutil
 import ssl
 import stat
 import subprocess
 import sys
+import termios
 import time
+import tty
 import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
@@ -62,16 +66,250 @@ SDK_SEARCH_PATHS = [
     "C:\\Android\\Sdk",
 ]
 
-# Packages matching these prefixes are large (several hundred MB to 1GB+)
-# and need substantially more time than the default package timeout.
-# System images in particular routinely exceed 600s on anything but a very
-# fast connection, which is what caused the original timeout failures.
 LARGE_PACKAGE_PREFIXES = (
     "system-images;",
 )
 
 DEFAULT_PACKAGE_TIMEOUT = 600
 LARGE_PACKAGE_TIMEOUT = 1800
+
+_EMULATOR_PROCESS = None
+_EMULATOR_SERIAL = None
+_ORIGINAL_TERMIOS = None
+_TERM_SIZE = (80, 24)
+
+
+def get_terminal_size() -> Tuple[int, int]:
+    global _TERM_SIZE
+    try:
+        size = os.get_terminal_size()
+        _TERM_SIZE = (size.columns, size.lines)
+    except (OSError, ValueError):
+        pass
+    return _TERM_SIZE
+
+
+def term_width() -> int:
+    return get_terminal_size()[0]
+
+
+def term_height() -> int:
+    return get_terminal_size()[1]
+
+
+class TUI:
+    @staticmethod
+    def clear_screen():
+        sys.stdout.write('\033[2J\033[H')
+        sys.stdout.flush()
+    
+    @staticmethod
+    def clear_line():
+        sys.stdout.write('\033[2K\r')
+        sys.stdout.flush()
+    
+    @staticmethod
+    def move_cursor(row: int, col: int = 0):
+        sys.stdout.write(f'\033[{row};{col}H')
+        sys.stdout.flush()
+    
+    @staticmethod
+    def hide_cursor():
+        sys.stdout.write('\033[?25l')
+        sys.stdout.flush()
+    
+    @staticmethod
+    def show_cursor():
+        sys.stdout.write('\033[?25h')
+        sys.stdout.flush()
+    
+    @staticmethod
+    def draw_box(top: int, left: int, width: int, height: int, title: str = ""):
+        if width < 4 or height < 2:
+            return
+        
+        box_top = '┌' + '─' * (width - 2) + '┐'
+        if title:
+            title_str = f" {title} "
+            box_top = '┌' + title_str.center(width - 2, '─') + '┐'
+        
+        TUI.move_cursor(top, left)
+        sys.stdout.write(box_top)
+        
+        for i in range(1, height - 1):
+            TUI.move_cursor(top + i, left)
+            sys.stdout.write('│')
+            TUI.move_cursor(top + i, left + width - 1)
+            sys.stdout.write('│')
+        
+        TUI.move_cursor(top + height - 1, left)
+        sys.stdout.write('└' + '─' * (width - 2) + '┘')
+        sys.stdout.flush()
+    
+    @staticmethod
+    def draw_progress_bar(row: int, col: int, width: int, pct: float, label: str = ""):
+        filled = int(width * pct / 100)
+        bar = '█' * filled + '░' * (width - filled)
+        TUI.move_cursor(row, col)
+        sys.stdout.write(f"{label}{bar} {pct:.0f}%")
+        sys.stdout.flush()
+    
+    @staticmethod
+    def draw_header():
+        w = term_width()
+        TUI.move_cursor(1, 0)
+        header = " AromaUI CLI ".center(w, '═')
+        sys.stdout.write(f"\033[1;36m{header}\033[0m")
+        sys.stdout.flush()
+    
+    @staticmethod
+    def draw_footer(text: str = ""):
+        h = term_height()
+        w = term_width()
+        TUI.move_cursor(h, 0)
+        footer = f" {text} ".ljust(w)
+        sys.stdout.write(f"\033[1;30;47m{footer}\033[0m")
+        sys.stdout.flush()
+    
+    @staticmethod
+    def status_line(row: int, message: str, status: str = "", color: str = ""):
+        w = term_width()
+        TUI.move_cursor(row, 0)
+        TUI.clear_line()
+        
+        color_map = {
+            "success": "\033[32m",
+            "error": "\033[31m",
+            "warning": "\033[33m",
+            "info": "\033[36m",
+            "step": "\033[1;34m",
+        }
+        
+        prefix = color_map.get(color, "")
+        suffix = "\033[0m" if prefix else ""
+        
+        if status:
+            line = f"  {prefix}{status}{suffix} {message}"
+        else:
+            line = f"  {message}"
+        
+        line = line[:w - 1]
+        sys.stdout.write(line)
+        sys.stdout.flush()
+    
+    @staticmethod
+    def spinner_frame() -> str:
+        frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        return frames[int(time.time() * 10) % len(frames)]
+    
+    @staticmethod
+    def draw_table(top: int, left: int, headers: List[str], rows: List[List[str]], col_widths: List[int] = None):
+        if not col_widths:
+            col_widths = [max(len(str(cell)) for cell in col) for col in zip(*([headers] + rows))]
+            col_widths = [max(w, len(h)) + 2 for w, h in zip(col_widths, headers)]
+        
+        total_width = sum(col_widths) + len(col_widths) - 1
+        
+        TUI.move_cursor(top, left)
+        line = '┌'
+        for i, w in enumerate(col_widths):
+            line += '─' * w
+            if i < len(col_widths) - 1:
+                line += '┬'
+        line += '┐'
+        sys.stdout.write(line)
+        
+        TUI.move_cursor(top + 1, left)
+        sys.stdout.write('│')
+        for i, header in enumerate(headers):
+            sys.stdout.write(f"\033[1m{header.center(col_widths[i])}\033[0m│")
+        
+        TUI.move_cursor(top + 2, left)
+        line = '├'
+        for i, w in enumerate(col_widths):
+            line += '─' * w
+            if i < len(col_widths) - 1:
+                line += '┼'
+        line += '┤'
+        sys.stdout.write(line)
+        
+        for j, row in enumerate(rows):
+            TUI.move_cursor(top + 3 + j, left)
+            sys.stdout.write('│')
+            for i, cell in enumerate(row):
+                color = ""
+                end = ""
+                if cell == "✓":
+                    color = "\033[32m"
+                    end = "\033[0m"
+                elif cell == "✗":
+                    color = "\033[31m"
+                    end = "\033[0m"
+                sys.stdout.write(f"{color}{str(cell).ljust(col_widths[i])}{end}│")
+        
+        TUI.move_cursor(top + 3 + len(rows), left)
+        line = '└'
+        for i, w in enumerate(col_widths):
+            line += '─' * w
+            if i < len(col_widths) - 1:
+                line += '┴'
+        line += '┘'
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
+
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    
+    @classmethod
+    def disable(cls):
+        for attr in dir(cls):
+            if not attr.startswith('_') and not callable(getattr(cls, attr)):
+                val = getattr(cls, attr)
+                if isinstance(val, str):
+                    setattr(cls, attr, '')
+
+
+class Logger:
+    _verbose = False
+    
+    @classmethod
+    def setup(cls, verbose: bool = False):
+        cls._verbose = verbose
+    
+    @classmethod
+    def step(cls, msg: str):
+        print(f"{Colors.OKBLUE}==>{Colors.ENDC} {Colors.BOLD}{msg}{Colors.ENDC}")
+    
+    @classmethod
+    def success(cls, msg: str):
+        print(f"{Colors.OKGREEN}OK {msg}{Colors.ENDC}")
+    
+    @classmethod
+    def error(cls, msg: str):
+        print(f"{Colors.FAIL}ERROR {msg}{Colors.ENDC}", file=sys.stderr)
+    
+    @classmethod
+    def info(cls, msg: str):
+        if cls._verbose:
+            print(f"{Colors.OKCYAN}INFO {msg}{Colors.ENDC}")
+    
+    @classmethod
+    def warning(cls, msg: str):
+        print(f"{Colors.WARNING}WARN {msg}{Colors.ENDC}")
+    
+    @classmethod
+    def debug(cls, msg: str):
+        if cls._verbose:
+            print(f"{Colors.OKCYAN}DEBUG {msg}{Colors.ENDC}")
 
 
 class DownloadProgress:
@@ -81,7 +319,7 @@ class DownloadProgress:
         self.downloaded = 0
         self.last_report = 0
         self.start_time = time.time()
-        self.width = 40
+        self.width = min(40, term_width() - 30)
     
     def update(self, count: int):
         self.downloaded += count
@@ -92,30 +330,14 @@ class DownloadProgress:
         
         if self.total > 0:
             pct = self.downloaded / self.total
-            filled = int(self.width * pct)
-            bar = '█' * filled + '░' * (self.width - filled)
-            elapsed = now - self.start_time
-            speed = self.downloaded / elapsed if elapsed > 0 else 0
-            speed_str = self._format_size(speed) + "/s"
-            downloaded_str = self._format_size(self.downloaded)
-            total_str = self._format_size(self.total)
-            sys.stdout.write(f"\r{self.desc}: |{bar}| {pct*100:.1f}% {downloaded_str}/{total_str} {speed_str}  ")
+            TUI.draw_progress_bar(3, 2, self.width, pct * 100, f"{self.desc}: ")
         else:
             downloaded_str = self._format_size(self.downloaded)
-            sys.stdout.write(f"\r{self.desc}: {downloaded_str} downloaded  ")
-        sys.stdout.flush()
+            TUI.status_line(3, f"{self.desc}: {downloaded_str} downloaded", status="⏳", color="info")
     
     def finish(self):
-        if self.total > 0:
-            elapsed = time.time() - self.start_time
-            speed = self.total / elapsed if elapsed > 0 else 0
-            speed_str = self._format_size(speed) + "/s"
-            total_str = self._format_size(self.total)
-            sys.stdout.write(f"\r{self.desc}: |{'█' * self.width}| 100.0% {total_str}/{total_str} {speed_str}  \n")
-        else:
-            total_str = self._format_size(self.downloaded)
-            sys.stdout.write(f"\r{self.desc}: {total_str} downloaded  \n")
-        sys.stdout.flush()
+        TUI.status_line(3, f"{self.desc}: complete", status="✓", color="success")
+        sys.stdout.write('\n')
     
     def _format_size(self, size: float) -> str:
         for unit in ['B', 'KB', 'MB', 'GB']:
@@ -210,60 +432,6 @@ def resolve_value(key: str, config: Dict[str, Any], default: Any = None) -> Any:
     return value
 
 
-class Colors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    
-    @classmethod
-    def disable(cls):
-        for attr in dir(cls):
-            if not attr.startswith('_') and not callable(getattr(cls, attr)):
-                val = getattr(cls, attr)
-                if isinstance(val, str):
-                    setattr(cls, attr, '')
-
-
-class Logger:
-    _verbose = False
-    
-    @classmethod
-    def setup(cls, verbose: bool = False):
-        cls._verbose = verbose
-    
-    @classmethod
-    def step(cls, msg: str):
-        print(f"{Colors.OKBLUE}==>{Colors.ENDC} {Colors.BOLD}{msg}{Colors.ENDC}")
-    
-    @classmethod
-    def success(cls, msg: str):
-        print(f"{Colors.OKGREEN}OK {msg}{Colors.ENDC}")
-    
-    @classmethod
-    def error(cls, msg: str):
-        print(f"{Colors.FAIL}ERROR {msg}{Colors.ENDC}", file=sys.stderr)
-    
-    @classmethod
-    def info(cls, msg: str):
-        if cls._verbose:
-            print(f"{Colors.OKCYAN}INFO {msg}{Colors.ENDC}")
-    
-    @classmethod
-    def warning(cls, msg: str):
-        print(f"{Colors.WARNING}WARN {msg}{Colors.ENDC}")
-    
-    @classmethod
-    def debug(cls, msg: str):
-        if cls._verbose:
-            print(f"{Colors.OKCYAN}DEBUG {msg}{Colors.ENDC}")
-
-
 def secure_input(prompt: str, default: str = None, validator: Callable = None,
                  error_msg: str = "Invalid input", secret: bool = False,
                  min_length: int = 0) -> str:
@@ -302,10 +470,6 @@ def secure_input(prompt: str, default: str = None, validator: Callable = None,
         return val
 
 
-# JLS-reserved words + boolean/null literals. Contextual keywords (var,
-# record, yield, sealed, ...) are deliberately excluded: they're legal
-# identifiers outside their special syntactic context, and a package
-# segment is such a context.
 _JAVA_RESERVED_WORDS = frozenset({
     "abstract", "assert", "boolean", "break", "byte", "case", "catch",
     "char", "class", "const", "continue", "default", "do", "double",
@@ -379,22 +543,12 @@ def run_command(cmd: List[str], cwd: str = None, env: Dict = None,
 
 
 def package_timeout(package: str) -> int:
-    """Return the timeout (seconds) to use for a given sdkmanager package.
-
-    Large packages (currently: system images) get a longer timeout since
-    they routinely run 1GB+ and can legitimately take longer than 600s on
-    anything but a fast connection.
-    """
     if package.startswith(LARGE_PACKAGE_PREFIXES):
         return LARGE_PACKAGE_TIMEOUT
     return DEFAULT_PACKAGE_TIMEOUT
 
 
 def get_installed_sdk_packages(sdkmanager: str, env: Dict) -> Optional[set]:
-    """Return the set of currently installed package paths, or None if the
-    query itself failed (in which case callers should fall back to
-    attempting the install rather than assuming nothing is installed).
-    """
     result = run_command([sdkmanager, "--list_installed"], capture_output=True, timeout=60, env=env)
     if result is None or result.returncode != 0:
         return None
@@ -405,8 +559,6 @@ def get_installed_sdk_packages(sdkmanager: str, env: Dict) -> Optional[set]:
         line = line.strip()
         if not line or line.lower().startswith(("installed packages", "path", "---", "available")):
             continue
-        # `sdkmanager --list_installed` lines look like:
-        #   platforms;android-34 | 2 | Android SDK Platform 34 | platforms/android-34
         first_col = line.split('|')[0].strip()
         if first_col:
             installed.add(first_col)
@@ -429,10 +581,8 @@ def safe_extract_zip(zip_path: str, extract_dir: str) -> bool:
             for i, member in enumerate(zf.infolist()):
                 zf.extract(member, extract_dir)
                 pct = (i + 1) / total * 100
-                sys.stdout.write(f"\rExtracting: {pct:.0f}% ({i+1}/{total})  ")
-                sys.stdout.flush()
-            sys.stdout.write("\rExtracting: 100% complete  \n")
-            sys.stdout.flush()
+                TUI.draw_progress_bar(4, 2, 30, pct, "Extracting: ")
+            TUI.status_line(4, "Extraction complete", status="✓", color="success")
         return True
     except (zipfile.BadZipFile, IOError) as e:
         Logger.error(f"Extraction failed: {e}")
@@ -517,6 +667,44 @@ def find_java_for_gradle(gradle_version: str) -> Optional[str]:
             return os.path.dirname(os.path.dirname(java_path))
     
     return None
+
+
+def set_terminal_raw():
+    global _ORIGINAL_TERMIOS
+    if sys.stdin.isatty():
+        _ORIGINAL_TERMIOS = termios.tcgetattr(sys.stdin)
+        tty.setraw(sys.stdin)
+
+
+def restore_terminal():
+    global _ORIGINAL_TERMIOS
+    if _ORIGINAL_TERMIOS is not None and sys.stdin.isatty():
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, _ORIGINAL_TERMIOS)
+        _ORIGINAL_TERMIOS = None
+
+
+def get_keypress() -> Optional[str]:
+    if not sys.stdin.isatty():
+        return None
+    try:
+        if select.select([sys.stdin], [], [], 0.1)[0]:
+            ch = sys.stdin.read(1)
+            if ch == '\x03':
+                raise KeyboardInterrupt()
+            return ch
+    except (IOError, OSError):
+        pass
+    return None
+
+
+def read_escape_sequence() -> str:
+    seq = ''
+    try:
+        if select.select([sys.stdin], [], [], 0.05)[0]:
+            seq += sys.stdin.read(2)
+    except (IOError, OSError):
+        pass
+    return seq
 
 
 class ADBManager:
@@ -760,8 +948,7 @@ zipStorePath=wrapper/dists
             Logger.success(f"Gradle wrapper {version} ready")
             return True
         
-        return False
-    
+        return False    
     def _create_manual_wrapper(self, android_dir: str, version: str) -> bool:
         gradlew_path = os.path.join(android_dir, "gradlew")
         gradlew_bat = os.path.join(android_dir, "gradlew.bat")
@@ -1087,12 +1274,6 @@ class AndroidSDKManager:
             if java_homes:
                 env["JAVA_HOME"] = os.path.dirname(os.path.dirname(java_homes[0][0]))
         
-        # Query what's already installed so a re-run after a partial failure
-        # (e.g. a previous timeout on one package) doesn't redo work that
-        # already succeeded, and doesn't risk hitting the same timeout on a
-        # package a user may have installed manually in the meantime.
-        # If the query itself fails, installed stays None and every package
-        # falls through to being attempted, matching the old behavior.
         installed = get_installed_sdk_packages(self.sdkmanager, env)
         
         total = len(self.packages)
@@ -1114,6 +1295,7 @@ class AndroidSDKManager:
         
         Logger.success("All SDK packages installed")
         return True
+    
     def install_cmdline(self) -> bool:
         if os.path.exists(self.sdkmanager):
             return True
@@ -1149,15 +1331,14 @@ class AndroidSDKManager:
         if os.path.exists(zip_path):
             os.remove(zip_path)
         
-        # Set permissions for BOTH tools
         os.chmod(self.sdkmanager, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
         
-        # ADD THIS LINE:
         if os.path.exists(self.avdmanager):
             os.chmod(self.avdmanager, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
         
         Logger.success("Android SDK command-line tools installed")
         return True
+    
     def install_emulator(self) -> bool:
         emulator_path = os.path.join(self.sdk_root, "emulator", "emulator")
         if platform.system() == "Windows":
@@ -1179,9 +1360,6 @@ class AndroidSDKManager:
             Logger.error("Failed to install emulator")
             return False
         
-        # Check what's already there before attempting a system image, so a
-        # retry after a prior timeout (or a manual install in the meantime)
-        # doesn't re-attempt a package that's already present.
         installed = get_installed_sdk_packages(self.sdkmanager, env)
         
         x86_64_image = f"system-images;android-{self.sdk_version};google_apis;x86_64"
@@ -1711,7 +1889,24 @@ def find_package_name(cwd: str) -> Optional[str]:
     return None
 
 
+def get_connected_devices(adb_cmd: str) -> List[str]:
+    result = run_command([adb_cmd, "devices"], capture_output=True)
+    if not result:
+        return []
+    
+    devices = []
+    lines = result.stdout.strip().split('\n')
+    for line in lines[1:]:
+        if line.strip():
+            parts = line.split()
+            if len(parts) >= 2 and parts[1] == 'device':
+                devices.append(parts[0])
+    return devices
+
+
 def start_emulator(sdk: AndroidSDKManager, adb_cmd: str) -> bool:
+    global _EMULATOR_PROCESS, _EMULATOR_SERIAL
+    
     emulator_path = os.path.join(sdk.sdk_root, "emulator", "emulator")
     if platform.system() == "Windows":
         emulator_path += ".exe"
@@ -1721,9 +1916,12 @@ def start_emulator(sdk: AndroidSDKManager, adb_cmd: str) -> bool:
         if not sdk.install_emulator():
             return False
     
-    result = run_command([adb_cmd, "devices"], capture_output=True)
-    if result and "emulator-" in result.stdout:
-        Logger.info("Emulator already running")
+    existing_devices = get_connected_devices(adb_cmd)
+    existing_emulators = [d for d in existing_devices if d.startswith("emulator-")]
+    
+    if existing_emulators:
+        _EMULATOR_SERIAL = existing_emulators[0]
+        Logger.info(f"Emulator already running: {_EMULATOR_SERIAL}")
         return True
     
     result = run_command([sdk.avdmanager, "list", "avd", "-c"], capture_output=True)
@@ -1776,78 +1974,305 @@ def start_emulator(sdk: AndroidSDKManager, adb_cmd: str) -> bool:
     if "ANDROID_SDK_ROOT" not in env:
         env["ANDROID_SDK_ROOT"] = sdk.sdk_root
     
-    subprocess.Popen(
+    _EMULATOR_PROCESS = subprocess.Popen(
         [emulator_path, "-avd", avd_name, "-no-snapshot-load", "-no-boot-anim"],
         stdout=log, stderr=log, env=env
     )
     
+    Logger.info("Waiting for new emulator to appear...")
+    new_serial = None
+    for i in range(60):
+        current_devices = get_connected_devices(adb_cmd)
+        current_emulators = [d for d in current_devices if d.startswith("emulator-")]
+        new_emulators = [d for d in current_emulators if d not in existing_devices]
+        if new_emulators:
+            new_serial = new_emulators[0]
+            break
+        time.sleep(2)
+    
+    if not new_serial:
+        Logger.error("New emulator did not appear")
+        return False
+    
+    _EMULATOR_SERIAL = new_serial
+    Logger.info(f"New emulator detected: {_EMULATOR_SERIAL}")
     Logger.info("Waiting for device to be ready...")
-    run_command([adb_cmd, "wait-for-device"], timeout=120)
+    
+    run_command([adb_cmd, "-s", _EMULATOR_SERIAL, "wait-for-device"], timeout=120)
     
     for i in range(120):
-        result = run_command([adb_cmd, "shell", "getprop", "sys.boot_completed"], capture_output=True)
+        result = run_command([adb_cmd, "-s", _EMULATOR_SERIAL, "shell", "getprop", "sys.boot_completed"], capture_output=True)
         if result and result.stdout.strip() == "1":
             break
         time.sleep(2)
     
-    run_command([adb_cmd, "shell", "wm", "dismiss-keyguard"])
+    run_command([adb_cmd, "-s", _EMULATOR_SERIAL, "shell", "wm", "dismiss-keyguard"])
     
-    Logger.success("Emulator ready")
+    Logger.success(f"Emulator {_EMULATOR_SERIAL} ready")
     return True
 
 
-def cmd_doctor(args):
-    Logger.step("System Check")
-    print(f"OS: {platform.system()} {platform.release()}")
-    print(f"Arch: {platform.machine()}")
-    print(f"Python: {sys.version}")
+def install_and_launch_app(adb_cmd: str, serial: str, apk_path: str, pkg: str) -> bool:
+    Logger.step("Installing APK...")
+    result = run_command([adb_cmd, "-s", serial, "install", "-r", apk_path], capture_output=True)
+    if result is None or result.returncode != 0:
+        Logger.error("Installation failed")
+        if result and result.stderr:
+            Logger.debug(result.stderr.strip())
+        return False
     
+    Logger.success("APK installed")
+    Logger.step("Launching app...")
+    run_command([adb_cmd, "-s", serial, "shell", "am", "start",
+                "-n", f"{pkg}/android.app.NativeActivity"])
+    
+    run_command([adb_cmd, "-s", serial, "shell", "wm", "dismiss-keyguard"])
+    Logger.success("App launched")
+    return True
+
+
+def view_logcat(adb_cmd: str, serial: str):
+    TUI.clear_screen()
+    TUI.draw_header()
+    
+    h = term_height()
+    TUI.move_cursor(2, 0)
+    TUI.clear_line()
+    sys.stdout.write(f"  \033[1;36mLogcat - {serial}\033[0m  (Press \033[1mQ\033[0m to return)")
+    sys.stdout.flush()
+    
+    logcat_process = subprocess.Popen(
+        [adb_cmd, "-s", serial, "logcat", "-v", "brief", "*:E", "AndroidRuntime:E"],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+    )
+    
+    log_lines = []
+    max_lines = h - 5
+    running = True
+    
+    set_terminal_raw()
+    try:
+        while running:
+            if logcat_process.poll() is not None:
+                break
+            
+            line = logcat_process.stdout.readline()
+            if line:
+                log_lines.append(line.rstrip())
+                if len(log_lines) > max_lines:
+                    log_lines = log_lines[-max_lines:]
+                
+                for i, log_line in enumerate(log_lines):
+                    TUI.move_cursor(4 + i, 2)
+                    TUI.clear_line()
+                    sys.stdout.write(log_line[:term_width() - 4])
+                sys.stdout.flush()
+            
+            key = get_keypress()
+            if key and key.lower() == 'q':
+                running = False
+    finally:
+        restore_terminal()
+    
+    logcat_process.terminate()
+    try:
+        logcat_process.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        logcat_process.kill()
+
+
+def interactive_tui(adb_cmd: str, serial: str, cwd: str, config: Dict[str, Any], pkg: str, apk_path: str):
+    global _EMULATOR_PROCESS, _EMULATOR_SERIAL
+    
+    TUI.clear_screen()
+    TUI.hide_cursor()
+    
+    try:
+        while True:
+            if _EMULATOR_PROCESS and _EMULATOR_PROCESS.poll() is not None:
+                break
+            
+            devices = get_connected_devices(adb_cmd)
+            if serial not in devices:
+                break
+            
+            w = term_width()
+            h = term_height()
+            
+            TUI.draw_header()
+            
+            TUI.draw_box(2, 2, w - 4, 3, "Emulator Status")
+            TUI.move_cursor(4, 4)
+            sys.stdout.write(f"\033[36m●\033[0m Connected: \033[1m{serial}\033[0m")
+            
+            TUI.draw_box(6, 2, w - 4, 3, "Application")
+            TUI.move_cursor(8, 4)
+            sys.stdout.write(f"Package: \033[1m{pkg}\033[0m")
+            
+            TUI.draw_box(10, 2, w - 4, 6, "Controls")
+            TUI.move_cursor(12, 4)
+            sys.stdout.write("\033[1;37m[R]\033[0m \033[32mRebuild & Reinstall\033[0m")
+            TUI.move_cursor(13, 4)
+            sys.stdout.write("\033[1;37m[L]\033[0m \033[36mView Logcat\033[0m")
+            TUI.move_cursor(14, 4)
+            sys.stdout.write("\033[1;37m[Q]\033[0m \033[31mQuit & Stop Emulator\033[0m")
+            
+            TUI.draw_footer("AromaUI Interactive Mode | R: Rebuild  L: Logcat  Q: Quit")
+            
+            sys.stdout.flush()
+            
+            set_terminal_raw()
+            try:
+                key = None
+                for _ in range(50):
+                    key = get_keypress()
+                    if key:
+                        break
+                    time.sleep(0.05)
+            finally:
+                restore_terminal()
+            
+            if key is None:
+                continue
+            
+            key = key.lower()
+            
+            if key == 'r':
+                restore_terminal()
+                TUI.clear_screen()
+                TUI.draw_header()
+                
+                for i in range(2, h):
+                    TUI.move_cursor(i, 0)
+                    TUI.clear_line()
+                
+                TUI.status_line(3, "Building Android project...", status=TUI.spinner_frame(), color="step")
+                TUI.draw_footer("Building...")
+                
+                bs = BuildSystem(cwd, config)
+                if bs.build_android(False, False):
+                    TUI.status_line(3, "Build successful", status="✓", color="success")
+                    if install_and_launch_app(adb_cmd, serial, apk_path, pkg):
+                        TUI.status_line(4, "App installed and launched", status="✓", color="success")
+                    else:
+                        TUI.status_line(4, "Failed to install app", status="✗", color="error")
+                else:
+                    TUI.status_line(3, "Build failed", status="✗", color="error")
+                
+                time.sleep(1)
+                continue
+            
+            elif key == 'l':
+                restore_terminal()
+                TUI.show_cursor()
+                view_logcat(adb_cmd, serial)
+                TUI.hide_cursor()
+                continue
+            
+            elif key == 'q':
+                break
+    
+    finally:
+        TUI.show_cursor()
+        TUI.clear_screen()
+        restore_terminal()
+    
+    cleanup_emulator(adb_cmd)
+
+
+def cleanup_emulator(adb_cmd: str = None):
+    global _EMULATOR_PROCESS, _EMULATOR_SERIAL
+    
+    if _EMULATOR_SERIAL and adb_cmd:
+        Logger.info("Stopping emulator...")
+        run_command([adb_cmd, "-s", _EMULATOR_SERIAL, "emu", "kill"], timeout=10)
+        time.sleep(2)
+    
+    if _EMULATOR_PROCESS and _EMULATOR_PROCESS.poll() is None:
+        try:
+            _EMULATOR_PROCESS.terminate()
+            _EMULATOR_PROCESS.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            _EMULATOR_PROCESS.kill()
+            _EMULATOR_PROCESS.wait()
+    
+    _EMULATOR_PROCESS = None
+    _EMULATOR_SERIAL = None
+
+
+def final_cleanup():
+    if _EMULATOR_SERIAL:
+        adb_cmd = shutil.which("adb") or "adb"
+        run_command([adb_cmd, "-s", _EMULATOR_SERIAL, "emu", "kill"], timeout=10)
+        time.sleep(1)
+    if _EMULATOR_PROCESS and _EMULATOR_PROCESS.poll() is None:
+        _EMULATOR_PROCESS.terminate()
+        try:
+            _EMULATOR_PROCESS.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _EMULATOR_PROCESS.kill()
+
+
+atexit.register(final_cleanup)
+
+
+def tui_doctor(args):
     config = load_config(getattr(args, 'config', None))
     
+    TUI.draw_header()
+    
     java_list = find_installed_java()
+    sdk = AndroidSDKManager(config)
+    sdk_found = sdk.find()
+    
+    rows = []
+    
+    rows.append(["OS", f"{platform.system()} {platform.release()}", "✓"])
+    rows.append(["Python", sys.version.split()[0], "✓"])
+    
     if java_list:
-        for path, ver in java_list:
-            Logger.success(f"Java {ver}: {path}")
-        best_gradle = find_best_gradle_for_java(max(v[1] for v in java_list))
-        if best_gradle:
-            Logger.success(f"Compatible Gradle: {best_gradle} (will be downloaded on build)")
+        for path, ver in java_list[:3]:
+            rows.append(["Java", f"JDK {ver}", "✓"])
     else:
-        Logger.warning("Java: not found")
+        rows.append(["Java", "Not found", "✗"])
     
     tools = ["cmake", "ninja", "gcc", "keytool"]
     for tool in tools:
-        if shutil.which(tool):
-            Logger.success(f"{tool}: available")
-        else:
-            Logger.warning(f"{tool}: not found")
+        found = shutil.which(tool) is not None
+        rows.append([tool.capitalize(), "Available" if found else "Not found", "✓" if found else "✗"])
     
-    sdk = AndroidSDKManager(config)
-    if sdk.find():
-        Logger.success(f"Android SDK: {sdk.sdk_root}")
-        if sdk.adb.is_installed():
-            Logger.success("ADB: available")
-        else:
-            Logger.warning("ADB: not found")
+    if sdk_found:
+        rows.append(["Android SDK", sdk.sdk_root, "✓"])
+        rows.append(["ADB", "Available" if sdk.adb.is_installed() else "Not found", "✓" if sdk.adb.is_installed() else "✗"])
         ndk = sdk.get_ndk_path()
-        if ndk:
-            Logger.success(f"Android NDK: {ndk}")
-        else:
-            Logger.warning("Android NDK: not found")
-        if sdk.licenses_accepted():
-            Logger.success("Licenses: accepted")
-        else:
-            Logger.warning("Licenses: not accepted")
-            sdk.accept_licenses()
+        rows.append(["NDK", ndk or "Not found", "✓" if ndk else "✗"])
+        rows.append(["Licenses", "Accepted" if sdk.licenses_accepted() else "Not accepted", "✓" if sdk.licenses_accepted() else "✗"])
         
         emulator_path = os.path.join(sdk.sdk_root, "emulator", "emulator")
         if platform.system() == "Windows":
             emulator_path += ".exe"
-        if os.path.exists(emulator_path):
-            Logger.success("Emulator: installed")
-        else:
-            Logger.warning("Emulator: not installed")
+        rows.append(["Emulator", "Installed" if os.path.exists(emulator_path) else "Not installed", "✓" if os.path.exists(emulator_path) else "✗"])
     else:
-        Logger.warning("Android SDK: not found")
+        rows.append(["Android SDK", "Not found", "✗"])
+    
+    TUI.draw_table(3, 2, ["Component", "Status", ""], rows)
+    TUI.draw_footer("System Check Complete | Press any key to exit")
+    
+    sys.stdout.flush()
+    set_terminal_raw()
+    try:
+        while True:
+            if get_keypress():
+                break
+            time.sleep(0.1)
+    finally:
+        restore_terminal()
+    TUI.clear_screen()
+
+
+def cmd_doctor(args):
+    config = load_config(getattr(args, 'config', None))
+    tui_doctor(args)
 
 
 def cmd_install_sdk(args):
@@ -1875,17 +2300,20 @@ def cmd_build(args):
 
 
 def cmd_run(args):
+    global _EMULATOR_SERIAL
+    
     config = load_config(getattr(args, 'config', None))
-    bs = BuildSystem(os.getcwd(), config)
+    cwd = os.getcwd()
+    bs = BuildSystem(cwd, config)
     
     if args.platform == "linux":
         if not bs.build_linux():
             return
-        _run_linux(os.getcwd())
+        _run_linux(cwd)
     elif args.platform == "android":
         if not bs.build_android(False, False):
             return
-        _run_android(os.getcwd(), args.emu, config)
+        _run_android(cwd, args.emu, config)
     elif args.platform == "web":
         if not bs.build_web():
             return
@@ -1911,6 +2339,8 @@ def _run_linux(cwd: str):
 
 
 def _run_android(cwd: str, use_emu: bool, config: Dict[str, Any]):
+    global _EMULATOR_SERIAL
+    
     sdk = AndroidSDKManager(config)
     if not sdk.find():
         Logger.error("Android SDK not found")
@@ -1928,39 +2358,47 @@ def _run_android(cwd: str, use_emu: bool, config: Dict[str, Any]):
         if not start_emulator(sdk, adb_cmd):
             return
     
-    result = run_command([adb_cmd, "devices"], capture_output=True)
-    if not result:
-        return
-    
-    lines = result.stdout.strip().split('\n')
-    devices = [l for l in lines[1:] if l.strip() and not l.startswith('*')]
+    devices = get_connected_devices(adb_cmd)
     
     if not devices:
         Logger.error("No device connected")
         return
     
-    authorized = any('\tdevice' in l or ' device' in l for l in devices)
-    if not authorized:
-        Logger.error("No authorized device")
-        return
+    target_device = None
+    if _EMULATOR_SERIAL and _EMULATOR_SERIAL in devices:
+        target_device = _EMULATOR_SERIAL
+    elif len(devices) == 1:
+        target_device = devices[0]
+    else:
+        emulators = [d for d in devices if d.startswith("emulator-")]
+        if emulators:
+            target_device = emulators[0]
+            Logger.info(f"Multiple devices found, targeting emulator: {target_device}")
+        else:
+            Logger.info("Multiple devices connected:")
+            for i, device in enumerate(devices):
+                Logger.info(f"  [{i+1}] {device}")
+            
+            choice = secure_input("Select device", default="1",
+                                validator=lambda x: x.isdigit() and 1 <= int(x) <= len(devices),
+                                error_msg=f"Enter 1-{len(devices)}")
+            target_device = devices[int(choice) - 1]
     
-    apk = os.path.join(cwd, "android", "app", "build", "outputs", "apk", "debug", "app-debug.apk")
-    if not os.path.exists(apk):
+    apk_path = os.path.join(cwd, "android", "app", "build", "outputs", "apk", "debug", "app-debug.apk")
+    if not os.path.exists(apk_path):
         Logger.error("APK not found")
         return
     
-    Logger.step("Installing")
-    result = run_command([adb_cmd, "install", "-r", apk], capture_output=True)
-    if result is None or result.returncode != 0:
-        Logger.error("Installation failed")
-        if result and result.stderr:
-            Logger.debug(result.stderr.strip())
+    pkg = find_package_name(cwd)
+    if not pkg:
+        Logger.error("Could not determine package name")
         return
     
-    pkg = find_package_name(cwd)
-    if pkg:
-        Logger.step(f"Launching {pkg}")
-        run_command([adb_cmd, "shell", "am", "start", "-n", f"{pkg}/android.app.NativeActivity"])
+    if not install_and_launch_app(adb_cmd, target_device, apk_path, pkg):
+        return
+    
+    if target_device.startswith("emulator-"):
+        interactive_tui(adb_cmd, target_device, cwd, config, pkg, apk_path)
 
 
 def _serve_web(build_dir: str, port: int):

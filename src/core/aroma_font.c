@@ -3,6 +3,10 @@
 #include "aroma_native_utils.h"
 #include <stdint.h>
 
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
+
 #ifdef ESP32
 #include <stdlib.h>
 #include <string.h>
@@ -146,10 +150,15 @@ static bool init_freetype(void) {
 }
 
 AromaFont* aroma_font_create(const char* font_path, int size_px) {
+
+
     if (!init_freetype() || !font_path || size_px <= 0)
         return NULL;
 
-    AromaFont* font = malloc(sizeof(AromaFont));
+    #ifdef __ANDROID__
+    size_px = aroma_android_sp_to_px(size_px);
+    #endif
+        AromaFont* font = malloc(sizeof(AromaFont));
     if (!font) return NULL;
 
     char resolved_font_path[1024];
@@ -180,6 +189,10 @@ AromaFont* aroma_font_create_from_memory(
 ) {
     if (!init_freetype() || !data || size_px <= 0)
         return NULL;
+
+    #ifdef __ANDROID__
+    size_px = aroma_android_sp_to_px(size_px);
+    #endif
 
     LOG_INFO("aroma_font_create_from_memory: data=%p data_len=%u size_px=%d", (void*)data, data_len, size_px);
 

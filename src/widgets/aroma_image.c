@@ -29,6 +29,9 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include "core/aroma_common.h"
 #include <string.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #define AROMA_IMAGE_PATH_MAX 1024
 
@@ -226,6 +229,15 @@ AromaNode* aroma_image_create(AromaNode* parent, const char* image_path, int x, 
         LOG_ERROR("Invalid parent node for image widget");
         return NULL;
     }
+
+
+#ifdef __ANDROID__
+x = aroma_android_dp_to_px(x);
+y = aroma_android_dp_to_px(y);
+width = aroma_android_dp_to_px(width);
+height = aroma_android_dp_to_px(height);
+#endif
+
 
     AromaImage* image = (AromaImage*)aroma_widget_alloc(sizeof(AromaImage));
     if (!image) {
