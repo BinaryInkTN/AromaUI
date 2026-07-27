@@ -155,14 +155,27 @@ static bool __sidebar_handle_event(AromaEvent *event, void *user_data)
     if (!sidebar)
         return false;
 
-    bool in_bounds = (event->data.mouse.x >= sidebar->rect.x && event->data.mouse.x <= sidebar->rect.x + sidebar->rect.width &&
-                      event->data.mouse.y >= sidebar->rect.y && event->data.mouse.y <= sidebar->rect.y + sidebar->rect.height);
+   int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+                          AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+        if (aroma_container_is_scrollable(cur)) {
+            int scroll_x, scroll_y;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+    
 
+    bool in_bounds = (adjusted_x >= sidebar->rect.x && adjusted_x <= sidebar->rect.x + sidebar->rect.width &&
+                      adjusted_y >= sidebar->rect.y && adjusted_y <= sidebar->rect.y + sidebar->rect.height);
     switch (event->event_type)
     {
     case EVENT_TYPE_MOUSE_MOVE:
     {
-        int new_hover = in_bounds ? __sidebar_index_from_y(sidebar, event->data.mouse.y) : -1;
+        int new_hover = in_bounds ? __sidebar_index_from_y(sidebar, adjusted_y) : -1;
         if (new_hover != sidebar->hovered_index)
         {
             sidebar->hovered_index = new_hover;
@@ -182,7 +195,7 @@ static bool __sidebar_handle_event(AromaEvent *event, void *user_data)
     case EVENT_TYPE_MOUSE_CLICK:
         if (in_bounds)
         {
-            int index = __sidebar_index_from_y(sidebar, event->data.mouse.y);
+            int index = __sidebar_index_from_y(sidebar, adjusted_y);
             if (index >= 0 && index < sidebar->count && index != sidebar->selected_index)
             {
                 sidebar->prev_selected_index = sidebar->selected_index;

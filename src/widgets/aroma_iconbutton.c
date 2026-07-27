@@ -51,6 +51,22 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
     if (!btn)
         return false;
 
+
+    int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+
+    AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+        if (aroma_container_is_scrollable(cur)) {
+            int scroll_x, scroll_y;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+    
+
     AromaRect r = btn->rect;
     
     // Get coordinates based on event type
@@ -65,8 +81,8 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
         y = event->data.mouse.y;
     }
     
-    bool in_bounds = (x >= r.x && x <= r.x + r.width &&
-                      y >= r.y && y <= r.y + r.height);
+    bool in_bounds = (adjusted_x >= r.x && adjusted_x <= r.x + r.width &&
+                      adjusted_y >= r.y && adjusted_y <= r.y + r.height);
                       
     switch (event->event_type)
     {

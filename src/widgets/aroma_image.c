@@ -25,6 +25,7 @@
 #include "core/aroma_style.h"
 #include "core/aroma_event.h"
 #include "backends/aroma_abi.h"
+#include "widgets/aroma_container.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include "core/aroma_common.h"
@@ -94,12 +95,29 @@ static bool __image_default_event_handler(AromaEvent* event, void* user_data)
     bool is_release = false;
     bool handle_click = false;
     bool handle_hover = false;
+   
+    int adjusted_x = event->event_type == EVENT_TYPE_TOUCH_DOWN || event->event_type == EVENT_TYPE_TOUCH_UP || event->event_type == EVENT_TYPE_TOUCH_MOVE
+                     ? event->data.touch.x : event->data.mouse.x;
+    int adjusted_y = event->event_type == EVENT_TYPE_TOUCH_DOWN || event->event_type == EVENT_TYPE_TOUCH_UP || event->event_type == EVENT_TYPE_TOUCH_MOVE
+                     ? event->data.touch.y : event->data.mouse.y;
+
+    AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+    if (aroma_container_is_scrollable(cur)) {
+        int scroll_x, scroll_y;
+        aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+        adjusted_x += scroll_x;
+        adjusted_y += scroll_y;
+    }
+    cur = cur->parent_node;
+    }
+
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_CLICK:
             if (image->active_pointer_id != -1) return false;
             x = event->data.mouse.x; y = event->data.mouse.y;
-            return aroma_image_point_in_bounds(image, x, y);
+            return aroma_image_point_in_bounds(image, adjusted_x, adjusted_y);
 
         case EVENT_TYPE_MOUSE_RELEASE:
             if (image->active_pointer_id != -1) return false;
@@ -121,7 +139,7 @@ static bool __image_default_event_handler(AromaEvent* event, void* user_data)
         case EVENT_TYPE_TOUCH_DOWN:
             if (image->active_pointer_id != -1) return false;
             x = event->data.touch.x; y = event->data.touch.y;
-            if (!aroma_image_point_in_bounds(image, x, y)) return false;
+            if (!aroma_image_point_in_bounds(image, adjusted_x, adjusted_y)) return false;
             image->active_pointer_id = event->data.touch.id;
             return true;
 

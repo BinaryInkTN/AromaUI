@@ -6,6 +6,7 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "widgets/aroma_container.h"
 #include <stdlib.h>
 #include <string.h>
 #ifdef __ANDROID__
@@ -30,10 +31,10 @@ typedef struct  AromaCheckbox {
     void (*on_change)(bool, void*);
     void* user_data;
     int box_size;
-    int box_x;
-    int box_y;
-    int text_x;
-    int text_y;
+    int box_offset_x;
+    int box_offset_y;
+    int text_offset_x;
+    int text_offset_y;
     bool use_theme_colors;
 } AromaCheckbox;
 
@@ -63,10 +64,12 @@ static void __checkbox_update_layout(AromaCheckbox* checkbox)
     checkbox->box_size = checkbox->rect.height - padding;
     if (checkbox->box_size < 16) checkbox->box_size = 16;
     if (checkbox->box_size > checkbox->rect.height) checkbox->box_size = checkbox->rect.height;
-    checkbox->box_x = checkbox->rect.x;
-    checkbox->box_y = checkbox->rect.y + (checkbox->rect.height - checkbox->box_size) / 2;
-    checkbox->text_x = checkbox->box_x + checkbox->box_size + padding;
-    checkbox->text_y = checkbox->rect.y + (checkbox->rect.height - aroma_font_get_line_height(checkbox->font) - padding) / 2;
+    checkbox->box_offset_x = 0;
+    checkbox->box_offset_y = (checkbox->rect.height - checkbox->box_size) / 2;
+    checkbox->text_offset_x = checkbox->box_offset_x + checkbox->box_size + padding;
+    checkbox->text_offset_y = checkbox->font
+        ? (checkbox->rect.height - aroma_font_get_line_height(checkbox->font) - padding) / 2
+        : checkbox->box_offset_y;
 }
 
 AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
@@ -117,10 +120,10 @@ AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
     }
 
     data->box_size = 0;
-    data->box_x = 0;
-    data->box_y = 0;
-    data->text_x = 0;
-    data->text_y = 0;
+    data->box_offset_x = 0;
+    data->box_offset_y = 0;
+    data->text_offset_x = 0;
+    data->text_offset_y = 0;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, data);
     if (!node) {
@@ -255,26 +258,30 @@ if (data->use_theme_colors) {
         data->text_color = theme.colors.text_primary;
     }
 
-    
+    int box_x = data->rect.x + data->box_offset_x;
+    int box_y = data->rect.y + data->box_offset_y;
+    int text_x = data->rect.x + data->text_offset_x;
+    int text_y = data->rect.y + data->text_offset_y;
+
     uint32_t base_color = data->box_color;
     if (data->is_hovered) base_color = __checkbox_lighten(base_color, 0.06f);
     uint32_t border_color = data->border_color;
     if (data->is_pressed) base_color = __checkbox_darken(base_color, 0.06f);
 
-    gfx->fill_rectangle(window_id, data->box_x, data->box_y, data->box_size, data->box_size,
+    gfx->fill_rectangle(window_id, box_x, box_y, data->box_size, data->box_size,
                         base_color, true, data->border_radius);
-    gfx->draw_hollow_rectangle(window_id, data->box_x, data->box_y, data->box_size, data->box_size,
+    gfx->draw_hollow_rectangle(window_id, box_x, box_y, data->box_size, data->box_size,
                                border_color, 1.0f, true, data->border_radius);
 
     if (data->checked) {
         uint32_t fill = data->check_color;
-        gfx->fill_rectangle(window_id, data->box_x + 3, data->box_y + 3, data->box_size - 6, data->box_size - 6,
+        gfx->fill_rectangle(window_id, box_x + 3, box_y + 3, data->box_size - 6, data->box_size - 6,
                             __checkbox_lighten(fill, 0.12f), true, 3.0f);
-        __checkbox_draw_checkmark(gfx, window_id, data->box_x + 4, data->box_y + 4, data->box_size - 8, fill);
+        __checkbox_draw_checkmark(gfx, window_id, box_x + 4, box_y + 4, data->box_size - 8, fill);
     }
 
     if (data->font && data->label[0] != '\0' && gfx->render_text) {
-        gfx->render_text(window_id, data->font, data->label, data->text_x, data->text_y, data->text_color, 1.0f);
+        gfx->render_text(window_id, data->font, data->label, text_x, text_y, data->text_color, 1.0f);
     }
 }
 
@@ -287,6 +294,27 @@ static bool __checkbox_handle_event(AromaEvent* event, void* user_data)
     AromaRect* r = &data->rect;
     bool in_bounds = (event->data.mouse.x >= r->x && event->data.mouse.x <= r->x + r->width &&
                       event->data.mouse.y >= r->y && event->data.mouse.y <= r->y + r->height);
+
+    
+
+    int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+    AromaNode *cur = event->target_node->parent_node;
+    while (cur)
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER && aroma_container_is_scrollable(cur))
+        {
+            int scroll_x = 0, scroll_y = 0;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+    
+    in_bounds = (adjusted_x >= r->x && adjusted_x <= r->x + r->width &&
+                 adjusted_y >= r->y && adjusted_y <= r->y + r->height);
+
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_ENTER:

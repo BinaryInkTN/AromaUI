@@ -674,15 +674,31 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
                 best_z = hit->z_index;
             }
         }
-    }
-
-    if (root->node_type == NODE_TYPE_WIDGET ||
+    }if (root->node_type == NODE_TYPE_WIDGET ||
         root->node_type == NODE_TYPE_CONTAINER)
     {
+        int adjusted_x = x;
+        int adjusted_y = y;
+
+        // Traverse ALL ancestors to accumulate every scroll offset
+        AromaNode *cur = root->parent_node;
+        while (event_node_valid(cur))
+        {
+            if (cur->node_type == NODE_TYPE_CONTAINER && aroma_container_is_scrollable(cur))
+            {
+                int delta_x = 0, delta_y = 0;
+                aroma_container_get_scroll(cur, &delta_x, &delta_y);
+                adjusted_x += delta_x;
+                adjusted_y += delta_y;
+            }
+            cur = cur->parent_node;
+        }
+
         AromaRect *bounds = aroma_node_get_rect(root);
+        
         if (bounds &&
-            x >= bounds->x && x < (bounds->x + bounds->width) &&
-            y >= bounds->y && y < (bounds->y + bounds->height))
+            adjusted_x >= bounds->x && adjusted_x < (bounds->x + bounds->width) &&
+            adjusted_y >= bounds->y && adjusted_y < (bounds->y + bounds->height))
         {
             bool should_win = (root->node_type == NODE_TYPE_CONTAINER)
                                   ? (best == NULL)
@@ -696,7 +712,6 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
     }
     return best;
 }
-
 
 static AromaNode *find_scrollable_ancestor(AromaNode *start)
 {

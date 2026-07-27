@@ -144,10 +144,24 @@ static bool __tabs_handle_event(AromaEvent* event, void* user_data)
     AromaTabs* tabs = (AromaTabs*)event->target_node->node_widget_ptr;
     if (!tabs) return false;
 
-    bool in_bounds = (event->data.mouse.x >= tabs->rect.x && 
-                      event->data.mouse.x <= tabs->rect.x + tabs->rect.width &&
-                      event->data.mouse.y >= tabs->rect.y && 
-                      event->data.mouse.y <= tabs->rect.y + tabs->rect.height);
+ int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+                          AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+        if (aroma_container_is_scrollable(cur)) {
+            int scroll_x, scroll_y;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+    
+
+    bool in_bounds = (adjusted_x >= tabs->rect.x && 
+                      adjusted_x <= tabs->rect.x + tabs->rect.width &&
+                      adjusted_y >= tabs->rect.y && 
+                      adjusted_y <= tabs->rect.y + tabs->rect.height);
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_MOVE: {
@@ -157,7 +171,7 @@ static bool __tabs_handle_event(AromaEvent* event, void* user_data)
             return false;
         case EVENT_TYPE_MOUSE_CLICK:
             if (in_bounds) {
-                int index = __tabs_index_from_x(tabs, event->data.mouse.x);
+                int index = __tabs_index_from_x(tabs, adjusted_x);
                 if (index >= 0 && index < tabs->count && index != tabs->selected_index) {
                     tabs->prev_selected_index = tabs->selected_index;
                     tabs->selected_index = index;

@@ -1107,19 +1107,33 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
     struct AromaMapExtra *extra = (struct AromaMapExtra *)user_data;
     if (!extra)
         return false;
+    int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+        AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+        if (aroma_container_is_scrollable(cur)) {
+            int scroll_x, scroll_y;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+    
+    
     switch (event->event_type)
     {
     case EVENT_TYPE_MOUSE_DOUBLE_CLICK:
-        if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
-            event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height)
+        if (adjusted_x >= map->rect.x && adjusted_x <= map->rect.x + map->rect.width &&
+            adjusted_y >= map->rect.y && adjusted_y <= map->rect.y + map->rect.height)
         {
             aroma_map_zoom_in(event->target_node);
             return true;
         }
         break;
     case EVENT_TYPE_MOUSE_CLICK:
-        if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
-            event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height)
+        if (adjusted_x >= map->rect.x && adjusted_x <= map->rect.x + map->rect.width &&
+            adjusted_y >= map->rect.y && adjusted_y <= map->rect.y + map->rect.height)
         {
             int clicked_marker = -1;
             double center_x = extra->display_px_x * pow(2.0, extra->display_zoom - extra->zoom);
@@ -1135,8 +1149,8 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
                 double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * pow(2.0, extra->display_zoom) * TILE_SIZE;
                 int draw_x = map->rect.x + (int)(px_x - view_tl_x);
                 int draw_y = map->rect.y + (int)(px_y - view_tl_y);
-                if (event->data.mouse.x >= draw_x - 12 && event->data.mouse.x <= draw_x + 12 &&
-                    event->data.mouse.y >= draw_y - 12 && event->data.mouse.y <= draw_y + 12)
+                if (adjusted_x >= draw_x - 12 && adjusted_x <= draw_x + 12 &&
+                    adjusted_y >= draw_y - 12 && adjusted_y <= draw_y + 12)
                 {
                     clicked_marker = i;
                     break;
@@ -1156,8 +1170,8 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
             else
             {
                 map->is_dragging = true;
-                map->last_mouse_x = event->data.mouse.x;
-                map->last_mouse_y = event->data.mouse.y;
+                map->last_mouse_x = adjusted_x;
+                map->last_mouse_y = adjusted_y;
                 extra->active_popup_idx = -1;
             }
             aroma_node_invalidate(event->target_node);
@@ -1167,8 +1181,8 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
     case EVENT_TYPE_MOUSE_MOVE:
         if (map->is_dragging)
         {
-            int dx = event->data.mouse.x - map->last_mouse_x;
-            int dy = event->data.mouse.y - map->last_mouse_y;
+            int dx = adjusted_x - map->last_mouse_x;
+            int dy = adjusted_y - map->last_mouse_y;
             extra->center_px_x -= dx;
             extra->center_px_y -= dy;
             extra->display_px_x -= dx;
@@ -1183,8 +1197,8 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
                 extra->velocity_x = 0;
                 extra->velocity_y = 0;
             }
-            map->last_mouse_x = event->data.mouse.x;
-            map->last_mouse_y = event->data.mouse.y;
+            map->last_mouse_x = adjusted_x;
+            map->last_mouse_y = adjusted_y;
             aroma_node_invalidate(event->target_node);
             return true;
         }
@@ -1198,8 +1212,8 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
         }
         break;
     case EVENT_TYPE_MOUSE_SCROLL:
-        if (event->data.mouse.x >= map->rect.x && event->data.mouse.x <= map->rect.x + map->rect.width &&
-            event->data.mouse.y >= map->rect.y && event->data.mouse.y <= map->rect.y + map->rect.height)
+        if (adjusted_x >= map->rect.x && adjusted_x <= map->rect.x + map->rect.width &&
+            adjusted_y >= map->rect.y && adjusted_y <= map->rect.y + map->rect.height)
         {
             if (event->data.mouse.scroll_y > 0)
             {

@@ -5,6 +5,7 @@
 #include "core/aroma_event.h"
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
+#include "widgets/aroma_container.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
@@ -162,19 +163,35 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
     if (!event || !event->target_node) return false;
     AromaDropdown* dd = (AromaDropdown*)event->target_node->node_widget_ptr;
     if (!dd) return false;
+    
+    int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+    AromaNode *cur = event->target_node->parent_node;
+    while (cur)
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER && aroma_container_is_scrollable(cur))
+        {
+            int scroll_x = 0, scroll_y = 0;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+
 
     int option_height = dd->rect.height;
-    bool in_main = (event->data.mouse.x >= dd->rect.x && event->data.mouse.x <= dd->rect.x + dd->rect.width &&
-                    event->data.mouse.y >= dd->rect.y && event->data.mouse.y <= dd->rect.y + dd->rect.height);
+    bool in_main = (adjusted_x >= dd->rect.x && adjusted_x <= dd->rect.x + dd->rect.width &&
+                    adjusted_y >= dd->rect.y && adjusted_y <= dd->rect.y + dd->rect.height);
     bool in_list = false;
     int clicked_index = -1;
     if (dd->is_expanded && dd->option_count > 0) {
         int list_top = dd->rect.y + dd->rect.height;
         int list_bottom = list_top + option_height * dd->option_count;
-        in_list = (event->data.mouse.x >= dd->rect.x && event->data.mouse.x <= dd->rect.x + dd->rect.width &&
-                   event->data.mouse.y >= list_top && event->data.mouse.y <= list_bottom);
+        in_list = (adjusted_x >= dd->rect.x && adjusted_x <= dd->rect.x + dd->rect.width &&
+                   adjusted_y >= list_top && adjusted_y <= list_bottom);
         if (in_list) {
-            clicked_index = (event->data.mouse.y - list_top) / option_height;
+            clicked_index = (adjusted_y - list_top) / option_height;
             if (clicked_index < 0 || clicked_index >= dd->option_count) clicked_index = -1;
         }
     }

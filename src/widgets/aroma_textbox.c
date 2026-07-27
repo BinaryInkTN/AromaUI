@@ -651,14 +651,24 @@ static bool textbox_mouse_handler(AromaEvent *event, void *user_data)
         return false;
 
     AromaTextbox *tb = (AromaTextbox *)event->target_node->node_widget_ptr;
-    int mx = event->data.mouse.x;
-    int my = event->data.mouse.y;
-
+  
+ int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+                          AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+        if (aroma_container_is_scrollable(cur)) {
+            int scroll_x, scroll_y;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
     switch (event->event_type)
     {
     case EVENT_TYPE_MOUSE_CLICK:
     {
-        bool inside = textbox_contains_point(tb, mx, my);
+        bool inside = textbox_contains_point(tb, adjusted_x, adjusted_y);
 
         if (inside)
         {
@@ -667,7 +677,7 @@ static bool textbox_mouse_handler(AromaEvent *event, void *user_data)
             AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
             size_t window_id = tb->last_window_id;
 
-            int relative_x = mx - (tb->rect.x + AROMA_TEXTBOX_PADDING_X);
+            int relative_x = adjusted_x - (tb->rect.x + AROMA_TEXTBOX_PADDING_X);
             if (relative_x <= 0)
             {
                 tb->cursor_pos = tb->scroll_offset;
@@ -725,7 +735,7 @@ static bool textbox_mouse_handler(AromaEvent *event, void *user_data)
 
     case EVENT_TYPE_MOUSE_MOVE:
     {
-        bool inside = textbox_contains_point(tb, mx, my);
+        bool inside = textbox_contains_point(tb, adjusted_x, adjusted_y);
         if (tb->is_hovered != inside)
         {
             tb->is_hovered = inside;
@@ -746,7 +756,7 @@ static bool textbox_mouse_handler(AromaEvent *event, void *user_data)
 
     case EVENT_TYPE_MOUSE_RELEASE:
     {
-        bool inside = textbox_contains_point(tb, mx, my);
+        bool inside = textbox_contains_point(tb, adjusted_x, adjusted_y);
         if (tb->is_hovered != inside)
         {
             tb->is_hovered = inside;

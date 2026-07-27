@@ -1062,7 +1062,6 @@ extern "C"
                 aroma_listview_set_callback(lv, callback, user_data);
             if (font)
                 aroma_listview_set_font(lv, font);
-            aroma_listview_set_scroll_container(lv, sc);
         }
         return lv;
     }

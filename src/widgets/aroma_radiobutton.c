@@ -5,6 +5,7 @@
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
+#include "widgets/aroma_container.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
@@ -376,8 +377,23 @@ static bool __radio_handle_event(AromaEvent* event, void* user_data)
     if (!data) return false;
 
     AromaRect* r = &data->rect;
-    bool in_bounds = (event->data.mouse.x >= r->x && event->data.mouse.x <= r->x + r->width &&
-                      event->data.mouse.y >= r->y && event->data.mouse.y <= r->y + r->height);
+   
+      int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+                          AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+        if (aroma_container_is_scrollable(cur)) {
+            int scroll_x, scroll_y;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+    
+    bool in_bounds = (adjusted_x >= r->x && adjusted_x <= r->x + r->width &&
+                      adjusted_y >= r->y && adjusted_y <= r->y + r->height);
+ 
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_ENTER:

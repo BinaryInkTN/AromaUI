@@ -6,6 +6,7 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "widgets/aroma_container.h"
 #include <stdlib.h>
 #include <string.h>
 #ifdef __ANDROID__
@@ -222,14 +223,29 @@ static bool __slider_default_mouse_handler(AromaEvent* event, void* user_data)
     if (!event || !event->target_node) return false;
     AromaSlider* slider = (AromaSlider*)event->target_node->node_widget_ptr;
     if (!slider) return false;
+    
+     int adjusted_x = event->data.mouse.x;
+    int adjusted_y = event->data.mouse.y;
+                          AromaNode *cur = event->target_node->parent_node;
+    while (cur) {
+        if (aroma_container_is_scrollable(cur)) {
+            int scroll_x, scroll_y;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_x += scroll_x;
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+    
+
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_CLICK:
-            aroma_slider_on_click(event->target_node, event->data.mouse.x, event->data.mouse.y);
+            aroma_slider_on_click(event->target_node, adjusted_x, adjusted_y);
             __slider_request_redraw(user_data);
             return true;
         case EVENT_TYPE_MOUSE_MOVE:
-            aroma_slider_on_mouse_move(event->target_node, event->data.mouse.x, event->data.mouse.y, false);
+            aroma_slider_on_mouse_move(event->target_node, adjusted_x, adjusted_y, false);
             __slider_request_redraw(user_data);
             return true;
         case EVENT_TYPE_MOUSE_RELEASE:

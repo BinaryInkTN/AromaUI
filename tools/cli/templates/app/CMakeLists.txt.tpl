@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Default to GLFW on desktop Linux
 #
 if(NOT ANDROID AND NOT EMSCRIPTEN)
-    option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" ON)
+    option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
 else()
     option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
 endif()
