@@ -1,0 +1,3 @@
+/home/yassine/Projects/AromaUI/src/CMakeLists.txt
+/home/yassine/Projects/AromaUI/tools/cli/tesrt/android/app/src/main/cpp/CMakeLists.txt
+/home/yassine/Projects/AromaUI/vendors/freetype/CMakeLists.txt

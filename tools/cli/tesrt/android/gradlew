@@ -1,0 +1,3 @@
+#!/bin/bash
+# Gradle wrapper for AromaSDK
+exec "/home/yassine/.aroma/gradle/gradle-8.4/bin/gradle" "$@"

@@ -1,0 +1,41 @@
+{
+  "buildFiles": [
+    "/home/yassine/Projects/AromaUI/src/CMakeLists.txt",
+    "/home/yassine/Projects/AromaUI/tools/cli/tesrt/android/app/src/main/cpp/CMakeLists.txt",
+    "/home/yassine/Projects/AromaUI/vendors/freetype/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/yassine/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/yassine/Projects/AromaUI/tools/cli/tesrt/android/app/.cxx/Debug/1wr4z3p5/arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/yassine/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/yassine/Projects/AromaUI/tools/cli/tesrt/android/app/.cxx/Debug/1wr4z3p5/arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "freetype::@bdc1e324bbc9e3c81525": {
+      "artifactName": "freetype",
+      "abi": "arm64-v8a",
+      "output": "/home/yassine/Projects/AromaUI/tools/cli/tesrt/android/app/.cxx/Debug/1wr4z3p5/arm64-v8a/freetype_build/libfreetyped.a",
+      "runtimeFiles": []
+    },
+    "aroma::@9df0d65908e3390db40e": {
+      "artifactName": "aroma",
+      "abi": "arm64-v8a",
+      "output": "/home/yassine/Projects/AromaUI/tools/cli/tesrt/android/app/.cxx/Debug/1wr4z3p5/arm64-v8a/aroma_lib/libaroma.a",
+      "runtimeFiles": []
+    },
+    "aroma_app::@6890427a1f51a3e7e1df": {
+      "artifactName": "aroma_app",
+      "abi": "arm64-v8a",
+      "output": "/home/yassine/Projects/AromaUI/tools/cli/tesrt/android/app/build/intermediates/cxx/Debug/1wr4z3p5/obj/arm64-v8a/libaroma_app.so",
+      "runtimeFiles": []
+    }
+  }
+}
