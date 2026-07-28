@@ -232,7 +232,7 @@ AromaEvent* aroma_event_create_custom(uint64_t target_node_id, uint32_t custom_t
 void aroma_event_destroy(AromaEvent* event);
 
 void aroma_event_consume(AromaEvent* event);
-
+void aroma_event_set_disabled(AromaEvent* event, bool disabled);
 AromaNode* aroma_event_hit_test(AromaNode* root, int x, int y);
 
 const char* aroma_event_type_name(AromaEventType event_type);

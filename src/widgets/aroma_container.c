@@ -717,8 +717,7 @@ static void draw_scrollbar_indicators(AromaContainer *c, size_t window_id)
     uint32_t base = c->scrollbar_color;
     uint8_t base_alpha = base & 0xFF;
     uint8_t alpha = (uint8_t)(base_alpha * c->scrollbar_opacity);
-    uint32_t color = (base & 0xFFFFFF00u) | alpha;
-
+    uint32_t color = (base & 0x00FFFFFFu) | (alpha << 24);  
     int eff_sx = effective_scroll_x(c);
     int eff_sy = effective_scroll_y(c);
 
