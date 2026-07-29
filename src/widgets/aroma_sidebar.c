@@ -523,7 +523,7 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
     sidebar->bg_color = theme.colors.surface;
     sidebar->text_color = theme.colors.text_primary;
     sidebar->selected_color = theme.colors.primary;
-    sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, 0xFFFFFFFF, 0.88f);
+    sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, theme.colors.surface, 0.88f);
     sidebar->hover_bg_color = aroma_color_blend(theme.colors.surface, 0xFF000000, 0.05f);
 
     float bg_radius = sidebar->apple_style ? (float)sidebar->corner_radius : 12.0f;

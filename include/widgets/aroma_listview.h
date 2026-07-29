@@ -11,8 +11,8 @@ extern "C" {
 #endif
 typedef struct    __attribute__((packed, aligned(1)))
 { 
-    char text[64];
-    char secondary_text[64];
+    char text[128];
+    char secondary_text[128];
     char icon[32];
     uint8_t _pad[4];
     void* user_data;

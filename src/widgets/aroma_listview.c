@@ -14,7 +14,7 @@
 #include "aroma_android.h"
 #endif
 
-#define AROMA_LIST_MAX_ITEMS 24
+#define AROMA_LIST_MAX_ITEMS 64
 #define AROMA_LIST_ITEM_PADDING 12
 #define AROMA_LIST_ICON_PADDING 12
 #define AROMA_LIST_MIN_ITEM_HEIGHT 28
