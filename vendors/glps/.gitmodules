@@ -1,0 +1,3 @@
+[submodule "alsa"]
+	path = alsa
+	url = https://github.com/alsa-project/alsa-lib.git

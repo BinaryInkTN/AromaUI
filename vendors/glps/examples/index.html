@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MyPlatform - Platform Abstraction Layer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #333;
+}
+
+header {
+    background: #222;
+    padding: 10px 0;
+}
+
+header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    height: 40px;
+}
+
+nav a {
+    color: #ccc;
+    margin-left: 20px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav a:hover {
+    color: #fff;
+}
+
+.container {
+    width: 90%;
+    max-width: 1000px;
+    margin: auto;
+}
+
+.intro {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.intro h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.intro p {
+    font-size: 20px;
+    margin-bottom: 40px;
+}
+
+.button {
+    display: inline-block;
+    margin: 10px;
+    padding: 12px 24px;
+    background: #007acc;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.button:hover {
+    background: #005f99;
+}
+
+.features {
+    padding: 40px 0;
+}
+
+.features ul {
+    list-style: none;
+    padding: 0;
+}
+
+.features li {
+    margin: 10px 0;
+    font-size: 18px;
+}
+
+footer {
+    background: #222;
+    color: #ccc;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 40px;
+}
+
+</style>
+<body>
+    <header>
+        <div class="container">
+            <img src="assets/logo.png" alt="MyPlatform Logo" class="logo">
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="docs.html">Documentation</a>
+                <a href="about.html">About</a>
+                <a href="https://github.com/your-repo" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <h1>MyPlatform</h1>
+            <p>A minimal and powerful platform abstraction layer for modern applications.</p>
+            <a href="https://github.com/your-repo/releases" class="button">Download</a>
+            <a href="docs.html" class="button">View Documentation</a>
+        </section>
+
+        <section class="features">
+            <h2>Features</h2>
+            <ul>
+                <li>Window creation and management</li>
+                <li>Context creation for OpenGL, Vulkan, etc.</li>
+                <li>Input handling (keyboard, mouse, joystick)</li>
+                <li>Cross-platform: Windows, Linux, macOS</li>
+                <li>Lightweight and dependency-free</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            &copy; 2025 MyPlatform. Inspired by GLFW.
+        </div>
+    </footer>
+</body>
+</html>

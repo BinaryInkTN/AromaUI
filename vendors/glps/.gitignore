@@ -1,0 +1,8 @@
+.vscode
+build
+.idea
+.qtcreator
+*.xml
+internal/xdg/
+src/xdg/
+alsa

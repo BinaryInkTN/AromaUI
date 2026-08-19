@@ -1,0 +1,15 @@
+[submodule "vendors/emscripten"]
+	path = vendors/emscripten
+	url = https://github.com/emscripten-core/emsdk.git
+[submodule "vendors/glps"]
+	path = vendors/glps
+	url = https://github.com/BinaryInkTN/GLPS
+[submodule "vendors/freetype"]
+	path = vendors/freetype
+	url = https://github.com/freetype/freetype.git
+[submodule "vendors/glfw"]
+	path = vendors/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "vendors/sqlite3"]
+	path = vendors/sqlite3
+	url = https://github.com/azadkuh/sqlite-amalgamation.git

@@ -1,0 +1,91 @@
+======================================================================
+Qt vs Aroma UI - Performance Benchmark Report
+======================================================================
+Date: 2026-07-24 17:43:57
+Trials per binary: 100
+
+
+======================================================================
+Timing Metrics
+======================================================================
+
+  Wall Clock Time (ms):
+    Qt:    6,578.10 ± 51.50 (min=6,540.00, max=6,930.00)
+    Aroma: 5,744.00 ± 2,639.79 (min=5,330.00, max=28,770.00)
+    → Aroma better by 12.7%
+
+  CPU User Time (ms):
+    Qt:    1,188.60 ± 352.33 (min=720.00, max=2,210.00)
+    Aroma: 253.50 ± 65.34 (min=190.00, max=410.00)
+    → Aroma better by 78.7%
+
+  CPU System Time (ms):
+    Qt:    148.50 ± 22.71 (min=70.00, max=200.00)
+    Aroma: 93.20 ± 20.04 (min=70.00, max=150.00)
+    → Aroma better by 37.2%
+
+  Total CPU Time (ms):
+    Qt:    1,337.10 ± 368.93 (min=790.00, max=2,380.00)
+    Aroma: 346.70 ± 82.83 (min=270.00, max=530.00)
+    → Aroma better by 74.1%
+
+  CPU Utilization (%):
+    Qt:    19.89 ± 5.39 (min=12.00, max=35.00)
+    Aroma: 5.91 ± 1.68 (min=1.00, max=9.00)
+    → Qt better by 70.3%
+
+======================================================================
+Memory Metrics
+======================================================================
+
+  USS Memory (Unique Set Size) (KB):
+    Qt:    44,309.44 ± 1,053.77 (min=43,120.00, max=45,836.00)
+    Aroma: 28,186.08 ± 89.53 (min=27,988.00, max=28,388.00)
+    → Aroma better by 36.4%
+
+  PSS Memory (Proportional Set Size) (KB):
+    Qt:    55,008.61 ± 1,215.26 (min=53,518.00, max=58,097.00)
+    Aroma: 39,764.21 ± 89.49 (min=39,560.00, max=39,960.00)
+    → Aroma better by 27.7%
+
+  RSS Memory (Resident Set Size) (KB):
+    Qt:    134,384.84 ± 1,543.13 (min=132,408.00, max=138,872.00)
+    Aroma: 141,351.52 ± 125.42 (min=141,044.00, max=141,648.00)
+    → Qt better by 4.9%
+
+======================================================================
+CPU Performance Counters
+======================================================================
+
+  Instructions (count):
+    Qt:    7,194,219,080.05 ± 1,073,737,303.38 (min=4,160,869,446.00, max=9,544,012,207.00)
+    Aroma: 2,275,885,823.40 ± 114,340,894.20 (min=1,992,834,590.00, max=2,613,217,507.00)
+    → Aroma better by 68.4%
+
+  Instructions Per Cycle (IPC):
+    Qt:    1.24 ± 0.06 (min=1.15, max=1.55)
+    Aroma: 1.31 ± 0.04 (min=1.25, max=1.40)
+    → Aroma better by 5.3%
+
+  Context Switches (count):
+    Qt:    3,991.00 ± 284.09 (min=1,273.00, max=4,179.00)
+    Aroma: 970.03 ± 18.29 (min=886.00, max=1,022.00)
+    → Aroma better by 75.7%
+
+======================================================================
+Statistical Analysis
+======================================================================
+
+Performance differences (Aroma vs Qt):
+  Wall Clock Time: Aroma is 12.7% better (lower is better)
+  CPU User Time: Aroma is 78.7% better (lower is better)
+  USS Memory: Aroma is 36.4% better (lower is better)
+  PSS Memory: Aroma is 27.7% better (lower is better)
+
+======================================================================
+Raw Data Files
+======================================================================
+  JSON results: benchmark_results.json
+  Summary stats: summary_statistics.json
+
+======================================================================

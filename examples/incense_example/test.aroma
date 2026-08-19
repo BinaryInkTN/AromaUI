@@ -1,0 +1,54 @@
+Window {
+    width: 300
+    height: 300
+    title: "Rainbow Text Showcase"
+
+    Label {
+        text: "Red"
+        color: "#FF0000"
+        x: 20
+        y: 20
+    }
+
+    Label {
+        text: "Orange"
+        color: "#FF7F00"
+        x: 20
+        y: 50
+    }
+
+    Label {
+        text: "Yellow"
+        color: "#FFFF00"
+        x: 20
+        y: 80
+    }
+
+    Label {
+        text: "Green"
+        color: "#00FF00"
+        x: 20
+        y: 110
+    }
+
+    Label {
+        text: "Blue"
+        color: "#0000FF"
+        x: 20
+        y: 140
+    }
+
+    Label {
+        text: "Indigo"
+        color: "#4B0082"
+        x: 20
+        y: 170
+    }
+
+    Label {
+        text: "Violet"
+        color: "#8B00FF"
+        x: 20
+        y: 200
+    }
+}

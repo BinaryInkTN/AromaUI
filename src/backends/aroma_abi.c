@@ -1,0 +1,333 @@
+
+
+#include "aroma_abi.h"
+#include "graphics/aroma_graphics_interface.h"
+#include "backends/platforms/aroma_platform_interface.h"
+#include <aroma_drawlist.h>
+#include <stdatomic.h>
+#include <stddef.h>
+
+static _Atomic(AromaGraphicsBackendType) current_graphics_backend = GRAPHICS_BACKEND_GLES3;
+static _Atomic(AromaPlatformBackendType) current_platform_backend = PLATFORM_BACKEND_GLPS;
+
+static AromaGraphicsInterface* get_real_graphics_interface(void) {
+#ifdef ESP32
+    current_graphics_backend = GRAPHICS_BACKEND_TFT_ESPI;
+    return &aroma_graphics_tft;
+#else
+    AromaGraphicsBackendType type = atomic_load(&current_graphics_backend);
+#ifdef AROMA_HAS_VULKAN
+    if (type == GRAPHICS_BACKEND_VULKAN)
+        return &aroma_graphics_vulkan;
+#endif
+    if (type == GRAPHICS_BACKEND_GLES3)
+        return &aroma_graphics_gles3;
+#endif
+}
+
+static void drawlist_proxy_clear(size_t window_id, uint32_t color)
+{
+    #ifndef ESP32
+
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_clear(list, color);
+        return;
+    }
+    #endif
+
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->clear) {
+        real->clear(window_id, color);
+    }
+}
+
+static void drawlist_proxy_fill_rectangle(size_t window_id, int x, int y, int width, int height,
+                                          uint32_t color, bool isRounded, float cornerRadius)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_fill_rect(list, x, y, width, height, color, isRounded, cornerRadius);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->fill_rectangle) {
+        real->fill_rectangle(window_id, x, y, width, height, color, isRounded, cornerRadius);
+    }
+}
+
+static void drawlist_proxy_draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height,
+                                                 uint32_t color, int border_width, bool isRounded, float cornerRadius)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_hollow_rect(list, x, y, width, height, color, border_width, isRounded, cornerRadius);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->draw_hollow_rectangle) {
+        real->draw_hollow_rectangle(window_id, x, y, width, height, color, border_width, isRounded, cornerRadius);
+    }
+}
+
+static void drawlist_proxy_draw_arc(size_t window_id, int cx, int cy, int radius,
+                                    float start_angle, float end_angle, uint32_t color, int thickness)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_arc(list, cx, cy, radius, start_angle, end_angle, color, thickness);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->draw_arc) {
+        real->draw_arc(window_id, cx, cy, radius, start_angle, end_angle, color, thickness);
+    }
+}
+
+static void drawlist_proxy_render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color, float scale)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_text(list, font, text, x, y, color, scale);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->render_text) {
+        real->render_text(window_id, font, text, x, y, color, scale);
+    }
+}
+
+static float drawlist_proxy_measure_text(size_t window_id, AromaFont* font, const char* text, float scale)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->measure_text) {
+        return real->measure_text(window_id, font, text, scale);
+    }
+    return 0.0f;
+}
+
+static unsigned int drawlist_proxy_load_image(const char* image_path)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if(real && real->load_image)
+    {
+        return real->load_image(image_path);
+    }
+    return 0;
+}
+
+static void drawlist_proxy_unload_image(unsigned int texture_id)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if(real && real->unload_image)
+    {
+        real->unload_image(texture_id);
+    }
+}
+
+#ifndef ESP32
+static unsigned int drawlist_proxy_load_image_from_memory(unsigned char* data, size_t binary_length)
+#else 
+static unsigned int drawlist_proxy_load_image_from_memory(const uint16_t* data, size_t binary_length)
+#endif
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if(real && real->load_image_from_memory)
+    {
+        return real->load_image_from_memory(data, binary_length);
+    }
+    return 0;
+}
+
+static unsigned int drawlist_proxy_load_image_from_rgba(unsigned char* data, int width, int height)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if(real && real->load_image_from_rgba)
+    {
+        return real->load_image_from_rgba(data, width, height);
+    }
+    return 0;
+}
+static void drawlist_proxy_draw_line(size_t window_id, int x0, int y0, int x1, int y1, uint32_t color, float thickness, bool round_cap)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_line(list, x0, y0, x1, y1, color, thickness, round_cap);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->draw_line) {
+        real->draw_line(window_id, x0, y0, x1, y1, color, thickness, round_cap);
+    }
+}
+
+static void drawlist_proxy_draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id)
+{
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_image(list, x, y, width, height, texture_id);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->draw_image) {
+        real->draw_image(window_id, x, y, width, height, texture_id);
+    }
+}
+static void drawlist_proxy_graphics_set_tft_context(void* tft) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_set_tft_context) {
+        real->graphics_set_tft_context(tft);
+    }
+}
+
+static void drawlist_proxy_graphics_set_sprite_mode(bool enable, void* sprite) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_set_sprite_mode) {
+        real->graphics_set_sprite_mode(enable, sprite);
+    }
+}
+
+static int drawlist_proxy_setup_shared_window_resources(void)
+{
+   
+    return 0;
+}
+
+static int drawlist_proxy_setup_separate_window_resources(size_t window_id)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->setup_separate_window_resources) {
+        return real->setup_separate_window_resources(window_id);
+    }
+    return 0;
+}
+
+static void drawlist_proxy_shutdown(void)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->shutdown) {
+        real->shutdown();
+    }
+}
+
+
+
+void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_scissor_push(list, x, y, w, h);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_set_clip) {
+        real->graphics_set_clip(x, y, w, h);
+    }
+}
+
+void drawlist_proxy_graphics_clear_clip(void) {
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_scissor_pop(list);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_clear_clip) {
+        real->graphics_clear_clip();
+    }
+}
+
+static void drawlist_proxy_graphics_flush(void) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->graphics_flush) {
+        real->graphics_flush();
+    }
+}
+
+static void drawlist_proxy_notify_dirty_region(int x, int y, int w, int h) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->notify_dirty_region) {
+        real->notify_dirty_region(x, y, w, h);
+    }
+}
+
+static bool drawlist_proxy_get_pending_dirty_rect(int *x, int *y, int *w, int *h) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->get_pending_dirty_rect) {
+        return real->get_pending_dirty_rect(x, y, w, h);
+    }
+    return false;
+}
+
+
+static AromaGraphicsInterface drawlist_proxy = {
+    .setup_shared_window_resources = drawlist_proxy_setup_shared_window_resources,
+    .setup_separate_window_resources = drawlist_proxy_setup_separate_window_resources,
+    .clear = drawlist_proxy_clear,
+    .fill_rectangle = drawlist_proxy_fill_rectangle,
+    .draw_hollow_rectangle = drawlist_proxy_draw_hollow_rectangle,
+    .draw_arc = drawlist_proxy_draw_arc,
+    .unload_image = drawlist_proxy_unload_image,
+    .load_image = drawlist_proxy_load_image,
+    .load_image_from_memory = drawlist_proxy_load_image_from_memory,
+    .load_image_from_rgba = drawlist_proxy_load_image_from_rgba,
+    .draw_image = drawlist_proxy_draw_image,
+    .draw_line = drawlist_proxy_draw_line,
+    .render_text = drawlist_proxy_render_text,
+    .measure_text = drawlist_proxy_measure_text,
+    .shutdown = drawlist_proxy_shutdown,
+    .graphics_set_sprite_mode = drawlist_proxy_graphics_set_sprite_mode,
+    .graphics_set_tft_context = drawlist_proxy_graphics_set_tft_context,
+    .graphics_set_clip = drawlist_proxy_graphics_set_clip,
+    .graphics_clear_clip = drawlist_proxy_graphics_clear_clip,
+    .graphics_flush = drawlist_proxy_graphics_flush,
+    .notify_dirty_region = drawlist_proxy_notify_dirty_region,
+    .get_pending_dirty_rect = drawlist_proxy_get_pending_dirty_rect,
+};
+
+void set_graphics_backend_type(AromaGraphicsBackendType type) {
+    atomic_store(&current_graphics_backend, type);
+}
+
+void set_platform_backend_type(AromaPlatformBackendType type) {
+    atomic_store(&current_platform_backend, type);
+}
+
+AromaGraphicsBackendType aroma_get_graphics_backend_type(void) {
+    return atomic_load(&current_graphics_backend);
+}
+
+AromaGraphicsInterface* get_graphics_interface(void) {
+    return &drawlist_proxy;
+}
+
+AromaPlatformInterface* aroma_get_platform_interface(void) {
+    AromaPlatformBackendType backend = atomic_load(&current_platform_backend);
+#ifdef ESP32
+    return &aroma_platform_tft;
+#elif defined(__ANDROID__)
+    current_platform_backend = PLATFORM_BACKEND_ANDROID;
+    return &aroma_platform_android;
+#elif defined(AROMA_USE_GLFW)
+    current_platform_backend = PLATFORM_BACKEND_GLFW;
+    return &aroma_platform_glfw;
+#elif defined(AROMA_USE_EMSCRIPTEN)
+    current_platform_backend = PLATFORM_BACKEND_GLFW;
+    return &aroma_platform_emscripten;
+#else
+    current_platform_backend = PLATFORM_BACKEND_GLPS;
+    return &aroma_platform_glps;
+#endif
+}
+
+AromaPlatformBackendType aroma_get_platform_backend_type(void) {
+    return atomic_load(&current_platform_backend);
+}
+
+AromaBackendABI aroma_backend_abi = {
+    .set_graphics_backend_type = set_graphics_backend_type,
+    .set_platform_backend_type = set_platform_backend_type,
+    .get_graphics_backend_type = aroma_get_graphics_backend_type,
+    .get_graphics_interface = get_graphics_interface,
+    .get_platform_interface = aroma_get_platform_interface,
+    .get_platform_backend_type = aroma_get_platform_backend_type
+};
