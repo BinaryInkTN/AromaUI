@@ -75,7 +75,21 @@ typedef struct
     unsigned int infolen;
     char info[2048];
 } swupdate_progress_msg_t;
+#include <time.h>
 
+#define POI_QUERY_MIN_INTERVAL_MS 400.0  
+#define POI_QUERY_MOVE_THRESHOLD_DEG 0.0008 
+#define POI_QUERY_ZOOM_THRESHOLD 0.25
+
+static bool poi_query_in_flight = false;
+static double last_poi_query_time_ms = 0.0;
+
+static double monotonic_ms(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (double)ts.tv_sec * 1000.0 + (double)ts.tv_nsec / 1e6;
+}
 static bool dark_mode_enabled = false;
 static AromaNode *settings_dark_mode_switch = NULL;
 
@@ -1104,7 +1118,6 @@ static void truncate_for_listview(const char *input, char *output, size_t output
         output[output_size - 1] = '\0';
     }
 }
-
 static void update_pois_markers(void)
 {
     if (!state.map_node)
@@ -1119,6 +1132,28 @@ static void update_pois_markers(void)
     double center_lat = map_widget->center_lat;
     double center_lon = map_widget->center_lon;
     double zoom = 18.0;
+
+    /* --- debounce gate --- */
+    if (poi_query_in_flight)
+        return;
+
+    double now_ms = monotonic_ms();
+    bool time_elapsed = (now_ms - last_poi_query_time_ms) >= POI_QUERY_MIN_INTERVAL_MS;
+    bool moved_enough =
+        fabs(center_lat - last_center_lat) > POI_QUERY_MOVE_THRESHOLD_DEG ||
+        fabs(center_lon - last_center_lon) > POI_QUERY_MOVE_THRESHOLD_DEG ||
+        fabs(zoom - last_zoom) > POI_QUERY_ZOOM_THRESHOLD;
+
+    if (!poi_refresh_forced && !moved_enough)
+        return;
+
+    if (!time_elapsed && !poi_refresh_forced)
+        return;
+    /* --- end debounce gate --- */
+
+    poi_query_in_flight = true;
+    poi_refresh_forced = false;
+    last_poi_query_time_ms = now_ms;
 
     poi_update_counter++;
 
@@ -1170,6 +1205,7 @@ static void update_pois_markers(void)
     {
         aroma_map_clear_markers(state.map_node);
         aroma_node_invalidate(state.map_node);
+        poi_query_in_flight = false;
         return;
     }
 
@@ -1179,6 +1215,7 @@ static void update_pois_markers(void)
 
     if (!pois || result_count == 0)
     {
+        poi_query_in_flight = false;
         return;
     }
 
@@ -1242,6 +1279,7 @@ static void update_pois_markers(void)
 
     if (candidate_count == 0)
     {
+        poi_query_in_flight = false;
         return;
     }
 
@@ -1257,8 +1295,9 @@ static void update_pois_markers(void)
     }
 
     aroma_node_invalidate(state.map_node);
-}
 
+    poi_query_in_flight = false;
+}
 static void populate_suggestion_cards(void)
 {
     int start = current_page * ITEMS_PER_PAGE;
