@@ -21,9 +21,6 @@
 #include <dirent.h>
 #include <signal.h>
 
-#define TILE_CACHE_DIR "./tiles"
-#define AMIXER_CONTROL_NAME "Master"
-#define BACKLIGHT_CLASS_DIR "/sys/class/backlight"
 #define SWUPDATE_CTRL_SOCKET_DEFAULT "/tmp/sockinstctrl"
 #define SWUPDATE_PROGRESS_SOCKET_DEFAULT "/tmp/swupdateprog"
 #define SWUPDATE_PID_FILE "/var/run/swupdate.pid"
@@ -51,7 +48,7 @@ typedef enum
 {
     SWU_IDLE,
     SWU_START,
-   SWU_RUN,
+    SWU_RUN,
     SWU_SUCCESS,
     SWU_FAILURE,
     SWU_DOWNLOAD,
@@ -270,7 +267,34 @@ static void restore_app_drawer_from_behind(void)
 
 static void apply_theme_colors(void)
 {
-    (void)dark_mode_enabled;
+    if(dark_mode_enabled)
+    {
+        state.theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
+        state.theme.colors.surface = 0xFF000000;
+        aroma_image_set_source(state.backroad,
+        #ifdef __EMSCRIPTEN__
+            "/assets/bg_dark.jpeg"
+        #elif defined(__arm__) || defined(__aarch64__) 
+            "/usr/share/infotainment/assets/bg_dark.jpeg"
+        #else
+            "../assets/bg_dark.jpeg"
+        #endif
+        );
+    }
+    else
+    {
+        state.theme = aroma_theme_create_material_blue();
+        aroma_image_set_source(state.backroad, 
+        #ifdef __EMSCRIPTEN__
+            "/assets/backroad_blur.png"
+        #elif defined(__arm__) || defined(__aarch64__)
+            "/usr/share/infotainment/assets/backroad_blur.png"
+        #else
+            "../assets/backroad_blur.png"
+        #endif
+        );
+    }
+    aroma_ui_set_theme(&state.theme);
 }
 
 static bool on_dark_mode_switch_changed(AromaNode *switch_node, void *user_data)
@@ -294,158 +318,6 @@ typedef struct {
 
 static AppDefinition app_definitions[4];
 #define APP_COUNT (sizeof(app_definitions) / sizeof(app_definitions[0]))
-
-static int run_command_silent(const char *const argv[])
-{
-    pid_t pid = fork();
-    if (pid < 0)
-    {
-        fprintf(stderr, "[settings] fork failed for %s: %s\n", argv[0], strerror(errno));
-        return -1;
-    }
-    if (pid == 0)
-    {
-        int devnull = open("/dev/null", O_WRONLY);
-        if (devnull >= 0)
-        {
-            dup2(devnull, STDOUT_FILENO);
-            dup2(devnull, STDERR_FILENO);
-            if (devnull > STDERR_FILENO)
-                close(devnull);
-        }
-        execvp(argv[0], (char *const *)argv);
-        _exit(127);
-    }
-    int status = 0;
-    if (waitpid(pid, &status, 0) < 0)
-    {
-        fprintf(stderr, "[settings] waitpid failed for %s: %s\n", argv[0], strerror(errno));
-        return -1;
-    }
-    if (WIFEXITED(status))
-        return WEXITSTATUS(status);
-    return -1;
-}
-
-static bool apply_system_volume(int percent)
-{
-    if (percent < 0)
-        percent = 0;
-    if (percent > 100)
-        percent = 100;
-
-    char percent_arg[16];
-    snprintf(percent_arg, sizeof(percent_arg), "%d%%", percent);
-
-    const char *argv[] = {"amixer", "-q", "sset", AMIXER_CONTROL_NAME, percent_arg, NULL};
-    int rc = run_command_silent(argv);
-    if (rc != 0)
-    {
-        fprintf(stderr, "[settings] amixer sset %s %s failed (rc=%d) - is alsa-utils installed "
-                        "and does control \"%s\" exist? Try `amixer scontrols` on-device.\n",
-                AMIXER_CONTROL_NAME, percent_arg, rc, AMIXER_CONTROL_NAME);
-        return false;
-    }
-    return true;
-}
-
-static bool find_backlight_device(char *out_path, size_t out_path_len, long *out_max_brightness)
-{
-    DIR *d = opendir(BACKLIGHT_CLASS_DIR);
-    if (!d)
-    {
-        fprintf(stderr, "[settings] no %s directory - brightness control unavailable on this "
-                        "device (no backlight class exposed by the kernel/DT)\n",
-                BACKLIGHT_CLASS_DIR);
-        return false;
-    }
-
-    struct dirent *entry;
-    bool found = false;
-    while ((entry = readdir(d)) != NULL)
-    {
-        if (entry->d_name[0] == '.')
-            continue;
-        snprintf(out_path, out_path_len, "%s/%s", BACKLIGHT_CLASS_DIR, entry->d_name);
-        found = true;
-        break;
-    }
-    closedir(d);
-
-    if (!found)
-    {
-        fprintf(stderr, "[settings] %s exists but has no backlight devices\n", BACKLIGHT_CLASS_DIR);
-        return false;
-    }
-
-    char max_path[320];
-    snprintf(max_path, sizeof(max_path), "%s/max_brightness", out_path);
-    FILE *f = fopen(max_path, "r");
-    if (!f)
-    {
-        fprintf(stderr, "[settings] cannot read %s: %s\n", max_path, strerror(errno));
-        return false;
-    }
-    long max_val = 0;
-    if (fscanf(f, "%ld", &max_val) != 1 || max_val <= 0)
-    {
-        fprintf(stderr, "[settings] unexpected contents in %s\n", max_path);
-        fclose(f);
-        return false;
-    }
-    fclose(f);
-
-    *out_max_brightness = max_val;
-    return true;
-}
-
-static bool backlight_device_resolved = false;
-static bool backlight_device_available = false;
-static char backlight_device_path[320];
-static long backlight_max_brightness = 0;
-
-static bool apply_system_brightness(int percent)
-{
-    if (percent < 0)
-        percent = 0;
-    if (percent > 100)
-        percent = 100;
-
-    if (!backlight_device_resolved)
-    {
-        backlight_device_available = find_backlight_device(
-            backlight_device_path, sizeof(backlight_device_path), &backlight_max_brightness);
-        backlight_device_resolved = true;
-    }
-    if (!backlight_device_available)
-        return false;
-
-    long raw_value = (long)((percent / 100.0) * backlight_max_brightness + 0.5);
-    if (raw_value < 0)
-        raw_value = 0;
-    if (raw_value > backlight_max_brightness)
-        raw_value = backlight_max_brightness;
-
-    char brightness_path[352];
-    snprintf(brightness_path, sizeof(brightness_path), "%s/brightness", backlight_device_path);
-
-    FILE *f = fopen(brightness_path, "w");
-    if (!f)
-    {
-        fprintf(stderr, "[settings] cannot write %s: %s\n", brightness_path, strerror(errno));
-        if (errno == EACCES)
-        {
-            fprintf(stderr, "[settings] Permission denied. Try:\n");
-            fprintf(stderr, "  1. Add user to video group: sudo usermod -a -G video $USER\n");
-            fprintf(stderr, "  2. Create udev rule: /etc/udev/rules.d/99-backlight.rules\n");
-            fprintf(stderr, "  3. Run as root: sudo ./your_app\n");
-        }
-        return false;
-    }
-    fprintf(f, "%ld", raw_value);
-    fclose(f);
-    return true;
-}
 
 static const char *swupdate_ctrl_socket_path(void)
 {
@@ -577,127 +449,6 @@ static int swupdate_get_web_port(void)
     return SWUPDATE_WEB_PORT_DEFAULT;
 }
 
-static bool swupdate_start_service(char *err_buf, size_t err_buf_len)
-{
-    if (swupdate_is_running())
-    {
-        snprintf(err_buf, err_buf_len, "swupdate is already running");
-        return true;
-    }
-    
-    int port = swupdate_get_web_port();
-    char port_str[16];
-    snprintf(port_str, sizeof(port_str), "%d", port);
-    
-    const char *argv[] = {"swupdate", "-w", port_str, "-p", "/tmp/swupdateprog", "-c", "/tmp/sockinstctrl", NULL};
-    pid_t pid = fork();
-    if (pid < 0)
-    {
-        snprintf(err_buf, err_buf_len, "failed to fork: %s", strerror(errno));
-        return false;
-    }
-    
-    if (pid == 0)
-    {
-        int devnull = open("/dev/null", O_RDWR);
-        if (devnull >= 0)
-        {
-            dup2(devnull, STDIN_FILENO);
-            dup2(devnull, STDOUT_FILENO);
-            dup2(devnull, STDERR_FILENO);
-            if (devnull > STDERR_FILENO)
-                close(devnull);
-        }
-        execvp("swupdate", (char *const *)argv);
-        _exit(127);
-    }
-    
-    int status;
-    if (waitpid(pid, &status, 0) < 0)
-    {
-        snprintf(err_buf, err_buf_len, "waitpid failed: %s", strerror(errno));
-        return false;
-    }
-    
-    if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-    {
-        snprintf(err_buf, err_buf_len, "swupdate exited with status %d", WEXITSTATUS(status));
-        return false;
-    }
-    
-    usleep(500000);
-    if (swupdate_is_running())
-    {
-        snprintf(err_buf, err_buf_len, "swupdate started successfully on port %d", port);
-        return true;
-    }
-    
-    snprintf(err_buf, err_buf_len, "swupdate failed to start properly");
-    return false;
-}
-
-static bool swupdate_stop_service(char *err_buf, size_t err_buf_len)
-{
-    if (!swupdate_is_running())
-    {
-        snprintf(err_buf, err_buf_len, "swupdate is not running");
-        return true;
-    }
-    
-    FILE *pid_file = fopen(SWUPDATE_PID_FILE, "r");
-    if (!pid_file)
-    {
-        snprintf(err_buf, err_buf_len, "cannot read pid file %s", SWUPDATE_PID_FILE);
-        return false;
-    }
-    
-    pid_t pid;
-    if (fscanf(pid_file, "%d", &pid) != 1)
-    {
-        fclose(pid_file);
-        snprintf(err_buf, err_buf_len, "invalid pid file");
-        return false;
-    }
-    fclose(pid_file);
-    
-    if (kill(pid, SIGTERM) != 0)
-    {
-        snprintf(err_buf, err_buf_len, "cannot kill process %d: %s", pid, strerror(errno));
-        return false;
-    }
-    
-    usleep(500000);
-    if (!swupdate_is_running())
-    {
-        snprintf(err_buf, err_buf_len, "swupdate stopped successfully");
-        return true;
-    }
-    
-    kill(pid, SIGKILL);
-    usleep(200000);
-    if (!swupdate_is_running())
-    {
-        snprintf(err_buf, err_buf_len, "swupdate force-stopped");
-        return true;
-    }
-    
-    snprintf(err_buf, err_buf_len, "failed to stop swupdate");
-    return false;
-}
-
-static bool swupdate_restart_service(char *err_buf, size_t err_buf_len)
-{
-    char stop_err[256];
-    if (!swupdate_stop_service(stop_err, sizeof(stop_err)))
-    {
-        snprintf(err_buf, err_buf_len, "stop failed: %s", stop_err);
-        return false;
-    }
-    
-    usleep(300000);
-    return swupdate_start_service(err_buf, err_buf_len);
-}
-
 static bool bottom_bar_app_open = false;
 static pthread_mutex_t app_open_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t contact_list_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -735,19 +486,8 @@ static AromaNode *settings_sidebar = NULL;
 static AromaNode *settings_page_general = NULL;
 static AromaNode *settings_page_display = NULL;
 static AromaNode *settings_page_updates = NULL;
-static AromaNode *settings_airplane_switch = NULL;
-static AromaNode *settings_wifi_switch = NULL;
 static AromaNode *settings_bluetooth_switch = NULL;
-static AromaNode *settings_hotspot_switch = NULL;
 static AromaNode *settings_autolock_label = NULL;
-static AromaNode *settings_brightness_slider = NULL;
-static AromaNode *settings_brightness_value_label = NULL;
-static AromaNode *settings_volume_slider = NULL;
-static AromaNode *settings_volume_value_label = NULL;
-static int settings_autolock_index = 0;
-static const char *settings_autolock_options[] = {"30 Seconds", "1 Minute", "2 Minutes", "5 Minutes", "Never"};
-static int current_brightness = 75;
-static int current_volume = 50;
 
 static AromaNode *bt_info_card = NULL;
 static AromaNode *bt_info_name_label = NULL;
@@ -763,10 +503,8 @@ static AromaNode *settings_ota_progress_bar = NULL;
 static AromaNode *settings_ota_progress_label = NULL;
 static AromaNode *settings_swupdate_status_label = NULL;
 static AromaNode *settings_swupdate_port_label = NULL;
-static AromaNode *settings_swupdate_start_btn = NULL;
-static AromaNode *settings_swupdate_stop_btn = NULL;
-static AromaNode *settings_swupdate_restart_btn = NULL;
 static AromaNode *settings_swupdate_card = NULL;
+static AromaNode *settings_map_options_card = NULL;
 
 typedef enum
 {
@@ -928,6 +666,7 @@ typedef struct
 
 static void update_pois_markers(void);
 static SuggestionSlotContext suggestion_slot_contexts[ITEMS_PER_PAGE];
+
 static bool on_pois_switch_changed(AromaNode *switch_node, void *user_data)
 {
     (void)user_data;
@@ -1032,26 +771,6 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
     return true;
 }
 
-static bool on_settings_volume_changed(AromaNode *slider, void *user_data)
-{
-    (void)user_data;
-    int value = aroma_slider_get_value(slider);
-    current_volume = value;
-
-    bool applied = apply_system_volume(value);
-
-    if (settings_volume_value_label)
-    {
-        char buf[40];
-        if (applied)
-            snprintf(buf, sizeof(buf), "%d%%", value);
-        else
-            snprintf(buf, sizeof(buf), "%d%% (not applied)", value);
-        aroma_label_set_text(settings_volume_value_label, buf);
-    }
-    return true;
-}
-
 static double calculate_distance_km(double lat1, double lon1, double lat2, double lon2)
 {
     double dlat = (lat2 - lat1) * M_PI / 180.0;
@@ -1133,7 +852,6 @@ static void update_pois_markers(void)
     double center_lon = map_widget->center_lon;
     double zoom = 18.0;
 
-    /* --- debounce gate --- */
     if (poi_query_in_flight)
         return;
 
@@ -1149,7 +867,6 @@ static void update_pois_markers(void)
 
     if (!time_elapsed && !poi_refresh_forced)
         return;
-    /* --- end debounce gate --- */
 
     poi_query_in_flight = true;
     poi_refresh_forced = false;
@@ -2530,10 +2247,11 @@ void update_media_card_display(void)
         return;
     bt_media_info_t media = bt_speaker_get_media_info();
     bt_state_t current_state = bt_speaker_get_state();
-    bool is_connected = (current_state == BT_STATE_CONNECTED ||
-                         current_state == BT_STATE_PLAYING);
+    bool is_playing = (current_state == BT_STATE_PLAYING);
+    bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
     bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
-    if (!has_media || !is_connected)
+    
+    if (!is_playing || !has_media || !is_connected)
     {
         aroma_node_set_hidden(media_ui.media_card, true);
         media_ui.first_media_check_done = false;
@@ -2996,11 +2714,11 @@ static void update_music_now_playing_display(void)
         return;
     bt_media_info_t media = bt_speaker_get_media_info();
     bt_state_t current_state = bt_speaker_get_state();
-    bool is_connected = (current_state == BT_STATE_CONNECTED ||
-                         current_state == BT_STATE_PLAYING);
+    bool is_playing = (current_state == BT_STATE_PLAYING);
+    bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
     bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
 
-    if (!has_media || !is_connected)
+    if (!is_playing || !has_media || !is_connected)
     {
         if (music_no_media_label)
             aroma_node_set_hidden(music_no_media_label, false);
@@ -3304,63 +3022,6 @@ static void update_swupdate_service_status(void)
     }
 }
 
-static bool on_swupdate_start_click(AromaNode *button, void *user_data)
-{
-    (void)user_data;
-    char err_buf[256];
-    if (swupdate_start_service(err_buf, sizeof(err_buf)))
-    {
-        update_swupdate_service_status();
-    }
-    else
-    {
-        if (settings_swupdate_status_label)
-        {
-            aroma_label_set_text(settings_swupdate_status_label, err_buf);
-            aroma_label_set_color(settings_swupdate_status_label, IOS_COLOR_RED);
-        }
-    }
-    return true;
-}
-
-static bool on_swupdate_stop_click(AromaNode *button, void *user_data)
-{
-    (void)user_data;
-    char err_buf[256];
-    if (swupdate_stop_service(err_buf, sizeof(err_buf)))
-    {
-        update_swupdate_service_status();
-    }
-    else
-    {
-        if (settings_swupdate_status_label)
-        {
-            aroma_label_set_text(settings_swupdate_status_label, err_buf);
-            aroma_label_set_color(settings_swupdate_status_label, IOS_COLOR_RED);
-        }
-    }
-    return true;
-}
-
-static bool on_swupdate_restart_click(AromaNode *button, void *user_data)
-{
-    (void)user_data;
-    char err_buf[256];
-    if (swupdate_restart_service(err_buf, sizeof(err_buf)))
-    {
-        update_swupdate_service_status();
-    }
-    else
-    {
-        if (settings_swupdate_status_label)
-        {
-            aroma_label_set_text(settings_swupdate_status_label, err_buf);
-            aroma_label_set_color(settings_swupdate_status_label, IOS_COLOR_RED);
-        }
-    }
-    return true;
-}
-
 static void on_settings_sidebar_select(AromaNode *sidebar, int index, void *user_data)
 {
     (void)sidebar;
@@ -3379,6 +3040,8 @@ static void on_settings_sidebar_select(AromaNode *sidebar, int index, void *user
 static void on_settings_autolock_click(void *user_data)
 {
     (void)user_data;
+    int settings_autolock_index = 0;
+    const char *settings_autolock_options[] = {"30 Seconds", "1 Minute", "2 Minutes", "5 Minutes", "Never"};
     settings_autolock_index = (settings_autolock_index + 1) % 5;
     if (settings_autolock_label)
     {
@@ -3386,29 +3049,9 @@ static void on_settings_autolock_click(void *user_data)
     }
 }
 
-static bool on_settings_brightness_changed(AromaNode *slider, void *user_data)
-{
-    (void)user_data;
-    int value = aroma_slider_get_value(slider);
-    current_brightness = value;
-
-    bool applied = apply_system_brightness(value);
-
-    if (settings_brightness_value_label)
-    {
-        char buf[40];
-        if (applied)
-            snprintf(buf, sizeof(buf), "%d%%", value);
-        else
-            snprintf(buf, sizeof(buf), "%d%% (no backlight device)", value);
-        aroma_label_set_text(settings_brightness_value_label, buf);
-    }
-    return true;
-}
-
 static void update_ota_display(void)
 {
-    if (!settings_ota_status_label || !settings_ota_version_label || !settings_ota_check_btn)
+    if (!settings_ota_status_label || !settings_ota_check_btn)
         return;
 
     OtaState state_snapshot;
@@ -3949,7 +3592,6 @@ static void build_lock_screen(AromaNode *window)
 
 void build_vehicle_view(AromaNode *window)
 {
-    mkdir(TILE_CACHE_DIR, 0777);
     
     state.vehicle_view_root = aroma_ui_container(
         window, 0, 0, WIN_W, WIN_H,
@@ -3958,7 +3600,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(state.vehicle_view_root, Z_LAYER_BACKGROUND);
     aroma_node_set_hidden(state.vehicle_view_root, true);
 
-    AromaNode *backroad = aroma_ui_image(
+    state.backroad = aroma_ui_image(
         state.vehicle_view_root,
 #ifdef __EMSCRIPTEN__
         "/assets/bg_dark.jpeg"
@@ -3969,7 +3611,7 @@ void build_vehicle_view(AromaNode *window)
 #endif
         ,
         0, 0, WIN_W, WIN_H);
-    aroma_node_set_z_index(backroad, Z_LAYER_BACKGROUND);
+    aroma_node_set_z_index(state.backroad, Z_LAYER_BACKGROUND);
 
     state.car_img = aroma_ui_image(
         state.vehicle_view_root,
@@ -4677,22 +4319,12 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(general_title, Z_LAYER_STATUS_BAR + 13);
 
     AromaNode *general_card = aroma_ui_card(
-        settings_page_general, 20, 70, WIN_W - 250, 150, CARD_TYPE_FILLED);
+        settings_page_general, 20, 70, WIN_W - 250, 80, CARD_TYPE_FILLED);
     aroma_node_set_z_index(general_card, Z_LAYER_STATUS_BAR + 13);
 
-    AromaNode *airplane_icon = aroma_ui_icon(general_card, AROMA_ICON_AIRPLANEMODE_ACTIVE, 40, 25, 32, IOS_COLOR_ORANGE, state.icon_font);
-    AromaNode *airplane_label = aroma_ui_label(general_card, "Airplane Mode", 90, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    settings_airplane_switch = aroma_ui_switch(general_card, WIN_W - 320, 20, 60, 30, false, NULL, NULL);
-    aroma_node_set_z_index(airplane_icon, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(airplane_label, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(settings_airplane_switch, Z_LAYER_STATUS_BAR + 14);
-
-    AromaNode *divider1 = aroma_ui_divider(general_card, 20, 60, WIN_W - 290, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(divider1, Z_LAYER_STATUS_BAR + 14);
-
-    AromaNode *bt_icon = aroma_ui_icon(general_card, AROMA_ICON_BLUETOOTH, 40, 85, 32, IOS_COLOR_BLUE, state.icon_font);
-    AromaNode *bt_label = aroma_ui_label(general_card, "Bluetooth", 90, 90, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    settings_bluetooth_switch = aroma_ui_switch(general_card, WIN_W - 320, 80, 60, 30, true, on_settings_bluetooth_changed, NULL);
+    AromaNode *bt_icon = aroma_ui_icon(general_card, AROMA_ICON_BLUETOOTH, 40, 25, 32, IOS_COLOR_BLUE, state.icon_font);
+    AromaNode *bt_label = aroma_ui_label(general_card, "Bluetooth", 90, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    settings_bluetooth_switch = aroma_ui_switch(general_card, WIN_W - 320, 20, 60, 30, true, on_settings_bluetooth_changed, NULL);
     aroma_node_set_z_index(bt_icon, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(bt_label, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(settings_bluetooth_switch, Z_LAYER_STATUS_BAR + 14);
@@ -4731,36 +4363,12 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(display_title, Z_LAYER_STATUS_BAR + 13);
 
     AromaNode *display_card = aroma_ui_card(
-        settings_page_display, 20, 70, WIN_W - 250, 300, CARD_TYPE_FILLED);
+        settings_page_display, 20, 70, WIN_W - 250, 80, CARD_TYPE_FILLED);
     aroma_node_set_z_index(display_card, Z_LAYER_STATUS_BAR + 13);
 
-    AromaNode *brightness_icon = aroma_ui_icon(display_card, AROMA_ICON_BRIGHTNESS_6, 40, 25, 32, IOS_COLOR_BLUE, state.icon_font);
-    AromaNode *brightness_label = aroma_ui_label(display_card, "Brightness", 90, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    settings_brightness_slider = aroma_ui_slider(display_card, 90, 60, WIN_W - 390, 30, 0, 100, current_brightness, on_settings_brightness_changed, NULL);
-    settings_brightness_value_label = aroma_ui_label(display_card, "75%", WIN_W - 310, 60, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_node_set_z_index(brightness_icon, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(brightness_label, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(settings_brightness_slider, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(settings_brightness_value_label, Z_LAYER_STATUS_BAR + 14);
-
-    AromaNode *divider3 = aroma_ui_divider(display_card, 20, 110, WIN_W - 290, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(divider3, Z_LAYER_STATUS_BAR + 14);
-
-    AromaNode *volume_icon = aroma_ui_icon(display_card, AROMA_ICON_VOLUME_UP, 40, 135, 32, IOS_COLOR_BLUE, state.icon_font);
-    AromaNode *volume_label = aroma_ui_label(display_card, "Volume", 90, 140, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    settings_volume_slider = aroma_ui_slider(display_card, 90, 170, WIN_W - 390, 30, 0, 100, current_volume, on_settings_volume_changed, NULL);
-    settings_volume_value_label = aroma_ui_label(display_card, "50%", WIN_W - 310, 170, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_node_set_z_index(volume_icon, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(volume_label, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(settings_volume_slider, Z_LAYER_STATUS_BAR + 14);
-    aroma_node_set_z_index(settings_volume_value_label, Z_LAYER_STATUS_BAR + 14);
-
-    AromaNode *divider4 = aroma_ui_divider(display_card, 20, 220, WIN_W - 290, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(divider4, Z_LAYER_STATUS_BAR + 14);
-
-    AromaNode *dark_mode_icon = aroma_ui_icon(display_card, AROMA_ICON_PALETTE, 40, 245, 32, IOS_COLOR_PURPLE, state.icon_font);
-    AromaNode *dark_mode_label = aroma_ui_label(display_card, "Dark Mode", 90, 250, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    settings_dark_mode_switch = aroma_ui_switch(display_card, WIN_W - 320, 240, 60, 30, false, on_dark_mode_switch_changed, NULL);
+    AromaNode *dark_mode_icon = aroma_ui_icon(display_card, AROMA_ICON_PALETTE, 40, 25, 32, IOS_COLOR_PURPLE, state.icon_font);
+    AromaNode *dark_mode_label = aroma_ui_label(display_card, "Dark Mode", 90, 30, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    settings_dark_mode_switch = aroma_ui_switch(display_card, WIN_W - 320, 20, 60, 30, true, on_dark_mode_switch_changed, NULL);
     aroma_node_set_z_index(dark_mode_icon, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(dark_mode_label, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(settings_dark_mode_switch, Z_LAYER_STATUS_BAR + 14);
@@ -4787,34 +4395,17 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *os_name_label = aroma_ui_label(updates_card, "Aroma OS", (WIN_W - 350) / 2, 100, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(os_name_label, Z_LAYER_STATUS_BAR + 14);
 
-    AromaNode *divider5 = aroma_ui_divider(updates_card, 20, 160, WIN_W - 290, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(divider5, Z_LAYER_STATUS_BAR + 14);
-
-    AromaNode *swupdate_icon = aroma_ui_icon(updates_card, AROMA_ICON_REFRESH, 40, 175, 32, IOS_COLOR_BLUE, state.icon_font);
+    AromaNode *swupdate_icon = aroma_ui_icon(updates_card, AROMA_ICON_FILE_DOWNLOAD, 60, 175, 32, IOS_COLOR_BLUE, state.icon_font);
     AromaNode *swupdate_label = aroma_ui_label(updates_card, "SWUpdate 2023.12", 90, 180, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(swupdate_icon, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(swupdate_label, Z_LAYER_STATUS_BAR + 14);
 
-    settings_ota_status_label = aroma_ui_label(updates_card, "Up to date", 90, 210, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_node_set_z_index(settings_ota_status_label, Z_LAYER_STATUS_BAR + 14);
-
-    settings_ota_check_btn = aroma_ui_label(updates_card, "Check Now", WIN_W - 340, 180, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(settings_ota_check_btn, Z_LAYER_STATUS_BAR + 15);
-
-    AromaNode *divider6 = aroma_ui_divider(updates_card, 20, 250, WIN_W - 290, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(divider6, Z_LAYER_STATUS_BAR + 14);
 
     settings_swupdate_status_label = aroma_ui_label(updates_card, "SWUpdate: Stopped", 40, 265, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(settings_swupdate_status_label, Z_LAYER_STATUS_BAR + 14);
 
     settings_swupdate_port_label = aroma_ui_label(updates_card, "Port: --", 40, 285, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(settings_swupdate_port_label, Z_LAYER_STATUS_BAR + 14);
-
-    settings_swupdate_start_btn = aroma_ui_button(updates_card, "Start", WIN_W - 340, 260, 70, 28, on_swupdate_start_click, NULL, state.ui_font);
-    aroma_node_set_z_index(settings_swupdate_start_btn, Z_LAYER_STATUS_BAR + 14);
-
-    settings_swupdate_stop_btn = aroma_ui_button(updates_card, "Stop", WIN_W - 260, 260, 70, 28, on_swupdate_stop_click, NULL, state.ui_font);
-    aroma_node_set_z_index(settings_swupdate_stop_btn, Z_LAYER_STATUS_BAR + 14);
 
     settings_ota_progress_bar = aroma_ui_progressbar(updates_card, 40, 310, WIN_W - 330, 12, PROGRESS_TYPE_DETERMINATE, 0.0f);
     aroma_node_set_hidden(settings_ota_progress_bar, true);
