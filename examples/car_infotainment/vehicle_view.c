@@ -27,7 +27,7 @@
 #define SWUPDATE_WEB_PORT_ENV "SWUPDATE_WEBSERVER_PORT"
 #define SWUPDATE_WEB_PORT_DEFAULT 8080
 #define Z_LAYER_CARDS_TOP 1000
-
+void update_media_card_display(void);
 #define SWUPDATE_IPC_MAGIC 0x1002003
 typedef enum
 {
@@ -159,6 +159,21 @@ static AromaNode *lock_screen_root = NULL;
 static AromaNode *lock_screen_time = NULL;
 static AromaNode *lock_screen_date = NULL;
 static AromaNode *lock_screen_unlock_btn = NULL;
+
+static bt_state_t g_bt_state = BT_STATE_IDLE;
+static bt_device_info_t g_bt_device_info = {0};
+static bt_media_info_t g_bt_media_info = {0};
+static bt_stats_t g_bt_stats = {0};
+static bool g_bt_initialized = false;
+static bool g_bt_connected = false;
+static pthread_mutex_t g_bt_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void *user_data);
+static void on_bt_device_changed(const bt_device_info_t *device, bool connected, void *user_data);
+static void on_bt_error(bt_error_t error, const char *message, void *user_data);
+static void on_bt_audio_changed(bool started, void *user_data);
+static void on_bt_avrcp_changed(const bt_media_info_t *media, void *user_data);
+static void on_bt_call_changed(const bt_call_info_t *call, bool removed, void *user_data);
 
 typedef struct
 {
@@ -724,8 +739,10 @@ static void update_bt_info_card(void)
     if (!bt_info_card || !bt_info_name_label || !bt_info_address_label || !bt_info_status_label)
         return;
     
-    bt_device_info_t device = bt_speaker_get_device_info();
-    bt_state_t bt_state = bt_speaker_get_state();
+    pthread_mutex_lock(&g_bt_mutex);
+    bt_device_info_t device = g_bt_device_info;
+    bt_state_t bt_state = g_bt_state;
+    pthread_mutex_unlock(&g_bt_mutex);
     
     if (device.connected && device.name[0])
     {
@@ -759,14 +776,43 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
     
     if (enabled)
     {
+        if (!g_bt_initialized)
+        {
+            bt_config_t config = {
+                .device_name = "Aroma Infotainment",
+                .pin_code = "0000",
+                .verbose = true,
+                .state_cb = on_bt_state_changed,
+                .state_cb_data = NULL,
+                .device_cb = on_bt_device_changed,
+                .device_cb_data = NULL,
+                .error_cb = on_bt_error,
+                .error_cb_data = NULL,
+                .audio_cb = on_bt_audio_changed,
+                .audio_cb_data = NULL,
+                .avrcp_cb = on_bt_avrcp_changed,
+                .avrcp_cb_data = NULL,
+            };
+            bt_speaker_init(&config);
+            bt_hfp_init();
+            bt_hfp_set_call_callback(on_bt_call_changed, NULL);
+            g_bt_initialized = true;
+        }
         bt_speaker_start();
     }
     else
     {
+        bt_speaker_stop();
         bt_speaker_cleanup();
+        bt_hfp_cleanup();
+        g_bt_initialized = false;
+        g_bt_connected = false;
+        memset(&g_bt_device_info, 0, sizeof(bt_device_info_t));
+        memset(&g_bt_media_info, 0, sizeof(bt_media_info_t));
     }
     
     update_bt_info_card();
+    update_media_card_display();
     
     return true;
 }
@@ -1911,8 +1957,10 @@ static bool on_dialer_call_click_icon(AromaNode *node, void *user_data)
     (void)user_data;
     if (dialer_number[0] != '\0')
     {
-        bt_device_info_t device = bt_speaker_get_device_info();
-        if (device.connected)
+        pthread_mutex_lock(&g_bt_mutex);
+        bool connected = g_bt_connected;
+        pthread_mutex_unlock(&g_bt_mutex);
+        if (connected)
         {
             bt_hfp_dial(dialer_number);
         }
@@ -2245,13 +2293,17 @@ void update_media_card_display(void)
 {
     if (!media_ui.ui_initialized || !media_ui.media_card)
         return;
-    bt_media_info_t media = bt_speaker_get_media_info();
-    bt_state_t current_state = bt_speaker_get_state();
+    
+    pthread_mutex_lock(&g_bt_mutex);
+    bt_media_info_t media = g_bt_media_info;
+    bt_state_t current_state = g_bt_state;
+    pthread_mutex_unlock(&g_bt_mutex);
+    
     bool is_playing = (current_state == BT_STATE_PLAYING);
     bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
     bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
     
-    if (!is_playing || !has_media || !is_connected)
+    if (!is_connected || !has_media)
     {
         aroma_node_set_hidden(media_ui.media_card, true);
         media_ui.first_media_check_done = false;
@@ -2368,8 +2420,10 @@ static void on_contact_click(int index, void *user_data)
             safe_str_copy(number, state.contacts[orig_idx].number, sizeof(number));
             if (number[0] != '\0')
             {
-                bt_device_info_t device = bt_speaker_get_device_info();
-                if (device.connected)
+                pthread_mutex_lock(&g_bt_mutex);
+                bool connected = g_bt_connected;
+                pthread_mutex_unlock(&g_bt_mutex);
+                if (connected)
                 {
                     bt_hfp_dial(number);
                 }
@@ -2712,13 +2766,17 @@ static void update_music_now_playing_display(void)
 {
     if (!music_now_playing_card)
         return;
-    bt_media_info_t media = bt_speaker_get_media_info();
-    bt_state_t current_state = bt_speaker_get_state();
+    
+    pthread_mutex_lock(&g_bt_mutex);
+    bt_media_info_t media = g_bt_media_info;
+    bt_state_t current_state = g_bt_state;
+    pthread_mutex_unlock(&g_bt_mutex);
+    
     bool is_playing = (current_state == BT_STATE_PLAYING);
     bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
     bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
 
-    if (!is_playing || !has_media || !is_connected)
+    if (!is_connected || !has_media)
     {
         if (music_no_media_label)
             aroma_node_set_hidden(music_no_media_label, false);
@@ -2801,8 +2859,12 @@ static void update_music_device_display(void)
 {
     if (!music_device_card)
         return;
-    bt_device_info_t device = bt_speaker_get_device_info();
-    bt_state_t current_state = bt_speaker_get_state();
+    
+    pthread_mutex_lock(&g_bt_mutex);
+    bt_device_info_t device = g_bt_device_info;
+    bt_state_t current_state = g_bt_state;
+    pthread_mutex_unlock(&g_bt_mutex);
+    
     bool is_connected = (current_state == BT_STATE_CONNECTED ||
                          current_state == BT_STATE_PLAYING);
 
@@ -2848,7 +2910,9 @@ static void update_music_device_display(void)
     }
     if (music_device_stats_label)
     {
-        bt_stats_t stats = bt_speaker_get_stats();
+        pthread_mutex_lock(&g_bt_mutex);
+        bt_stats_t stats = g_bt_stats;
+        pthread_mutex_unlock(&g_bt_mutex);
         char stats_buf[160];
         unsigned long minutes = stats.connected_time_sec / 60;
         unsigned long seconds = stats.connected_time_sec % 60;
@@ -3589,10 +3653,108 @@ static void build_lock_screen(AromaNode *window)
     lock_screen_active = true;
     aroma_node_set_hidden(state.vehicle_view_root, true);
 }
+static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void *user_data)
+{
+    (void)user_data;
+    (void)old_state;
+    
+    pthread_mutex_lock(&g_bt_mutex);
+    g_bt_state = new_state;
+    g_bt_connected = (new_state == BT_STATE_CONNECTED || new_state == BT_STATE_PLAYING);
+    pthread_mutex_unlock(&g_bt_mutex);
+    
+    update_bt_info_card();
+    update_media_card_display();
+}
+static void on_bt_device_changed(const bt_device_info_t *device, bool connected, void *user_data)
+{
+    (void)user_data;
+    pthread_mutex_lock(&g_bt_mutex);
+    g_bt_connected = connected;
+    if (connected && device)
+    {
+        memcpy(&g_bt_device_info, device, sizeof(bt_device_info_t));
+    }
+    else
+    {
+        memset(&g_bt_device_info, 0, sizeof(bt_device_info_t));
+    }
+    pthread_mutex_unlock(&g_bt_mutex);
+    update_bt_info_card();
+
+    if (connected && device && device->path[0] && !state.contacts_fetched)
+    {
+        bt_contact_t bt_contacts[MAX_CONTACTS];
+        int count = bt_hfp_fetch_contacts(device->path, bt_contacts, MAX_CONTACTS);
+        if (count > 0)
+        {
+            state.contact_count = count;
+            for (int i = 0; i < count && i < MAX_CONTACTS; i++)
+            {
+                strncpy(state.contacts[i].name, bt_contacts[i].name, sizeof(state.contacts[i].name) - 1);
+                state.contacts[i].name[sizeof(state.contacts[i].name) - 1] = '\0';
+                strncpy(state.contacts[i].number, bt_contacts[i].number, sizeof(state.contacts[i].number) - 1);
+                state.contacts[i].number[sizeof(state.contacts[i].number) - 1] = '\0';
+            }
+            state.contacts_fetched = true;
+            populate_contact_listview(state.contact_listview);
+        }
+    }
+}
+
+static void on_bt_error(bt_error_t error, const char *message, void *user_data)
+{
+    (void)user_data;
+    (void)error;
+    fprintf(stderr, "Bluetooth error: %s\n", message ? message : "unknown");
+}
+
+static void on_bt_audio_changed(bool started, void *user_data)
+{
+    (void)user_data;
+    (void)started;
+    update_media_card_display();
+}
+
+static void on_bt_avrcp_changed(const bt_media_info_t *media, void *user_data)
+{
+    (void)user_data;
+    if (media)
+    {
+        pthread_mutex_lock(&g_bt_mutex);
+        memcpy(&g_bt_media_info, media, sizeof(bt_media_info_t));
+        pthread_mutex_unlock(&g_bt_mutex);
+    }
+    update_media_card_display();
+    if (music_app_open && music_active_tab == 0)
+    {
+        update_music_now_playing_display();
+    }
+}
+
+static void on_bt_call_changed(const bt_call_info_t *call, bool removed, void *user_data)
+{
+    (void)user_data;
+    (void)removed;
+    if (call && call->state == BT_CALL_STATE_INCOMING)
+    {
+        show_incoming_call_screen(call->name, call->line_id, call->path);
+    }
+    else if (call && call->state == BT_CALL_STATE_DISCONNECTED)
+    {
+        if (incoming_call_overlay)
+        {
+            aroma_node_set_hidden(incoming_call_overlay, true);
+        }
+        pthread_mutex_lock(&call_state_lock);
+        call_overlay_visible = false;
+        current_call_path[0] = '\0';
+        pthread_mutex_unlock(&call_state_lock);
+    }
+}
 
 void build_vehicle_view(AromaNode *window)
 {
-    
     state.vehicle_view_root = aroma_ui_container(
         window, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW,
@@ -3725,28 +3887,25 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_hidden(state.battery_health, true);
 
     media_ui.media_card = aroma_ui_card(
-        state.vehicle_view_root, 110, WIN_H - 110, 380, 80, CARD_TYPE_GLASS);
+        state.vehicle_view_root, 110, WIN_H - 110, 395, 80, CARD_TYPE_GLASS);
     aroma_node_set_z_index(media_ui.media_card, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    aroma_card_set_colors(media_ui.media_card, 0x80FFFFFF, 0x80FFFFFF);
     aroma_node_set_hidden(media_ui.media_card, true);
 
     AromaNode *music_icon_btn = aroma_ui_iconbutton(
         media_ui.media_card, AROMA_ICON_MUSIC_NOTE,
-        16, 22, 36, ICON_BUTTON_FILLED,
+        22, 22, 36, ICON_BUTTON_FILLED,
         on_music_icon_click, NULL, state.icon_font);
-    aroma_iconbutton_set_colors(music_icon_btn, ANDROID_COLOR_PRIMARY, ANDROID_COLOR_SURFACE);
     aroma_node_set_z_index(music_icon_btn, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
     media_ui.media_title_label = aroma_ui_label(
-        media_ui.media_card, "No Track", 60, 12,
+        media_ui.media_card, "No Track", 70, 12,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(media_ui.media_title_label, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
     media_ui.media_artist_label = aroma_ui_label(
-        media_ui.media_card, "No Artist", 60, 40,
+        media_ui.media_card, "No Artist", 70, 40,
         LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(media_ui.media_artist_label, Z_LAYER_VEHICLE_OVERLAYS + 3);
-    aroma_label_set_color(media_ui.media_artist_label, 0xFFAAAAAA);
 
     media_ui.media_prev_button = aroma_ui_iconbutton(
         media_ui.media_card, AROMA_ICON_SKIP_PREVIOUS,
@@ -4330,8 +4489,7 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(settings_bluetooth_switch, Z_LAYER_STATUS_BAR + 14);
 
     bt_info_card = aroma_ui_card(
-        settings_page_general, 20, 240, WIN_W - 250, 120, CARD_TYPE_FILLED);
-    aroma_card_set_colors(bt_info_card, IOS_COLOR_GROUPED_BACKGROUND, IOS_COLOR_GROUPED_BACKGROUND);
+        settings_page_general, 20, 180, WIN_W - 250, 120, CARD_TYPE_FILLED);
     aroma_node_set_z_index(bt_info_card, Z_LAYER_STATUS_BAR + 13);
     aroma_node_set_hidden(bt_info_card, true);
 
@@ -4339,15 +4497,12 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(bt_info_icon, Z_LAYER_STATUS_BAR + 14);
 
     bt_info_status_label = aroma_ui_label(bt_info_card, "Connected", 80, 20, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_label_set_color(bt_info_status_label, IOS_COLOR_LABEL);
     aroma_node_set_z_index(bt_info_status_label, Z_LAYER_STATUS_BAR + 14);
 
     bt_info_name_label = aroma_ui_label(bt_info_card, "Name: None", 30, 55, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_label_set_color(bt_info_name_label, IOS_COLOR_SECONDARY_LABEL);
     aroma_node_set_z_index(bt_info_name_label, Z_LAYER_STATUS_BAR + 14);
 
     bt_info_address_label = aroma_ui_label(bt_info_card, "Address: None", 30, 80, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_label_set_color(bt_info_address_label, IOS_COLOR_SECONDARY_LABEL);
     aroma_node_set_z_index(bt_info_address_label, Z_LAYER_STATUS_BAR + 14);
 
     settings_page_display = aroma_ui_container(
@@ -4464,19 +4619,33 @@ void build_vehicle_view(AromaNode *window)
 
     media_ui.ui_initialized = true;
 
+    bt_config_t config = {
+        .device_name = "Aroma Infotainment",
+        .pin_code = "0000",
+        .verbose = true,
+        .state_cb = on_bt_state_changed,
+        .state_cb_data = NULL,
+        .device_cb = on_bt_device_changed,
+        .device_cb_data = NULL,
+        .error_cb = on_bt_error,
+        .error_cb_data = NULL,
+        .audio_cb = on_bt_audio_changed,
+        .audio_cb_data = NULL,
+        .avrcp_cb = on_bt_avrcp_changed,
+        .avrcp_cb_data = NULL,
+    };
+    bt_speaker_init(&config);
+    bt_hfp_init();
+    bt_hfp_set_call_callback(on_bt_call_changed, NULL);
+    g_bt_initialized = true;
+    bt_speaker_start();
+
     pthread_t media_thread;
     pthread_attr_t media_attr;
     pthread_attr_init(&media_attr);
     pthread_attr_setdetachstate(&media_attr, PTHREAD_CREATE_DETACHED);
     pthread_create(&media_thread, &media_attr, media_monitor_thread_func, NULL);
     pthread_attr_destroy(&media_attr);
-
-    pthread_t call_thread;
-    pthread_attr_t call_attr;
-    pthread_attr_init(&call_attr);
-    pthread_attr_setdetachstate(&call_attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&call_thread, &call_attr, call_monitor_thread_func, NULL);
-    pthread_attr_destroy(&call_attr);
 
     build_lock_screen(window);
 }
@@ -4488,6 +4657,8 @@ void update_vehicle_view(void)
         update_lock_screen_clock();
         return;
     }
+
+    bt_hfp_poll();
 
     if (maps_screen_open && state.map_node && !map_nav.navigation_active)
     {
