@@ -71,9 +71,9 @@ USER_AGENTS = [
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5
-BATCH_SIZE = 100
-MAX_WORKERS = 1
-RATE_LIMIT_DELAY = 1
+BATCH_SIZE = 1000
+MAX_WORKERS = 80
+RATE_LIMIT_DELAY = 0.5
 
 OSRM_SOURCES = {
     "tunisia": "https://download.geofabrik.de/africa/tunisia-latest.osm.pbf",

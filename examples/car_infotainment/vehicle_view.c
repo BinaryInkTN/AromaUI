@@ -213,11 +213,11 @@ static bool on_satellite_switch_changed(AromaNode *switch_node, void *user_data)
     {
         aroma_map_set_mbtiles(state.map_node,
         #ifdef __EMSCRIPTEN__
-            "/assets/ariana_3d.mbtiles"
+            "/assets/ariana_sat.mbtiles"
         #elif defined(__arm__) || defined(__aarch64__)
-            "/usr/share/infotainment/assets/ariana_3d.mbtiles"
+            "/usr/share/infotainment/assets/ariana_sat.mbtiles"
         #else
-            "../assets/ariana_3d.mbtiles"
+            "../assets/ariana_sat.mbtiles"
         #endif
         );
     }
@@ -225,11 +225,11 @@ static bool on_satellite_switch_changed(AromaNode *switch_node, void *user_data)
     {
         aroma_map_set_mbtiles(state.map_node, 
         #ifdef __EMSCRIPTEN__
-            "/assets/ariana_sat.mbtiles"
+            "/assets/ariana_3d.mbtiles"
         #elif defined(__arm__) || defined(__aarch64__)
-            "/usr/share/infotainment/assets/ariana_sat.mbtiles"
+            "/usr/share/infotainment/assets/ariana_3d.mbtiles"
         #else
-            "../assets/ariana_sat.mbtiles"
+            "../assets/ariana_3d.mbtiles"
         #endif
         );
     }
@@ -4271,8 +4271,8 @@ void build_vehicle_view(AromaNode *window)
     #endif
     );
     aroma_map_set_center(state.map_node, 36.8625, 10.1956);
-    aroma_map_set_zoom(state.map_node, 18);
-    aroma_map_set_animations_enabled(state.map_node, true);
+    aroma_map_set_animations_enabled(state.map_node, false);
+    
     aroma_node_set_z_index(state.map_node, Z_LAYER_STATUS_BAR + 11);
     state.map_close_btn = aroma_ui_iconbutton(app_definitions[0].app_root, AROMA_ICON_CLOSE, 20, 20, 48, ICON_BUTTON_FILLED, close_maps, app_definitions[0].app_root, state.icon_font);
     aroma_node_set_z_index(state.map_close_btn, Z_LAYER_STATUS_BAR + 20);
@@ -4299,12 +4299,10 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *map_options_btn = aroma_ui_iconbutton(
         app_definitions[0].app_root, AROMA_ICON_MORE_VERT, WIN_W - 70, 20, 48, ICON_BUTTON_FILLED,
         on_map_options_click, NULL, state.icon_font);
-    aroma_iconbutton_set_colors(map_options_btn, GMAPS_COLOR_SURFACE, GMAPS_COLOR_ON_SURFACE);
     aroma_node_set_z_index(map_options_btn, Z_LAYER_STATUS_BAR + 20);
 
     map_options_card = aroma_ui_card(
         app_definitions[0].app_root, WIN_W - 320, 80, 300, 200, CARD_TYPE_ELEVATED);
-    aroma_card_set_colors(map_options_card, GMAPS_COLOR_SURFACE, GMAPS_COLOR_SURFACE);
     aroma_node_set_z_index(map_options_card, Z_LAYER_STATUS_BAR + 21);
     aroma_node_set_hidden(map_options_card, true);
 
@@ -4315,7 +4313,6 @@ void build_vehicle_view(AromaNode *window)
 
     AromaNode *map_options_title = aroma_ui_label(
         map_options_card, "Map Options", 16, 16, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-    aroma_label_set_color(map_options_title, GMAPS_COLOR_ON_SURFACE);
     aroma_node_set_z_index(map_options_title, Z_LAYER_STATUS_BAR + 22);
 
     AromaNode *satellite_switch = aroma_ui_switch(
@@ -4325,7 +4322,6 @@ void build_vehicle_view(AromaNode *window)
 
     AromaNode *satellite_label = aroma_ui_label(
         map_options_card, "Satellite View", 16, 65, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_label_set_color(satellite_label, GMAPS_COLOR_ON_SURFACE);
     aroma_node_set_z_index(satellite_label, Z_LAYER_STATUS_BAR + 22);
     
     AromaNode *pois_switch = aroma_ui_switch(
@@ -4334,17 +4330,14 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(pois_switch, Z_LAYER_STATUS_BAR + 22);
     AromaNode *pois_label = aroma_ui_label(
         map_options_card, "Show POIs", 16, 115, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_label_set_color(pois_label, GMAPS_COLOR_ON_SURFACE);
     aroma_node_set_z_index(pois_label, Z_LAYER_STATUS_BAR + 22);
 
     map_search_surface = aroma_ui_card(app_definitions[0].app_root, 0, 80, 340, 520, CARD_TYPE_ELEVATED);
-    aroma_card_set_colors(map_search_surface, GMAPS_COLOR_SURFACE, GMAPS_COLOR_SURFACE);
     aroma_node_set_z_index(map_search_surface, Z_LAYER_STATUS_BAR + 15);
     aroma_node_set_hidden(map_search_surface, true);
 
     map_search_placeholder_label = aroma_ui_label(
         map_search_surface, "Search here", 60, 18, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_label_set_color(map_search_placeholder_label, GMAPS_COLOR_ON_SURFACE_VARIANT);
     aroma_node_set_z_index(map_search_placeholder_label, Z_LAYER_STATUS_BAR + 16);
 
     map_search_back_btn = aroma_ui_iconbutton(
@@ -4361,26 +4354,18 @@ void build_vehicle_view(AromaNode *window)
     aroma_textbox_enable_virtual_keyboard(map_from_entry, true);
     aroma_node_set_z_index(map_from_entry, Z_LAYER_STATUS_BAR + 16);
 
-    map_swap_btn = aroma_ui_iconbutton(
-        map_search_surface, AROMA_ICON_SWAP_VERT, 300, 78, 28, ICON_BUTTON_FILLED, on_swap_click, NULL, state.icon_font);
-    aroma_iconbutton_set_colors(map_swap_btn, GMAPS_COLOR_SURFACE_VARIANT, GMAPS_COLOR_ON_SURFACE_VARIANT);
-    aroma_node_set_z_index(map_swap_btn, Z_LAYER_STATUS_BAR + 16);
-
     map_to_entry = aroma_ui_textbox(map_search_surface, 15, 122, 280, 40, "Search to...", on_to_text_changed, NULL, state.ui_font);
     aroma_textbox_enable_virtual_keyboard(map_to_entry, true);
     aroma_node_set_z_index(map_to_entry, Z_LAYER_STATUS_BAR + 16);
 
     map_go_btn = aroma_ui_button(map_search_surface, "Directions", 16, 172, 308, 40, on_go_click, NULL, state.settings_font);
-    aroma_button_set_colors(map_go_btn, GMAPS_COLOR_PRIMARY, GMAPS_COLOR_SURFACE, GMAPS_COLOR_PRIMARY_DARK, GMAPS_COLOR_SURFACE);
     aroma_node_set_z_index(map_go_btn, Z_LAYER_STATUS_BAR + 16);
 
     suggestion_page = aroma_ui_card(app_definitions[0].app_root, 320, 80, 704, 520, CARD_TYPE_ELEVATED);
-    aroma_card_set_colors(suggestion_page, GMAPS_COLOR_SURFACE, GMAPS_COLOR_SURFACE);
     aroma_node_set_hidden(suggestion_page, true);
     aroma_node_set_z_index(suggestion_page, Z_LAYER_STATUS_BAR + 40);
 
     AromaNode *suggestion_title = aroma_ui_label(suggestion_page, "Select Location", 280, 10, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-    aroma_label_set_color(suggestion_title, GMAPS_COLOR_ON_SURFACE);
     aroma_node_set_z_index(suggestion_title, Z_LAYER_STATUS_BAR + 41);
 
     for (int slot = 0; slot < ITEMS_PER_PAGE; slot++)
@@ -4388,11 +4373,9 @@ void build_vehicle_view(AromaNode *window)
         int card_y = 50 + slot * 55;
 
         AromaNode *card = aroma_ui_card(suggestion_page, 16, card_y, 672, 50, CARD_TYPE_ELEVATED);
-        aroma_card_set_colors(card, GMAPS_COLOR_SURFACE_VARIANT, GMAPS_COLOR_SURFACE_VARIANT);
         aroma_node_set_z_index(card, Z_LAYER_STATUS_BAR + 41);
 
         AromaNode *name_label = aroma_ui_label(card, "", 10, 5, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-        aroma_label_set_color(name_label, GMAPS_COLOR_ON_SURFACE);
         AromaNode *desc_label = aroma_ui_label(card, "", 10, 25, LABEL_STYLE_LABEL_SMALL, state.ui_font);
         aroma_label_set_color(desc_label, GMAPS_COLOR_ON_SURFACE_VARIANT);
         aroma_node_set_z_index(name_label, Z_LAYER_STATUS_BAR + 42);
@@ -4403,7 +4386,6 @@ void build_vehicle_view(AromaNode *window)
 
         AromaNode *pick_btn = aroma_ui_button_with_icon(card, "Pick", 520, 8, 90, 34,
                                               on_suggestion_pick, &suggestion_slot_contexts[slot], state.ui_font, AROMA_ICON_CHECK, state.icon_font);
-        aroma_button_set_colors(pick_btn, GMAPS_COLOR_PRIMARY, GMAPS_COLOR_SURFACE, GMAPS_COLOR_PRIMARY_DARK, GMAPS_COLOR_SURFACE);
         aroma_node_set_z_index(pick_btn, Z_LAYER_STATUS_BAR + 42);
 
         aroma_node_set_hidden(card, true);
@@ -4415,7 +4397,6 @@ void build_vehicle_view(AromaNode *window)
     }
 
     page_label_suggestions = aroma_ui_label(suggestion_page, "Page 1/1", 320, 490, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_label_set_color(page_label_suggestions, GMAPS_COLOR_ON_SURFACE);
     aroma_node_set_z_index(page_label_suggestions, Z_LAYER_STATUS_BAR + 41);
 
     AromaNode *prev_btn = aroma_ui_button_with_icon(suggestion_page, "Prev", 110, 400, 80, 50, on_prev_page, NULL, state.ui_font, AROMA_ICON_ARROW_LEFT, state.icon_font);
