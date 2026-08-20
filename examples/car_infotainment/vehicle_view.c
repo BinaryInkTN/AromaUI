@@ -171,6 +171,7 @@ static pthread_mutex_t g_bt_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void *user_data);
 static void on_bt_device_changed(const bt_device_info_t *device, bool connected, void *user_data);
 static void on_bt_error(bt_error_t error, const char *message, void *user_data);
+static void on_bt_log(const char *level, const char *message, void *user_data);
 static void on_bt_audio_changed(bool started, void *user_data);
 static void on_bt_avrcp_changed(const bt_media_info_t *media, void *user_data);
 static void on_bt_call_changed(const bt_call_info_t *call, bool removed, void *user_data);
@@ -790,10 +791,29 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
                 .error_cb_data = NULL,
                 .audio_cb = on_bt_audio_changed,
                 .audio_cb_data = NULL,
+                .log_cb = on_bt_log,
+                .log_cb_data = NULL,
                 .avrcp_cb = on_bt_avrcp_changed,
                 .avrcp_cb_data = NULL,
             };
-            bt_speaker_init(&config);
+            if (bt_speaker_init(&config) != 0)
+            {
+                fprintf(stderr, "[BT] init failed: %s\n",
+                        bt_speaker_get_last_error_message());
+            }
+            else if (bt_speaker_get_state() != BT_STATE_ADVERTISING)
+            {
+                /* init() returned 0 but didn't reach ADVERTISING — most
+                 * likely register_agent() failed (see on_bt_log above for
+                 * why). Pairing attempts will be silently rejected by
+                 * BlueZ until this resolves, since there's no agent to
+                 * answer the PIN/confirmation request. */
+                fprintf(stderr,
+                        "[BT] warning: state is '%s' after init, not "
+                        "advertising — pairing attempts may be rejected "
+                        "with no visible error until the agent registers.\n",
+                        bt_speaker_get_state_string());
+            }
             bt_hfp_init();
             bt_hfp_set_call_callback(on_bt_call_changed, NULL);
             g_bt_initialized = true;
@@ -896,7 +916,12 @@ static void update_pois_markers(void)
 
     double center_lat = map_widget->center_lat;
     double center_lon = map_widget->center_lon;
-    double zoom = 18.0;
+    /* Was hardcoded to 18.0 — that made fabs(zoom - last_zoom) always
+     * converge to 0 after the first call (last_zoom gets set to the same
+     * constant every time), so the POI refresh's zoom-change trigger was
+     * permanently dead, and the bounding-box query below used a fixed
+     * zoom that didn't match what was actually on screen. */
+    double zoom = aroma_map_get_zoom(state.map_node);
 
     if (poi_query_in_flight)
         return;
@@ -2588,6 +2613,14 @@ void close_maps(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
+    /* Clear eagerly at close-initiation rather than relying solely on
+     * closing_anim's progress>=1.0f branch (~30 lines below) — if that
+     * animation callback is ever interrupted or never reaches exactly
+     * 1.0 (e.g. a new open is requested mid-close), bottom_bar_app_open
+     * was left stuck true, which silently blocks every other app's open
+     * button via is_any_app_open(). Harmless to also clear it again once
+     * the animation completes. */
+    set_app_open(false);
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 300, closing_anim, NULL);
     aroma_node_set_hidden(map_search_surface, true);
@@ -2714,6 +2747,9 @@ void close_phone(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
+    /* See close_maps for why this is cleared here, not only inside
+     * phone_closing_anim's progress>=1.0f branch. */
+    set_app_open(false);
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 300, phone_closing_anim, NULL);
     aroma_node_set_hidden(state.phone_app_tabs, true);
@@ -3050,6 +3086,11 @@ void close_music(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
+    /* See close_maps for why this is cleared here, not only inside
+     * music_closing_anim's progress>=1.0f branch. Clearing both flags
+     * to match what that callback clears on completion. */
+    set_app_open(false);
+    music_app_open = false;
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 300, music_closing_anim, NULL);
     aroma_node_set_hidden(music_now_playing_card, true);
@@ -3464,6 +3505,9 @@ void close_settings(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
+    /* See close_maps for why this is cleared here, not only inside
+     * settings_closing_anim's progress>=1.0f branch. */
+    set_app_open(false);
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 300, settings_closing_anim, NULL);
     aroma_node_set_hidden(settings_sidebar, true);
@@ -3653,6 +3697,16 @@ static void build_lock_screen(AromaNode *window)
     lock_screen_active = true;
     aroma_node_set_hidden(state.vehicle_view_root, true);
 }
+static void on_bt_log(const char *level, const char *message, void *user_data)
+{
+    (void)user_data;
+    /* register_agent() failures, D-Bus timeouts, and other warnings from
+     * bt_speaker_api.c only reach log_cb — nothing was wired to it before,
+     * so they were going nowhere. Surfacing to stderr at minimum so a
+     * failed pairing has a visible cause instead of just "rejected". */
+    fprintf(stderr, "[BT %s] %s\n", level ? level : "INFO", message ? message : "");
+}
+
 static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void *user_data)
 {
     (void)user_data;
@@ -3886,8 +3940,13 @@ void build_vehicle_view(AromaNode *window)
     aroma_label_set_color(state.battery_health, 0xFF00C853);
     aroma_node_set_hidden(state.battery_health, true);
 
+    /* Width = remaining space after the left dock (dock: x=20, w=80, plus
+     * this card's own x=110 start) minus a 20px right margin, matching
+     * the 20px margin the dock itself has on the screen's left edge.
+     * Was a fixed 395 before; this now grows/shrinks with WIN_W instead
+     * of leaving a gap (or overflowing) on wider/narrower screens. */
     media_ui.media_card = aroma_ui_card(
-        state.vehicle_view_root, 110, WIN_H - 110, 395, 80, CARD_TYPE_GLASS);
+        state.vehicle_view_root, 110, WIN_H - 110, WIN_W - 110 - 20, 80, CARD_TYPE_GLASS);
     aroma_node_set_z_index(media_ui.media_card, Z_LAYER_VEHICLE_OVERLAYS + 2);
     aroma_node_set_hidden(media_ui.media_card, true);
 
@@ -3907,21 +3966,33 @@ void build_vehicle_view(AromaNode *window)
         LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(media_ui.media_artist_label, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
+    /* Anchored to the card's right edge (card is now WIN_W-110-20 wide,
+     * not a fixed 395) instead of fixed x positions, so these stay
+     * pinned to the right side instead of floating mid-card. Margin/
+     * spacing (41px right margin, 44px between buttons) preserved from
+     * the original fixed layout: next-button was at x=318 with a 36px
+     * icon, so 395 - (318+36) = 41px margin; 274-230 = 318-274 = 44px
+     * spacing. */
+    int media_card_width = WIN_W - 110 - 20;
+    int media_next_x = media_card_width - 41 - 36;
+    int media_play_x = media_next_x - 44;
+    int media_prev_x = media_play_x - 44;
+
     media_ui.media_prev_button = aroma_ui_iconbutton(
         media_ui.media_card, AROMA_ICON_SKIP_PREVIOUS,
-        230, 22, 36, ICON_BUTTON_OUTLINED,
+        media_prev_x, 22, 36, ICON_BUTTON_OUTLINED,
         on_media_prev_click, NULL, state.icon_font);
     aroma_node_set_z_index(media_ui.media_prev_button, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
     media_ui.media_play_pause_button = aroma_ui_iconbutton(
         media_ui.media_card, AROMA_ICON_PLAY_ARROW,
-        274, 22, 36, ICON_BUTTON_OUTLINED,
+        media_play_x, 22, 36, ICON_BUTTON_OUTLINED,
         on_media_play_pause_click, NULL, state.icon_font);
     aroma_node_set_z_index(media_ui.media_play_pause_button, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
     media_ui.media_next_button = aroma_ui_iconbutton(
         media_ui.media_card, AROMA_ICON_SKIP_NEXT,
-        318, 22, 36, ICON_BUTTON_OUTLINED,
+        media_next_x, 22, 36, ICON_BUTTON_OUTLINED,
         on_media_next_click, NULL, state.icon_font);
     aroma_node_set_z_index(media_ui.media_next_button, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
@@ -4631,10 +4702,24 @@ void build_vehicle_view(AromaNode *window)
         .error_cb_data = NULL,
         .audio_cb = on_bt_audio_changed,
         .audio_cb_data = NULL,
+        .log_cb = on_bt_log,
+        .log_cb_data = NULL,
         .avrcp_cb = on_bt_avrcp_changed,
         .avrcp_cb_data = NULL,
     };
-    bt_speaker_init(&config);
+    if (bt_speaker_init(&config) != 0)
+    {
+        fprintf(stderr, "[BT] init failed: %s\n",
+                bt_speaker_get_last_error_message());
+    }
+    else if (bt_speaker_get_state() != BT_STATE_ADVERTISING)
+    {
+        fprintf(stderr,
+                "[BT] warning: state is '%s' after init, not advertising — "
+                "pairing attempts may be rejected with no visible error "
+                "until the agent registers.\n",
+                bt_speaker_get_state_string());
+    }
     bt_hfp_init();
     bt_hfp_set_call_callback(on_bt_call_changed, NULL);
     g_bt_initialized = true;

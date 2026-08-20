@@ -1179,9 +1179,14 @@ static void monitor_avrcp_changes(internal_app_t *app)
         dbus_message_iter_recurse(&entry, &var);
 
         if (strcmp(key, "Track") == 0) {
+            /* Same variant-unwrap issue as the PropertiesChanged handler:
+             * 'var' is the VARIANT, parse_avrcp_metadata needs the ARRAY
+             * inside it. */
+            DBusMessageIter track_var;
+            dbus_message_iter_recurse(&var, &track_var);
             pthread_mutex_lock(&app->lock);
             memset(&app->current_media, 0, sizeof(app->current_media));
-            parse_avrcp_metadata(&var, &app->current_media);
+            parse_avrcp_metadata(&track_var, &app->current_media);
             if (app->current_media.title[0] || app->current_media.artist[0])
                 safe_strncpy(app->current_media.status, "playing",
                              sizeof(app->current_media.status));
@@ -1743,7 +1748,13 @@ static bool register_agent(internal_app_t *app)
         return false;
     }
     const char *path = AGENT_PATH;
-    const char *cap  = "KeyboardDisplay";
+    /* TESTING ONLY — isolated facility, single known test device.
+     * NoInputNoOutput -> BlueZ uses "Just Works" pairing: no PIN prompt,
+     * no confirmation step, any device in range pairs silently.
+     * Do NOT ship this in a car/consumer build — switch back to
+     * "KeyboardDisplay" (fixed-PIN pairing) before deploying anywhere
+     * other devices could be nearby. */
+    const char *cap  = "NoInputNoOutput";
     dbus_message_append_args(msg,
                              DBUS_TYPE_OBJECT_PATH, &path,
                              DBUS_TYPE_STRING, &cap,
@@ -1939,9 +1950,19 @@ static void handle_signal(internal_app_t *app, DBusMessage *msg)
             dbus_message_iter_next(&e);
 
             if (strcmp(prop, "Track") == 0) {
+                /* 'e' here is the VARIANT wrapping the Track metadata
+                 * dict, not the dict itself. parse_avrcp_metadata()
+                 * requires an ARRAY iterator and returns immediately on
+                 * type mismatch (see its first check), so passing the
+                 * variant directly made every Title/Artist/Album update
+                 * silently no-op — Status/Position kept working because
+                 * they don't go through parse_avrcp_metadata. Unwrap the
+                 * variant first, same as the other properties below. */
+                DBusMessageIter track_var;
+                dbus_message_iter_recurse(&e, &track_var);
                 pthread_mutex_lock(&app->lock);
                 memset(&app->current_media, 0, sizeof(app->current_media));
-                parse_avrcp_metadata(&e, &app->current_media);
+                parse_avrcp_metadata(&track_var, &app->current_media);
                 if (app->current_media.title[0] || app->current_media.artist[0])
                     safe_strncpy(app->current_media.status, "playing",
                                  sizeof(app->current_media.status));
