@@ -27,7 +27,12 @@
 #define SWUPDATE_WEB_PORT_ENV "SWUPDATE_WEBSERVER_PORT"
 #define SWUPDATE_WEB_PORT_DEFAULT 8080
 #define Z_LAYER_CARDS_TOP 1000
+#define CONTACTS_RETRY_INTERVAL_SEC 5
+#define MAX_CONTACTS_RETRIES 20
+#define MIN_EMPTY_RESULT_RETRIES 3
+
 void update_media_card_display(void);
+
 #define SWUPDATE_IPC_MAGIC 0x1002003
 typedef enum
 {
@@ -72,6 +77,7 @@ typedef struct
     unsigned int infolen;
     char info[2048];
 } swupdate_progress_msg_t;
+
 #include <time.h>
 
 #define POI_QUERY_MIN_INTERVAL_MS 400.0  
@@ -87,6 +93,7 @@ static double monotonic_ms(void)
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (double)ts.tv_sec * 1000.0 + (double)ts.tv_nsec / 1e6;
 }
+
 static bool dark_mode_enabled = false;
 static AromaNode *settings_dark_mode_switch = NULL;
 
@@ -101,6 +108,7 @@ void close_settings(void *user_data);
 static void update_music_now_playing_display(void);
 static void update_music_device_display(void);
 static void on_music_icon_click(void *user_data);
+static void attempt_contact_fetch(void);
 
 #define MEDIA_UPDATE_INTERVAL_US 500000
 #define CONTACTS_PER_PAGE 7
@@ -168,6 +176,10 @@ static bool g_bt_initialized = false;
 static bool g_bt_connected = false;
 static pthread_mutex_t g_bt_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static int contact_fetch_retries = 0;
+static bool contact_fetch_in_progress = false;
+static pthread_mutex_t contact_fetch_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void *user_data);
 static void on_bt_device_changed(const bt_device_info_t *device, bool connected, void *user_data);
 static void on_bt_error(bt_error_t error, const char *message, void *user_data);
@@ -175,6 +187,9 @@ static void on_bt_log(const char *level, const char *message, void *user_data);
 static void on_bt_audio_changed(bool started, void *user_data);
 static void on_bt_avrcp_changed(const bt_media_info_t *media, void *user_data);
 static void on_bt_call_changed(const bt_call_info_t *call, bool removed, void *user_data);
+
+static void set_app_open(bool open);
+static void apply_deferred_bottom_bar_position(void);
 
 typedef struct
 {
@@ -811,11 +826,6 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
             }
             else if (bt_speaker_get_state() != BT_STATE_ADVERTISING)
             {
-                /* init() returned 0 but didn't reach ADVERTISING — most
-                 * likely register_agent() failed (see on_bt_log above for
-                 * why). Pairing attempts will be silently rejected by
-                 * BlueZ until this resolves, since there's no agent to
-                 * answer the PIN/confirmation request. */
                 fprintf(stderr,
                         "[BT] warning: state is '%s' after init, not "
                         "advertising — pairing attempts may be rejected "
@@ -827,6 +837,10 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
             g_bt_initialized = true;
         }
         bt_speaker_start();
+        
+        pthread_mutex_lock(&contact_fetch_mutex);
+        contact_fetch_retries = 0;
+        pthread_mutex_unlock(&contact_fetch_mutex);
     }
     else
     {
@@ -837,6 +851,8 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
         g_bt_connected = false;
         memset(&g_bt_device_info, 0, sizeof(bt_device_info_t));
         memset(&g_bt_media_info, 0, sizeof(bt_media_info_t));
+        state.contacts_fetched = false;
+        state.contact_count = 0;
     }
     
     update_bt_info_card();
@@ -911,6 +927,7 @@ static void truncate_for_listview(const char *input, char *output, size_t output
         output[output_size - 1] = '\0';
     }
 }
+
 static void update_pois_markers(void)
 {
     if (!state.map_node)
@@ -924,11 +941,6 @@ static void update_pois_markers(void)
 
     double center_lat = map_widget->center_lat;
     double center_lon = map_widget->center_lon;
-    /* Was hardcoded to 18.0 — that made fabs(zoom - last_zoom) always
-     * converge to 0 after the first call (last_zoom gets set to the same
-     * constant every time), so the POI refresh's zoom-change trigger was
-     * permanently dead, and the bounding-box query below used a fixed
-     * zoom that didn't match what was actually on screen. */
     double zoom = aroma_map_get_zoom(state.map_node);
 
     if (poi_query_in_flight)
@@ -1094,6 +1106,7 @@ static void update_pois_markers(void)
 
     poi_query_in_flight = false;
 }
+
 static void populate_suggestion_cards(void)
 {
     int start = current_page * ITEMS_PER_PAGE;
@@ -1889,9 +1902,9 @@ void show_incoming_call_screen(const char *name, const char *number, const char 
         return;
     
     pthread_mutex_lock(&call_state_lock);
-    safe_str_copy(current_call_name, name ? name : "Unknown", sizeof(current_call_name));
-    safe_str_copy(current_call_number, number ? number : "", sizeof(current_call_number));
-    safe_str_copy(current_call_path, call_path ? call_path : "", sizeof(current_call_path));
+    if (name) strncpy(current_call_name, name, sizeof(current_call_name) - 1);
+    if (number) strncpy(current_call_number, number, sizeof(current_call_number) - 1);
+    if (call_path) strncpy(current_call_path, call_path, sizeof(current_call_path) - 1);
     call_overlay_visible = true;
     pthread_mutex_unlock(&call_state_lock);
     
@@ -2068,15 +2081,25 @@ static int compare_contacts(const void *a, const void *b)
     const ContactInfo *ca = (const ContactInfo *)a;
     const ContactInfo *cb = (const ContactInfo *)b;
     char name_a[128], name_b[128];
-    safe_str_copy(name_a, ca->name, sizeof(name_a));
-    safe_str_copy(name_b, cb->name, sizeof(name_b));
-    if (name_a[0] == '\0')
+    if (ca->name[0] == '\0')
     {
-        safe_str_copy(name_a, ca->number, sizeof(name_a));
+        strncpy(name_a, ca->number, sizeof(name_a) - 1);
+        name_a[sizeof(name_a) - 1] = '\0';
     }
-    if (name_b[0] == '\0')
+    else
     {
-        safe_str_copy(name_b, cb->number, sizeof(name_b));
+        strncpy(name_a, ca->name, sizeof(name_a) - 1);
+        name_a[sizeof(name_a) - 1] = '\0';
+    }
+    if (cb->name[0] == '\0')
+    {
+        strncpy(name_b, cb->number, sizeof(name_b) - 1);
+        name_b[sizeof(name_b) - 1] = '\0';
+    }
+    else
+    {
+        strncpy(name_b, cb->name, sizeof(name_b) - 1);
+        name_b[sizeof(name_b) - 1] = '\0';
     }
     return strcasecmp(name_a, name_b);
 }
@@ -2099,7 +2122,14 @@ void populate_contact_listview(AromaNode *listview)
     aroma_listview_clear(listview);
     if (!state.contacts_fetched)
     {
-        aroma_listview_add_item_with_icon(listview, "Connecting to phone...", "Make sure Bluetooth is enabled in settings.", AROMA_ICON_BLUETOOTH_DISABLED, NULL);
+        if (g_bt_connected)
+        {
+            aroma_listview_add_item_with_icon(listview, "Loading contacts...", "Please wait", AROMA_ICON_PERSON, NULL);
+        }
+        else
+        {
+            aroma_listview_add_item_with_icon(listview, "No phone connected", "Enable Bluetooth and connect a phone", AROMA_ICON_BLUETOOTH_DISABLED, NULL);
+        }
         if (pagination_card)
             aroma_node_set_hidden(pagination_card, true);
         pthread_mutex_unlock(&contact_list_lock);
@@ -2107,7 +2137,7 @@ void populate_contact_listview(AromaNode *listview)
     }
     if (state.contact_count == 0)
     {
-        aroma_listview_add_item_with_icon(listview, "No contacts found", "Connect a phone with PBAP", AROMA_ICON_PERSON, NULL);
+        aroma_listview_add_item_with_icon(listview, "No contacts found", "Connect a phone with PBAP or sync contacts", AROMA_ICON_PERSON, NULL);
         if (pagination_card)
             aroma_node_set_hidden(pagination_card, true);
         pthread_mutex_unlock(&contact_list_lock);
@@ -2121,23 +2151,28 @@ void populate_contact_listview(AromaNode *listview)
         return;
     }
     int *orig_indices = malloc(sizeof(int) * state.contact_count);
+    if (!orig_indices)
+    {
+        free(sorted_contacts);
+        aroma_listview_add_item_with_icon(listview, "Memory error", "", AROMA_ICON_PERSON, NULL);
+        pthread_mutex_unlock(&contact_list_lock);
+        return;
+    }
     for (int i = 0; i < state.contact_count; i++)
     {
         orig_indices[i] = i;
     }
     memcpy(sorted_contacts, state.contacts, sizeof(ContactInfo) * state.contact_count);
-    for (int i = 0; i < state.contact_count - 1; i++)
+    qsort(sorted_contacts, state.contact_count, sizeof(ContactInfo), compare_contacts);
+    for (int i = 0; i < state.contact_count; i++)
     {
-        for (int j = i + 1; j < state.contact_count; j++)
+        for (int j = 0; j < state.contact_count; j++)
         {
-            if (compare_contacts(&sorted_contacts[i], &sorted_contacts[j]) > 0)
+            if (compare_contacts(&sorted_contacts[i], &state.contacts[j]) == 0 &&
+                strcmp(sorted_contacts[i].number, state.contacts[j].number) == 0)
             {
-                ContactInfo temp = sorted_contacts[i];
-                sorted_contacts[i] = sorted_contacts[j];
-                sorted_contacts[j] = temp;
-                int tempidx = orig_indices[i];
-                orig_indices[i] = orig_indices[j];
-                orig_indices[j] = tempidx;
+                orig_indices[i] = j;
+                break;
             }
         }
     }
@@ -2450,7 +2485,8 @@ static void on_contact_click(int index, void *user_data)
         if (orig_idx >= 0 && orig_idx < state.contact_count)
         {
             char number[64];
-            safe_str_copy(number, state.contacts[orig_idx].number, sizeof(number));
+            strncpy(number, state.contacts[orig_idx].number, sizeof(number) - 1);
+            number[sizeof(number) - 1] = '\0';
             if (number[0] != '\0')
             {
                 pthread_mutex_lock(&g_bt_mutex);
@@ -2621,13 +2657,6 @@ void close_maps(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
-    /* Clear eagerly at close-initiation rather than relying solely on
-     * closing_anim's progress>=1.0f branch (~30 lines below) — if that
-     * animation callback is ever interrupted or never reaches exactly
-     * 1.0 (e.g. a new open is requested mid-close), bottom_bar_app_open
-     * was left stuck true, which silently blocks every other app's open
-     * button via is_any_app_open(). Harmless to also clear it again once
-     * the animation completes. */
     set_app_open(false);
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 300, closing_anim, NULL);
@@ -2698,6 +2727,7 @@ static bool open_phone(AromaNode *node, void *user_data)
         aroma_node_set_hidden(dialer_card, true);
     aroma_node_set_z_index(card_node, Z_LAYER_STATUS_BAR + 10);
     contact_page = 0;
+    
     populate_contact_listview(state.contact_listview);
     
     return true;
@@ -2755,8 +2785,6 @@ void close_phone(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
-    /* See close_maps for why this is cleared here, not only inside
-     * phone_closing_anim's progress>=1.0f branch. */
     set_app_open(false);
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 300, phone_closing_anim, NULL);
@@ -3094,9 +3122,6 @@ void close_music(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
-    /* See close_maps for why this is cleared here, not only inside
-     * music_closing_anim's progress>=1.0f branch. Clearing both flags
-     * to match what that callback clears on completion. */
     set_app_open(false);
     music_app_open = false;
     AromaAnimation *anim = aroma_animation_start_custom(
@@ -3513,8 +3538,6 @@ void close_settings(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
-    /* See close_maps for why this is cleared here, not only inside
-     * settings_closing_anim's progress>=1.0f branch. */
     set_app_open(false);
     AromaAnimation *anim = aroma_animation_start_custom(
         card_node, 0.0f, 1.0f, 300, settings_closing_anim, NULL);
@@ -3705,13 +3728,10 @@ static void build_lock_screen(AromaNode *window)
     lock_screen_active = true;
     aroma_node_set_hidden(state.vehicle_view_root, true);
 }
+
 static void on_bt_log(const char *level, const char *message, void *user_data)
 {
     (void)user_data;
-    /* register_agent() failures, D-Bus timeouts, and other warnings from
-     * bt_speaker_api.c only reach log_cb — nothing was wired to it before,
-     * so they were going nowhere. Surfacing to stderr at minimum so a
-     * failed pairing has a visible cause instead of just "rejected". */
     fprintf(stderr, "[BT %s] %s\n", level ? level : "INFO", message ? message : "");
 }
 
@@ -3728,6 +3748,99 @@ static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void
     update_bt_info_card();
     update_media_card_display();
 }
+
+static void attempt_contact_fetch(void)
+{
+    pthread_mutex_lock(&contact_fetch_mutex);
+    
+    if (contact_fetch_in_progress)
+    {
+        pthread_mutex_unlock(&contact_fetch_mutex);
+        return;
+    }
+    
+    if (state.contacts_fetched)
+    {
+        pthread_mutex_unlock(&contact_fetch_mutex);
+        return;
+    }
+    
+    pthread_mutex_lock(&g_bt_mutex);
+    bool connected = g_bt_connected;
+    bt_device_info_t device = g_bt_device_info;
+    pthread_mutex_unlock(&g_bt_mutex);
+    
+    if (!connected || !device.name[0])
+    {
+        pthread_mutex_unlock(&contact_fetch_mutex);
+        return;
+    }
+    
+    contact_fetch_in_progress = true;
+    pthread_mutex_unlock(&contact_fetch_mutex);
+    
+    bt_contact_t bt_contacts[MAX_CONTACTS];
+    int count = bt_hfp_fetch_contacts(device.path, bt_contacts, MAX_CONTACTS);
+    
+    pthread_mutex_lock(&contact_fetch_mutex);
+    contact_fetch_in_progress = false;
+    
+    if (count > 0)
+    {
+        state.contacts_fetched = true;
+        state.contact_count = count;
+        for (int i = 0; i < count && i < MAX_CONTACTS; i++)
+        {
+            strncpy(state.contacts[i].name, bt_contacts[i].name, sizeof(state.contacts[i].name) - 1);
+            state.contacts[i].name[sizeof(state.contacts[i].name) - 1] = '\0';
+            strncpy(state.contacts[i].number, bt_contacts[i].number, sizeof(state.contacts[i].number) - 1);
+            state.contacts[i].number[sizeof(state.contacts[i].number) - 1] = '\0';
+        }
+        contact_fetch_retries = 0;
+        pthread_mutex_unlock(&contact_fetch_mutex);
+        populate_contact_listview(state.contact_listview);
+        return;
+    }
+    
+    if (count == 0)
+    {
+        contact_fetch_retries++;
+        if (contact_fetch_retries >= MIN_EMPTY_RESULT_RETRIES)
+        {
+            state.contacts_fetched = true;
+            state.contact_count = 0;
+            contact_fetch_retries = 0;
+            pthread_mutex_unlock(&contact_fetch_mutex);
+            populate_contact_listview(state.contact_listview);
+            return;
+        }
+        pthread_mutex_unlock(&contact_fetch_mutex);
+        return;
+    }
+    
+    contact_fetch_retries++;
+    pthread_mutex_unlock(&contact_fetch_mutex);
+}
+
+static void *contact_fetch_thread_func(void *arg)
+{
+    (void)arg;
+    
+    while (1)
+    {
+        sleep(CONTACTS_RETRY_INTERVAL_SEC);
+        
+        pthread_mutex_lock(&contact_fetch_mutex);
+        bool should_retry = !state.contacts_fetched && 
+                           (contact_fetch_retries < MAX_CONTACTS_RETRIES);
+        pthread_mutex_unlock(&contact_fetch_mutex);
+        
+        if (!should_retry)
+            continue;
+    }
+    return NULL;
+}
+
 static void on_bt_device_changed(const bt_device_info_t *device, bool connected, void *user_data)
 {
     (void)user_data;
@@ -3744,23 +3857,19 @@ static void on_bt_device_changed(const bt_device_info_t *device, bool connected,
     pthread_mutex_unlock(&g_bt_mutex);
     update_bt_info_card();
 
-    if (connected && device && device->path[0] && !state.contacts_fetched)
+    if (connected && device && device->name[0])
     {
-        bt_contact_t bt_contacts[MAX_CONTACTS];
-        int count = bt_hfp_fetch_contacts(device->path, bt_contacts, MAX_CONTACTS);
-        if (count > 0)
-        {
-            state.contact_count = count;
-            for (int i = 0; i < count && i < MAX_CONTACTS; i++)
-            {
-                strncpy(state.contacts[i].name, bt_contacts[i].name, sizeof(state.contacts[i].name) - 1);
-                state.contacts[i].name[sizeof(state.contacts[i].name) - 1] = '\0';
-                strncpy(state.contacts[i].number, bt_contacts[i].number, sizeof(state.contacts[i].number) - 1);
-                state.contacts[i].number[sizeof(state.contacts[i].number) - 1] = '\0';
-            }
-            state.contacts_fetched = true;
-            populate_contact_listview(state.contact_listview);
-        }
+        pthread_mutex_lock(&contact_fetch_mutex);
+        contact_fetch_retries = 0;
+        state.contacts_fetched = false;
+        pthread_mutex_unlock(&contact_fetch_mutex);
+    }
+    else
+    {
+        pthread_mutex_lock(&contact_fetch_mutex);
+        state.contacts_fetched = false;
+        state.contact_count = 0;
+        pthread_mutex_unlock(&contact_fetch_mutex);
     }
 }
 
@@ -3948,13 +4057,9 @@ void build_vehicle_view(AromaNode *window)
     aroma_label_set_color(state.battery_health, 0xFF00C853);
     aroma_node_set_hidden(state.battery_health, true);
 
-    /* Width = remaining space after the left dock (dock: x=20, w=80, plus
-     * this card's own x=110 start) minus a 20px right margin, matching
-     * the 20px margin the dock itself has on the screen's left edge.
-     * Was a fixed 395 before; this now grows/shrinks with WIN_W instead
-     * of leaving a gap (or overflowing) on wider/narrower screens. */
+    int media_card_width = WIN_W - 110 - 20;
     media_ui.media_card = aroma_ui_card(
-        state.vehicle_view_root, 110, WIN_H - 110, WIN_W - 110 - 20, 80, CARD_TYPE_GLASS);
+        state.vehicle_view_root, 110, WIN_H - 110, media_card_width, 80, CARD_TYPE_GLASS);
     aroma_node_set_z_index(media_ui.media_card, Z_LAYER_VEHICLE_OVERLAYS + 2);
     aroma_node_set_hidden(media_ui.media_card, true);
 
@@ -3974,14 +4079,6 @@ void build_vehicle_view(AromaNode *window)
         LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(media_ui.media_artist_label, Z_LAYER_VEHICLE_OVERLAYS + 3);
 
-    /* Anchored to the card's right edge (card is now WIN_W-110-20 wide,
-     * not a fixed 395) instead of fixed x positions, so these stay
-     * pinned to the right side instead of floating mid-card. Margin/
-     * spacing (41px right margin, 44px between buttons) preserved from
-     * the original fixed layout: next-button was at x=318 with a 36px
-     * icon, so 395 - (318+36) = 41px margin; 274-230 = 318-274 = 44px
-     * spacing. */
-    int media_card_width = WIN_W - 110 - 20;
     int media_next_x = media_card_width - 41 - 36;
     int media_play_x = media_next_x - 44;
     int media_prev_x = media_play_x - 44;
@@ -4288,7 +4385,7 @@ void build_vehicle_view(AromaNode *window)
         suggestion_desc_labels[slot] = desc_label;
         suggestion_pick_buttons[slot] = pick_btn;
     }
-#
+
     page_label_suggestions = aroma_ui_label(suggestion_page, "Page 1/1", 320, 490, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(page_label_suggestions, Z_LAYER_STATUS_BAR + 41);
 
@@ -4647,7 +4744,6 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(swupdate_icon, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(swupdate_label, Z_LAYER_STATUS_BAR + 14);
 
-
     settings_swupdate_status_label = aroma_ui_label(updates_card, "SWUpdate: Stopped", 40, 265, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(settings_swupdate_status_label, Z_LAYER_STATUS_BAR + 14);
 
@@ -4753,6 +4849,20 @@ void build_vehicle_view(AromaNode *window)
     pthread_create(&media_thread, &media_attr, media_monitor_thread_func, NULL);
     pthread_attr_destroy(&media_attr);
 
+    pthread_t contact_thread;
+    pthread_attr_t contact_attr;
+    pthread_attr_init(&contact_attr);
+    pthread_attr_setdetachstate(&contact_attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&contact_thread, &contact_attr, contact_fetch_thread_func, NULL);
+    pthread_attr_destroy(&contact_attr);
+
+    pthread_t call_thread;
+    pthread_attr_t call_attr;
+    pthread_attr_init(&call_attr);
+    pthread_attr_setdetachstate(&call_attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&call_thread, &call_attr, call_monitor_thread_func, NULL);
+    pthread_attr_destroy(&call_attr);
+
     build_lock_screen(window);
 }
 
@@ -4765,6 +4875,15 @@ void update_vehicle_view(void)
     }
 
     bt_hfp_poll();
+
+    pthread_mutex_lock(&g_bt_mutex);
+    bool bt_connected_for_contacts = g_bt_connected;
+    pthread_mutex_unlock(&g_bt_mutex);
+
+    if (bt_connected_for_contacts && !state.contacts_fetched)
+    {
+        attempt_contact_fetch();
+    }
 
     if (maps_screen_open && state.map_node && !map_nav.navigation_active)
     {

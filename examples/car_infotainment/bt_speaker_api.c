@@ -1679,12 +1679,34 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         if (device_path) {
             set_prop_bool(app->bus, BLUEZ_BUS_NAME, device_path,
                           BLUEZ_DEVICE_IFACE, "Trusted", TRUE);
+
+            char fetched_address[32] = {0};
+            char fetched_name[128] = {0};
+            get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
+                            BLUEZ_DEVICE_IFACE, "Address",
+                            fetched_address, sizeof(fetched_address));
+            if (!get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
+                                 BLUEZ_DEVICE_IFACE, "Name",
+                                 fetched_name, sizeof(fetched_name)))
+                get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
+                                BLUEZ_DEVICE_IFACE, "Alias",
+                                fetched_name, sizeof(fetched_name));
+            if (!fetched_name[0] && fetched_address[0])
+                snprintf(fetched_name, sizeof(fetched_name),
+                         "Device (%s)", fetched_address);
+
             pthread_mutex_lock(&app->lock);
             safe_strncpy(app->connected_device_path, device_path,
                          sizeof(app->connected_device_path));
+            safe_strncpy(app->connected_device_address, fetched_address,
+                         sizeof(app->connected_device_address));
+            safe_strncpy(app->connected_device_name, fetched_name,
+                         sizeof(app->connected_device_name));
             app->connected_time = time(NULL);
             set_state_locked(app, BT_STATE_CONNECTED);
             pthread_mutex_unlock(&app->lock);
+
+            notify_device_event(app, true);
         }
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
@@ -1700,12 +1722,34 @@ static DBusHandlerResult agent_handler(DBusConnection *conn,
         if (device_path) {
             set_prop_bool(app->bus, BLUEZ_BUS_NAME, device_path,
                           BLUEZ_DEVICE_IFACE, "Trusted", TRUE);
+
+            char fetched_address[32] = {0};
+            char fetched_name[128] = {0};
+            get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
+                            BLUEZ_DEVICE_IFACE, "Address",
+                            fetched_address, sizeof(fetched_address));
+            if (!get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
+                                 BLUEZ_DEVICE_IFACE, "Name",
+                                 fetched_name, sizeof(fetched_name)))
+                get_prop_string(app->bus, BLUEZ_BUS_NAME, device_path,
+                                BLUEZ_DEVICE_IFACE, "Alias",
+                                fetched_name, sizeof(fetched_name));
+            if (!fetched_name[0] && fetched_address[0])
+                snprintf(fetched_name, sizeof(fetched_name),
+                         "Device (%s)", fetched_address);
+
             pthread_mutex_lock(&app->lock);
             safe_strncpy(app->connected_device_path, device_path,
                          sizeof(app->connected_device_path));
+            safe_strncpy(app->connected_device_address, fetched_address,
+                         sizeof(app->connected_device_address));
+            safe_strncpy(app->connected_device_name, fetched_name,
+                         sizeof(app->connected_device_name));
             app->connected_time = time(NULL);
             set_state_locked(app, BT_STATE_CONNECTED);
             pthread_mutex_unlock(&app->lock);
+
+            notify_device_event(app, true);
         }
         DBusMessage *r = dbus_message_new_method_return(msg);
         dbus_connection_send(conn, r, NULL);
