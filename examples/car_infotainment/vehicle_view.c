@@ -313,6 +313,14 @@ static void apply_theme_colors(void)
     aroma_ui_set_theme(&state.theme);
 }
 
+void on_preset_item_click(int index, void *user_data)
+{
+    (void)user_data;
+    if (index < 0 || index >= NUM_POI_CATEGORIES)
+        return;
+    
+}
+
 static bool on_dark_mode_switch_changed(AromaNode *switch_node, void *user_data)
 {
     (void)user_data;
@@ -4233,6 +4241,19 @@ void build_vehicle_view(AromaNode *window)
     map_go_btn = aroma_ui_button(map_search_surface, "Directions", 16, 172, 308, 40, on_go_click, NULL, state.settings_font);
     aroma_node_set_z_index(map_go_btn, Z_LAYER_STATUS_BAR + 16);
 
+    AromaNode *preset_title = aroma_ui_label(map_search_surface, "Presets", 16, 232, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    aroma_node_set_z_index(preset_title, Z_LAYER_STATUS_BAR + 16);
+
+    AromaNode* preset_listview = aroma_listview_create(map_search_surface, 16, 260, 308, 240);
+    aroma_listview_add_item_with_icon(preset_listview, "Home", "", AROMA_ICON_HOME, NULL);
+    aroma_listview_add_item_with_icon(preset_listview, "Parad'Ice", "", AROMA_ICON_LOCAL_DINING, NULL);
+    aroma_listview_add_item_with_icon(preset_listview, "ISI", "", AROMA_ICON_BOOK, NULL);
+    aroma_listview_add_item_with_icon(preset_listview , "Agile", "", AROMA_ICON_LOCAL_GAS_STATION, NULL);
+    aroma_listview_set_font(preset_listview, state.ui_font);
+    aroma_listview_set_icon_font(preset_listview, state.icon_font);
+    aroma_node_set_z_index(preset_listview, Z_LAYER_STATUS_BAR + 16);
+    aroma_listview_set_callback(preset_listview, on_preset_item_click, NULL);
+
     suggestion_page = aroma_ui_card(app_definitions[0].app_root, 320, 80, 704, 520, CARD_TYPE_ELEVATED);
     aroma_node_set_hidden(suggestion_page, true);
     aroma_node_set_z_index(suggestion_page, Z_LAYER_STATUS_BAR + 40);
@@ -4267,7 +4288,7 @@ void build_vehicle_view(AromaNode *window)
         suggestion_desc_labels[slot] = desc_label;
         suggestion_pick_buttons[slot] = pick_btn;
     }
-
+#
     page_label_suggestions = aroma_ui_label(suggestion_page, "Page 1/1", 320, 490, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(page_label_suggestions, Z_LAYER_STATUS_BAR + 41);
 
