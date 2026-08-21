@@ -1,11 +1,15 @@
+
 # AromaUI
 
 
 <br/>
 
-<div style="text-align:center;">
-  <img src="images/infotainment.png" />
-</div>
+<img width="1031" height="611" alt="Screenshot From 2026-08-21 16-16-48" src="https://github.com/user-attachments/assets/0dd6097b-2eb0-4142-a5f6-d463f618df36" />
+<img width="1031" height="611" alt="Screenshot From 2026-08-21 16-16-43" src="https://github.com/user-attachments/assets/9896b23b-ffcc-4426-93d7-30443c549cc2" />
+<img width="1031" height="611" alt="Screenshot From 2026-08-21 16-17-41" src="https://github.com/user-attachments/assets/b3175973-a9aa-43e6-b99e-519f0eff380c" />
+<img width="1031" height="611" alt="Screenshot From 2026-08-21 16-17-33" src="https://github.com/user-attachments/assets/1f9b639f-b58c-47ad-a0a3-694a2b1e9ede" />
+<img width="1031" height="611" alt="Screenshot From 2026-08-21 16-17-25" src="https://github.com/user-attachments/assets/cc6da86e-e3ca-4bb9-9f65-9edac46a46e4" />
+<img width="1031" height="611" alt="Screenshot From 2026-08-21 16-16-54" src="https://github.com/user-attachments/assets/75212a9c-c3f2-447a-ac82-bbb0dc47512a" />
 
 <br/>
 
