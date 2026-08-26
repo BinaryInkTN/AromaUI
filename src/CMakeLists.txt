@@ -17,6 +17,8 @@ add_library(aroma
     core/utils/mpc.c
     core/aroma_incense.c
     core/aroma_incense_loader.c
+    core/aroma_3d.c
+    core/cJSON.c
 
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
@@ -55,12 +57,14 @@ add_library(aroma
     widgets/aroma_table.c
     widgets/aroma_map.c
     widgets/aroma_gauge.c
+    widgets/aroma_3d_viewer.c
 )
 
 target_include_directories(aroma
     PUBLIC  "${CMAKE_CURRENT_SOURCE_DIR}/../include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backends"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/backends/graphics/utils"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/internal"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/sqlite3"

@@ -1009,9 +1009,9 @@ static bool load_osrm_binary(OSRMGraph *graph, const char *filename)
 
     for (uint32_t i = 0; i < graph->edge_count; i++)
     {
-        uint32_t edge_id;  // Temporary - read from file but not stored
-        uint8_t speed;     // Temporary - read from file but not stored
-        uint8_t priority;  // Temporary - read from file but not stored
+        uint32_t edge_id;  
+        uint8_t speed;     
+        uint8_t priority;  
         uint32_t is_roundabout;
         if (fread(&edge_id, sizeof(uint32_t), 1, fp) != 1)
             goto error;
@@ -1030,9 +1030,7 @@ static bool load_osrm_binary(OSRMGraph *graph, const char *filename)
         if (fread(&is_roundabout, sizeof(uint32_t), 1, fp) != 1)
             goto error;
 
-        // Only store is_roundabout (actually used in turn instructions)
         graph->edges[i].is_roundabout = (is_roundabout != 0);
-        // edge_id, speed, and priority are not stored (dead fields)
     }
 
     graph->adjacency_offset = calloc(graph->node_count + 1, sizeof(uint32_t));

@@ -199,6 +199,14 @@ typedef struct
     AromaNode *setup_overlay;
     AromaNode *battery_button;
 
+    AromaNode *interior_ac_btn;
+    AromaNode *ac_controls_btn;
+    AromaNode *ac_controls_card;
+    AromaNode *ac_controls_temp_label;
+    AromaNode *seat_controls_btn;
+    AromaNode *seat_controls_card;
+    AromaNode *seat_position_slider;
+
     AromaNode *bt_container;
     AromaNode *range_card;
     AromaNode *secondary_notification_card;
@@ -207,6 +215,7 @@ typedef struct
     AromaNode *bottom_bar;
     AromaNode *phone_app_tabs;
     AromaNode* backroad;
+    AromaNode *viewer_3d;
     AromaTheme theme;
 
     AromaFont *big_icon_font;
@@ -218,6 +227,14 @@ typedef struct
     bool voice_nav_trigger;
     bool g_voice_assistant_enabled;
     bool initialized;
+
+    bool camera_animating;
+    float anim_target_theta;
+    float anim_target_phi;
+    float anim_target_radius;
+    float anim_target_x;
+    float anim_target_y;
+    float anim_target_z;
 
     EVState vehicle_state;
 
@@ -232,6 +249,8 @@ typedef struct
     int voice_ac_change;
     int voice_info_request;
     int current_ac_temp;
+    int current_fan_speed;
+    bool ac_auto_mode;
 
     char voice_status_text[MAX_VOICE_TEXT];
     char voice_partial_text[MAX_VOICE_TEXT];

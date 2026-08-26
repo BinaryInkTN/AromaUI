@@ -24,6 +24,7 @@
 #include "aroma_widgets.h"
 #include "aroma_ubuntu_font.h"
 #include "aroma_android.h"
+#include "aroma_3d.h"
 
 #endif 
 

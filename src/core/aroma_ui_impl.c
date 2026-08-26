@@ -10,6 +10,7 @@
 #include "core/aroma_time.h"
 #include "widgets/aroma_window.h"
 #include "widgets/aroma_container.h"
+#include "widgets/aroma_3d_viewer.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
@@ -67,6 +68,9 @@ static int find_window_index_by_id(size_t window_id);
 static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
                                size_t *task_count, size_t max_tasks,
                                const AromaRect *clip);
+
+extern AromaNodeDrawFn aroma_3d_viewer_get_draw_cb(void);
+
 static int draw_task_compare(const void *a, const void *b);
 
 static inline bool is_valid_node_ptr(const AromaNode *node)
@@ -184,7 +188,6 @@ bool aroma_ui_init_impl(void)
     {
         g_window_drawlists[i] = NULL;
     }
-
 
     g_running = true;
     g_ui_initialized = true;
@@ -601,6 +604,9 @@ static void render_dirty_window_internal(size_t window_id, uint32_t clear_color)
     AromaTheme theme = aroma_theme_get_global();
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
 
+    AromaNodeDrawFn immediate_draw_cb = aroma_3d_viewer_get_draw_cb();
+    AromaDrawList *frame_list = (window_id < AROMA_MAX_WINDOWS) ? g_window_drawlists[0] : NULL;
+
     for (size_t i = 0; i < task_count; ++i)
     {
         AromaNode *n = tasks[i].node;
@@ -634,6 +640,18 @@ static void render_dirty_window_internal(size_t window_id, uint32_t clear_color)
                  (void *)n->node_widget_ptr,
                  (unsigned long long)n->child_count);
 #endif
+
+        bool is_immediate_draw = frame_list && (tasks[i].draw_cb == immediate_draw_cb);
+
+        if (is_immediate_draw)
+        {
+
+            aroma_drawlist_end();
+            aroma_drawlist_flush(frame_list, window_id);
+            if (gfx && gfx->graphics_flush)
+                gfx->graphics_flush();
+            aroma_drawlist_begin(frame_list);
+        }
 
         tasks[i].draw_cb(n, window_id);
 
@@ -681,7 +699,14 @@ static int draw_task_compare(const void *a, const void *b)
 {
     const AromaDrawTask *ta = (const AromaDrawTask *)a;
     const AromaDrawTask *tb = (const AromaDrawTask *)b;
-    return (ta->z_index > tb->z_index) - (ta->z_index < tb->z_index);
+
+    if (ta->z_index != tb->z_index)
+        return (ta->z_index > tb->z_index) - (ta->z_index < tb->z_index);
+
+    if (ta->node && tb->node)
+        return (ta->node->node_id > tb->node->node_id) - (ta->node->node_id < tb->node->node_id);
+
+    return 0;
 }
 
 static int find_window_index_by_id(size_t window_id)

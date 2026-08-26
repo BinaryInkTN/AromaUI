@@ -150,7 +150,6 @@ if(NOT EMSCRIPTEN AND NOT ENABLE_GLFW AND ENABLE_GPU_HARDWARE)
     )
     target_compile_definitions(aroma PRIVATE 
         GLPS_USE_EGL=1
-        GLPS_USE_WAYLAND=1
         AROMA_FORCE_HARDWARE_GPU=1
     )
     target_link_options(infotainment PRIVATE

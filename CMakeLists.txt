@@ -57,7 +57,7 @@ endif()
 
 find_package(Vulkan QUIET)
 if(Vulkan_FOUND)
-    set(GLPS_INCLUDE_VULKAN ON CACHE BOOL "Enable Vulkan support in GLPS" FORCE)
+    option(GLPS_INCLUDE_VULKAN "Enable Vulkan support in GLPS" ON)
 endif()
 
 add_subdirectory(vendors/sqlite3)

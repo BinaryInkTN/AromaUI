@@ -4,6 +4,7 @@
 #include "bt_speaker_api.h"
 #include "bt_speaker_hfp.h"
 #include "navigation_geo.h"
+#include "widgets/aroma_loading.h"
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
@@ -30,6 +31,36 @@
 #define CONTACTS_RETRY_INTERVAL_SEC 5
 #define MAX_CONTACTS_RETRIES 20
 #define MIN_EMPTY_RESULT_RETRIES 3
+
+static const char *resolve_asset_path(const char *filename)
+{
+    static char resolved[512];
+    const char *basename = strrchr(filename, '/');
+    if (basename)
+        basename++;
+    else
+        basename = filename;
+
+    const char *candidates[] = {
+        filename,
+        "../assets/",
+        "examples/car_infotainment/assets/",
+        NULL};
+
+    for (int i = 0; candidates[i]; i++)
+    {
+        char path[512];
+        snprintf(path, sizeof(path), "%s%s", candidates[i], basename);
+        FILE *f = fopen(path, "rb");
+        if (f)
+        {
+            fclose(f);
+            snprintf(resolved, sizeof(resolved), "%s", path);
+            return resolved;
+        }
+    }
+    return filename;
+}
 
 void update_media_card_display(void);
 
@@ -80,8 +111,8 @@ typedef struct
 
 #include <time.h>
 
-#define POI_QUERY_MIN_INTERVAL_MS 400.0  
-#define POI_QUERY_MOVE_THRESHOLD_DEG 0.0008 
+#define POI_QUERY_MIN_INTERVAL_MS 400.0
+#define POI_QUERY_MOVE_THRESHOLD_DEG 0.0008
 #define POI_QUERY_ZOOM_THRESHOLD 0.25
 
 static bool poi_query_in_flight = false;
@@ -220,7 +251,7 @@ static AromaNode *app_drawer_grid = NULL;
 static AromaNode *app_drawer_close_btn = NULL;
 static bool app_drawer_visible = false;
 static bool app_drawer_behind_app = false;
-#define APP_DRAWER_Z_INDEX (Z_LAYER_STATUS_BAR +1)
+#define APP_DRAWER_Z_INDEX (Z_LAYER_STATUS_BAR + 1)
 
 static void send_app_drawer_behind(void)
 {
@@ -240,25 +271,25 @@ static bool on_satellite_switch_changed(AromaNode *switch_node, void *user_data)
     if (aroma_switch_get_state(switch_node))
     {
         aroma_map_set_mbtiles(state.map_node,
-        #ifdef __EMSCRIPTEN__
-            "/assets/ariana_sat.mbtiles"
-        #elif defined(__arm__) || defined(__aarch64__)
-            "/usr/share/infotainment/assets/ariana_sat.mbtiles"
-        #else
-            "../assets/ariana_sat.mbtiles"
-        #endif
+#ifdef __EMSCRIPTEN__
+                              "/assets/ariana_sat.mbtiles"
+#elif defined(__arm__) || defined(__aarch64__)
+                              "/usr/share/infotainment/assets/ariana_sat.mbtiles"
+#else
+                              "../assets/ariana_sat.mbtiles"
+#endif
         );
     }
     else
     {
-        aroma_map_set_mbtiles(state.map_node, 
-        #ifdef __EMSCRIPTEN__
-            "/assets/ariana_3d.mbtiles"
-        #elif defined(__arm__) || defined(__aarch64__)
-            "/usr/share/infotainment/assets/ariana_3d.mbtiles"
-        #else
-            "../assets/ariana_3d.mbtiles"
-        #endif
+        aroma_map_set_mbtiles(state.map_node,
+#ifdef __EMSCRIPTEN__
+                              "/assets/ariana_3d.mbtiles"
+#elif defined(__arm__) || defined(__aarch64__)
+                              "/usr/share/infotainment/assets/ariana_3d.mbtiles"
+#else
+                              "../assets/ariana_3d.mbtiles"
+#endif
         );
     }
     aroma_node_invalidate(state.map_node);
@@ -298,31 +329,31 @@ static void restore_app_drawer_from_behind(void)
 
 static void apply_theme_colors(void)
 {
-    if(dark_mode_enabled)
+    if (dark_mode_enabled)
     {
         state.theme = aroma_theme_create_material_preset_dark(AROMA_THEME_MATERIAL_BLUE);
         state.theme.colors.surface = 0xFF000000;
         aroma_image_set_source(state.backroad,
-        #ifdef __EMSCRIPTEN__
-            "/assets/bg_dark.jpeg"
-        #elif defined(__arm__) || defined(__aarch64__) 
-            "/usr/share/infotainment/assets/bg_dark.jpeg"
-        #else
-            "../assets/bg_dark.jpeg"
-        #endif
+#ifdef __EMSCRIPTEN__
+                               "/assets/bg_dark.jpeg"
+#elif defined(__arm__) || defined(__aarch64__)
+                               "/usr/share/infotainment/assets/bg_dark.jpeg"
+#else
+                               "../assets/bg_dark.jpeg"
+#endif
         );
     }
     else
     {
         state.theme = aroma_theme_create_material_blue();
-        aroma_image_set_source(state.backroad, 
-        #ifdef __EMSCRIPTEN__
-            "/assets/backroad_blur.png"
-        #elif defined(__arm__) || defined(__aarch64__)
-            "/usr/share/infotainment/assets/backroad_blur.png"
-        #else
-            "../assets/backroad_blur.png"
-        #endif
+        aroma_image_set_source(state.backroad,
+#ifdef __EMSCRIPTEN__
+                               "/assets/backroad_blur.png"
+#elif defined(__arm__) || defined(__aarch64__)
+                               "/usr/share/infotainment/assets/backroad_blur.png"
+#else
+                               "../assets/backroad_blur.png"
+#endif
         );
     }
     aroma_ui_set_theme(&state.theme);
@@ -333,7 +364,6 @@ void on_preset_item_click(int index, void *user_data)
     (void)user_data;
     if (index < 0 || index >= NUM_POI_CATEGORIES)
         return;
-    
 }
 
 static bool on_dark_mode_switch_changed(AromaNode *switch_node, void *user_data)
@@ -344,7 +374,8 @@ static bool on_dark_mode_switch_changed(AromaNode *switch_node, void *user_data)
     return true;
 }
 
-typedef struct {
+typedef struct
+{
     const char *name;
     const char *icon;
     uint32_t card_color;
@@ -457,11 +488,11 @@ static bool swupdate_is_running(void)
         close(fd);
         return true;
     }
-    
+
     FILE *pid_file = fopen(SWUPDATE_PID_FILE, "r");
     if (!pid_file)
         return false;
-    
+
     pid_t pid;
     if (fscanf(pid_file, "%d", &pid) != 1)
     {
@@ -469,10 +500,10 @@ static bool swupdate_is_running(void)
         return false;
     }
     fclose(pid_file);
-    
+
     if (kill(pid, 0) == 0)
         return true;
-    
+
     return false;
 }
 
@@ -710,10 +741,10 @@ static bool on_pois_switch_changed(AromaNode *switch_node, void *user_data)
 {
     (void)user_data;
     bool enabled = aroma_switch_get_state(switch_node);
-    
+
     static bool saved_categories[NUM_POI_CATEGORIES] = {false};
     static bool categories_saved = false;
-    
+
     if (!enabled)
     {
         for (int i = 0; i < NUM_POI_CATEGORIES; i++)
@@ -721,7 +752,7 @@ static bool on_pois_switch_changed(AromaNode *switch_node, void *user_data)
             saved_categories[i] = category_enabled[i];
         }
         categories_saved = true;
-        
+
         for (int i = 0; i < NUM_POI_CATEGORIES; i++)
         {
             category_enabled[i] = false;
@@ -744,17 +775,17 @@ static bool on_pois_switch_changed(AromaNode *switch_node, void *user_data)
             }
         }
     }
-    
+
     poi_refresh_forced = true;
     last_center_lat = 0.0;
     last_center_lon = 0.0;
     last_zoom = 0.0;
-    
+
     if (maps_screen_open && state.map_node && !map_nav.navigation_active)
     {
         update_pois_markers();
     }
-    
+
     return true;
 }
 
@@ -762,29 +793,29 @@ static void update_bt_info_card(void)
 {
     if (!bt_info_card || !bt_info_name_label || !bt_info_address_label || !bt_info_status_label)
         return;
-    
+
     pthread_mutex_lock(&g_bt_mutex);
     bt_device_info_t device = g_bt_device_info;
     bt_state_t bt_state = g_bt_state;
     pthread_mutex_unlock(&g_bt_mutex);
-    
+
     if (device.connected && device.name[0])
     {
         char name_buf[128];
         snprintf(name_buf, sizeof(name_buf), "Name: %s", device.name);
         aroma_label_set_text(bt_info_name_label, name_buf);
-        
+
         char addr_buf[128];
         snprintf(addr_buf, sizeof(addr_buf), "Address: %s", device.address[0] ? device.address : "Unknown");
         aroma_label_set_text(bt_info_address_label, addr_buf);
-        
+
         const char *status_text = "Connected";
         if (bt_state == BT_STATE_PLAYING)
             status_text = "Connected - Playing Audio";
         else if (bt_state == BT_STATE_CONNECTED)
             status_text = "Connected";
         aroma_label_set_text(bt_info_status_label, status_text);
-        
+
         aroma_node_set_hidden(bt_info_card, false);
     }
     else
@@ -797,7 +828,7 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
 {
     (void)user_data;
     bool enabled = aroma_switch_get_state(switch_node);
-    
+
     if (enabled)
     {
         if (!g_bt_initialized)
@@ -837,7 +868,7 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
             g_bt_initialized = true;
         }
         bt_speaker_start();
-        
+
         pthread_mutex_lock(&contact_fetch_mutex);
         contact_fetch_retries = 0;
         pthread_mutex_unlock(&contact_fetch_mutex);
@@ -854,10 +885,10 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
         state.contacts_fetched = false;
         state.contact_count = 0;
     }
-    
+
     update_bt_info_card();
     update_media_card_display();
-    
+
     return true;
 }
 
@@ -937,7 +968,8 @@ static void update_pois_markers(void)
         return;
 
     AromaMap *map_widget = (AromaMap *)state.map_node->node_widget_ptr;
-    if (!map_widget) return;
+    if (!map_widget)
+        return;
 
     double center_lat = map_widget->center_lat;
     double center_lon = map_widget->center_lon;
@@ -994,8 +1026,18 @@ static void update_pois_markers(void)
     double view_max_lat = 180.0 / M_PI * (2.0 * atan(exp(n_min)) - M_PI / 2.0);
     double view_min_lat = 180.0 / M_PI * (2.0 * atan(exp(n_max)) - M_PI / 2.0);
 
-    if (view_max_lat < view_min_lat) { double tmp = view_max_lat; view_max_lat = view_min_lat; view_min_lat = tmp; }
-    if (view_max_lon < view_min_lon) { double tmp = view_max_lon; view_max_lon = view_min_lon; view_min_lon = tmp; }
+    if (view_max_lat < view_min_lat)
+    {
+        double tmp = view_max_lat;
+        view_max_lat = view_min_lat;
+        view_min_lat = tmp;
+    }
+    if (view_max_lon < view_min_lon)
+    {
+        double tmp = view_max_lon;
+        view_max_lon = view_min_lon;
+        view_min_lon = tmp;
+    }
 
     view_min_lat = fmax(view_min_lat, -85.0);
     view_max_lat = fmin(view_max_lat, 85.0);
@@ -1054,28 +1096,69 @@ static void update_pois_markers(void)
             }
         }
 
-        if (!cat_enabled) continue;
-        if (!poi->name[0]) continue;
+        if (!cat_enabled)
+            continue;
+        if (!poi->name[0])
+            continue;
 
         uint32_t color = 0xFF999999;
         const char *icon_code = AROMA_ICON_PLACE;
 
         switch (poi->category)
         {
-        case POI_CATEGORY_GAS_STATION: color = 0xFFFF6600; icon_code = AROMA_ICON_LOCAL_GAS_STATION; break;
+        case POI_CATEGORY_GAS_STATION:
+            color = 0xFFFF6600;
+            icon_code = AROMA_ICON_LOCAL_GAS_STATION;
+            break;
         case POI_CATEGORY_RESTAURANT:
-        case POI_CATEGORY_FAST_FOOD: color = 0xFFFF3333; icon_code = AROMA_ICON_RESTAURANT; break;
-        case POI_CATEGORY_CAFE: color = 0xFF8B4513; icon_code = AROMA_ICON_LOCAL_CAFE; break;
-        case POI_CATEGORY_PARKING: color = 0xFF3366FF; icon_code = AROMA_ICON_LOCAL_PARKING; break;
-        case POI_CATEGORY_CHARGING_STATION: color = 0xFF00FF00; icon_code = AROMA_ICON_EV_STATION; break;
-        case POI_CATEGORY_HOSPITAL: color = 0xFFFF0000; icon_code = AROMA_ICON_LOCAL_HOSPITAL; break;
-        case POI_CATEGORY_PHARMACY: color = 0xFF009933; icon_code = AROMA_ICON_LOCAL_PHARMACY; break;
-        case POI_CATEGORY_HOTEL: color = 0xFF0066CC; icon_code = AROMA_ICON_LOCAL_HOTEL; break;
-        case POI_CATEGORY_ATM: color = 0xFF006699; icon_code = AROMA_ICON_LOCAL_ATM; break;
-        case POI_CATEGORY_BANK: color = 0xFF003366; icon_code = AROMA_ICON_ACCOUNT_BALANCE; break;
-        case POI_CATEGORY_SHOP: color = 0xFF9933FF; icon_code = AROMA_ICON_SHOP; break;
-        case POI_CATEGORY_SUPERMARKET: color = 0xFF00CC00; icon_code = AROMA_ICON_LOCAL_GROCERY_STORE; break;
-        default: color = 0xFF999999; icon_code = AROMA_ICON_PLACE; break;
+        case POI_CATEGORY_FAST_FOOD:
+            color = 0xFFFF3333;
+            icon_code = AROMA_ICON_RESTAURANT;
+            break;
+        case POI_CATEGORY_CAFE:
+            color = 0xFF8B4513;
+            icon_code = AROMA_ICON_LOCAL_CAFE;
+            break;
+        case POI_CATEGORY_PARKING:
+            color = 0xFF3366FF;
+            icon_code = AROMA_ICON_LOCAL_PARKING;
+            break;
+        case POI_CATEGORY_CHARGING_STATION:
+            color = 0xFF00FF00;
+            icon_code = AROMA_ICON_EV_STATION;
+            break;
+        case POI_CATEGORY_HOSPITAL:
+            color = 0xFFFF0000;
+            icon_code = AROMA_ICON_LOCAL_HOSPITAL;
+            break;
+        case POI_CATEGORY_PHARMACY:
+            color = 0xFF009933;
+            icon_code = AROMA_ICON_LOCAL_PHARMACY;
+            break;
+        case POI_CATEGORY_HOTEL:
+            color = 0xFF0066CC;
+            icon_code = AROMA_ICON_LOCAL_HOTEL;
+            break;
+        case POI_CATEGORY_ATM:
+            color = 0xFF006699;
+            icon_code = AROMA_ICON_LOCAL_ATM;
+            break;
+        case POI_CATEGORY_BANK:
+            color = 0xFF003366;
+            icon_code = AROMA_ICON_ACCOUNT_BALANCE;
+            break;
+        case POI_CATEGORY_SHOP:
+            color = 0xFF9933FF;
+            icon_code = AROMA_ICON_SHOP;
+            break;
+        case POI_CATEGORY_SUPERMARKET:
+            color = 0xFF00CC00;
+            icon_code = AROMA_ICON_LOCAL_GROCERY_STORE;
+            break;
+        default:
+            color = 0xFF999999;
+            icon_code = AROMA_ICON_PLACE;
+            break;
         }
 
         candidates[candidate_count].lat = poi->lat;
@@ -1111,7 +1194,8 @@ static void populate_suggestion_cards(void)
 {
     int start = current_page * ITEMS_PER_PAGE;
     int end = start + ITEMS_PER_PAGE;
-    if (end > filtered_poi_count) end = filtered_poi_count;
+    if (end > filtered_poi_count)
+        end = filtered_poi_count;
 
     for (int slot = 0; slot < ITEMS_PER_PAGE; slot++)
     {
@@ -1151,7 +1235,11 @@ static void populate_suggestion_cards(void)
 
 static void update_suggestions(const char *query)
 {
-    if (filtered_pois) { free(filtered_pois); filtered_pois = NULL; }
+    if (filtered_pois)
+    {
+        free(filtered_pois);
+        filtered_pois = NULL;
+    }
     filtered_poi_count = 0;
     current_page = 0;
 
@@ -1191,10 +1279,12 @@ static bool on_suggestion_pick(AromaNode *btn, void *user_data)
 {
     (void)btn;
     SuggestionSlotContext *ctx = (SuggestionSlotContext *)user_data;
-    if (!ctx) return true;
+    if (!ctx)
+        return true;
 
     int actual_index = current_page * ITEMS_PER_PAGE + ctx->slot_index;
-    if (actual_index >= filtered_poi_count) return true;
+    if (actual_index >= filtered_poi_count)
+        return true;
 
     PointOfInterest *poi = &filtered_pois[actual_index];
     const char *name = poi->name[0] ? poi->name : "Unnamed";
@@ -1242,7 +1332,8 @@ static bool on_prev_page(AromaNode *btn, void *user_data)
 {
     (void)btn;
     (void)user_data;
-    if (current_page <= 0) return true;
+    if (current_page <= 0)
+        return true;
     current_page--;
     populate_suggestion_cards();
     return true;
@@ -1252,7 +1343,8 @@ static bool on_next_page(AromaNode *btn, void *user_data)
 {
     (void)btn;
     (void)user_data;
-    if (current_page >= total_pages_suggestions - 1) return true;
+    if (current_page >= total_pages_suggestions - 1)
+        return true;
     current_page++;
     populate_suggestion_cards();
     return true;
@@ -1504,8 +1596,10 @@ static bool recalculate_route_from_current_position(void)
     double *new_path_lon = malloc(sizeof(double) * new_count);
     if (!new_path_lat || !new_path_lon)
     {
-        if (new_path_lat) free(new_path_lat);
-        if (new_path_lon) free(new_path_lon);
+        if (new_path_lat)
+            free(new_path_lat);
+        if (new_path_lon)
+            free(new_path_lon);
         return false;
     }
 
@@ -1515,15 +1609,17 @@ static bool recalculate_route_from_current_position(void)
         new_path_lon[i] = nav_mercator_to_lon(route_lons[i]);
     }
 
-    if (map_nav.path_lat) free(map_nav.path_lat);
-    if (map_nav.path_lon) free(map_nav.path_lon);
+    if (map_nav.path_lat)
+        free(map_nav.path_lat);
+    if (map_nav.path_lon)
+        free(map_nav.path_lon);
     map_nav.path_lat = new_path_lat;
     map_nav.path_lon = new_path_lon;
     map_nav.route_point_count = new_count;
     map_nav.seg_index = 0;
     map_nav.seg_progress_m = 0.0;
     map_nav.seg_length_m = nav_haversine_m(map_nav.path_lat[0], map_nav.path_lon[0],
-                                          map_nav.path_lat[1], map_nav.path_lon[1]);
+                                           map_nav.path_lat[1], map_nav.path_lon[1]);
     map_nav.off_route_counter = 0;
     map_nav.reroute_cooldown_frames = RE_ROUTE_COOLDOWN_FRAMES;
     return true;
@@ -1546,27 +1642,32 @@ static void update_navigation_display(void)
 
     if (progress.distance_to_next_turn < 100 && turn.type != MANEUVER_ARRIVE && turn.type != MANEUVER_NONE)
     {
-        if (turn.type == MANEUVER_ROUNDABOUT) {
+        if (turn.type == MANEUVER_ROUNDABOUT)
+        {
             strcpy(banner_text, "Roundabout");
             snprintf(banner_sub_text, sizeof(banner_sub_text), "Take exit %d", turn.roundabout_exit);
             icon_code = AROMA_ICON_REFRESH;
         }
-        else if (turn.type == MANEUVER_TURN_LEFT) {
+        else if (turn.type == MANEUVER_TURN_LEFT)
+        {
             strcpy(banner_text, "Turn left");
             snprintf(banner_sub_text, sizeof(banner_sub_text), "%.0f m", progress.distance_to_next_turn);
             icon_code = AROMA_ICON_ARROW_BACK;
         }
-        else if (turn.type == MANEUVER_TURN_RIGHT) {
+        else if (turn.type == MANEUVER_TURN_RIGHT)
+        {
             strcpy(banner_text, "Turn right");
             snprintf(banner_sub_text, sizeof(banner_sub_text), "%.0f m", progress.distance_to_next_turn);
             icon_code = AROMA_ICON_ARROW_FORWARD;
         }
-        else if (turn.type == MANEUVER_UTURN) {
+        else if (turn.type == MANEUVER_UTURN)
+        {
             strcpy(banner_text, "Make U-turn");
             snprintf(banner_sub_text, sizeof(banner_sub_text), "%.0f m", progress.distance_to_next_turn);
             icon_code = AROMA_ICON_REFRESH;
         }
-        else {
+        else
+        {
             strcpy(banner_text, "Continue");
             snprintf(banner_sub_text, sizeof(banner_sub_text), "%.0f m", progress.distance_to_next_turn);
             icon_code = AROMA_ICON_ARROW_UPWARD;
@@ -1639,8 +1740,16 @@ static void start_navigation(double from_lat, double from_lon, double to_lat, do
             map_nav.off_route_counter = 0;
             map_nav.reroute_cooldown_frames = 0;
 
-            if (map_nav.path_lat) { free(map_nav.path_lat); map_nav.path_lat = NULL; }
-            if (map_nav.path_lon) { free(map_nav.path_lon); map_nav.path_lon = NULL; }
+            if (map_nav.path_lat)
+            {
+                free(map_nav.path_lat);
+                map_nav.path_lat = NULL;
+            }
+            if (map_nav.path_lon)
+            {
+                free(map_nav.path_lon);
+                map_nav.path_lon = NULL;
+            }
 
             map_nav.path_lat = malloc(sizeof(double) * map_nav.route_point_count);
             map_nav.path_lon = malloc(sizeof(double) * map_nav.route_point_count);
@@ -1650,7 +1759,7 @@ static void start_navigation(double from_lat, double from_lon, double to_lat, do
                 map_nav.path_lon[i] = nav_mercator_to_lon(route_lons[i]);
             }
             map_nav.seg_length_m = nav_haversine_m(map_nav.path_lat[0], map_nav.path_lon[0],
-                                                  map_nav.path_lat[1], map_nav.path_lon[1]);
+                                                   map_nav.path_lat[1], map_nav.path_lon[1]);
 
             aroma_map_add_popup_marker(state.map_node, to_lat, to_lon, GMAPS_COLOR_DESTINATION, "Destination");
             aroma_map_add_marker(state.map_node, map_nav.current_lat, map_nav.current_lon, GMAPS_COLOR_PRIMARY);
@@ -1708,8 +1817,16 @@ static void clear_navigation(void)
     map_nav.navigation_active = false;
     map_nav.simulation_started = false;
     map_nav.route_ready = false;
-    if (map_nav.path_lat) { free(map_nav.path_lat); map_nav.path_lat = NULL; }
-    if (map_nav.path_lon) { free(map_nav.path_lon); map_nav.path_lon = NULL; }
+    if (map_nav.path_lat)
+    {
+        free(map_nav.path_lat);
+        map_nav.path_lat = NULL;
+    }
+    if (map_nav.path_lon)
+    {
+        free(map_nav.path_lon);
+        map_nav.path_lon = NULL;
+    }
     map_nav.route_point_count = 0;
     aroma_map_clear_route(state.map_node);
     aroma_map_clear_markers(state.map_node);
@@ -1822,12 +1939,12 @@ static void on_accept_call_click(void *user_data)
     strncpy(call_path_copy, current_call_path, sizeof(call_path_copy) - 1);
     call_path_copy[sizeof(call_path_copy) - 1] = '\0';
     pthread_mutex_unlock(&call_state_lock);
-    
+
     if (call_path_copy[0] != '\0')
     {
         bt_hfp_answer(call_path_copy);
     }
-    
+
     if (incoming_call_overlay)
     {
         aroma_node_set_hidden(incoming_call_accept_btn, true);
@@ -1840,7 +1957,7 @@ static void on_accept_call_click(void *user_data)
             aroma_label_set_text(incoming_call_name_label, display);
         }
     }
-    
+
     pthread_mutex_lock(&call_state_lock);
     current_call_path[0] = '\0';
     pthread_mutex_unlock(&call_state_lock);
@@ -1854,17 +1971,17 @@ static void on_reject_call_click(void *user_data)
     strncpy(call_path_copy, current_call_path, sizeof(call_path_copy) - 1);
     call_path_copy[sizeof(call_path_copy) - 1] = '\0';
     pthread_mutex_unlock(&call_state_lock);
-    
+
     if (call_path_copy[0] != '\0')
     {
         bt_hfp_hangup(call_path_copy);
     }
-    
+
     if (incoming_call_overlay)
     {
         aroma_node_set_hidden(incoming_call_overlay, true);
     }
-    
+
     pthread_mutex_lock(&call_state_lock);
     call_overlay_visible = false;
     current_call_path[0] = '\0';
@@ -1875,12 +1992,12 @@ static void on_end_call_click(void *user_data)
 {
     (void)user_data;
     bt_hfp_hangup_all();
-    
+
     if (incoming_call_overlay)
     {
         aroma_node_set_hidden(incoming_call_overlay, true);
     }
-    
+
     pthread_mutex_lock(&call_state_lock);
     call_overlay_visible = false;
     current_call_path[0] = '\0';
@@ -1900,14 +2017,17 @@ void show_incoming_call_screen(const char *name, const char *number, const char 
 {
     if (!incoming_call_overlay)
         return;
-    
+
     pthread_mutex_lock(&call_state_lock);
-    if (name) strncpy(current_call_name, name, sizeof(current_call_name) - 1);
-    if (number) strncpy(current_call_number, number, sizeof(current_call_number) - 1);
-    if (call_path) strncpy(current_call_path, call_path, sizeof(current_call_path) - 1);
+    if (name)
+        strncpy(current_call_name, name, sizeof(current_call_name) - 1);
+    if (number)
+        strncpy(current_call_number, number, sizeof(current_call_number) - 1);
+    if (call_path)
+        strncpy(current_call_path, call_path, sizeof(current_call_path) - 1);
     call_overlay_visible = true;
     pthread_mutex_unlock(&call_state_lock);
-    
+
     if (incoming_call_name_label)
     {
         char display[256];
@@ -1935,7 +2055,7 @@ static void *call_monitor_thread_func(void *arg)
         usleep(1000000);
         bt_call_info_t curr_calls[10];
         int curr_count = bt_hfp_get_active_calls(curr_calls, 10);
-        
+
         bool found_incoming = false;
         for (int i = 0; i < curr_count; i++)
         {
@@ -1957,7 +2077,7 @@ static void *call_monitor_thread_func(void *arg)
                 break;
             }
         }
-        
+
         if (!found_incoming)
         {
             bool should_hide = false;
@@ -1968,13 +2088,13 @@ static void *call_monitor_thread_func(void *arg)
                 call_overlay_visible = false;
             }
             pthread_mutex_unlock(&call_state_lock);
-            
+
             if (should_hide && incoming_call_overlay)
             {
                 aroma_node_set_hidden(incoming_call_overlay, true);
             }
         }
-        
+
         memcpy(prev_calls, curr_calls, sizeof(curr_calls));
         prev_count = curr_count;
     }
@@ -2361,16 +2481,16 @@ void update_media_card_display(void)
 {
     if (!media_ui.ui_initialized || !media_ui.media_card)
         return;
-    
+
     pthread_mutex_lock(&g_bt_mutex);
     bt_media_info_t media = g_bt_media_info;
     bt_state_t current_state = g_bt_state;
     pthread_mutex_unlock(&g_bt_mutex);
-    
+
     bool is_playing = (current_state == BT_STATE_PLAYING);
     bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
     bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
-    
+
     if (!is_connected || !has_media)
     {
         aroma_node_set_hidden(media_ui.media_card, true);
@@ -2446,6 +2566,8 @@ static void ac_temp_up_callback(void *user_data)
     char buf[16];
     snprintf(buf, sizeof(buf), "%dC", state.current_ac_temp);
     aroma_label_set_text(state.ac_temp_label, buf);
+    if (state.ac_controls_temp_label)
+        aroma_label_set_text(state.ac_controls_temp_label, buf);
 }
 
 static void ac_temp_down_callback(void *user_data)
@@ -2456,6 +2578,288 @@ static void ac_temp_down_callback(void *user_data)
     char buf[16];
     snprintf(buf, sizeof(buf), "%dC", state.current_ac_temp);
     aroma_label_set_text(state.ac_temp_label, buf);
+    if (state.ac_controls_temp_label)
+        aroma_label_set_text(state.ac_controls_temp_label, buf);
+}
+
+#define VEHICLE_CAM_EXTERIOR_THETA -5.0f
+#define VEHICLE_CAM_EXTERIOR_PHI 1.34f
+#define VEHICLE_CAM_EXTERIOR_RADIUS 5.14f
+#define VEHICLE_CAM_EXTERIOR_TARGET_X 0.05f
+#define VEHICLE_CAM_EXTERIOR_TARGET_Y -0.13f
+#define VEHICLE_CAM_EXTERIOR_TARGET_Z -0.08f
+
+#define VEHICLE_CAM_INTERIOR_THETA -3.10f
+#define VEHICLE_CAM_INTERIOR_PHI 1.09f
+#define VEHICLE_CAM_INTERIOR_RADIUS 1.14f
+#define VEHICLE_CAM_INTERIOR_TARGET_X 0.05f
+#define VEHICLE_CAM_INTERIOR_TARGET_Y -0.13f
+#define VEHICLE_CAM_INTERIOR_TARGET_Z -0.08f
+
+static bool interior_view_active = false;
+static AromaNode *interior_close_btn = NULL;
+
+static Aroma3DCamera locked_vehicle_camera;
+static bool has_locked_vehicle_camera = false;
+
+static Aroma3DLoadJob *pending_vehicle_model_job = NULL;
+static AromaNode *vehicle_model_loading_spinner = NULL;
+
+typedef void (*VehicleModelLoadedCb)(bool success, void *user_data);
+static VehicleModelLoadedCb vehicle_model_loaded_cb = NULL;
+static void *vehicle_model_loaded_cb_user_data = NULL;
+
+void set_vehicle_model_loaded_callback(VehicleModelLoadedCb cb, void *user_data)
+{
+    vehicle_model_loaded_cb = cb;
+    vehicle_model_loaded_cb_user_data = user_data;
+}
+
+static void lock_vehicle_camera(const Aroma3DCamera *cam)
+{
+    memcpy(&locked_vehicle_camera, cam, sizeof(Aroma3DCamera));
+    has_locked_vehicle_camera = true;
+    if (state.viewer_3d)
+        aroma_3d_viewer_set_camera(state.viewer_3d, cam);
+}
+
+static void set_exterior_overlays_hidden(bool hidden)
+{
+    aroma_node_set_hidden(state.battery_button, hidden);
+    aroma_node_set_hidden(state.vehicle_view_large_clock, hidden);
+    aroma_node_set_hidden(state.vehicle_view_large_clock_pm_am, hidden);
+    aroma_node_set_hidden(state.vehicle_view_frunk_divider, hidden);
+    aroma_node_set_hidden(state.vehicle_view_lock_divider, hidden);
+    aroma_node_set_hidden(state.vehicle_view_lock_icon, hidden);
+    aroma_node_set_hidden(state.vehicle_view_frunk_header, hidden);
+    aroma_node_set_hidden(state.vehicle_view_frunk_desc, hidden);
+    aroma_node_set_hidden(state.vehicle_view_trunk_divider, hidden);
+    aroma_node_set_hidden(state.vehicle_view_trunk_header, hidden);
+    aroma_node_set_hidden(state.vehicle_view_trunk_desc, hidden);
+    aroma_node_set_hidden(state.vehicle_view_charge_port_divider, hidden);
+    aroma_node_set_hidden(state.vehicle_view_charge_port_icon, hidden);
+    aroma_node_set_hidden(media_ui.media_card, hidden);
+    aroma_node_set_hidden(state.bottom_bar, hidden);
+    aroma_node_set_hidden(state.status_card, hidden);
+    aroma_node_set_hidden(state.wifi_icon, hidden); 
+    aroma_node_set_hidden(state.gps_icon, hidden);
+    aroma_node_set_hidden(state.signal_icon, hidden); 
+    aroma_node_set_hidden(state.battery_icon, hidden);
+    aroma_node_set_hidden(state.ac_controls_btn, hidden);
+    aroma_node_set_hidden(state.seat_controls_btn, hidden);
+
+    if (hidden)
+        aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
+}
+
+static void ac_interior_callback(void *user_data)
+{
+    (void)user_data;
+    if (!state.viewer_3d || interior_view_active)
+        return;
+
+    state.anim_target_theta = VEHICLE_CAM_INTERIOR_THETA;
+    state.anim_target_phi = VEHICLE_CAM_INTERIOR_PHI;
+    state.anim_target_radius = VEHICLE_CAM_INTERIOR_RADIUS;
+    state.anim_target_x = VEHICLE_CAM_INTERIOR_TARGET_X;
+    state.anim_target_y = VEHICLE_CAM_INTERIOR_TARGET_Y;
+    state.anim_target_z = VEHICLE_CAM_INTERIOR_TARGET_Z;
+    state.camera_animating = true;
+
+    Aroma3DCamera camera;
+    aroma_3d_viewer_get_camera(state.viewer_3d, &camera);
+    camera.far_plane = 1000.0f;
+    camera.near_plane = 0.1f;
+    camera.fov = 45.0f;
+    aroma_3d_viewer_set_camera(state.viewer_3d, &camera);
+
+    interior_view_active = true;
+    set_exterior_overlays_hidden(true);
+
+    if (interior_close_btn)
+    {
+        aroma_node_set_hidden(interior_close_btn, false);
+        aroma_animation_start(interior_close_btn, AROMA_ANIM_FADE, 0, 1, 400);
+    }
+    if (state.ac_controls_btn)
+    {
+        aroma_node_set_hidden(state.ac_controls_btn, false);
+        aroma_animation_start(state.ac_controls_btn, AROMA_ANIM_FADE, 0, 1, 400);
+    }
+    if (state.seat_controls_btn)
+    {
+        aroma_node_set_hidden(state.seat_controls_btn, false);
+        aroma_animation_start(state.seat_controls_btn, AROMA_ANIM_FADE, 0, 1, 400);
+    }
+}
+
+static void toggle_seat_controls_callback(void *user_data)
+{
+    (void)user_data;
+    if (!state.seat_controls_card)
+        return;
+
+    bool hidden = aroma_node_is_hidden(state.seat_controls_card);
+    if (hidden)
+    {
+        aroma_node_set_hidden(state.seat_controls_card, false);
+        aroma_animation_start(state.seat_controls_card, AROMA_ANIM_FADE, 0, 1, 400);
+    }
+    else
+    {
+        AromaAnimation *anim = aroma_animation_start(state.seat_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
+        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+        aroma_node_set_hidden(state.seat_controls_card, true);
+    }
+}
+
+static void toggle_ac_controls_callback(void *user_data)
+{
+    (void)user_data;
+    if (!state.ac_controls_card)
+        return;
+
+    bool hidden = aroma_node_is_hidden(state.ac_controls_card);
+    if (hidden)
+    {
+        aroma_node_set_hidden(state.ac_controls_card, false);
+        aroma_animation_start(state.ac_controls_card, AROMA_ANIM_FADE, 0, 1, 400);
+    }
+    else
+    {
+        AromaAnimation *anim = aroma_animation_start(state.ac_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
+        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+        aroma_node_set_hidden(state.ac_controls_card, true);
+    }
+}
+
+static bool ac_power_callback(AromaNode *node, void *user_data)
+{
+    (void)node;
+    (void)user_data;
+    state.ac_auto_mode = !state.ac_auto_mode;
+    return true;
+}
+
+static void fan_up_callback(void *user_data)
+{
+    (void)user_data;
+    if (state.current_fan_speed < 5)
+        state.current_fan_speed++;
+}
+
+static void fan_down_callback(void *user_data)
+{
+    (void)user_data;
+    if (state.current_fan_speed > 0)
+        state.current_fan_speed--;
+}
+
+static bool ac_mode_callback(AromaNode *node, void *user_data)
+{
+    (void)node;
+    (void)user_data;
+    state.ac_auto_mode = !state.ac_auto_mode;
+    return true;
+}
+
+static void close_interior_view_callback(void *user_data)
+{
+    (void)user_data;
+    if (!state.viewer_3d || !interior_view_active)
+        return;
+
+    state.anim_target_theta = VEHICLE_CAM_EXTERIOR_THETA;
+    state.anim_target_phi = VEHICLE_CAM_EXTERIOR_PHI;
+    state.anim_target_radius = VEHICLE_CAM_EXTERIOR_RADIUS;
+    state.anim_target_x = VEHICLE_CAM_EXTERIOR_TARGET_X;
+    state.anim_target_y = VEHICLE_CAM_EXTERIOR_TARGET_Y;
+    state.anim_target_z = VEHICLE_CAM_EXTERIOR_TARGET_Z;
+    state.camera_animating = true;
+
+    interior_view_active = false;
+    set_exterior_overlays_hidden(false);
+
+    if (interior_close_btn)
+    {
+        AromaAnimation *anim = aroma_animation_start(interior_close_btn, AROMA_ANIM_FADE, 1, 0, 300);
+        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+        aroma_node_set_hidden(interior_close_btn, true);
+    }
+    if (state.ac_controls_btn)
+    {
+        AromaAnimation *anim = aroma_animation_start(state.ac_controls_btn, AROMA_ANIM_FADE, 1, 0, 300);
+        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+        aroma_node_set_hidden(state.ac_controls_btn, true);
+    }
+    if (state.ac_controls_card)
+    {
+        AromaAnimation *anim = aroma_animation_start(state.ac_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
+        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+        aroma_node_set_hidden(state.ac_controls_card, true);
+    }
+    if (state.seat_controls_btn)
+    {
+        AromaAnimation *anim = aroma_animation_start(state.seat_controls_btn, AROMA_ANIM_FADE, 1, 0, 300);
+        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+        aroma_node_set_hidden(state.seat_controls_btn, true);
+    }
+    if (state.seat_controls_card)
+    {
+        AromaAnimation *anim = aroma_animation_start(state.seat_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
+        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
+        aroma_node_set_hidden(state.seat_controls_card, true);
+    }
+}
+
+/* Front/rear are just alternate orbit angles around the same exterior pivot,
+ * phi and radius reused as-is. FRONT_THETA below is a starting guess (90 deg
+ * off the exterior hero angle) - drag the model in the running app until the
+ * camera is square on the front bumper, then replace the 1.5708f offset with
+ * whatever cam.theta reads at that point. REAR is defined 180 deg from FRONT
+ * so it stays lined up automatically once FRONT is tuned. */
+#define VEHICLE_CAM_FRONT_THETA (VEHICLE_CAM_EXTERIOR_THETA + 1.5708f)
+#define VEHICLE_CAM_FRONT_PHI VEHICLE_CAM_EXTERIOR_PHI
+#define VEHICLE_CAM_FRONT_RADIUS VEHICLE_CAM_EXTERIOR_RADIUS
+#define VEHICLE_CAM_FRONT_TARGET_X VEHICLE_CAM_EXTERIOR_TARGET_X
+#define VEHICLE_CAM_FRONT_TARGET_Y VEHICLE_CAM_EXTERIOR_TARGET_Y
+#define VEHICLE_CAM_FRONT_TARGET_Z VEHICLE_CAM_EXTERIOR_TARGET_Z
+
+#define VEHICLE_CAM_REAR_THETA (VEHICLE_CAM_FRONT_THETA + 3.14159f)
+#define VEHICLE_CAM_REAR_PHI VEHICLE_CAM_EXTERIOR_PHI
+#define VEHICLE_CAM_REAR_RADIUS VEHICLE_CAM_EXTERIOR_RADIUS
+#define VEHICLE_CAM_REAR_TARGET_X VEHICLE_CAM_EXTERIOR_TARGET_X
+#define VEHICLE_CAM_REAR_TARGET_Y VEHICLE_CAM_EXTERIOR_TARGET_Y
+#define VEHICLE_CAM_REAR_TARGET_Z VEHICLE_CAM_EXTERIOR_TARGET_Z
+
+static void front_view_callback(void *user_data)
+{
+    (void)user_data;
+    if (!state.viewer_3d || interior_view_active)
+        return;
+
+    state.anim_target_theta = VEHICLE_CAM_FRONT_THETA;
+    state.anim_target_phi = VEHICLE_CAM_FRONT_PHI;
+    state.anim_target_radius = VEHICLE_CAM_FRONT_RADIUS;
+    state.anim_target_x = VEHICLE_CAM_FRONT_TARGET_X;
+    state.anim_target_y = VEHICLE_CAM_FRONT_TARGET_Y;
+    state.anim_target_z = VEHICLE_CAM_FRONT_TARGET_Z;
+    state.camera_animating = true;
+}
+
+static void rear_view_callback(void *user_data)
+{
+    (void)user_data;
+    if (!state.viewer_3d || interior_view_active)
+        return;
+
+    state.anim_target_theta = VEHICLE_CAM_REAR_THETA;
+    state.anim_target_phi = VEHICLE_CAM_REAR_PHI;
+    state.anim_target_radius = VEHICLE_CAM_REAR_RADIUS;
+    state.anim_target_x = VEHICLE_CAM_REAR_TARGET_X;
+    state.anim_target_y = VEHICLE_CAM_REAR_TARGET_Y;
+    state.anim_target_z = VEHICLE_CAM_REAR_TARGET_Z;
+    state.camera_animating = true;
 }
 
 static bool car_frontdoor_open(AromaNode *node, void *user_data)
@@ -2510,15 +2914,15 @@ void opening_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *maps_rect = aroma_node_get_rect(state.map_node);
     if (!maps_rect)
         return;
-    
+
     int start_y = WIN_H;
     int end_y = 0;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
     rect->height = WIN_H;
-    
+
     maps_rect->x = rect->x;
     maps_rect->y = rect->y;
     maps_rect->width = rect->width;
@@ -2581,7 +2985,7 @@ bool open_maps(AromaNode *node, void *user_data)
             aroma_label_set_text(map_search_placeholder_label, "Search for a location");
         }
     }
-    
+
     return true;
 }
 
@@ -2594,20 +2998,20 @@ void closing_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *maps_rect = aroma_node_get_rect(state.map_node);
     if (!maps_rect)
         return;
-    
+
     int start_y = 0;
     int end_y = WIN_H;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
     rect->height = WIN_H;
-    
+
     maps_rect->x = rect->x;
     maps_rect->y = rect->y;
     maps_rect->width = rect->width;
     maps_rect->height = rect->height;
-    
+
     if (progress >= 0.92f)
     {
         aroma_node_set_z_index(target, 1);
@@ -2676,15 +3080,15 @@ void phone_opening_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *phone_tabs_rect = aroma_node_get_rect(state.phone_app_tabs);
     if (!phone_tabs_rect)
         return;
-    
+
     int start_y = WIN_H;
     int end_y = 0;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
     rect->height = WIN_H;
-    
+
     phone_rect->x = rect->x;
     phone_rect->y = rect->y;
     phone_rect->width = rect->width;
@@ -2727,9 +3131,9 @@ static bool open_phone(AromaNode *node, void *user_data)
         aroma_node_set_hidden(dialer_card, true);
     aroma_node_set_z_index(card_node, Z_LAYER_STATUS_BAR + 10);
     contact_page = 0;
-    
+
     populate_contact_listview(state.contact_listview);
-    
+
     return true;
 }
 
@@ -2745,15 +3149,15 @@ void phone_closing_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *phone_tabs_rect = aroma_node_get_rect(state.phone_app_tabs);
     if (!phone_tabs_rect)
         return;
-    
+
     int start_y = 0;
     int end_y = WIN_H;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
     rect->height = WIN_H;
-    
+
     phone_rect->x = rect->x;
     phone_rect->y = rect->y;
     phone_rect->width = rect->width;
@@ -2838,12 +3242,12 @@ static void update_music_now_playing_display(void)
 {
     if (!music_now_playing_card)
         return;
-    
+
     pthread_mutex_lock(&g_bt_mutex);
     bt_media_info_t media = g_bt_media_info;
     bt_state_t current_state = g_bt_state;
     pthread_mutex_unlock(&g_bt_mutex);
-    
+
     bool is_playing = (current_state == BT_STATE_PLAYING);
     bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
     bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
@@ -2931,12 +3335,12 @@ static void update_music_device_display(void)
 {
     if (!music_device_card)
         return;
-    
+
     pthread_mutex_lock(&g_bt_mutex);
     bt_device_info_t device = g_bt_device_info;
     bt_state_t current_state = g_bt_state;
     pthread_mutex_unlock(&g_bt_mutex);
-    
+
     bool is_connected = (current_state == BT_STATE_CONNECTED ||
                          current_state == BT_STATE_PLAYING);
 
@@ -3029,15 +3433,15 @@ void music_opening_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *tabs_rect = aroma_node_get_rect(music_app_tabs);
     if (!tabs_rect)
         return;
-    
+
     int start_y = WIN_H;
     int end_y = 0;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
     rect->height = WIN_H;
-    
+
     tabs_rect->x = rect->x;
     tabs_rect->y = rect->y;
     tabs_rect->width = rect->width;
@@ -3074,7 +3478,7 @@ static bool open_music(AromaNode *node, void *user_data)
     music_app_open = true;
     music_active_tab = 0;
     update_music_now_playing_display();
-    
+
     return true;
 }
 
@@ -3087,15 +3491,15 @@ void music_closing_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *tabs_rect = aroma_node_get_rect(music_app_tabs);
     if (!tabs_rect)
         return;
-    
+
     int start_y = 0;
     int end_y = WIN_H;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
     rect->height = WIN_H;
-    
+
     tabs_rect->x = rect->x;
     tabs_rect->y = rect->y + 90;
     tabs_rect->width = rect->width;
@@ -3135,17 +3539,17 @@ static void update_swupdate_service_status(void)
 {
     if (!settings_swupdate_status_label || !settings_swupdate_port_label)
         return;
-    
+
     bool running = swupdate_is_running();
     int port = swupdate_get_web_port();
-    
+
     if (running)
     {
         char status_text[128];
         snprintf(status_text, sizeof(status_text), "Running on port %d", port);
         aroma_label_set_text(settings_swupdate_status_label, status_text);
         aroma_label_set_color(settings_swupdate_status_label, IOS_COLOR_GREEN);
-        
+
         char port_text[64];
         snprintf(port_text, sizeof(port_text), "http://localhost:%d", port);
         aroma_label_set_text(settings_swupdate_port_label, port_text);
@@ -3164,11 +3568,11 @@ static void on_settings_sidebar_select(AromaNode *sidebar, int index, void *user
 {
     (void)sidebar;
     (void)user_data;
-    
+
     aroma_node_set_hidden(settings_page_general, index != 0);
     aroma_node_set_hidden(settings_page_display, index != 1);
     aroma_node_set_hidden(settings_page_updates, index != 2);
-    
+
     if (index == 2)
     {
         update_swupdate_service_status();
@@ -3205,7 +3609,6 @@ static void update_ota_display(void)
     strncpy(image_snapshot, ota_current_image, sizeof(image_snapshot) - 1);
     image_snapshot[sizeof(image_snapshot) - 1] = '\0';
     pthread_mutex_unlock(&ota_state_lock);
-
 
     switch (state_snapshot)
     {
@@ -3368,8 +3771,8 @@ static void *ota_install_thread_func(void *arg)
             if (msg.infolen > 0)
             {
                 size_t copy_len = msg.infolen < sizeof(ota_status_detail) - 1
-                                       ? msg.infolen
-                                       : sizeof(ota_status_detail) - 1;
+                                      ? msg.infolen
+                                      : sizeof(ota_status_detail) - 1;
                 memcpy(ota_status_detail, msg.info, copy_len);
                 ota_status_detail[copy_len] = '\0';
             }
@@ -3412,8 +3815,8 @@ static void on_settings_ota_check_click(void *user_data)
 
     pthread_mutex_lock(&ota_state_lock);
     bool already_running = ota_poll_thread_running ||
-                            settings_ota_state == OTA_STATE_CONNECTING ||
-                            settings_ota_state == OTA_STATE_RUNNING;
+                           settings_ota_state == OTA_STATE_CONNECTING ||
+                           settings_ota_state == OTA_STATE_RUNNING;
     if (already_running)
     {
         pthread_mutex_unlock(&ota_state_lock);
@@ -3458,10 +3861,10 @@ void settings_opening_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
-    
+
     int start_y = WIN_H;
     int end_y = 0;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
@@ -3496,7 +3899,7 @@ static bool open_settings(AromaNode *node, void *user_data)
     aroma_node_set_z_index(card_node, Z_LAYER_STATUS_BAR + 10);
     update_bt_info_card();
     update_swupdate_service_status();
-    
+
     return true;
 }
 
@@ -3506,10 +3909,10 @@ void settings_closing_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
-    
+
     int start_y = 0;
     int end_y = WIN_H;
-    
+
     rect->x = 0;
     rect->y = start_y + (int)((end_y - start_y) * progress);
     rect->width = WIN_W;
@@ -3548,7 +3951,7 @@ void close_settings(void *user_data)
     aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
 }
 
-static bool on_app_drawer_click(AromaNode* node, void *user_data)
+static bool on_app_drawer_click(AromaNode *node, void *user_data)
 {
     (void)node;
     int app_index = (int)(intptr_t)user_data;
@@ -3684,7 +4087,7 @@ static void build_lock_screen(AromaNode *window)
         window, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
         AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
-    aroma_node_set_z_index(lock_screen_root,  9990);
+    aroma_node_set_z_index(lock_screen_root, 9990);
 
     AromaNode *black_bg = aroma_ui_card(
         lock_screen_root, -10, -10, WIN_W + 20, WIN_H + 20, CARD_TYPE_FILLED);
@@ -3739,12 +4142,12 @@ static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void
 {
     (void)user_data;
     (void)old_state;
-    
+
     pthread_mutex_lock(&g_bt_mutex);
     g_bt_state = new_state;
     g_bt_connected = (new_state == BT_STATE_CONNECTED || new_state == BT_STATE_PLAYING);
     pthread_mutex_unlock(&g_bt_mutex);
-    
+
     update_bt_info_card();
     update_media_card_display();
 }
@@ -3752,39 +4155,39 @@ static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void
 static void attempt_contact_fetch(void)
 {
     pthread_mutex_lock(&contact_fetch_mutex);
-    
+
     if (contact_fetch_in_progress)
     {
         pthread_mutex_unlock(&contact_fetch_mutex);
         return;
     }
-    
+
     if (state.contacts_fetched)
     {
         pthread_mutex_unlock(&contact_fetch_mutex);
         return;
     }
-    
+
     pthread_mutex_lock(&g_bt_mutex);
     bool connected = g_bt_connected;
     bt_device_info_t device = g_bt_device_info;
     pthread_mutex_unlock(&g_bt_mutex);
-    
+
     if (!connected || !device.name[0])
     {
         pthread_mutex_unlock(&contact_fetch_mutex);
         return;
     }
-    
+
     contact_fetch_in_progress = true;
     pthread_mutex_unlock(&contact_fetch_mutex);
-    
+
     bt_contact_t bt_contacts[MAX_CONTACTS];
     int count = bt_hfp_fetch_contacts(device.path, bt_contacts, MAX_CONTACTS);
-    
+
     pthread_mutex_lock(&contact_fetch_mutex);
     contact_fetch_in_progress = false;
-    
+
     if (count > 0)
     {
         state.contacts_fetched = true;
@@ -3801,7 +4204,7 @@ static void attempt_contact_fetch(void)
         populate_contact_listview(state.contact_listview);
         return;
     }
-    
+
     if (count == 0)
     {
         contact_fetch_retries++;
@@ -3817,7 +4220,7 @@ static void attempt_contact_fetch(void)
         pthread_mutex_unlock(&contact_fetch_mutex);
         return;
     }
-    
+
     contact_fetch_retries++;
     pthread_mutex_unlock(&contact_fetch_mutex);
 }
@@ -3825,16 +4228,16 @@ static void attempt_contact_fetch(void)
 static void *contact_fetch_thread_func(void *arg)
 {
     (void)arg;
-    
+
     while (1)
     {
         sleep(CONTACTS_RETRY_INTERVAL_SEC);
-        
+
         pthread_mutex_lock(&contact_fetch_mutex);
-        bool should_retry = !state.contacts_fetched && 
-                           (contact_fetch_retries < MAX_CONTACTS_RETRIES);
+        bool should_retry = !state.contacts_fetched &&
+                            (contact_fetch_retries < MAX_CONTACTS_RETRIES);
         pthread_mutex_unlock(&contact_fetch_mutex);
-        
+
         if (!should_retry)
             continue;
     }
@@ -3924,6 +4327,47 @@ static void on_bt_call_changed(const bt_call_info_t *call, bool removed, void *u
     }
 }
 
+static void apply_vehicle_paint_finish(Aroma3DModel *model, float metallic, float clearcoat)
+{
+    if (!model)
+        return;
+    int mesh_count = aroma_3d_get_mesh_count(model);
+    for (int i = 0; i < mesh_count; i++)
+    {
+        const Aroma3DMesh *mesh = aroma_3d_get_mesh(model, i);
+        if (aroma_3d_mesh_is_alpha_blended(mesh))
+            continue;
+        aroma_3d_set_mesh_metallic(model, i, metallic);
+        aroma_3d_set_mesh_clearcoat(model, i, clearcoat);
+    }
+}
+
+static void apply_vehicle_model_to_viewer(Aroma3DModel *model, float metallic, float clearcoat)
+{
+    if (!state.viewer_3d || !model)
+        return;
+
+    apply_vehicle_paint_finish(model, metallic, clearcoat);
+    aroma_3d_viewer_set_model(state.viewer_3d, model);
+
+    Aroma3DCamera cam;
+    aroma_3d_viewer_get_camera(state.viewer_3d, &cam);
+
+    cam.theta = -5.0f;
+    cam.phi = 1.34f;
+    cam.radius = 5.14f;
+    cam.target[0] = 0.05f;
+    cam.target[1] = -0.13f;
+    cam.target[2] = -0.08f;
+
+    cam.fov = 45.0f;
+    cam.near_plane = 0.1f;
+    cam.far_plane = 1000.0f;
+    lock_vehicle_camera(&cam);
+
+    aroma_3d_viewer_set_light_position(state.viewer_3d, 4.0f, 6.0f, 3.0f);
+}
+
 void build_vehicle_view(AromaNode *window)
 {
     state.vehicle_view_root = aroma_ui_container(
@@ -3932,7 +4376,6 @@ void build_vehicle_view(AromaNode *window)
         AROMA_JUSTIFY_START, AROMA_ALIGN_STRETCH);
     aroma_node_set_z_index(state.vehicle_view_root, Z_LAYER_BACKGROUND);
     aroma_node_set_hidden(state.vehicle_view_root, true);
-
     state.backroad = aroma_ui_image(
         state.vehicle_view_root,
 #ifdef __EMSCRIPTEN__
@@ -3940,33 +4383,58 @@ void build_vehicle_view(AromaNode *window)
 #elif defined(__arm__) || defined(__aarch64__)
         "/usr/share/infotainment/assets/bg_dark.jpeg"
 #else
-        "../assets/bg_dark.jpeg"
+        resolve_asset_path("../assets/bg_dark.jpeg")
 #endif
         ,
         0, 0, WIN_W, WIN_H);
     aroma_node_set_z_index(state.backroad, Z_LAYER_BACKGROUND);
 
-    state.car_img = aroma_ui_image(
-        state.vehicle_view_root,
-#ifdef __EMSCRIPTEN__
-        "/assets/car.png"
-#elif defined(__arm__) || defined(__aarch64__)
-        "/usr/share/infotainment/assets/car.png"
-#else
-        "../assets/car.png"
-#endif
-        ,
-        150, 100, 700, 405);
-    aroma_node_set_z_index(state.car_img, Z_LAYER_VEHICLE_IMAGE);
+    aroma_3d_init();
+    state.viewer_3d = aroma_3d_viewer_create(
+        state.vehicle_view_root, -100, 0, WIN_W + 200, WIN_H + 100);
+    if (state.viewer_3d)
+    {
+        aroma_node_set_z_index(state.viewer_3d, Z_LAYER_BACKGROUND + 1);
+        fprintf(stderr, "[ZDEBUG] viewer_3d z_index = %d (Z_LAYER_BACKGROUND=%d)\n",
+                (int)(Z_LAYER_BACKGROUND + 1), (int)Z_LAYER_BACKGROUND);
+        aroma_3d_viewer_set_interactive(state.viewer_3d, false);
+        aroma_3d_init();
 
-    state.overlay = aroma_ui_image(state.vehicle_view_root, NULL, 150, 100, 700, 405);
-    aroma_node_set_z_index(state.overlay, Z_LAYER_VEHICLE_OVERLAYS);
+        Aroma3DModel *placeholder = aroma_3d_create_cube();
+        if (placeholder)
+            apply_vehicle_model_to_viewer(placeholder, 0.75f, 0.85f);
+
+        pending_vehicle_model_job = aroma_3d_load_model_async(
+#ifdef __EMSCRIPTEN__
+            "/assets/tesla_roadster_2020.glb"
+#elif defined(__arm__) || defined(__aarch64__)
+            "/usr/share/infotainment/assets/tesla_roadster_2020.glb"
+#else
+            resolve_asset_path("../assets/etron.glb")
+#endif
+        );
+        if (!pending_vehicle_model_job)
+        {
+            fprintf(stderr, "[vehicle_view] aroma_3d_load_model_async failed to start, keeping cube placeholder\n");
+        }
+
+        vehicle_model_loading_spinner = aroma_loading_create(
+            state.vehicle_view_root, WIN_W / 2, (WIN_H + 100) / 2,
+            40, 6, 0xFFFFFFFF);
+        if (vehicle_model_loading_spinner)
+        {
+            aroma_node_set_z_index(vehicle_model_loading_spinner, Z_LAYER_BACKGROUND + 2);
+            aroma_node_set_hidden(vehicle_model_loading_spinner, !pending_vehicle_model_job);
+        }
+    }
 
     state.battery_button = aroma_ui_iconbutton(
         state.vehicle_view_root, AROMA_ICON_BATTERY_FULL,
         WIN_W - 260, 22, 40, ICON_BUTTON_OUTLINED,
         battery_diagnostics, NULL, state.icon_font);
     aroma_node_set_z_index(state.battery_button, Z_LAYER_VEHICLE_OVERLAYS + 1);
+    fprintf(stderr, "[ZDEBUG] battery_button z_index = %d (Z_LAYER_VEHICLE_OVERLAYS=%d)\n",
+            (int)(Z_LAYER_VEHICLE_OVERLAYS + 1), (int)Z_LAYER_VEHICLE_OVERLAYS);
 
     state.vehicle_view_large_clock = aroma_ui_label(
         state.vehicle_view_root, "12:45",
@@ -4043,7 +4511,7 @@ void build_vehicle_view(AromaNode *window)
 #elif defined(__arm__) || defined(__aarch64__)
         "/usr/share/infotainment/assets/charging.png"
 #else
-        "../assets/charging.png"
+        resolve_asset_path("../assets/charging.png")
 #endif
         ,
         WIN_W / 2 - 180, 100, 128, 128);
@@ -4119,6 +4587,116 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *ac_plus = aroma_ui_iconbutton(state.bottom_bar, AROMA_ICON_ADD, 25, 260, 30, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
     aroma_node_set_z_index(ac_plus, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
+    /* Placement is a starting guess (same 80px pitch as the buttons above) -
+     * nudge the y values if this overlaps anything on the actual screen. */
+    AromaNode *front_view_btn = aroma_ui_iconbutton(state.bottom_bar, AROMA_ICON_ARROW_FORWARD, 25, 340, 30, ICON_BUTTON_FILLED, front_view_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(front_view_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    AromaNode *rear_view_btn = aroma_ui_iconbutton(state.bottom_bar, AROMA_ICON_ARROW_BACK, 25, 420, 30, ICON_BUTTON_FILLED, rear_view_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(rear_view_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
+    state.interior_ac_btn = aroma_ui_iconbutton(
+        state.vehicle_view_root, AROMA_ICON_AC_UNIT,
+        25, 100, 36, ICON_BUTTON_FILLED,
+        ac_interior_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(state.interior_ac_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
+    state.ac_controls_btn = aroma_ui_iconbutton(
+        state.vehicle_view_root, AROMA_ICON_SETTINGS,
+        70, 100, 36, ICON_BUTTON_FILLED,
+        toggle_ac_controls_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(state.ac_controls_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    aroma_node_set_hidden(state.ac_controls_btn, true);
+
+    state.ac_controls_card = aroma_ui_card(
+        state.vehicle_view_root, 25, 145, 260, 220, CARD_TYPE_GLASS);
+    aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP);
+    aroma_node_set_hidden(state.ac_controls_card, true);
+
+    aroma_ui_icon(
+        state.ac_controls_card, AROMA_ICON_AC_UNIT, 20, 18, 28,
+        state.theme.colors.primary, state.icon_font);
+    aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP + 1);
+
+    aroma_ui_label(
+        state.ac_controls_card, "Climate", 62, 18,
+        LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP + 1);
+
+    state.ac_controls_temp_label = aroma_ui_label(
+        state.ac_controls_card, "22C", 120, 50,
+        LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    aroma_node_set_z_index(state.ac_controls_temp_label, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *ac_temp_up = aroma_ui_iconbutton(
+        state.ac_controls_card, AROMA_ICON_ADD, 200, 45, 32, ICON_BUTTON_OUTLINED,
+        ac_temp_up_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(ac_temp_up, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *ac_temp_down = aroma_ui_iconbutton(
+        state.ac_controls_card, AROMA_ICON_REMOVE, 200, 85, 32, ICON_BUTTON_OUTLINED,
+        ac_temp_down_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(ac_temp_down, Z_LAYER_CARDS_TOP + 1);
+
+    aroma_ui_label(
+        state.ac_controls_card, "Fan Speed", 20, 100,
+        LABEL_STYLE_LABEL_SMALL, state.ui_font);
+    aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *fan_up = aroma_ui_iconbutton(
+        state.ac_controls_card, AROMA_ICON_ARROW_UPWARD, 200, 125, 32, ICON_BUTTON_OUTLINED,
+        fan_up_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(fan_up, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *fan_down = aroma_ui_iconbutton(
+        state.ac_controls_card, AROMA_ICON_ARROW_DOWNWARD, 200, 165, 32, ICON_BUTTON_OUTLINED,
+        fan_down_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(fan_down, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *ac_mode_btn = aroma_ui_button(
+        state.ac_controls_card, "Auto", 20, 130, 90, 32,
+        ac_mode_callback, NULL, state.ui_font);
+    aroma_node_set_z_index(ac_mode_btn, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *ac_power_btn = aroma_ui_button(
+        state.ac_controls_card, "AC", 120, 130, 60, 32,
+        ac_power_callback, NULL, state.ui_font);
+    aroma_node_set_z_index(ac_power_btn, Z_LAYER_CARDS_TOP + 1);
+
+    state.seat_controls_btn = aroma_ui_iconbutton(
+        state.vehicle_view_root, AROMA_ICON_AIRLINE_SEAT_LEGROOM_EXTRA,
+        25, WIN_H - 70, 40, ICON_BUTTON_FILLED,
+        toggle_seat_controls_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(state.seat_controls_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    aroma_node_set_hidden(state.seat_controls_btn, true);
+
+    state.seat_controls_card = aroma_ui_card(
+        state.vehicle_view_root, 25, WIN_H - 220, 240, 180, CARD_TYPE_GLASS);
+    aroma_node_set_z_index(state.seat_controls_card, Z_LAYER_CARDS_TOP);
+    aroma_node_set_hidden(state.seat_controls_card, true);
+
+    aroma_ui_icon(
+        state.seat_controls_card, AROMA_ICON_AIRLINE_SEAT_LEGROOM_EXTRA, 20, 18, 28,
+        state.theme.colors.primary, state.icon_font);
+    aroma_node_set_z_index(state.seat_controls_card, Z_LAYER_CARDS_TOP + 1);
+
+    aroma_ui_label(
+        state.seat_controls_card, "Seat Position", 20, 18,
+        LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    aroma_node_set_z_index(state.seat_controls_card, Z_LAYER_CARDS_TOP + 1);
+
+    state.seat_position_slider = aroma_slider_create(
+        state.seat_controls_card, 20, 55, 200, 40,
+        0, 100, 50);
+    aroma_node_set_z_index(state.seat_position_slider, Z_LAYER_CARDS_TOP + 1);
+    aroma_slider_setup_events(state.seat_position_slider, aroma_ui_request_redraw, NULL);
+
+    interior_close_btn = aroma_ui_iconbutton(
+        state.vehicle_view_root, AROMA_ICON_CLOSE,
+        WIN_W - 60, 20, 40, ICON_BUTTON_FILLED,
+        close_interior_view_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(interior_close_btn, Z_LAYER_CARDS_TOP);
+    aroma_node_set_hidden(interior_close_btn, true);
+
     app_drawer = aroma_ui_card(
         state.vehicle_view_root, 0, WIN_H, WIN_W, WIN_H, CARD_TYPE_ELEVATED);
     aroma_node_set_z_index(app_drawer, APP_DRAWER_Z_INDEX);
@@ -4146,7 +4724,7 @@ void build_vehicle_view(AromaNode *window)
     app_definitions[1].open_func = open_phone;
     app_definitions[1].user_data = NULL;
     app_definitions[1].card_color = aroma_color_blend(0xFF00FF00, 0xFF00FF00, 0.5f);
-    
+
     app_definitions[2].name = "";
     app_definitions[2].icon = AROMA_ICON_MUSIC_NOTE;
     app_definitions[2].open_func = open_music;
@@ -4163,10 +4741,10 @@ void build_vehicle_view(AromaNode *window)
     {
         int row = i / 2;
         int col = i % 2;
-        
+
         int card_x = 300 + col * 230;
         int card_y = 130 + row * 200;
-        
+
         AromaNode *btn_card = aroma_ui_card(
             app_drawer, card_x, card_y, 180, 150, CARD_TYPE_ELEVATED);
         aroma_node_set_z_index(btn_card, APP_DRAWER_Z_INDEX + 1);
@@ -4174,7 +4752,7 @@ void build_vehicle_view(AromaNode *window)
             btn_card, app_definitions[i].icon,
             120, 40, 64, 0xFFFFFFFF, state.huge_icon_font);
         aroma_node_set_z_index(app_definitions[i].drawer_icon, APP_DRAWER_Z_INDEX + 3);
-        
+
         AromaNode *app_label = aroma_ui_label(
             btn_card, app_definitions[i].name,
             50, 100, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
@@ -4182,7 +4760,7 @@ void build_vehicle_view(AromaNode *window)
         aroma_node_set_z_index(app_label, APP_DRAWER_Z_INDEX + 3);
         aroma_label_set_color(app_label, 0xFFFFFFFF);
         app_definitions[i].drawer_card = btn_card;
-        
+
         AromaNode *app_btn = aroma_ui_button(
             btn_card, "",
             0, 0, 180, 150,
@@ -4220,36 +4798,36 @@ void build_vehicle_view(AromaNode *window)
     state.phone_app_icon = app_definitions[1].drawer_icon;
 
     state.map_node = aroma_ui_map(app_definitions[0].app_root, 0, 0, 48, 48);
-    aroma_map_set_mbtiles(state.map_node, 
-    #ifdef __EMSCRIPTEN__
-        "/assets/tunisia.mbtiles"
-    #elif defined(__arm__) || defined(__aarch64__)
-        "/usr/share/infotainment/assets/ariana_3d.mbtiles"
-    #else
-        "../assets/ariana_3d.mbtiles"
-    #endif
+    aroma_map_set_mbtiles(state.map_node,
+#ifdef __EMSCRIPTEN__
+                          "/assets/tunisia.mbtiles"
+#elif defined(__arm__) || defined(__aarch64__)
+                          "/usr/share/infotainment/assets/ariana_3d.mbtiles"
+#else
+                          "../assets/ariana_3d.mbtiles"
+#endif
     );
     aroma_map_load_osrm_data(state.map_node,
-    #ifdef __EMSCRIPTEN__
-        "/assets/routing_data.bin"
-    #elif defined(__arm__) || defined(__aarch64__)
-        "/usr/share/infotainment/assets/routing_data.bin"
-    #else
-        "../assets/routing_data.bin"
-    #endif
+#ifdef __EMSCRIPTEN__
+                             "/assets/routing_data.bin"
+#elif defined(__arm__) || defined(__aarch64__)
+                             "/usr/share/infotainment/assets/routing_data.bin"
+#else
+                             "../assets/routing_data.bin"
+#endif
     );
-    aroma_map_load_poi_database(state.map_node, 
-    #ifdef __EMSCRIPTEN__
-        "/assets/tunisia_pois.db"
-    #elif defined(__arm__) || defined(__aarch64__)
-        "/usr/share/infotainment/assets/tunisia_pois.db"
-    #else
-        "../assets/tunisia_pois.db"
-    #endif
+    aroma_map_load_poi_database(state.map_node,
+#ifdef __EMSCRIPTEN__
+                                "/assets/tunisia_pois.db"
+#elif defined(__arm__) || defined(__aarch64__)
+                                "/usr/share/infotainment/assets/tunisia_pois.db"
+#else
+                                "../assets/tunisia_pois.db"
+#endif
     );
     aroma_map_set_center(state.map_node, 36.8625, 10.1956);
     aroma_map_set_animations_enabled(state.map_node, false);
-    
+
     aroma_node_set_z_index(state.map_node, Z_LAYER_STATUS_BAR + 11);
     state.map_close_btn = aroma_ui_iconbutton(app_definitions[0].app_root, AROMA_ICON_CLOSE, 20, 20, 48, ICON_BUTTON_FILLED, close_maps, app_definitions[0].app_root, state.icon_font);
     aroma_node_set_z_index(state.map_close_btn, Z_LAYER_STATUS_BAR + 20);
@@ -4300,7 +4878,7 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *satellite_label = aroma_ui_label(
         map_options_card, "Satellite View", 16, 65, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(satellite_label, Z_LAYER_STATUS_BAR + 22);
-    
+
     AromaNode *pois_switch = aroma_ui_switch(
         map_options_card, 210, 110, 60, 30,
         true, on_pois_switch_changed, NULL);
@@ -4341,11 +4919,11 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *preset_title = aroma_ui_label(map_search_surface, "Presets", 16, 232, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(preset_title, Z_LAYER_STATUS_BAR + 16);
 
-    AromaNode* preset_listview = aroma_listview_create(map_search_surface, 16, 260, 308, 240);
+    AromaNode *preset_listview = aroma_listview_create(map_search_surface, 16, 260, 308, 240);
     aroma_listview_add_item_with_icon(preset_listview, "Home", "", AROMA_ICON_HOME, NULL);
     aroma_listview_add_item_with_icon(preset_listview, "Parad'Ice", "", AROMA_ICON_LOCAL_DINING, NULL);
     aroma_listview_add_item_with_icon(preset_listview, "ISI", "", AROMA_ICON_BOOK, NULL);
-    aroma_listview_add_item_with_icon(preset_listview , "Agile", "", AROMA_ICON_LOCAL_GAS_STATION, NULL);
+    aroma_listview_add_item_with_icon(preset_listview, "Agile", "", AROMA_ICON_LOCAL_GAS_STATION, NULL);
     aroma_listview_set_font(preset_listview, state.ui_font);
     aroma_listview_set_icon_font(preset_listview, state.icon_font);
     aroma_node_set_z_index(preset_listview, Z_LAYER_STATUS_BAR + 16);
@@ -4375,7 +4953,7 @@ void build_vehicle_view(AromaNode *window)
         suggestion_slot_contexts[slot].slot_index = slot;
 
         AromaNode *pick_btn = aroma_ui_button_with_icon(card, "Pick", 520, 8, 90, 34,
-                                              on_suggestion_pick, &suggestion_slot_contexts[slot], state.ui_font, AROMA_ICON_CHECK, state.icon_font);
+                                                        on_suggestion_pick, &suggestion_slot_contexts[slot], state.ui_font, AROMA_ICON_CHECK, state.icon_font);
         aroma_node_set_z_index(pick_btn, Z_LAYER_STATUS_BAR + 42);
 
         aroma_node_set_hidden(card, true);
@@ -4733,7 +5311,7 @@ void build_vehicle_view(AromaNode *window)
         settings_page_updates, 20, 70, WIN_W - 250, 340, CARD_TYPE_FILLED);
     aroma_node_set_z_index(updates_card, Z_LAYER_STATUS_BAR + 13);
 
-    AromaNode *logo_icon = aroma_ui_icon(updates_card, AROMA_ICON_MEMORY, (WIN_W - 200) / 2 , 20, 60, IOS_COLOR_BLUE, state.huge_icon_font);
+    AromaNode *logo_icon = aroma_ui_icon(updates_card, AROMA_ICON_MEMORY, (WIN_W - 200) / 2, 20, 60, IOS_COLOR_BLUE, state.huge_icon_font);
     aroma_node_set_z_index(logo_icon, Z_LAYER_STATUS_BAR + 14);
 
     AromaNode *os_name_label = aroma_ui_label(updates_card, "Aroma OS", (WIN_W - 350) / 2, 100, LABEL_STYLE_LABEL_LARGE, state.settings_font);
@@ -4868,10 +5446,73 @@ void build_vehicle_view(AromaNode *window)
 
 void update_vehicle_view(void)
 {
+    if (pending_vehicle_model_job && aroma_3d_load_model_poll(pending_vehicle_model_job))
+    {
+        Aroma3DModel *loaded_model = aroma_3d_load_model_finish(pending_vehicle_model_job);
+        pending_vehicle_model_job = NULL;
+
+        if (loaded_model)
+        {
+            apply_vehicle_model_to_viewer(loaded_model, 0.75f, 0.85f);
+            if (vehicle_model_loading_spinner)
+                aroma_node_set_hidden(vehicle_model_loading_spinner, true);
+            if (vehicle_model_loaded_cb)
+                vehicle_model_loaded_cb(true, vehicle_model_loaded_cb_user_data);
+        }
+        else
+        {
+            fprintf(stderr, "[vehicle_view] async vehicle model load failed, keeping cube placeholder\n");
+            if (vehicle_model_loading_spinner)
+                aroma_node_set_hidden(vehicle_model_loading_spinner, true);
+            if (vehicle_model_loaded_cb)
+                vehicle_model_loaded_cb(false, vehicle_model_loaded_cb_user_data);
+        }
+    }
+
     if (lock_screen_active)
     {
         update_lock_screen_clock();
         return;
+    }
+
+    if (state.camera_animating && state.viewer_3d)
+    {
+        Aroma3DCamera cam;
+        aroma_3d_viewer_get_camera(state.viewer_3d, &cam);
+        float t = 0.08f;
+        cam.theta += (state.anim_target_theta - cam.theta) * t;
+        cam.phi += (state.anim_target_phi - cam.phi) * t;
+        cam.radius += (state.anim_target_radius - cam.radius) * t;
+        cam.target[0] += (state.anim_target_x - cam.target[0]) * t;
+        cam.target[1] += (state.anim_target_y - cam.target[1]) * t;
+        cam.target[2] += (state.anim_target_z - cam.target[2]) * t;
+
+        float dtheta = state.anim_target_theta - cam.theta;
+        float dphi = state.anim_target_phi - cam.phi;
+        float dradius = state.anim_target_radius - cam.radius;
+        float dtarget[3];
+        dtarget[0] = state.anim_target_x - cam.target[0];
+        dtarget[1] = state.anim_target_y - cam.target[1];
+        dtarget[2] = state.anim_target_z - cam.target[2];
+        float dist = sqrtf(dtheta * dtheta + dphi * dphi + dradius * dradius + dtarget[0] * dtarget[0] + dtarget[1] * dtarget[1] + dtarget[2] * dtarget[2]);
+
+        if (dist < 0.001f)
+        {
+            cam.theta = state.anim_target_theta;
+            cam.phi = state.anim_target_phi;
+            cam.radius = state.anim_target_radius;
+            cam.target[0] = state.anim_target_x;
+            cam.target[1] = state.anim_target_y;
+            cam.target[2] = state.anim_target_z;
+            state.camera_animating = false;
+        }
+
+        lock_vehicle_camera(&cam);
+    }
+    else if (state.viewer_3d && has_locked_vehicle_camera)
+    {
+
+        aroma_3d_viewer_set_camera(state.viewer_3d, &locked_vehicle_camera);
     }
 
     bt_hfp_poll();
@@ -4897,17 +5538,24 @@ void update_vehicle_view(void)
         if (map_nav.seg_index < map_nav.route_point_count - 1)
         {
             double dist_remaining_estimate = 0.0;
-            for (int i = map_nav.seg_index; i < map_nav.route_point_count - 1; i++)
-                dist_remaining_estimate += nav_haversine_m(map_nav.path_lat[i], map_nav.path_lon[i],
-                                                            map_nav.path_lat[i + 1], map_nav.path_lon[i + 1]);
-            dist_remaining_estimate -= map_nav.seg_progress_m;
+            if (map_nav.route_point_count > 1)
+            {
+                for (int i = map_nav.seg_index; i < map_nav.route_point_count - 1; i++)
+                    dist_remaining_estimate += nav_haversine_m(map_nav.path_lat[i], map_nav.path_lon[i],
+                                                               map_nav.path_lat[i + 1], map_nav.path_lon[i + 1]);
+                dist_remaining_estimate -= map_nav.seg_progress_m;
+            }
 
             double target_speed = 35.0;
-            if (map_nav.frame < 90) target_speed = 35.0 * (map_nav.frame / 90.0);
-            if (dist_remaining_estimate < 60.0) target_speed = fmin(target_speed, 35.0 * (dist_remaining_estimate / 60.0));
-            if (target_speed < 5.0 && dist_remaining_estimate > 2.0) target_speed = 5.0;
+            if (map_nav.frame < 90)
+                target_speed = 35.0 * (map_nav.frame / 90.0);
+            if (dist_remaining_estimate < 60.0)
+                target_speed = fmin(target_speed, 35.0 * (dist_remaining_estimate / 60.0));
+            if (target_speed < 5.0 && dist_remaining_estimate > 2.0)
+                target_speed = 5.0;
             map_nav.speed += (target_speed - map_nav.speed) * 0.05;
-            if (map_nav.speed < 0.0) map_nav.speed = 0.0;
+            if (map_nav.speed < 0.0)
+                map_nav.speed = 0.0;
 
             double meters_per_frame = (map_nav.speed * 1000.0 / 3600.0) / 60.0;
             map_nav.seg_progress_m += meters_per_frame;
@@ -4917,11 +5565,12 @@ void update_vehicle_view(void)
                 map_nav.seg_progress_m -= map_nav.seg_length_m;
                 map_nav.seg_index++;
                 map_nav.seg_length_m = nav_haversine_m(map_nav.path_lat[map_nav.seg_index], map_nav.path_lon[map_nav.seg_index],
-                                                      map_nav.path_lat[map_nav.seg_index + 1], map_nav.path_lon[map_nav.seg_index + 1]);
+                                                       map_nav.path_lat[map_nav.seg_index + 1], map_nav.path_lon[map_nav.seg_index + 1]);
             }
 
             double t = (map_nav.seg_length_m > 0.0001) ? (map_nav.seg_progress_m / map_nav.seg_length_m) : 0.0;
-            if (t > 1.0) t = 1.0;
+            if (t > 1.0)
+                t = 1.0;
 
             double a_lat = map_nav.path_lat[map_nav.seg_index], a_lon = map_nav.path_lon[map_nav.seg_index];
             double b_lat = map_nav.path_lat[map_nav.seg_index + 1], b_lon = map_nav.path_lon[map_nav.seg_index + 1];
@@ -5002,5 +5651,10 @@ void update_vehicle_view(void)
                 aroma_node_set_hidden(map_end_nav_btn, false);
             }
         }
+    }
+
+    if (state.viewer_3d)
+    {
+        aroma_3d_viewer_update(state.viewer_3d);
     }
 }

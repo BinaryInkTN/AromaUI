@@ -197,8 +197,8 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
             int anchor_x = cx + (int)(cos(angle) * label_radius);
             int anchor_y = cy + (int)(sin(angle) * label_radius);
 
-            int lx = anchor_x - (int)((text_width / 2.0f) * (1.0f + cos(angle)));
-            int ly = anchor_y - (int)((text_height / 2.0f) * (1.0f + sin(angle))) + (int)(text_height / 4.0f);
+            int lx = anchor_x - (int)(text_width / 2.0f);
+            int ly = anchor_y - (int)(text_height / 2.0f);
 
             uint32_t c = gauge->label_color;
             if (gauge->red_zone_val != 0.0f && val >= gauge->red_zone_val)
@@ -238,6 +238,11 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
         int base_y = cy + (int)(sin(fill_end) * needle_start_r);
 
         gfx->draw_line(window_id, base_x, base_y, tip_x, tip_y, gauge->needle_color, gauge->needle_thickness, true);
+        
+        if (gfx->fill_rectangle) {
+            int base_radius = gauge->needle_thickness * 2;
+            gfx->fill_rectangle(window_id, base_x - base_radius, base_y - base_radius, base_radius * 2, base_radius * 2, gauge->needle_color, true, base_radius);
+        }
     }
 }
 

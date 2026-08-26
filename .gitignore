@@ -6,3 +6,4 @@ build-web/
 build-ems/
 examples/smarthome_example/
 examples/map_example/
+*.glb

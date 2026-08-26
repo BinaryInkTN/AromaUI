@@ -40,6 +40,7 @@
 #include "widgets/aroma_loading.h"
 #include "widgets/aroma_table.h"
 #include "widgets/aroma_gauge.h"
+#include "widgets/aroma_3d_viewer.h"
 
 #endif
 

@@ -27,15 +27,6 @@ static AromaGraphicsInterface* get_real_graphics_interface(void) {
 
 static void drawlist_proxy_clear(size_t window_id, uint32_t color)
 {
-    #ifndef ESP32
-
-    AromaDrawList* list = aroma_drawlist_get_active();
-    if (list) {
-        aroma_drawlist_cmd_clear(list, color);
-        return;
-    }
-    #endif
-
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->clear) {
         real->clear(window_id, color);

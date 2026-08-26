@@ -400,6 +400,10 @@ void set_window_update_callback(void (*callback)(size_t window_id, void *data), 
 
 void request_window_update(size_t window_id)
 {
+    if (platform_ctx.frame_update_callback)
+    {
+        platform_ctx.frame_update_callback(window_id, platform_ctx.frame_update_data);
+    }
 }
 
 bool run_event_loop()
