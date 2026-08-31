@@ -126,24 +126,15 @@ typedef struct
     AromaNode *gps_icon;
     AromaNode *bluetooth_icon;
 
-    AromaNode *vehicle_view_lock_icon;
-    AromaNode *vehicle_view_lock_divider;
-    AromaNode *vehicle_view_charge_port_divider;
-    AromaNode *vehicle_view_charge_port_icon;
-    AromaNode *vehicle_view_frunk_header;
-    AromaNode *vehicle_view_frunk_desc;
-    AromaNode *vehicle_view_frunk_divider;
-    AromaNode *vehicle_view_trunk_divider;
-    AromaNode *vehicle_view_trunk_header;
-    AromaNode *vehicle_view_trunk_desc;
+    AromaNode *vehicle_view_clock_gauge;
+    AromaNode *vehicle_view_ampm_label;
+    AromaNode *vehicle_view_hints;
+
     AromaNode *vehicle_view_warning_message_card;
     AromaNode *vehicle_view_warning_message_label;
     AromaNode *vehicle_view_warning_warning_icon;
     AromaNode *vehicle_view_warning_message_action;
-    AromaNode *vehicle_view_large_clock;
-    AromaNode *vehicle_view_large_clock_pm_am;
-    AromaNode *vehicle_view_hints;
-    AromaNode *vehicle_view_side_arrow_icon_button;
+
     AromaNode *overlay;
     AromaNode *recent_lv;
 
@@ -163,6 +154,15 @@ typedef struct
     AromaNode *battery_image;
     AromaNode *battery_health;
     AromaNode *battery_percentage;
+
+    AromaNode *tire_card;
+    AromaNode *tire_name_label;
+    AromaNode *tire_pressure_label;
+    AromaNode *tire_button;
+    AromaNode *tire_close_btn;
+
+    int selected_tire;
+    bool tire_check_active;
 
     AromaNode *map_node;
     AromaNode *map_panel;
@@ -203,6 +203,12 @@ typedef struct
     AromaNode *ac_controls_btn;
     AromaNode *ac_controls_card;
     AromaNode *ac_controls_temp_label;
+    AromaNode *ac_temp_up_btn;
+    AromaNode *ac_temp_down_btn;
+    AromaNode *fan_up_btn;
+    AromaNode *fan_down_btn;
+    AromaNode *ac_mode_btn;
+    AromaNode *ac_power_btn;
     AromaNode *seat_controls_btn;
     AromaNode *seat_controls_card;
     AromaNode *seat_position_slider;
@@ -235,6 +241,7 @@ typedef struct
     float anim_target_x;
     float anim_target_y;
     float anim_target_z;
+    bool startup_animating;
 
     EVState vehicle_state;
 

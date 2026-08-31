@@ -93,6 +93,73 @@ Layers are defined in `app_state.h` to ensure consistent depth sorting [examples
 
 ---
 
+## 3D Vehicle Viewer and Camera System
+
+AromaOS uses the `Aroma3DViewer` widget to render an interactive 3D vehicle model. The camera system supports multiple preset views (exterior, interior, front, rear, tire) with smooth animated transitions.
+
+### 3D Viewer Integration
+
+The viewer is created during `build_vehicle_view` and stored in `state.viewer_3d` [examples/car_infotainment/vehicle_view.c61-90](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_view.c#L61-L90). The model is loaded asynchronously using `aroma_3d_load_model_async`, and a loading spinner is displayed while the GLB file is being parsed [examples/car_infotainment/vehicle_camera.c59-60](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L59-L60).
+
+### Camera Presets
+
+The camera uses spherical coordinates (theta, phi, radius) and a target point. Five preset views are defined in `vehicle_camera.c`:
+
+| View | Theta | Phi | Radius | Purpose |
+| --- | --- | --- | --- | --- |
+| Exterior | -5.0 | 1.34 | 5.14 | Default overview of the vehicle. |
+| Interior | -3.10 | 1.09 | 1.14 | Close-up inside the cabin. |
+| Front | +90 deg from exterior | Same | Same | Front bumper / headlight view. |
+| Rear | +180 deg from front | Same | Same | Rear bumper / taillight view. |
+| Tire | 0.0 | 1.2 | 2.2 | Close-up wheel inspection. |
+
+Each tire view also has a per-wheel target offset (e.g., Front Right at `(-0.85, -0.08, 1.05)`) defined in the `tire_views[]` array [examples/car_infotainment/vehicle_camera.c39-51](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L39-L51).
+
+### Animated Transitions
+
+Camera transitions are driven by the AromaUI animation engine. The `main_loop` interpolates the current camera values toward `state.anim_target_*` each frame:
+
+```c
+if (state.camera_animating)
+{
+    state.camera.theta += (state.anim_target_theta - state.camera.theta) * 0.08f;
+    state.camera.phi   += (state.anim_target_phi   - state.camera.phi)   * 0.08f;
+    state.camera.radius+= (state.anim_target_radius - state.camera.radius)* 0.08f;
+    // ... same for target x, y, z
+    aroma_3d_viewer_set_camera(state.viewer_3d, &state.camera);
+}
+```
+
+The `lock_vehicle_camera()` function snapshots the current camera state so it can be restored after leaving an animated view [examples/car_infotainment/vehicle_camera.c123-129](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L123-L129).
+
+### Lighting and Materials
+
+When a model is loaded, `apply_vehicle_paint_finish()` sets the metallic and clearcoat factors for all non-transparent meshes [examples/car_infainment/vehicle_camera.c72-85](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L72-L85). The light position is configured via `aroma_3d_viewer_set_light_position` to simulate a showroom environment [examples/car_infotainment/vehicle_camera.c120](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L120-L120).
+
+### Vehicle Camera Data Flow
+
+```mermaid
+flowchart TD
+    subgraph subGraph1 ["Camera State"]
+        CAM["Aroma3DCamera"]
+        TARGET["anim_target_*"]
+        ANIM["main_loop interpolation"]
+    end
+    subgraph subGraph0 ["3D Viewer"]
+        VIEWER["state.viewer_3d"]
+        MODEL["Aroma3DModel (GLB)"]
+        RENDER["aroma_3d_render_to_rect()"]
+    end
+    CAM -->|"set_camera()"| VIEWER
+    ANIM -->|"updates"| CAM
+    VIEWER -->|"draws"| RENDER
+    MODEL -->|"renders"| RENDER
+```
+
+**Sources:**[examples/car_infotainment/vehicle_camera.c1-60](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L1-L60)[examples/car_infotainment/vehicle_camera.c87-121](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L87-L121)[examples/car_infotainment/vehicle_view.c61-90](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_view.c#L61-L90)
+
+---
+
 ## Voice Control System (Vosk Integration)
 
 AromaOS features an integrated voice assistant using the Vosk API for offline speech-to-intent processing.

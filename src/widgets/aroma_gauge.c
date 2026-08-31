@@ -29,6 +29,18 @@ typedef struct AromaGauge
     uint32_t needle_color;
     int needle_thickness;
 
+    bool has_secondary_hand;
+    uint32_t secondary_color;
+    int secondary_thickness;
+    float secondary_length_ratio;
+    float secondary_value;
+
+    bool has_extra_hand;
+    uint32_t extra_color;
+    int extra_thickness;
+    float extra_length_ratio;
+    float extra_value;
+
     bool has_ticks;
     int major_tick_count;
     int minor_tick_count;
@@ -244,6 +256,38 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
             gfx->fill_rectangle(window_id, base_x - base_radius, base_y - base_radius, base_radius * 2, base_radius * 2, gauge->needle_color, true, base_radius);
         }
     }
+
+    if (gauge->has_secondary_hand && gfx->draw_line)
+    {
+        float sec_normalized = (gauge->secondary_value - gauge->min_val) / (gauge->max_val - gauge->min_val);
+        if (sec_normalized < 0.0f)
+            sec_normalized = 0.0f;
+        if (sec_normalized > 1.0f)
+            sec_normalized = 1.0f;
+        float sec_end = gauge->start_angle + sec_normalized * (gauge->end_angle - gauge->start_angle);
+
+        int sec_len = (int)(base_radius * gauge->secondary_length_ratio);
+        int sec_tip_x = cx + (int)(cos(sec_end) * sec_len);
+        int sec_tip_y = cy + (int)(sin(sec_end) * sec_len);
+
+        gfx->draw_line(window_id, cx, cy, sec_tip_x, sec_tip_y, gauge->secondary_color, gauge->secondary_thickness, true);
+    }
+
+    if (gauge->has_extra_hand && gfx->draw_line)
+    {
+        float extra_normalized = (gauge->extra_value - gauge->min_val) / (gauge->max_val - gauge->min_val);
+        if (extra_normalized < 0.0f)
+            extra_normalized = 0.0f;
+        if (extra_normalized > 1.0f)
+            extra_normalized = 1.0f;
+        float extra_end = gauge->start_angle + extra_normalized * (gauge->end_angle - gauge->start_angle);
+
+        int extra_len = (int)(base_radius * gauge->extra_length_ratio);
+        int extra_tip_x = cx + (int)(cos(extra_end) * extra_len);
+        int extra_tip_y = cy + (int)(sin(extra_end) * extra_len);
+
+        gfx->draw_line(window_id, cx, cy, extra_tip_x, extra_tip_y, gauge->extra_color, gauge->extra_thickness, true);
+    }
 }
 
 static void aroma_gauge_destroy(AromaNode *node)
@@ -288,6 +332,18 @@ AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height
     gauge->has_needle = false;
     gauge->needle_color = 0xFFFFFFFF;
     gauge->needle_thickness = 4;
+
+    gauge->has_secondary_hand = false;
+    gauge->secondary_color = 0xFFFFFFFF;
+    gauge->secondary_thickness = 2;
+    gauge->secondary_length_ratio = 0.85f;
+    gauge->secondary_value = 0.0f;
+
+    gauge->has_extra_hand = false;
+    gauge->extra_color = 0xFFFFFFFF;
+    gauge->extra_thickness = 3;
+    gauge->extra_length_ratio = 0.65f;
+    gauge->extra_value = 0.0f;
 
     gauge->has_ticks = false;
     gauge->tick_direction = AROMA_GAUGE_TICK_DOWN;
@@ -368,6 +424,48 @@ void aroma_gauge_set_needle(AromaNode *node, bool enable, uint32_t color, int th
     gauge->has_needle = enable;
     gauge->needle_color = color;
     gauge->needle_thickness = thickness;
+    aroma_node_invalidate(node);
+}
+
+void aroma_gauge_set_secondary_hand(AromaNode *node, bool enable, uint32_t color, int thickness, float length_ratio)
+{
+    if (!node || !node->node_widget_ptr)
+        return;
+    AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
+    gauge->has_secondary_hand = enable;
+    gauge->secondary_color = color;
+    gauge->secondary_thickness = thickness;
+    gauge->secondary_length_ratio = length_ratio;
+    aroma_node_invalidate(node);
+}
+
+void aroma_gauge_set_secondary_value(AromaNode *node, float value)
+{
+    if (!node || !node->node_widget_ptr)
+        return;
+    AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
+    gauge->secondary_value = value;
+    aroma_node_invalidate(node);
+}
+
+void aroma_gauge_set_extra_hand(AromaNode *node, bool enable, uint32_t color, int thickness, float length_ratio)
+{
+    if (!node || !node->node_widget_ptr)
+        return;
+    AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
+    gauge->has_extra_hand = enable;
+    gauge->extra_color = color;
+    gauge->extra_thickness = thickness;
+    gauge->extra_length_ratio = length_ratio;
+    aroma_node_invalidate(node);
+}
+
+void aroma_gauge_set_extra_value(AromaNode *node, float value)
+{
+    if (!node || !node->node_widget_ptr)
+        return;
+    AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
+    gauge->extra_value = value;
     aroma_node_invalidate(node);
 }
 

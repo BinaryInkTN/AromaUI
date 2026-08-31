@@ -298,6 +298,25 @@ def find_installed_java() -> List[Tuple[str, int]]:
     return found
 
 
+def find_emscripten_sdk() -> Optional[str]:
+    candidates = []
+    cwd = os.getcwd()
+    candidates.append(os.path.join(cwd, "vendors", "emscripten"))
+    for parent in [os.path.dirname(cwd), os.path.dirname(os.path.dirname(cwd))]:
+        candidates.append(os.path.join(parent, "vendors", "emscripten"))
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    for _ in range(6):
+        candidates.append(os.path.join(script_dir, "vendors", "emscripten"))
+        script_dir = os.path.dirname(script_dir)
+    install_dir = get_default_install_path()
+    candidates.append(os.path.join(install_dir, "vendors", "emscripten"))
+    home = os.path.expanduser("~")
+    candidates.append(os.path.join(home, "Projects", "AromaUI", "vendors", "emscripten"))
+    for path in candidates:
+        if os.path.isdir(path) and os.path.isfile(os.path.join(path, "emsdk")):
+            return path
+    return None
+
 def find_aroma_root() -> str:
     return os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", ".."))
 
@@ -1702,13 +1721,22 @@ def cmd_build(args):
     elif args.platform == "linux":
         sdk_ver = ndk_ver = bt_ver = cmake_ver = None
     
+    elif args.platform == "web":
+        sdk_ver = ndk_ver = bt_ver = cmake_ver = None
+        emsdk_dir = find_emscripten_sdk()
+        if not emsdk_dir:
+            print(f"{Colors.FAIL}ERROR: Emscripten SDK not found. Install it under vendors/emscripten or ~/.aroma/vendors/emscripten.{Colors.ENDC}")
+            sys.exit(1)
+        print(f"{Colors.OKCYAN}Using Emscripten SDK: {emsdk_dir}{Colors.ENDC}")
+    
     _do_build(args.platform, detector.sdk_root, sdk_ver, bt_ver, ndk_ver, cmake_ver, args.release, args.aab)
 
 
-def _do_build(platform: str, sdk_root: str, sdk_ver: str, bt_ver: str, ndk_ver: str, cmake_ver: str, release: bool, aab: bool):
+def _do_build(build_platform: str, sdk_root: str, sdk_ver: str, bt_ver: str, ndk_ver: str, cmake_ver: str, release: bool, aab: bool):
     cwd = os.getcwd()
+    emsdk_dir = find_emscripten_sdk()
     
-    if platform == "linux":
+    if build_platform == "linux":
         build_dir = os.path.join(cwd, "build")
         os.makedirs(build_dir, exist_ok=True)
         
@@ -1726,7 +1754,40 @@ def _do_build(platform: str, sdk_root: str, sdk_ver: str, bt_ver: str, ndk_ver: 
         
         print(f"{Colors.OKGREEN}OK Build successful{Colors.ENDC}")
     
-    elif platform == "android":
+    elif build_platform == "web":
+        if not emsdk_dir:
+            print(f"{Colors.FAIL}ERROR: Emscripten SDK not found. Install it under vendors/emscripten or ~/.aroma/vendors/emscripten.{Colors.ENDC}")
+            sys.exit(1)
+        
+        build_dir = os.path.join(cwd, "build_web")
+        os.makedirs(build_dir, exist_ok=True)
+        
+        emscripten_root = os.path.join(emsdk_dir, "upstream", "emscripten")
+        emcmake = os.path.join(emscripten_root, "emcmake")
+        emmake = os.path.join(emscripten_root, "emmake")
+        if platform.system() == "Windows":
+            emcmake += ".bat"
+            emmake += ".bat"
+        
+        env = os.environ.copy()
+        env["EMSDK"] = emsdk_dir
+        
+        print(f"{Colors.OKBLUE}==>{Colors.ENDC} Configuring (Emscripten)...")
+        result = run_command([emcmake, "cmake", "..", "-DCMAKE_BUILD_TYPE=Release"], cwd=build_dir, env=env)
+        if result is None or result.returncode != 0:
+            print(f"{Colors.FAIL}ERROR: CMake configuration failed{Colors.ENDC}")
+            sys.exit(1)
+        
+        print(f"{Colors.OKBLUE}==>{Colors.ENDC} Building...")
+        result = run_command([emmake, "make", f"-j{os.cpu_count() or 4}"], cwd=build_dir, env=env)
+        if result is None or result.returncode != 0:
+            print(f"{Colors.FAIL}ERROR: Build failed{Colors.ENDC}")
+            sys.exit(1)
+        
+        print(f"{Colors.OKGREEN}OK Build successful{Colors.ENDC}")
+        print(f"  Output: {build_dir}")
+    
+    elif build_platform == "android":
         android_dir = os.path.join(cwd, "android")
         if not os.path.exists(android_dir):
             print(f"{Colors.FAIL}ERROR: Not an Aroma project (no android/ directory){Colors.ENDC}")
@@ -1860,6 +1921,44 @@ def cmd_run(args):
                 print()
                 Logger.info("Stopping emulator...")
                 cleanup_emulator(adb_cmd)
+    
+    elif args.platform == "web":
+        build_dir = os.path.join(cwd, "build_web")
+        if not os.path.isdir(build_dir):
+            print(f"{Colors.FAIL}ERROR: build_web/ not found. Run 'aroma build web' first.{Colors.ENDC}")
+            sys.exit(1)
+        
+        port = 8080
+        while port < 8100:
+            try:
+                import http.server
+                import socketserver
+                
+                class ReusableTCPServer(socketserver.TCPServer):
+                    allow_reuse_address = True
+                
+                class Handler(http.server.SimpleHTTPRequestHandler):
+                    def __init__(self, *args, **kwargs):
+                        super().__init__(*args, directory=build_dir, **kwargs)
+                
+                print(f"{Colors.OKBLUE}==>{Colors.ENDC} Serving at http://localhost:{port}")
+                print("Press Ctrl+C to stop")
+                
+                with ReusableTCPServer(("", port), Handler) as httpd:
+                    try:
+                        httpd.serve_forever()
+                    except KeyboardInterrupt:
+                        print()
+                        httpd.shutdown()
+                break
+            except OSError as e:
+                if e.errno == 98:
+                    port += 1
+                else:
+                    raise
+        else:
+            print(f"{Colors.FAIL}ERROR: Could not find available port in range 8080-8099{Colors.ENDC}")
+            sys.exit(1)
 
 
 def main():

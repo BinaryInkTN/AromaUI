@@ -2430,10 +2430,10 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
         return;
   static const char *const valid[] = {
     "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_start_val",
-    "attribution", "autoplay", "color", "columns", "condition", "direction", "duration", "font", "group",
-    "header", "height", "hidden", "icon", "id", "label", "lat", "layout", "length", "lon", "max", "message",
-    "min", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "placeholder",
-    "position", "radius", "selected", "show", "size", "src", "style", "text", "thickness", "title", "type", "value",
+    "attribution", "autoplay", "color", "columns", "condition", "direction", "duration", "fill_color", "font", "group",
+    "header", "height", "hidden", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "label", "lat", "layout", "length", "lon", "max", "message",
+    "min", "model", "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "placeholder",
+    "position", "progress", "radius", "selected", "show", "size", "src", "start_angle", "end_angle", "style", "text", "thickness", "title", "track_color", "track_thickness", "ticks", "tick_color", "tick_thickness", "type", "value",
     "variant", "visible", "width", "x", "y", "zoom", "z_index", NULL};
     for (int i = 0; i < bag->count; i++)
     {
@@ -3282,6 +3282,81 @@ static AromaNode *build_loading(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
+static AromaNode *build_gauge(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    AromaNode *built = aroma_ui_gauge(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+                                      props_int(&bag, "width", 200), props_int(&bag, "height", 200));
+    if (built)
+    {
+        if (props_get(&bag, "value"))
+            aroma_gauge_set_value(built, props_float(&bag, "value", 0.0f));
+        if (props_get(&bag, "min") || props_get(&bag, "max"))
+            aroma_gauge_set_range(built, props_float(&bag, "min", 0.0f), props_float(&bag, "max", 1.0f));
+        if (props_get(&bag, "track_color") || props_get(&bag, "fill_color"))
+            aroma_gauge_set_colors(built, props_color(&bag, "track_color", 0x00000000),
+                                         props_color(&bag, "fill_color", 0x00000000));
+        if (props_get(&bag, "start_angle") || props_get(&bag, "end_angle"))
+            aroma_gauge_set_angles(built, props_float(&bag, "start_angle", 135.0f),
+                                         props_float(&bag, "end_angle", 405.0f));
+        if (props_get(&bag, "track_thickness") || props_get(&bag, "fill_thickness"))
+            aroma_gauge_set_thickness(built, props_int(&bag, "track_thickness", 10),
+                                      props_int(&bag, "fill_thickness", 10));
+        if (props_bool(&bag, "needle", false))
+        {
+            aroma_gauge_set_needle(built, true, props_color(&bag, "needle_color", 0xFFFFFFFF),
+                                   props_int(&bag, "needle_thickness", 4));
+        }
+        if (props_bool(&bag, "ticks", false))
+        {
+            aroma_gauge_set_ticks(built, true,
+                                  props_int(&bag, "major_ticks", 5),
+                                  props_int(&bag, "minor_ticks", 4),
+                                  props_int(&bag, "major_length", 10),
+                                  props_int(&bag, "minor_length", 5),
+                                  props_color(&bag, "tick_color", 0xFFFFFFFF),
+                                  props_int(&bag, "tick_thickness", 1));
+        }
+        if (props_bool(&bag, "hub", false))
+        {
+            aroma_gauge_set_hub(built, true, props_int(&bag, "hub_radius", 6),
+                                props_color(&bag, "hub_color", 0xFFFFFFFF),
+                                props_int(&bag, "hub_thickness", 2));
+        }
+    }
+    WIDGET_POSTAMBLE(built, bag, node, ctx);
+}
+
+static AromaNode *build_3d_viewer(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    AromaNode *built = aroma_3d_viewer_create(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+                                              props_int(&bag, "width", 300), props_int(&bag, "height", 300));
+    if (built)
+    {
+        aroma_3d_viewer_set_auto_rotate(built, props_bool(&bag, "auto_rotate", false));
+        aroma_3d_viewer_set_interactive(built, props_bool(&bag, "interactive", true));
+        aroma_3d_viewer_set_light_position(built,
+            props_float(&bag, "light_x", 1.0f),
+            props_float(&bag, "light_y", 1.0f),
+            props_float(&bag, "light_z", 1.0f));
+        const char *model_path = props_get(&bag, "model");
+        if (model_path && model_path[0])
+        {
+            Aroma3DModel *model = aroma_3d_load_model(model_path);
+            if (model)
+                aroma_3d_viewer_set_model(built, model);
+            else
+                ERR_WARN_N(node, "Failed to load 3D model: %s", model_path);
+        }
+    }
+    WIDGET_POSTAMBLE(built, bag, node, ctx);
+}
+
 static AromaNode *build_map(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
     if (!ctx)
@@ -3785,6 +3860,7 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Divider", build_divider},
     {"Dropdown", build_dropdown},
     {"GIF", build_gif},
+    {"Gauge", build_gauge},
     {"Icon", build_icon},
     {"IconButton", build_iconbutton},
     {"Image", build_image},
@@ -3804,6 +3880,7 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Table", build_table},
     {"Tabs", build_tabs},
     {"Textbox", build_textbox},
+    {"ThreeDViewer", build_3d_viewer},
     {"Tooltip", build_tooltip},
     {NULL, NULL}};
 
@@ -4543,9 +4620,26 @@ static bool reload_hot_window(HotReloadWatcher *watcher)
         .font_registry = freg,
         .default_font = watcher->font,
         .icon_font = watcher->icon_font};
+    int new_w = 0, new_h = 0;
+    if (doc->root)
+    {
+        PropBag bag;
+        props_collect(doc->root, &bag);
+        new_w = props_int(&bag, "width", 0);
+        new_h = props_int(&bag, "height", 0);
+        props_free(&bag);
+    }
     build_children(doc->root, root_node, &ctx);
     IncenseDestroy(doc);
     free(freg);
+
+    if (new_w > 0 && new_h > 0 && (watcher->window->rect.width != new_w || watcher->window->rect.height != new_h))
+    {
+        watcher->window->rect.x = 0;
+        watcher->window->rect.y = 0;
+        watcher->window->rect.width = new_w;
+        watcher->window->rect.height = new_h;
+    }
 
     watcher->last_modified = get_file_modified_time(watcher->file_path);
     if (watcher->on_reload)

@@ -1,4 +1,5 @@
 #include "core/aroma_drawlist.h"
+#include "core/aroma_logger.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>

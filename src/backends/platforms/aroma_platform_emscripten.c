@@ -239,7 +239,7 @@ static EM_BOOL _cb_mouse_move(int et, const EmscriptenMouseEvent *e, void *ud)
 {
     (void)et; (void)ud;
     double cx, cy;
-    _client_to_canvas(e->clientX, e->clientY, &cx, &cy);
+    _client_to_canvas(e->targetX, e->targetY, &cx, &cy);
 
     if (cx == platform_ctx.last_mouse_x && cy == platform_ctx.last_mouse_y)
         return EM_TRUE;
@@ -256,7 +256,7 @@ static EM_BOOL _cb_mouse_down(int et, const EmscriptenMouseEvent *e, void *ud)
 {
     (void)et; (void)ud;
     double cx, cy;
-    _client_to_canvas(e->clientX, e->clientY, &cx, &cy);
+    _client_to_canvas(e->targetX, e->targetY, &cx, &cy);
 
     platform_ctx.mouse_button_down = true;
     platform_ctx.last_mouse_x = cx;
@@ -264,8 +264,8 @@ static EM_BOOL _cb_mouse_down(int et, const EmscriptenMouseEvent *e, void *ud)
 
     bool ok = _queue_mouse_event(EVENT_TYPE_MOUSE_CLICK, cx, cy,
                                  (uint8_t)e->button);
-    LOG_INFO("mouse_down: client=(%.1f,%.1f) canvas=(%.1f,%.1f) btn=%d ok=%d",
-             (double)e->clientX, (double)e->clientY, cx, cy, e->button, ok);
+    LOG_INFO("mouse_down: target=(%.1f,%.1f) canvas=(%.1f,%.1f) btn=%d ok=%d",
+             (double)e->targetX, (double)e->targetY, cx, cy, e->button, ok);
     return EM_TRUE;
 }
 
@@ -273,7 +273,7 @@ static EM_BOOL _cb_mouse_up(int et, const EmscriptenMouseEvent *e, void *ud)
 {
     (void)et; (void)ud;
     double cx, cy;
-    _client_to_canvas(e->clientX, e->clientY, &cx, &cy);
+    _client_to_canvas(e->targetX, e->targetY, &cx, &cy);
 
     platform_ctx.mouse_button_down = false;
     platform_ctx.last_mouse_x = cx;
@@ -281,8 +281,8 @@ static EM_BOOL _cb_mouse_up(int et, const EmscriptenMouseEvent *e, void *ud)
 
     bool ok = _queue_mouse_event(EVENT_TYPE_MOUSE_RELEASE, cx, cy,
                                  (uint8_t)e->button);
-    LOG_INFO("mouse_up: client=(%.1f,%.1f) canvas=(%.1f,%.1f) btn=%d ok=%d",
-             (double)e->clientX, (double)e->clientY, cx, cy, e->button, ok);
+    LOG_INFO("mouse_up: target=(%.1f,%.1f) canvas=(%.1f,%.1f) btn=%d ok=%d",
+             (double)e->targetX, (double)e->targetY, cx, cy, e->button, ok);
     aroma_event_handle_pointer_move((int)cx, (int)cy, false);
     return EM_TRUE;
 }
@@ -330,7 +330,10 @@ static EM_BOOL _cb_key_up(int et, const EmscriptenKeyboardEvent *e, void *ud)
 static void _frame_trampoline(void *arg)
 {
     (void)arg;
-   
+    if (platform_ctx.frame_callback) {
+        // Emscripten backend currently supports a single implicit window (id 1)
+        platform_ctx.frame_callback(1, platform_ctx.frame_callback_data);
+    }
 }
 
 static int initialize(void)
@@ -360,20 +363,27 @@ static int initialize(void)
 
     EmscriptenWebGLContextAttributes attr;
     emscripten_webgl_init_context_attributes(&attr);
-    attr.alpha      = EM_FALSE;
+    attr.alpha      = EM_TRUE;
     attr.depth      = EM_TRUE;
     attr.stencil    = EM_FALSE;
     attr.antialias  = EM_FALSE;
     attr.majorVersion = 2;
     attr.minorVersion = 0;
 
+    LOG_INFO("initialize: attempting WebGL context canvas_css=%.0fx%.0f dpr=%.2f attr={alpha=%d depth=%d stencil=%d antialias=%d ver=%d.%d}",
+             css_w, css_h, platform_ctx.device_pixel_ratio,
+             attr.alpha, attr.depth, attr.stencil, attr.antialias,
+             attr.majorVersion, attr.minorVersion);
+
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx =
         emscripten_webgl_create_context("#canvas", &attr);
+    LOG_INFO("initialize: WebGL2 create_context returned %ld", (long)ctx);
 
     if (ctx <= 0) {
         LOG_WARNING("initialize: WebGL2 unavailable, falling back to WebGL1");
         attr.majorVersion = 1;
         ctx = emscripten_webgl_create_context("#canvas", &attr);
+        LOG_INFO("initialize: WebGL1 create_context returned %ld", (long)ctx);
     }
 
     if (ctx <= 0) {
@@ -388,8 +398,8 @@ static int initialize(void)
     emscripten_set_mousedown_callback("#canvas", NULL, EM_TRUE, _cb_mouse_down);
     emscripten_set_mouseup_callback  ("#canvas", NULL, EM_TRUE, _cb_mouse_up);
     emscripten_set_wheel_callback    ("#canvas", NULL, EM_TRUE, _cb_wheel);
-    emscripten_set_keydown_callback  (EMSCRIPTEN_EVENT_TARGET_WINDOW, NULL, EM_TRUE, _cb_key_down);
-    emscripten_set_keyup_callback    (EMSCRIPTEN_EVENT_TARGET_WINDOW, NULL, EM_TRUE, _cb_key_up);
+    emscripten_set_keydown_callback  ("#canvas", NULL, EM_TRUE, _cb_key_down);
+    emscripten_set_keyup_callback    ("#canvas", NULL, EM_TRUE, _cb_key_up);
 
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx && gfx->setup_shared_window_resources)

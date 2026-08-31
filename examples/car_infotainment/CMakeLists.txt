@@ -112,19 +112,23 @@ endif()
 add_executable(infotainment
         main.c 
        main_loop.c 
-       app_state.c 
-       voice_handler.c 
-       theme_manager.c 
-       font_manager.c 
-       ui_animation_utils.c 
-       navigation_geo.c
-       vehicle_view.c 
-       easter_egg.c 
-       status_bar.c 
-       tabs_manager.c
-       bt_speaker_api.c
-       bt_speaker_hfp.c
-)
+        app_state.c 
+        voice_handler.c 
+        theme_manager.c 
+        font_manager.c 
+        ui_animation_utils.c 
+        navigation_geo.c
+        vehicle_view.c 
+        lock_screen.c
+        vehicle_camera.c
+        interior_controls.c
+        media_controls.c
+        easter_egg.c 
+        status_bar.c 
+        tabs_manager.c
+        bt_speaker_api.c
+        bt_speaker_hfp.c
+ )
 
 target_compile_options(infotainment PRIVATE
     ${PRODUCTION_COMPILE_FLAGS}

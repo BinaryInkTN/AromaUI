@@ -203,7 +203,12 @@ static int initialize_glfw(void)
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+        glfwWindowHint(GLFW_RED_BITS, 8);
+        glfwWindowHint(GLFW_GREEN_BITS, 8);
+        glfwWindowHint(GLFW_BLUE_BITS, 8);
+        glfwWindowHint(GLFW_ALPHA_BITS, 0);
+        glfwWindowHint(GLFW_DEPTH_BITS, 24);
+        glfwWindowHint(GLFW_STENCIL_BITS, 8);
     }
 
     LOG_INFO("GLFW initialized successfully");
@@ -505,6 +510,7 @@ static size_t create_window(const char *title, int x, int y, int width, int heig
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     }
 
+    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
     GLFWwindow *window = glfwCreateWindow(width, height, title, NULL, NULL);
     if (!window)
     {
@@ -521,6 +527,13 @@ static size_t create_window(const char *title, int x, int y, int width, int heig
         platform_ctx.primary_window = window;
 
         glfwMakeContextCurrent(window);
+
+        if (!g_use_surfaceless)
+        {
+            glfwShowWindow(window);
+            glfwFocusWindow(window);
+            glfwSwapInterval(1);
+        }
 
         const char *version = (const char *)glGetString(GL_VERSION);
         LOG_INFO("GLFW OpenGL/ES Version: %s", version ? version : "NULL");
@@ -638,7 +651,6 @@ static void swap_buffers(size_t window_id)
 {
     if (g_use_surfaceless)
     {
-
         extern void glFlush(void);
         glFlush();
         return;

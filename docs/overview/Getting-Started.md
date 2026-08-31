@@ -1,8 +1,26 @@
-
+ 
 This page provides a comprehensive guide for new developers to set up the AromaUI environment, create a new project, and deploy a "Hello World" application across Linux, Android, and Web platforms.
-
+ 
+## Quick Start
+ 
+Get up and running in under two minutes on Linux:
+ 
+ ```bash
+ # Clone the repository with submodules
+ git clone https://github.com/BinaryInkTN/AromaUI.git --recursive
+ cd AromaUI
+ 
+ # Build and run the car infotainment example
+ cd examples/car_infotainment/build
+ cmake ..
+ make -j$(nproc)
+ ./infotainment
+ ```
+ 
+For web deployment, see [Building for Web](#building-for-web-emscripten). For Android, see [Deployment](#3-android-deployment) below.
+ 
 ## 1. Environment Setup
-
+ 
 The AromaUI toolchain is centered around a Python-based CLI utility named `aroma`. This tool abstracts complex build systems like CMake, Gradle, and Emscripten to provide a unified developer experience.
 
 ### 1.1. Cloning the Repository

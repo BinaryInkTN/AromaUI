@@ -50,8 +50,8 @@ static int __create_atlas(GLES3TextRenderer* renderer)
     
     glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas_size, atlas_size, 
-                 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, atlas_size, atlas_size, 
+                 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
     
     GLenum error = glGetError();
     if (error != GL_NO_ERROR)
@@ -210,7 +210,7 @@ static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer,
                     atlas->current_x - ATLAS_PADDING, 
                     atlas->current_y - ATLAS_PADDING,
                     padded_width, padded_height,
-                    GL_RED, GL_UNSIGNED_BYTE, padded_bitmap);
+                    GL_LUMINANCE, GL_UNSIGNED_BYTE, padded_bitmap);
     
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
@@ -266,7 +266,17 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
     {
         GlyphAtlas* atlas = &renderer->atlases[i];
         glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, renderer->atlas_width, renderer->atlas_height, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        /* Resetting an atlas means "give this texture fresh, undefined/zeroed
+         * storage again" — that's glTexImage2D's job, and it's the only one
+         * of the two calls that accepts NULL for the pixels argument.
+         * glTexSubImage2D always requires a real source buffer; passing NULL
+         * here previously triggered "INVALID_VALUE: texSubImage2D: no pixels"
+         * on every font load and left every atlas's prior contents in place
+         * (the call was rejected before touching the texture), so glyphs
+         * packed into a "reset" atlas were silently drawn over stale data
+         * from the last time this atlas slot was used. */
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, renderer->atlas_width, renderer->atlas_height,
+                     0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
         atlas->current_x = ATLAS_PADDING;
         atlas->current_y = ATLAS_PADDING;
         atlas->row_height = 0;

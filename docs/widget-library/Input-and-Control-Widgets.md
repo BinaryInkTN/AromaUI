@@ -38,6 +38,23 @@ Sources: [src/widgets/aroma_button.c31-42](https://github.com/BinaryInkTN/AromaU
 
 ## Core Input Widgets
 
+### Interactive Sandbox Example
+
+```c sandbox
+    // Create a container with vertical layout
+    AromaNode *container = aroma_container_create(root, 20, 20, 360, 260);
+    aroma_container_set_layout(container, LAYOUT_VERTICAL, 10);
+    
+    // Add a button
+    AromaNode *btn = aroma_button_create(container, "Click Me", 0, 0, 150, 40);
+    
+    // Add a switch
+    AromaNode *sw = aroma_switch_create(container, 0, 0, 60, 30, true);
+    
+    // Add a slider
+    AromaNode *slider = aroma_slider_create(container, 0, 0, 200, 30, 0, 100, 50);
+```
+
 ### Button and Icon Button
 
 Buttons support labels, icons, and custom color states. They utilize the `AromaTheme` for default styling but allow per-instance overrides [src/widgets/aroma_button.c104-109](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L104-L109)

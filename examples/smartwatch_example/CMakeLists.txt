@@ -56,6 +56,10 @@ if(EMSCRIPTEN)
         "-sINITIAL_MEMORY=134217728"
         "-sFETCH=1"
     )
+    file(COPY
+        ${CMAKE_CURRENT_SOURCE_DIR}/index.html
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    )
     message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
 
 elseif(ENABLE_GLFW)

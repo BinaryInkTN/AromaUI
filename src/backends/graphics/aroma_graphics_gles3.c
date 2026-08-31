@@ -19,7 +19,7 @@
 #include "utils/stb_image.h"
 
 #define MAX_FONT_CACHE_PER_WINDOW 16
-#define MAX_WINDOWS 1
+#define MAX_WINDOWS 16
 #define INVALID_FONT_INDEX -1
 
 #define MAX_BATCH_QUADS 256
@@ -473,6 +473,8 @@ static void flush_shape_batch(void)
     if (ctx.batch.count == 0)
         return;
 
+    printf("flush_shape_batch mode=%d count=%d w=%.1f h=%.1f r=%.1f\n", ctx.batch.mode, ctx.batch.count, ctx.batch.u_width, ctx.batch.u_height, ctx.batch.u_radius);
+
     if (!ensure_frame_state(ctx.batch.window_id))
     {
         ctx.batch.count = 0;
@@ -770,6 +772,11 @@ static void clear(size_t window_id, uint32_t color)
     convert_hex_to_rgb(&color_rgb, color);
     glClearColor(color_rgb[0], color_rgb[1], color_rgb[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        LOG_ERROR("GL error after clear: 0x%04X", err);
+    }
 }
 
 static void render_text(size_t window_id, AromaFont *font, const char *text,
@@ -1314,6 +1321,8 @@ static void gles3_set_clip(int x, int y, int w, int h)
     int gl_y = window_height - y - h;
     if (gl_y < 0)
         gl_y = 0;
+
+    printf("gles3_set_clip x=%d y=%d w=%d h=%d -> gl_y=%d window_height=%d\n", x, y, w, h, gl_y, window_height);
 
     glEnable(GL_SCISSOR_TEST);
     glScissor(x, gl_y, w, h);

@@ -107,10 +107,44 @@ static void toggle_notification(void *user_data)
     }
 }
 
-
 static void open_quick_reply(void *user_data)
 {
     aroma_label_set_text(watch.notif_body, "Replying...");
+}
+
+static void main_loop_iteration(void *arg)
+{
+    if(!aroma_ui_is_running())
+    {
+        return;
+    } 
+    (void)arg;
+
+    static uint64_t last_update = 0;
+    if (last_update == 0)
+        last_update = aroma_time_now_ms();
+
+    uint64_t now = aroma_time_now_ms();
+
+    if (now - last_update > 1000)
+    {
+        time_t rawtime = time(NULL);
+        struct tm *ti = localtime(&rawtime);
+        char time_str[16], date_str[32];
+        strftime(time_str, sizeof(time_str), "%H:%M", ti);
+        strftime(date_str, sizeof(date_str), "%a, %b %d", ti);
+        aroma_label_set_text(watch.time_label, time_str);
+        aroma_label_set_text(watch.date_label, date_str);
+        last_update = now;
+    }
+
+    aroma_ui_process_events();
+    aroma_ui_render(watch.window);
+
+#ifdef __EMSCRIPTEN__
+    if (!aroma_ui_is_running())
+        emscripten_cancel_main_loop();
+#endif
 }
 
 void build_watch_face(AromaNode *window)
@@ -137,7 +171,7 @@ void build_watch_face(AromaNode *window)
         watch.watch_face, 0, 125, WATCH_INNER_W, 55, CARD_TYPE_FILLED);
     aroma_node_set_z_index(stats_card, Z_STATS);
 
-    AromaAnimation* stats_anim = aroma_animation_start(stats_card, AROMA_ANIM_SLIDE_Y, -60, 157, 1600);
+    AromaAnimation *stats_anim = aroma_animation_start(stats_card, AROMA_ANIM_SLIDE_Y, -60, 157, 1600);
 
     watch.steps_icon = aroma_ui_icon(stats_card, AROMA_ICON_DIRECTIONS_WALK, 40, 14, 22,
                                      watch.theme.colors.primary, watch.icon_font);
@@ -170,7 +204,7 @@ void build_watch_face(AromaNode *window)
     watch.weather_icon = aroma_ui_icon(weather_card, AROMA_ICON_WB_SUNNY, 40, 10, 24,
                                        0xFFFFC107, watch.icon_font);
     aroma_node_set_z_index(watch.weather_icon, Z_WEATHER + 2);
-    AromaAnimation* weather_anim = aroma_animation_start(weather_card, AROMA_ANIM_SLIDE_Y, -45, 220, 1600);
+    AromaAnimation *weather_anim = aroma_animation_start(weather_card, AROMA_ANIM_SLIDE_Y, -45, 220, 1600);
     aroma_animation_set_easing(weather_anim, AROMA_EASE_OUT_ELASTIC);
     aroma_animation_set_easing(stats_anim, AROMA_EASE_OUT_ELASTIC);
     watch.weather_label = aroma_ui_label(weather_card, "22°C Sunny", 55, 12, LABEL_STYLE_LABEL_MEDIUM, watch.small_font);
@@ -180,7 +214,7 @@ void build_watch_face(AromaNode *window)
     watch.notif_card = aroma_ui_card(window, WATCH_PADDING, -120, WATCH_INNER_W, 100, CARD_TYPE_FILLED);
     aroma_node_set_z_index(watch.notif_card, Z_NOTIFICATION);
     aroma_node_set_hidden(watch.notif_card, true);
-    
+
     watch.notif_icon = aroma_ui_icon(watch.notif_card, AROMA_ICON_EMAIL, 40, 15, 22,
                                      watch.theme.colors.primary, watch.icon_font);
     aroma_node_set_z_index(watch.notif_icon, Z_NOTIFICATION + 1);
@@ -233,7 +267,7 @@ void build_watch_face(AromaNode *window)
                                            20, 15, LABEL_STYLE_LABEL_LARGE, watch.ui_font);
     aroma_node_set_z_index(apps_label, Z_APPS_PANEL + 1);
     aroma_label_set_color(apps_label, watch.theme.colors.text_primary);
-;
+    ;
     AromaNode *apps_grid = aroma_container_create(
         watch.apps_panel, WATCH_PADDING, 55, WATCH_INNER_W, WATCH_H - WATCH_PADDING - 120);
     aroma_node_set_z_index(apps_grid, Z_APPS_PANEL + 1);
@@ -281,8 +315,8 @@ int main(int argc, char **argv)
 
     watch.theme = aroma_theme_create_material_black();
     watch.theme.enable_shadows = true;
-    //material blue
-    watch.theme.colors.primary = 0xFF2196F3; 
+
+    watch.theme.colors.primary = 0xFF2196F3;
     watch.theme.colors.primary_dark = aroma_color_blend(watch.theme.colors.primary, 0xFF000000, 0.2f);
 
     aroma_ui_set_theme(&watch.theme);
@@ -294,36 +328,19 @@ int main(int argc, char **argv)
     watch.tiny_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 13);
 
     watch.window = aroma_ui_create_window("Aroma Watch", WATCH_W, WATCH_H);
-    aroma_event_set_root((AromaNode *)watch.window);
-    aroma_ui_prepare_font_for_window(0, watch.ui_font);
 
     build_watch_face((AromaNode *)watch.window);
 
-    uint64_t last_update = aroma_time_now_ms();
+#ifdef __EMSCRIPTEN__
 
+    emscripten_set_main_loop_arg(main_loop_iteration, NULL, 0, 1);
+
+    return 0;
+#else
     while (aroma_ui_is_running())
     {
-        uint64_t now = aroma_time_now_ms();
-
-        if (now - last_update > 1000)
-        {
-            time_t rawtime = time(NULL);
-            struct tm *ti = localtime(&rawtime);
-            char time_str[16], date_str[32];
-            strftime(time_str, sizeof(time_str), "%H:%M", ti);
-            strftime(date_str, sizeof(date_str), "%a, %b %d", ti);
-            aroma_label_set_text(watch.time_label, time_str);
-            aroma_label_set_text(watch.date_label, date_str);
-            last_update = now;
-        }
-
-        aroma_ui_process_events();
-        aroma_ui_render(watch.window);
-#ifdef __EMSCRIPTEN__
-        emscripten_sleep(16);
-#else
+        main_loop_iteration(NULL);
         usleep(16000);
-#endif
     }
 
     aroma_ui_destroy_window(watch.window);
@@ -334,4 +351,5 @@ int main(int argc, char **argv)
     aroma_ui_unload_font(watch.tiny_font);
     aroma_ui_shutdown();
     return 0;
+#endif
 }

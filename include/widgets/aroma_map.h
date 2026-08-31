@@ -4,6 +4,7 @@
 #include "aroma_node.h"
 #include "aroma_event.h"
 #include "aroma_common.h"
+#include "aroma_font.h"
 #include <stdint.h>
 #include <stdbool.h>
 

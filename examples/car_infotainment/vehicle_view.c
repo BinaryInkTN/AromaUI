@@ -5,6 +5,9 @@
 #include "bt_speaker_hfp.h"
 #include "navigation_geo.h"
 #include "widgets/aroma_loading.h"
+#include "widgets/aroma_gauge.h"
+#include "lock_screen.h"
+#include "vehicle_camera.h"
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
@@ -32,7 +35,7 @@
 #define MAX_CONTACTS_RETRIES 20
 #define MIN_EMPTY_RESULT_RETRIES 3
 
-static const char *resolve_asset_path(const char *filename)
+const char *resolve_asset_path(const char *filename)
 {
     static char resolved[512];
     const char *basename = strrchr(filename, '/');
@@ -61,8 +64,6 @@ static const char *resolve_asset_path(const char *filename)
     }
     return filename;
 }
-
-void update_media_card_display(void);
 
 #define SWUPDATE_IPC_MAGIC 0x1002003
 typedef enum
@@ -118,30 +119,25 @@ typedef struct
 static bool poi_query_in_flight = false;
 static double last_poi_query_time_ms = 0.0;
 
-static double monotonic_ms(void)
+double monotonic_ms(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (double)ts.tv_sec * 1000.0 + (double)ts.tv_nsec / 1e6;
 }
 
-static bool dark_mode_enabled = false;
+static bool dark_mode_enabled = true;
 static AromaNode *settings_dark_mode_switch = NULL;
 
 void populate_contact_listview(AromaNode *listview);
 static void start_navigation(double from_lat, double from_lon, double to_lat, double to_lon);
 bool open_maps(AromaNode *node, void *user_data);
 static bool open_phone(AromaNode *node, void *user_data);
-static bool open_music(AromaNode *node, void *user_data);
 static bool open_settings(AromaNode *node, void *user_data);
-void close_music(void *user_data);
 void close_settings(void *user_data);
-static void update_music_now_playing_display(void);
-static void update_music_device_display(void);
-static void on_music_icon_click(void *user_data);
 static void attempt_contact_fetch(void);
 
-#define MEDIA_UPDATE_INTERVAL_US 500000
+
 #define CONTACTS_PER_PAGE 7
 #define MAX_DIALER_DIGITS 32
 #define BOTTOM_BAR_X_COLLAPSED 20
@@ -193,22 +189,16 @@ static void attempt_contact_fetch(void);
 #define MAX_SUGGESTIONS 512
 #define NUM_POI_CATEGORIES 14
 
-static bool lock_screen_active = true;
-static AromaNode *lock_screen_root = NULL;
-static AromaNode *lock_screen_time = NULL;
-static AromaNode *lock_screen_date = NULL;
-static AromaNode *lock_screen_unlock_btn = NULL;
+bt_state_t g_bt_state = BT_STATE_IDLE;
+bt_device_info_t g_bt_device_info = {0};
+bt_media_info_t g_bt_media_info = {0};
+bt_stats_t g_bt_stats = {0};
+bool g_bt_initialized = false;
+bool g_bt_connected = false;
+pthread_mutex_t g_bt_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static bt_state_t g_bt_state = BT_STATE_IDLE;
-static bt_device_info_t g_bt_device_info = {0};
-static bt_media_info_t g_bt_media_info = {0};
-static bt_stats_t g_bt_stats = {0};
-static bool g_bt_initialized = false;
-static bool g_bt_connected = false;
-static pthread_mutex_t g_bt_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static int contact_fetch_retries = 0;
-static bool contact_fetch_in_progress = false;
+int contact_fetch_retries = 0;
+bool contact_fetch_in_progress = false;
 static pthread_mutex_t contact_fetch_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void on_bt_state_changed(bt_state_t old_state, bt_state_t new_state, void *user_data);
@@ -218,9 +208,6 @@ static void on_bt_log(const char *level, const char *message, void *user_data);
 static void on_bt_audio_changed(bool started, void *user_data);
 static void on_bt_avrcp_changed(const bt_media_info_t *media, void *user_data);
 static void on_bt_call_changed(const bt_call_info_t *call, bool removed, void *user_data);
-
-static void set_app_open(bool open);
-static void apply_deferred_bottom_bar_position(void);
 
 typedef struct
 {
@@ -249,11 +236,11 @@ static const POICategoryInfo poi_categories[] = {
 static AromaNode *app_drawer = NULL;
 static AromaNode *app_drawer_grid = NULL;
 static AromaNode *app_drawer_close_btn = NULL;
-static bool app_drawer_visible = false;
+bool app_drawer_visible = false;
 static bool app_drawer_behind_app = false;
 #define APP_DRAWER_Z_INDEX (Z_LAYER_STATUS_BAR + 1)
 
-static void send_app_drawer_behind(void)
+void send_app_drawer_behind(void)
 {
     if (!app_drawer)
         return;
@@ -316,7 +303,7 @@ static void on_map_options_close_click(void *user_data)
     }
 }
 
-static void restore_app_drawer_from_behind(void)
+void restore_app_drawer_from_behind(void)
 {
     if (!app_drawer_behind_app)
         return;
@@ -327,7 +314,9 @@ static void restore_app_drawer_from_behind(void)
     app_drawer_visible = true;
 }
 
-static void apply_theme_colors(void)
+static void update_clock_gauge_colors(void);
+
+void apply_theme_colors(void)
 {
     if (dark_mode_enabled)
     {
@@ -357,6 +346,33 @@ static void apply_theme_colors(void)
         );
     }
     aroma_ui_set_theme(&state.theme);
+
+    update_clock_gauge_colors();
+}
+
+static void update_clock_gauge_colors(void)
+{
+    if (!state.vehicle_view_clock_gauge)
+        return;
+
+    if (dark_mode_enabled)
+    {
+        aroma_gauge_set_colors(state.vehicle_view_clock_gauge, 0x33FFFFFF, 0x00FFFFFF);
+        aroma_gauge_set_ticks(state.vehicle_view_clock_gauge, true, 12, 5, 10, 6, 0xFFFFFFFF, 2);
+        aroma_gauge_set_needle(state.vehicle_view_clock_gauge, true, 0xFFFFFFFF, 4);
+        aroma_gauge_set_secondary_hand(state.vehicle_view_clock_gauge, true, 0xFFFF4444, 2, 0.85f);
+        aroma_gauge_set_extra_hand(state.vehicle_view_clock_gauge, true, 0xFFFFFFFF, 3, 0.55f);
+        aroma_gauge_set_hub(state.vehicle_view_clock_gauge, true, 8, 0xFFFFFFFF, 2);
+    }
+    else
+    {
+        aroma_gauge_set_colors(state.vehicle_view_clock_gauge, 0x33000000, 0x00000000);
+        aroma_gauge_set_ticks(state.vehicle_view_clock_gauge, true, 12, 5, 10, 6, 0xFF000000, 2);
+        aroma_gauge_set_needle(state.vehicle_view_clock_gauge, true, 0xFF000000, 4);
+        aroma_gauge_set_secondary_hand(state.vehicle_view_clock_gauge, true, 0xFFFF4444, 2, 0.85f);
+        aroma_gauge_set_extra_hand(state.vehicle_view_clock_gauge, true, 0xFF000000, 3, 0.55f);
+        aroma_gauge_set_hub(state.vehicle_view_clock_gauge, true, 8, 0xFF000000, 2);
+    }
 }
 
 void on_preset_item_click(int index, void *user_data)
@@ -374,20 +390,7 @@ static bool on_dark_mode_switch_changed(AromaNode *switch_node, void *user_data)
     return true;
 }
 
-typedef struct
-{
-    const char *name;
-    const char *icon;
-    uint32_t card_color;
-    bool (*open_func)(AromaNode *node, void *user_data);
-    void *user_data;
-    AromaNode *drawer_icon;
-    AromaNode *drawer_card;
-    AromaNode *app_root;
-} AppDefinition;
-
-static AppDefinition app_definitions[4];
-#define APP_COUNT (sizeof(app_definitions) / sizeof(app_definitions[0]))
+AppDefinition app_definitions[4];
 
 static const char *swupdate_ctrl_socket_path(void)
 {
@@ -528,30 +531,6 @@ static AromaNode *dialer_display_label = NULL;
 static AromaNode *dialer_card = NULL;
 static int sorted_to_original[100];
 
-static AromaNode *music_app_tabs = NULL;
-static bool music_app_open = false;
-static int music_active_tab = 0;
-
-static AromaNode *music_now_playing_card = NULL;
-static AromaNode *music_art_placeholder = NULL;
-static AromaNode *music_track_title_label = NULL;
-static AromaNode *music_track_artist_label = NULL;
-static AromaNode *music_track_album_label = NULL;
-static AromaNode *music_status_label = NULL;
-static AromaNode *music_prev_button = NULL;
-static AromaNode *music_play_pause_button = NULL;
-static AromaNode *music_next_button = NULL;
-static AromaNode *music_no_media_label = NULL;
-static AromaNode *music_open_btn = NULL;
-
-static AromaNode *music_device_card = NULL;
-static AromaNode *music_device_status_icon = NULL;
-static AromaNode *music_device_status_label = NULL;
-static AromaNode *music_device_name_label = NULL;
-static AromaNode *music_device_address_label = NULL;
-static AromaNode *music_device_stats_label = NULL;
-static AromaNode *music_device_no_phone_label = NULL;
-
 static AromaNode *settings_sidebar = NULL;
 static AromaNode *settings_page_general = NULL;
 static AromaNode *settings_page_display = NULL;
@@ -604,20 +583,6 @@ static char current_call_name[128] = "";
 static char current_call_number[64] = "";
 static char current_call_path[256] = "";
 static pthread_mutex_t call_state_lock = PTHREAD_MUTEX_INITIALIZER;
-
-typedef struct
-{
-    AromaNode *media_card;
-    AromaNode *media_title_label;
-    AromaNode *media_artist_label;
-    AromaNode *media_prev_button;
-    AromaNode *media_play_pause_button;
-    AromaNode *media_next_button;
-    bool is_playing;
-    bool bottom_bar_expanded;
-    bool ui_initialized;
-    bool first_media_check_done;
-} MediaPlayerUI;
 
 typedef struct
 {
@@ -698,12 +663,6 @@ static const LocalOffset maps_icon_offset = {30, 15, 48, 48};
 static const LocalOffset phone_icon_offset = {100, 15, 48, 48};
 static const LocalOffset music_icon_offset = {170, 15, 48, 48};
 static const LocalOffset settings_icon_offset = {240, 15, 48, 48};
-
-static MediaPlayerUI media_ui = {
-    .is_playing = false,
-    .bottom_bar_expanded = false,
-    .ui_initialized = false,
-    .first_media_check_done = false};
 
 static int contact_page = 0;
 static int total_pages = 0;
@@ -789,7 +748,7 @@ static bool on_pois_switch_changed(AromaNode *switch_node, void *user_data)
     return true;
 }
 
-static void update_bt_info_card(void)
+void update_bt_info_card(void)
 {
     if (!bt_info_card || !bt_info_name_label || !bt_info_address_label || !bt_info_status_label)
         return;
@@ -892,7 +851,7 @@ static bool on_settings_bluetooth_changed(AromaNode *switch_node, void *user_dat
     return true;
 }
 
-static double calculate_distance_km(double lat1, double lon1, double lat2, double lon2)
+double calculate_distance_km(double lat1, double lon1, double lat2, double lon2)
 {
     double dlat = (lat2 - lat1) * M_PI / 180.0;
     double dlon = (lon2 - lon1) * M_PI / 180.0;
@@ -908,7 +867,7 @@ static int estimate_eta_minutes(double distance_km)
     return (int)((distance_km / 50.0) * 60.0) + 1;
 }
 
-static void format_time_string(int minutes, char *buf, size_t size)
+void format_time_string(int minutes, char *buf, size_t size)
 {
     if (minutes < 60)
     {
@@ -922,7 +881,7 @@ static void format_time_string(int minutes, char *buf, size_t size)
     }
 }
 
-static void format_distance_string(double km, char *buf, size_t size)
+void format_distance_string(double km, char *buf, size_t size)
 {
     if (km < 1.0)
     {
@@ -934,7 +893,7 @@ static void format_distance_string(double km, char *buf, size_t size)
     }
 }
 
-static void truncate_for_listview(const char *input, char *output, size_t output_size)
+void truncate_for_listview(const char *input, char *output, size_t output_size)
 {
     if (!input || output_size == 0)
     {
@@ -2417,17 +2376,7 @@ static void on_media_next_click(void *user_data)
     bt_speaker_avrcp_next();
 }
 
-static void on_music_icon_click(void *user_data)
-{
-    (void)user_data;
-    if (app_drawer_visible)
-    {
-        send_app_drawer_behind();
-    }
-    open_music(NULL, app_definitions[2].app_root);
-}
-
-static void apply_deferred_bottom_bar_position(void)
+void apply_deferred_bottom_bar_position(void)
 {
     if (!state.bottom_bar)
         return;
@@ -2462,7 +2411,7 @@ static void set_bottom_bar_expanded(bool expanded)
     media_ui.bottom_bar_expanded = expanded;
 }
 
-static bool is_any_app_open(void)
+bool is_any_app_open(void)
 {
     pthread_mutex_lock(&app_open_lock);
     bool result = bottom_bar_app_open;
@@ -2470,92 +2419,11 @@ static bool is_any_app_open(void)
     return result;
 }
 
-static void set_app_open(bool open)
+void set_app_open(bool open)
 {
     pthread_mutex_lock(&app_open_lock);
     bottom_bar_app_open = open;
     pthread_mutex_unlock(&app_open_lock);
-}
-
-void update_media_card_display(void)
-{
-    if (!media_ui.ui_initialized || !media_ui.media_card)
-        return;
-
-    pthread_mutex_lock(&g_bt_mutex);
-    bt_media_info_t media = g_bt_media_info;
-    bt_state_t current_state = g_bt_state;
-    pthread_mutex_unlock(&g_bt_mutex);
-
-    bool is_playing = (current_state == BT_STATE_PLAYING);
-    bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
-    bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
-
-    if (!is_connected || !has_media)
-    {
-        aroma_node_set_hidden(media_ui.media_card, true);
-        media_ui.first_media_check_done = false;
-        set_bottom_bar_expanded(false);
-        return;
-    }
-    if (!media_ui.first_media_check_done)
-    {
-        media_ui.first_media_check_done = true;
-        set_bottom_bar_expanded(true);
-    }
-    if (!is_any_app_open())
-    {
-        aroma_node_set_hidden(media_ui.media_card, false);
-    }
-    else
-    {
-        aroma_node_set_hidden(media_ui.media_card, true);
-    }
-    if (strcmp(media.status, "playing") == 0)
-    {
-        if (!media_ui.is_playing)
-        {
-            media_ui.is_playing = true;
-            update_play_pause_button_icon();
-        }
-    }
-    else if (strcmp(media.status, "paused") == 0)
-    {
-        if (media_ui.is_playing)
-        {
-            media_ui.is_playing = false;
-            update_play_pause_button_icon();
-        }
-    }
-    if (media_ui.media_title_label && media.title[0])
-        aroma_label_set_text(media_ui.media_title_label, media.title);
-    if (media_ui.media_artist_label)
-    {
-        if (media.artist[0])
-            aroma_label_set_text(media_ui.media_artist_label, media.artist);
-        else
-            aroma_label_set_text(media_ui.media_artist_label, "Unknown Artist");
-    }
-}
-
-static void *media_monitor_thread_func(void *arg)
-{
-    (void)arg;
-    usleep(3000000);
-    while (media_ui.ui_initialized)
-    {
-        update_media_card_display();
-        update_bt_info_card();
-        if (music_app_open)
-        {
-            if (music_active_tab == 0)
-                update_music_now_playing_display();
-            else
-                update_music_device_display();
-        }
-        usleep(MEDIA_UPDATE_INTERVAL_US);
-    }
-    return NULL;
 }
 
 static void ac_temp_up_callback(void *user_data)
@@ -2582,117 +2450,6 @@ static void ac_temp_down_callback(void *user_data)
         aroma_label_set_text(state.ac_controls_temp_label, buf);
 }
 
-#define VEHICLE_CAM_EXTERIOR_THETA -5.0f
-#define VEHICLE_CAM_EXTERIOR_PHI 1.34f
-#define VEHICLE_CAM_EXTERIOR_RADIUS 5.14f
-#define VEHICLE_CAM_EXTERIOR_TARGET_X 0.05f
-#define VEHICLE_CAM_EXTERIOR_TARGET_Y -0.13f
-#define VEHICLE_CAM_EXTERIOR_TARGET_Z -0.08f
-
-#define VEHICLE_CAM_INTERIOR_THETA -3.10f
-#define VEHICLE_CAM_INTERIOR_PHI 1.09f
-#define VEHICLE_CAM_INTERIOR_RADIUS 1.14f
-#define VEHICLE_CAM_INTERIOR_TARGET_X 0.05f
-#define VEHICLE_CAM_INTERIOR_TARGET_Y -0.13f
-#define VEHICLE_CAM_INTERIOR_TARGET_Z -0.08f
-
-static bool interior_view_active = false;
-static AromaNode *interior_close_btn = NULL;
-
-static Aroma3DCamera locked_vehicle_camera;
-static bool has_locked_vehicle_camera = false;
-
-static Aroma3DLoadJob *pending_vehicle_model_job = NULL;
-static AromaNode *vehicle_model_loading_spinner = NULL;
-
-typedef void (*VehicleModelLoadedCb)(bool success, void *user_data);
-static VehicleModelLoadedCb vehicle_model_loaded_cb = NULL;
-static void *vehicle_model_loaded_cb_user_data = NULL;
-
-void set_vehicle_model_loaded_callback(VehicleModelLoadedCb cb, void *user_data)
-{
-    vehicle_model_loaded_cb = cb;
-    vehicle_model_loaded_cb_user_data = user_data;
-}
-
-static void lock_vehicle_camera(const Aroma3DCamera *cam)
-{
-    memcpy(&locked_vehicle_camera, cam, sizeof(Aroma3DCamera));
-    has_locked_vehicle_camera = true;
-    if (state.viewer_3d)
-        aroma_3d_viewer_set_camera(state.viewer_3d, cam);
-}
-
-static void set_exterior_overlays_hidden(bool hidden)
-{
-    aroma_node_set_hidden(state.battery_button, hidden);
-    aroma_node_set_hidden(state.vehicle_view_large_clock, hidden);
-    aroma_node_set_hidden(state.vehicle_view_large_clock_pm_am, hidden);
-    aroma_node_set_hidden(state.vehicle_view_frunk_divider, hidden);
-    aroma_node_set_hidden(state.vehicle_view_lock_divider, hidden);
-    aroma_node_set_hidden(state.vehicle_view_lock_icon, hidden);
-    aroma_node_set_hidden(state.vehicle_view_frunk_header, hidden);
-    aroma_node_set_hidden(state.vehicle_view_frunk_desc, hidden);
-    aroma_node_set_hidden(state.vehicle_view_trunk_divider, hidden);
-    aroma_node_set_hidden(state.vehicle_view_trunk_header, hidden);
-    aroma_node_set_hidden(state.vehicle_view_trunk_desc, hidden);
-    aroma_node_set_hidden(state.vehicle_view_charge_port_divider, hidden);
-    aroma_node_set_hidden(state.vehicle_view_charge_port_icon, hidden);
-    aroma_node_set_hidden(media_ui.media_card, hidden);
-    aroma_node_set_hidden(state.bottom_bar, hidden);
-    aroma_node_set_hidden(state.status_card, hidden);
-    aroma_node_set_hidden(state.wifi_icon, hidden); 
-    aroma_node_set_hidden(state.gps_icon, hidden);
-    aroma_node_set_hidden(state.signal_icon, hidden); 
-    aroma_node_set_hidden(state.battery_icon, hidden);
-    aroma_node_set_hidden(state.ac_controls_btn, hidden);
-    aroma_node_set_hidden(state.seat_controls_btn, hidden);
-
-    if (hidden)
-        aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
-}
-
-static void ac_interior_callback(void *user_data)
-{
-    (void)user_data;
-    if (!state.viewer_3d || interior_view_active)
-        return;
-
-    state.anim_target_theta = VEHICLE_CAM_INTERIOR_THETA;
-    state.anim_target_phi = VEHICLE_CAM_INTERIOR_PHI;
-    state.anim_target_radius = VEHICLE_CAM_INTERIOR_RADIUS;
-    state.anim_target_x = VEHICLE_CAM_INTERIOR_TARGET_X;
-    state.anim_target_y = VEHICLE_CAM_INTERIOR_TARGET_Y;
-    state.anim_target_z = VEHICLE_CAM_INTERIOR_TARGET_Z;
-    state.camera_animating = true;
-
-    Aroma3DCamera camera;
-    aroma_3d_viewer_get_camera(state.viewer_3d, &camera);
-    camera.far_plane = 1000.0f;
-    camera.near_plane = 0.1f;
-    camera.fov = 45.0f;
-    aroma_3d_viewer_set_camera(state.viewer_3d, &camera);
-
-    interior_view_active = true;
-    set_exterior_overlays_hidden(true);
-
-    if (interior_close_btn)
-    {
-        aroma_node_set_hidden(interior_close_btn, false);
-        aroma_animation_start(interior_close_btn, AROMA_ANIM_FADE, 0, 1, 400);
-    }
-    if (state.ac_controls_btn)
-    {
-        aroma_node_set_hidden(state.ac_controls_btn, false);
-        aroma_animation_start(state.ac_controls_btn, AROMA_ANIM_FADE, 0, 1, 400);
-    }
-    if (state.seat_controls_btn)
-    {
-        aroma_node_set_hidden(state.seat_controls_btn, false);
-        aroma_animation_start(state.seat_controls_btn, AROMA_ANIM_FADE, 0, 1, 400);
-    }
-}
-
 static void toggle_seat_controls_callback(void *user_data)
 {
     (void)user_data;
@@ -2703,12 +2460,9 @@ static void toggle_seat_controls_callback(void *user_data)
     if (hidden)
     {
         aroma_node_set_hidden(state.seat_controls_card, false);
-        aroma_animation_start(state.seat_controls_card, AROMA_ANIM_FADE, 0, 1, 400);
     }
     else
     {
-        AromaAnimation *anim = aroma_animation_start(state.seat_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
-        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
         aroma_node_set_hidden(state.seat_controls_card, true);
     }
 }
@@ -2723,12 +2477,9 @@ static void toggle_ac_controls_callback(void *user_data)
     if (hidden)
     {
         aroma_node_set_hidden(state.ac_controls_card, false);
-        aroma_animation_start(state.ac_controls_card, AROMA_ANIM_FADE, 0, 1, 400);
     }
     else
     {
-        AromaAnimation *anim = aroma_animation_start(state.ac_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
-        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
         aroma_node_set_hidden(state.ac_controls_card, true);
     }
 }
@@ -2760,121 +2511,6 @@ static bool ac_mode_callback(AromaNode *node, void *user_data)
     (void)node;
     (void)user_data;
     state.ac_auto_mode = !state.ac_auto_mode;
-    return true;
-}
-
-static void close_interior_view_callback(void *user_data)
-{
-    (void)user_data;
-    if (!state.viewer_3d || !interior_view_active)
-        return;
-
-    state.anim_target_theta = VEHICLE_CAM_EXTERIOR_THETA;
-    state.anim_target_phi = VEHICLE_CAM_EXTERIOR_PHI;
-    state.anim_target_radius = VEHICLE_CAM_EXTERIOR_RADIUS;
-    state.anim_target_x = VEHICLE_CAM_EXTERIOR_TARGET_X;
-    state.anim_target_y = VEHICLE_CAM_EXTERIOR_TARGET_Y;
-    state.anim_target_z = VEHICLE_CAM_EXTERIOR_TARGET_Z;
-    state.camera_animating = true;
-
-    interior_view_active = false;
-    set_exterior_overlays_hidden(false);
-
-    if (interior_close_btn)
-    {
-        AromaAnimation *anim = aroma_animation_start(interior_close_btn, AROMA_ANIM_FADE, 1, 0, 300);
-        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
-        aroma_node_set_hidden(interior_close_btn, true);
-    }
-    if (state.ac_controls_btn)
-    {
-        AromaAnimation *anim = aroma_animation_start(state.ac_controls_btn, AROMA_ANIM_FADE, 1, 0, 300);
-        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
-        aroma_node_set_hidden(state.ac_controls_btn, true);
-    }
-    if (state.ac_controls_card)
-    {
-        AromaAnimation *anim = aroma_animation_start(state.ac_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
-        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
-        aroma_node_set_hidden(state.ac_controls_card, true);
-    }
-    if (state.seat_controls_btn)
-    {
-        AromaAnimation *anim = aroma_animation_start(state.seat_controls_btn, AROMA_ANIM_FADE, 1, 0, 300);
-        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
-        aroma_node_set_hidden(state.seat_controls_btn, true);
-    }
-    if (state.seat_controls_card)
-    {
-        AromaAnimation *anim = aroma_animation_start(state.seat_controls_card, AROMA_ANIM_FADE, 1, 0, 300);
-        aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
-        aroma_node_set_hidden(state.seat_controls_card, true);
-    }
-}
-
-/* Front/rear are just alternate orbit angles around the same exterior pivot,
- * phi and radius reused as-is. FRONT_THETA below is a starting guess (90 deg
- * off the exterior hero angle) - drag the model in the running app until the
- * camera is square on the front bumper, then replace the 1.5708f offset with
- * whatever cam.theta reads at that point. REAR is defined 180 deg from FRONT
- * so it stays lined up automatically once FRONT is tuned. */
-#define VEHICLE_CAM_FRONT_THETA (VEHICLE_CAM_EXTERIOR_THETA + 1.5708f)
-#define VEHICLE_CAM_FRONT_PHI VEHICLE_CAM_EXTERIOR_PHI
-#define VEHICLE_CAM_FRONT_RADIUS VEHICLE_CAM_EXTERIOR_RADIUS
-#define VEHICLE_CAM_FRONT_TARGET_X VEHICLE_CAM_EXTERIOR_TARGET_X
-#define VEHICLE_CAM_FRONT_TARGET_Y VEHICLE_CAM_EXTERIOR_TARGET_Y
-#define VEHICLE_CAM_FRONT_TARGET_Z VEHICLE_CAM_EXTERIOR_TARGET_Z
-
-#define VEHICLE_CAM_REAR_THETA (VEHICLE_CAM_FRONT_THETA + 3.14159f)
-#define VEHICLE_CAM_REAR_PHI VEHICLE_CAM_EXTERIOR_PHI
-#define VEHICLE_CAM_REAR_RADIUS VEHICLE_CAM_EXTERIOR_RADIUS
-#define VEHICLE_CAM_REAR_TARGET_X VEHICLE_CAM_EXTERIOR_TARGET_X
-#define VEHICLE_CAM_REAR_TARGET_Y VEHICLE_CAM_EXTERIOR_TARGET_Y
-#define VEHICLE_CAM_REAR_TARGET_Z VEHICLE_CAM_EXTERIOR_TARGET_Z
-
-static void front_view_callback(void *user_data)
-{
-    (void)user_data;
-    if (!state.viewer_3d || interior_view_active)
-        return;
-
-    state.anim_target_theta = VEHICLE_CAM_FRONT_THETA;
-    state.anim_target_phi = VEHICLE_CAM_FRONT_PHI;
-    state.anim_target_radius = VEHICLE_CAM_FRONT_RADIUS;
-    state.anim_target_x = VEHICLE_CAM_FRONT_TARGET_X;
-    state.anim_target_y = VEHICLE_CAM_FRONT_TARGET_Y;
-    state.anim_target_z = VEHICLE_CAM_FRONT_TARGET_Z;
-    state.camera_animating = true;
-}
-
-static void rear_view_callback(void *user_data)
-{
-    (void)user_data;
-    if (!state.viewer_3d || interior_view_active)
-        return;
-
-    state.anim_target_theta = VEHICLE_CAM_REAR_THETA;
-    state.anim_target_phi = VEHICLE_CAM_REAR_PHI;
-    state.anim_target_radius = VEHICLE_CAM_REAR_RADIUS;
-    state.anim_target_x = VEHICLE_CAM_REAR_TARGET_X;
-    state.anim_target_y = VEHICLE_CAM_REAR_TARGET_Y;
-    state.anim_target_z = VEHICLE_CAM_REAR_TARGET_Z;
-    state.camera_animating = true;
-}
-
-static bool car_frontdoor_open(AromaNode *node, void *user_data)
-{
-    (void)node;
-    (void)user_data;
-    aroma_image_set_source(state.overlay,
-#ifdef __EMSCRIPTEN__
-                           "/assets/car_frontdoor.png"
-#elif defined(__arm__) || defined(__aarch64__)
-                           "/usr/share/infotainment/assets/car_frontdoor.png"
-#else
-                           "../assets/car_frontdoor.png"
-#endif
-    );
     return true;
 }
 
@@ -3209,206 +2845,6 @@ static void update_music_play_pause_icon(void)
                               media_ui.is_playing ? AROMA_ICON_PAUSE : AROMA_ICON_PLAY_ARROW);
 }
 
-static void on_music_prev_click(void *user_data)
-{
-    (void)user_data;
-    bt_speaker_avrcp_previous();
-}
-
-static void on_music_play_pause_click(void *user_data)
-{
-    (void)user_data;
-    if (media_ui.is_playing)
-    {
-        bt_speaker_avrcp_pause();
-        media_ui.is_playing = false;
-    }
-    else
-    {
-        bt_speaker_avrcp_play();
-        media_ui.is_playing = true;
-    }
-    update_play_pause_button_icon();
-    update_music_play_pause_icon();
-}
-
-static void on_music_next_click(void *user_data)
-{
-    (void)user_data;
-    bt_speaker_avrcp_next();
-}
-
-static void update_music_now_playing_display(void)
-{
-    if (!music_now_playing_card)
-        return;
-
-    pthread_mutex_lock(&g_bt_mutex);
-    bt_media_info_t media = g_bt_media_info;
-    bt_state_t current_state = g_bt_state;
-    pthread_mutex_unlock(&g_bt_mutex);
-
-    bool is_playing = (current_state == BT_STATE_PLAYING);
-    bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
-    bool has_media = (media.title[0] != '\0' || media.artist[0] != '\0');
-
-    if (!is_connected || !has_media)
-    {
-        if (music_no_media_label)
-            aroma_node_set_hidden(music_no_media_label, false);
-        if (music_art_placeholder)
-            aroma_node_set_hidden(music_art_placeholder, true);
-        if (music_track_title_label)
-            aroma_node_set_hidden(music_track_title_label, true);
-        if (music_track_artist_label)
-            aroma_node_set_hidden(music_track_artist_label, true);
-        if (music_track_album_label)
-            aroma_node_set_hidden(music_track_album_label, true);
-        if (music_status_label)
-            aroma_node_set_hidden(music_status_label, true);
-        if (music_prev_button)
-            aroma_node_set_hidden(music_prev_button, true);
-        if (music_play_pause_button)
-            aroma_node_set_hidden(music_play_pause_button, true);
-        if (music_next_button)
-            aroma_node_set_hidden(music_next_button, true);
-        return;
-    }
-
-    if (music_no_media_label)
-        aroma_node_set_hidden(music_no_media_label, true);
-    if (music_art_placeholder)
-        aroma_node_set_hidden(music_art_placeholder, false);
-    if (music_prev_button)
-        aroma_node_set_hidden(music_prev_button, false);
-    if (music_play_pause_button)
-        aroma_node_set_hidden(music_play_pause_button, false);
-    if (music_next_button)
-        aroma_node_set_hidden(music_next_button, false);
-
-    if (music_track_title_label)
-    {
-        aroma_node_set_hidden(music_track_title_label, false);
-        aroma_label_set_text(music_track_title_label, media.title[0] ? media.title : "Unknown Track");
-    }
-    if (music_track_artist_label)
-    {
-        aroma_node_set_hidden(music_track_artist_label, false);
-        aroma_label_set_text(music_track_artist_label, media.artist[0] ? media.artist : "Unknown Artist");
-    }
-    if (music_track_album_label)
-    {
-        if (media.album[0])
-        {
-            aroma_node_set_hidden(music_track_album_label, false);
-            aroma_label_set_text(music_track_album_label, media.album);
-        }
-        else
-        {
-            aroma_node_set_hidden(music_track_album_label, true);
-        }
-    }
-    if (music_status_label)
-    {
-        aroma_node_set_hidden(music_status_label, false);
-        if (strcmp(media.status, "playing") == 0)
-        {
-            aroma_label_set_text(music_status_label, "Playing");
-            aroma_label_set_color(music_status_label, 0xFF4CAF50);
-        }
-        else if (strcmp(media.status, "paused") == 0)
-        {
-            aroma_label_set_text(music_status_label, "Paused");
-            aroma_label_set_color(music_status_label, 0xFFFF9800);
-        }
-        else
-        {
-            aroma_label_set_text(music_status_label, "Connected");
-            aroma_label_set_color(music_status_label, 0xFF9E9E9E);
-        }
-    }
-
-    update_music_play_pause_icon();
-}
-
-static void update_music_device_display(void)
-{
-    if (!music_device_card)
-        return;
-
-    pthread_mutex_lock(&g_bt_mutex);
-    bt_device_info_t device = g_bt_device_info;
-    bt_state_t current_state = g_bt_state;
-    pthread_mutex_unlock(&g_bt_mutex);
-
-    bool is_connected = (current_state == BT_STATE_CONNECTED ||
-                         current_state == BT_STATE_PLAYING);
-
-    if (!is_connected || !device.connected || !device.name[0])
-    {
-        if (music_device_no_phone_label)
-            aroma_node_set_hidden(music_device_no_phone_label, false);
-        if (music_device_name_label)
-            aroma_node_set_hidden(music_device_name_label, true);
-        if (music_device_address_label)
-            aroma_node_set_hidden(music_device_address_label, true);
-        if (music_device_stats_label)
-            aroma_node_set_hidden(music_device_stats_label, true);
-        if (music_device_status_label)
-            aroma_label_set_text(music_device_status_label, "No Phone Connected");
-        if (music_device_status_icon)
-            aroma_icon_set_color(music_device_status_icon, 0xFF9E9E9E);
-        return;
-    }
-
-    if (music_device_no_phone_label)
-        aroma_node_set_hidden(music_device_no_phone_label, true);
-
-    if (music_device_status_label)
-        aroma_label_set_text(music_device_status_label,
-                             current_state == BT_STATE_PLAYING ? "Connected - Playing" : "Connected");
-    if (music_device_status_icon)
-        aroma_icon_set_color(music_device_status_icon, 0xFF4CAF50);
-
-    if (music_device_name_label)
-    {
-        char name_buf[128];
-        snprintf(name_buf, sizeof(name_buf), "Name: %s", device.name);
-        aroma_node_set_hidden(music_device_name_label, false);
-        aroma_label_set_text(music_device_name_label, name_buf);
-    }
-    if (music_device_address_label)
-    {
-        char address_buf[128];
-        snprintf(address_buf, sizeof(address_buf), "Address: %s", device.address[0] ? device.address : "Unknown");
-        aroma_node_set_hidden(music_device_address_label, false);
-        aroma_label_set_text(music_device_address_label, address_buf);
-    }
-    if (music_device_stats_label)
-    {
-        pthread_mutex_lock(&g_bt_mutex);
-        bt_stats_t stats = g_bt_stats;
-        pthread_mutex_unlock(&g_bt_mutex);
-        char stats_buf[160];
-        unsigned long minutes = stats.connected_time_sec / 60;
-        unsigned long seconds = stats.connected_time_sec % 60;
-        if (stats.audio_active && stats.audio_time_sec > 0)
-        {
-            unsigned long audio_min = stats.audio_time_sec / 60;
-            unsigned long audio_sec = stats.audio_time_sec % 60;
-            snprintf(stats_buf, sizeof(stats_buf),
-                     "Connected: %lumin %lus | Audio: %lumin %lus",
-                     minutes, seconds, audio_min, audio_sec);
-        }
-        else
-        {
-            snprintf(stats_buf, sizeof(stats_buf), "Connected: %lumin %lus", minutes, seconds);
-        }
-        aroma_node_set_hidden(music_device_stats_label, false);
-        aroma_label_set_text(music_device_stats_label, stats_buf);
-    }
-}
-
 static void on_music_tab_changed(AromaNode *tabs, int tab_index, void *user_data)
 {
     (void)tabs;
@@ -3422,117 +2858,6 @@ static void on_music_tab_changed(AromaNode *tabs, int tab_index, void *user_data
         update_music_now_playing_display();
     else
         update_music_device_display();
-}
-
-void music_opening_anim(AromaNode *target, float progress, void *user_data)
-{
-    (void)user_data;
-    AromaRect *rect = aroma_node_get_rect(target);
-    if (!rect)
-        return;
-    AromaRect *tabs_rect = aroma_node_get_rect(music_app_tabs);
-    if (!tabs_rect)
-        return;
-
-    int start_y = WIN_H;
-    int end_y = 0;
-
-    rect->x = 0;
-    rect->y = start_y + (int)((end_y - start_y) * progress);
-    rect->width = WIN_W;
-    rect->height = WIN_H;
-
-    tabs_rect->x = rect->x;
-    tabs_rect->y = rect->y;
-    tabs_rect->width = rect->width;
-    tabs_rect->height = 100;
-    aroma_node_invalidate(target);
-}
-
-static bool open_music(AromaNode *node, void *user_data)
-{
-    (void)node;
-    AromaNode *card_node = (AromaNode *)user_data;
-    if (!card_node)
-        return false;
-    if (app_drawer_visible)
-    {
-        send_app_drawer_behind();
-    }
-
-    aroma_node_set_hidden(card_node, false);
-    AromaAnimation *anim = aroma_animation_start_custom(
-        card_node, 0.0f, 1.0f, 300, music_opening_anim, NULL);
-    if (!anim)
-        return false;
-    set_app_open(true);
-    if (media_ui.media_card)
-        aroma_node_set_hidden(media_ui.media_card, true);
-    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
-    aroma_node_set_hidden(music_app_tabs, false);
-    aroma_node_set_hidden(music_now_playing_card, false);
-    aroma_node_set_hidden(music_device_card, true);
-    if (music_app_tabs)
-        aroma_tabs_set_selected(music_app_tabs, 0);
-    aroma_node_set_z_index(card_node, Z_LAYER_STATUS_BAR + 10);
-    music_app_open = true;
-    music_active_tab = 0;
-    update_music_now_playing_display();
-
-    return true;
-}
-
-void music_closing_anim(AromaNode *target, float progress, void *user_data)
-{
-    (void)user_data;
-    AromaRect *rect = aroma_node_get_rect(target);
-    if (!rect)
-        return;
-    AromaRect *tabs_rect = aroma_node_get_rect(music_app_tabs);
-    if (!tabs_rect)
-        return;
-
-    int start_y = 0;
-    int end_y = WIN_H;
-
-    rect->x = 0;
-    rect->y = start_y + (int)((end_y - start_y) * progress);
-    rect->width = WIN_W;
-    rect->height = WIN_H;
-
-    tabs_rect->x = rect->x;
-    tabs_rect->y = rect->y + 90;
-    tabs_rect->width = rect->width;
-    tabs_rect->height = 100;
-    if (progress >= 0.92f)
-    {
-        aroma_node_set_z_index(target, 1);
-        aroma_node_set_hidden(music_app_tabs, true);
-        aroma_node_set_hidden(target, true);
-    }
-    if (progress >= 1.0f)
-    {
-        set_app_open(false);
-        music_app_open = false;
-        apply_deferred_bottom_bar_position();
-        update_media_card_display();
-        restore_app_drawer_from_behind();
-    }
-    aroma_node_invalidate(target);
-}
-
-void close_music(void *user_data)
-{
-    AromaNode *card_node = (AromaNode *)user_data;
-    if (!card_node)
-        return;
-    set_app_open(false);
-    music_app_open = false;
-    AromaAnimation *anim = aroma_animation_start_custom(
-        card_node, 0.0f, 1.0f, 300, music_closing_anim, NULL);
-    aroma_node_set_hidden(music_now_playing_card, true);
-    aroma_node_set_hidden(music_device_card, true);
-    aroma_animation_set_easing(anim, AROMA_EASE_IN_OUT_QUAD);
 }
 
 static void update_swupdate_service_status(void)
@@ -4008,16 +3333,6 @@ static void battery_diagnostics(void *user_data)
     AromaAnimation *anim = aroma_animation_start(
         state.overlay, AROMA_ANIM_SLIDE_Y, 150, 100, 400);
     aroma_animation_set_easing(anim, AROMA_EASE_OUT_ELASTIC);
-    aroma_node_set_hidden(state.vehicle_view_lock_divider, true);
-    aroma_node_set_hidden(state.vehicle_view_charge_port_divider, true);
-    aroma_node_set_hidden(state.vehicle_view_charge_port_icon, true);
-    aroma_node_set_hidden(state.vehicle_view_frunk_header, true);
-    aroma_node_set_hidden(state.vehicle_view_frunk_desc, true);
-    aroma_node_set_hidden(state.vehicle_view_frunk_divider, true);
-    aroma_node_set_hidden(state.vehicle_view_trunk_divider, true);
-    aroma_node_set_hidden(state.vehicle_view_trunk_header, true);
-    aroma_node_set_hidden(state.vehicle_view_trunk_desc, true);
-    aroma_node_set_hidden(state.vehicle_view_lock_icon, true);
     aroma_node_set_hidden(state.vehicle_view_warning_message_card, true);
     aroma_node_set_hidden(state.vehicle_view_warning_message_label, true);
     aroma_node_set_hidden(state.vehicle_view_warning_warning_icon, true);
@@ -4025,111 +3340,6 @@ static void battery_diagnostics(void *user_data)
     aroma_node_set_hidden(state.battery_image, false);
     aroma_node_set_hidden(state.battery_health, false);
     aroma_node_set_hidden(state.battery_percentage, false);
-    aroma_animation_start(state.battery_image, AROMA_ANIM_FADE, 0, 1, 1000);
-    aroma_animation_start(state.battery_health, AROMA_ANIM_FADE, 0, 1, 1000);
-    aroma_animation_start(state.battery_percentage, AROMA_ANIM_FADE, 0, 1, 1000);
-}
-
-void unlock_screen(void)
-{
-    if (!lock_screen_active)
-        return;
-    lock_screen_active = false;
-    if (lock_screen_root)
-    {
-        aroma_animation_start(lock_screen_root, AROMA_ANIM_FADE, 1, 0, 400);
-        aroma_node_set_hidden(lock_screen_root, true);
-    }
-    if (state.vehicle_view_root)
-    {
-        aroma_node_set_hidden(state.vehicle_view_root, false);
-        aroma_animation_start(state.vehicle_view_root, AROMA_ANIM_FADE, 0, 1, 400);
-    }
-}
-
-static void on_unlock_button_click(void *user_data)
-{
-    (void)user_data;
-    unlock_screen();
-}
-
-static void update_lock_screen_clock(void)
-{
-    if (!lock_screen_active || !lock_screen_time)
-        return;
-    time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
-    char time_str[16];
-    char date_str[64];
-    strftime(time_str, sizeof(time_str), "%I:%M", tm_info);
-    if (time_str[0] == '0')
-        time_str[0] = ' ';
-    strftime(date_str, sizeof(date_str), "%A, %B %d", tm_info);
-    aroma_label_set_text(lock_screen_time, time_str);
-    if (lock_screen_date)
-        aroma_label_set_text(lock_screen_date, date_str);
-}
-
-static void *lock_screen_clock_thread(void *arg)
-{
-    (void)arg;
-    while (1)
-    {
-        update_lock_screen_clock();
-        sleep(1);
-    }
-    return NULL;
-}
-
-static void build_lock_screen(AromaNode *window)
-{
-    lock_screen_root = aroma_ui_container(
-        window, 0, 0, WIN_W, WIN_H,
-        AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
-        AROMA_JUSTIFY_CENTER, AROMA_ALIGN_CENTER);
-    aroma_node_set_z_index(lock_screen_root, 9990);
-
-    AromaNode *black_bg = aroma_ui_card(
-        lock_screen_root, -10, -10, WIN_W + 20, WIN_H + 20, CARD_TYPE_FILLED);
-    aroma_card_set_colors(black_bg, 0xFF000000, 0xFF000000);
-    aroma_node_set_z_index(black_bg, 9991);
-
-    lock_screen_time = aroma_ui_label(
-        lock_screen_root, "12:00",
-        WIN_W / 2 - 70, WIN_H / 2 - 100, LABEL_STYLE_LABEL_LARGE, state.clock_font);
-    aroma_label_set_color(lock_screen_time, 0xFFFFFFFF);
-    aroma_node_set_z_index(lock_screen_time, 9991);
-
-    lock_screen_date = aroma_ui_label(
-        lock_screen_root, "Monday, January 1",
-        WIN_W / 2 - 100, WIN_H / 2, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_label_set_color(lock_screen_date, 0xCCFFFFFF);
-    aroma_node_set_z_index(lock_screen_date, 9991);
-
-    lock_screen_unlock_btn = aroma_ui_iconbutton(
-        lock_screen_root, AROMA_ICON_LOCK_OPEN,
-        WIN_W / 2 - 30, WIN_H / 2 + 60, 60, ICON_BUTTON_FILLED,
-        on_unlock_button_click, NULL, state.icon_font);
-    aroma_iconbutton_set_colors(lock_screen_unlock_btn, 0xFFFFFFFF, 0xFF2196F3);
-    aroma_node_set_z_index(lock_screen_unlock_btn, 9991);
-
-    AromaNode *hint_label = aroma_ui_label(
-        lock_screen_root, "Tap to unlock",
-        WIN_W / 2 - 57, WIN_H / 2 + 140, LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_label_set_color(hint_label, 0x88FFFFFF);
-    aroma_node_set_z_index(hint_label, 9991);
-
-    update_lock_screen_clock();
-
-    pthread_t clock_thread;
-    pthread_attr_t clock_attr;
-    pthread_attr_init(&clock_attr);
-    pthread_attr_setdetachstate(&clock_attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&clock_thread, &clock_attr, lock_screen_clock_thread, NULL);
-    pthread_attr_destroy(&clock_attr);
-
-    lock_screen_active = true;
-    aroma_node_set_hidden(state.vehicle_view_root, true);
 }
 
 static void on_bt_log(const char *level, const char *message, void *user_data)
@@ -4327,47 +3537,6 @@ static void on_bt_call_changed(const bt_call_info_t *call, bool removed, void *u
     }
 }
 
-static void apply_vehicle_paint_finish(Aroma3DModel *model, float metallic, float clearcoat)
-{
-    if (!model)
-        return;
-    int mesh_count = aroma_3d_get_mesh_count(model);
-    for (int i = 0; i < mesh_count; i++)
-    {
-        const Aroma3DMesh *mesh = aroma_3d_get_mesh(model, i);
-        if (aroma_3d_mesh_is_alpha_blended(mesh))
-            continue;
-        aroma_3d_set_mesh_metallic(model, i, metallic);
-        aroma_3d_set_mesh_clearcoat(model, i, clearcoat);
-    }
-}
-
-static void apply_vehicle_model_to_viewer(Aroma3DModel *model, float metallic, float clearcoat)
-{
-    if (!state.viewer_3d || !model)
-        return;
-
-    apply_vehicle_paint_finish(model, metallic, clearcoat);
-    aroma_3d_viewer_set_model(state.viewer_3d, model);
-
-    Aroma3DCamera cam;
-    aroma_3d_viewer_get_camera(state.viewer_3d, &cam);
-
-    cam.theta = -5.0f;
-    cam.phi = 1.34f;
-    cam.radius = 5.14f;
-    cam.target[0] = 0.05f;
-    cam.target[1] = -0.13f;
-    cam.target[2] = -0.08f;
-
-    cam.fov = 45.0f;
-    cam.near_plane = 0.1f;
-    cam.far_plane = 1000.0f;
-    lock_vehicle_camera(&cam);
-
-    aroma_3d_viewer_set_light_position(state.viewer_3d, 4.0f, 6.0f, 3.0f);
-}
-
 void build_vehicle_view(AromaNode *window)
 {
     state.vehicle_view_root = aroma_ui_container(
@@ -4391,7 +3560,7 @@ void build_vehicle_view(AromaNode *window)
 
     aroma_3d_init();
     state.viewer_3d = aroma_3d_viewer_create(
-        state.vehicle_view_root, -100, 0, WIN_W + 200, WIN_H + 100);
+        state.vehicle_view_root, -100, 0, WIN_W + 200, WIN_H + 50);
     if (state.viewer_3d)
     {
         aroma_node_set_z_index(state.viewer_3d, Z_LAYER_BACKGROUND + 1);
@@ -4436,57 +3605,13 @@ void build_vehicle_view(AromaNode *window)
     fprintf(stderr, "[ZDEBUG] battery_button z_index = %d (Z_LAYER_VEHICLE_OVERLAYS=%d)\n",
             (int)(Z_LAYER_VEHICLE_OVERLAYS + 1), (int)Z_LAYER_VEHICLE_OVERLAYS);
 
-    state.vehicle_view_large_clock = aroma_ui_label(
-        state.vehicle_view_root, "12:45",
-        WIN_W / 2 - 90, 35, LABEL_STYLE_LABEL_LARGE, state.clock_font);
-    aroma_node_set_z_index(state.vehicle_view_large_clock, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.vehicle_view_large_clock_pm_am = aroma_ui_label(
-        state.vehicle_view_root, "PM",
-        WIN_W / 2 + 68, 70, LABEL_STYLE_LABEL_MEDIUM, state.clock_pm_am_font);
-    aroma_node_set_z_index(state.vehicle_view_large_clock_pm_am, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.vehicle_view_frunk_divider = aroma_ui_divider(
-        state.vehicle_view_root, 260, 260, 80, DIVIDER_ORIENTATION_VERTICAL);
-    aroma_node_set_z_index(state.vehicle_view_frunk_divider, Z_LAYER_VEHICLE_OVERLAYS + 1);
-
-    state.vehicle_view_lock_divider = aroma_ui_divider(
-        state.vehicle_view_root, 550, 165, 40, DIVIDER_ORIENTATION_VERTICAL);
-    aroma_node_set_z_index(state.vehicle_view_lock_divider, Z_LAYER_VEHICLE_OVERLAYS + 1);
-
-    state.vehicle_view_lock_icon = aroma_ui_icon(
-        state.vehicle_view_root, AROMA_ICON_LOCK, 563, 130, 24,
-        state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.vehicle_view_lock_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.vehicle_view_frunk_header = aroma_ui_label(
-        state.vehicle_view_root, "Frunk", 180, 250, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(state.vehicle_view_frunk_header, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.vehicle_view_frunk_desc = aroma_ui_label(
-        state.vehicle_view_root, "Open", 180, 270, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(state.vehicle_view_frunk_desc, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.vehicle_view_trunk_divider = aroma_ui_divider(
-        state.vehicle_view_root, 780, 220, 80, DIVIDER_ORIENTATION_VERTICAL);
-    aroma_node_set_z_index(state.vehicle_view_trunk_divider, Z_LAYER_VEHICLE_OVERLAYS + 1);
-
-    state.vehicle_view_trunk_header = aroma_ui_label(
-        state.vehicle_view_root, "Trunk", 800, 215, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(state.vehicle_view_trunk_header, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.vehicle_view_trunk_desc = aroma_ui_label(
-        state.vehicle_view_root, "Closed", 800, 235, LABEL_STYLE_LABEL_LARGE, state.ui_font);
-    aroma_node_set_z_index(state.vehicle_view_trunk_desc, Z_LAYER_VEHICLE_OVERLAYS + 2);
-
-    state.vehicle_view_charge_port_divider = aroma_ui_divider(
-        state.vehicle_view_root, 810, 330, 40, DIVIDER_ORIENTATION_HORIZONTAL);
-    aroma_node_set_z_index(state.vehicle_view_charge_port_divider, Z_LAYER_VEHICLE_OVERLAYS + 1);
-
-    state.vehicle_view_charge_port_icon = aroma_ui_icon(
-        state.vehicle_view_root, AROMA_ICON_POWER, 880, 315, 24,
-        state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.vehicle_view_charge_port_icon, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    state.vehicle_view_clock_gauge = aroma_ui_gauge(
+        state.vehicle_view_root, WIN_W / 2 - 120, 0, 240, 240);
+    aroma_node_set_z_index(state.vehicle_view_clock_gauge, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    aroma_gauge_set_angles(state.vehicle_view_clock_gauge, -1.5708f, 4.7124f);
+    aroma_gauge_set_range(state.vehicle_view_clock_gauge, 0.0f, 60.0f);
+    aroma_gauge_set_thickness(state.vehicle_view_clock_gauge, 3, 0);
+    update_clock_gauge_colors();
 
     state.vehicle_view_warning_message_card = aroma_ui_card(
         state.vehicle_view_root, 330, WIN_H + 100, 600, 70, CARD_TYPE_FILLED);
@@ -4587,80 +3712,109 @@ void build_vehicle_view(AromaNode *window)
     AromaNode *ac_plus = aroma_ui_iconbutton(state.bottom_bar, AROMA_ICON_ADD, 25, 260, 30, ICON_BUTTON_FILLED, ac_temp_up_callback, NULL, state.icon_font);
     aroma_node_set_z_index(ac_plus, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
-    /* Placement is a starting guess (same 80px pitch as the buttons above) -
-     * nudge the y values if this overlaps anything on the actual screen. */
-    AromaNode *front_view_btn = aroma_ui_iconbutton(state.bottom_bar, AROMA_ICON_ARROW_FORWARD, 25, 340, 30, ICON_BUTTON_FILLED, front_view_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(front_view_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
-    AromaNode *rear_view_btn = aroma_ui_iconbutton(state.bottom_bar, AROMA_ICON_ARROW_BACK, 25, 420, 30, ICON_BUTTON_FILLED, rear_view_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(rear_view_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
+    state.tire_button = aroma_ui_iconbutton(state.vehicle_view_root, AROMA_ICON_INFO, 400, 400, 30, ICON_BUTTON_FILLED, tire_cycle_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(state.tire_button, Z_LAYER_VEHICLE_OVERLAYS + 2);
+
+    state.tire_card = aroma_ui_card(
+        state.vehicle_view_root, (WIN_W - 220) / 2, 20, 220, 180, CARD_TYPE_GLASS);
+    aroma_node_set_z_index(state.tire_card, Z_LAYER_CARDS_TOP);
+    aroma_node_set_hidden(state.tire_card, true);
+
+    state.tire_name_label = aroma_ui_label(
+        state.tire_card, "Front Left", 20, 10,
+        LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    aroma_node_set_z_index(state.tire_name_label, Z_LAYER_CARDS_TOP + 1);
+
+    state.tire_pressure_label = aroma_ui_label(
+        state.tire_card, "32 psi", 20, 34,
+        LABEL_STYLE_LABEL_LARGE, state.ui_font);
+    aroma_node_set_z_index(state.tire_pressure_label, Z_LAYER_CARDS_TOP + 1);
+
+    state.tire_close_btn = aroma_ui_iconbutton(
+        state.tire_card, AROMA_ICON_CLOSE,
+        190, 10, 24, ICON_BUTTON_OUTLINED,
+        tire_exit_check_callback, NULL, state.icon_font);
+    aroma_node_set_z_index(state.tire_close_btn, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *fl_btn = aroma_ui_button(state.tire_card, "FL", 30, 70, 100, 40, tire_select_callback, (void *)1, state.ui_font);
+    aroma_node_set_z_index(fl_btn, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *fr_btn = aroma_ui_button(state.tire_card, "FR", 125, 70, 100, 40, tire_select_callback, (void *)0, state.ui_font);
+    aroma_node_set_z_index(fr_btn, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *rl_btn = aroma_ui_button(state.tire_card, "RL", 30, 120, 100, 40, tire_select_callback, (void *)3, state.ui_font);
+    aroma_node_set_z_index(rl_btn, Z_LAYER_CARDS_TOP + 1);
+
+    AromaNode *rr_btn = aroma_ui_button(state.tire_card, "RR", 125, 120, 100, 40, tire_select_callback, (void *)2, state.ui_font);
+    aroma_node_set_z_index(rr_btn, Z_LAYER_CARDS_TOP + 1);
 
     state.interior_ac_btn = aroma_ui_iconbutton(
         state.vehicle_view_root, AROMA_ICON_AC_UNIT,
-        25, 100, 36, ICON_BUTTON_FILLED,
+        450, 280, 36, ICON_BUTTON_FILLED,
         ac_interior_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.interior_ac_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
 
     state.ac_controls_btn = aroma_ui_iconbutton(
         state.vehicle_view_root, AROMA_ICON_SETTINGS,
-        70, 100, 36, ICON_BUTTON_FILLED,
+        90, 200, 36, ICON_BUTTON_FILLED,
         toggle_ac_controls_callback, NULL, state.icon_font);
     aroma_node_set_z_index(state.ac_controls_btn, Z_LAYER_VEHICLE_OVERLAYS + 2);
     aroma_node_set_hidden(state.ac_controls_btn, true);
 
     state.ac_controls_card = aroma_ui_card(
-        state.vehicle_view_root, 25, 145, 260, 220, CARD_TYPE_GLASS);
+        state.vehicle_view_root, 90, 230, 260, 220, CARD_TYPE_GLASS);
     aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP);
     aroma_node_set_hidden(state.ac_controls_card, true);
 
-    aroma_ui_icon(
-        state.ac_controls_card, AROMA_ICON_AC_UNIT, 20, 18, 28,
+    AromaNode *ac_icon = aroma_ui_icon(
+        state.ac_controls_card, AROMA_ICON_AC_UNIT, 50, 20, 28,
         state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(ac_icon, Z_LAYER_CARDS_TOP + 1);
 
-    aroma_ui_label(
+    AromaNode *climate_label = aroma_ui_label(
         state.ac_controls_card, "Climate", 62, 18,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(climate_label, Z_LAYER_CARDS_TOP + 1);
 
     state.ac_controls_temp_label = aroma_ui_label(
         state.ac_controls_card, "22C", 120, 50,
         LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(state.ac_controls_temp_label, Z_LAYER_CARDS_TOP + 1);
 
-    AromaNode *ac_temp_up = aroma_ui_iconbutton(
+    state.ac_temp_up_btn = aroma_ui_iconbutton(
         state.ac_controls_card, AROMA_ICON_ADD, 200, 45, 32, ICON_BUTTON_OUTLINED,
         ac_temp_up_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(ac_temp_up, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(state.ac_temp_up_btn, Z_LAYER_CARDS_TOP + 1);
 
-    AromaNode *ac_temp_down = aroma_ui_iconbutton(
+    state.ac_temp_down_btn = aroma_ui_iconbutton(
         state.ac_controls_card, AROMA_ICON_REMOVE, 200, 85, 32, ICON_BUTTON_OUTLINED,
         ac_temp_down_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(ac_temp_down, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(state.ac_temp_down_btn, Z_LAYER_CARDS_TOP + 1);
 
-    aroma_ui_label(
+    AromaNode *fan_speed_label = aroma_ui_label(
         state.ac_controls_card, "Fan Speed", 20, 100,
         LABEL_STYLE_LABEL_SMALL, state.ui_font);
-    aroma_node_set_z_index(state.ac_controls_card, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(fan_speed_label, Z_LAYER_CARDS_TOP + 1);
 
-    AromaNode *fan_up = aroma_ui_iconbutton(
+    state.fan_up_btn = aroma_ui_iconbutton(
         state.ac_controls_card, AROMA_ICON_ARROW_UPWARD, 200, 125, 32, ICON_BUTTON_OUTLINED,
         fan_up_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(fan_up, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(state.fan_up_btn, Z_LAYER_CARDS_TOP + 1);
 
-    AromaNode *fan_down = aroma_ui_iconbutton(
+    state.fan_down_btn = aroma_ui_iconbutton(
         state.ac_controls_card, AROMA_ICON_ARROW_DOWNWARD, 200, 165, 32, ICON_BUTTON_OUTLINED,
         fan_down_callback, NULL, state.icon_font);
-    aroma_node_set_z_index(fan_down, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(state.fan_down_btn, Z_LAYER_CARDS_TOP + 1);
 
-    AromaNode *ac_mode_btn = aroma_ui_button(
+    state.ac_mode_btn = aroma_ui_button(
         state.ac_controls_card, "Auto", 20, 130, 90, 32,
         ac_mode_callback, NULL, state.ui_font);
-    aroma_node_set_z_index(ac_mode_btn, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(state.ac_mode_btn, Z_LAYER_CARDS_TOP + 1);
 
-    AromaNode *ac_power_btn = aroma_ui_button(
+    state.ac_power_btn = aroma_ui_button(
         state.ac_controls_card, "AC", 120, 130, 60, 32,
         ac_power_callback, NULL, state.ui_font);
-    aroma_node_set_z_index(ac_power_btn, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(state.ac_power_btn, Z_LAYER_CARDS_TOP + 1);
 
     state.seat_controls_btn = aroma_ui_iconbutton(
         state.vehicle_view_root, AROMA_ICON_AIRLINE_SEAT_LEGROOM_EXTRA,
@@ -4674,15 +3828,15 @@ void build_vehicle_view(AromaNode *window)
     aroma_node_set_z_index(state.seat_controls_card, Z_LAYER_CARDS_TOP);
     aroma_node_set_hidden(state.seat_controls_card, true);
 
-    aroma_ui_icon(
-        state.seat_controls_card, AROMA_ICON_AIRLINE_SEAT_LEGROOM_EXTRA, 20, 18, 28,
+    AromaNode *seat_icon = aroma_ui_icon(
+        state.seat_controls_card, AROMA_ICON_AIRLINE_SEAT_LEGROOM_EXTRA, 20, 20, 28,
         state.theme.colors.primary, state.icon_font);
-    aroma_node_set_z_index(state.seat_controls_card, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(seat_icon, Z_LAYER_CARDS_TOP + 1);
 
-    aroma_ui_label(
-        state.seat_controls_card, "Seat Position", 20, 18,
+    AromaNode *seat_label = aroma_ui_label(
+        state.seat_controls_card, "Seat Position", 50, 20,
         LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    aroma_node_set_z_index(state.seat_controls_card, Z_LAYER_CARDS_TOP + 1);
+    aroma_node_set_z_index(seat_label, Z_LAYER_CARDS_TOP + 1);
 
     state.seat_position_slider = aroma_slider_create(
         state.seat_controls_card, 20, 55, 200, 40,
@@ -5378,11 +4532,6 @@ void build_vehicle_view(AromaNode *window)
     aroma_iconbutton_set_colors(incoming_call_end_btn, 0xFFF44336, 0xFFFFFFFF);
     aroma_node_set_hidden(incoming_call_end_btn, true);
 
-    aroma_animation_start(state.vehicle_view_frunk_divider, AROMA_ANIM_SCALE_Y, 0, 40, 1200);
-    aroma_animation_start(state.vehicle_view_trunk_divider, AROMA_ANIM_SCALE_Y, 0, 40, 1200);
-    aroma_animation_start(state.vehicle_view_lock_divider, AROMA_ANIM_SCALE_Y, 0, 40, 1200);
-    aroma_animation_start(state.vehicle_view_charge_port_divider, AROMA_ANIM_SCALE_X, 0, 20, 1200);
-
     media_ui.ui_initialized = true;
 
     bt_config_t config = {
@@ -5469,9 +4618,8 @@ void update_vehicle_view(void)
         }
     }
 
-    if (lock_screen_active)
+    if (lock_screen_is_active())
     {
-        update_lock_screen_clock();
         return;
     }
 
@@ -5505,6 +4653,12 @@ void update_vehicle_view(void)
             cam.target[1] = state.anim_target_y;
             cam.target[2] = state.anim_target_z;
             state.camera_animating = false;
+
+            if (state.startup_animating)
+            {
+                state.startup_animating = false;
+                aroma_3d_viewer_set_auto_rotate(state.viewer_3d, true);
+            }
         }
 
         lock_vehicle_camera(&cam);

@@ -5,6 +5,8 @@ import hashlib
 import json
 import os
 import re
+import subprocess
+import shutil
 import tempfile
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -418,10 +420,126 @@ class MermaidPreprocessor(Preprocessor):
         return new_lines
 
 
+class SandboxPreprocessor(Preprocessor):
+    def run(self, lines):
+        new_lines = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.strip() == "```c sandbox":
+                sandbox_code = []
+                i += 1
+                while i < len(lines) and lines[i].strip() != "```":
+                    sandbox_code.append(lines[i])
+                    i += 1
+                if i < len(lines):
+                    i += 1
+                if sandbox_code:
+                    code_str = "\n".join(sandbox_code)
+                    code_hash = hashlib.md5(code_str.encode('utf-8')).hexdigest()[:8]
+                    
+                    # Generate the HTML for the sandbox
+                    html = (
+                        '<div class="sandbox-wrapper" style="display:flex; flex-direction:row; gap:16px; margin:24px 0;">\n'
+                        '  <div class="sandbox-code" style="flex:1; overflow:auto;">\n'
+                        '    <pre><code class="language-c">' + code_str.replace('<', '&lt;').replace('>', '&gt;') + '</code></pre>\n'
+                        '  </div>\n'
+                        '  <div class="sandbox-preview" style="flex:1; border:1px solid var(--md-outline-variant); border-radius:8px; overflow:hidden;">\n'
+                        f'    <iframe src="sandboxes/sandbox_{code_hash}.html" style="width:100%; height:100%; min-height:400px; border:none;"></iframe>\n'
+                        '  </div>\n'
+                        '</div>'
+                    )
+                    new_lines.append(html)
+                    
+                    # Compile the sandbox code
+                    self._compile_sandbox(code_str, code_hash)
+                continue
+            new_lines.append(line)
+            i += 1
+        return new_lines
+
+    def _compile_sandbox(self, code_str: str, code_hash: str):
+        # Determine the project root
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        site_dir = os.path.join(project_root, "_site")
+        sandbox_dir = os.path.join(site_dir, "sandboxes")
+        os.makedirs(sandbox_dir, exist_ok=True)
+        
+        out_html = os.path.join(sandbox_dir, f"sandbox_{code_hash}.html")
+        if os.path.exists(out_html):
+            return # Already compiled
+            
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_file = os.path.join(tmpdir, "main.c")
+            
+            # Wrap code if it doesn't contain main()
+            if "int main(" not in code_str and "int main (" not in code_str:
+                wrapped = (
+                    '#include <aroma.h>\n'
+                    '#ifdef __EMSCRIPTEN__\n'
+                    '#include <emscripten/emscripten.h>\n'
+                    '#endif\n\n'
+                    'static void main_loop(void) {\n'
+                    '    aroma_ui_run_frame();\n'
+                    '}\n\n'
+                    'int main(void) {\n'
+                    '    aroma_ui_init();\n'
+                    '    AromaWindow *window = aroma_ui_create_window("Aroma Sandbox", 400, 400);\n'
+                    '    AromaNode *root = (AromaNode *)window;\n'
+                    f'    {code_str}\n'
+                    '#ifdef __EMSCRIPTEN__\n'
+                    '    emscripten_set_main_loop(main_loop, 0, 1);\n'
+                    '#else\n'
+                    '    while (aroma_ui_is_running()) { aroma_ui_run_frame(); }\n'
+                    '#endif\n'
+                    '    return 0;\n'
+                    '}\n'
+                )
+            else:
+                wrapped = code_str
+                
+            with open(src_file, "w") as f:
+                f.write(wrapped)
+                
+            include_dir = os.path.join(project_root, "include")
+            # Build using emcc directly, assuming libaroma.a is pre-built in examples/smartwatch_example/build_web/aroma_root/src/libaroma.a
+            lib_path = os.path.join(project_root, "examples", "smartwatch_example", "build_web", "aroma_root", "src", "libaroma.a")
+            
+            emcc_path = os.path.join(project_root, "vendors", "emscripten", "upstream", "emscripten", "emcc")
+            if not os.path.exists(emcc_path):
+                emcc_path = "emcc"
+                
+            cmd = [
+                emcc_path, src_file, "-o", out_html,
+                "-I" + include_dir,
+                lib_path,
+                "-s", "USE_FREETYPE=1",
+                "-s", "USE_WEBGL2=1",
+                "-s", "FULL_ES3=1",
+                "-s", "ALLOW_MEMORY_GROWTH=1",
+                "-s", "ASYNCIFY=1"
+            ]
+            
+            env = os.environ.copy()
+            env["EM_CACHE"] = os.path.join(sandbox_dir, ".emcache")
+            env["EM_CONFIG"] = os.path.join(project_root, "vendors", "emscripten", ".emscripten")
+            
+            try:
+                subprocess.run(cmd, env=env, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to compile sandbox {code_hash}: {e.stderr.decode('utf-8')}")
+                # Create a fallback HTML
+                with open(out_html, "w") as f:
+                    f.write(f"<html><body><h3>Compilation Failed</h3><pre>{e.stderr.decode('utf-8')}</pre></body></html>")
+
+
 class MermaidExtension(Extension):
     def extendMarkdown(self, md):
         md.preprocessors.register(MermaidPreprocessor(md), "mermaid", 175)
 
+class SandboxExtension(Extension):
+    def extendMarkdown(self, md):
+        md.preprocessors.register(SandboxPreprocessor(md), "sandbox", 176)
 
 def _title_to_slug(title: str) -> str:
     slug = title.lower().strip()
@@ -547,12 +665,13 @@ class DocGenerator:
             f"<span>{p['name']}</span></span>"
         )
 
-    def _quick_links_html(self, config: Dict) -> str:
+    def _quick_links_html(self, config: Dict, slug_to_id: Optional[Dict[str, str]] = None) -> str:
         cards = config.get("quick_links", [])
         if not cards:
             return ""
+        slug_to_id = slug_to_id or {}
         items = "".join(
-            f'<div class="quick-link" onclick="showPage(\'{c.get("page_id", "")}\')">'
+            f'<div class="quick-link" onclick="showPage(\'{slug_to_id.get(c.get("page_id", ""), c.get("page_id", ""))}\')">'
             f'<div class="ql-icon"><i data-lucide="{c.get("icon", "link")}"></i></div>'
             f'<div class="ql-body">'
             f'<div class="ql-title">{c.get("title", "")}</div>'
@@ -568,6 +687,64 @@ class DocGenerator:
             f'<div class="quick-links">{items}</div>'
             "</div>"
         )
+
+    def _welcome_page_html(
+        self,
+        project_name: str,
+        description: str,
+        quick_links_html: str,
+        categories: List[Dict],
+        sidebar_sections: Dict[str, Dict[str, List]],
+    ) -> str:
+        cat_cards = []
+        for cat in categories:
+            cname = cat.get("name", "General")
+            subcats = sidebar_sections.get(cname)
+            if not subcats:
+                continue
+            page_count = sum(len(pages) for pages in subcats.values())
+            cicon = cat.get("icon", "folder")
+            cdesc = cat.get("description", f"Documentation for {cname}")
+            cat_cards.append(
+                f'<div class="home-cat-card" onclick="showCategory(\'{cname}\')">'
+                f'<div class="home-cat-icon"><i data-lucide="{cicon}"></i></div>'
+                f'<h3 class="home-cat-title">{cname}</h3>'
+                f'<p class="home-cat-desc">{cdesc}</p>'
+                f'<span class="home-cat-count">{page_count} document{"s" if page_count != 1 else ""}</span>'
+                f'</div>'
+            )
+
+        browse_section = (
+            (
+                '<div class="home-section">'
+                '<h2 class="section-heading">Browse the Docs</h2>'
+                f'<div class="home-cat-grid">{"".join(cat_cards)}</div>'
+                '</div>'
+            )
+            if cat_cards
+            else ""
+        )
+
+        return f'''
+        <div class="welcome-page">
+            <div class="home-hero">
+                <h1 class="home-title">{project_name}</h1>
+                <p class="home-tagline">{description}</p>
+                <div class="home-hero-actions">
+                    <button class="m3-btn-filled" onclick="showFirstDoc()">
+                        <i data-lucide="book-open"></i>
+                        <span>Start reading</span>
+                    </button>
+                    <button class="m3-btn-outlined" onclick="openSearch()">
+                        <i data-lucide="search"></i>
+                        <span>Search docs</span>
+                    </button>
+                </div>
+            </div>
+            {quick_links_html}
+            {browse_section}
+        </div>
+        '''
 
     def _category_page_html(
         self,
@@ -689,7 +866,7 @@ class DocGenerator:
             "md_in_html",
         ]
         md = markdown.Markdown(extensions=exts)
-        md.registerExtensions([MermaidExtension()], {})
+        md.registerExtensions([MermaidExtension(), SandboxExtension()], {})
         return md.convert(content)
 
     def load_markdown(self, path: str) -> str:
@@ -860,83 +1037,66 @@ hr { border: none; border-top: 1pt solid #DADCE0; margin: 28pt 0; }
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Google+Sans+Display:wght@400&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{{
-  --md-primary: #0468D7;
+  --md-primary: #02569B;
   --md-on-primary: #FFFFFF;
-  --md-primary-container: #E6F4FF;
-  --md-on-primary-cont: #003B95;
-  --md-secondary: #5C5C5C;
+  --md-primary-container: #E1F5FE;
+  --md-on-primary-cont: #01579B;
+  --md-secondary: #0175C2;
   --md-on-secondary: #FFFFFF;
-  --md-secondary-cont: #F2F2F2;
-  --md-on-secondary-cont: #1C1B1F;
-  --md-tertiary: #6750A4;
-  --md-tertiary-cont: #EADDFF;
-  --md-on-tertiary-cont: #21005D;
+  --md-secondary-cont: #E1F5FE;
+  --md-on-secondary-cont: #01579B;
   --md-background: #FFFFFF;
   --md-surface: #FFFFFF;
-  --md-surface-variant: #F8F9FA;
-  --md-on-surface: #1C1B1F;
-  --md-on-surface-var: #5C5C5C;
-  --md-on-surface-3: #787579;
-  --md-outline: #747775;
-  --md-outline-variant: #C4C7C5;
+  --md-surface-variant: #F5F7F9;
+  --md-on-surface: #202124;
+  --md-on-surface-var: #5F6368;
+  --md-on-surface-3: #80868B;
+  --md-outline: #DADCE0;
+  --md-outline-variant: #E8EAED;
   --md-surf-1: #F8F9FA;
-  --md-surf-2: #F2F2F2;
-  --md-surf-3: #E9E9E9;
-  --md-surf-4: #E0E0E0;
-  --md-surf-5: #D6D6D6;
-  --md-state-hover: rgba(4, 104, 215, 0.04);
-  --md-state-focus: rgba(4, 104, 215, 0.08);
-  --md-state-pressed: rgba(4, 104, 215, 0.12);
-  --md-state-drag: rgba(4, 104, 215, 0.16);
-  --md-elev-1: 0px 1px 3px rgba(0,0,0,0.08), 0px 1px 2px rgba(0,0,0,0.12);
-  --md-elev-2: 0px 2px 6px rgba(0,0,0,0.08), 0px 1px 2px rgba(0,0,0,0.12);
-  --md-elev-3: 0px 4px 12px rgba(0,0,0,0.12), 0px 2px 4px rgba(0,0,0,0.08);
-  --nav-drawer-w: 280px;
+  --md-surf-2: #F1F3F4;
+  --md-surf-3: #EAEDEE;
+  --md-surf-4: #E3E7E8;
+  --md-state-hover: rgba(1, 117, 194, 0.08);
+  --md-state-focus: rgba(1, 117, 194, 0.12);
+  --md-state-pressed: rgba(1, 117, 194, 0.16);
+  --md-elev-1: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+  --md-elev-2: 0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15);
+  --md-elev-3: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+  --nav-drawer-w: 300px;
   --top-bar-h: 64px;
-  --toc-w: 240px;
-  --content-max: 800px;
-  --bg: var(--md-background);
-  --acc: var(--md-primary);
-  --acc-l: var(--md-primary-container);
-  --t1: var(--md-on-surface);
-  --t2: var(--md-on-surface-var);
-  --t3: var(--md-on-surface-3);
-  --bdr: var(--md-outline-variant);
-  --fb: 'Google Sans', system-ui, sans-serif;
+  --toc-w: 260px;
+  --content-max: 840px;
+  --fb: 'Google Sans', 'Roboto', system-ui, sans-serif;
   --fd: 'Google Sans Display', 'Google Sans', sans-serif;
-  --fm: 'Roboto Mono', 'Menlo', monospace;
+  --fm: 'Roboto Mono', monospace;
 }}
 
 [data-theme="dark"]{{
-  --md-primary: #A6C8FF;
-  --md-on-primary: #003B95;
-  --md-primary-container: #003B95;
-  --md-on-primary-cont: #E6F4FF;
-  --md-secondary: #9AA0A6;
-  --md-on-secondary: #1C1B1F;
-  --md-secondary-cont: #3C3C3C;
-  --md-on-secondary-cont: #E8EAED;
-  --md-tertiary: #D0BCFF;
-  --md-tertiary-cont: #4F378B;
-  --md-on-tertiary-cont: #EADDFF;
-  --md-background: #1C1B1F;
-  --md-surface: #1C1B1F;
-  --md-surface-variant: #2D2D2D;
+  --md-primary: #40CAFF;
+  --md-on-primary: #003355;
+  --md-primary-container: #004C80;
+  --md-on-primary-cont: #B3E5FC;
+  --md-secondary: #40CAFF;
+  --md-on-secondary: #003355;
+  --md-secondary-cont: #004C80;
+  --md-on-secondary-cont: #B3E5FC;
+  --md-background: #202124;
+  --md-surface: #202124;
+  --md-surface-variant: #303134;
   --md-on-surface: #E8EAED;
   --md-on-surface-var: #9AA0A6;
-  --md-on-surface-3: #787579;
-  --md-outline: #8E918F;
-  --md-outline-variant: #444746;
-  --md-surf-1: #252528;
-  --md-surf-2: #2D2D30;
-  --md-surf-3: #353538;
-  --md-surf-4: #3D3D40;
-  --md-surf-5: #454548;
-  --md-state-hover: rgba(166, 200, 255, 0.04);
-  --md-state-focus: rgba(166, 200, 255, 0.08);
-  --md-state-pressed: rgba(166, 200, 255, 0.12);
+  --md-on-surface-3: #80868B;
+  --md-outline: #5F6368;
+  --md-outline-variant: #3C4043;
+  --md-surf-1: #292A2D;
+  --md-surf-2: #303134;
+  --md-surf-3: #37383B;
+  --md-surf-4: #3E3F42;
+  --md-state-hover: rgba(64, 202, 255, 0.08);
+  --md-state-focus: rgba(64, 202, 255, 0.12);
+  --md-state-pressed: rgba(64, 202, 255, 0.16);
 }}
-
 *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
 html{{font-size:16px;-webkit-text-size-adjust:100%;scroll-behavior:smooth}}
 body{{
@@ -993,33 +1153,39 @@ body{{
   border:none;
   display:flex;
   align-items:center;
-  gap:12px;
-  padding:0 16px;
-  cursor:text;
-  transition:background 150ms,box-shadow 150ms;
+  gap:10px;
+  padding:0 8px 0 16px;
+  transition:background 150ms,box-shadow 150ms,border-radius 150ms;
   position:relative;
+  z-index:210;
 }}
 .search-bar:hover{{
   background:var(--md-surf-2);
-  box-shadow:var(--md-elev-1);
+}}
+.search-bar.open{{
+  background:var(--md-surf-3);
+  box-shadow:var(--md-elev-2);
+  border-radius:20px 20px 0 0;
 }}
 .search-bar svg{{
   width:18px;height:18px;
   color:var(--md-on-surface-var);
   flex-shrink:0;
 }}
-.search-bar-placeholder{{
-  flex:1;
-  font-size:14px;
-  color:var(--md-on-surface-var);
-  font-family:var(--fb);
-  user-select:none;
-  font-weight:400;
+.search-bar-input{{
+  flex:1;min-width:0;
+  height:100%;
+  background:none;border:none;outline:none;
+  font-family:var(--fb);font-size:14px;font-weight:400;
+  color:var(--md-on-surface);
 }}
+.search-bar-input::placeholder{{color:var(--md-on-surface-var)}}
 .search-bar-kbd{{
   display:flex;gap:4px;align-items:center;
   font-size:11px;color:var(--md-on-surface-3);
+  flex-shrink:0;
 }}
+.search-bar.open .search-bar-kbd{{display:none}}
 .search-bar-kbd kbd{{
   padding:2px 6px;
   border-radius:4px;
@@ -1027,6 +1193,60 @@ body{{
   background:var(--md-surf-2);
   font-size:10px;
   font-family:var(--fm);
+}}
+.search-bar-clear{{
+  display:none;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:14px;flex-shrink:0;
+  border:none;background:transparent;color:var(--md-on-surface-var);
+  cursor:pointer;position:relative;overflow:hidden;
+}}
+.search-bar-clear::before{{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:var(--md-on-surface);opacity:0;transition:opacity 150ms;
+}}
+.search-bar-clear:hover::before{{opacity:.08}}
+.search-bar-clear i{{width:16px;height:16px;position:relative;z-index:1}}
+.search-bar.open .search-bar-clear{{display:flex}}
+
+.search-dropdown{{
+  display:none;position:absolute;top:100%;left:0;right:0;
+  background:var(--md-surf-3);
+  border-radius:0 0 16px 16px;
+  overflow:hidden;
+  box-shadow:var(--md-elev-2);
+  font-family:var(--fb);
+}}
+.search-bar.open .search-dropdown{{display:block}}
+.search-results{{max-height:420px;overflow-y:auto}}
+.search-result-item{{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 20px;cursor:pointer;
+  border-top:1px solid var(--md-outline-variant);
+  transition:background 150ms;position:relative;overflow:hidden;
+}}
+.search-result-item::before{{
+  content:'';position:absolute;inset:0;
+  background:var(--md-on-surface);opacity:0;transition:opacity 150ms;
+}}
+.search-result-item:hover::before,.search-result-item.selected::before{{opacity:.04}}
+.search-result-icon{{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--md-primary-container);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--md-on-primary-cont);flex-shrink:0;position:relative;z-index:1;
+}}
+.search-result-icon i{{width:18px;height:18px}}
+.search-result-title{{font-size:15px;font-weight:500;color:var(--md-on-surface);position:relative;z-index:1}}
+.search-result-path{{font-size:12px;color:var(--md-on-surface-var);margin-top:2px;position:relative;z-index:1}}
+.search-dropdown-footer{{
+  display:flex;gap:20px;padding:10px 20px;
+  border-top:1px solid var(--md-outline-variant);
+  background:var(--md-surf-4);
+  font-size:11px;color:var(--md-on-surface-3);
+}}
+.search-dropdown-footer kbd{{
+  padding:2px 6px;border-radius:4px;
+  border:1px solid var(--md-outline-variant);font-size:10px;
 }}
 
 .top-bar-trailing{{
@@ -1328,6 +1548,81 @@ body{{
 }}
 .quick-link:hover .ql-arrow{{transform:translateX(4px);color:var(--md-primary)}}
 
+.welcome-page{{padding:8px 0 16px;animation:fl-fade-up 200ms cubic-bezier(0,0,0,1)}}
+.home-hero{{
+  padding:24px 0 48px;
+  border-bottom:1px solid var(--md-outline-variant);
+  margin-bottom:48px;
+}}
+.home-title{{
+  font-family:var(--fd);
+  font-size:clamp(40px,6vw,56px);
+  font-weight:400;color:var(--md-on-surface);
+  letter-spacing:-.02em;line-height:1.1;margin-bottom:16px;
+}}
+.home-tagline{{
+  font-size:18px;line-height:1.6;color:var(--md-on-surface-var);
+  max-width:640px;margin-bottom:32px;
+}}
+.home-hero-actions{{display:flex;gap:12px;flex-wrap:wrap}}
+.m3-btn-filled,.m3-btn-outlined{{
+  display:inline-flex;align-items:center;gap:10px;
+  height:44px;padding:0 24px;
+  border-radius:22px;
+  font-family:var(--fb);font-size:14px;font-weight:500;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:box-shadow 150ms,border-color 150ms;
+}}
+.m3-btn-filled{{
+  background:var(--md-primary);color:var(--md-on-primary);border:none;
+}}
+.m3-btn-filled::before{{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:var(--md-on-primary);opacity:0;transition:opacity 150ms;
+}}
+.m3-btn-filled:hover{{box-shadow:var(--md-elev-1)}}
+.m3-btn-filled:hover::before{{opacity:.08}}
+.m3-btn-outlined{{
+  background:transparent;color:var(--md-primary);
+  border:1px solid var(--md-outline);
+}}
+.m3-btn-outlined::before{{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:var(--md-primary);opacity:0;transition:opacity 150ms;
+}}
+.m3-btn-outlined:hover{{border-color:var(--md-primary)}}
+.m3-btn-outlined:hover::before{{opacity:.08}}
+.m3-btn-filled i,.m3-btn-outlined i{{width:18px;height:18px;position:relative;z-index:1}}
+.m3-btn-filled span,.m3-btn-outlined span{{position:relative;z-index:1}}
+
+.home-section{{margin-bottom:56px}}
+.home-cat-grid{{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;
+}}
+.home-cat-card{{
+  background:var(--md-surface);
+  border:1px solid var(--md-outline-variant);
+  border-radius:12px;
+  padding:24px;cursor:pointer;
+  transition:box-shadow 150ms,border-color 150ms;
+}}
+.home-cat-card:hover{{
+  box-shadow:var(--md-elev-1);
+  border-color:var(--md-primary);
+}}
+.home-cat-icon{{
+  width:48px;height:48px;border-radius:10px;
+  background:var(--md-primary-container);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--md-on-primary-cont);margin-bottom:16px;
+}}
+.home-cat-icon i{{width:24px;height:24px}}
+.home-cat-title{{font-size:17px;font-weight:500;color:var(--md-on-surface);margin-bottom:6px}}
+.home-cat-desc{{font-size:13px;color:var(--md-on-surface-var);line-height:1.5;margin-bottom:16px}}
+.home-cat-count{{font-size:12px;font-weight:500;color:var(--md-on-surface-3)}}
+
 .category-page{{padding:8px 0;animation:fl-fade-up 200ms cubic-bezier(0,0,0,1)}}
 .category-header{{margin-bottom:40px}}
 .cat-icon-wrap{{
@@ -1600,6 +1895,36 @@ body{{
 .mermaid{{padding:28px;text-align:center;min-height:120px;display:flex;align-items:center;justify-content:center}}
 .mermaid svg{{max-width:100%;height:auto}}
 
+.doc-pn-nav{{
+  margin-top:56px;
+  padding-top:28px;
+  border-top:1px solid var(--md-outline-variant);
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+}}
+.doc-pn-nav:empty{{display:none;border-top:none;margin-top:0;padding-top:0}}
+.doc-pn-link{{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 20px;
+  border:1px solid var(--md-outline-variant);
+  border-radius:16px;
+  cursor:pointer;text-decoration:none;
+  transition:border-color 150ms,box-shadow 150ms;
+  min-width:0;
+}}
+.doc-pn-link:hover{{border-color:var(--md-primary);box-shadow:var(--md-elev-1)}}
+.doc-pn-link.next{{grid-column:2;flex-direction:row-reverse;text-align:right}}
+.doc-pn-link i{{width:20px;height:20px;color:var(--md-on-surface-var);flex-shrink:0}}
+.doc-pn-text{{min-width:0;display:flex;flex-direction:column;gap:4px}}
+.doc-pn-label{{font-size:12px;font-weight:500;color:var(--md-on-surface-3);text-transform:uppercase;letter-spacing:.04em}}
+.doc-pn-title{{
+  font-size:15px;font-weight:500;color:var(--md-on-surface);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}}
+@media(max-width:600px){{
+  .doc-pn-nav{{grid-template-columns:1fr}}
+  .doc-pn-link.next{{grid-column:1}}
+}}
+
 .pg-footer{{
   margin-top:64px;padding-top:24px;
   border-top:1px solid var(--md-outline-variant);
@@ -1691,66 +2016,6 @@ body{{
   .top-bar-center{{justify-content:flex-start}}
 }}
 
-#searchOverlay{{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.42);
-  backdrop-filter:blur(4px);
-  z-index:400;align-items:flex-start;justify-content:center;
-  padding-top:64px;
-}}
-#searchOverlay.open{{display:flex}}
-.search-modal{{
-  width:560px;max-width:92vw;
-  background:var(--md-surf-3);
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:var(--md-elev-3);
-  font-family:var(--fb);
-}}
-.search-modal-header{{
-  display:flex;align-items:center;gap:12px;
-  padding:16px 20px;
-  border-bottom:1px solid var(--md-outline-variant);
-}}
-.search-modal-input{{
-  flex:1;background:none;border:none;outline:none;
-  font-family:var(--fb);font-size:16px;
-  color:var(--md-on-surface);font-weight:400;
-}}
-.search-modal-input::placeholder{{color:var(--md-on-surface-var)}}
-.search-results{{max-height:440px;overflow-y:auto}}
-.search-result-item{{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 20px;cursor:pointer;
-  border-bottom:1px solid var(--md-outline-variant);
-  transition:background 150ms;position:relative;overflow:hidden;
-}}
-.search-result-item::before{{
-  content:'';position:absolute;inset:0;
-  background:var(--md-on-surface);opacity:0;transition:opacity 150ms;
-}}
-.search-result-item:hover::before,.search-result-item.selected::before{{opacity:.04}}
-.search-result-item:last-child{{border-bottom:none}}
-.search-result-icon{{
-  width:36px;height:36px;border-radius:8px;
-  background:var(--md-primary-container);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--md-on-primary-cont);flex-shrink:0;position:relative;z-index:1;
-}}
-.search-result-icon i{{width:18px;height:18px}}
-.search-result-title{{font-size:15px;font-weight:500;color:var(--md-on-surface);position:relative;z-index:1}}
-.search-result-path{{font-size:12px;color:var(--md-on-surface-var);margin-top:2px;position:relative;z-index:1}}
-.search-modal-footer{{
-  display:flex;gap:20px;padding:10px 20px;
-  border-top:1px solid var(--md-outline-variant);
-  background:var(--md-surf-4);
-  font-size:11px;color:var(--md-on-surface-3);
-}}
-.search-modal-footer kbd{{
-  padding:2px 6px;border-radius:4px;
-  border:1px solid var(--md-outline-variant);font-size:10px;
-}}
-
 {pygments_styles}
 </style>
 </head>
@@ -1763,14 +2028,30 @@ body{{
     <button class="mob-btn" onclick="openDrawer()" style="margin-right:8px;flex-shrink:0">
       <i data-lucide="menu"></i>
     </button>
-    <div class="search-bar" onclick="openSearch()" role="button" aria-label="Search documentation">
+    <div class="search-bar" id="searchBar">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
       </svg>
-      <span class="search-bar-placeholder">Search documentation…</span>
-      <span class="search-bar-kbd">
+      <input class="search-bar-input" id="searchInput" type="text"
+             placeholder="Search documentation…"
+             autocomplete="off"
+             oninput="renderSearchResults(this.value)"
+             onfocus="openSearch()"
+             onkeydown="handleSearchKey(event)">
+      <span class="search-bar-kbd" id="searchKbd">
         <kbd>⌘</kbd><kbd>K</kbd>
       </span>
+      <button class="search-bar-clear" id="searchClear" onclick="closeSearch()" title="Close" aria-label="Close search">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="search-dropdown" id="searchDropdown">
+        <div class="search-results" id="searchResults"></div>
+        <div class="search-dropdown-footer">
+          <span><kbd>↑↓</kbd> to navigate</span>
+          <span><kbd>↵</kbd> to open</span>
+          <span><kbd>Esc</kbd> to close</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1803,28 +2084,6 @@ body{{
 
 <div class="sb-scrim" id="sbScrim" onclick="closeDrawer()"></div>
 
-<div id="searchOverlay" onclick="closeSearchOnBg(event)">
-  <div class="search-modal">
-    <div class="search-modal-header">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-           stroke="var(--md-on-surface-var)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <input class="search-modal-input" id="searchInput" type="text"
-             placeholder="Search documentation…"
-             oninput="renderSearchResults(this.value)"
-             onkeydown="handleSearchKey(event)"
-             autocomplete="off">
-    </div>
-    <div class="search-results" id="searchResults"></div>
-    <div class="search-modal-footer">
-      <span><kbd>↑↓</kbd> to navigate</span>
-      <span><kbd>↵</kbd> to open</span>
-      <span><kbd>Esc</kbd> to close</span>
-    </div>
-  </div>
-</div>
-
 <div class="layout">
   <nav class="nav-drawer" id="navDrawer">
     <div class="nav-drawer-content" id="navDrawerContent">
@@ -1846,6 +2105,7 @@ body{{
     <div class="c-layout">
       <div class="c-scroll" id="cScroll">
         <div class="c-inner">
+          <div id="welcomeView">{welcome_html}</div>
           <div id="categoryView" style="display:none"></div>
           <div id="subcategoryView" style="display:none"></div>
           <div id="docView" style="display:none">
@@ -1871,6 +2131,7 @@ body{{
               </div>
             </div>
             <div class="md" id="docContent"></div>
+            <div class="doc-pn-nav" id="docPnNav"></div>
             <div class="pg-footer">
               <span>© {year} {project_name}</span>
               <span>v{version} · {last_updated}</span>
@@ -1903,6 +2164,7 @@ const SEARCH_INDEX = {search_index_json};
 const PAGE_ICONS = {page_icons_js};
 const SLUG_TO_ID = {slug_to_id_json};
 const ID_TO_SLUG = {id_to_slug_json};
+const PAGE_ORDER = {page_order_json};
 const FIRST_PAGE_ID = '{first_page_id}';
 
 let currentId=null, currentCategory=null, currentSubcategory=null;
@@ -1955,12 +2217,29 @@ function showCategoryFromBc(){{if(currentCategory) showCategory(currentCategory)
 function showSubcategoryFromBc(){{if(currentCategory&&currentSubcategory) showSubcategory(currentCategory,currentSubcategory);}}
 
 function _hideAll(){{
-  ['categoryView','subcategoryView','docView'].forEach(id=>
+  ['welcomeView','categoryView','subcategoryView','docView'].forEach(id=>
     document.getElementById(id).style.display='none');
 }}
 
+function showWelcome(){{
+  _hideAll();
+  document.getElementById('welcomeView').style.display='';
+  document.getElementById('tocPanel').classList.remove('vis');
+  currentCategory=null; currentSubcategory=null; currentId=null;
+  previousView={{type:'first',category:null,subcategory:null,id:null}};
+  updateBreadcrumbs(); setActiveNav(null);
+  updateURL();
+  document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
+}}
+
 function showFirstPage() {{
-  showCategory(CATS[FIRST_PAGE_ID]||'');
+  showWelcome();
+}}
+
+function showFirstDoc() {{
+  if (FIRST_PAGE_ID && PAGES[FIRST_PAGE_ID]) {{
+    showPage(FIRST_PAGE_ID, CATS[FIRST_PAGE_ID]||null, SUBCATS[FIRST_PAGE_ID]||null);
+  }}
 }}
 
 function getBasePath() {{
@@ -2173,9 +2452,37 @@ function showPage(id, category=null, subcategory=null){{
   updateURL();
   
   updateBreadcrumbs();
+  renderPnNav(id);
   document.getElementById('cScroll').scrollTop=0;
   closeDrawer();
   setTimeout(()=>{{addCopyBtns();initMermaid(localStorage.getItem('docs-theme')||'light');ic();buildToc();}},60);
+}}
+
+function renderPnNav(id){{
+  const nav = document.getElementById('docPnNav');
+  if (!nav) return;
+  const idx = PAGE_ORDER.indexOf(id);
+  if (idx === -1) {{ nav.innerHTML = ''; return; }}
+
+  const prevId = idx > 0 ? PAGE_ORDER[idx - 1] : null;
+  const nextId = idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : null;
+
+  const link = (pid, dir) => {{
+    if (!pid || !PAGES[pid]) return '';
+    const label = dir === 'prev' ? 'Previous' : 'Next';
+    const icon = dir === 'prev' ? 'arrow-left' : 'arrow-right';
+    const title = (TITLES[pid] || pid).replace(/"/g, '&quot;');
+    return `<div class="doc-pn-link ${{dir}}" onclick="showPage('${{pid}}', '${{CATS[pid]||''}}', ${{SUBCATS[pid] ? `'${{SUBCATS[pid]}}'` : 'null'}})" title="${{title}}">
+      <i data-lucide="${{icon}}"></i>
+      <div class="doc-pn-text">
+        <span class="doc-pn-label">${{label}}</span>
+        <span class="doc-pn-title">${{TITLES[pid] || pid}}</span>
+      </div>
+    </div>`;
+  }};
+
+  nav.innerHTML = link(prevId, 'prev') + link(nextId, 'next');
+  ic();
 }}
 
 function goBackFromDoc(){{
@@ -2305,19 +2612,16 @@ function filterPlatform(p){{
 }}
 
 function openSearch(){{
-  document.getElementById('searchOverlay').classList.add('open');
+  document.getElementById('searchBar').classList.add('open');
   setTimeout(()=>document.getElementById('searchInput').focus(), 40);
-  renderSearchResults('');
+  renderSearchResults(document.getElementById('searchInput').value||'');
 }}
 
 function closeSearch(){{
-  document.getElementById('searchOverlay').classList.remove('open');
+  document.getElementById('searchBar').classList.remove('open');
   document.getElementById('searchInput').value='';
+  document.getElementById('searchInput').blur();
   searchIdx=-1;
-}}
-
-function closeSearchOnBg(e){{
-  if(e.target===document.getElementById('searchOverlay')) closeSearch();
 }}
 
 function renderSearchResults(q){{
@@ -2451,8 +2755,12 @@ function closeDrawer(){{
 document.addEventListener('keydown',e=>{{
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){{e.preventDefault();openSearch();}}
   if(e.key==='Escape'){{
-    if(document.getElementById('searchOverlay').classList.contains('open')) closeSearch();
+    if(document.getElementById('searchBar').classList.contains('open')) closeSearch();
   }}
+}});
+
+document.addEventListener('click',e=>{{
+  if(!document.getElementById('searchBar')?.contains(e.target)) closeSearch();
 }});
 
 document.addEventListener('DOMContentLoaded',()=>{{
@@ -2610,9 +2918,13 @@ window.addEventListener('hashchange', () => {{
                 "content": content_text[:1000],
             })
 
-        quick_links_html = self._quick_links_html(config)
+        quick_links_html = self._quick_links_html(config, slug_to_id)
+        welcome_html = self._welcome_page_html(
+            project_name, description, quick_links_html, categories, sidebar_sections
+        )
 
         sb = []
+        page_order: List[str] = []
         for cat in categories:
             cname = cat.get("name", "General")
             cid = re.sub(r"[^a-z0-9]+", "-", cname.lower())
@@ -2637,6 +2949,7 @@ window.addEventListener('hashchange', () => {{
                     f"<div class='nav-dest' data-page='{page['id']}' onclick=\"showPage('{page['id']}', '{cname}', null)\">"
                     f"<span class='nav-dest-text'>{page['title']}</span></div>"
                 )
+                page_order.append(page["id"])
 
             for sub_name, sub_items in csects.items():
                 if not sub_name:
@@ -2657,9 +2970,17 @@ window.addEventListener('hashchange', () => {{
                         f"<div class='nav-dest sub' data-page='{page['id']}' onclick=\"showPage('{page['id']}', '{cname}', '{sub_name}')\">"
                         f"<span class='nav-dest-text'>{page['title']}</span></div>"
                     )
+                    page_order.append(page["id"])
                 sb.append("</div>")
 
             sb.append("</div>")
+
+        # Categories with no subcategory structure at all never entered the
+        # loop above (sidebar_sections only holds categories with pages), but
+        # guard anyway so no page silently falls out of prev/next ordering.
+        for sid in page_objects:
+            if sid not in page_order:
+                page_order.append(sid)
 
         category_pages: Dict[str, str] = {}
         for cat in categories:
@@ -2685,7 +3006,7 @@ window.addEventListener('hashchange', () => {{
             project_name=project_name,
             version=project_version,
             description=description,
-            action_cards=quick_links_html,
+            welcome_html=welcome_html,
             pygments_styles=self._pygments_css(),
             sidebar_content="\n".join(sb),
             pages_json=json.dumps(pages_dict),
@@ -2698,6 +3019,7 @@ window.addEventListener('hashchange', () => {{
             search_index_json=json.dumps(search_index),
             slug_to_id_json=json.dumps(slug_to_id),
             id_to_slug_json=json.dumps(id_to_slug),
+            page_order_json=json.dumps(page_order),
             first_page_id=first_page_id,
             year=datetime.now().year,
             last_updated=datetime.now().strftime("%B %d, %Y"),

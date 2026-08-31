@@ -1,0 +1,12 @@
+Window {
+    width: 400
+    height: 600
+    title: "Buttons"
+
+    Label { text: "Buttons" x: 20 y: 20 style: "large" }
+    Label { text: "Click the buttons to see them respond" x: 20 y: 60 style: "medium" color: "#888888" }
+
+    Button { text: "Primary" x: 20 y: 120 width: 120 height: 40 }
+    Button { text: "Secondary" x: 160 y: 120 width: 120 height: 40 }
+    Button { text: "Disabled" x: 20 y: 180 width: 120 height: 40 }
+}

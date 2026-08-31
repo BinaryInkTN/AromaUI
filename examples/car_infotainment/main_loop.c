@@ -5,6 +5,7 @@
 #include "voice_handler.h"
 #include "aroma.h"
 #include "aroma_animation.h"
+#include "widgets/aroma_gauge.h"
 #include <time.h>
 #include "vehicle_view.h"
 #include <stdio.h>
@@ -56,7 +57,7 @@ void main_loop()
     
     uint64_t last_time_update = aroma_time_now_ms();
 
-    if (state.vehicle_view_large_clock)
+    if (state.vehicle_view_clock_gauge)
     {
         time_t rawtime;
         struct tm *timeinfo;
@@ -64,9 +65,15 @@ void main_loop()
         timeinfo = localtime(&rawtime);
         if (timeinfo)
         {
-            char clock_str[16];
-            strftime(clock_str, sizeof(clock_str), "%H:%M", timeinfo);
-            update_label_safe(state.vehicle_view_large_clock, clock_str);
+            float minute_val = (float)timeinfo->tm_min + (float)timeinfo->tm_sec / 60.0f;
+            aroma_gauge_set_value(state.vehicle_view_clock_gauge, minute_val);
+            aroma_gauge_set_secondary_value(state.vehicle_view_clock_gauge, (float)timeinfo->tm_sec);
+            aroma_gauge_set_extra_value(state.vehicle_view_clock_gauge, (float)(timeinfo->tm_hour % 12) * 5.0f + (float)timeinfo->tm_min / 12.0f);
+            if (state.vehicle_view_ampm_label)
+            {
+                const char *ampm = timeinfo->tm_hour >= 12 ? "PM" : "AM";
+                update_label_safe(state.vehicle_view_ampm_label, ampm);
+            }
         }
     }
 
@@ -75,21 +82,25 @@ void main_loop()
         
         uint64_t now = aroma_time_now_ms();
 
-        if (now - last_time_update > 30000)
+        if (state.vehicle_view_clock_gauge)
         {
             time_t rawtime;
             struct tm *timeinfo;
             time(&rawtime);
             timeinfo = localtime(&rawtime);
-            if (timeinfo && state.vehicle_view_large_clock)
+            if (timeinfo)
             {
-                char clock_str[16];
-                strftime(clock_str, sizeof(clock_str), "%H:%M", timeinfo);
-                update_label_safe(state.vehicle_view_large_clock, clock_str);
+                float minute_val = (float)timeinfo->tm_min + (float)timeinfo->tm_sec / 60.0f;
+                aroma_gauge_set_value(state.vehicle_view_clock_gauge, minute_val);
+                aroma_gauge_set_secondary_value(state.vehicle_view_clock_gauge, (float)timeinfo->tm_sec);
+                aroma_gauge_set_extra_value(state.vehicle_view_clock_gauge, (float)(timeinfo->tm_hour % 12) * 5.0f + (float)timeinfo->tm_min / 12.0f);
+                if (state.vehicle_view_ampm_label)
+                {
+                    const char *ampm = timeinfo->tm_hour >= 12 ? "PM" : "AM";
+                    update_label_safe(state.vehicle_view_ampm_label, ampm);
+                }
             }
-            last_time_update = now;
         }
-
 
         process_voice_commands();
 

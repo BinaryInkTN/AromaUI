@@ -152,25 +152,30 @@ void aroma_ui_android_intent_impl(int action, const char *uri, const char *type,
     LOG_WARNING("Android Intent called on non-Android platform");
 #endif
 }
-bool aroma_ui_init_impl(void)
-{
-    if (g_ui_initialized)
-    {
-        LOG_WARNING("Aroma UI already initialized");
-        return true;
-    }
+ bool aroma_ui_init_impl(void)
+ {
+     if (g_ui_initialized)
+     {
+         LOG_WARNING("Aroma UI already initialized");
+         return true;
+     }
 
-    __node_system_init();
-    aroma_event_system_init();
+     printf("[INIT] Starting Aroma UI init\n");
+     __node_system_init();
+     printf("[INIT] Node system initialized\n");
+     aroma_event_system_init();
+     printf("[INIT] Event system initialized\n");
 
-    srand((unsigned int)time(NULL));
+     srand((unsigned int)time(NULL));
 
-    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
-    if (platform && platform->initialize && !platform->initialize())
-    {
-        LOG_CRITICAL("Failed to initialize platform backend");
-        return false;
-    }
+     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+     printf("[INIT] Platform interface: %p\n", (void*)platform);
+     if (platform && platform->initialize && !platform->initialize())
+     {
+         LOG_CRITICAL("Failed to initialize platform backend");
+         return false;
+     }
+     printf("[INIT] Platform initialized\n");
 
     if (platform)
     {
@@ -591,15 +596,10 @@ static void render_dirty_window_internal(size_t window_id, uint32_t clear_color)
         }
     }
 
-    if (task_count > 1)
+    printf("aroma_ui_end_frame task_count=%d\n", (int)task_count); if (task_count > 1)
     {
         qsort(tasks, task_count, sizeof(AromaDrawTask), draw_task_compare);
     }
-
-#ifdef __EMSCRIPTEN__
-    LOG_INFO("render_dirty: window=%zu dirty_count=%zu task_count=%zu",
-             window_id, dirty_count, task_count);
-#endif
 
     AromaTheme theme = aroma_theme_get_global();
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
@@ -787,7 +787,7 @@ static void window_update_callback(size_t window_id, void *data)
     }
     s_in_update = true;
 
-    aroma_frame_advance();
+    aroma_frame_advance(); puts("window_update_callback running");
 
     size_t actual_window_id = (g_window_count > 0) ? g_windows[0].window_id : 0;
 
@@ -855,6 +855,9 @@ static void window_update_callback(size_t window_id, void *data)
         return;
     }
 
+    LOG_INFO("render: window=%zu clear=0x%08X bg=0x%08X surface=0x%08X text=0x%08X",
+             actual_window_id, theme.colors.background, theme.colors.background,
+             theme.colors.surface, theme.colors.text_primary);
     aroma_graphics_clear(actual_window_id, theme.colors.background);
     g_frame_cleared = true;
 

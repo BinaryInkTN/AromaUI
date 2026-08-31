@@ -28,6 +28,7 @@
 #include "core/aroma_logger.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifdef __ANDROID__
 #include "aroma_android.h"
@@ -45,13 +46,15 @@ static bool window_resize_handler(AromaEvent* event, void* user_data) {
     return false;
 }
 
-AromaNode* aroma_window_create(const char* title, int x, int y, int width, int height)
-{
-    AromaWindow* node = (AromaWindow*)aroma_widget_alloc(sizeof(AromaWindow));
-    if (!node)
-    {
-        return NULL;
-    }
+ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int height)
+ {
+     printf("[WIN] Creating window: title=%s %dx%d\n", title ? title : "(null)", width, height);
+     AromaWindow* node = (AromaWindow*)aroma_widget_alloc(sizeof(AromaWindow));
+     if (!node)
+     {
+         printf("[WIN] widget_alloc failed\n");
+         return NULL;
+     }
 #ifdef __ANDROID__
     x = aroma_android_dp_to_px(x);
     y = aroma_android_dp_to_px(y);
@@ -59,15 +62,21 @@ AromaNode* aroma_window_create(const char* title, int x, int y, int width, int h
     height = aroma_android_dp_to_px(height);
 #endif
     
-    AromaNode* scene_node = (AromaNode*) __create_node(NODE_TYPE_ROOT, NULL, node);
-    if(!scene_node)
-    {
-        __slab_pool_free(&global_memory_system.node_pool, node);
-        return NULL;
-    }
+      AromaNode* scene_node = (AromaNode*) __create_node(NODE_TYPE_ROOT, NULL, node);
+      if(!scene_node)
+      {
+          printf("[WIN] __create_node failed\n");
+#ifdef ESP32
+          __slab_pool_free(&global_memory_system.node_pool, node);
+#else
+          free(node);
+#endif
+          return NULL;
+      }
     
     AromaPlatformInterface* platform_interface = aroma_backend_abi.get_platform_interface();
     node->window_id = platform_interface->create_window(title, x, y, width, height);
+    printf("[WIN] platform->create_window returned id=%hu\n", node->window_id);
     node->rect.x = x;
     node->rect.y = y;
     

@@ -1,5 +1,7 @@
-Button {
+Window {
+    Button {
     x: 20
     y: 100
     text: "Click Me"
+}
 }

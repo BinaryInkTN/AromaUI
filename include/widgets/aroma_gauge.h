@@ -24,6 +24,14 @@ extern "C"
 
     void aroma_gauge_set_needle(AromaNode *node, bool enable, uint32_t color, int thickness);
 
+    void aroma_gauge_set_secondary_hand(AromaNode *node, bool enable, uint32_t color, int thickness, float length_ratio);
+
+    void aroma_gauge_set_secondary_value(AromaNode *node, float value);
+
+    void aroma_gauge_set_extra_hand(AromaNode *node, bool enable, uint32_t color, int thickness, float length_ratio);
+
+    void aroma_gauge_set_extra_value(AromaNode *node, float value);
+
     void aroma_gauge_set_ticks(AromaNode *node, bool enable, int major_count, int minor_count_per_major,
                                int major_length, int minor_length, uint32_t color, int thickness);
 

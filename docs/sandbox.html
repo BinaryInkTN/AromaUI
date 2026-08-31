@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Incense Sandbox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --ide-bg: #1e1e1e;
+      --ide-sidebar: #252526;
+      --ide-border: #3e3e42;
+      --ide-text: #cccccc;
+      --ide-text-muted: #858585;
+      --ide-accent: #007acc;
+      --ide-accent-hover: #0098ff;
+      --ide-input-bg: #3c3c3c;
+      --ide-hover: #2a2d2e;
+      --ide-success: #4ec9b0;
+      --ide-error: #f48771;
+      --ide-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --ide-mono: 'Roboto Mono', 'Consolas', monospace;
+    }
+    [data-theme="light"] {
+      --ide-bg: #ffffff;
+      --ide-sidebar: #f3f3f3;
+      --ide-border: #e4e4e4;
+      --ide-text: #333333;
+      --ide-text-muted: #616161;
+      --ide-accent: #0064b0;
+      --ide-accent-hover: #005a9e;
+      --ide-input-bg: #f3f3f3;
+      --ide-hover: #e8e8e8;
+      --ide-success: #107c41;
+      --ide-error: #a1260d;
+    }
+    .ghost-text { opacity: 0.4; pointer-events: none; }
+    [data-theme="light"] .ghost-text { opacity: 0.35; }
+    html, body { height: 100%; background: var(--ide-bg); color: var(--ide-text); font-family: var(--ide-font); overflow: hidden; margin: 0; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+    #toolbar {
+      height: 36px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; border-bottom: 1px solid var(--ide-border); background: var(--ide-sidebar); gap: 8px;
+    }
+    .toolbar-title { font-size: 12px; font-weight: 600; color: var(--ide-text); }
+    .toolbar-actions { display: flex; gap: 6px; align-items: center; }
+    #runBtn {
+      height: 28px; padding: 0 10px; border-radius: 4px; border: none; font-family: var(--ide-font);
+      font-size: 12px; font-weight: 500; cursor: pointer; background: var(--ide-accent); color: #fff;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    #runBtn:hover { background: var(--ide-accent-hover); }
+    #runBtn.pending { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .icon-btn {
+      width: 28px; height: 28px; border-radius: 4px; border: none; cursor: pointer;
+      background: transparent; color: var(--ide-text-muted); display: flex; align-items: center; justify-content: center;
+    }
+    .icon-btn:hover { background: var(--ide-hover); color: var(--ide-text); }
+    .icon-btn svg { width: 14px; height: 14px; }
+    #workspace { display: flex; flex-direction: row; flex: 1; min-height: 0; }
+    #editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--ide-border); }
+    #editor { flex: 1; }
+    #preview-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+    #preview-header {
+      height: 32px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; border-bottom: 1px solid var(--ide-border); font-size: 11px; color: var(--ide-text-muted);
+    }
+    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #111318; }
+    #canvas-wrap canvas { display: block; max-width: 100%; max-height: 100%; }
+    #status-bar {
+      height: 22px; background: var(--ide-sidebar); border-top: 1px solid var(--ide-border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; gap: 10px;
+    }
+    .status-left, .status-right { display: flex; align-items: center; gap: 8px; }
+    .status-item { display: flex; align-items: center; gap: 6px; color: var(--ide-text-muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.ok { background: var(--ide-success); }
+    .status-dot.error { background: var(--ide-error); }
+    .status-dot.pending { background: currentColor; animation: pulse 1.5s infinite; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <div class="toolbar-title">Incense Sandbox</div>
+      <div class="toolbar-actions">
+        <button class="icon-btn" id="themeBtn" title="Toggle theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <button id="runBtn" title="Run">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Run</span>
+        </button>
+      </div>
+    </div>
+    <div id="workspace">
+      <div id="editor-pane">
+        <div id="editor"></div>
+      </div>
+      <div id="preview-pane">
+        <div id="preview-header">
+          <span>Preview</span>
+        </div>
+        <div id="canvas-wrap">
+          <canvas id="canvas" width="320" height="480"></canvas>
+        </div>
+      </div>
+    </div>
+    <footer id="status-bar">
+      <div class="status-left">
+        <span class="status-item"><span class="status-dot ok" id="statusDot"></span><span id="statusText">Ready</span></span>
+        <span class="status-item" id="errorMsg"></span>
+      </div>
+      <div class="status-right">
+        <span class="status-item">Incense</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    window.Module = window.Module || {};
+    Module.onRuntimeInitialized = function() {
+      var c = Module.canvas;
+      if (c) {
+        c.tabIndex = -1;
+        c.onkeydown = null;
+        c.onkeypress = null;
+        c.onkeyup = null;
+        Module.keyboardInput = null;
+      }
+      try {
+        Module.callMain();
+      } catch (e) {
+        console.error('[sandbox] callMain failed', e);
+      }
+    };
+  </script>
+  <script src="incense_sandbox.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.min.js"></script>
+  <script>
+    window.setStatus = function(type, msg) {
+      var statusDot = document.getElementById('statusDot');
+      var statusText = document.getElementById('statusText');
+      var errorMsg = document.getElementById('errorMsg');
+      if (statusText) statusText.textContent = msg || 'Ready';
+      if (statusDot) statusDot.className = 'status-dot ' + type;
+      if (errorMsg) errorMsg.textContent = type === 'error' ? msg : '';
+    };
+
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+      var savedTheme = localStorage.getItem('sandbox-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      monaco.editor.defineTheme('incense-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+          { token: 'keyword', foreground: '02569B', fontStyle: 'bold' },
+          { token: 'type', foreground: '0175C2' },
+          { token: 'string', foreground: 'C41A16' },
+          { token: 'number', foreground: '1C01CE' },
+          { token: 'comment', foreground: '177500' },
+          { token: 'delimiter', foreground: 'A90D91' }
+        ],
+        colors: { 'editor.background': '#FFFFFF', 'editor.foreground': '#202124' }
+      });
+      monaco.editor.defineTheme('incense-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'keyword', foreground: 'C586C0', fontStyle: 'bold' },
+          { token: 'type', foreground: '4EC9B0' },
+          { token: 'string', foreground: 'CE9178' },
+          { token: 'number', foreground: 'B5CEA8' },
+          { token: 'comment', foreground: '6A9955' },
+          { token: 'delimiter', foreground: 'D4D4D4' }
+        ],
+        colors: { 'editor.background': '#1E1E1E', 'editor.foreground': '#D4D4D4' }
+      });
+
+      monaco.languages.register({ id: 'incense' });
+      monaco.languages.setMonarchTokensProvider('incense', {
+        keywords: [
+          'Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar',
+          'Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar',
+          'Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer',
+          'Snackbar','ListView','Dialog','ScrollView','Table','Column','Row','Tab','Item','MenuItem',
+          'Option','HeaderCell'
+        ],
+        properties: [
+          'x','y','width','height','text','title','message','placeholder','value','min','max',
+          'style','layout','direction','orientation','type','variant','checked','selected',
+          'src','lat','lon','zoom','radius','thickness','color','action','duration','z_index',
+          'autoplay','interactive','auto_rotate'
+        ],
+        enums: [
+          'large','medium','small','flex','row','column','horizontal','vertical','elevated',
+          'filled','outlined','standard','assist','filter','suggestion','top','bottom','left','right',
+          'basic','fullscreen','determinate','indeterminate'
+        ],
+        tokenizer: {
+          root: [
+            [/\{/, 'delimiter.curly'],
+            [/\}/, 'delimiter.curly'],
+            [/:/, 'delimiter.colon'],
+            [/,/, 'delimiter.comma'],
+            [/#[0-9a-fA-F]+/, 'color'],
+            [/\d+\.?\d*/, 'number'],
+            [/"([^"\\]|\\.)*$/, 'string.invalid'],
+            [/"/, 'string', '@string'],
+            [/\b(true|false)\b/, 'boolean'],
+            [/\/\/.*$/, 'comment'],
+            [/[a-zA-Z_]\w*/, {
+              cases: {
+                '@keywords': 'keyword',
+                '@properties': 'property',
+                '@enums': 'enum',
+                '@default': 'identifier'
+              }
+            }]
+          ],
+          string: [
+            [/[^\\"]+/, 'string'],
+            [/"/, 'string', '@pop']
+          ]
+        }
+      });
+
+      var INCENSE_SUGGESTIONS = [
+        ...['Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','ScrollView','Table','Column','Row','Tab','Item','MenuItem','Option','HeaderCell'].map(function(w){ return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: w + ' {\n    $0\n}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
+        ...['x','y','width','height','text','title','message','placeholder','value','min','max','style','layout','direction','orientation','type','variant','checked','selected','src','lat','lon','zoom','radius','thickness','color','action','duration','z_index','autoplay','interactive','auto_rotate'].map(function(p){ return { label: p, kind: monaco.languages.CompletionItemKind.Property, insertText: p + ': $0', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
+        { label: 'true', kind: monaco.languages.CompletionItemKind.Value, insertText: 'true' },
+        { label: 'false', kind: monaco.languages.CompletionItemKind.Value, insertText: 'false' },
+        ...['large','medium','small','flex','row','column','horizontal','vertical','elevated','filled','outlined','standard','assist','filter','suggestion','top','bottom','left','right','basic','fullscreen','determinate','indeterminate'].map(function(e){ return { label: e, kind: monaco.languages.CompletionItemKind.Enum, insertText: e }; })
+      ];
+
+      var WIDGET_PROPS = {
+        'Button': ['x','y','width','height','text','style','color','on_click','z_index'],
+        'Label': ['x','y','text','style','color','z_index'],
+        'Container': ['x','y','width','height','layout','direction','z_index'],
+        'ScrollView': ['x','y','width','height','direction','z_index'],
+        'Checkbox': ['x','y','width','height','label','checked','on_change','z_index'],
+        'Switch': ['x','y','width','height','value','on_change','z_index'],
+        'Slider': ['x','y','width','height','min','max','value','on_change','z_index'],
+        'Textbox': ['x','y','width','height','placeholder','on_change','on_submit','z_index'],
+        'ProgressBar': ['x','y','width','height','value','type','z_index'],
+        'Divider': ['x','y','length','orientation','z_index'],
+        'Card': ['x','y','width','height','type','z_index'],
+        'IconButton': ['x','y','width','height','icon','variant','on_click','z_index'],
+        'Icon': ['x','y','size','text','src','color','z_index'],
+        'Image': ['x','y','width','height','src','z_index'],
+        'Dropdown': ['x','y','width','height','on_change','z_index'],
+        'RadioButton': ['x','y','width','height','label','group','selected','on_click','z_index'],
+        'Tabs': ['x','y','width','height','on_change','z_index'],
+        'Sidebar': ['x','y','width','height','z_index'],
+        'Menu': ['x','y','width','z_index'],
+        'Chip': ['x','y','label','icon','type','selected','z_index'],
+        'Tooltip': ['x','y','text','position','z_index'],
+        'GIF': ['x','y','width','height','src','autoplay','z_index'],
+        'Loading': ['x','y','radius','thickness','color','z_index'],
+        'Gauge': ['x','y','width','height','value','min','max','track_color','fill_color','start_angle','end_angle','track_thickness','fill_thickness','needle','needle_color','needle_thickness','ticks','hub','z_index'],
+        'Canvas': ['x','y','width','height','z_index'],
+        'DebugOverlay': ['x','y','width','height','visible','z_index'],
+        'Map': ['x','y','width','height','lat','lon','zoom','attribution','z_index'],
+        'ThreeDViewer': ['x','y','width','height','auto_rotate','interactive','light_x','light_y','light_z','model','z_index'],
+        'Snackbar': ['message','duration','action','on_click','z_index'],
+        'ListView': ['x','y','width','height','on_select','z_index'],
+        'Dialog': ['title','message','width','height','type','z_index'],
+        'Table': ['x','y','width','height','columns','z_index'],
+        'Column': ['header','width'],
+        'Row': [],
+        'Tab': ['text','icon'],
+        'Item': ['text','icon'],
+        'MenuItem': ['text','icon'],
+        'Option': ['text'],
+        'HeaderCell': ['text']
+      };
+
+      var WIDGET_CHILDREN = {
+        'Window': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','ScrollView','Table'],
+        'Container': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','ScrollView','Table'],
+        'ScrollView': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','ScrollView','Table'],
+        'Tabs': ['Tab'],
+        'Tab': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','ScrollView','Table'],
+        'Sidebar': ['Item'],
+        'Menu': ['MenuItem'],
+        'Dropdown': ['Option'],
+        'Dialog': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','ScrollView','Table'],
+        'Table': ['Column','Row','HeaderCell']
+      };
+
+      function getWidgetContext(model, line) {
+        var text = model.getValue();
+        var lines = text.split('\n');
+        var stack = [];
+        for (var i = 0; i < line && i < lines.length; i++) {
+          var l = lines[i].trim();
+          if (!l || l.startsWith('//')) continue;
+          var open = (l.match(/\{/g) || []).length;
+          var close = (l.match(/\}/g) || []).length;
+          if (open > close) {
+            var match = l.match(/^([A-Za-z_]\w*)\s*\{/);
+            if (match && WIDGET_PROPS[match[1]]) {
+              stack.push(match[1]);
+            }
+          } else if (close > open) {
+            if (stack.length) stack.pop();
+          }
+        }
+        return stack;
+      }
+
+      var WIDGET_SNIPPETS = {
+        'Button': 'Button {\n    text: "$1"\n    x: ${2:0}\n    y: ${3:0}\n    width: ${4:120}\n    height: ${5:40}\n}',
+        'Label': 'Label {\n    text: "$1"\n    x: ${2:0}\n    y: ${3:0}\n    style: ${4:medium}\n}',
+        'Container': 'Container {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    layout: $5\n    direction: $6\n}',
+        'ScrollView': 'ScrollView {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    direction: $5\n}',
+        'Checkbox': 'Checkbox {\n    label: "$1"\n    x: $2\n    y: $3\n    width: $4\n    height: $5\n    checked: $6\n}',
+        'Switch': 'Switch {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    value: $5\n}',
+        'Slider': 'Slider {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    min: $5\n    max: $6\n    value: $7\n}',
+        'Textbox': 'Textbox {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    placeholder: "$5"\n}',
+        'ProgressBar': 'ProgressBar {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    value: $5\n}',
+        'Divider': 'Divider {\n    x: $1\n    y: $2\n    length: $3\n    orientation: $4\n}',
+        'Card': 'Card {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    type: $5\n}',
+        'IconButton': 'IconButton {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    icon: "$5"\n    variant: $6\n}',
+        'Icon': 'Icon {\n    x: $1\n    y: $2\n    size: $3\n    text: "$4"\n}',
+        'Image': 'Image {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    src: "$5"\n}',
+        'Dropdown': 'Dropdown {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Option { text: "$5" }\n    Option { text: "$6" }\n}',
+        'RadioButton': 'RadioButton {\n    label: "$1"\n    x: $2\n    y: $3\n    width: $4\n    height: $5\n    group: $6\n    checked: $7\n}',
+        'Tabs': 'Tabs {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Tab { text: "$5" }\n    Tab { text: "$6" }\n}',
+        'Sidebar': 'Sidebar {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Item { text: "$5" }\n    Item { text: "$6" }\n}',
+        'Menu': 'Menu {\n    x: $1\n    y: $2\n    width: $3\n    MenuItem { text: "$4" }\n    MenuItem { text: "$5" }\n}',
+        'Chip': 'Chip {\n    x: $1\n    y: $2\n    label: "$3"\n    type: $4\n    selected: $5\n}',
+        'Tooltip': 'Tooltip {\n    text: "$1"\n    x: $2\n    y: $3\n    position: $4\n}',
+        'GIF': 'GIF {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    src: "$5"\n    autoplay: $6\n}',
+        'Loading': 'Loading {\n    x: $1\n    y: $2\n    radius: $3\n    thickness: $4\n}',
+        'Gauge': 'Gauge {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    value: $5\n}',
+        'Canvas': 'Canvas {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n}',
+        'DebugOverlay': 'DebugOverlay {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    visible: $5\n}',
+        'Map': 'Map {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    lat: $5\n    lon: $6\n    zoom: $7\n}',
+        'ThreeDViewer': 'ThreeDViewer {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    auto_rotate: $5\n    interactive: $6\n}',
+        'Snackbar': 'Snackbar {\n    message: "$1"\n    duration: $2\n    action: "$3"\n}',
+        'ListView': 'ListView {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n}',
+        'Dialog': 'Dialog {\n    title: "$1"\n    message: "$2"\n    width: $3\n    height: $4\n    type: $5\n}',
+        'Table': 'Table {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Column { header: "$5" }\n    Column { header: "$6" }\n}',
+        'Column': 'Column {\n    header: "$1"\n    width: $2\n}',
+        'Row': 'Row {\n}',
+        'Tab': 'Tab {\n    text: "$1"\n    icon: "$2"\n}',
+        'Item': 'Item {\n    text: "$1"\n    icon: "$2"\n}',
+        'MenuItem': 'MenuItem {\n    text: "$1"\n    icon: "$2"\n}',
+        'Option': 'Option {\n    text: "$1"\n}',
+        'HeaderCell': 'HeaderCell {\n    text: "$1"\n}'
+      };
+
+      monaco.languages.registerCompletionItemProvider('incense', {
+        provideCompletionItems: function(model, position) {
+          var ctx = getWidgetContext(model, position.lineNumber - 1);
+          var suggestions = [];
+          var word = model.getWordUntilPosition(position);
+          var range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
+
+          if (ctx.length === 0) {
+            var widgetNames = Object.keys(WIDGET_SNIPPETS);
+            suggestions = suggestions.concat(
+              widgetNames.map(function(w) {
+                return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: WIDGET_SNIPPETS[w], insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range: range };
+              })
+            );
+          } else {
+            var currentWidget = ctx[ctx.length - 1];
+            var props = WIDGET_PROPS[currentWidget] || [];
+            suggestions = suggestions.concat(
+              props.map(function(p) {
+                return { label: p, kind: monaco.languages.CompletionItemKind.Property, insertText: p + ': $0', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range: range };
+              })
+            );
+            suggestions.push({ label: 'true', kind: monaco.languages.CompletionItemKind.Value, insertText: 'true', range: range });
+            suggestions.push({ label: 'false', kind: monaco.languages.CompletionItemKind.Value, insertText: 'false', range: range });
+            var children = WIDGET_CHILDREN[currentWidget];
+            if (children && children.length) {
+              suggestions = suggestions.concat(
+                children.map(function(w) {
+                  return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: WIDGET_SNIPPETS[w] || (w + ' {\n    $0\n}'), insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range: range };
+                })
+              );
+            }
+          }
+
+          return { suggestions: suggestions };
+        }
+      });
+
+      monaco.languages.registerHoverProvider('incense', {
+        provideHover: function(model, position) {
+          var word = model.getWordAtPosition(position);
+          if (!word) return null;
+          var docs = {
+            'Window': 'Top-level container for an AromaUI application.',
+            'Container': 'A layout container that can arrange children in flex or none mode.',
+            'Button': 'A clickable button widget.',
+            'Label': 'Displays a single line of text.',
+            'Checkbox': 'A toggleable checkbox.',
+            'Switch': 'A toggle switch.',
+            'Slider': 'A value slider with min/max range.',
+            'Textbox': 'A single-line text input.',
+            'ProgressBar': 'Shows progress, determinate or indeterminate.',
+            'Divider': 'A visual divider line.',
+            'Card': 'A material-style card container.',
+            'IconButton': 'A button that shows an icon.',
+            'Icon': 'Renders a single icon glyph.',
+            'Image': 'Displays an image from a source path.',
+            'Dropdown': 'A dropdown selection widget.',
+            'RadioButton': 'A radio button for single-choice groups.',
+            'Tabs': 'A tabbed interface container.',
+            'Sidebar': 'A side navigation panel.',
+            'Menu': 'A popup menu with items.',
+            'Chip': 'A compact chip/tag element.',
+            'Tooltip': 'A floating tooltip.',
+            'GIF': 'An animated GIF image widget.',
+            'Loading': 'A loading spinner indicator.',
+            'Gauge': 'A circular gauge meter.',
+            'Canvas': 'A blank canvas drawing surface.',
+            'DebugOverlay': 'A debug information overlay.',
+            'Map': 'An interactive map widget.',
+            'ThreeDViewer': 'A 3D model viewer.',
+            'Snackbar': 'A transient message bar.',
+            'ListView': 'A scrollable list of items.',
+            'Dialog': 'A modal dialog window.',
+            'ScrollView': 'A scrollable container.',
+            'Table': 'A data table widget.'
+          };
+          var text = docs[word.word];
+          if (!text) return null;
+          return { contents: [{ value: '**' + word.word + '**\n\n' + text }] };
+        }
+      });
+
+      var defaultSource = `Window {\n    width: 320\n    height: 480\n    title: "Hello World"\n\n    Label { text: "Hello, AromaUI!" x: 20 y: 20 style: large }\n    Label { text: "Edit this code and press Run" x: 20 y: 60 style: medium color: #888888 }\n}`;
+      var editor = monaco.editor.create(document.getElementById('editor'), {
+        value: defaultSource,
+        language: 'incense',
+        theme: savedTheme === 'dark' ? 'incense-dark' : 'incense-light',
+        automaticLayout: true,
+        minimap: { enabled: true },
+        fontSize: 14,
+        fontFamily: 'Roboto Mono, Consolas, monospace',
+        lineNumbers: 'on',
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+        suggest: { showMethods: true, showFunctions: true, showClasses: true }
+      });
+      window.incenseEditor = editor;
+
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, function() {
+        editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
+      });
+
+      function runCode() {
+        var source = window.incenseEditor ? window.incenseEditor.getValue() : '';
+        try {
+          Module.cwrap('aroma_sandbox_reload', 'void', ['string'])(source);
+          if (Module.cwrap('aroma_sandbox_has_error', 'number', [])()) {
+            setStatus('error', Module.cwrap('aroma_sandbox_get_last_error', 'string', [])());
+          } else {
+            setStatus('ok', 'Ready');
+            document.getElementById('runBtn').classList.remove('pending');
+          }
+        } catch (e) {
+          console.error('[sandbox] Runtime error:', e);
+          if (typeof e === 'object' && e.stack) console.error('[sandbox] Stack:', e.stack);
+          setStatus('error', 'Runtime error: ' + (e.message || String(e)));
+        }
+      }
+      window.runCode = runCode;
+      document.getElementById('runBtn').onclick = runCode;
+      document.getElementById('themeBtn').onclick = function() {
+        var html = document.documentElement;
+        var current = html.getAttribute('data-theme');
+        var next = current === 'light' ? 'dark' : 'light';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('sandbox-theme', next);
+        var icon = document.querySelector('#themeBtn svg');
+        if (icon) {
+          icon.innerHTML = next === 'dark'
+            ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>'
+            : '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+        }
+        monaco.editor.setTheme(next === 'dark' ? 'incense-dark' : 'incense-light');
+      };
+    });
+  </script>
+</body>
+</html>

@@ -55,7 +55,13 @@ add_library(aroma
     widgets/aroma_gif.c
     widgets/aroma_loading.c
     widgets/aroma_table.c
-    widgets/aroma_map.c
+)
+
+if(NOT EMSCRIPTEN)
+    target_sources(aroma PRIVATE widgets/aroma_map.c)
+endif()
+
+target_sources(aroma PRIVATE
     widgets/aroma_gauge.c
     widgets/aroma_3d_viewer.c
 )
@@ -116,6 +122,7 @@ elseif(EMSCRIPTEN)
         backends/graphics/aroma_graphics_emscripten_stub.c
     )
     target_compile_definitions(aroma PUBLIC AROMA_USE_EMSCRIPTEN)
+    target_link_options(aroma PUBLIC "-sUSE_WEBGL2=1" "-sASYNCIFY=1")
 elseif(ENABLE_GLFW)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_glfw.c)
     target_link_libraries(aroma PRIVATE glfw)

@@ -638,6 +638,7 @@ static mpc_parser_t *p_Boolean = NULL;
 static mpc_parser_t *p_Color = NULL;
 static mpc_parser_t *p_String = NULL;
 static mpc_parser_t *p_Embed = NULL;
+static mpc_parser_t *p_Enum = NULL;
 static mpc_parser_t *p_Value = NULL;
 static mpc_parser_t *p_Property = NULL;
 static mpc_parser_t *p_Object = NULL;
@@ -658,6 +659,7 @@ static int incense_parsers_init(void)
     p_Color = mpc_new("color");
     p_String = mpc_new("string");
     p_Embed = mpc_new("embed");
+    p_Enum = mpc_new("enum_");
     p_Value = mpc_new("value");
     p_Property = mpc_new("property");
     p_Object = mpc_new("object");
@@ -673,14 +675,15 @@ static int incense_parsers_init(void)
                                " color    : /#[0-9A-Fa-f]+/ ;                              "
                                " string   : /\\\"(\\\\\\\\.|[^\\\"])*\\\"/ ;               "
                                " embed    : \"@embed\" <string> ;                          "
+                               " enum_    : /[a-z][A-Za-z0-9_]*/ ;                         "
                                " value    : <float_> | <integer> | <boolean>               "
-                               "           | <color>  | <string> ;                         "
+                               "           | <color>  | <string> | <enum_> ;               "
                                " property : <ident> \":\" <value> ;                        "
                                " object   : <typename> \"{\" <item>* \"}\" ;              "
                                " item     : <object> | <property> | <embed> ;              "
                                " document : /^/ <object> /$/ ;                             ",
                                p_Ident, p_TypeName, p_Integer, p_Float_, p_Boolean, p_Color, p_String,
-                               p_Embed, p_Value, p_Property, p_Object, p_Item, p_Document, NULL);
+                               p_Embed, p_Enum, p_Value, p_Property, p_Object, p_Item, p_Document, NULL);
 
     if (err)
     {
