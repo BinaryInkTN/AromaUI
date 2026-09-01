@@ -1,115 +1,75 @@
 
-AromaUI is built on a strict four-layer architecture designed to provide native performance while maintaining high portability across desktop (Linux), mobile (Android), and resource-constrained embedded systems (ESP32/TFT). The framework enforces a clear separation between application logic, UI state management, platform services, and hardware-accelerated rendering.
+AromaUI is structured in four layers. Understanding these layers helps you write efficient, portable UI code.
 
-### System Hierarchy
-
-The system is organized into the following layers:
-
-1. **Application Layer**: Consumer code using the `aroma_ui_*` factory functions and high-level widget APIs [include/aroma_ui.h135-158](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L135-L158)
-2. **Core Framework**: Manages the `AromaNode` scene graph, the recursive layout engine, the event dispatch system, and the deferred rendering pipeline [src/core/aroma_ui_impl.c165-166](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L165-L166)
-3. **Backend Abstraction Layer (ABI)**: A proxy layer (`AromaBackendABI`) that routes generic draw and platform commands to the appropriate backend [src/backends/aroma_abi.c27-35](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.c#L27-L35)
-4. **Platform & Graphics Backends**: Hardware-specific implementations for input, windowing (GLPS, GLFW, Android), and rendering (GLES3, Vulkan, TFT_eSPI) [src/backends/aroma_abi.h6-20](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.h#L6-L20)
-
-### Architectural Flow
-
-The following diagram illustrates the data flow from a high-level widget creation to low-level hardware execution.
-
-**Diagram: System Layer Interaction**
+## System Layers
 
 ```mermaid
 flowchart TD
-    subgraph subGraph3 ["Hardware Backends"]
-        PLAT["Platform Interface"]
-        GRAPH["Graphics Interface"]
-    end
-    subgraph subGraph2 ["Backend Abstraction Layer (ABI)"]
-        ABI["aroma_backend_abi"]
-        PROXY["DrawList Proxy"]
-    end
-    subgraph subGraph1 ["Core Framework"]
-        NODE["AromaNode Tree"]
-        LAYOUT["Layout Engine"]
-        EVENT["Event System"]
-        DL["DrawList Recording"]
-    end
-    subgraph subGraph0 ["Application Layer"]
-        APP["App Code"]
-        WIDGETS["aroma_ui_button()"]
-    end
-    APP --> WIDGETS
-    WIDGETS --> NODE
-    NODE --> LAYOUT
-    LAYOUT --> DL
-    DL --> PROXY
-    PROXY --> ABI
-    ABI --> PLAT
-    ABI --> GRAPH
+    App["Application Layer<br/>aroma_ui_button(), aroma_ui_label()"]
+    Core["Core Framework<br/>AromaNode, Layout, Events, DrawList"]
+    ABI["Backend Abstraction Layer<br/>AromaBackendABI proxy"]
+    Backends["Platform & Graphics Backends<br/>GLES3, Vulkan, TFT_eSPI, Android"]
+    
+    App --> Core
+    Core --> ABI
+    ABI --> Backends
 ```
 
-**Sources:**[src/core/aroma_ui_impl.c1-15](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L1-L15)[src/backends/aroma_abi.h27-35](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.h#L27-L35)[include/aroma_ui.h1-23](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L1-L23)
+1. **Application Layer** - Your code. Uses factory functions from `include/aroma_ui.h` to build the scene graph.
+2. **Core Framework** - Platform-agnostic logic: `AromaNode` tree, recursive layout, event dispatch, deferred rendering.
+3. **ABI** - A switchboard that routes generic draw calls to the active backend.
+4. **Backends** - Hardware-specific implementations for windowing, input, and GPU rendering.
 
----
+## Key Concepts
 
-### Core Concepts
+### AromaNode
 
-#### AromaNode (The Scene Graph)
+Every visible element is an `AromaNode`. Nodes form a tree with a 64-child limit per parent. Each node stores:
+- Geometry (`AromaRect`)
+- Layout hints (`AromaLayout`)
+- Visibility and Z-index
+- A `draw_cb` function pointer for rendering
 
-Every UI element in AromaUI is an `AromaNode`. It is the base unit of the scene graph, holding geometric data, visibility states, and parent-child relationships [include/aroma_ui.h36-62](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L36-L62) Nodes are allocated via a slab allocator to ensure deterministic performance on embedded targets [src/core/aroma_ui_impl.c7-8](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L7-L8)
+### Dirty-Region Tracking
 
-#### Dirty-Region Tracking
+Only changed nodes are redrawn. When you update a property, call `aroma_node_invalidate()`. The framework tracks dirty nodes in a global array and re-renders only what changed.
 
-AromaUI employs an invalidation-based rendering model. When a node's state changes (e.g., a button is pressed), it is marked as "dirty" [src/core/aroma_ui_impl.c221-222](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L221-L222) The framework tracks these regions and only re-renders windows that have entries in the global dirty list [src/core/aroma_ui_impl.c225-229](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L225-L229)
+### DrawList (Deferred Rendering)
 
-#### DrawList and Deferred Rendering
+Instead of drawing immediately, widgets record commands into an `AromaDrawList`. On flush, commands are sorted by Z-index and batched for the GPU. This enables:
+- Correct Z-ordering regardless of tree position
+- Frustum culling (skip offscreen nodes)
+- Efficient batching on embedded hardware
 
-To optimize batching, AromaUI does not issue immediate draw calls. Instead, it records commands into an `AromaDrawList`[src/core/aroma_ui_impl.c62](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L62-L62) During the render phase, these commands are sorted (e.g., by Z-index) and then flushed to the graphics backend through the ABI [src/core/aroma_ui_impl.c71-75](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L71-L75)
-
----
-
-### Backend Abstraction Layer (ABI)
-
-The `AromaBackendABI` acts as a central switchboard. It allows the Core Framework to remain platform-agnostic while supporting diverse environments like Android or surfaceless EGL clusters [src/backends/aroma_abi.c13-32](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.c#L13-L32)
-
-**Diagram: ABI Proxy Pattern**
+## Data Flow: A Button Click
 
 ```mermaid
 flowchart LR
-    subgraph subGraph2 ["Concrete Backends"]
-        GLES["aroma_graphics_gles3"]
-        VULKAN["aroma_graphics_vulkan"]
-        TFT["aroma_graphics_tft"]
-    end
-    subgraph subGraph1 ["AromaBackendABI #91;src/backends/aroma_abi.c#93;"]
-        ABI["aroma_backend_abi"]
-        PROXY_RECT["drawlist_proxy_fill_rectangle"]
-        PROXY_TEXT["drawlist_proxy_render_text"]
-    end
-    subgraph subGraph0 ["Core Logic"]
-        RENDER["aroma_ui_render_dirty_window"]
-    end
-    RENDER --> PROXY_RECT
-    RENDER --> PROXY_TEXT
-    PROXY_RECT --> ABI
-    PROXY_TEXT --> ABI
-    ABI --> GLES
-    ABI --> VULKAN
-    ABI --> TFT
+    Touch["User Touch"] --> Platform["Platform Backend<br/>captures event"]
+    Platform --> EventSys["Event System<br/>queues + hit-tests"]
+    EventSys --> Button["Button listener fires"]
+    Button --> Callback["Your callback runs"]
+    Callback --> Invalidate["aroma_node_invalidate(button)"]
+    Invalidate --> Frame["Next frame:<br/>layout + draw"]
+    Frame --> DrawList["DrawList records commands"]
+    DrawList --> ABI["ABI routes to<br/>GLES3/Vulkan/TFT"]
+    ABI --> Screen["Screen updates"]
 ```
 
-**Sources:**[src/backends/aroma_abi.c51-63](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.c#L51-L63)[src/backends/aroma_abi.c93-104](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.c#L93-L104)[src/backends/aroma_abi.h27-35](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.h#L27-L35)
+## File Map
 
----
+| Concern | Key Files |
+|---|---|
+| Entry points | `include/aroma_ui.h`, `src/core/aroma_ui_impl.c` |
+| Node system | `include/aroma_node.h`, `src/core/aroma_node.c` |
+| Layout | `src/core/aroma_layout.c` |
+| Events | `src/core/aroma_event.c` |
+| Rendering | `src/core/aroma_drawlist.c`, `src/backends/aroma_abi.c` |
+| Graphics | `src/backends/graphics/aroma_graphics_gles3.c` |
+| Platforms | `src/backends/platforms/aroma_platform_glfw.c` |
 
-### Data Flow: Frame Lifecycle
+## What's Next
 
-The frame lifecycle is managed by the platform's event loop (e.g., GLFW or Android's `Choreographer`) [src/backends/platforms/aroma_platform_interface.h99-103](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h#L99-L103)
-
-| Phase | Description | Key Functions |
-| --- | --- | --- |
-| **Input** | Platform captures raw input and sends to Event System. | `run_event_loop`[src/backends/platforms/aroma_platform_interface.h103](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h#L103-L103) |
-| **Layout** | Recursive pass to calculate node bounds. | `aroma_node_update_layout`[src/widgets/aroma_window.c38](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_window.c#L38-L38) |
-| **Record** | Nodes record draw commands into the `AromaDrawList`. | `aroma_drawlist_cmd_fill_rect`[src/backends/aroma_abi.c56](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.c#L56-L56) |
-| **Batch** | Sort tasks by Z-index and apply frustum culling. | `collect_draw_tasks`[src/core/aroma_ui_impl.c71-73](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L71-L73) |
-| **Flush** | ABI routes batched commands to the Graphics Backend. | `swap_buffers`[src/backends/platforms/aroma_platform_interface.h108](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h#L108-L108) |
-
-**Sources:**[src/core/aroma_ui_impl.c68-75](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L68-L75)[src/backends/platforms/aroma_platform_interface.h35-108](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_interface.h#L35-L108)[src/widgets/aroma_window.c32-42](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_window.c#L32-L42)
+- Dive into the [Scene Graph](Scene-Graph-and-Node-System.md) to understand node lifecycle.
+- Learn how [Events](Event-System.md) flow through the system.
+- Explore the [Rendering Pipeline](Rendering-Pipeline-and-DrawList.md) for draw optimization details.

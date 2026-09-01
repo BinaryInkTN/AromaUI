@@ -1,0 +1,6 @@
+
+Name: zlib
+Description: zlib port from emscripten
+Version: 1.3.2
+Libs: -sUSE_ZLIB
+Cflags: -sUSE_ZLIB

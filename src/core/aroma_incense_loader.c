@@ -18,6 +18,7 @@
 #include "widgets/aroma_tabs.h"
 #include "widgets/aroma_tooltip.h"
 #include "widgets/aroma_container.h"
+#include "widgets/aroma_listview.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2433,7 +2434,7 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
     "attribution", "autoplay", "color", "columns", "condition", "direction", "duration", "fill_color", "font", "group",
     "header", "height", "hidden", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "label", "lat", "layout", "length", "lon", "max", "message",
     "min", "model", "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "placeholder",
-    "position", "progress", "radius", "selected", "show", "size", "src", "start_angle", "end_angle", "style", "text", "thickness", "title", "track_color", "track_thickness", "ticks", "tick_color", "tick_thickness", "type", "value",
+    "position", "progress", "radius", "selected", "secondary", "show", "size", "src", "start_angle", "end_angle", "style", "text", "thickness", "title", "track_color", "track_thickness", "ticks", "tick_color", "tick_thickness", "type", "value",
     "variant", "visible", "width", "x", "y", "zoom", "z_index", NULL};
     for (int i = 0; i < bag->count; i++)
     {
@@ -3130,7 +3131,61 @@ static AromaNode *build_listview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
     CallbackEntry *on_select = resolve_callback(node, &bag, "on_select");
     AromaNode *built = aroma_ui_listview(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
                                          props_int(&bag, "width", 200), props_int(&bag, "height", 300), on_select ? bridge_listview_select : NULL, on_select, _widget_font);
-    WIDGET_POSTAMBLE(built, bag, node, ctx);
+    if (!built)
+    {
+        ERR_SYNTAX_N(node, "Failed to create ListView");
+        props_free(&bag);
+        return NULL;
+    }
+    if (node)
+        node->id = built->node_id;
+    IncenseNode *list_items[MAX_ITEM_NODES];
+    int n = collect_item_nodes(node, "ListItem", list_items, MAX_ITEM_NODES);
+    for (int i = 0; i < n; i++)
+    {
+        PropBag ib;
+        props_collect(list_items[i], &ib);
+        char *text = props_str_dup(&ib, "text", "");
+        char *secondary = props_str_dup(&ib, "secondary", "");
+        const char *icon = props_get(&ib, "icon");
+        if (text && text[0])
+        {
+            if (icon && icon[0])
+                aroma_listview_add_item_with_icon(built, text, secondary, icon, NULL);
+            else
+                aroma_listview_add_item(built, text, secondary, NULL);
+        }
+        free(text);
+        free(secondary);
+        props_free(&ib);
+    }
+    IncenseNode *headers[MAX_ITEM_NODES];
+    int h = collect_item_nodes(node, "Header", headers, MAX_ITEM_NODES);
+    for (int i = 0; i < h; i++)
+    {
+        PropBag hb;
+        props_collect(headers[i], &hb);
+        char *text = props_str_dup(&hb, "text", "");
+        if (text && text[0])
+            aroma_listview_add_header(built, text);
+        free(text);
+        props_free(&hb);
+    }
+    IncenseNode *separators[MAX_ITEM_NODES];
+    int s = collect_item_nodes(node, "Separator", separators, MAX_ITEM_NODES);
+    for (int i = 0; i < s; i++)
+    {
+        aroma_listview_add_separator(built);
+    }
+    aroma_listview_set_font(built, _widget_font);
+    int zi = props_int(&bag, "z_index", 0);
+    if (zi)
+        aroma_node_set_z_index(built, zi);
+    apply_widget_animations(built, &bag, node);
+    maybe_register(&bag, built, ctx);
+    build_children(node, built, ctx);
+    props_free(&bag);
+    return built;
 }
 
 static AromaNode *build_dialog(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
@@ -3854,6 +3909,7 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Card", build_card},
     {"Checkbox", build_checkbox},
     {"Chip", build_chip},
+    {"Column", NULL},
     {"Container", build_container},
     {"DebugOverlay", build_debugoverlay},
     {"Dialog", build_dialog},
@@ -3861,17 +3917,25 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Dropdown", build_dropdown},
     {"GIF", build_gif},
     {"Gauge", build_gauge},
+    {"Header", NULL},
+    {"HeaderCell", NULL},
     {"Icon", build_icon},
     {"IconButton", build_iconbutton},
     {"Image", build_image},
+    {"Item", NULL},
     {"Label", build_label},
+    {"ListItem", NULL},
     {"ListView", build_listview},
     {"Loading", build_loading},
     {"Map", build_map},
     {"Menu", build_menu},
+    {"MenuItem", NULL},
+    {"Option", NULL},
     {"ProgressBar", build_progressbar},
     {"RadioButton", build_radiobutton},
+    {"Row", NULL},
     {"ScrollView", build_scrollview},
+    {"Separator", NULL},
     {"Sidebar", build_sidebar},
     {"Slider", build_slider},
     {"Snackbar", build_snackbar},
@@ -3937,8 +4001,12 @@ static AromaNode *build_widget(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         return NULL;
     }
     const WidgetEntry *e = bsearch(node->name, WIDGET_TABLE, WIDGET_TABLE_COUNT, sizeof(WidgetEntry), widget_cmp);
-    if (e && e->build)
-        return e->build(node, sp, ctx);
+    if (e)
+    {
+        if (e->build)
+            return e->build(node, sp, ctx);
+        return NULL;
+    }
     ERR_SYNTAX_N(node, "Unknown widget type '%s'", node->name);
     ERR_SUGGEST("Check widget name spelling or add to WIDGET_TABLE");
     return NULL;

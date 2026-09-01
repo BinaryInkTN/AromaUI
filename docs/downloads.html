@@ -1,0 +1,422 @@
+<div class="downloads-page">
+  <div class="downloads-header">
+    <h2>SDK Downloads</h2>
+    <p class="downloads-subtitle">Get the latest AromaUI release for your platform</p>
+  </div>
+
+  <div id="downloads-loading" class="downloads-loading">
+    <div class="spinner"></div>
+    <p>Fetching latest release from GitHub...</p>
+  </div>
+
+  <div id="downloads-error" class="downloads-error" style="display:none">
+    <p>Unable to load release information. Please check your connection or visit the <a href="https://github.com/BinaryInkTN/AromaUI/releases" target="_blank">GitHub Releases page</a>.</p>
+    <button onclick="loadReleaseData()" class="retry-btn">Retry</button>
+  </div>
+
+  <div id="downloads-content" style="display:none">
+    <div class="release-info-card">
+      <div class="release-badge" id="release-version"></div>
+      <div class="release-meta">
+        <span id="release-date"></span>
+        <span id="release-author" class="author-badge"></span>
+      </div>
+      <div id="release-notes" class="release-notes"></div>
+    </div>
+
+    <h3 class="section-title">Platform Downloads</h3>
+    <div class="download-grid" id="download-grid"></div>
+
+    <div class="requirements-card">
+      <h3>System Requirements</h3>
+      <ul>
+        <li><strong>Linux:</strong> CMake 3.22.1+, GCC 9+ or Clang 10+</li>
+        <li><strong>Android:</strong> NDK 25.1.8937393, SDK 34, Java JDK 17</li>
+        <li><strong>Web:</strong> Emscripten 3.1+ with CMake support</li>
+        <li><strong>Windows:</strong> Visual Studio 2019+ or MinGW-w64</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<style>
+.downloads-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 0;
+}
+.downloads-header {
+  margin-bottom: 32px;
+}
+.downloads-header h2 {
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--md-on-surface);
+  margin: 0 0 8px;
+}
+.downloads-subtitle {
+  font-size: 15px;
+  color: var(--md-on-surface-var);
+  margin: 0;
+}
+.downloads-loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--md-on-surface-var);
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--md-outline-variant);
+  border-top-color: var(--md-primary);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.downloads-error {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--md-on-surface-var);
+}
+.retry-btn {
+  margin-top: 16px;
+  padding: 10px 24px;
+  border-radius: 20px;
+  border: none;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  font-family: var(--fb);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: box-shadow 150ms;
+}
+.retry-btn:hover {
+  box-shadow: var(--md-elev-1);
+}
+.release-info-card {
+  background: var(--md-surface-variant);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.release-badge {
+  display: inline-block;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.release-meta {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--md-on-surface-var);
+}
+.author-badge {
+  background: var(--md-surf-2);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+.release-notes {
+  line-height: 1.6;
+}
+.release-notes h1, .release-notes h2, .release-notes h3 {
+  display: none;
+}
+.release-notes ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.release-notes li {
+  margin-bottom: 6px;
+}
+.release-notes p {
+  margin: 0 0 12px;
+}
+.section-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--md-on-surface);
+  margin: 0 0 16px;
+}
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.download-card {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: 12px;
+  padding: 20px;
+  transition: box-shadow 150ms, border-color 150ms;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.download-card:hover {
+  box-shadow: var(--md-elev-1);
+  border-color: var(--md-primary);
+}
+.download-card .platform-icon {
+  font-size: 24px;
+  margin-bottom: 12px;
+  display: block;
+}
+.download-card .platform-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--md-on-surface);
+  margin-bottom: 4px;
+}
+.download-card .platform-desc {
+  font-size: 13px;
+  color: var(--md-on-surface-var);
+  margin-bottom: 12px;
+}
+.download-card .download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-cont);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.download-card .download-btn:hover {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+.download-card .file-size {
+  font-size: 12px;
+  color: var(--md-on-surface-3);
+  margin-top: 8px;
+}
+.requirements-card {
+  background: var(--md-surf-1);
+  border-radius: 12px;
+  padding: 24px;
+}
+.requirements-card h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 12px;
+  color: var(--md-on-surface);
+}
+.requirements-card ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.requirements-card li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--md-on-surface-var);
+  line-height: 1.5;
+}
+.requirements-card li strong {
+  color: var(--md-on-surface);
+}
+.source-code-card {
+  background: linear-gradient(135deg, var(--md-surf-1) 0%, var(--md-surf-2) 100%);
+  border: 1px dashed var(--md-outline);
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+const GITHUB_REPO = 'BinaryInkTN/AromaUI';
+const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+
+function formatDate(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return '';
+  const kb = bytes / 1024;
+  const mb = kb / 1024;
+  if (mb >= 1) return `${mb.toFixed(1)} MB`;
+  return `${kb.toFixed(0)} KB`;
+}
+
+function getPlatformIcon(platform) {
+  const icons = {
+    'linux': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
+    'windows': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>',
+    'android': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
+    'web': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    'source': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>'
+  };
+  return icons[platform] || icons['source'];
+}
+
+function detectPlatform(filename) {
+  const lower = filename.toLowerCase();
+  if (lower.includes('linux') || lower.includes('ubuntu') || lower.includes('debian')) return 'linux';
+  if (lower.includes('windows') || lower.includes('win') || lower.endsWith('.exe') || lower.endsWith('.zip')) return 'windows';
+  if (lower.includes('android') || lower.endsWith('.apk') || lower.endsWith('.aab')) return 'android';
+  if (lower.includes('wasm') || lower.includes('web') || lower.includes('html')) return 'web';
+  if (lower.endsWith('.tar.gz') || lower.endsWith('.tar.xz') || lower.includes('source')) return 'source';
+  return 'source';
+}
+
+function getPlatformName(platform) {
+  const names = {
+    'linux': 'Linux x64',
+    'windows': 'Windows x64',
+    'android': 'Android APK',
+    'web': 'WebAssembly',
+    'source': 'Source Code'
+  };
+  return names[platform] || platform;
+}
+
+function getPlatformDesc(platform) {
+  const descs = {
+    'linux': 'Native Linux binary with GLES3 backend',
+    'windows': 'Windows native build with Vulkan support',
+    'android': 'Universal APK for ARM and x86 devices',
+    'web': 'Run in any modern browser via WASM',
+    'source': 'Full source code for custom builds'
+  };
+  return descs[platform] || 'Download archive';
+}
+
+function loadReleaseData() {
+  const loadingEl = document.getElementById('downloads-loading');
+  const errorEl = document.getElementById('downloads-error');
+  const contentEl = document.getElementById('downloads-content');
+
+  loadingEl.style.display = 'block';
+  errorEl.style.display = 'none';
+  contentEl.style.display = 'none';
+
+  function renderRelease(release) {
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+
+    document.getElementById('release-version').textContent = `v${release.tag_name || release.name}`;
+    document.getElementById('release-date').textContent = formatDate(release.published_at);
+    document.getElementById('release-author').textContent = `by ${release.author ? release.author.login : 'BinaryInkTN'}`;
+
+    const notesEl = document.getElementById('release-notes');
+    if (release.body) {
+      notesEl.innerHTML = marked.parse(release.body);
+    } else {
+      notesEl.innerHTML = '<p>No release notes available.</p>';
+    }
+
+    const grid = document.getElementById('download-grid');
+    grid.innerHTML = '';
+
+    if (release.assets && release.assets.length > 0) {
+      const platformAssets = {};
+      release.assets.forEach(asset => {
+        const platform = detectPlatform(asset.name);
+        if (!platformAssets[platform]) platformAssets[platform] = [];
+        platformAssets[platform].push(asset);
+      });
+
+      Object.keys(platformAssets).forEach(platform => {
+        const assets = platformAssets[platform];
+        const primaryAsset = assets[0];
+
+        const card = document.createElement('a');
+        card.className = 'download-card';
+        if (platform === 'source') card.classList.add('source-code-card');
+        card.href = primaryAsset.browser_download_url;
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+
+        const icon = getPlatformIcon(platform);
+        const name = getPlatformName(platform);
+        const desc = getPlatformDesc(platform);
+        const size = formatFileSize(primaryAsset.size);
+        const downloadCount = assets.reduce((sum, a) => sum + (a.download_count || 0), 0);
+
+        card.innerHTML = `
+          <div class="platform-icon">${icon}</div>
+          <div class="platform-name">${name}</div>
+          <div class="platform-desc">${desc}</div>
+          <span class="download-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </span>
+          <div class="file-size">${size} ${downloadCount > 0 ? `(${downloadCount.toLocaleString()} downloads)` : ''}</div>
+        `;
+
+        grid.appendChild(card);
+      });
+    } else {
+      grid.innerHTML = `
+        <a href="${release.html_url}" target="_blank" rel="noopener noreferrer" class="download-card source-code-card">
+          <div class="platform-icon">${getPlatformIcon('source')}</div>
+          <div class="platform-name">Source Code</div>
+          <div class="platform-desc">Download the source code archive</div>
+          <span class="download-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            View on GitHub
+          </span>
+        </a>
+      `;
+    }
+  }
+
+  fetch(GITHUB_API, {
+    headers: {
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  })
+  .then(release => renderRelease(release))
+  .catch(err => {
+    console.warn('Latest release fetch failed, trying releases list:', err);
+    fetch(`${GITHUB_API.replace('/latest', '')}?per_page=1`, {
+      headers: {
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then(releases => {
+      if (releases && releases.length > 0) {
+        renderRelease(releases[0]);
+      } else {
+        throw new Error('No releases found');
+      }
+    })
+    .catch(err2 => {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+      console.error('Failed to load release data:', err2);
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', loadReleaseData);
+</script>

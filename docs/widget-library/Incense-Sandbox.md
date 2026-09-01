@@ -1,78 +1,116 @@
-<h1 id="incense-sandbox">Incense Sandbox</h1>
-<p>The <strong>Incense Sandbox</strong> is an interactive, real-time playground for experimenting with AromaUI's declarative <a href="https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/Incense-Format.md">Incense</a> markup. It pairs a <a href="https://microsoft.github.io/monaco-editor/">Monaco Editor</a> on the left with a live-rendering AromaUI canvas on the right, giving you instant visual feedback as you type.</p>
-<h2 id="features">Features</h2>
-<ul>
-<li><strong>Real-time compilation</strong> — edits are debounced at 400ms and reloaded automatically</li>
-<li><strong>Monaco Editor</strong> — syntax highlighting for all Incense widgets and properties</li>
-<li><strong>Preset showcases</strong> — one-click examples for Buttons, Forms, Layout, and All Widgets</li>
-<li><strong>Error reporting</strong> — parse and semantic errors are shown inline below the preview</li>
-<li><strong>Emscripten/WASM</strong> — runs entirely in the browser with no server-side build step</li>
-</ul>
-<h2 id="supported-widgets">Supported Widgets</h2>
-<p>The sandbox showcases the full widget library, including:</p>
-<ul>
-<li><strong>Basic:</strong> <code>Button</code>, <code>Label</code>, <code>Checkbox</code>, <code>Switch</code>, <code>Slider</code>, <code>Textbox</code>, <code>Progressbar</code>, <code>Divider</code></li>
-<li><strong>Containers:</strong> <code>Card</code>, <code>Container</code> (flex row/column)</li>
-<li><strong>Advanced:</strong> <code>Dropdown</code>, <code>Image</code>, <code>Gif</code>, <code>Loading</code>, <code>Gauge</code>, <code>Viewer3D</code>, <code>Map</code>, <code>Table</code>, <code>Tabs</code>, <code>Sidebar</code>, <code>Menu</code>, <code>Dialog</code>, <code>Snackbar</code>, <code>Tooltip</code>, <code>Chip</code></li>
-</ul>
-<h2 id="building">Building</h2>
-<p>To build the sandbox for the web:</p>
-<div class="codehilite"><pre><span></span><code>mkdir -p examples/incense_sandbox/build
-cd examples/incense_sandbox/build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j<span class="k">$(</span>nproc<span class="k">)</span>
-</code></pre></div>
-<p>This produces <code>incense_sandbox.html</code>, <code>incense_sandbox.js</code>, and <code>incense_sandbox.wasm</code>. Copy these files to <code>docs/widget-library/wasm/incense_sandbox/</code> to publish.</p>
-<h2 id="usage">Usage</h2>
-<ol>
-<li>Open <code>docs/widget-library/wasm/incense_sandbox/index.html</code> in a browser (serve via HTTP for best results)</li>
-<li>Edit the Incense markup in the Monaco editor on the left</li>
-<li>The preview on the right updates automatically after you stop typing</li>
-<li>Use the preset buttons at the top to load showcase examples</li>
-<li>Check the status bar below the preview for errors</li>
-</ol>
-<h2 id="architecture">Architecture</h2>
-<p>The sandbox is built on three layers:</p>
-<div class="mermaid-wrapper">
-<div class="mermaid-controls">
-<button class="mermaid-export" onclick="exportMermaidAsSVG(this)" title="Export as SVG"><i data-lucide="download"></i></button>
-<button class="mermaid-open" onclick="openMermaidInNewPage(this)" title="Open in new tab"><i data-lucide="external-link"></i></button>
-</div>
-<div class="mermaid">
-flowchart TD
-    subgraph subGraph2 ["Browser (JS)"]
-        A["Monaco Editor"]
-        B["Debounce (400ms)"]
-        C["ccall / cwrap"]
-    end
-    subgraph subGraph1 ["WASM Boundary"]
-        D["aroma_sandbox_reload"]
-        E["IncenseLoadStringEx"]
-        F["aroma_ui_create_window"]
-    end
-    subgraph subGraph0 ["AromaUI Core"]
-        G["Scene Graph"]
-        H["DrawList"]
-        I["WebGL Renderer"]
-    end
-    A -->|"source"| B
-    B -->|"string"| C
-    C -->|"const char*"| D
-    D -->|"parse"| E
-    E -->|"build"| F
-    F -->|"invalidate"| G
-    G -->|"collect tasks"| H
-    H -->|"flush"| I
-    I -->|"present"| A
-</div>
-</div>
 
-<p><strong>Sources:</strong></p>
-<ul>
-<li><a href="https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/incense_sandbox/sandbox.c">examples/incense_sandbox/sandbox.c</a></li>
-<li><a href="https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_incense_loader.h">include/aroma_incense_loader.h</a></li>
-<li><a href="https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c">src/core/aroma_ui_impl.c</a></li>
-</ul>
-<hr />
-<h2 id="extending">Extending</h2>
-<p>To add your own preset examples, create a new <code>.aroma</code> file in <code>examples/incense_sandbox/showcase/</code> and add a button in <code>examples/incense_sandbox/index.html</code>. The preset content is embedded directly in the JavaScript for zero-load-time switching.</p>
+Incense is AromaUI's declarative language for building UIs. Write widget trees in a clean syntax and see results instantly in the browser sandbox.
+
+## Open the Sandbox
+
+**[Launch Incense Sandbox](../widget-library/wasm/incense_sandbox/index.html)**
+
+Edit code on the left, click **Run**, and see the preview update instantly via WebAssembly.
+
+## Syntax
+
+```aroma
+Window {
+    width: 320
+    height: 480
+    title: "My App"
+
+    Container {
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+
+        Label {
+            text: "Hello"
+            style: large
+            color: #333333
+        }
+
+        Button {
+            text: "Click Me"
+            x: 20
+            y: 100
+            width: 120
+            height: 40
+            on_click: "handle_click"
+        }
+    }
+}
+```
+
+## Supported Widgets
+
+| Widget | Key Properties | Children |
+|---|---|---|
+| `Button` | `text`, `x`, `y`, `width`, `height`, `on_click` | - |
+| `Label` | `text`, `x`, `y`, `style`, `color` | - |
+| `Container` | `x`, `y`, `width`, `height`, `layout`, `direction` | Any widget |
+| `Card` | `x`, `y`, `width`, `height`, `type` | - |
+| `Checkbox` | `label`, `x`, `y`, `checked`, `on_change` | - |
+| `Switch` | `x`, `y`, `width`, `height`, `value`, `on_change` | - |
+| `Slider` | `x`, `y`, `width`, `height`, `min`, `max`, `value`, `on_change` | - |
+| `Textbox` | `x`, `y`, `width`, `height`, `placeholder`, `on_change` | - |
+| `ProgressBar` | `x`, `y`, `width`, `height`, `value` | - |
+| `Divider` | `x`, `y`, `length`, `orientation` | - |
+| `IconButton` | `x`, `y`, `width`, `height`, `icon`, `on_click` | - |
+| `Icon` | `x`, `y`, `size`, `text`, `color` | - |
+| `Image` | `x`, `y`, `width`, `height`, `src` | - |
+| `Dropdown` | `x`, `y`, `width`, `height`, `on_change` | `Option` |
+| `RadioButton` | `label`, `x`, `y`, `width`, `height`, `group`, `checked`, `on_click` | - |
+| `Tabs` | `x`, `y`, `width`, `height`, `on_change` | `Tab` |
+| `Sidebar` | `x`, `y`, `width`, `height` | `Item` |
+| `Menu` | `x`, `y`, `width` | `MenuItem` |
+| `Chip` | `x`, `y`, `label`, `icon`, `type`, `selected` | - |
+| `Tooltip` | `text`, `x`, `y`, `position` | - |
+| `GIF` | `x`, `y`, `width`, `height`, `src`, `autoplay` | - |
+| `Loading` | `x`, `y`, `radius`, `thickness` | - |
+| `Gauge` | `x`, `y`, `width`, `height`, `value` | - |
+| `Canvas` | `x`, `y`, `width`, `height` | - |
+| `DebugOverlay` | `x`, `y`, `width`, `height`, `visible` | - |
+| `Map` | `x`, `y`, `width`, `height`, `lat`, `lon`, `zoom` | - |
+| `Snackbar` | `message`, `duration`, `action`, `on_click` | - |
+| `ListView` | `x`, `y`, `width`, `height`, `on_select` | `ListItem`, `Header`, `Separator` |
+| `Dialog` | `title`, `message`, `width`, `height`, `type` | - |
+| `ScrollView` | `x`, `y`, `width`, `height`, `direction` | Any widget |
+| `Table` | `x`, `y`, `width`, `height` | `Column`, `Row`, `HeaderCell` |
+
+## Property Types
+
+| Type | Example | Notes |
+|---|---|---|
+| Integer | `x: 20` | Whole numbers |
+| Float | `value: 0.5` | Decimal numbers |
+| Boolean | `checked: true` | `true` or `false` |
+| Color | `color: #FF0000` | Hex color |
+| String | `text: "Hello"` | Double-quoted |
+| Enum | `style: large` | Unquoted keyword |
+| Object | `Container { ... }` | Nested widget |
+
+## Special Features
+
+- **Callbacks**: Reference C-registered callbacks: `on_click: "handle_click"`
+- **Embeds**: Include other files: `@embed "shared.aroma"`
+- **Comments**: Single-line with `//`
+- **List children**: `ListItem { text: "..." secondary: "..." }` for ListView
+
+## Known Limitations
+
+1. No arrays/lists as property values - use child objects instead
+2. No control flow - all widgets render every frame
+3. No data binding - properties are static literals
+4. No expressions - cannot compute values from other values
+5. No component system - no user-defined widgets yet
+6. No declarative animations
+7. Limited event types - `on_click`, `on_change`, `on_select`, `on_submit`
+8. Single window per file
+9. No string interpolation
+10. Hard limits: 64 children per parent, 64 properties per widget
+
+## What's Next
+
+- Learn the underlying C APIs in [Widget Library](Layout-and-Navigation-Widgets.md).
+- Explore [Core Framework](Scene-Graph-and-Node-System.md) to understand how Incense maps to `AromaNode`.
+- Try the [interactive sandbox](../widget-library/wasm/incense_sandbox/index.html).

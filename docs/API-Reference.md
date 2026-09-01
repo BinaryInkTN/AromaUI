@@ -1,4 +1,3 @@
-# API Reference
 
 This page provides a high-level index of the public AromaUI API. For detailed documentation on subsystems, see the [Core Framework](core-framework/) and [Widget Library](widget-library/) sections.
 

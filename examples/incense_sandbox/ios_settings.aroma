@@ -1,0 +1,78 @@
+Window {
+    width: 320
+    height: 480
+    title: "Settings"
+
+    Container {
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+
+        Label {
+            text: "Settings"
+            style: large
+            color: #000000
+        }
+
+        Label {
+            text: "Discover missing features in Incense"
+            style: small
+            color: #666666
+        }
+
+        ListView {
+            x: 0
+            y: 40
+            width: 320
+            height: 400
+
+            Header { text: "General" }
+
+            ListItem {
+                text: "Airplane Mode"
+                secondary: "Off"
+            }
+
+            ListItem {
+                text: "Wi-Fi"
+                secondary: "Not Connected"
+            }
+
+            ListItem {
+                text: "Bluetooth"
+                secondary: "On"
+            }
+
+            Separator { }
+
+            Header { text: "Display & Brightness" }
+
+            ListItem {
+                text: "Brightness"
+                secondary: "50%"
+            }
+
+            ListItem {
+                text: "Auto-Lock"
+                secondary: "2 minutes"
+            }
+
+            Separator { }
+
+            Header { text: "Privacy" }
+
+            ListItem {
+                text: "Location Services"
+                secondary: "While Using the App"
+            }
+
+            ListItem {
+                text: "Photos"
+                secondary: "All Photos"
+            }
+        }
+    }
+}

@@ -1,0 +1,1 @@
+6.0.7|/home/yassine/Projects/AromaUI/vendors/emscripten/upstream/bin

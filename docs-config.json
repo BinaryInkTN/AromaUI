@@ -66,44 +66,34 @@
         {
             "name": "Overview",
             "icon": "home",
-            "description": "Introduction, architecture, and getting started guides."
+            "description": "Get started quickly and understand the big picture."
         },
         {
             "name": "Core Framework",
             "icon": "layers",
-            "description": "Rendering, events, layouts, scene graph, and styling systems."
+            "description": "Scene graph, events, layout, rendering, animation, and theming."
         },
         {
             "name": "Widget Library",
             "icon": "component",
-            "description": "UI widgets, controls, navigation, and display components."
+            "description": "UI widgets, controls, navigation, and the Incense declarative language."
         },
         {
-            "name": "Backend Abstraction Layer",
-            "icon": "cpu",
-            "description": "Graphics and platform backend integrations."
-        },
-        {
-            "name": "CLI Toolchain",
+            "name": "Build & Deploy",
             "icon": "terminal",
-            "description": "Project creation, scaffolding, building, and deployment."
+            "description": "CLI toolchain, project scaffolding, and cross-platform deployment."
         },
         {
-            "name": "Example Applications",
-            "icon": "play",
-            "description": "Reference applications built using AromaSDK."
-        },
-        {
-            "name": "Additional Documentation",
+            "name": "Reference",
             "icon": "book-open",
-            "description": "Fonts, testing, quality assurance, and glossary."
+            "description": "Fonts, testing, glossary, and advanced topics."
         }
     ],
 
     "sections": [
         {
             "title": "Getting Started",
-            "description": "Introduction to AromaSDK, installation, and first application.",
+            "description": "Install, build, and run your first AromaUI app in under 5 minutes.",
             "icon": "rocket",
             "color": "#4285F4",
             "category": "Overview",
@@ -111,7 +101,7 @@
         },
         {
             "title": "Architecture Overview",
-            "description": "Understand the architecture and design principles of AromaSDK.",
+            "description": "How AromaUI works under the hood: layers, data flow, and key abstractions.",
             "icon": "boxes",
             "color": "#4285F4",
             "category": "Overview",
@@ -119,16 +109,16 @@
         },
 
         {
-            "title": "Animation Engine",
-            "description": "Animation framework, transitions, timing systems, and interpolation.",
-            "icon": "play",
+            "title": "Scene Graph & Nodes",
+            "description": "AromaNode lifecycle, hierarchy, memory management, and dirty-region tracking.",
+            "icon": "git-branch",
             "color": "#006875",
             "category": "Core Framework",
-            "file": "docs/core-framework/Animation-Engine.md"
+            "file": "docs/core-framework/Scene-Graph-and-Node-System.md"
         },
         {
             "title": "Event System",
-            "description": "Input processing, event dispatching, and interaction handling.",
+            "description": "Input capture, hit-testing, event bubbling, and scroll interception.",
             "icon": "mouse-pointer",
             "color": "#006875",
             "category": "Core Framework",
@@ -136,31 +126,31 @@
         },
         {
             "title": "Layout Engine",
-            "description": "Responsive layouts, positioning, sizing, and containers.",
+            "description": "Self-layout, flexbox, grid, scroll containers, and content sizing.",
             "icon": "layout-dashboard",
             "color": "#006875",
             "category": "Core Framework",
             "file": "docs/core-framework/Layout-Engine.md"
         },
         {
-            "title": "Rendering Pipeline & Draw List",
-            "description": "Rendering architecture, command submission, and draw list processing.",
+            "title": "Rendering Pipeline",
+            "description": "DrawList, deferred rendering, Z-sorting, and backend flush.",
             "icon": "layers",
             "color": "#006875",
             "category": "Core Framework",
             "file": "docs/core-framework/Rendering-Pipeline-and-DrawList.md"
         },
         {
-            "title": "Scene Graph & Node System",
-            "description": "Hierarchical UI organization and node-based rendering.",
-            "icon": "git-branch",
+            "title": "Animation Engine",
+            "description": "Property transitions, easing functions, and widget integration.",
+            "icon": "play",
             "color": "#006875",
             "category": "Core Framework",
-            "file": "docs/core-framework/Scene-Graph-and-Node-System.md"
+            "file": "docs/core-framework/Animation-Engine.md"
         },
         {
             "title": "Theming & Styling",
-            "description": "Theme creation, styling APIs, and visual customization.",
+            "description": "Color palettes, typography, shadows, and runtime theme switching.",
             "icon": "palette",
             "color": "#006875",
             "category": "Core Framework",
@@ -168,24 +158,24 @@
         },
 
         {
-            "title": "Display & Feedback Widgets",
-            "description": "Labels, progress bars, images, indicators, and feedback controls.",
+            "title": "Display & Feedback",
+            "description": "Labels, images, cards, progress bars, snackbars, and dialogs.",
             "icon": "monitor",
             "color": "#7D5260",
             "category": "Widget Library",
             "file": "docs/widget-library/Display-and-Feedback-Widgets.md"
         },
         {
-            "title": "Input & Control Widgets",
-            "description": "Buttons, switches, sliders, text inputs, and interactive controls.",
+            "title": "Input & Controls",
+            "description": "Buttons, checkboxes, switches, sliders, textboxes, and chips.",
             "icon": "toggle-left",
             "color": "#7D5260",
             "category": "Widget Library",
             "file": "docs/widget-library/Input-and-Control-Widgets.md"
         },
         {
-            "title": "Layout & Navigation Widgets",
-            "description": "Tabs, navigation bars, side panels, windows, and containers.",
+            "title": "Layout & Navigation",
+            "description": "Containers, scrolling, ListView, tabs, sidebars, and menus.",
             "icon": "navigation",
             "color": "#7D5260",
             "category": "Widget Library",
@@ -193,94 +183,68 @@
         },
         {
             "title": "Map Widget",
-            "description": "Interactive mapping, GPS visualization, and geographic data rendering.",
+            "description": "Interactive maps with markers, routes, and tile caching.",
             "icon": "map",
             "color": "#7D5260",
             "category": "Widget Library",
             "file": "docs/widget-library/Map-Widget.md"
         },
-
         {
-            "title": "Graphics Backends",
-            "description": "OpenGL, OpenGL ES, Vulkan, and renderer backend integrations.",
-            "icon": "cpu",
-            "color": "#6750A4",
-            "category": "Backend Abstraction Layer",
-            "file": "docs/backend-abstraction-layer/Graphics-Backends.md"
-        },
-        {
-            "title": "Platform Backends",
-            "description": "Windows, Linux, Android, and embedded platform abstraction.",
-            "icon": "monitor",
-            "color": "#6750A4",
-            "category": "Backend Abstraction Layer",
-            "file": "docs/backend-abstraction-layer/Platform-Backends.md"
+            "title": "Incense Declarative UI",
+            "description": "Write UIs in a declarative language with live preview in the browser.",
+            "icon": "code",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "file": "docs/widget-library/Incense-Sandbox.md"
         },
 
         {
-            "title": "Project Creation & Scaffolding",
-            "description": "Create new AromaSDK projects using the CLI toolchain.",
+            "title": "Project Creation",
+            "description": "Scaffold new projects with `aroma create` and understand the generated structure.",
             "icon": "folder-plus",
             "color": "#386A20",
-            "category": "CLI Toolchain",
+            "category": "Build & Deploy",
             "file": "docs/cli-toolchain/Project-Creation-and-Scaffolding.md"
         },
         {
             "title": "Building & Deployment",
-            "description": "Compile, package, and deploy applications across supported platforms.",
+            "description": "Compile for Linux, Android, and Web. Sign, package, and run.",
             "icon": "hammer",
             "color": "#386A20",
-            "category": "CLI Toolchain",
+            "category": "Build & Deploy",
             "file": "docs/cli-toolchain/Building-and-Deployment.md"
         },
-
         {
-            "title": "Car Infotainment (AromaOS)",
-            "description": "Complete automotive infotainment reference application.",
-            "icon": "car",
-            "color": "#9A4521",
-            "category": "Example Applications",
-            "file": "docs/example-applications/Car-Infotainment-(AromaOS).md"
-        },
-        {
-            "title": "Smartwatch & Other Examples",
-            "description": "Wearable and embedded application examples built with AromaSDK.",
-            "icon": "watch",
-            "color": "#9A4521",
-            "category": "Example Applications",
-            "file": "docs/example-applications/Smartwatch-and-Other-Examples.md"
-        },
-        {
-            "title": "Voice Control System",
-            "description": "Voice assistant and speech-processing application example.",
-            "icon": "mic",
-            "color": "#9A4521",
-            "category": "Example Applications",
-            "file": "docs/example-applications/Voice-Control-System.md"
+            "title": "SDK Downloads",
+            "description": "Download the latest AromaUI SDK release for your platform.",
+            "icon": "download",
+            "color": "#386A20",
+            "category": "Build & Deploy",
+            "file": "docs/downloads.html"
         },
 
         {
             "title": "Font System",
-            "description": "Font loading, glyph management, rasterization, and text rendering.",
+            "description": "Font loading, glyph caching, FreeType integration, and platform specifics.",
             "icon": "type",
             "color": "#4A4458",
-            "category": "Additional Documentation",
+            "category": "Reference",
             "file": "docs/Font-System.md"
         },
         {
             "title": "Testing & Quality",
-            "description": "Testing strategies, validation, quality assurance, and best practices.",
+            "description": "Unit tests, memory sanitization, and CI integration.",
             "icon": "check-circle",
             "color": "#4A4458",
-            "category": "Additional Documentation",
+            "category": "Reference",
             "file": "docs/Testing-and-Quality.md"
         },
         {
             "title": "Glossary",
-            "description": "Definitions and terminology used throughout AromaSDK.",
+            "description": "Definitions, abbreviations, and code references.",
             "icon": "book-open",
             "color": "#4A4458",
-            "category": "Additional Documentation",
+            "category": "Reference",
             "file": "docs/Glossary.md"
         }
     ]

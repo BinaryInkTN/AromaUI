@@ -1,145 +1,89 @@
 
-Input and control widgets form the interactive layer of AromaUI, allowing users to manipulate data and trigger application logic. These widgets are implemented as specialized `AromaNode` objects where the `node_widget_ptr` links to a widget-specific data structure [src/widgets/aroma_button.c85](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L85-L85)
+Interactive widgets: buttons, checkboxes, switches, sliders, textboxes, and chips.
 
-## Widget Architecture and Event Flow
+## Buttons
 
-Widgets in AromaUI follow a factory pattern for creation and use a subscription-based model for event handling. Most widgets encapsulate their internal state (e.g., `is_pressed`, `is_hovered`) and expose callbacks for application-level logic [include/widgets/aroma_button.h44-46](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_button.h#L44-L46)
-
-### Data Flow: Interaction to Redraw
-
-The following diagram illustrates how a physical interaction (like a mouse click) transitions through the system to update a widget's visual state.
-
-**Interaction Pipeline**
-
-```mermaid
-flowchart TD
-    subgraph subGraph1 ["Code Entity Space"]
-        Platform["Platform Backend (GLPS/Android)"]
-        EventSys["aroma_event_dispatch"]
-        WidgetHandler["__button_handle_event (Static)"]
-        WidgetData["AromaButton Struct"]
-        Invalidate["aroma_node_invalidate"]
-        UI_Redraw["aroma_ui_request_redraw"]
-    end
-    subgraph subGraph0 ["Natural Language Space"]
-        UserAction["User clicks a Button"]
-    end
-    UserAction --> Platform
-    Platform -->|"EVENT_TYPE_MOUSE_CLICK"| EventSys
-    EventSys -->|"Bubbling/Subscription"| WidgetHandler
-    WidgetHandler -->|"Update state to BUTTON_STATE_PRESSED"| WidgetData
-    WidgetHandler --> Invalidate
-    Invalidate --> UI_Redraw
+```c
+AromaNode *btn = aroma_ui_button(root, "Click Me", 20, 20, 160, 48);
+aroma_button_set_on_click(btn, [](AromaNode *node, void *ud) {
+    // handle click
+}, NULL);
 ```
 
-Sources: [src/widgets/aroma_button.c31-42](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L31-L42)[src/widgets/aroma_button.c139-158](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L139-L158)[src/widgets/aroma_switch.c135-182](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_switch.c#L135-L182)
+Variants: `standard`, `filled`, `tonal`, `outlined`
 
----
+## Icon Button
 
-## Core Input Widgets
-
-### Interactive Sandbox Example
-
-```c sandbox
-    // Create a container with vertical layout
-    AromaNode *container = aroma_container_create(root, 20, 20, 360, 260);
-    aroma_container_set_layout(container, LAYOUT_VERTICAL, 10);
-    
-    // Add a button
-    AromaNode *btn = aroma_button_create(container, "Click Me", 0, 0, 150, 40);
-    
-    // Add a switch
-    AromaNode *sw = aroma_switch_create(container, 0, 0, 60, 30, true);
-    
-    // Add a slider
-    AromaNode *slider = aroma_slider_create(container, 0, 0, 200, 30, 0, 100, 50);
+```c
+AromaNode *ib = aroma_ui_icon_button(root, AROMA_ICON_SETTINGS, 300, 20, 48, 48);
 ```
 
-### Button and Icon Button
+## Checkbox
 
-Buttons support labels, icons, and custom color states. They utilize the `AromaTheme` for default styling but allow per-instance overrides [src/widgets/aroma_button.c104-109](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L104-L109)
-
-- **Factory**: `aroma_button_create(parent, label, x, y, w, h)`[src/widgets/aroma_button.c70](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L70-L70)
-- **Icons**: Supports prepending an icon using `aroma_button_set_icon`[include/widgets/aroma_button.h63](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_button.h#L63-L63)
-- **Callback**: `bool (*on_click)(AromaNode*, void*)`[include/widgets/aroma_button.h44](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_button.h#L44-L44)
-
-### Checkbox and RadioButton
-
-These widgets manage boolean or mutually exclusive states.
-
-- **Checkbox**: Managed via `aroma_checkbox_set_state`[src/widgets/aroma_checkbox.c152](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_checkbox.c#L152-L152)
-- **RadioButton**: Requires an `AromaRadioGroup` to manage mutual exclusivity among multiple buttons [src/widgets/aroma_radiobutton.c17-22](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_radiobutton.c#L17-L22)
-- **Group Logic**: When a button in a group is selected, the group automatically deselects other members [src/widgets/aroma_radiobutton.c119-132](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_radiobutton.c#L119-L132)
-
-### Switch and Slider
-
-Used for binary toggles and range-based input.
-
-- **Switch**: Features a sliding thumb animation. State is toggled via `aroma_switch_set_state`[src/widgets/aroma_switch.c63](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_switch.c#L63-L63)
-- **Slider**: Maps horizontal coordinates to a value range (`min_value` to `max_value`) [src/widgets/aroma_slider.c19-20](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_slider.c#L19-L20) It handles dragging events internally to update the `current_value`[src/widgets/aroma_slider.c149-156](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_slider.c#L149-L156)
-
-### Textbox
-
-The `AromaTextbox` supports single-line text entry, placeholder text, and cursor management.
-
-- **Focus**: Integration with `aroma_ui_set_focused_node` ensures only one textbox receives keyboard events [src/widgets/aroma_textbox.c194](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c#L194-L194)
-- **Keyboard**: On supported platforms (Android), focusing a textbox triggers `platform->show_keyboard()`[src/widgets/aroma_textbox.c195-197](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c#L195-L197)
-- **Cursor**: Includes logic for cursor blinking and calculating cursor position from mouse clicks [src/widgets/aroma_textbox.c62-83](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c#L62-L83)
-
----
-
-## Specialized Controls
-
-### Floating Action Button (FAB)
-
-A Material Design inspired button typically used for primary actions.
-
-- **Sizes**: Supports `FAB_SIZE_SMALL`, `NORMAL`, `LARGE`, and `EXTENDED`[src/widgets/aroma_fab.c86-94](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_fab.c#L86-L94)
-- **Extended Mode**: Automatically adjusts width based on provided text [src/widgets/aroma_fab.c182-184](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_fab.c#L182-L184)
-
-### Chip
-
-Used for filtering or choice selection.
-
-- **Types**: `CHIP_TYPE_ACTION`, `CHIP_TYPE_CHOICE`, `CHIP_TYPE_FILTER`, and `CHIP_TYPE_INPUT`[src/widgets/aroma_chip.c15](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_chip.c#L15-L15)
-- **Interaction**: Filter chips toggle their `selected` state upon clicking [src/widgets/aroma_chip.c80-82](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_chip.c#L80-L82)
-
----
-
-## Implementation Summary
-
-### Widget Factory and Event Setup
-
-The lifecycle of an input widget involves allocation, node attachment, and event subscription.
-
-**Widget Lifecycle Diagram**
-
-```mermaid
-sequenceDiagram
-    participant App as Application Code
-    participant Factory as aroma_ui_*_create
-    participant Slab as aroma_slab_alloc
-    participant Node as aroma_node_create
-    participant Event as aroma_event_subscribe
-    App->>Factory: Call factory function
-    Factory->>Slab: aroma_widget_alloc(sizeof(WidgetStruct))
-    Slab-->>Factory: Return pointer
-    Factory->>Node: __add_child_node(NODE_TYPE_WIDGET, ...)
-    Factory->>Event: Register internal handlers (click/hover)
-    Factory-->>App: Return AromaNode*
+```c
+AromaNode *cb = aroma_ui_checkbox(root, "Enable notifications", 20, 100, 300, 32);
+aroma_checkbox_set_on_change(cb, [](bool checked, void *ud) {
+    // handle toggle
+}, NULL);
 ```
 
-Sources: [src/widgets/aroma_button.c78-93](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L78-L93)[src/widgets/aroma_switch.c19-51](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_switch.c#L19-L51)[src/widgets/aroma_textbox.c92-139](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c#L92-L139)
+## Radio Button
 
-### Styling and Themes
+```c
+AromaRadioGroup group;
+aroma_radiobutton_group_init(&group);
+AromaNode *rb1 = aroma_ui_radiobutton(root, "Option A", &group, 20, 140, 200, 32);
+AromaNode *rb2 = aroma_ui_radiobutton(root, "Option B", &group, 20, 180, 200, 32);
+```
 
-Widgets default to the global theme colors but provide explicit setter functions to override appearance.
+Radio buttons in the same group are mutually exclusive.
 
-| Widget | Color Properties | Scaling/Sizing |
-| --- | --- | --- |
-| **Button** | `idle`, `hover`, `pressed`, `text`[src/widgets/aroma_button.c180-181](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L180-L181) | `text_scale`, `corner_radius`[include/widgets/aroma_button.h36-38](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_button.h#L36-L38) |
-| **Slider** | `track_color`, `thumb_color`[src/widgets/aroma_slider.c43-44](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_slider.c#L43-L44) | `track_height`, `thumb_size`[src/widgets/aroma_slider.c52-54](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_slider.c#L52-L54) |
-| **Textbox** | `bg`, `border`, `focused_border`[src/widgets/aroma_textbox.c110-118](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c#L110-L118) | `text_scale`, `padding_x`[src/widgets/aroma_textbox.c16-125](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c#L16-L125) |
-| **Switch** | `color_on`, `color_off`[src/widgets/aroma_switch.c31-32](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_switch.c#L31-L32) | `track_radius`, `toggle_size`[src/widgets/aroma_switch.c35-36](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_switch.c#L35-L36) |
+## Switch
 
-Sources: [src/widgets/aroma_button.c180-203](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_button.c#L180-L203)[src/widgets/aroma_slider.c42-56](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_slider.c#L42-L56)[src/widgets/aroma_textbox.c109-131](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_textbox.c#L109-L131)[src/widgets/aroma_switch.c30-41](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_switch.c#L30-L41)
+```c
+AromaNode *sw = aroma_ui_switch(root, 20, 220, 56, 28, true);
+aroma_switch_set_on_change(sw, [](bool value, void *ud) {
+    // handle toggle
+}, NULL);
+```
+
+## Slider
+
+```c
+AromaNode *slider = aroma_ui_slider(root, 20, 280, 260, 32, 0, 100, 50);
+aroma_slider_set_on_change(slider, [](int value, void *ud) {
+    // handle value change
+}, NULL);
+```
+
+## Textbox
+
+```c
+AromaNode *tb = aroma_ui_textbox(root, "Enter name...", 20, 340, 260, 48);
+aroma_textbox_set_on_change(tb, [](const char *text, void *ud) {
+    // handle text change
+}, NULL);
+aroma_textbox_set_on_submit(tb, [](const char *text, void *ud) {
+    // handle Enter key
+}, NULL);
+```
+
+## Chip
+
+```c
+AromaNode *chip = aroma_ui_chip(root, "Filter", 20, 400, 100, 36, CHIP_TYPE_FILTER);
+aroma_chip_set_selected(chip, true);
+```
+
+| Type | Use Case |
+|---|---|
+| `CHIP_TYPE_ACTION` | Single action |
+| `CHIP_TYPE_CHOICE` | Selection from options |
+| `CHIP_TYPE_FILTER` | Toggleable filter |
+| `CHIP_TYPE_INPUT` | Text input chip |
+
+## What's Next
+
+- Learn [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
+- Explore the [Map Widget](Map-Widget.md) for interactive maps.
+- Try [Incense](../widget-library/wasm/incense_sandbox/index.html) for rapid prototyping.

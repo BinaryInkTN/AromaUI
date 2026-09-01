@@ -187,14 +187,14 @@
           'Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar',
           'Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar',
           'Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer',
-          'Snackbar','ListView','Dialog','ScrollView','Table','Column','Row','Tab','Item','MenuItem',
+          'Snackbar','ListView','Dialog','ScrollView','Table','Column','Row','Tab','Item','MenuItem','ListItem','Header',            'Separator',
           'Option','HeaderCell'
         ],
         properties: [
           'x','y','width','height','text','title','message','placeholder','value','min','max',
           'style','layout','direction','orientation','type','variant','checked','selected',
           'src','lat','lon','zoom','radius','thickness','color','action','duration','z_index',
-          'autoplay','interactive','auto_rotate'
+          'autoplay','interactive','auto_rotate','secondary'
         ],
         enums: [
           'large','medium','small','flex','row','column','horizontal','vertical','elevated',
@@ -223,15 +223,15 @@
             }]
           ],
           string: [
-            [/[^\\"]+/, 'string'],
+            [/[^\"]+/, 'string'],
             [/"/, 'string', '@pop']
           ]
         }
       });
 
       var INCENSE_SUGGESTIONS = [
-        ...['Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','ScrollView','Table','Column','Row','Tab','Item','MenuItem','Option','HeaderCell'].map(function(w){ return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: w + ' {\n    $0\n}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
-        ...['x','y','width','height','text','title','message','placeholder','value','min','max','style','layout','direction','orientation','type','variant','checked','selected','src','lat','lon','zoom','radius','thickness','color','action','duration','z_index','autoplay','interactive','auto_rotate'].map(function(p){ return { label: p, kind: monaco.languages.CompletionItemKind.Property, insertText: p + ': $0', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
+        ...['Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','ScrollView','Table','Column','Row','Tab','Item','MenuItem','ListItem','Header','Separator','Option','HeaderCell'].map(function(w){ return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: w + ' {\n    $0\n}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
+        ...['x','y','width','height','text','title','message','placeholder','value','min','max','style','layout','direction','orientation','type','variant','checked','selected','src','lat','lon','zoom','radius','thickness','color','action','duration','z_index','autoplay','interactive','auto_rotate','secondary'].map(function(p){ return { label: p, kind: monaco.languages.CompletionItemKind.Property, insertText: p + ': $0', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
         { label: 'true', kind: monaco.languages.CompletionItemKind.Value, insertText: 'true' },
         { label: 'false', kind: monaco.languages.CompletionItemKind.Value, insertText: 'false' },
         ...['large','medium','small','flex','row','column','horizontal','vertical','elevated','filled','outlined','standard','assist','filter','suggestion','top','bottom','left','right','basic','fullscreen','determinate','indeterminate'].map(function(e){ return { label: e, kind: monaco.languages.CompletionItemKind.Enum, insertText: e }; })
@@ -267,7 +267,7 @@
         'Map': ['x','y','width','height','lat','lon','zoom','attribution','z_index'],
         'ThreeDViewer': ['x','y','width','height','auto_rotate','interactive','light_x','light_y','light_z','model','z_index'],
         'Snackbar': ['message','duration','action','on_click','z_index'],
-        'ListView': ['x','y','width','height','on_select','z_index'],
+        'ListView': ['x','y','width','height','on_select','secondary','icon','z_index'],
         'Dialog': ['title','message','width','height','type','z_index'],
         'Table': ['x','y','width','height','columns','z_index'],
         'Column': ['header','width'],
@@ -289,7 +289,8 @@
         'Menu': ['MenuItem'],
         'Dropdown': ['Option'],
         'Dialog': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','ScrollView','Table'],
-        'Table': ['Column','Row','HeaderCell']
+        'Table': ['Column','Row','HeaderCell'],
+        'ListView': ['ListItem','Header','Separator']
       };
 
       function getWidgetContext(model, line) {
@@ -427,7 +428,7 @@
             'Map': 'An interactive map widget.',
             'ThreeDViewer': 'A 3D model viewer.',
             'Snackbar': 'A transient message bar.',
-            'ListView': 'A scrollable list of items.',
+            'ListView': 'A scrollable list with ListItem, Header, and Separator children.',
             'Dialog': 'A modal dialog window.',
             'ScrollView': 'A scrollable container.',
             'Table': 'A data table widget.'
@@ -438,7 +439,85 @@
         }
       });
 
-      var defaultSource = `Window {\n    width: 320\n    height: 480\n    title: "Hello World"\n\n    Label { text: "Hello, AromaUI!" x: 20 y: 20 style: large }\n    Label { text: "Edit this code and press Run" x: 20 y: 60 style: medium color: #888888 }\n}`;
+      var defaultSource = `Window {
+    width: 320
+    height: 480
+    title: "Settings"
+
+    Container {
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+
+        Label {
+            text: "Settings"
+            style: large
+            color: #000000
+        }
+
+        Label {
+            text: "Discover missing features in Incense"
+            style: small
+            color: #666666
+        }
+
+        ListView {
+            x: 0
+            y: 40
+            width: 320
+            height: 400
+
+            Header { text: "General" }
+
+            ListItem {
+                text: "Airplane Mode"
+                secondary: "Off"
+            }
+
+            ListItem {
+                text: "Wi-Fi"
+                secondary: "Not Connected"
+            }
+
+            ListItem {
+                text: "Bluetooth"
+                secondary: "On"
+            }
+
+            Separator { }
+
+            Header { text: "Display & Brightness" }
+
+            ListItem {
+                text: "Brightness"
+                secondary: "50%"
+            }
+
+            ListItem {
+                text: "Auto-Lock"
+                secondary: "2 minutes"
+            }
+
+            Separator { }
+
+            Header { text: "Privacy" }
+
+            ListItem {
+                text: "Location Services"
+                secondary: "While Using the App"
+            }
+
+            ListItem {
+                text: "Photos"
+                secondary: "All Photos"
+            }
+        }
+    }
+}
+`;
       var editor = monaco.editor.create(document.getElementById('editor'), {
         value: defaultSource,
         language: 'incense',

@@ -742,6 +742,13 @@ class DocGenerator:
                 </div>
             </div>
             {quick_links_html}
+            <div class="home-section">
+                <h2 class="section-heading">Try Incense</h2>
+                <p style="color:var(--md-on-surface-var);margin:8px 0 16px;font-size:15px">Interactive Incense language playground. Edit the code and click Run.</p>
+                <div style="border:1px solid var(--md-outline);border-radius:12px;overflow:hidden;background:var(--md-surface)">
+                    <iframe src="sandbox.html" style="width:100%;height:720px;border:none;display:block"></iframe>
+                </div>
+            </div>
             {browse_section}
         </div>
         '''
@@ -874,7 +881,10 @@ class DocGenerator:
             if not os.path.exists(path):
                 return f"<h1>File not found</h1><p>{path}</p>"
             with open(path, "r", encoding="utf-8") as f:
-                return self._process_markdown(f.read())
+                content = f.read()
+            if path.lower().endswith(".html"):
+                return content
+            return self._process_markdown(content)
         except Exception as e:
             return f"<h1>Error loading file</h1><p>{e}</p>"
 
@@ -3002,6 +3012,9 @@ window.addEventListener('hashchange', () => {{
         pdf_url = os.path.basename(pdf_output) if pdf_output else ""
         page_icons_js = json.dumps(page_icon_map)
 
+        def _esc(s: str) -> str:
+            return s.replace("</script>", "<\\/script>")
+
         html = self._build_template().format(
             project_name=project_name,
             version=project_version,
@@ -3009,14 +3022,14 @@ window.addEventListener('hashchange', () => {{
             welcome_html=welcome_html,
             pygments_styles=self._pygments_css(),
             sidebar_content="\n".join(sb),
-            pages_json=json.dumps(pages_dict),
-            titles_json=json.dumps(titles_dict),
-            categories_json=json.dumps(page_categories),
-            subcategories_json=json.dumps(page_subcats),
+            pages_json=json.dumps({k: _esc(v) for k, v in pages_dict.items()}),
+            titles_json=json.dumps({k: _esc(v) for k, v in titles_dict.items()}),
+            categories_json=json.dumps({k: _esc(v) for k, v in page_categories.items()}),
+            subcategories_json=json.dumps({k: _esc(v) for k, v in subcategory_pages.items()}),
             platforms_json=json.dumps(page_platforms),
-            category_pages_json=json.dumps(category_pages),
-            subcategory_pages_json=json.dumps(subcategory_pages),
-            search_index_json=json.dumps(search_index),
+            category_pages_json=json.dumps({k: _esc(v) for k, v in category_pages.items()}),
+            subcategory_pages_json=json.dumps({k: _esc(v) for k, v in subcategory_pages.items()}),
+            search_index_json=json.dumps([{k: _esc(v) if isinstance(v, str) else v for k, v in item.items()} for item in search_index]),
             slug_to_id_json=json.dumps(slug_to_id),
             id_to_slug_json=json.dumps(id_to_slug),
             page_order_json=json.dumps(page_order),
