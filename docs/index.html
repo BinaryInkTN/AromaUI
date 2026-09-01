@@ -1727,7 +1727,8 @@ function initDownloadsPage(){
 
       const notesEl = document.getElementById('release-notes');
       if (release.body) {
-        notesEl.innerHTML = marked.parse(release.body);
+        const cleaned = release.body.replace(/!\[.*?\]\(.*?\)/g, '');
+        notesEl.innerHTML = marked.parse(cleaned);
       } else {
         notesEl.innerHTML = '<p>No release notes available.</p>';
       }
