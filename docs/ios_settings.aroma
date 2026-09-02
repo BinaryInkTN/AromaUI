@@ -1,0 +1,304 @@
+Window {
+    width: 320
+    height: 480
+    title: "Settings"
+
+    Container {
+        id: "page_main"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 1
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+        
+            color: #121212
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+                visible: 0
+            }
+
+            Label {
+                text: "Settings"
+                style: large
+                color: #FFFFFF
+                y:20
+                x: 10
+            }
+        }
+
+        ListView {
+            x: 0
+            y: 56
+            width: 320
+            height: 424
+            on_select: "navigate"
+
+            Header { text: "General" }
+            ListItem { text: "Airplane Mode" secondary: "Off" icon: "AROMA_ICON_AIRPLANEMODE_INACTIVE" }
+            ListItem { text: "Wi-Fi" secondary: "Not Connected" icon: "AROMA_ICON_NETWORK_WIFI" }
+            ListItem { text: "Bluetooth" secondary: "On" icon: "AROMA_ICON_BLUETOOTH" }
+            ListItem { text: "Cellular" secondary: "5G On" icon: "AROMA_ICON_SIGNAL_CELLULAR_4_BAR" }
+            ListItem { text: "VPN" secondary: "Disconnected" icon: "AROMA_ICON_LOCK" }
+
+            Header { text: "Display & Brightness" }
+            ListItem { text: "Brightness" secondary: "50%" icon: "AROMA_ICON_BRIGHTNESS_MEDIUM" }
+            ListItem { text: "Auto-Lock" secondary: "2 minutes" icon: "AROMA_ICON_LOCK" }
+            ListItem { text: "Night Shift" secondary: "On until 7 AM" icon: "AROMA_ICON_WB_SUNNY" }
+            ListItem { text: "True Tone" secondary: "On" icon: "AROMA_ICON_BRIGHTNESS_AUTO" }
+
+            Header { text: "Privacy" }
+            ListItem { text: "Location Services" secondary: "While Using the App" icon: "AROMA_ICON_LOCATION_CITY" }
+            ListItem { text: "Photos" secondary: "All Photos" icon: "AROMA_ICON_PHOTO" }
+            ListItem { text: "Camera" secondary: "On" icon: "AROMA_ICON_PHOTO_CAMERA" }
+            ListItem { text: "Microphone" secondary: "On" icon: "AROMA_ICON_MIC" }
+        }
+    }
+
+    Container {
+        id: "page_airplane"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+    
+            color: #121212
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Airplane Mode"
+                style: large
+                color: #FFFFFF
+                y: 20
+                x: 60
+            }
+        }
+
+        ListView {
+            x: 0
+            y: 56
+            width: 320
+            height: 424
+
+            ListItem { text: "Airplane Mode" secondary: "Off" }
+            ListItem { text: "My Number" secondary: "" }
+            ListItem { text: "Cellular Data Options" secondary: "" }
+            ListItem { text: "Cellular Data" secondary: "On" }
+            ListItem { text: "Data Roaming" secondary: "Off" }
+            ListItem { text: "Voice & Data" secondary: "5G Auto" }
+            ListItem { text: "Data Mode" secondary: "Allow More Data on 5G" }
+        }
+    }
+
+    Container {
+        id: "page_wifi"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+  
+            color: #121212
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Wi-Fi"
+                style: large
+                color: #FFFFFF
+                y: 20
+                x: 60
+            }
+        }
+
+        ListView {
+            x: 0
+            y: 56
+            width: 320
+            height: 370
+
+            ListItem { text: "Wi-Fi" secondary: "On" }
+            ListItem { text: "Network Name" secondary: "Not Connected" }
+            ListItem { text: "Auto-Join" secondary: "On" }
+            ListItem { text: "Auto-Lock" secondary: "Never" }
+            ListItem { text: "Ask to Join" secondary: "On" }
+        }
+
+        IconButton {
+            x: 246
+            y: 394
+            width: 60
+            height: 60
+            icon: "AROMA_ICON_ADD"
+            variant: standard
+            on_click: "navigate_wifi_connect"
+        }
+    }
+
+    Container {
+        id: "page_wifi_connect"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+            color: #121212
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Wi-Fi"
+                style: large
+                color: #FFFFFF
+                y: 20
+                x: 60
+            }
+        }
+
+        Container {
+            x: 0
+            y: 70
+            width: 280
+            height: 340
+
+            Textbox {
+                text: ""
+                placeholder: "Network Name (SSID)"
+                x: 20
+                y: 30
+                width: 280
+                height: 44
+            }
+
+            Textbox {
+                text: ""
+                placeholder: "Password"
+                x: 20
+                y: 90
+                width: 280
+                height: 44
+            }
+
+            Button {
+                text: "Connect to Network"
+                x: 40
+                y: 170
+                width: 200
+                height: 44
+                on_click: "wifi_connect"
+            }
+        }
+    }
+
+    Container {
+        id: "page_bluetooth"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+            color: #121212
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Bluetooth"
+                style: large
+                color: #FFFFFF
+                y: 20
+                x: 60 
+            }
+        }
+
+        ListView {
+            x: 0
+            y: 56
+            width: 320
+            height: 424
+
+            ListItem { text: "Bluetooth" secondary: "On" }
+            ListItem { text: "My Devices" secondary: "" }
+            ListItem { text: "Other Devices" secondary: "" }
+        }
+    }
+}
