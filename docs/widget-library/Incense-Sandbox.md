@@ -3,7 +3,7 @@ Incense is AromaUI's declarative language for building UIs. Write widget trees i
 
 ## Open the Sandbox
 
-**[Launch Incense Sandbox](wasm/incense_sandbox/index.html)**
+**[Launch Incense Sandbox](https://binaryinktn.github.io/AromaUI/sandbox.html)**
 
 Edit code on the left, click **Run**, and see the preview update instantly via WebAssembly.
 
