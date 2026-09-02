@@ -1,6 +1,0 @@
-
-Name: freetype2
-Description: freetype2 port from emscripten
-Version: 26.2.20
-Libs: -sUSE_FREETYPE
-Cflags: -sUSE_FREETYPE
