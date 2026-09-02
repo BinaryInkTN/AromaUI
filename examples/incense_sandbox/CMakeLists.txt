@@ -13,10 +13,12 @@ endif()
 add_executable(incense_sandbox
     sandbox.c
     aroma_map_stub.c
+    ../../src/widgets/aroma_textbox.c
 )
 
 target_include_directories(incense_sandbox PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../src"
 )
 
 if(EMSCRIPTEN)
@@ -27,9 +29,8 @@ if(EMSCRIPTEN)
         "-sMAX_WEBGL_VERSION=2"
         "-sFULL_ES3=1"
         "-sASYNCIFY=1"
-        "-sINVOKE_RUN=0"
-        "-sEXPORTED_FUNCTIONS=['_main','_aroma_sandbox_init','_aroma_sandbox_reload','_aroma_sandbox_get_last_error','_aroma_sandbox_has_error','_aroma_sandbox_get_width','_aroma_sandbox_get_height','_aroma_event_handle_touch','_aroma_event_handle_pointer_move','_aroma_emscripten_dispatch_mouse']"
-        "-sEXPORTED_RUNTIME_METHODS=['callMain','ccall','cwrap','FS','addRunDependency','removeRunDependency']"
+        "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free','_aroma_sandbox_init','_aroma_sandbox_reload','_aroma_sandbox_get_last_error','_aroma_sandbox_has_error','_aroma_sandbox_get_width','_aroma_sandbox_get_height','_aroma_event_handle_touch','_aroma_event_handle_pointer_move','_aroma_emscripten_dispatch_mouse','_aroma_textbox_enable_virtual_keyboard','_aroma_textbox_show_virtual_keyboard','_aroma_textbox_hide_virtual_keyboard']"
+        "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS','addRunDependency','removeRunDependency','lengthBytesUTF8','stringToUTF8','UTF8ToString']"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=134217728"
         "-sFETCH=1"

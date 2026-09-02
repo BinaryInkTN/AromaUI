@@ -1,4 +1,4 @@
-prefix=/usr/local
+prefix=/home/yassine/Projects/AromaUI/vendors/emscripten/upstream/emscripten/cache/sysroot
 exec_prefix=${prefix}
 libdir=${prefix}/lib
 includedir=${prefix}/include

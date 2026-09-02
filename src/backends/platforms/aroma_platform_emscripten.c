@@ -47,18 +47,15 @@ EM_JS(void, _aroma_resize_canvas_for_dpr, (const char *selector, int css_w, int 
     el.style.height = css_h + 'px';
 });
 
-static inline void _js_expose_mouse(int type, int target, int x, int y, int btn)
-{
-    EM_ASM({
-        if (typeof window !== 'undefined') {
-            window.aromaLastMouseType   = $0;
-            window.aromaLastMouseTarget = $1;
-            window.aromaLastMouseX      = $2;
-            window.aromaLastMouseY      = $3;
-            window.aromaLastMouseButton = $4;
-        }
-    }, type, target, x, y, btn);
-}
+EM_JS(void, _js_expose_mouse, (int type, int target, int x, int y, int btn), {
+    if (typeof window !== 'undefined') {
+        window.aromaLastMouseType   = type;
+        window.aromaLastMouseTarget = target;
+        window.aromaLastMouseX      = x;
+        window.aromaLastMouseY      = y;
+        window.aromaLastMouseButton = btn;
+    }
+});
 
 EMSCRIPTEN_KEEPALIVE int               aroma_test_get_last_mouse_event_type(void)    { return g_last_type;   }
 EMSCRIPTEN_KEEPALIVE int               aroma_test_get_last_mouse_event_x(void)       { return g_last_x;      }
@@ -120,20 +117,22 @@ static bool _queue_mouse_event(AromaEventType type,
     return queued;
 }
 
+EM_JS(void, _aroma_emscripten_dispatch_mouse_js, (int action, int x, int y, int button), {
+    if (typeof window !== 'undefined') {
+        window.aromaLastMouseDispatchAction = action;
+        window.aromaLastMouseDispatchX      = x;
+        window.aromaLastMouseDispatchY      = y;
+        window.aromaLastMouseDispatchButton = button;
+    }
+    console.log('dispatch_mouse', action, x, y, button);
+});
+
 EMSCRIPTEN_KEEPALIVE
 void aroma_emscripten_dispatch_mouse(int action, int x, int y, int button)
 {
     LOG_INFO("dispatch_mouse: action=%d x=%d y=%d btn=%d", action, x, y, button);
 
-    EM_ASM({
-        if (typeof window !== 'undefined') {
-            window.aromaLastMouseDispatchAction = $0;
-            window.aromaLastMouseDispatchX      = $1;
-            window.aromaLastMouseDispatchY      = $2;
-            window.aromaLastMouseDispatchButton = $3;
-        }
-        console.log('dispatch_mouse', $0, $1, $2, $3);
-    }, action, x, y, button);
+    _aroma_emscripten_dispatch_mouse_js(action, x, y, button);
 
     double dpr = platform_ctx.device_pixel_ratio;
     if (dpr < 1.0) dpr = 1.0;

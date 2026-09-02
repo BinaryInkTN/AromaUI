@@ -17,25 +17,27 @@
 #include "aroma_android.h"
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+#endif
+
 #define AROMA_TEXTBOX_PADDING_X 8
-#define AROMA_VK_KEY_WIDTH 60
-#define AROMA_VK_KEY_HEIGHT 50
-#define AROMA_VK_KEY_SPACING 8
-#define AROMA_VK_ROW_SPACING 8
-#define AROMA_VK_PADDING 20
-#define AROMA_VK_PREVIEW_HEIGHT 70
-#define AROMA_VK_PREVIEW_GAP 30
-#define AROMA_VK_BUTTON_HEIGHT 50
-#define AROMA_VK_BUTTON_GAP 20
 
 static void textbox_insert_char(AromaTextbox *tb, char ch);
 static void textbox_backspace(AromaTextbox *tb);
 static void textbox_delete(AromaTextbox *tb);
 
-void aroma_textbox_show_virtual_keyboard(AromaNode *node);
-void aroma_textbox_hide_virtual_keyboard(AromaNode *node);
-void aroma_textbox_enable_virtual_keyboard(AromaNode *node, bool enable);
-bool aroma_textbox_is_virtual_keyboard_enabled(AromaNode *node);
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+#define VK_KEEP EMSCRIPTEN_KEEPALIVE
+#else
+#define VK_KEEP
+#endif
+
+VK_KEEP void aroma_textbox_show_virtual_keyboard(AromaNode *node);
+VK_KEEP void aroma_textbox_hide_virtual_keyboard(AromaNode *node);
+VK_KEEP void aroma_textbox_enable_virtual_keyboard(AromaNode *node, bool enable);
+VK_KEEP bool aroma_textbox_is_virtual_keyboard_enabled(AromaNode *node);
 
 static const char *vk_rows[] = {
     "1234567890",
@@ -136,17 +138,96 @@ static int vk_get_key_count(void)
     return count;
 }
 
+typedef struct {
+    int key_width;
+    int key_height;
+    int spacing;
+    int row_spacing;
+    int padding;
+    int preview_height;
+    int preview_gap;
+    int button_height;
+    int button_gap;
+    int top_offset;
+    bool abbreviate;
+} VKLayout;
+
+static VKLayout g_vk_layout;
+
 static int vk_get_keys_start_y(void)
 {
-    return AROMA_VK_PADDING + AROMA_VK_PREVIEW_HEIGHT + AROMA_VK_PREVIEW_GAP;
+    return g_vk_layout.padding + g_vk_layout.preview_height + g_vk_layout.preview_gap;
+}
+
+static int vk_get_total_height(void)
+{
+    int h = g_vk_layout.padding * 2;
+    h += g_vk_layout.preview_height;
+    h += g_vk_layout.preview_gap;
+    h += 4 * (g_vk_layout.key_height + g_vk_layout.row_spacing);
+    h += g_vk_layout.key_height;
+    h += g_vk_layout.button_gap;
+    h += g_vk_layout.button_height;
+    return h;
+}
+
+static void vk_compute_layout(void)
+{
+    int available_width = g_vk.width;
+    int available_height = g_vk.height;
+    int max_keys = 10;
+
+    if (available_width < 200) available_width = 200;
+    if (available_height < 300) available_height = 300;
+
+    int total_padding_h = 40;
+    int usable_width = available_width - total_padding_h;
+    if (usable_width < 160) usable_width = 160;
+
+    g_vk_layout.spacing = 4;
+    if (available_width > 400) g_vk_layout.spacing = 6;
+    if (available_width > 600) g_vk_layout.spacing = 8;
+
+    g_vk_layout.key_width = (usable_width - (max_keys - 1) * g_vk_layout.spacing) / max_keys;
+    if (g_vk_layout.key_width < 20) g_vk_layout.key_width = 20;
+    if (g_vk_layout.key_width > 70) g_vk_layout.key_width = 70;
+
+    g_vk_layout.key_height = g_vk_layout.key_width * 3 / 4;
+    if (g_vk_layout.key_height < 28) g_vk_layout.key_height = 28;
+    if (g_vk_layout.key_height > 56) g_vk_layout.key_height = 56;
+
+    g_vk_layout.row_spacing = g_vk_layout.spacing;
+    g_vk_layout.padding = g_vk_layout.spacing * 2;
+    g_vk_layout.preview_height = g_vk_layout.key_height + 16;
+    g_vk_layout.preview_gap = g_vk_layout.spacing * 3;
+    g_vk_layout.button_height = g_vk_layout.key_height;
+    g_vk_layout.button_gap = g_vk_layout.spacing * 3;
+    g_vk_layout.abbreviate = g_vk_layout.key_width < 34;
+
+    int total_h = vk_get_total_height();
+    g_vk_layout.top_offset = available_height - total_h;
+    if (g_vk_layout.top_offset < 0) g_vk_layout.top_offset = 0;
+}
+
+static const char *vk_get_key_label(const char *full_label)
+{
+    if (!g_vk_layout.abbreviate)
+        return full_label;
+
+    if (strcmp(full_label, "Shift") == 0) return "Sh";
+    if (strcmp(full_label, "Space") == 0) return "Sp";
+    if (strcmp(full_label, "Backspace") == 0) return "Bk";
+    if (strcmp(full_label, "Submit") == 0) return "OK";
+    if (strcmp(full_label, "Cancel") == 0) return "Cn";
+    return full_label;
 }
 
 static void vk_get_key_rect(int key_index, int *x, int *y, int *width, int *height)
 {
     *x = 0;
     *y = 0;
-    *width = AROMA_VK_KEY_WIDTH;
-    *height = AROMA_VK_KEY_HEIGHT;
+    *width = g_vk_layout.key_width;
+    *height = g_vk_layout.key_height;
     
     int current_index = 0;
     for (int row = 0; vk_rows[row] != NULL; row++) {
@@ -154,28 +235,29 @@ static void vk_get_key_rect(int key_index, int *x, int *y, int *width, int *heig
         if (key_index >= current_index && key_index < current_index + row_length) {
             int col = key_index - current_index;
             
-            int total_row_width = row_length * AROMA_VK_KEY_WIDTH + 
-                                  (row_length - 1) * AROMA_VK_KEY_SPACING;
+            int total_row_width = row_length * g_vk_layout.key_width + 
+                                  (row_length - 1) * g_vk_layout.spacing;
             int row_offset = (g_vk.width - total_row_width) / 2;
             
-            *x = g_vk.x + AROMA_VK_PADDING + row_offset + 
-                 col * (AROMA_VK_KEY_WIDTH + AROMA_VK_KEY_SPACING);
+            *x = g_vk.x + g_vk_layout.padding + row_offset + 
+                 col * (g_vk_layout.key_width + g_vk_layout.spacing);
             *y = g_vk.y + vk_get_keys_start_y() + 
-                 row * (AROMA_VK_KEY_HEIGHT + AROMA_VK_ROW_SPACING);
+                 row * (g_vk_layout.key_height + g_vk_layout.row_spacing);
             return;
         }
         current_index += row_length;
     }
+    return;
 }
 
 static int vk_get_special_y(void)
 {
-    return vk_get_keys_start_y() + 4 * (AROMA_VK_KEY_HEIGHT + AROMA_VK_ROW_SPACING);
+    return vk_get_keys_start_y() + 4 * (g_vk_layout.key_height + g_vk_layout.row_spacing);
 }
 
 static int vk_get_buttons_y(void)
 {
-    return vk_get_special_y() + AROMA_VK_KEY_HEIGHT + AROMA_VK_BUTTON_GAP;
+    return vk_get_special_y() + g_vk_layout.key_height + g_vk_layout.button_gap;
 }
 
 static int vk_get_key_at_position(int x, int y)
@@ -232,10 +314,10 @@ static void vk_get_button_rects(AromaVKWidget *vk, int *submit_x, int *submit_y,
 {
     int button_y = vk->rect.y + vk_get_buttons_y();
     
-    *submit_w = 150;
-    *submit_h = AROMA_VK_BUTTON_HEIGHT;
+    *submit_w = 100;
+    *submit_h = g_vk_layout.button_height;
     *cancel_w = 100;
-    *cancel_h = AROMA_VK_BUTTON_HEIGHT;
+    *cancel_h = g_vk_layout.button_height;
     
     *submit_x = vk->rect.x + vk->rect.width / 2 - *submit_w - 15;
     *submit_y = button_y;
@@ -261,10 +343,10 @@ static void vk_draw_widget(AromaNode *node, size_t window_id)
                                vk->rect.width, vk->rect.height, 
                                vk->border_color, 2, true, 16.0f);
     
-    int preview_x = vk->rect.x + AROMA_VK_PADDING;
-    int preview_y = vk->rect.y + AROMA_VK_PADDING;
-    int preview_w = vk->rect.width - 2 * AROMA_VK_PADDING;
-    int preview_h = AROMA_VK_PREVIEW_HEIGHT;
+    int preview_x = vk->rect.x + g_vk_layout.padding;
+    int preview_y = vk->rect.y + g_vk_layout.padding;
+    int preview_w = vk->rect.width - 2 * g_vk_layout.padding;
+    int preview_h = g_vk_layout.preview_height;
     
     gfx->fill_rectangle(window_id, preview_x, preview_y, preview_w, preview_h,
                         vk->preview_bg, true, 10.0f);
@@ -277,14 +359,14 @@ static void vk_draw_widget(AromaNode *node, size_t window_id)
             display_text = vk->textbox->placeholder;
         }
         
-        int text_x = preview_x + 15;
+        int text_x = preview_x + g_vk_layout.spacing * 2;
         int text_y = preview_y + (preview_h - aroma_font_get_line_height(vk->textbox->font)) / 2;
         
         char preview_text[AROMA_TEXTBOX_MAX_LENGTH];
         strncpy(preview_text, display_text ? display_text : "", sizeof(preview_text) - 1);
         preview_text[sizeof(preview_text) - 1] = '\0';
         
-        int max_width = preview_w - 30;
+        int max_width = preview_w - g_vk_layout.spacing * 4;
         if (gfx->measure_text) {
             float text_width = gfx->measure_text(window_id, vk->textbox->font, 
                                                  preview_text, vk->textbox->text_scale);
@@ -337,43 +419,56 @@ static void vk_draw_widget(AromaNode *node, size_t window_id)
     }
     
     int special_y = vk->rect.y + vk_get_special_y();
-    int special_x = vk->rect.x + AROMA_VK_PADDING;
+    int special_x = vk->rect.x + g_vk_layout.padding;
     
     uint32_t shift_color = g_vk.shift_pressed ? vk->key_active_color : vk->key_color;
     gfx->fill_rectangle(window_id, special_x, special_y, 
-                        AROMA_VK_KEY_WIDTH * 2, AROMA_VK_KEY_HEIGHT, 
+                        g_vk_layout.key_width * 2, g_vk_layout.key_height, 
                         shift_color, true, 10.0f);
     gfx->draw_hollow_rectangle(window_id, special_x, special_y, 
-                               AROMA_VK_KEY_WIDTH * 2, AROMA_VK_KEY_HEIGHT, 
+                               g_vk_layout.key_width * 2, g_vk_layout.key_height, 
                                vk->border_color, 1, true, 10.0f);
     if (vk->textbox && vk->textbox->font && gfx->render_text) {
-        gfx->render_text(window_id, vk->textbox->font, "Shift", 
-                        special_x + 20, special_y + 15, vk->text_color, vk->textbox->text_scale);
+        const char *label = vk_get_key_label("Shift");
+        gfx->render_text(window_id, vk->textbox->font, label, 
+                         special_x + g_vk_layout.spacing * 2, special_y + g_vk_layout.spacing * 2, 
+                         vk->text_color, vk->textbox->text_scale);
     }
     
-    int space_width = g_vk.width - AROMA_VK_PADDING * 2 - AROMA_VK_KEY_WIDTH * 4 - AROMA_VK_KEY_SPACING * 4;
-    int space_x = special_x + AROMA_VK_KEY_WIDTH * 2 + AROMA_VK_KEY_SPACING;
+    int space_width = g_vk.width - g_vk_layout.padding * 2 - g_vk_layout.key_width * 4 - g_vk_layout.spacing * 4;
+    int space_x = special_x + g_vk_layout.key_width * 2 + g_vk_layout.spacing;
     gfx->fill_rectangle(window_id, space_x, special_y, 
-                        space_width, AROMA_VK_KEY_HEIGHT, vk->key_color, true, 10.0f);
+                        space_width, g_vk_layout.key_height, vk->key_color, true, 10.0f);
     gfx->draw_hollow_rectangle(window_id, space_x, special_y, 
-                               space_width, AROMA_VK_KEY_HEIGHT, vk->border_color, 1, true, 10.0f);
+                               space_width, g_vk_layout.key_height, vk->border_color, 1, true, 10.0f);
     if (vk->textbox && vk->textbox->font && gfx->render_text) {
-        gfx->render_text(window_id, vk->textbox->font, "Space", 
-                        space_x + space_width / 2 - 25, special_y + 15, 
-                        vk->text_color, vk->textbox->text_scale);
+        const char *label = vk_get_key_label("Space");
+        int label_w = gfx->measure_text ? 
+            (int)gfx->measure_text(window_id, vk->textbox->font, label, vk->textbox->text_scale) : 0;
+        int text_x = space_x + (space_width - label_w) / 2;
+        int text_y = special_y + (g_vk_layout.key_height - aroma_font_get_line_height(vk->textbox->font)) / 2;
+        gfx->render_text(window_id, vk->textbox->font, label, 
+                         text_x, text_y, 
+                         vk->text_color, vk->textbox->text_scale);
     }
     
-    int backspace_x = space_x + space_width + AROMA_VK_KEY_SPACING;
-    int backspace_w = AROMA_VK_KEY_WIDTH * 2;
+    int backspace_x = space_x + space_width + g_vk_layout.spacing;
+    int backspace_w = g_vk_layout.key_width * 2;
     gfx->fill_rectangle(window_id, backspace_x, special_y, 
-                        backspace_w, AROMA_VK_KEY_HEIGHT, 
+                        backspace_w, g_vk_layout.key_height, 
                         vk->key_color, true, 10.0f);
     gfx->draw_hollow_rectangle(window_id, backspace_x, special_y, 
-                               backspace_w, AROMA_VK_KEY_HEIGHT, 
+                               backspace_w, g_vk_layout.key_height, 
                                vk->border_color, 1, true, 10.0f);
     if (vk->textbox && vk->textbox->font && gfx->render_text) {
-        gfx->render_text(window_id, vk->textbox->font, "Backspace", 
-                        backspace_x + 15, special_y + 15, vk->text_color, vk->textbox->text_scale);
+        const char *label = vk_get_key_label("Backspace");
+        int label_w = gfx->measure_text ? 
+            (int)gfx->measure_text(window_id, vk->textbox->font, label, vk->textbox->text_scale) : 0;
+        int text_x = backspace_x + (backspace_w - label_w) / 2;
+        int text_y = special_y + (g_vk_layout.key_height - aroma_font_get_line_height(vk->textbox->font)) / 2;
+        gfx->render_text(window_id, vk->textbox->font, label, 
+                         text_x, text_y, 
+                         vk->text_color, vk->textbox->text_scale);
     }
     
     int submit_x, submit_y, submit_w, submit_h;
@@ -386,8 +481,13 @@ static void vk_draw_widget(AromaNode *node, size_t window_id)
     gfx->draw_hollow_rectangle(window_id, submit_x, submit_y, submit_w, submit_h,
                                vk->border_color, 1, true, 10.0f);
     if (vk->textbox && vk->textbox->font && gfx->render_text) {
-        gfx->render_text(window_id, vk->textbox->font, "Submit", 
-                        submit_x + 40, submit_y + 15, vk->submit_text, vk->textbox->text_scale);
+        const char *label = vk_get_key_label("Submit");
+        int label_w = gfx->measure_text ? 
+            (int)gfx->measure_text(window_id, vk->textbox->font, label, vk->textbox->text_scale) : 0;
+        int text_x = submit_x + (submit_w - label_w) / 2;
+        int text_y = submit_y + (submit_h - aroma_font_get_line_height(vk->textbox->font)) / 2;
+        gfx->render_text(window_id, vk->textbox->font, label, 
+                         text_x, text_y, vk->submit_text, vk->textbox->text_scale);
     }
     
     gfx->fill_rectangle(window_id, cancel_x, cancel_y, cancel_w, cancel_h,
@@ -395,8 +495,13 @@ static void vk_draw_widget(AromaNode *node, size_t window_id)
     gfx->draw_hollow_rectangle(window_id, cancel_x, cancel_y, cancel_w, cancel_h,
                                vk->border_color, 1, true, 10.0f);
     if (vk->textbox && vk->textbox->font && gfx->render_text) {
-        gfx->render_text(window_id, vk->textbox->font, "Cancel", 
-                        cancel_x + 20, cancel_y + 15, vk->text_color, vk->textbox->text_scale);
+        const char *label = vk_get_key_label("Cancel");
+        int label_w = gfx->measure_text ? 
+            (int)gfx->measure_text(window_id, vk->textbox->font, label, vk->textbox->text_scale) : 0;
+        int text_x = cancel_x + (cancel_w - label_w) / 2;
+        int text_y = cancel_y + (cancel_h - aroma_font_get_line_height(vk->textbox->font)) / 2;
+        gfx->render_text(window_id, vk->textbox->font, label, 
+                         text_x, text_y, vk->text_color, vk->textbox->text_scale);
     }
 }
 
@@ -451,17 +556,17 @@ static bool vk_event_handler(AromaEvent *event, void *user_data)
             }
             
             int special_y = vk->rect.y + vk_get_special_y();
-            if (y >= special_y && y <= special_y + AROMA_VK_KEY_HEIGHT) {
-                int special_x = vk->rect.x + AROMA_VK_PADDING;
+            if (y >= special_y && y <= special_y + g_vk_layout.key_height) {
+                int special_x = vk->rect.x + g_vk_layout.padding;
                 
-                if (x >= special_x && x <= special_x + AROMA_VK_KEY_WIDTH * 2) {
+                if (x >= special_x && x <= special_x + g_vk_layout.key_width * 2) {
                     g_vk.shift_pressed = !g_vk.shift_pressed;
                     aroma_node_invalidate(g_vk.keyboard_node);
                     return true;
                 }
                 
-                int space_width = g_vk.width - AROMA_VK_PADDING * 2 - AROMA_VK_KEY_WIDTH * 4 - AROMA_VK_KEY_SPACING * 4;
-                int space_x = special_x + AROMA_VK_KEY_WIDTH * 2 + AROMA_VK_KEY_SPACING;
+                int space_width = g_vk.width - g_vk_layout.padding * 2 - g_vk_layout.key_width * 4 - g_vk_layout.spacing * 4;
+                int space_x = special_x + g_vk_layout.key_width * 2 + g_vk_layout.spacing;
                 if (x >= space_x && x <= space_x + space_width) {
                     textbox_insert_char(vk->textbox, ' ');
                     aroma_node_invalidate(g_vk.textbox_node);
@@ -469,8 +574,8 @@ static bool vk_event_handler(AromaEvent *event, void *user_data)
                     return true;
                 }
                 
-                int backspace_x = space_x + space_width + AROMA_VK_KEY_SPACING;
-                if (x >= backspace_x && x <= backspace_x + AROMA_VK_KEY_WIDTH * 2) {
+                int backspace_x = space_x + space_width + g_vk_layout.spacing;
+                if (x >= backspace_x && x <= backspace_x + g_vk_layout.key_width * 2) {
                     textbox_backspace(vk->textbox);
                     aroma_node_invalidate(g_vk.textbox_node);
                     aroma_node_invalidate(g_vk.keyboard_node);
@@ -785,7 +890,7 @@ void aroma_textbox_set_font(AromaNode *node, AromaFont *font)
 
 static AromaNode *g_focused_textbox = NULL;
 
-void aroma_textbox_enable_virtual_keyboard(AromaNode *node, bool enable)
+VK_KEEP void aroma_textbox_enable_virtual_keyboard(AromaNode *node, bool enable)
 {
     if (!node) return;
     g_vk.enabled = enable;
@@ -795,12 +900,12 @@ void aroma_textbox_enable_virtual_keyboard(AromaNode *node, bool enable)
     }
 }
 
-bool aroma_textbox_is_virtual_keyboard_enabled(AromaNode *node)
+VK_KEEP bool aroma_textbox_is_virtual_keyboard_enabled(AromaNode *node)
 {
     return g_vk.enabled;
 }
 
-void aroma_textbox_show_virtual_keyboard(AromaNode *node)
+VK_KEEP void aroma_textbox_show_virtual_keyboard(AromaNode *node)
 {
     if (!node || !g_vk.enabled) return;
     
@@ -826,6 +931,11 @@ void aroma_textbox_show_virtual_keyboard(AromaNode *node)
     g_vk.active_key = -1;
     g_vk.hovered_key = -1;
     
+    vk_compute_layout();
+
+    g_vk.y = g_vk_layout.top_offset;
+    g_vk.height = vk_get_total_height();
+
     if (!g_vk.keyboard_node) {
         g_vk.keyboard_node = vk_create_overlay(node, data);
     } else {
@@ -843,7 +953,7 @@ void aroma_textbox_show_virtual_keyboard(AromaNode *node)
     aroma_node_invalidate(g_vk.keyboard_node);
 }
 
-void aroma_textbox_hide_virtual_keyboard(AromaNode *node)
+VK_KEEP void aroma_textbox_hide_virtual_keyboard(AromaNode *node)
 {
     if (g_vk.visible && g_vk.textbox_node == node) {
         g_vk.visible = false;

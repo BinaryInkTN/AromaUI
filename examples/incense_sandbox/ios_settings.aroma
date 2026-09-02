@@ -163,13 +163,94 @@ Window {
             x: 0
             y: 56
             width: 320
-            height: 424
+            height: 370
 
             ListItem { text: "Wi-Fi" secondary: "On" }
             ListItem { text: "Network Name" secondary: "Not Connected" }
             ListItem { text: "Auto-Join" secondary: "On" }
             ListItem { text: "Auto-Lock" secondary: "Never" }
             ListItem { text: "Ask to Join" secondary: "On" }
+        }
+
+        IconButton {
+            x: 246
+            y: 394
+            width: 60
+            height: 60
+            icon: "AROMA_ICON_ADD"
+            variant: standard
+            on_click: "navigate_wifi_connect"
+        }
+    }
+
+    Container {
+        id: "page_wifi_connect"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+            color: #121212
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Wi-Fi"
+                style: large
+                color: #FFFFFF
+                y: 20
+                x: 60
+            }
+        }
+
+        Container {
+            x: 0
+            y: 70
+            width: 280
+            height: 340
+
+            Textbox {
+                text: ""
+                placeholder: "Network Name (SSID)"
+                x: 20
+                y: 30
+                width: 280
+                height: 44
+            }
+
+            Textbox {
+                text: ""
+                placeholder: "Password"
+                x: 20
+                y: 90
+                width: 280
+                height: 44
+            }
+
+            Button {
+                text: "Connect to Network"
+                x: 40
+                y: 170
+                width: 200
+                height: 44
+                on_click: "wifi_connect"
+            }
         }
     }
 

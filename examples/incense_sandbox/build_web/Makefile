@@ -257,6 +257,30 @@ aroma_map_stub.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/incense_sandbox.dir/build.make CMakeFiles/incense_sandbox.dir/aroma_map_stub.c.s
 .PHONY : aroma_map_stub.c.s
 
+home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.o: home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.o
+.PHONY : home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.o
+
+# target to build an object file
+home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/incense_sandbox.dir/build.make CMakeFiles/incense_sandbox.dir/home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.o
+.PHONY : home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.o
+
+home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.i: home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.i
+.PHONY : home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.i
+
+# target to preprocess a source file
+home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/incense_sandbox.dir/build.make CMakeFiles/incense_sandbox.dir/home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.i
+.PHONY : home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.i
+
+home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.s: home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.s
+.PHONY : home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.s
+
+# target to generate assembly for a file
+home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/incense_sandbox.dir/build.make CMakeFiles/incense_sandbox.dir/home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.s
+.PHONY : home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.c.s
+
 sandbox.o: sandbox.c.o
 .PHONY : sandbox.o
 
@@ -302,6 +326,9 @@ help:
 	@echo "... aroma_map_stub.o"
 	@echo "... aroma_map_stub.i"
 	@echo "... aroma_map_stub.s"
+	@echo "... home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.o"
+	@echo "... home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.i"
+	@echo "... home/yassine/Projects/AromaUI/src/widgets/aroma_textbox.s"
 	@echo "... sandbox.o"
 	@echo "... sandbox.i"
 	@echo "... sandbox.s"

@@ -95,6 +95,9 @@ Window {
 - **Embeds**: Include other files: `@embed "shared.aroma"`
 - **Comments**: Single-line with `//`
 - **List children**: `ListItem { text: "..." secondary: "..." }` for ListView
+- **Navigation**: Use `visible: 0/1` to show/hide pages and `on_click: "back"` for back navigation
+- **Icons**: Material icon names: `AROMA_ICON_*` constants for `IconButton` and `Icon` widgets
+- **Virtual Keyboard**: Textbox widgets automatically show a responsive virtual keyboard when focused; keys scale to fit screen width, are anchored at the bottom, and abbreviate labels when space is limited
 
 ## Known Limitations
 

@@ -143,6 +143,23 @@ static void navigate_to_main(void *user_data)
     navigate_to(g_main_page, true);
 }
 
+static void navigate_to_wifi_connect(void *user_data)
+{
+    (void)user_data;
+    if (g_is_animating) return;
+    if (!g_window || !g_registry) return;
+
+    AromaNode *target = IncenseFindWidget(g_registry, "page_wifi_connect");
+    if (!target) return;
+
+    navigate_to(target, false);
+}
+
+static void on_wifi_connect(void *user_data)
+{
+    (void)user_data;
+}
+
 static void register_navigation(void)
 {
     g_main_page = NULL;
@@ -211,6 +228,8 @@ void aroma_sandbox_init(void)
     aroma_ui_set_theme(&theme);
     IncenseRegisterCallback("navigate", INCENSE_CALLBACK_INT_PTR, (void *)navigate_to_detail, NULL);
     IncenseRegisterCallback("back", INCENSE_CALLBACK_VOID_PTR, (void *)navigate_to_main, NULL);
+    IncenseRegisterCallback("navigate_wifi_connect", INCENSE_CALLBACK_VOID_PTR, (void *)navigate_to_wifi_connect, NULL);
+    IncenseRegisterCallback("wifi_connect", INCENSE_CALLBACK_VOID_PTR, (void *)on_wifi_connect, NULL);
 }
 
 #ifdef __EMSCRIPTEN__
@@ -236,6 +255,9 @@ void aroma_sandbox_reload(const char *source)
     AromaNode *root = (AromaNode *)g_window;
     aroma_event_set_root(root);
     register_navigation();
+#ifdef __EMSCRIPTEN__
+    aroma_textbox_enable_virtual_keyboard(root, true);
+#endif
     aroma_node_invalidate_tree(root);
     aroma_ui_request_redraw(NULL);
 }
@@ -446,13 +468,92 @@ static const char *default_source =
     "            x: 0\n"
     "            y: 56\n"
     "            width: 320\n"
-    "            height: 424\n"
+    "            height: 370\n"
     "\n"
     "            ListItem { text: \"Wi-Fi\" secondary: \"On\" }\n"
     "            ListItem { text: \"Network Name\" secondary: \"Not Connected\" }\n"
     "            ListItem { text: \"Auto-Join\" secondary: \"On\" }\n"
     "            ListItem { text: \"Auto-Lock\" secondary: \"Never\" }\n"
     "            ListItem { text: \"Ask to Join\" secondary: \"On\" }\n"
+    "        }\n"
+    "\n"
+    "        IconButton {\n"
+    "            x: 246\n"
+    "            y: 394\n"
+    "            width: 60\n"
+    "            height: 60\n"
+    "            icon: \"AROMA_ICON_ADD\"\n"
+    "            variant: standard\n"
+    "            on_click: \"navigate_wifi_connect\"\n"
+    "        }\n"
+    "    }\n"
+    "\n"
+    "    Container {\n"
+    "        id: \"page_wifi_connect\"\n"
+    "        x: 0\n"
+    "        y: 0\n"
+    "        width: 320\n"
+    "        height: 480\n"
+    "        visible: 0\n"
+    "\n"
+    "        Container {\n"
+    "            x: 0\n"
+    "            y: 0\n"
+    "            width: 320\n"
+    "            height: 56\n"
+    "            color: #121212\n"
+    "\n"
+    "            IconButton {\n"
+    "                x: 8\n"
+    "                y: 8\n"
+    "                width: 40\n"
+    "                height: 40\n"
+    "                icon: \"AROMA_ICON_ARROW_BACK\"\n"
+    "                variant: standard\n"
+    "                on_click: \"back\"\n"
+    "            }\n"
+    "\n"
+    "            Label {\n"
+    "                text: \"Wi-Fi\"\n"
+    "                style: large\n"
+    "                color: #FFFFFF\n"
+    "                y: 20\n"
+    "                x: 60\n"
+    "            }\n"
+    "        }\n"
+    "\n"
+    "        Container {\n"
+    "            x: 0\n"
+    "            y: 70\n"
+    "            width: 280\n"
+    "            height: 340\n"
+    "\n"
+    "            Textbox {\n"
+    "                text: \"\"\n"
+    "                placeholder: \"Network Name (SSID)\"\n"
+    "                x: 20\n"
+    "                y: 30\n"
+    "                width: 280\n"
+    "                height: 44\n"
+    "            }\n"
+    "\n"
+    "            Textbox {\n"
+    "                text: \"\"\n"
+    "                placeholder: \"Password\"\n"
+    "                x: 20\n"
+    "                y: 90\n"
+    "                width: 280\n"
+    "                height: 44\n"
+    "            }\n"
+    "\n"
+    "            Button {\n"
+    "                text: \"Connect to Network\"\n"
+    "                x: 70\n"
+    "                y: 170\n"
+    "                width: 140\n"
+    "                height: 44\n"
+    "                on_click: \"wifi_connect\"\n"
+    "            }\n"
     "        }\n"
     "    }\n"
     "\n"
