@@ -21,7 +21,6 @@ AromaUI is a modern, lightweight C UI framework designed for embedded and deskto
 - **Rich Widget Library**: Buttons, containers, list views, tabs, sidebars, maps, 3D viewers, and more
 - **Theme System**: Material Design presets, dark mode, high contrast, and custom color palettes
 - **Animation Engine**: Smooth property transitions with easing functions
-- **Voice Control**: Integrated offline speech recognition (Vosk) for automotive HMI
 - **3D Rendering**: Built-in software 3D viewer with camera orbit, zoom, and auto-rotate
  
 ## Platform Support

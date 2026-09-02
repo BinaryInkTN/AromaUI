@@ -3,7 +3,7 @@ Incense is AromaUI's declarative language for building UIs. Write widget trees i
 
 ## Open the Sandbox
 
-**[Launch Incense Sandbox](https://binaryinktn.github.io/AromaUI/sandbox.html)**
+**[Launch Incense Sandbox](wasm/incense_sandbox/index.html)**
 
 Edit code on the left, click **Run**, and see the preview update instantly via WebAssembly.
 
@@ -97,7 +97,7 @@ Window {
 - **List children**: `ListItem { text: "..." secondary: "..." }` for ListView
 - **Navigation**: Use `visible: 0/1` to show/hide pages and `on_click: "back"` for back navigation
 - **Icons**: Material icon names: `AROMA_ICON_*` constants for `IconButton` and `Icon` widgets
-- **Virtual Keyboard**: Textbox widgets automatically show a responsive virtual keyboard when focused; keys scale to fit screen width, are anchored at the bottom, and abbreviate labels when space is limited
+- **Virtual Keyboard**: Textbox widgets automatically show a responsive virtual keyboard when focused on Emscripten/WebAssembly builds. The keyboard anchors at the bottom of the canvas, keys scale to fit screen width, and labels abbreviate when space is limited. Enable it programmatically with `aroma_textbox_enable_virtual_keyboard(root, true)`.
 
 ## Known Limitations
 
@@ -112,8 +112,102 @@ Window {
 9. No string interpolation
 10. Hard limits: 64 children per parent, 64 properties per widget
 
+## Emscripten Build
+
+For WebAssembly builds, the following must be included in your `CMakeLists.txt`:
+
+- **`aroma_textbox.c`** must be added to the executable's source list (it is not part of the default library link on Emscripten)
+- `aroma_textbox_enable_virtual_keyboard` and related functions must be listed in `EXPORTED_FUNCTIONS`
+- `aroma_textbox.c` uses `__EMSCRIPTEN__` guards for web-only VK code paths
+
+Example CMakeLists.txt configuration:
+```cmake
+add_executable(my_app main.c ../../src/widgets/aroma_textbox.c)
+
+target_link_options(my_app PRIVATE
+    "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free',...,'_aroma_textbox_enable_virtual_keyboard','_aroma_textbox_show_virtual_keyboard','_aroma_textbox_hide_virtual_keyboard']"
+    "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS','addRunDependency','removeRunDependency']"
+)
+```
+
+## Sample: Wi-Fi Connect Page
+
+The Incense Sandbox includes a sample iOS-style Wi-Fi connection page demonstrating multi-page navigation with text input:
+
+```aroma
+Container {
+    id: "page_wifi_connect"
+    x: 0
+    y: 0
+    width: 320
+    height: 480
+    layout: flex
+    direction: column
+    visible: 0
+
+    Container {
+        x: 0
+        y: 0
+        width: 320
+        height: 56
+        color: #121212
+
+        IconButton {
+            x: 8
+            y: 8
+            width: 40
+            height: 40
+            icon: "AROMA_ICON_ARROW_BACK"
+            variant: standard
+            on_click: "back"
+        }
+
+        Label {
+            text: "Wi-Fi"
+            style: large
+            color: #FFFFFF
+            y: 20
+            x: 60
+        }
+    }
+
+    Container {
+        x: 20
+        y: 70
+        width: 280
+        height: 340
+
+        Textbox {
+            text: ""
+            placeholder: "Network Name (SSID)"
+            x: 20
+            y: 30
+            width: 240
+            height: 44
+        }
+
+        Textbox {
+            text: ""
+            placeholder: "Password"
+            x: 20
+            y: 90
+            width: 240
+            height: 44
+        }
+
+        Button {
+            text: "Connect to Network"
+            x: 40
+            y: 170
+            width: 200
+            height: 44
+            on_click: "wifi_connect"
+        }
+    }
+}
+
 ## What's Next
 
 - Learn the underlying C APIs in [Widget Library](Layout-and-Navigation-Widgets.md).
 - Explore [Core Framework](Scene-Graph-and-Node-System.md) to understand how Incense maps to `AromaNode`.
-- Try the [interactive sandbox](../widget-library/wasm/incense_sandbox/index.html).
+- Try the [interactive sandbox](wasm/incense_sandbox/index.html).
