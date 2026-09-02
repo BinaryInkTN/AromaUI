@@ -51,6 +51,7 @@ void aroma_listview_update_secondary_text(AromaNode* list_node, int index, const
 void aroma_listview_destroy(AromaNode* list_node);
 
 AromaNode* aroma_listview_get_scroll_container(AromaNode* list_node);
+int aroma_listview_get_content_height(AromaNode* list_node);
 
 #ifdef __cplusplus
 }

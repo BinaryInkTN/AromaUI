@@ -2774,6 +2774,9 @@ static void bridge_node_int(AromaNode *node, int index, void *ud)
             int _zi = props_int(&(bag), "z_index", 0);       \
             if (_zi)                                         \
                 aroma_node_set_z_index((built), _zi);        \
+            int _vis = props_int(&(bag), "visible", -1);     \
+            if (_vis >= 0)                                   \
+                aroma_node_set_hidden((built), (_vis) == 0); \
         }                                                    \
         else                                                 \
             ERR_SYNTAX_N((node), "Failed to create widget"); \
@@ -3139,45 +3142,60 @@ static AromaNode *build_listview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
     }
     if (node)
         node->id = built->node_id;
-    IncenseNode *list_items[MAX_ITEM_NODES];
-    int n = collect_item_nodes(node, "ListItem", list_items, MAX_ITEM_NODES);
-    for (int i = 0; i < n; i++)
+    for (IncenseNode *cur = node->first_child; cur; cur = cur->next_sibling)
     {
-        PropBag ib;
-        props_collect(list_items[i], &ib);
-        char *text = props_str_dup(&ib, "text", "");
-        char *secondary = props_str_dup(&ib, "secondary", "");
-        const char *icon = props_get(&ib, "icon");
-        if (text && text[0])
+        if (!cur || cur->type != INCENSE_OBJECT || !cur->name)
+            continue;
+        if (strcmp(cur->name, "ListItem") == 0)
         {
-            if (icon && icon[0])
-                aroma_listview_add_item_with_icon(built, text, secondary, icon, NULL);
-            else
-                aroma_listview_add_item(built, text, secondary, NULL);
+            PropBag ib;
+            props_collect(cur, &ib);
+            char *text = props_str_dup(&ib, "text", "");
+            char *secondary = props_str_dup(&ib, "secondary", "");
+            const char *icon_name = props_get(&ib, "icon");
+            char *icon_code = NULL;
+            if (icon_name && icon_name[0])
+            {
+                const char *resolved = resolve_icon(icon_name);
+                icon_code = strdup(resolved ? resolved : "");
+            }
+            if (text && text[0])
+            {
+                if (icon_code && icon_code[0])
+                    aroma_listview_add_item_with_icon(built, text, secondary, icon_code, NULL);
+                else
+                    aroma_listview_add_item(built, text, secondary, NULL);
+            }
+            free(text);
+            free(secondary);
+            free(icon_code);
+            props_free(&ib);
         }
-        free(text);
-        free(secondary);
-        props_free(&ib);
-    }
-    IncenseNode *headers[MAX_ITEM_NODES];
-    int h = collect_item_nodes(node, "Header", headers, MAX_ITEM_NODES);
-    for (int i = 0; i < h; i++)
-    {
-        PropBag hb;
-        props_collect(headers[i], &hb);
-        char *text = props_str_dup(&hb, "text", "");
-        if (text && text[0])
-            aroma_listview_add_header(built, text);
-        free(text);
-        props_free(&hb);
-    }
-    IncenseNode *separators[MAX_ITEM_NODES];
-    int s = collect_item_nodes(node, "Separator", separators, MAX_ITEM_NODES);
-    for (int i = 0; i < s; i++)
-    {
-        aroma_listview_add_separator(built);
+        else if (strcmp(cur->name, "Header") == 0)
+        {
+            PropBag hb;
+            props_collect(cur, &hb);
+            char *text = props_str_dup(&hb, "text", "");
+            if (text && text[0])
+                aroma_listview_add_header(built, text);
+            free(text);
+            props_free(&hb);
+        }
+        else if (strcmp(cur->name, "Separator") == 0)
+        {
+            aroma_listview_add_separator(built);
+        }
     }
     aroma_listview_set_font(built, _widget_font);
+    if (ctx->icon_font)
+        aroma_listview_set_icon_font(built, ctx->icon_font);
+    AromaNode *scroll_container = built->parent_node;
+    if (scroll_container && aroma_container_is_scrollable(scroll_container))
+    {
+        int content_h = aroma_listview_get_content_height(built);
+        int content_w = props_int(&bag, "width", 200);
+        aroma_container_set_content_size(scroll_container, content_w, content_h);
+    }
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);

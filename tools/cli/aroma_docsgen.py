@@ -502,7 +502,6 @@ class SandboxPreprocessor(Preprocessor):
                 f.write(wrapped)
                 
             include_dir = os.path.join(project_root, "include")
-            # Build using emcc directly, assuming libaroma.a is pre-built in examples/smartwatch_example/build_web/aroma_root/src/libaroma.a
             lib_path = os.path.join(project_root, "examples", "smartwatch_example", "build_web", "aroma_root", "src", "libaroma.a")
             
             emcc_path = os.path.join(project_root, "vendors", "emscripten", "upstream", "emscripten", "emcc")
@@ -743,7 +742,7 @@ class DocGenerator:
             </div>
             {quick_links_html}
             <div class="home-section">
-                <h2 class="section-heading">Try Incense</h2>
+                <h2 class="section-heading">Want to separate UI from business logic? Use Aroma's Incense.</h2>
                 <p style="color:var(--md-on-surface-var);margin:8px 0 16px;font-size:15px">Interactive Incense language playground. Edit the code and click Run.</p>
                 <div style="border:1px solid var(--md-outline);border-radius:12px;overflow:hidden;background:var(--md-surface)">
                     <iframe src="sandbox.html" style="width:100%;height:720px;border:none;display:block"></iframe>
@@ -2558,7 +2557,7 @@ function initDownloadsPage(){{
 
       const notesEl = document.getElementById('release-notes');
       if (release.body) {{
-        const cleaned = release.body.replace(/!\[.*?\]\(.*?\)/g, '');
+        const cleaned = release.body.replace(/<img[^>]*>/g, '').replace(/!\[.*?\]\(.*?\)/g, '');
         notesEl.innerHTML = marked.parse(cleaned);
       }} else {{
         notesEl.innerHTML = '<p>No release notes available.</p>';

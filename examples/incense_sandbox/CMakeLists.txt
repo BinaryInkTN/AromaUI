@@ -20,6 +20,7 @@ target_include_directories(incense_sandbox PRIVATE
 )
 
 if(EMSCRIPTEN)
+    set(ENV{EMCC_CFLAGS} "-Wno-error=attribute-alias")
     target_link_libraries(incense_sandbox PRIVATE aroma)
     target_link_options(incense_sandbox PRIVATE
         "-sMIN_WEBGL_VERSION=1"

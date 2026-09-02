@@ -339,6 +339,20 @@ height = aroma_android_dp_to_px(height);
     return node;
 }
 
+AromaNode *aroma_listview_get_scroll_container(AromaNode *list_node)
+{
+    if (!list_node) return NULL;
+    return list_node->parent_node;
+}
+
+int aroma_listview_get_content_height(AromaNode *list_node)
+{
+    if (!list_node) return 0;
+    AromaListViewInternal *list = get_internal(list_node);
+    if (!list) return 0;
+    return list->rect.height;
+}
+
 static void safe_copy(char *dst, const char *src, size_t dstsz)
 {
     if (!src || dstsz == 0)

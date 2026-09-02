@@ -23,6 +23,7 @@ typedef struct {
     double last_mouse_y;
     bool mouse_button_down;
     bool initialized;
+    int active_touch_id;
 } AromaEmscriptenContext;
 
 static AromaEmscriptenContext platform_ctx = {0};
@@ -309,6 +310,52 @@ static EM_BOOL _cb_wheel(int et, const EmscriptenWheelEvent *e, void *ud)
     return EM_TRUE;
 }
 
+static EM_BOOL _cb_touch_start(int et, const EmscriptenTouchEvent *e, void *ud)
+{
+    (void)et; (void)ud;
+    if (!e || e->numTouches <= 0 || !e->touches) return EM_TRUE;
+    const EmscriptenTouchPoint *tp = &e->touches[0];
+    double cx, cy;
+    _client_to_canvas(tp->targetX, tp->targetY, &cx, &cy);
+    platform_ctx.active_touch_id = tp->identifier;
+    aroma_event_handle_touch(tp->identifier, (int)cx, (int)cy, 1);
+    return EM_TRUE;
+}
+
+static EM_BOOL _cb_touch_move(int et, const EmscriptenTouchEvent *e, void *ud)
+{
+    (void)et; (void)ud;
+    if (!e || e->numTouches <= 0 || !e->touches) return EM_TRUE;
+    const EmscriptenTouchPoint *tp = &e->touches[0];
+    double cx, cy;
+    _client_to_canvas(tp->targetX, tp->targetY, &cx, &cy);
+    platform_ctx.active_touch_id = tp->identifier;
+    aroma_event_handle_touch(tp->identifier, (int)cx, (int)cy, 2);
+    return EM_TRUE;
+}
+
+static EM_BOOL _cb_touch_end(int et, const EmscriptenTouchEvent *e, void *ud)
+{
+    (void)et; (void)ud;
+    if (!e || e->numTouches <= 0 || !e->touches) return EM_TRUE;
+    const EmscriptenTouchPoint *tp = &e->touches[0];
+    double cx, cy;
+    _client_to_canvas(tp->targetX, tp->targetY, &cx, &cy);
+    aroma_event_handle_touch(tp->identifier, (int)cx, (int)cy, 0);
+    platform_ctx.active_touch_id = -1;
+    return EM_TRUE;
+}
+
+static EM_BOOL _cb_touch_cancel(int et, const EmscriptenTouchEvent *e, void *ud)
+{
+    (void)et; (void)ud;
+    if (!e || e->numTouches <= 0 || !e->touches) return EM_TRUE;
+    const EmscriptenTouchPoint *tp = &e->touches[0];
+    aroma_event_handle_touch(tp->identifier, -1, -1, 0);
+    platform_ctx.active_touch_id = -1;
+    return EM_TRUE;
+}
+
 static EM_BOOL _cb_key_down(int et, const EmscriptenKeyboardEvent *e, void *ud)
 {
     (void)et; (void)ud;
@@ -398,6 +445,10 @@ static int initialize(void)
     emscripten_set_mousedown_callback("#canvas", NULL, EM_TRUE, _cb_mouse_down);
     emscripten_set_mouseup_callback  ("#canvas", NULL, EM_TRUE, _cb_mouse_up);
     emscripten_set_wheel_callback    ("#canvas", NULL, EM_TRUE, _cb_wheel);
+    emscripten_set_touchstart_callback("#canvas", NULL, EM_TRUE, _cb_touch_start);
+    emscripten_set_touchmove_callback("#canvas", NULL, EM_TRUE, _cb_touch_move);
+    emscripten_set_touchend_callback  ("#canvas", NULL, EM_TRUE, _cb_touch_end);
+    emscripten_set_touchcancel_callback("#canvas", NULL, EM_TRUE, _cb_touch_cancel);
     emscripten_set_keydown_callback  ("#canvas", NULL, EM_TRUE, _cb_key_down);
     emscripten_set_keyup_callback    ("#canvas", NULL, EM_TRUE, _cb_key_up);
 
