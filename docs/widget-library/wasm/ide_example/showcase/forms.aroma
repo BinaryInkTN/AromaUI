@@ -1,0 +1,23 @@
+Window {
+    width: 360
+    height: 480
+    title: "Forms"
+
+    Label { text: "Form Elements" x: 20 y: 20 style: "large" }
+
+    Textbox { placeholder: "Email" x: 20 y: 60 width: 320 height: 40 }
+    Textbox { placeholder: "Password" x: 20 y: 120 width: 320 height: 40 }
+
+    Checkbox { text: "Remember me" x: 20 y: 180 width: 320 height: 24 }
+
+    RadioButton { text: "Male" x: 20 y: 220 width: 100 height: 24 group: 1 checked: true }
+    RadioButton { text: "Female" x: 130 y: 220 width: 100 height: 24 group: 1 }
+
+    Dropdown { x: 20 y: 260 width: 320 height: 40 }
+
+    Switch { x: 280 y: 310 width: 40 height: 24 value: true }
+
+    Label { text: "Enable notifications" x: 30 y: 314 }
+
+    Button { text: "Submit" x: 100 y: 380 width: 160 height: 44 }
+}

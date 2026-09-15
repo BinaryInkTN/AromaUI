@@ -1,0 +1,56 @@
+Window {
+    width: 400
+    height: 500
+    title: "Layout"
+
+    Label { text: "Layout Demo" x: 20 y: 20 style: "large" }
+
+    Container {
+        x: 20
+        y: 60
+        width: 160
+        height: 120
+        color: #E3F2FD
+        Label { text: "Top Left" x: 10 y: 10 }
+    }
+
+    Container {
+        x: 200
+        y: 60
+        width: 160
+        height: 120
+        color: #F1F8E9
+        Label { text: "Top Right" x: 10 y: 10 }
+    }
+
+    Container {
+        x: 20
+        y: 200
+        width: 340
+        height: 100
+        layout: flex
+        direction: row
+        Button { text: "One" x: 10 y: 20 width: 100 height: 40 }
+        Button { text: "Two" x: 120 y: 20 width: 100 height: 40 }
+        Button { text: "Three" x: 230 y: 20 width: 100 height: 40 }
+    }
+
+    Container {
+        x: 20
+        y: 320
+        width: 340
+        height: 140
+        layout: flex
+        direction: column
+        Label { text: "Header" x: 10 y: 5 style: "medium" }
+        Button { text: "Content" x: 10 y: 30 width: 320 height: 40 }
+        Button { text: "Footer" x: 110 y: 80 width: 100 height: 30 }
+    }
+
+    Divider {
+        x: 20
+        y: 480
+        length: 340
+        orientation: horizontal
+    }
+}

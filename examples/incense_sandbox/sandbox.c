@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 
 #ifdef __EMSCRIPTEN__
@@ -160,6 +161,64 @@ static void on_wifi_connect(void *user_data)
     (void)user_data;
 }
 
+static bool g_search_active = false;
+static char g_search_text[128] = {0};
+
+static int strcase_contains(const char *haystack, const char *needle)
+{
+    if (!haystack || !needle || !*needle) return 0;
+    while (*haystack)
+    {
+        const char *h = haystack;
+        const char *n = needle;
+        while (*n && tolower((unsigned char)*h) == tolower((unsigned char)*n))
+        {
+            h++;
+            n++;
+        }
+        if (!*n) return 1;
+        haystack++;
+    }
+    return 0;
+}
+
+static bool on_search_change(AromaNode *node, const char *text, void *user_data)
+{
+    (void)node;
+    (void)user_data;
+    if (!g_registry) return false;
+
+    if (text && strlen(text) > 0) {
+        strncpy(g_search_text, text, sizeof(g_search_text) - 1);
+        g_search_text[sizeof(g_search_text) - 1] = '\0';
+        g_search_active = true;
+    } else {
+        g_search_text[0] = '\0';
+        g_search_active = false;
+    }
+
+    AromaNode *list = IncenseFindWidget(g_registry, "settings_list");
+    if (!list) return false;
+
+    size_t count = aroma_listview_get_count(list);
+    for (size_t i = 0; i < count; i++) {
+        bool should_show = !g_search_active;
+        if (g_search_active) {
+            const char *item_text = aroma_listview_get_item_text(list, (int)i);
+            if (item_text && strcase_contains(item_text, g_search_text)) {
+                should_show = true;
+            } else {
+                should_show = false;
+            }
+        }
+        aroma_listview_set_item_hidden(list, (int)i, !should_show);
+    }
+    aroma_node_update_layout(list, 0, 120, WIN_W, 360);
+    aroma_node_invalidate(list);
+    aroma_ui_request_redraw(NULL);
+    return true;
+}
+
 static void register_navigation(void)
 {
     g_main_page = NULL;
@@ -230,6 +289,7 @@ void aroma_sandbox_init(void)
     IncenseRegisterCallback("back", INCENSE_CALLBACK_VOID_PTR, (void *)navigate_to_main, NULL);
     IncenseRegisterCallback("navigate_wifi_connect", INCENSE_CALLBACK_VOID_PTR, (void *)navigate_to_wifi_connect, NULL);
     IncenseRegisterCallback("wifi_connect", INCENSE_CALLBACK_VOID_PTR, (void *)on_wifi_connect, NULL);
+    IncenseRegisterCallback("on_search_change", INCENSE_CALLBACK_NODE_STRING_PTR, (void *)on_search_change, NULL);
 }
 
 #ifdef __EMSCRIPTEN__
@@ -322,7 +382,7 @@ static const char *default_source =
     "            x: 0\n"
     "            y: 0\n"
     "            width: 320\n"
-    "            height: 56\n"
+    "            height: 120\n"
     "        \n"
     "            color: #121212\n"
     "\n"
@@ -344,13 +404,24 @@ static const char *default_source =
     "                y:20\n"
     "                x: 10\n"
     "            }\n"
+    "             Textbox {\n"
+    "            text: \"\"\n"
+    "            placeholder: \"Search settings\"\n"
+    "            x: 10\n"
+    "            y: 56\n"
+    "            width: 300\n"
+    "            height: 44\n"
+    "            on_change: \"on_search_change\"\n"
+    "        }\n"
     "        }\n"
     "\n"
+    "       \n"
     "        ListView {\n"
+    "            id: \"settings_list\"\n"
     "            x: 0\n"
-    "            y: 56\n"
+    "            y: 120\n"
     "            width: 320\n"
-    "            height: 424\n"
+    "            height: 360\n"
     "            on_select: \"navigate\"\n"
     "\n"
     "            Header { text: \"General\" }\n"
@@ -494,6 +565,8 @@ static const char *default_source =
     "        y: 0\n"
     "        width: 320\n"
     "        height: 480\n"
+    "        layout: flex\n"
+    "        direction: column\n"
     "        visible: 0\n"
     "\n"
     "        Container {\n"
@@ -523,7 +596,7 @@ static const char *default_source =
     "        }\n"
     "\n"
     "        Container {\n"
-    "            x: 0\n"
+    "            x: 20\n"
     "            y: 70\n"
     "            width: 280\n"
     "            height: 340\n"
@@ -533,7 +606,7 @@ static const char *default_source =
     "                placeholder: \"Network Name (SSID)\"\n"
     "                x: 20\n"
     "                y: 30\n"
-    "                width: 280\n"
+    "                width: 240\n"
     "                height: 44\n"
     "            }\n"
     "\n"
@@ -542,15 +615,15 @@ static const char *default_source =
     "                placeholder: \"Password\"\n"
     "                x: 20\n"
     "                y: 90\n"
-    "                width: 280\n"
+    "                width: 240\n"
     "                height: 44\n"
     "            }\n"
     "\n"
     "            Button {\n"
     "                text: \"Connect to Network\"\n"
-    "                x: 70\n"
+    "                x: 40\n"
     "                y: 170\n"
-    "                width: 140\n"
+    "                width: 200\n"
     "                height: 44\n"
     "                on_click: \"wifi_connect\"\n"
     "            }\n"

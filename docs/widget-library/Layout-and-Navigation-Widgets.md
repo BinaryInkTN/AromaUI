@@ -41,8 +41,9 @@ aroma_listview_add_separator(list);
 | `aroma_listview_clear` | Remove all items |
 | `aroma_listview_get_selected` | Get selected index |
 | `aroma_listview_set_font` | Change item font |
+| `aroma_listview_set_item_hidden` | Hide/show individual items (useful for filtering) |
 
-ListView is built on a scrollable container. Item heights are calculated dynamically.
+ListView is built on a scrollable container. Item heights are calculated dynamically. Use `aroma_listview_set_item_hidden()` to hide items without removing them, then call `aroma_node_invalidate()` to trigger a redraw.
 
 ## Table
 

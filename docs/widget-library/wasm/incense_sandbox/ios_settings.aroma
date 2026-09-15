@@ -17,7 +17,7 @@ Window {
             x: 0
             y: 0
             width: 320
-            height: 56
+            height: 120
         
             color: #121212
 
@@ -39,13 +39,25 @@ Window {
                 y:20
                 x: 10
             }
+             Textbox {
+            text: ""
+            placeholder: "Search settings"
+            x: 10
+            y: 56
+            width: 300
+            height: 44
+            on_change: "on_search_change"
+        }
         }
 
+       
+
         ListView {
+            id: "settings_list"
             x: 0
-            y: 56
+            y: 120
             width: 320
-            height: 424
+            height: 360
             on_select: "navigate"
 
             Header { text: "General" }
@@ -220,7 +232,7 @@ Window {
         }
 
         Container {
-            x: 0
+            x: 20
             y: 70
             width: 280
             height: 340
@@ -230,7 +242,7 @@ Window {
                 placeholder: "Network Name (SSID)"
                 x: 20
                 y: 30
-                width: 280
+                width: 240
                 height: 44
             }
 
@@ -239,7 +251,7 @@ Window {
                 placeholder: "Password"
                 x: 20
                 y: 90
-                width: 280
+                width: 240
                 height: 44
             }
 

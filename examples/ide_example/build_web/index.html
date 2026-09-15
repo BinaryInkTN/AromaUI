@@ -1,0 +1,1634 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AromaUI IDE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ide-bg: #1e1e1e;
+      --ide-sidebar: #252526;
+      --ide-panel: #2d2d30;
+      --ide-border: #3e3e42;
+      --ide-text: #cccccc;
+      --ide-text-muted: #858585;
+      --ide-accent: #007acc;
+      --ide-accent-hover: #0098ff;
+      --ide-input-bg: #3c3c3c;
+      --ide-hover: #2a2d2e;
+      --ide-success: #4ec9b0;
+      --ide-error: #f48771;
+      --ide-warning: #d7ba7d;
+      --ide-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --ide-mono: 'Roboto Mono', 'Consolas', monospace;
+    }
+    [data-theme="light"] {
+      --ide-bg: #ffffff;
+      --ide-sidebar: #f3f3f3;
+      --ide-panel: #e8e8e8;
+      --ide-border: #e4e4e4;
+      --ide-text: #333333;
+      --ide-text-muted: #616161;
+      --ide-accent: #0064b0;
+      --ide-accent-hover: #005a9e;
+      --ide-input-bg: #f3f3f3;
+      --ide-hover: #e8e8e8;
+      --ide-success: #107c41;
+      --ide-error: #a1260d;
+      --ide-warning: #8a6d00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: var(--ide-bg); color: var(--ide-text); font-family: var(--ide-font); overflow: hidden; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+
+    /* Home Page */
+    #home-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      background: var(--ide-bg);
+      padding: 40px;
+    }
+    .home-logo {
+      font-size: 32px; font-weight: 700; color: var(--ide-accent); margin-bottom: 8px;
+    }
+    .home-subtitle { font-size: 14px; color: var(--ide-text-muted); margin-bottom: 40px; }
+    .home-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .home-btn {
+      height: 40px; padding: 0 20px; border-radius: 6px; border: none;
+      font-family: var(--ide-font); font-size: 13px; font-weight: 500;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      background: var(--ide-accent); color: #fff; transition: background 0.15s;
+    }
+    .home-btn:hover { background: var(--ide-accent-hover); }
+    .home-btn.secondary { background: var(--ide-panel); color: var(--ide-text); border: 1px solid var(--ide-border); }
+    .home-btn.secondary:hover { background: var(--ide-hover); }
+
+    /* IDE Layout */
+    #ide { display: none; flex-direction: column; height: 100%; }
+    #titlebar {
+      height: 32px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; background: var(--ide-sidebar); border-bottom: 1px solid var(--ide-border);
+      font-size: 11px; color: var(--ide-text-muted);
+    }
+    .titlebar-left { display: flex; align-items: center; gap: 12px; }
+    .titlebar-controls { display: flex; align-items: center; gap: 4px; }
+    #toolbar {
+      height: 40px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; border-bottom: 1px solid var(--ide-border); background: var(--ide-sidebar); gap: 8px;
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 8px; }
+    .toolbar-center { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+    .toolbar-right { display: flex; align-items: center; gap: 6px; }
+    .toolbar-title { font-size: 12px; font-weight: 600; color: var(--ide-text); }
+    .action-btn {
+      height: 28px; padding: 0 10px; border-radius: 4px; border: none; font-family: var(--ide-font);
+      font-size: 12px; font-weight: 500; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px;
+      color: #fff;
+    }
+    .action-btn:hover { opacity: 0.9; }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .action-btn.pending { animation: pulse 1.5s infinite; }
+    .action-btn svg { width: 12px; height: 12px; }
+    #buildBtn { background: #6c757d; }
+    #runBtn { background: var(--ide-success); }
+    #previewBtn { background: var(--ide-accent); }
+    .icon-btn {
+      width: 28px; height: 28px; border-radius: 4px; border: none; cursor: pointer;
+      background: transparent; color: var(--ide-text-muted); display: flex; align-items: center; justify-content: center;
+    }
+    .icon-btn:hover { background: var(--ide-hover); color: var(--ide-text); }
+    .icon-btn svg { width: 14px; height: 14px; }
+    #buildTarget {
+      height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid var(--ide-border);
+      background: var(--ide-input-bg); color: var(--ide-text); font-size: 12px; font-family: var(--ide-font);
+    }
+
+    #workspace { display: flex; flex-direction: row; flex: 1; min-height: 0; }
+
+    /* File Explorer */
+    #file-explorer {
+      width: 240px; background: var(--ide-sidebar); border-right: 1px solid var(--ide-border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .explorer-header {
+      height: 28px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between;
+      background: var(--ide-panel); border-bottom: 1px solid var(--ide-border);
+      font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--ide-text-muted);
+    }
+    .explorer-actions { display: flex; gap: 4px; }
+    .explorer-tree {
+      flex: 1; overflow-y: auto; padding: 4px 0;
+    }
+    .tree-item {
+      height: 24px; padding: 0 10px; display: flex; align-items: center; gap: 6px;
+      font-size: 12px; cursor: pointer; user-select: none;
+      font-family: var(--ide-mono);
+    }
+    .tree-item:hover { background: var(--ide-hover); }
+    .tree-item.active { background: var(--ide-accent); color: #fff; }
+    .tree-section { padding: 4px 10px 2px; font-size: 10px; text-transform: uppercase; color: var(--ide-text-muted); font-weight: 600; }
+    .tree-empty { padding: 20px; text-align: center; color: var(--ide-text-muted); font-size: 11px; }
+
+    /* Editor Area */
+    #left-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--ide-border); }
+    #tab-bar {
+      height: 28px; background: var(--ide-sidebar); border-bottom: 1px solid var(--ide-border);
+      display: flex; align-items: center; gap: 2px; padding: 0 8px; overflow-x: auto;
+    }
+    .tab {
+      height: 24px; padding: 0 10px; border-radius: 4px 4px 0 0; border: 1px solid var(--ide-border);
+      background: var(--ide-bg); color: var(--ide-text); font-size: 11px; font-family: var(--ide-mono);
+      cursor: pointer; display: flex; align-items: center; gap: 6px; border-bottom: none;
+      margin-bottom: -1px; white-space: nowrap;
+    }
+    .tab.active { background: var(--ide-panel); border-color: var(--ide-border); border-bottom: 1px solid var(--ide-panel); }
+    .tab .close { width: 12px; height: 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; }
+    .tab .close:hover { background: var(--ide-text-muted); color: var(--ide-bg); }
+    .tab-content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .editor-label {
+      height: 20px; padding: 0 8px; background: var(--ide-sidebar); border-bottom: 1px solid var(--ide-border);
+      font-size: 10px; color: var(--ide-text-muted); display: flex; align-items: center;
+    }
+    .editor-container { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .editor-instance { flex: 1; min-height: 0; }
+
+    /* Preview */
+    #preview-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+    #preview-header {
+      height: 32px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; border-bottom: 1px solid var(--ide-border); font-size: 11px; color: var(--ide-text-muted);
+    }
+    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #111318; }
+    #phone-frame { display: inline-block; max-width: 100%; max-height: 100%; border-radius: 24px; box-shadow: 0 0 0 8px #1a1a1a, 0 0 0 10px #333, 0 20px 50px rgba(0,0,0,0.5); overflow: hidden; background: #000; line-height: 0; }
+    #phone-frame canvas { display: block; max-width: 100%; max-height: 100%; touch-action: none; }
+
+    /* Status bar */
+    #status-bar {
+      height: 24px; background: var(--ide-sidebar); border-top: 1px solid var(--ide-border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; gap: 10px;
+      font-family: var(--ide-mono);
+    }
+    .status-left, .status-right { display: flex; align-items: center; gap: 8px; }
+    .status-item { display: flex; align-items: center; gap: 6px; color: var(--ide-text-muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.ok { background: var(--ide-success); }
+    .status-dot.error { background: var(--ide-error); }
+    .status-dot.pending { background: currentColor; animation: pulse 1.5s infinite; }
+
+    /* Build output */
+    #build-output {
+      height: 200px; border-top: 2px solid var(--ide-border); background: #111318;
+      color: #d4d4d4; font-family: var(--ide-mono); font-size: 11px; overflow-y: auto;
+      padding: 8px; display: none;
+    }
+    .build-output-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 4px; border-bottom: 1px solid #333; margin-bottom: 4px;
+    }
+    .build-output-header span { font-weight: 600; color: var(--ide-text-muted); }
+    .build-output-line { white-space: pre-wrap; }
+    .build-output-line.error { color: var(--ide-error); }
+    .build-output-line.warn { color: var(--ide-warning); }
+    .build-output-line.success { color: var(--ide-success); }
+
+    /* Command Palette */
+    #command-palette {
+      position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+      width: 600px; max-width: 90vw; background: var(--ide-panel);
+      border: 1px solid var(--ide-border); border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 1000;
+      display: none; flex-direction: column; max-height: 400px;
+    }
+    #command-palette.visible { display: flex; }
+    #command-palette input {
+      width: 100%; height: 40px; padding: 0 12px; border: none; outline: none;
+      background: var(--ide-panel); color: var(--ide-text);
+      font-size: 14px; font-family: var(--ide-font);
+      border-bottom: 1px solid var(--ide-border);
+      border-radius: 8px 8px 0 0;
+    }
+    .command-list {
+      flex: 1; overflow-y: auto; padding: 4px 0;
+    }
+    .command-item {
+      padding: 8px 12px; cursor: pointer; display: flex;
+      align-items: center; gap: 8px; font-size: 13px;
+    }
+    .command-item:hover, .command-item.selected { background: var(--ide-accent); color: #fff; }
+    .command-item .shortcut { margin-left: auto; font-size: 11px; color: var(--ide-text-muted); }
+    .command-item:hover .shortcut, .command-item.selected .shortcut { color: rgba(255,255,255,0.7); }
+
+    /* Context Menu */
+    #context-menu {
+      position: fixed; background: var(--ide-panel); border: 1px solid var(--ide-border);
+      border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      min-width: 180px; z-index: 1001; display: none; padding: 4px 0;
+    }
+    #context-menu.visible { display: block; }
+    .context-item {
+      padding: 6px 12px; cursor: pointer; font-size: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .context-item:hover { background: var(--ide-accent); color: #fff; }
+    .context-separator { height: 1px; background: var(--ide-border); margin: 4px 0; }
+
+    /* Settings Panel */
+    #settings-panel {
+      position: fixed; top: 0; right: 0; width: 400px; max-width: 90vw;
+      height: 100vh; background: var(--ide-sidebar);
+      border-left: 1px solid var(--ide-border); z-index: 999;
+      transform: translateX(100%); transition: transform 0.2s;
+      display: flex; flex-direction: column;
+    }
+    #settings-panel.visible { transform: translateX(0); }
+    .settings-header {
+      height: 40px; padding: 0 16px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid var(--ide-border);
+      font-size: 13px; font-weight: 600;
+    }
+    .settings-content {
+      flex: 1; overflow-y: auto; padding: 16px;
+    }
+    .settings-section { margin-bottom: 24px; }
+    .settings-section h3 {
+      font-size: 11px; text-transform: uppercase; color: var(--ide-text-muted);
+      margin-bottom: 8px; font-weight: 600;
+    }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px solid var(--ide-border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row label { font-size: 13px; }
+    .settings-row input[type="text"],
+    .settings-row input[type="number"],
+    .settings-row select {
+      width: 120px; padding: 4px 8px; border: 1px solid var(--ide-border);
+      border-radius: 3px; background: var(--ide-input-bg); color: var(--ide-text);
+      font-size: 12px; font-family: var(--ide-font);
+    }
+    .settings-row input[type="checkbox"] { width: 16px; height: 16px; }
+
+    /* Input Modal */
+    #input-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); z-index: 9999;
+      display: none; align-items: center; justify-content: center;
+    }
+    #input-modal.visible { display: flex !important; }
+    .input-modal-box {
+      background: var(--ide-panel); border: 1px solid var(--ide-border);
+      border-radius: 6px; padding: 20px; min-width: 400px; max-width: 90vw;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .input-modal-box h3 {
+      font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--ide-text);
+    }
+    .input-modal-box label {
+      display: block; font-size: 12px; color: var(--ide-text-muted); margin-bottom: 4px;
+    }
+    .input-modal-box input {
+      width: 100%; height: 32px; padding: 0 10px; border: 1px solid var(--ide-border);
+      border-radius: 3px; background: var(--ide-input-bg); color: var(--ide-text);
+      font-size: 13px; font-family: var(--ide-font); margin-bottom: 16px;
+      outline: none;
+    }
+    .input-modal-box input:focus { border-color: var(--ide-accent); }
+    .input-modal-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+    .input-modal-actions button {
+      height: 28px; padding: 0 16px; border-radius: 3px; border: none;
+      font-size: 12px; font-weight: 500; cursor: pointer;
+      background: var(--ide-input-bg); color: var(--ide-text);
+    }
+    .input-modal-actions button.primary {
+      background: var(--ide-accent); color: #fff;
+    }
+    .input-modal-actions button:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Home Page -->
+    <div id="home-page">
+      <div class="home-logo">AromaUI IDE</div>
+      <div class="home-subtitle">Incense UI markup editor and project manager</div>
+      <div class="home-actions">
+        <button class="home-btn" id="newProjectBtn">New Project</button>
+        <button class="home-btn secondary" id="openProjectBtn">Open Project</button>
+      </div>
+    </div>
+
+    <!-- IDE -->
+    <div id="ide">
+      <div id="titlebar">
+        <div class="titlebar-left">
+          <span id="projectName">Untitled Project</span>
+          <span id="projectPath"></span>
+        </div>
+        <div class="titlebar-controls">
+          <button class="icon-btn" id="backHomeBtn" title="Back to Home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8l2 2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="toolbar">
+        <div class="toolbar-left">
+          <span class="toolbar-title" id="workspaceLabel">No project open</span>
+        </div>
+        <div class="toolbar-center">
+          <select id="buildTarget" title="Build target">
+            <option value="linux">Linux</option>
+            <option value="web">Web (WASM)</option>
+          </select>
+          <button class="action-btn" id="buildBtn" title="Build only (Ctrl+Shift+B)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <span>Build</span>
+          </button>
+          <button class="action-btn" id="runBtn" title="Build and Run (F5)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Run</span>
+          </button>
+          <button class="action-btn" id="previewBtn" title="Build Web Preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Preview</span>
+          </button>
+        </div>
+        <div class="toolbar-right">
+          <button class="icon-btn" id="commandPaletteBtn" title="Command Palette (Ctrl+Shift+P)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </button>
+          <button class="icon-btn" id="settingsBtn" title="Settings (Ctrl+,)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+          <button class="icon-btn" id="openBuildBtn" title="Open build folder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+          </button>
+          <button class="icon-btn" id="homeBtn" title="Back to Home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="workspace">
+        <div id="file-explorer">
+          <div class="explorer-header">
+            <span>Explorer</span>
+            <div class="explorer-actions">
+              <button class="icon-btn" id="refreshExplorerBtn" title="Refresh">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="explorer-tree" id="explorerTree">
+            <div class="tree-empty">No project open</div>
+          </div>
+        </div>
+        <div id="left-pane">
+          <div id="tab-bar"></div>
+          <div class="tab-content" id="editorTabs"></div>
+        </div>
+        <div id="preview-pane">
+          <div id="preview-header">
+            <span>Preview</span>
+          </div>
+          <div id="canvas-wrap">
+            <div id="phone-frame">
+              <canvas id="canvas" width="320" height="480"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="build-output"></div>
+      <footer id="status-bar">
+        <div class="status-left">
+          <span class="status-item"><span class="status-dot ok" id="statusDot"></span><span id="statusText">Ready</span></span>
+          <span class="status-item" id="errorMsg"></span>
+        </div>
+        <div class="status-right">
+          <span class="status-item" id="cursorPos">Ln 1, Col 1</span>
+          <span class="status-item" id="fileInfo">No file</span>
+          <span class="status-item" id="fileEncoding">UTF-8</span>
+          <span class="status-item" id="eolInfo">LF</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Command Palette -->
+  <div id="command-palette">
+    <input type="text" id="commandInput" placeholder="Type a command..." autocomplete="off" />
+    <div class="command-list" id="commandList"></div>
+  </div>
+
+  <!-- Context Menu -->
+  <div id="context-menu"></div>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel">
+    <div class="settings-header">
+      <span>Settings</span>
+      <button class="icon-btn" id="closeSettingsBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="settings-content" id="settingsContent"></div>
+  </div>
+
+  <!-- Input Modal -->
+  <div id="input-modal">
+    <div class="input-modal-box">
+      <h3 id="inputModalTitle">Input</h3>
+      <label id="inputModalLabel">Enter value:</label>
+      <input type="text" id="inputModalField" />
+      <div class="input-modal-actions">
+        <button id="inputModalCancel">Cancel</button>
+        <button class="primary" id="inputModalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.Module = window.Module || {};
+    Module.onRuntimeInitialized = function() {
+      var c = Module.canvas;
+      if (c) {
+        c.tabIndex = -1;
+        c.onkeydown = null;
+        c.onkeypress = null;
+        c.onkeyup = null;
+        Module.keyboardInput = null;
+      }
+      resizeCanvas();
+      setStatus('ok', 'WASM initialized');
+    };
+
+    function resizeCanvas() {
+      var wrap = document.getElementById('canvas-wrap');
+      var frame = document.getElementById('phone-frame');
+      if (!wrap || !frame) return;
+      var rect = wrap.getBoundingClientRect();
+      var targetRatio = 320 / 480;
+      var maxWidth = rect.width - 40;
+      var maxHeight = rect.height - 40;
+      var newWidth, newHeight;
+      if (maxWidth / maxHeight > targetRatio) {
+        newHeight = Math.floor(maxHeight);
+        newWidth = Math.floor(newHeight * targetRatio);
+      } else {
+        newWidth = Math.floor(maxWidth);
+        newHeight = Math.floor(newWidth / targetRatio);
+      }
+      frame.style.width = newWidth + 'px';
+      frame.style.height = newHeight + 'px';
+    }
+    window.addEventListener('resize', resizeCanvas);
+  </script>
+  <script src="ide_example.js"></script>
+  <script src="monaco/vs/loader.js"></script>
+  <script>
+    // Global state
+    var CURRENT_PROJECT = { dir: null, name: 'Untitled', files: {} };
+    var OPEN_TABS = [];
+    var ACTIVE_TAB = null;
+    var EDITORS = {};
+    var TAB_PATHS = {};
+
+    window.setStatus = function(type, msg) {
+      var statusDot = document.getElementById('statusDot');
+      var statusText = document.getElementById('statusText');
+      var errorMsg = document.getElementById('errorMsg');
+      if (statusText) statusText.textContent = msg || 'Ready';
+      if (statusDot) statusDot.className = 'status-dot ' + type;
+      if (errorMsg) errorMsg.textContent = type === 'error' ? msg : '';
+    };
+
+    window.runCode = function() {
+      var btn = document.getElementById('runBtn');
+      var source = window.incenseEditor ? window.incenseEditor.getValue() : '';
+      if (!source || !source.trim()) {
+        setStatus('warn', 'No Incense source open');
+        return;
+      }
+      btn.classList.add('pending');
+      try {
+        var ptr = Module._malloc(Module.lengthBytesUTF8(source) + 1);
+        Module.stringToUTF8(source, ptr, Module.lengthBytesUTF8(source) + 1);
+        Module._aroma_sandbox_reload(ptr);
+        Module._free(ptr);
+        var hasErr = Module._aroma_sandbox_has_error();
+        if (hasErr) {
+          var errMsg = Module.UTF8ToString(Module._aroma_sandbox_get_last_error());
+          setStatus('error', errMsg);
+        } else {
+          setStatus('ok', 'Running');
+        }
+      } catch (e) {
+        console.error('[ide] Runtime error:', e);
+        setStatus('error', 'Runtime error: ' + (e.message || String(e)));
+      }
+      btn.classList.remove('pending');
+    };
+
+    function getLanguageFromExt(filename) {
+      var ext = filename.split('.').pop().toLowerCase();
+      if (ext === 'aroma') return 'incense';
+      if (ext === 'c') return 'c';
+      if (ext === 'h' || ext === 'hpp') return 'cpp';
+      if (ext === 'js') return 'javascript';
+      if (ext === 'json') return 'json';
+      if (ext === 'md') return 'markdown';
+      if (ext === 'cmake' || ext === 'txt') return 'plaintext';
+      return 'plaintext';
+    }
+
+    // Tab management
+    function createTab(filename, content, lang, dir) {
+      var tabId = filename;
+      lang = lang || getLanguageFromExt(filename);
+
+      var existing = document.querySelector('.tab[data-tab="' + tabId + '"]');
+      if (existing) {
+        activateTab(tabId);
+        return;
+      }
+
+      if (dir) {
+        TAB_PATHS[tabId] = { dir: dir, filename: filename };
+      } else if (CURRENT_PROJECT.dir) {
+        TAB_PATHS[tabId] = { dir: CURRENT_PROJECT.dir, filename: filename };
+      }
+
+      var tab = document.createElement('div');
+      tab.className = 'tab';
+      tab.setAttribute('data-tab', tabId);
+      tab.innerHTML = '<span>' + filename + '</span><span class="close" onclick="closeTab(\'' + tabId.replace(/'/g, "\\'") + '\')">&times;</span>';
+      tab.onclick = function(e) {
+        if (e.target.className !== 'close') activateTab(tabId);
+      };
+      document.getElementById('tab-bar').appendChild(tab);
+
+      var editorContainer = document.createElement('div');
+      editorContainer.className = 'editor-container';
+      editorContainer.setAttribute('data-tab', tabId);
+      editorContainer.style.display = 'none';
+      var langLabel = lang === 'incense' ? 'Incense' : (lang === 'c' ? 'C' : (lang === 'cpp' ? 'C++' : 'Text'));
+      editorContainer.innerHTML =
+        '<div class="editor-label">' + langLabel + '</div>' +
+        '<div class="editor-instance" id="editor-' + tabId.replace(/[.\/]/g, '_') + '"></div>';
+      document.getElementById('editorTabs').appendChild(editorContainer);
+
+      OPEN_TABS.push(tabId);
+
+      // Wait for Monaco to be ready, then create the editor
+      var tryCreate = function() {
+        if (typeof monaco === 'undefined' || !monaco.editor) {
+          setTimeout(tryCreate, 50);
+          return;
+        }
+        var editorId = 'editor-' + tabId.replace(/[.\/]/g, '_');
+        var el = document.getElementById(editorId);
+        if (!el) return;
+        var monacoEditor = monaco.editor.create(el, {
+          value: content || '',
+          language: lang,
+          theme: (localStorage.getItem('sandbox-theme') || 'dark') === 'dark' ? 'incense-dark' : 'incense-light',
+          automaticLayout: true,
+          minimap: { enabled: false },
+          fontSize: 14,
+          fontFamily: 'Roboto Mono, Consolas, monospace',
+          lineNumbers: 'on',
+          scrollBeyondLastLine: false,
+          wordWrap: 'on',
+          tabSize: 2,
+        });
+        EDITORS[tabId] = monacoEditor;
+
+        if (lang === 'incense') {
+          window.incenseEditor = monacoEditor;
+          monacoEditor.onDidChangeModelContent(function() {
+            // Debounce to avoid too many calls
+            clearTimeout(monacoEditor._runTimer);
+            monacoEditor._runTimer = setTimeout(function() {
+              window.runCode();
+            }, 300);
+          });
+        }
+
+        // Ctrl+S to save
+        monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {
+          saveCurrentFile();
+        });
+
+        activateTab(tabId);
+        setTimeout(function() { monacoEditor.focus(); }, 50);
+      };
+      tryCreate();
+    }
+
+    function activateTab(tabId) {
+      document.querySelectorAll('.editor-container').forEach(function(el) {
+        el.style.display = 'none';
+      });
+      var activeEl = document.querySelector('.editor-container[data-tab="' + tabId + '"]');
+      if (activeEl) activeEl.style.display = 'flex';
+      document.querySelectorAll('.tab').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      var activeTab = document.querySelector('.tab[data-tab="' + tabId + '"]');
+      if (activeTab) activeTab.classList.add('active');
+
+      ACTIVE_TAB = tabId;
+
+      if (EDITORS[tabId]) {
+        setTimeout(function() { EDITORS[tabId].focus(); }, 50);
+      }
+
+      // Update file explorer active state
+      document.querySelectorAll('.tree-item').forEach(function(el) {
+        el.classList.remove('active');
+        if (el.getAttribute('data-file') === tabId) el.classList.add('active');
+      });
+    }
+
+    function closeTab(tabId) {
+      var tabHeader = document.querySelector('.tab[data-tab="' + tabId + '"]');
+      var tabContent = document.querySelector('.editor-container[data-tab="' + tabId + '"]');
+      if (tabHeader) tabHeader.remove();
+      if (tabContent) tabContent.remove();
+
+      if (EDITORS[tabId]) {
+        EDITORS[tabId].dispose();
+      }
+      OPEN_TABS = OPEN_TABS.filter(function(t) { return t !== tabId; });
+      delete EDITORS[tabId];
+      delete TAB_PATHS[tabId];
+
+      if (ACTIVE_TAB === tabId) {
+        if (OPEN_TABS.length > 0) {
+          activateTab(OPEN_TABS[OPEN_TABS.length - 1]);
+        } else {
+          ACTIVE_TAB = null;
+        }
+      }
+    }
+    window.closeTab = closeTab;
+
+    // Save current file
+    async function saveCurrentFile() {
+      if (!ACTIVE_TAB || !EDITORS[ACTIVE_TAB]) return;
+      var editor = EDITORS[ACTIVE_TAB];
+      var content = editor.getValue();
+      var filePath = TAB_PATHS[ACTIVE_TAB];
+      if (filePath && window.electronAPI) {
+        var result = await window.electronAPI.saveProjectFile(filePath.dir, filePath.filename, content);
+        if (result.success) {
+          setStatus('ok', 'Saved: ' + filePath.filename);
+        } else {
+          setStatus('error', 'Save failed: ' + result.error);
+        }
+      } else {
+        setStatus('warn', 'No project file association');
+      }
+    }
+    window.saveCurrentFile = saveCurrentFile;
+
+    // Project operations
+    document.getElementById('newProjectBtn').onclick = async function() {
+      var { value: projectName } = await showPrompt('Create Project', 'Project name:', 'my_app');
+      if (projectName) {
+        if (window.electronAPI) {
+          var homeDir = await window.electronAPI.getHomeDir();
+          var result = await window.electronAPI.createProject(homeDir.path, projectName);
+          if (result.success) {
+            CURRENT_PROJECT.dir = result.path;
+            CURRENT_PROJECT.name = projectName;
+            setStatus('ok', 'Created project: ' + projectName);
+            showIDE(projectName, result.path);
+            var listResult = await window.electronAPI.listProjectFiles(result.path);
+            if (listResult.success) {
+              await loadProjectFiles(result.path, listResult.files);
+            }
+          } else {
+            setStatus('error', result.error);
+          }
+        } else {
+          setCurrentProject(projectName, projectName);
+          showIDE(projectName);
+          setStatus('ok', 'Created project: ' + projectName);
+        }
+      }
+    };
+
+    document.getElementById('openProjectBtn').onclick = async function() {
+      if (window.electronAPI) {
+        var result = await window.electronAPI.openFolder();
+        if (result.success) {
+          CURRENT_PROJECT.dir = result.dir;
+          CURRENT_PROJECT.name = result.name;
+          showIDE(CURRENT_PROJECT.name, result.dir);
+          await loadProjectFiles(result.dir, result.files);
+          setStatus('ok', 'Opened: ' + result.dir);
+        }
+      } else {
+        showIDE('Web Demo');
+      }
+    };
+
+    async function loadProjectFiles(dir, files) {
+      if (!dir) return;
+      await refreshFileExplorer();
+      // Open all .aroma files
+      if (files && files.aroma) {
+        for (const f of files.aroma) {
+          var r = await window.electronAPI.loadProjectFile(dir, f);
+          if (r.success) {
+            createTab(f, r.content, 'incense', dir);
+          }
+        }
+      }
+      // Then open main.c
+      if (files && files.c) {
+        const mainC = files.c.find(f => f === 'main.c') || files.c[0];
+        if (mainC) {
+          var r = await window.electronAPI.loadProjectFile(dir, mainC);
+          if (r.success) createTab(mainC, r.content, 'c', dir);
+        }
+      }
+    }
+
+    async function refreshFileExplorer() {
+      if (!CURRENT_PROJECT.dir) return;
+      var result = await window.electronAPI.listProjectFiles(CURRENT_PROJECT.dir);
+      if (!result.success) return;
+      var tree = document.getElementById('explorerTree');
+      var html = '';
+      if (result.files.folders && result.files.folders.length > 0) {
+        html += '<div class="tree-section">Folders</div>';
+        result.files.folders.forEach(function(f) {
+          var safeName = f.replace(/'/g, "\\'");
+          html += '<div class="tree-item" data-file="' + f + '" onclick="openProjectFile(\'' + safeName + '\')"><span>' + f + '/</span></div>';
+        });
+      }
+      if (result.files.aroma.length > 0) {
+        html += '<div class="tree-section">Incense Files</div>';
+        result.files.aroma.forEach(function(f) {
+          var safeName = f.replace(/'/g, "\\'");
+          html += '<div class="tree-item" data-file="' + f + '" onclick="openProjectFile(\'' + safeName + '\')"><span>' + f + '</span></div>';
+        });
+      }
+      if (result.files.c.length > 0) {
+        html += '<div class="tree-section">C Sources</div>';
+        result.files.c.forEach(function(f) {
+          var safeName = f.replace(/'/g, "\\'");
+          html += '<div class="tree-item" data-file="' + f + '" onclick="openProjectFile(\'' + safeName + '\')"><span>' + f + '</span></div>';
+        });
+      }
+      if (result.files.h && result.files.h.length > 0) {
+        html += '<div class="tree-section">Headers</div>';
+        result.files.h.forEach(function(f) {
+          var safeName = f.replace(/'/g, "\\'");
+          html += '<div class="tree-item" data-file="' + f + '" onclick="openProjectFile(\'' + safeName + '\')"><span>' + f + '</span></div>';
+        });
+      }
+      if (result.files.other && result.files.other.length > 0) {
+        html += '<div class="tree-section">Other</div>';
+        result.files.other.slice(0, 10).forEach(function(f) {
+          var safeName = f.replace(/'/g, "\\'");
+          html += '<div class="tree-item" data-file="' + f + '" onclick="openProjectFile(\'' + safeName + '\')"><span>' + f + '</span></div>';
+        });
+      }
+      if (!html) {
+        html = '<div class="tree-empty">No source files found</div>';
+      }
+      tree.innerHTML = html;
+    }
+
+    async function openProjectFile(filename) {
+      if (!CURRENT_PROJECT.dir) return;
+      var r = await window.electronAPI.loadProjectFile(CURRENT_PROJECT.dir, filename);
+      if (r.success) {
+        createTab(filename, r.content, null, CURRENT_PROJECT.dir);
+      } else {
+        setStatus('error', 'Failed to open: ' + r.error);
+      }
+    }
+    window.openProjectFile = openProjectFile;
+    window.refreshFileExplorer = refreshFileExplorer;
+
+    // Menu actions
+    if (window.electronAPI && window.electronAPI.onMenuAction) {
+      window.electronAPI.onMenuAction(function(action) {
+        switch (action) {
+          case 'new-project':
+            document.getElementById('newProjectBtn').click();
+            break;
+          case 'open-project':
+            document.getElementById('openProjectBtn').click();
+            break;
+          case 'home':
+            document.getElementById('home-page').style.display = 'flex';
+            document.getElementById('ide').style.display = 'none';
+            break;
+          case 'save':
+            saveCurrentFile();
+            break;
+          case 'save-all':
+            var oldActive = ACTIVE_TAB;
+            OPEN_TABS.forEach(function(tabId) {
+              activateTab(tabId);
+              saveCurrentFile();
+            });
+            if (oldActive) activateTab(oldActive);
+            break;
+          case 'toggle-theme':
+            toggleTheme();
+            break;
+          case 'build-linux':
+            buildProject('linux');
+            break;
+          case 'build-web':
+            buildProject('web');
+            break;
+          case 'run':
+            runCode();
+            break;
+        }
+      });
+    }
+
+    function showIDE(name, dir) {
+      document.getElementById('home-page').style.display = 'none';
+      document.getElementById('ide').style.display = 'flex';
+      setCurrentProject(dir, name);
+    }
+
+    function setCurrentProject(projectPath, projectName) {
+      CURRENT_PROJECT.dir = projectPath || null;
+      CURRENT_PROJECT.name = projectName || 'Untitled';
+      document.getElementById('projectName').textContent = CURRENT_PROJECT.name;
+      document.getElementById('projectPath').textContent = projectPath || '';
+      document.getElementById('workspaceLabel').textContent = projectName || 'Editor';
+    }
+
+    // Build
+    async function buildProject(target) {
+      var outputEl = document.getElementById('build-output');
+      var btn = document.getElementById('buildBtn');
+      btn.classList.add('pending');
+      outputEl.style.display = 'block';
+      outputEl.innerHTML = '<div class="build-output-header"><span>Build Output</span></div>' +
+                           '<div class="build-output-line">Building for ' + target + '...</div>';
+
+      if (window.electronAPI && CURRENT_PROJECT.dir) {
+        setStatus('pending', 'Building...');
+        var result = await window.electronAPI.buildProject(CURRENT_PROJECT.dir, target);
+        if (result.success) {
+          outputEl.innerHTML += '<div class="build-output-line success">Build successful!</div>' +
+                               '<div class="build-output-line">' + (result.stdout || '').replace(/</g, '&lt;') + '</div>';
+          setStatus('ok', 'Build successful');
+        } else {
+          outputEl.innerHTML += '<div class="build-output-line error">Build failed!</div>' +
+                               '<div class="build-output-line error">' + (result.error || '').replace(/</g, '&lt;') + '</div>' +
+                               '<div class="build-output-line">' + (result.stdout || '').replace(/</g, '&lt;') + '</div>' +
+                               '<div class="build-output-line">' + (result.stderr || '').replace(/</g, '&lt;') + '</div>';
+          setStatus('error', 'Build failed');
+        }
+        outputEl.scrollTop = outputEl.scrollHeight;
+      } else {
+        outputEl.innerHTML += '<div class="build-output-line warn">Cannot build: no project open or running in web mode</div>';
+      }
+      btn.classList.remove('pending');
+    }
+    window.buildProject = buildProject;
+
+    // Build and run
+    async function buildAndRun(target) {
+      var outputEl = document.getElementById('build-output');
+      var btn = document.getElementById('runBtn');
+      btn.classList.add('pending');
+      outputEl.style.display = 'block';
+      outputEl.innerHTML = '<div class="build-output-header"><span>Build & Run Output</span></div>' +
+                           '<div class="build-output-line">Building and running for ' + target + '...</div>';
+
+      if (window.electronAPI && CURRENT_PROJECT.dir) {
+        setStatus('pending', 'Building...');
+        var result = await window.electronAPI.buildAndRunProject(CURRENT_PROJECT.dir, target);
+        if (result.success) {
+          if (result.stage === 'started') {
+            outputEl.innerHTML += '<div class="build-output-line success">Build successful! Application started (PID: ' + result.pid + ')</div>';
+            if (result.buildStdout) {
+              outputEl.innerHTML += '<div class="build-output-line">--- Build Output ---</div>' +
+                                    '<div class="build-output-line">' + (result.buildStdout || '').replace(/</g, '&lt;') + '</div>';
+            }
+            setStatus('ok', 'Running (PID: ' + result.pid + ')');
+          } else {
+            outputEl.innerHTML += '<div class="build-output-line success">Build and run completed</div>';
+            if (result.buildStdout) {
+              outputEl.innerHTML += '<div class="build-output-line">--- Build Output ---</div>' +
+                                    '<div class="build-output-line">' + (result.buildStdout || '').replace(/</g, '&lt;') + '</div>';
+            }
+            if (result.stdout) {
+              outputEl.innerHTML += '<div class="build-output-line">--- Run Output ---</div>' +
+                                    '<div class="build-output-line">' + (result.stdout || '').replace(/</g, '&lt;') + '</div>';
+            }
+            setStatus('ok', 'Completed');
+          }
+        } else {
+          outputEl.innerHTML += '<div class="build-output-line error">' + (result.error || 'Failed') + '</div>';
+          if (result.stdout) {
+            outputEl.innerHTML += '<div class="build-output-line">' + (result.stdout || '').replace(/</g, '&lt;') + '</div>';
+          }
+          if (result.stderr) {
+            outputEl.innerHTML += '<div class="build-output-line">' + (result.stderr || '').replace(/</g, '&lt;') + '</div>';
+          }
+          if (result.buildStdout) {
+            outputEl.innerHTML += '<div class="build-output-line">--- Build Output ---</div>' +
+                                  '<div class="build-output-line">' + (result.buildStdout || '').replace(/</g, '&lt;') + '</div>';
+          }
+          setStatus('error', 'Build/Run failed');
+        }
+        outputEl.scrollTop = outputEl.scrollHeight;
+      } else {
+        outputEl.innerHTML += '<div class="build-output-line warn">Cannot run: no project open or running in web mode</div>';
+      }
+      btn.classList.remove('pending');
+    }
+    window.buildAndRun = buildAndRun;
+
+    // Run existing binary
+    async function runBinary() {
+      if (!window.electronAPI || !CURRENT_PROJECT.dir) return;
+      var findResult = await window.electronAPI.findBinary(CURRENT_PROJECT.dir);
+      if (!findResult.success) {
+        setStatus('error', findResult.error);
+        return;
+      }
+      var outputEl = document.getElementById('build-output');
+      outputEl.style.display = 'block';
+      outputEl.innerHTML = '<div class="build-output-header"><span>Run Output</span></div>' +
+                           '<div class="build-output-line">Running: ' + findResult.path + '</div>';
+
+      var result = await window.electronAPI.runBinary(findResult.path);
+      if (result.success) {
+        outputEl.innerHTML += '<div class="build-output-line success">Started (PID: ' + result.pid + ')</div>';
+        setStatus('ok', 'Running');
+      } else {
+        outputEl.innerHTML += '<div class="build-output-line error">Failed to start: ' + result.error + '</div>';
+        setStatus('error', 'Run failed');
+      }
+      outputEl.scrollTop = outputEl.scrollHeight;
+    }
+    window.runBinary = runBinary;
+
+    // Build web preview to /tmp/ and open in browser
+    async function buildAndOpenPreview() {
+      if (!window.electronAPI || !CURRENT_PROJECT.dir) {
+        setStatus('error', 'No project open');
+        return;
+      }
+
+      var btn = document.getElementById('previewBtn');
+      var outputEl = document.getElementById('build-output');
+      btn.classList.add('pending');
+      outputEl.style.display = 'block';
+      outputEl.innerHTML = '<div class="build-output-header"><span>Web Preview</span></div>' +
+                           '<div class="build-output-line">Building web preview...</div>';
+
+      setStatus('pending', 'Building preview...');
+
+      var result = await window.electronAPI.buildWebPreview(CURRENT_PROJECT.dir, CURRENT_PROJECT.name);
+      if (result.success) {
+        outputEl.innerHTML += '<div class="build-output-line success">Web preview built at: ' + result.path + '</div>';
+        if (result.buildStdout) {
+          outputEl.innerHTML += '<div class="build-output-line">--- Build Output ---</div>' +
+                                '<div class="build-output-line">' + (result.buildStdout || '').replace(/</g, '&lt;') + '</div>';
+        }
+        outputEl.innerHTML += '<div class="build-output-line success">Opening in browser...</div>';
+        outputEl.scrollTop = outputEl.scrollHeight;
+        setStatus('ok', 'Preview ready');
+
+        // Open in browser
+        await window.electronAPI.openWebPreview(CURRENT_PROJECT.dir, CURRENT_PROJECT.name);
+      } else {
+        outputEl.innerHTML += '<div class="build-output-line error">Preview build failed: ' + (result.error || 'Unknown error') + '</div>';
+        if (result.stdout) {
+          outputEl.innerHTML += '<div class="build-output-line">' + (result.stdout || '').replace(/</g, '&lt;') + '</div>';
+        }
+        if (result.stderr) {
+          outputEl.innerHTML += '<div class="build-output-line">' + (result.stderr || '').replace(/</g, '&lt;') + '</div>';
+        }
+        setStatus('error', 'Preview build failed');
+      }
+      outputEl.scrollTop = outputEl.scrollHeight;
+      btn.classList.remove('pending');
+    }
+    window.buildAndOpenPreview = buildAndOpenPreview;
+
+    // Listen for run output from main process
+    if (window.electronAPI && window.electronAPI.onRunOutput) {
+      window.electronAPI.onRunOutput(function(data) {
+        var outputEl = document.getElementById('build-output');
+        if (!outputEl) return;
+        if (data.type === 'stdout') {
+          outputEl.innerHTML += '<div class="build-output-line">' + data.data.replace(/</g, '&lt;') + '</div>';
+        } else if (data.type === 'stderr') {
+          outputEl.innerHTML += '<div class="build-output-line error">' + data.data.replace(/</g, '&lt;') + '</div>';
+        } else if (data.type === 'started') {
+          outputEl.innerHTML += '<div class="build-output-line success">Process started (PID: ' + data.pid + ')</div>';
+        }
+        outputEl.scrollTop = outputEl.scrollHeight;
+      });
+    }
+
+    // Theme toggle
+    function toggleTheme() {
+      var html = document.documentElement;
+      var current = html.getAttribute('data-theme');
+      var next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('sandbox-theme', next);
+      if (typeof monaco !== 'undefined' && monaco.editor) {
+        monaco.editor.setTheme(next === 'dark' ? 'incense-dark' : 'incense-light');
+      }
+    }
+    window.toggleTheme = toggleTheme;
+
+    // In-page input modal (works in both web and Electron)
+    function showPrompt(title, label, defaultValue) {
+      return new Promise(function(resolve) {
+        // Remove any existing modal
+        var existing = document.getElementById('prompt-overlay');
+        if (existing) existing.remove();
+
+        // Create a fresh modal each time to avoid stale event listeners
+        var overlay = document.createElement('div');
+        overlay.id = 'prompt-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;';
+
+        var box = document.createElement('div');
+        box.style.cssText = 'background:#2d2d30;border:1px solid #3e3e42;border-radius:6px;padding:20px;min-width:400px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.5);';
+
+        var h3 = document.createElement('h3');
+        h3.textContent = title || 'Input';
+        h3.style.cssText = 'font-size:14px;font-weight:600;margin-bottom:12px;color:#cccccc;';
+
+        var lbl = document.createElement('label');
+        lbl.textContent = label || 'Enter value:';
+        lbl.style.cssText = 'display:block;font-size:12px;color:#858585;margin-bottom:4px;';
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.value = defaultValue || '';
+        input.style.cssText = 'width:100%;height:32px;padding:0 10px;border:1px solid #3e3e42;border-radius:3px;background:#3c3c3c;color:#cccccc;font-size:13px;font-family:inherit;margin-bottom:16px;outline:none;box-sizing:border-box;';
+
+        var actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+
+        var cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = 'height:28px;padding:0 16px;border-radius:3px;border:none;font-size:12px;font-weight:500;cursor:pointer;background:#3c3c3c;color:#cccccc;';
+
+        var okBtn = document.createElement('button');
+        okBtn.textContent = 'OK';
+        okBtn.style.cssText = 'height:28px;padding:0 16px;border-radius:3px;border:none;font-size:12px;font-weight:500;cursor:pointer;background:#007acc;color:#fff;';
+
+        function cleanup() {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        }
+
+        function onOk() {
+          var value = input.value;
+          cleanup();
+          resolve({ value: value });
+        }
+
+        function onCancel() {
+          cleanup();
+          resolve({ value: null });
+        }
+
+        okBtn.onclick = onOk;
+        cancelBtn.onclick = onCancel;
+        input.onkeydown = function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); onOk(); }
+          else if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+        };
+        overlay.onclick = function(e) {
+          if (e.target === overlay) onCancel();
+        };
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(okBtn);
+        box.appendChild(h3);
+        box.appendChild(lbl);
+        box.appendChild(input);
+        box.appendChild(actions);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        setTimeout(function() { input.focus(); input.select(); }, 50);
+      });
+    }
+
+    // Refresh button
+    document.getElementById('refreshExplorerBtn').onclick = function() {
+      refreshFileExplorer();
+    };
+
+    // Back to home button
+    document.getElementById('backHomeBtn').onclick = function() {
+      document.getElementById('home-page').style.display = 'flex';
+      document.getElementById('ide').style.display = 'none';
+    };
+
+    // Build button
+    var buildTarget = document.getElementById('buildTarget');
+    document.getElementById('buildBtn').onclick = function() {
+      var target = buildTarget.value;
+      buildProject(target);
+    };
+    document.getElementById('runBtn').onclick = function() {
+      var target = buildTarget.value;
+      buildAndRun(target);
+    };
+    document.getElementById('previewBtn').onclick = function() {
+      buildAndOpenPreview();
+    };
+    document.getElementById('openBuildBtn').onclick = function() {
+      if (window.electronAPI && CURRENT_PROJECT.dir) {
+        window.electronAPI.openBuildFolder(CURRENT_PROJECT.dir).then(function(r) {
+          if (r.success) setStatus('ok', 'Opened: ' + r.path);
+          else setStatus('error', r.error);
+        });
+      }
+    };
+    document.getElementById('commandPaletteBtn').onclick = function() {
+      showCommandPalette();
+    };
+    document.getElementById('settingsBtn').onclick = function() {
+      openSettings();
+    };
+    document.getElementById('homeBtn').onclick = function() {
+      document.getElementById('home-page').style.display = 'flex';
+      document.getElementById('ide').style.display = 'none';
+    };
+
+    // ========== Command Palette ==========
+    var COMMANDS = [
+      { id: 'file.new', name: 'File: New File', shortcut: 'Ctrl+N', action: function() { createNewFile(); }},
+      { id: 'file.newFolder', name: 'File: New Folder', shortcut: '', action: function() { createNewFolder(); }},
+      { id: 'file.save', name: 'File: Save', shortcut: 'Ctrl+S', action: function() { saveCurrentFile(); }},
+      { id: 'file.saveAll', name: 'File: Save All', shortcut: 'Ctrl+Shift+S', action: function() { saveAllFiles(); }},
+      { id: 'file.openProject', name: 'File: Open Project', shortcut: 'Ctrl+O', action: function() { document.getElementById('openProjectBtn').click(); }},
+      { id: 'file.newProject', name: 'File: New Project', shortcut: 'Ctrl+Shift+N', action: function() { document.getElementById('newProjectBtn').click(); }},
+      { id: 'view.toggleTheme', name: 'View: Toggle Theme', shortcut: 'Ctrl+T', action: function() { toggleTheme(); }},
+      { id: 'view.toggleExplorer', name: 'View: Toggle File Explorer', shortcut: 'Ctrl+B', action: function() { toggleExplorer(); }},
+      { id: 'view.toggleOutput', name: 'View: Toggle Output Panel', shortcut: 'Ctrl+`', action: function() { toggleOutput(); }},
+      { id: 'view.openSettings', name: 'Preferences: Open Settings', shortcut: 'Ctrl+,', action: function() { openSettings(); }},
+      { id: 'build.build', name: 'Build: Build Project', shortcut: 'Ctrl+Shift+B', action: function() { buildProject(buildTarget.value); }},
+      { id: 'build.run', name: 'Build: Run Project', shortcut: 'F5', action: function() { buildAndRun(buildTarget.value); }},
+      { id: 'build.preview', name: 'Build: Web Preview', shortcut: 'Ctrl+Shift+P', action: function() { buildAndOpenPreview(); }},
+      { id: 'build.openBuild', name: 'Build: Open Build Folder', shortcut: '', action: function() {
+        if (window.electronAPI && CURRENT_PROJECT.dir) {
+          window.electronAPI.openBuildFolder(CURRENT_PROJECT.dir);
+        }
+      }},
+      { id: 'editor.format', name: 'Editor: Format Document', shortcut: 'Shift+Alt+F', action: function() {
+        if (EDITORS[ACTIVE_TAB]) EDITORS[ACTIVE_TAB].getAction('editor.action.formatDocument').run();
+      }},
+      { id: 'editor.find', name: 'Editor: Find', shortcut: 'Ctrl+F', action: function() {
+        if (EDITORS[ACTIVE_TAB]) EDITORS[ACTIVE_TAB].getAction('actions.find').run();
+      }},
+      { id: 'editor.replace', name: 'Editor: Replace', shortcut: 'Ctrl+H', action: function() {
+        if (EDITORS[ACTIVE_TAB]) EDITORS[ACTIVE_TAB].getAction('editor.action.startFindReplaceAction').run();
+      }},
+      { id: 'help.about', name: 'Help: About AromaUI IDE', shortcut: '', action: function() {
+        alert('AromaUI IDE v1.0.0\n\nA desktop IDE for building AromaUI applications.');
+      }},
+    ];
+
+    function showCommandPalette() {
+      var palette = document.getElementById('command-palette');
+      var input = document.getElementById('commandInput');
+      palette.classList.add('visible');
+      input.value = '';
+      input.focus();
+      filterCommands('');
+    }
+
+    function hideCommandPalette() {
+      document.getElementById('command-palette').classList.remove('visible');
+    }
+
+    function filterCommands(query) {
+      var list = document.getElementById('commandList');
+      var q = query.toLowerCase();
+      var filtered = COMMANDS.filter(function(cmd) {
+        return cmd.name.toLowerCase().includes(q);
+      });
+      list.innerHTML = filtered.map(function(cmd, i) {
+        return '<div class="command-item' + (i === 0 ? ' selected' : '') + '" data-cmd-id="' + cmd.id + '">' +
+               '<span>' + cmd.name + '</span>' +
+               (cmd.shortcut ? '<span class="shortcut">' + cmd.shortcut + '</span>' : '') +
+               '</div>';
+      }).join('');
+    }
+
+    document.getElementById('commandInput').addEventListener('input', function(e) {
+      filterCommands(e.target.value);
+    });
+
+    document.getElementById('commandInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        hideCommandPalette();
+      } else if (e.key === 'Enter') {
+        var selected = document.querySelector('.command-item.selected');
+        if (selected) {
+          var cmdId = selected.getAttribute('data-cmd-id');
+          var cmd = COMMANDS.find(function(c) { return c.id === cmdId; });
+          if (cmd) {
+            cmd.action();
+            hideCommandPalette();
+          }
+        }
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var items = document.querySelectorAll('.command-item');
+        var current = document.querySelector('.command-item.selected');
+        var idx = Array.from(items).indexOf(current);
+        if (e.key === 'ArrowDown') idx = Math.min(idx + 1, items.length - 1);
+        else idx = Math.max(idx - 1, 0);
+        items.forEach(function(el) { el.classList.remove('selected'); });
+        if (items[idx]) items[idx].classList.add('selected');
+      }
+    });
+
+    document.getElementById('commandList').addEventListener('click', function(e) {
+      var item = e.target.closest('.command-item');
+      if (item) {
+        var cmdId = item.getAttribute('data-cmd-id');
+        var cmd = COMMANDS.find(function(c) { return c.id === cmdId; });
+        if (cmd) {
+          cmd.action();
+          hideCommandPalette();
+        }
+      }
+    });
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      // Ctrl+Shift+P - Command Palette
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        showCommandPalette();
+      }
+      // Ctrl+` - Toggle output
+      else if (e.ctrlKey && e.key === '`') {
+        e.preventDefault();
+        toggleOutput();
+      }
+      // Ctrl+, - Settings
+      else if (e.ctrlKey && e.key === ',') {
+        e.preventDefault();
+        openSettings();
+      }
+    });
+
+    // ========== Context Menu ==========
+    var contextMenuTarget = null;
+
+    function showContextMenu(x, y, items) {
+      var menu = document.getElementById('context-menu');
+      menu.innerHTML = items.map(function(item) {
+        if (item.separator) {
+          return '<div class="context-separator"></div>';
+        }
+        return '<div class="context-item" data-action="' + item.action + '">' +
+               '<span>' + item.label + '</span></div>';
+      }).join('');
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+      menu.classList.add('visible');
+
+      menu.querySelectorAll('.context-item').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var action = el.getAttribute('data-action');
+          var item = items.find(function(i) { return i.action === action; });
+          if (item && item.callback) item.callback();
+          hideContextMenu();
+        });
+      });
+    }
+
+    function hideContextMenu() {
+      document.getElementById('context-menu').classList.remove('visible');
+    }
+
+    document.addEventListener('click', function() { hideContextMenu(); });
+    document.addEventListener('contextmenu', function(e) {
+      // Allow context menu on file explorer items
+      if (e.target.closest('#file-explorer')) {
+        e.preventDefault();
+        var treeItem = e.target.closest('.tree-item');
+        if (treeItem) {
+          showFileContextMenu(e.clientX, e.clientY, treeItem.getAttribute('data-file'));
+        } else {
+          showExplorerContextMenu(e.clientX, e.clientY);
+        }
+      }
+    });
+
+    function showFileContextMenu(x, y, filename) {
+      var isDir = !filename.includes('.');
+      var items = [
+        { label: 'Open', action: 'open', callback: function() {
+          if (isDir) return;
+          openProjectFile(filename);
+        }},
+        { separator: true },
+        { label: 'Rename', action: 'rename', callback: function() {
+          renameFileDialog(filename);
+        }},
+        { label: 'Delete', action: 'delete', callback: function() {
+          deleteFileDialog(filename);
+        }},
+      ];
+      showContextMenu(x, y, items);
+    }
+
+    function showExplorerContextMenu(x, y) {
+      var items = [
+        { label: 'New File', action: 'newfile', callback: function() { createNewFile(); }},
+        { label: 'New Folder', action: 'newfolder', callback: function() { createNewFolder(); }},
+        { separator: true },
+        { label: 'Refresh', action: 'refresh', callback: function() { refreshFileExplorer(); }},
+      ];
+      showContextMenu(x, y, items);
+    }
+
+    async function createNewFile() {
+      if (!CURRENT_PROJECT.dir) return;
+      var result = await window.electronAPI.showInput('New File', 'File name (e.g. main.aroma):', 'untitled.aroma');
+      if (result.value) {
+        var res = await window.electronAPI.createFile(CURRENT_PROJECT.dir, result.value, '');
+        if (res.success) {
+          await refreshFileExplorer();
+          openProjectFile(result.value);
+          setStatus('ok', 'Created: ' + result.value);
+        } else {
+          setStatus('error', res.error);
+        }
+      }
+    }
+
+    async function createNewFolder() {
+      if (!CURRENT_PROJECT.dir) return;
+      var result = await window.electronAPI.showInput('New Folder', 'Folder name:', 'new_folder');
+      if (result.value) {
+        var res = await window.electronAPI.createFolder(CURRENT_PROJECT.dir, result.value);
+        if (res.success) {
+          await refreshFileExplorer();
+          setStatus('ok', 'Created folder: ' + result.value);
+        } else {
+          setStatus('error', res.error);
+        }
+      }
+    }
+
+    async function renameFileDialog(filename) {
+      if (!CURRENT_PROJECT.dir) return;
+      var result = await window.electronAPI.showInput('Rename', 'New name:', filename);
+      if (result.value && result.value !== filename) {
+        var res = await window.electronAPI.renameFile(CURRENT_PROJECT.dir, filename, result.value);
+        if (res.success) {
+          // Close old tab if open
+          if (EDITORS[filename]) closeTab(filename);
+          await refreshFileExplorer();
+          setStatus('ok', 'Renamed to: ' + result.value);
+        } else {
+          setStatus('error', res.error);
+        }
+      }
+    }
+
+    async function deleteFileDialog(filename) {
+      if (!CURRENT_PROJECT.dir) return;
+      var confirm = await window.electronAPI.showConfirm('Delete', 'Are you sure you want to delete "' + filename + '"?');
+      if (confirm.confirmed) {
+        var fullPath = CURRENT_PROJECT.dir + '/' + filename;
+        var res = await window.electronAPI.deleteFile(fullPath);
+        if (res.success) {
+          if (EDITORS[filename]) closeTab(filename);
+          await refreshFileExplorer();
+          setStatus('ok', 'Deleted: ' + filename);
+        } else {
+          setStatus('error', res.error);
+        }
+      }
+    }
+
+    async function saveAllFiles() {
+      for (var tabId in EDITORS) {
+        var oldActive = ACTIVE_TAB;
+        activateTab(tabId);
+        await saveCurrentFile();
+      }
+      setStatus('ok', 'All files saved');
+    }
+
+    function toggleExplorer() {
+      var explorer = document.getElementById('file-explorer');
+      explorer.style.display = explorer.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function toggleOutput() {
+      var output = document.getElementById('build-output');
+      if (output.style.display === 'none' || !output.style.display) {
+        output.style.display = 'block';
+        output.style.height = '200px';
+      } else {
+        output.style.display = 'none';
+      }
+    }
+
+    // ========== Settings ==========
+    var APP_SETTINGS = {};
+
+    async function openSettings() {
+      APP_SETTINGS = await window.electronAPI.getSettings();
+      var content = document.getElementById('settingsContent');
+      content.innerHTML = '<div class="settings-section">' +
+        '<h3>Editor</h3>' +
+        '<div class="settings-row"><label>Font Size</label><input type="number" id="setting-fontSize" min="10" max="32" value="' + APP_SETTINGS.fontSize + '"></div>' +
+        '<div class="settings-row"><label>Tab Size</label><input type="number" id="setting-tabSize" min="1" max="8" value="' + APP_SETTINGS.tabSize + '"></div>' +
+        '<div class="settings-row"><label>Word Wrap</label><input type="checkbox" id="setting-wordWrap" ' + (APP_SETTINGS.wordWrap ? 'checked' : '') + '></div>' +
+        '<div class="settings-row"><label>Show Minimap</label><input type="checkbox" id="setting-minimap" ' + (APP_SETTINGS.minimap ? 'checked' : '') + '></div>' +
+        '<div class="settings-row"><label>Show Line Numbers</label><input type="checkbox" id="setting-showLineNumbers" ' + (APP_SETTINGS.showLineNumbers ? 'checked' : '') + '></div>' +
+        '</div>' +
+        '<div class="settings-section">' +
+        '<h3>Appearance</h3>' +
+        '<div class="settings-row"><label>Theme</label><select id="setting-theme"><option value="dark" ' + (APP_SETTINGS.theme === 'dark' ? 'selected' : '') + '>Dark</option><option value="light" ' + (APP_SETTINGS.theme === 'light' ? 'selected' : '') + '>Light</option></select></div>' +
+        '</div>' +
+        '<div class="settings-section">' +
+        '<h3>Files</h3>' +
+        '<div class="settings-row"><label>Auto Save</label><input type="checkbox" id="setting-autoSave" ' + (APP_SETTINGS.autoSave ? 'checked' : '') + '></div>' +
+        '</div>';
+      document.getElementById('settings-panel').classList.add('visible');
+
+      // Bind change handlers
+      ['fontSize', 'tabSize', 'wordWrap', 'minimap', 'showLineNumbers', 'theme', 'autoSave'].forEach(function(key) {
+        var el = document.getElementById('setting-' + key);
+        if (el) {
+          el.addEventListener('change', function() {
+            if (el.type === 'checkbox') APP_SETTINGS[key] = el.checked;
+            else APP_SETTINGS[key] = el.type === 'number' ? parseInt(el.value) : el.value;
+            saveAndApplySettings();
+          });
+        }
+      });
+    }
+
+    async function saveAndApplySettings() {
+      await window.electronAPI.saveSettings(APP_SETTINGS);
+      // Apply settings
+      Object.keys(EDITORS).forEach(function(tabId) {
+        var ed = EDITORS[tabId];
+        ed.updateOptions({
+          fontSize: APP_SETTINGS.fontSize,
+          tabSize: APP_SETTINGS.tabSize,
+          wordWrap: APP_SETTINGS.wordWrap ? 'on' : 'off',
+          minimap: { enabled: APP_SETTINGS.minimap },
+          lineNumbers: APP_SETTINGS.showLineNumbers ? 'on' : 'off',
+        });
+      });
+      if (APP_SETTINGS.theme === 'light' || APP_SETTINGS.theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', APP_SETTINGS.theme);
+        if (typeof monaco !== 'undefined' && monaco.editor) {
+          monaco.editor.setTheme(APP_SETTINGS.theme === 'dark' ? 'incense-dark' : 'incense-light');
+        }
+      }
+    }
+
+    document.getElementById('closeSettingsBtn').onclick = function() {
+      document.getElementById('settings-panel').classList.remove('visible');
+    };
+
+    // ========== Status Bar ==========
+    function updateStatusBar() {
+      var editor = EDITORS[ACTIVE_TAB];
+      if (editor) {
+        var pos = editor.getPosition();
+        document.getElementById('cursorPos').textContent = 'Ln ' + pos.lineNumber + ', Col ' + pos.column;
+        document.getElementById('fileInfo').textContent = ACTIVE_TAB || 'No file';
+        var eol = editor.getModel().getEOL();
+        document.getElementById('eolInfo').textContent = eol === '\n' ? 'LF' : 'CRLF';
+      } else {
+        document.getElementById('cursorPos').textContent = 'Ln 1, Col 1';
+        document.getElementById('fileInfo').textContent = 'No file';
+        document.getElementById('eolInfo').textContent = 'LF';
+      }
+    }
+
+    // Make sure status bar updates when editor changes
+    var origActivateTab = activateTab;
+    activateTab = function(tabId) {
+      origActivateTab(tabId);
+      setTimeout(updateStatusBar, 50);
+    };
+
+    var origCreateTab = createTab;
+    createTab = function(filename, content, lang, dir) {
+      origCreateTab(filename, content, lang, dir);
+      setTimeout(function() {
+        if (EDITORS[filename]) {
+          EDITORS[filename].onDidChangeCursorPosition(updateStatusBar);
+        }
+      }, 200);
+    };
+
+    // Monaco setup - using local files
+    require.config({ paths: { 'vs': 'monaco/vs' }});
+    require(['vs/editor/editor.main'], function() {
+      var savedTheme = localStorage.getItem('sandbox-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+
+      monaco.editor.defineTheme('incense-light', {
+        base: 'vs', inherit: true,
+        rules: [
+          { token: 'keyword', foreground: '02569B', fontStyle: 'bold' },
+          { token: 'type', foreground: '0175C2' },
+          { token: 'string', foreground: 'C41A16' },
+          { token: 'number', foreground: '1C01CE' },
+          { token: 'comment', foreground: '177500' },
+          { token: 'delimiter', foreground: 'A90D91' }
+        ],
+        colors: { 'editor.background': '#FFFFFF', 'editor.foreground': '#202124' }
+      });
+      monaco.editor.defineTheme('incense-dark', {
+        base: 'vs-dark', inherit: true,
+        rules: [
+          { token: 'keyword', foreground: 'C586C0', fontStyle: 'bold' },
+          { token: 'type', foreground: '4EC9B0' },
+          { token: 'string', foreground: 'CE9178' },
+          { token: 'number', foreground: 'B5CEA8' },
+          { token: 'comment', foreground: '6A9955' },
+          { token: 'delimiter', foreground: 'D4D4D4' }
+        ],
+        colors: { 'editor.background': '#1E1E1E', 'editor.foreground': '#D4D4D4' }
+      });
+
+      monaco.languages.register({ id: 'incense' });
+      monaco.languages.setMonarchTokensProvider('incense', {
+        keywords: [
+          'Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar',
+          'Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar',
+          'Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer',
+          'Snackbar','ListView','Dialog','ScrollView','Table','Column','Row','Tab','Item','MenuItem','ListItem','Header',
+          'Separator','Option','HeaderCell'
+        ],
+        properties: [
+          'x','y','width','height','text','title','message','placeholder','value','min','max',
+          'style','layout','direction','orientation','type','variant','checked','selected',
+          'src','lat','lon','zoom','radius','thickness','color','action','duration','z_index',
+          'autoplay','interactive','auto_rotate','secondary','id','on_click','on_change','on_select','on_submit'
+        ],
+        enums: ['large','medium','small','flex','row','column','horizontal','vertical','elevated',
+          'filled','outlined','standard','assist','filter','suggestion','top','bottom','left','right',
+          'basic','fullscreen','determinate','indeterminate'],
+        tokenizer: {
+          root: [
+            [/\{/, 'delimiter.curly'],
+            [/\}/, 'delimiter.curly'],
+            [/:/, 'delimiter.colon'],
+            [/,/, 'delimiter.comma'],
+            [/#[0-9a-fA-F]+/, 'color'],
+            [/\d+\.?\d*/, 'number'],
+            [/"([^"\\]|\\.)*$/, 'string.invalid'],
+            [/"/, 'string', '@string'],
+            [/\b(true|false)\b/, 'boolean'],
+            [/\/\/.*$/, 'comment'],
+            [/[a-zA-Z_]\w*/, { cases: { '@keywords': 'keyword', '@properties': 'property', '@enums': 'enum', '@default': 'identifier' } }]
+          ],
+          string: [[/[^\"]+/, 'string'], [/"/, 'string', '@pop']]
+        }
+      });
+
+      setStatus('ok', 'Ready');
+    });
+  </script>
+</body>
+</html>

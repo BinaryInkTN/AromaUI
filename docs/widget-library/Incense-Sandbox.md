@@ -211,3 +211,4 @@ Container {
 - Learn the underlying C APIs in [Widget Library](Layout-and-Navigation-Widgets.md).
 - Explore [Core Framework](Scene-Graph-and-Node-System.md) to understand how Incense maps to `AromaNode`.
 - Try the [interactive sandbox](wasm/incense_sandbox/index.html).
+- Try the [full IDE example](wasm/ide_example/index.html) with file browser and Monaco editor.

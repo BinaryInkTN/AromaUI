@@ -1,0 +1,69 @@
+Window {
+    width: 400
+    height: 600
+    title: "All Widgets"
+
+    Label { text: "Widget Showcase" x: 20 y: 20 style: "large" }
+    Label { text: "A quick tour of every widget" x: 20 y: 60 style: "medium" color: "#888888" }
+
+    Button { text: "Button" x: 20 y: 120 width: 100 height: 40 }
+    Switch { x: 140 y: 120 }
+    Checkbox { text: "Check" x: 240 y: 120 }
+
+    Slider { x: 20 y: 180 width: 360 min: 0 max: 100 value: 30 }
+
+    Textbox { text: "Text input" x: 20 y: 240 width: 170 height: 40 }
+    ProgressBar { value: 0.6 x: 210 y: 240 width: 170 height: 20 }
+
+    Card {
+        x: 20
+        y: 300
+        width: 360
+        height: 120
+        title: "Card Title"
+        subtitle: "Card subtitle text"
+    }
+
+    Divider {
+        x: 20
+        y: 430
+        length: 360
+        orientation: horizontal
+    }
+
+    IconButton {
+        x: 20
+        y: 460
+        width: 40
+        height: 40
+        icon: "AROMA_ICON_FAVORITE"
+    }
+
+    Icon {
+        x: 80
+        y: 460
+        size: 24
+        text: "AROMA_ICON_STAR"
+        color: #FFD700
+    }
+
+    Label {
+        x: 130
+        y: 455
+        text: "Icon Example"
+        style: "medium"
+    }
+
+    Snackbar {
+        message: "This is a snackbar"
+        action: "Undo"
+    }
+
+    Loading {
+        x: 20
+        y: 520
+        radius: 16
+        thickness: 3
+        color: #007ACC
+    }
+}

@@ -49,6 +49,7 @@ typedef struct
     uint8_t _padding[3];
 
     uint8_t item_types[AROMA_LIST_MAX_ITEMS];
+    bool item_hidden[AROMA_LIST_MAX_ITEMS];
     AromaListItem items[AROMA_LIST_MAX_ITEMS];
 } AromaListViewInternal;
 
@@ -117,7 +118,11 @@ static int total_content_height(const AromaListViewInternal *list)
 {
     int h = 0;
     for (size_t i = 0; i < list->item_count; i++)
+    {
+        if (list->item_hidden[i])
+            continue;
         h += item_height_at(list, (int)i);
+    }
     return h;
 }
 
@@ -158,6 +163,10 @@ static int hit_test(AromaNode *node, const AromaListViewInternal *list, int scre
 
     for (size_t i = 0; i < list->item_count; i++)
     {
+        if (list->item_hidden[i])
+        {
+            continue;
+        }
         int ih = item_height_at(list, (int)i);
         if (screen_y >= y && screen_y < y + ih)
         {
@@ -507,6 +516,32 @@ void aroma_listview_update_secondary_text(AromaNode *node, int index, const char
     aroma_node_invalidate(node);
 }
 
+void aroma_listview_set_item_hidden(AromaNode *node, int index, bool hidden)
+{
+    if (!node) return;
+    AromaListViewInternal *list = get_internal(node);
+    if (!list || !item_in_range(list, index)) return;
+    if (list->item_hidden[index] == hidden) return;
+    list->item_hidden[index] = hidden;
+    aroma_node_invalidate(node);
+}
+
+bool aroma_listview_is_item_hidden(AromaNode *node, int index)
+{
+    if (!node) return false;
+    AromaListViewInternal *list = get_internal(node);
+    if (!list || !item_in_range(list, index)) return false;
+    return list->item_hidden[index];
+}
+
+const char *aroma_listview_get_item_text(AromaNode *node, int index)
+{
+    if (!node) return NULL;
+    AromaListViewInternal *list = get_internal(node);
+    if (!list || !item_in_range(list, index)) return NULL;
+    return list->items[index].text;
+}
+
 int aroma_listview_get_selected(AromaNode *n)
 {
     AromaListViewInternal *l = get_internal(n);
@@ -527,6 +562,8 @@ size_t aroma_listview_get_selectable_count(AromaNode *n)
     size_t count = 0;
     for (size_t i = 0; i < l->item_count; i++)
     {
+        if (l->item_hidden[i])
+            continue;
         if (is_selectable(l, (int)i))
             count++;
     }
@@ -685,6 +722,9 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
 
     for (size_t i = 0; i < list->item_count; i++)
     {
+        if (list->item_hidden[i])
+            continue;
+
         int ih = item_height_at(list, (int)i);
 
         bool hdr = is_header(list, (int)i);

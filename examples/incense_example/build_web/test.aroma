@@ -1,0 +1,7 @@
+Window {
+    width: 400
+    height: 500
+    title: "Incense Demo"
+
+    Label { text: "Hello World" x: 20 y: 20 color: "#FFFFFF" }
+}
