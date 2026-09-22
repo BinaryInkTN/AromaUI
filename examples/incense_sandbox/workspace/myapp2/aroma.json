@@ -1,0 +1,9 @@
+{
+  "project": {
+    "name": "myapp2",
+    "package": "com.example.myapp2",
+    "min_sdk": 24,
+    "target_sdk": 34,
+    "compile_sdk": 34
+  }
+}

@@ -32,8 +32,14 @@ static AromaNode *g_current_page = NULL;
 static AromaNode *g_from_page = NULL;
 static bool g_is_animating = false;
 
-#define WIN_W 320
-#define WIN_H 480
+static inline int get_win_w(void) {
+    return g_window ? g_window->rect.width : 320;
+}
+static inline int get_win_h(void) {
+    return g_window ? g_window->rect.height : 480;
+}
+#define WIN_W get_win_w()
+#define WIN_H get_win_h()
 #define NAV_ANIM_MS 250
 
 static void on_nav_complete(AromaNode *target, void *user_data)
