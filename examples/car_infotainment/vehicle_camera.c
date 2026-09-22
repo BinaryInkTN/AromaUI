@@ -1,5 +1,5 @@
 #include "vehicle_view.h"
-#include "media_controls.h"
+#include "apps/media/media_controls.h"
 #include "aroma_animation.h"
 #include <string.h>
 #include <math.h>

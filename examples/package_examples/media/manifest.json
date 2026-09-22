@@ -1,0 +1,13 @@
+{
+  "id": "com.aroma.media",
+  "name": "Media",
+  "version": "1.0.0",
+  "version_code": 1,
+  "icon": "AROMA_ICON_MUSIC_NOTE",
+  "author": "AromaUI",
+  "description": "Built-in media app (Bluetooth AVRCP now playing + devices).",
+  "category": "Apps",
+  "plugin": "plugin.so",
+  "chrome": "self",
+  "min_abi": 1
+}

@@ -1,0 +1,12 @@
+{
+  "id": "com.aroma.game.memory",
+  "name": "Memory Match",
+  "version": "1.0.0",
+  "version_code": 1,
+  "icon": "AROMA_ICON_MEMORY",
+  "author": "AromaUI",
+  "description": "Memory Match puzzle: flip the 4x4 grid, find all 8 pairs in as few moves as possible.",
+  "category": "Games",
+  "plugin": "plugin.so",
+  "min_abi": 1
+}

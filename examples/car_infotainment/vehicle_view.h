@@ -5,22 +5,9 @@
 #include "app_state.h"
 #include "lock_screen.h"
 #include "vehicle_camera.h"
-#include "media_controls.h"
+#include "apps/media/media_controls.h"
 
-typedef struct
-{
-    const char *name;
-    const char *icon;
-    uint32_t card_color;
-    bool (*open_func)(AromaNode *node, void *user_data);
-    void *user_data;
-    AromaNode *drawer_icon;
-    AromaNode *drawer_card;
-    AromaNode *app_root;
-} AppDefinition;
-
-extern AppDefinition app_definitions[];
-#define APP_COUNT (sizeof(app_definitions) / sizeof(app_definitions[0]))
+#include "app_registry.h"
 
 void build_vehicle_view(AromaNode *window);
 void update_vehicle_view(void);
@@ -40,5 +27,40 @@ bool is_any_app_open(void);
 extern bool app_drawer_visible;
 
 #define MEDIA_UPDATE_INTERVAL_US 500000
+
+void opening_anim(AromaNode *target, float progress, void *user_data);
+void closing_anim(AromaNode *target, float progress, void *user_data);
+
+/* App open/close animation convention (all apps + packages):
+ * 300ms, ease-out-cubic in, ease-in-out-quad out. */
+#define APP_ANIM_MS 300
+#define APP_ANIM_OPEN_EASE AROMA_EASE_OUT_CUBIC
+#define APP_ANIM_CLOSE_EASE AROMA_EASE_IN_OUT_QUAD
+
+/* Third-party packages: create (or reveal) the drawer card + app root for
+ * an installed package id. Unknown ids fail. Removal is handled inside
+ * package_manager_uninstall (full teardown); this only re-packs the grid. */
+bool vehicle_view_add_package_card(const char *id);
+void vehicle_view_remove_package_card(const char *id);
+
+/* Open an installed package by id. */
+bool vehicle_view_open_package(const char *id);
+
+/* Visual-test hook (example only, zero impact unless AROMA_DEBUG_SCREEN
+ * is set): programmatically opens drawer/store/packages/wizard for
+ * headless screenshot verification. */
+void vehicle_view_debug_open(const char *what);
+
+/* Settings-owned Bluetooth card refresh (called from media home thread). */
+void update_bt_info_card(void);
+
+/* Enable/disable the Bluetooth speaker stack. Shared by the settings
+ * toggle and the first-run setup wizard. */
+bool vehicle_view_set_bluetooth_enabled(bool enabled);
+bool vehicle_view_is_bluetooth_enabled(void);
+
+/* Raise every descendant of root above the root card itself (see above).
+ * Needed for Incense-mounted or otherwise z-unset content. */
+void vehicle_view_raise_subtree(AromaNode *root);
 
 #endif

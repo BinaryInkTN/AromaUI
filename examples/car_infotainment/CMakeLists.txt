@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(settings_app C CXX)
 
+enable_testing()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 11)
@@ -113,21 +115,27 @@ add_executable(infotainment
         main.c 
        main_loop.c 
         app_state.c 
+        app_registry.c 
+        package_manager.c
+        setup_store.c
+        setup_wizard.c
+        apps/settings/settings_app.c 
+        apps/store/package_store_app.c
+        apps/store/store_client.c
         voice_handler.c 
         theme_manager.c 
         font_manager.c 
         ui_animation_utils.c 
-        navigation_geo.c
         vehicle_view.c 
         lock_screen.c
         vehicle_camera.c
         interior_controls.c
-        media_controls.c
+        media_home.c
         easter_egg.c 
         status_bar.c 
         tabs_manager.c
-        bt_speaker_api.c
-        bt_speaker_hfp.c
+        apps/phone/bt_speaker_api.c
+        apps/phone/bt_speaker_hfp.c
  )
 
 target_compile_options(infotainment PRIVATE
@@ -186,6 +194,13 @@ endif()
 
 target_include_directories(infotainment PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+# cJSON lives in src/core next to stale internal headers that must NOT
+# shadow include/, so scope that directory to store_client.c only.
+set_source_files_properties(apps/store/store_client.c PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../../src/core"
 )
 
 if(ENABLE_BLUETOOTH_SPEAKER AND NOT EMSCRIPTEN)
@@ -252,6 +267,20 @@ else()
     message(STATUS "Bluetooth Speaker: DISABLED")
 endif()
 
+if(UNIX AND NOT EMSCRIPTEN)
+    # Native .apak plugins resolve aroma_* and host symbols from the host
+    # process at dlopen time: export dynamic symbols, and pin the
+    # plugin-facing API (plugin_api.syms) so LTO/GC cannot drop functions
+    # only referenced by plugins.
+    target_link_options(infotainment PRIVATE -rdynamic)
+    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/plugin_api.syms" _plugin_api_syms)
+    foreach(_sym IN LISTS _plugin_api_syms)
+        if(_sym AND NOT _sym MATCHES "^#")
+            target_link_options(infotainment PRIVATE "LINKER:--export-dynamic-symbol,${_sym}")
+        endif()
+    endforeach()
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT ENABLE_DEBUG_SYMBOLS)
     add_custom_command(TARGET infotainment POST_BUILD
         COMMAND ${CMAKE_STRIP} ${CMAKE_STRIP_FLAGS} $<TARGET_FILE:infotainment>
@@ -272,3 +301,79 @@ message(STATUS "Sanitizers: ${ENABLE_ASAN} / ${ENABLE_TSAN}")
 message(STATUS "LTO Enabled: ${CMAKE_BUILD_TYPE}==Release")
 message(STATUS "=====================================")
 message(STATUS "")
+
+# --- First-party .apak packages ------------------------------------------------
+# nav / media / contacts compile to native plugins, are packed with tools/apak.py
+# and staged into <build>/packages/ (preinstalled system packages). Native
+# plugins need dlopen, so this whole block is skipped for Emscripten (where the
+# web build keeps settings/store/third-party UI packages only).
+set(AROMA_PACKAGES_STAGING_DIR "${CMAKE_CURRENT_BINARY_DIR}/packages")
+set(AROMA_APAK_DIST_DIR "${CMAKE_CURRENT_BINARY_DIR}/dist")
+file(MAKE_DIRECTORY "${AROMA_PACKAGES_STAGING_DIR}" "${AROMA_APAK_DIST_DIR}")
+
+if(NOT EMSCRIPTEN)
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+
+    # Adds build + pack rules for one first-party package:
+    #   add_first_party_package(<leaf-id> <package-source-dir> <plugin-target>)
+    function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET)
+        set(PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
+        file(MAKE_DIRECTORY "${PKG_LEAF_DIR}")
+        file(COPY "${PKG_SRC_DIR}/manifest.json" DESTINATION "${PKG_LEAF_DIR}")
+        if(Python3_FOUND)
+            add_custom_target(${PLUGIN_TARGET}_apak ALL
+                DEPENDS ${PLUGIN_TARGET}
+                COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/apak.py"
+                        pack "${PKG_LEAF_DIR}" -o "${AROMA_APAK_DIST_DIR}/${PKG_LEAF}.apak"
+                COMMENT "Packing ${PKG_LEAF}.apak"
+                VERBATIM
+            )
+        endif()
+    endfunction()
+
+    # Navigation (offline maps + routing).
+    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.nav")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav"
+                     "${CMAKE_CURRENT_BINARY_DIR}/nav_plugin_build")
+    unset(AROMA_PKG_LEAF_DIR)
+    add_first_party_package(com.aroma.nav
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav" nav_plugin)
+
+    # Media (Bluetooth AVRCP now playing + devices).
+    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.media")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media"
+                     "${CMAKE_CURRENT_BINARY_DIR}/media_plugin_build")
+    unset(AROMA_PKG_LEAF_DIR)
+    add_first_party_package(com.aroma.media
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media" media_plugin)
+
+    # Contacts (dialer + contact list + PBAP sync).
+    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.contacts")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts"
+                     "${CMAKE_CURRENT_BINARY_DIR}/contacts_plugin_build")
+    unset(AROMA_PKG_LEAF_DIR)
+    add_first_party_package(com.aroma.contacts
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts" contacts_plugin)
+
+    # --- Games (host-chrome native plugins, third-party pattern) ------------
+    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.snake")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/snake"
+                     "${CMAKE_CURRENT_BINARY_DIR}/snake_plugin_build")
+    unset(AROMA_PKG_LEAF_DIR)
+    add_first_party_package(com.aroma.game.snake
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/snake" snake_plugin)
+
+    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.tictactoe")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe"
+                     "${CMAKE_CURRENT_BINARY_DIR}/tictactoe_plugin_build")
+    unset(AROMA_PKG_LEAF_DIR)
+    add_first_party_package(com.aroma.game.tictactoe
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe" tictactoe_plugin)
+
+    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.memory")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory"
+                     "${CMAKE_CURRENT_BINARY_DIR}/memory_plugin_build")
+    unset(AROMA_PKG_LEAF_DIR)
+    add_first_party_package(com.aroma.game.memory
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory" memory_plugin)
+endif()

@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "bt_speaker_hfp.h"
+#include "apps/phone/bt_speaker_hfp.h"
 #define WIN_W 1024
 #define WIN_H 600
 
@@ -168,10 +168,8 @@ typedef struct
     AromaNode *map_panel;
     AromaNode *map_overlay_background;
     AromaNode *map_close_btn;
-    AromaNode *maps_app_icon;
     AromaNode *map_recently_viewed_card;
 
-    AromaNode *phone_app_icon;
     AromaNode *phone_node;
     AromaNode *phone_close_btn;
     AromaNode *phone_content_card;
@@ -217,9 +215,11 @@ typedef struct
     AromaNode *range_card;
     AromaNode *secondary_notification_card;
 
+
     AromaNode *phone_app_header_bar;
     AromaNode *bottom_bar;
     AromaNode *phone_app_tabs;
+    
     AromaNode* backroad;
     AromaNode *viewer_3d;
     AromaTheme theme;

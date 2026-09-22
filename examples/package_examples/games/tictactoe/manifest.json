@@ -1,0 +1,12 @@
+{
+  "id": "com.aroma.game.tictactoe",
+  "name": "Tic Tac Toe",
+  "version": "1.0.0",
+  "version_code": 1,
+  "icon": "AROMA_ICON_GRID_ON",
+  "author": "AromaUI",
+  "description": "Classic Tic Tac Toe board game. Play X against the car computer (O), track your score across rounds.",
+  "category": "Games",
+  "plugin": "plugin.so",
+  "min_abi": 1
+}

@@ -1,0 +1,13 @@
+{
+  "id": "com.aroma.contacts",
+  "name": "Contacts",
+  "version": "1.0.0",
+  "version_code": 1,
+  "icon": "AROMA_ICON_PERSON",
+  "author": "AromaUI",
+  "description": "Built-in contacts and dialer (Bluetooth HFP/PBAP).",
+  "category": "Apps",
+  "plugin": "plugin.so",
+  "chrome": "self",
+  "min_abi": 1
+}

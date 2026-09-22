@@ -1,0 +1,12 @@
+{
+  "id": "com.aroma.game.snake",
+  "name": "Snake",
+  "version": "1.0.0",
+  "version_code": 1,
+  "icon": "AROMA_ICON_VIDEOGAME_ASSET",
+  "author": "AromaUI",
+  "description": "Classic Snake arcade game. Steer with the arrow pad, eat the red pellets and chase the high score.",
+  "category": "Games",
+  "plugin": "plugin.so",
+  "min_abi": 1
+}
