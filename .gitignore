@@ -7,3 +7,22 @@ build-ems/
 examples/smarthome_example/
 examples/map_example/
 *.glb
+__pycache__/
+*.pyc
+# Local package installs (created at run time; only README.md is committed).
+examples/car_infotainment/packages/*/
+# Emscripten / CMake build trees (generated, never commit).
+build_web/
+build_native/
+# Local build artifacts.
+*.a
+*.o
+*.so
+# Android / IDE runtime junk.
+.gradle/
+*.hprof
+local.properties
+# Generated Aroma Play seed repo (tools/seed_store.sh output).
+store_repo/
+tools/store_repo/
+

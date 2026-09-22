@@ -1,2 +1,6 @@
 .mbtiles filter=lfs diff=lfs merge=lfs -text
 *.mbtiles filter=lfs diff=lfs merge=lfs -text
+# Shipped example builds (single depth only: build trees stay plain blobs,
+# and docs/**/wasm stays a plain blob - GitHub Pages cannot resolve
+# LFS pointers, and the docs site serves those files).
+examples/*/*.wasm filter=lfs diff=lfs merge=lfs -text
