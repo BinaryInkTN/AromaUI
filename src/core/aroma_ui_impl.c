@@ -596,7 +596,7 @@ static void render_dirty_window_internal(size_t window_id, uint32_t clear_color)
         }
     }
 
-    printf("aroma_ui_end_frame task_count=%d\n", (int)task_count); if (task_count > 1)
+    if (task_count > 1)
     {
         qsort(tasks, task_count, sizeof(AromaDrawTask), draw_task_compare);
     }

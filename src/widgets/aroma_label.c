@@ -217,6 +217,7 @@ void aroma_label_destroy(AromaNode* label_node)
     if (!label_node) return;
     if (label_node->node_widget_ptr) {
         aroma_widget_free(label_node->node_widget_ptr);
+        /* Detach so __destroy_node below does not free it a second time. */
         label_node->node_widget_ptr = NULL;
     }
     __destroy_node(label_node);

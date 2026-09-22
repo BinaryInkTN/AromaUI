@@ -44,6 +44,7 @@ typedef enum AromaDrawCmdType {
     AROMA_DRAW_CMD_IMAGE,        /**< Image rendering. */
     AROMA_DRAW_CMD_SCISSOR_PUSH, /**< Enable scissor clipping region. */
     AROMA_DRAW_CMD_SCISSOR_POP,  /**< Disable scissor clipping region. */
+    AROMA_DRAW_CMD_BLUR_BACKDROP, /**< Frosted-glass blur of rendered pixels behind a rect. */
 } AromaDrawCmdType;
 
 /**
@@ -190,6 +191,25 @@ void aroma_drawlist_cmd_scissor_push(AromaDrawList* list, int x, int y, int widt
  * @param list Target draw list.
  */
 void aroma_drawlist_cmd_scissor_pop(AromaDrawList* list);
+
+/**
+ * @brief Add a backdrop-blur command (frosted glass).
+ *
+ * Blurs the already-rendered pixels behind the given rectangle in place.
+ * Executes in command order, so background must have been recorded first.
+ * Backends without blur support ignore it (caller still draws its tint).
+ *
+ * @param list Target draw list.
+ * @param x Left edge of the region.
+ * @param y Top edge of the region.
+ * @param width Width of the region.
+ * @param height Height of the region.
+ * @param radius Blur radius in pixels (<= 0 records nothing).
+ * @param corner_radius Rounded-rect mask radius in pixels (0 = square).
+ */
+void aroma_drawlist_cmd_blur_backdrop(AromaDrawList* list, int x, int y,
+                                      int width, int height, float radius,
+                                      float corner_radius);
 
 /**
  * @brief Execute (flush) all commands in the list to the backend.

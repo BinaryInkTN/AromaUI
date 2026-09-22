@@ -5030,3 +5030,147 @@ void IncenseHotReloadStopAll(void)
         s_hot_watchers[i].active = false;
     LOG_INFO("All hot reload watchers stopped");
 }
+/* --- Package support: mount an Incense document into an existing parent ---
+ * Package ui.aroma files use the same syntax as standalone files (a Window{}
+ * root block); the Window's width/height/title are ignored and its children
+ * are built directly under `parent`. This lets hosts like the car
+ * infotainment embed third-party UIs inside an app card at runtime. */
+
+static bool build_doc_into_parent(const IncenseDocument *doc, AromaNode *parent,
+                                  AromaFont *font, AromaFont *icon_font,
+                                  IncenseRegistry **out_registry)
+{
+    err_clear();
+    aroma_animation_manager_init();
+    s_conditional_count = 0;
+    memset(s_conditional_states, 0, sizeof(s_conditional_states));
+    if (!s_icon_init)
+        icon_build_table();
+    if (!s_cb_init)
+        cb_init_buckets();
+    if (out_registry)
+        *out_registry = NULL;
+    if (!parent)
+    {
+        err_add(INCENSE_ERROR_SYNTAX, 0, 0, "Invalid parent node");
+        return false;
+    }
+    if (!doc || !doc->root)
+    {
+        err_add(INCENSE_ERROR_SYNTAX, 0, 0, "Invalid document or missing root node");
+        return false;
+    }
+    IncenseNode *root = doc->root;
+    if (!root->name || strcmp(root->name, "Window") != 0)
+    {
+        ERR_SYNTAX_N(root, "Root object must be 'Window', got '%s'", root->name ? root->name : "(null)");
+        ERR_SUGGEST("Wrap your UI in a Window {} block");
+        return false;
+    }
+
+    IncenseRegistry *ireg = calloc(1, sizeof(IncenseRegistry));
+    if (ireg)
+        registry_init(&ireg->reg);
+    else
+        LOG_ERROR("Out of memory allocating widget registry");
+
+    FontRegistry *freg = calloc(1, sizeof(FontRegistry));
+    if (freg)
+    {
+        font_registry_init(freg);
+        if (s_global_font_registry)
+        {
+            for (int i = 0; i < s_global_font_registry->count && freg->count < MAX_FONTS; i++)
+                font_registry_register(freg, s_global_font_registry->items[i].name, s_global_font_registry->items[i].font);
+        }
+    }
+    else
+    {
+        LOG_ERROR("Out of memory allocating font registry");
+    }
+
+    BuildCtx ctx = {.registry = ireg ? &ireg->reg : NULL, .font_registry = freg, .default_font = font, .icon_font = icon_font};
+    build_children(root, parent, &ctx);
+
+    /* The parent already lives in a rendered tree (unlike a fresh Window),
+     * so force a full layout/invalidate pass like the hot-reload path does -
+     * otherwise the new children may never draw. */
+    aroma_node_invalidate_tree(parent);
+
+    free(freg);
+    if (out_registry)
+        *out_registry = ireg;
+    else if (ireg)
+        free(ireg);
+    return !IncenseHasFatalError();
+}
+
+bool IncenseLoadStringIntoParent(const char *source, AromaNode *parent,
+                                 AromaFont *font, AromaFont *icon_font,
+                                 IncenseRegistry **out_registry)
+{
+    if (out_registry)
+        *out_registry = NULL;
+    if (!source)
+    {
+        LOG_ERROR("IncenseLoadStringIntoParent called with NULL source");
+        return false;
+    }
+    embed_props_clear();
+    embed_props_parse_from_source(source);
+    char *processed = incense_resolve_includes(source, NULL);
+    IncenseDocument *doc = IncenseParseString(processed ? processed : source);
+    free(processed);
+    if (!doc)
+    {
+        LOG_ERROR("Failed to parse UI source string");
+        return false;
+    }
+    bool ok = build_doc_into_parent(doc, parent, font, icon_font, out_registry);
+    IncenseDestroy(doc);
+    return ok;
+}
+
+bool IncenseLoadFileIntoParent(const char *path, AromaNode *parent,
+                               AromaFont *font, AromaFont *icon_font,
+                               IncenseRegistry **out_registry)
+{
+    if (out_registry)
+        *out_registry = NULL;
+    if (!path || !path[0])
+    {
+        LOG_ERROR("IncenseLoadFileIntoParent called with invalid path");
+        return false;
+    }
+    char *raw = NULL;
+    size_t raw_size = 0;
+    if (!read_entire_file(path, &raw, &raw_size))
+    {
+        LOG_ERROR("Failed to read UI file '%s'", path);
+        return false;
+    }
+    embed_props_clear();
+    embed_props_parse_from_source(raw);
+    char *processed = incense_resolve_includes(raw, path);
+    free(raw);
+    if (!processed)
+    {
+        LOG_ERROR("Failed to resolve embeds in '%s'", path);
+        return false;
+    }
+    IncenseDocument *doc = IncenseParseString(processed);
+    free(processed);
+    if (!doc)
+    {
+        LOG_ERROR("Failed to parse UI file '%s'", path);
+        return false;
+    }
+    bool ok = build_doc_into_parent(doc, parent, font, icon_font, out_registry);
+    IncenseDestroy(doc);
+    return ok;
+}
+
+const char *aroma_icon_codepoint_from_name(const char *name)
+{
+    return resolve_icon(name);
+}

@@ -268,6 +268,8 @@ void aroma_snackbar_destroy(AromaNode *snackbar_node)
     if (bar)
     {
         aroma_widget_free(bar);
+        /* Detach so __destroy_node below does not free it a second time. */
+        snackbar_node->node_widget_ptr = NULL;
     }
     __destroy_node(snackbar_node);
 }

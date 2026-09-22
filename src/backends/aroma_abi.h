@@ -2,6 +2,7 @@
 #define AROMA_ABI_H
 
 #include <stddef.h>
+#include <stdbool.h>
 
 typedef enum AromaPlatformBackendType {
     PLATFORM_BACKEND_GLPS,
@@ -35,6 +36,11 @@ typedef struct AromaBackendABI {
 } AromaBackendABI;
 
 AromaGraphicsBackendType aroma_get_graphics_backend_type(void);
+
+/* True when the active graphics backend implements backdrop
+ * (frosted-glass) blur. Glass surfaces fall back to plain translucency
+ * otherwise. */
+bool aroma_graphics_supports_backdrop_blur(void);
 
 extern AromaBackendABI aroma_backend_abi;
 

@@ -112,6 +112,21 @@ extern "C"
 
         bool (*get_pending_dirty_rect)(int *x, int *y, int *w, int *h);
 
+        /* Backdrop (frosted-glass) blur: blur the already-rendered pixels
+         * behind the given rectangle in place, so a translucent surface
+         * drawn on top reads as frosted glass. radius is in pixels;
+         * values <= 0 are ignored. corner_radius applies a rounded-rect
+         * mask (0 = square). Optional: NULL means the backend cannot do
+         * backdrop blur (callers fall back to plain translucency). Must
+         * be safe to call mid-frame; the backend flushes any pending
+         * batches first. */
+        void (*blur_backdrop)(
+            size_t window_id,
+            int x, int y,
+            int width, int height,
+            float radius,
+            float corner_radius);
+
     } AromaGraphicsInterface;
 
     extern AromaGraphicsInterface aroma_graphics_gles3;

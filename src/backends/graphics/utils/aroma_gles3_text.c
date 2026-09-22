@@ -3,6 +3,7 @@
 #include "helpers_gles3.h"
 #include "core/aroma_logger.h"
 #include "aroma_abi.h"
+#include "aroma_font.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -248,9 +249,14 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
         return;
     }
 
+    /* The face is shared with worker threads measuring labels: hold the
+     * process-wide face lock across load + slot reads (and the atlas
+     * packing that consumes the face-owned bitmap buffer). */
+    aroma_font_lock();
     FT_Error error = FT_Load_Char(face, 'M', FT_LOAD_RENDER);
     if (error) {
         LOG_ERROR("gles3_text_renderer_load_font: Failed to load test glyph");
+        aroma_font_unlock();
         return;
     }
 
@@ -328,6 +334,7 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
 
         renderer->glyphs[renderer->glyph_count++] = glyph;
     }
+    aroma_font_unlock();
 
     LOG_INFO("Loaded %d glyphs into font atlas", renderer->glyph_count);
 }
@@ -349,13 +356,16 @@ static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) 
         return NULL;
     }
 
+    aroma_font_lock();
     FT_Error error = FT_Load_Char(renderer->face, codepoint, FT_LOAD_RENDER);
     if (error) {
+        aroma_font_unlock();
         return NULL;
     }
 
     FT_GlyphSlot g = renderer->face->glyph;
     if (!g) {
+        aroma_font_unlock();
         return NULL;
     }
 
@@ -387,6 +397,7 @@ static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) 
     renderer->glyphs[renderer->glyph_count] = glyph;
     GLES3Glyph* result = &renderer->glyphs[renderer->glyph_count];
     renderer->glyph_count++;
+    aroma_font_unlock();
     return result;
 }
 
@@ -396,17 +407,22 @@ static int __get_kerning(GLES3TextRenderer* renderer, uint32_t left, uint32_t ri
         return 0;
     
     FT_Vector kerning;
+    aroma_font_lock();
     FT_UInt left_index = FT_Get_Char_Index(renderer->face, left);
     FT_UInt right_index = FT_Get_Char_Index(renderer->face, right);
-    
+
     if (left_index == 0 || right_index == 0)
+    {
+        aroma_font_unlock();
         return 0;
-    
-    FT_Error error = FT_Get_Kerning(renderer->face, left_index, right_index, 
+    }
+
+    FT_Error error = FT_Get_Kerning(renderer->face, left_index, right_index,
                                      FT_KERNING_DEFAULT, &kerning);
+    aroma_font_unlock();
     if (error)
         return 0;
-    
+
     return kerning.x >> 6;
 }
 

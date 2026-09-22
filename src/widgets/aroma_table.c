@@ -26,6 +26,7 @@ typedef struct
     AromaNode *cell_widgets[MAX_ROWS][MAX_COLS];
     int row_height;
     int header_height;
+    bool header_visible;
     int selected_row;
     AromaFont *font;
     void (*callback)(int, void *);
@@ -40,35 +41,56 @@ static AromaTableInternal *get_table(AromaNode *node)
     return (AromaTableInternal *)node->node_widget_ptr;
 }
 
+static int table_header_h(const AromaTableInternal *t)
+{
+    return (t && t->header_visible) ? t->header_height : 0;
+}
+
+static void table_sync_scroll_size(AromaNode *table_node,
+                                   const AromaTableInternal *t)
+{
+    if (!table_node || !t)
+        return;
+    if (table_node->parent_node &&
+        aroma_container_is_scrollable(table_node->parent_node))
+    {
+        aroma_container_set_content_size(
+            table_node->parent_node, t->rect.width,
+            table_header_h(t) + (t->num_rows * t->row_height));
+    }
+}
+
 static bool __table_handle_event(AromaEvent *event, void *user_data)
 {
     AromaNode *node = (AromaNode *)user_data;
     AromaTableInternal *t = get_table(node);
-    if (!t)
+    if (!t || !event)
         return false;
- int adjusted_x = event->data.mouse.x;
+    /* Walk up past scroll containers so the position is in the table's
+     * content space even when scrolled. */
+    int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
-                          AromaNode *cur = event->target_node->parent_node;
-    while (cur) {
-        if (aroma_container_is_scrollable(cur)) {
-            int scroll_x, scroll_y;
-            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
-            adjusted_x += scroll_x;
-            adjusted_y += scroll_y;
+    if (event->target_node)
+    {
+        AromaNode *cur = event->target_node->parent_node;
+        while (cur) {
+            if (aroma_container_is_scrollable(cur)) {
+                int scroll_x, scroll_y;
+                aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+                adjusted_x += scroll_x;
+                adjusted_y += scroll_y;
+            }
+            cur = cur->parent_node;
         }
-        cur = cur->parent_node;
     }
-    
+
     if (event->event_type == EVENT_TYPE_MOUSE_CLICK || event->event_type == EVENT_TYPE_TOUCH_DOWN)
     {
-        int my;
-        if (event->event_type == EVENT_TYPE_MOUSE_CLICK)
-            my = adjusted_y - t->rect.y;
-        else
-            my = adjusted_y - t->rect.y;
-        if (my > t->header_height)
+        int header_h = table_header_h(t);
+        int my = adjusted_y - t->rect.y;
+        if (my > header_h)
         {
-            int row = (my - t->header_height) / t->row_height;
+            int row = (my - header_h) / t->row_height;
             if (row >= 0 && row < t->num_rows)
             {
                 t->selected_row = row;
@@ -106,6 +128,7 @@ AromaNode *aroma_table_create(AromaNode *parent, int x, int y, int width, int he
     t->num_cols = num_cols;
     t->row_height = 40;
     t->header_height = 40;
+    t->header_visible = true;
     t->selected_row = -1;
 
     int default_w = width / num_cols;
@@ -134,7 +157,7 @@ static void _aroma_table_update_widgets(AromaNode *table_node)
     AromaTableInternal *t = get_table(table_node);
     if (!t)
         return;
-    int cur_y = t->rect.y + t->header_height;
+    int cur_y = t->rect.y + table_header_h(t);
     for (int r = 0; r < t->num_rows; r++)
     {
         int cur_x = t->rect.x;
@@ -187,12 +210,9 @@ int aroma_table_add_row(AromaNode *table_node)
     if (!t || t->num_rows >= MAX_ROWS)
         return -1;
     int row = t->num_rows++;
-    t->rect.height = t->header_height + (t->num_rows * t->row_height);
+    t->rect.height = table_header_h(t) + (t->num_rows * t->row_height);
 
-    if (table_node->parent_node && aroma_container_is_scrollable(table_node->parent_node))
-    {
-        aroma_container_set_content_size(table_node->parent_node, t->rect.width, t->rect.height);
-    }
+    table_sync_scroll_size(table_node, t);
 
     aroma_node_invalidate(table_node);
     return row;
@@ -241,21 +261,25 @@ void aroma_table_draw(AromaNode *table_node, size_t window_id)
     for (int i = 0; i < t->num_cols; i++)
         total_w += t->col_widths[i];
 
-    gfx->fill_rectangle(window_id, t->rect.x, cur_y, total_w, t->header_height, theme.colors.surface, false, 0);
-
-    int cur_x = t->rect.x;
-    for (int c = 0; c < t->num_cols; c++)
+    int header_h = table_header_h(t);
+    if (header_h > 0)
     {
+        gfx->fill_rectangle(window_id, t->rect.x, cur_y, total_w, header_h, theme.colors.surface, false, 0);
 
-        if (c > 0)
-            gfx->fill_rectangle(window_id, cur_x, cur_y, 1, t->rect.height, theme.colors.border, false, 0);
+        int cur_x = t->rect.x;
+        for (int c = 0; c < t->num_cols; c++)
+        {
 
-        gfx->render_text(window_id, t->font, t->headers[c], cur_x + 10, cur_y + (t->header_height / 2) - 10, theme.colors.text_primary, 1.0f);
-        cur_x += t->col_widths[c];
+            if (c > 0)
+                gfx->fill_rectangle(window_id, cur_x, cur_y, 1, t->rect.height, theme.colors.border, false, 0);
+
+            gfx->render_text(window_id, t->font, t->headers[c], cur_x + 10, cur_y + (header_h / 2) - 10, theme.colors.text_primary, 1.0f);
+            cur_x += t->col_widths[c];
+        }
+
+        gfx->fill_rectangle(window_id, t->rect.x, cur_y + header_h - 1, total_w, 2, theme.colors.border, false, 0);
+        cur_y += header_h;
     }
-
-    gfx->fill_rectangle(window_id, t->rect.x, cur_y + t->header_height - 1, total_w, 2, theme.colors.border, false, 0);
-    cur_y += t->header_height;
 
     for (int r = 0; r < t->num_rows; r++)
     {
@@ -269,7 +293,7 @@ void aroma_table_draw(AromaNode *table_node, size_t window_id)
             gfx->fill_rectangle(window_id, t->rect.x, cur_y, total_w, t->row_height, bg, false, 0);
         }
 
-        cur_x = t->rect.x;
+        int cur_x = t->rect.x;
         for (int c = 0; c < t->num_cols; c++)
         {
             if (!t->cell_widgets[r][c] || t->cells[r][c][0] != '\0')
@@ -307,4 +331,102 @@ void aroma_table_set_cell_widget(AromaNode *table_node, int row_idx, int col_idx
         _aroma_table_update_widgets(table_node);
         aroma_node_invalidate(table_node);
     }
+}
+
+void aroma_table_clear_rows(AromaNode *table_node, bool destroy_widgets)
+{
+    AromaTableInternal *t = get_table(table_node);
+    if (!t)
+        return;
+    if (destroy_widgets)
+    {
+        for (int r = 0; r < t->num_rows; r++)
+        {
+            for (int c = 0; c < t->num_cols; c++)
+            {
+                if (t->cell_widgets[r][c])
+                {
+                    /* Unlinks from the parent first, so no double free
+                     * when the table node itself is destroyed later. */
+                    __destroy_node_tree(t->cell_widgets[r][c]);
+                    t->cell_widgets[r][c] = NULL;
+                }
+            }
+        }
+    }
+    else
+    {
+        memset(t->cell_widgets, 0, sizeof(t->cell_widgets));
+    }
+    t->num_rows = 0;
+    t->selected_row = -1;
+    t->rect.height = table_header_h(t);
+    table_sync_scroll_size(table_node, t);
+    aroma_node_invalidate(table_node);
+}
+
+void aroma_table_set_row_height(AromaNode *table_node, int height)
+{
+    AromaTableInternal *t = get_table(table_node);
+    if (!t)
+        return;
+    if (height < 8)
+        height = 8;
+    if (height > 400)
+        height = 400;
+    t->row_height = height;
+    t->rect.height = table_header_h(t) + (t->num_rows * t->row_height);
+    _aroma_table_update_widgets(table_node);
+    table_sync_scroll_size(table_node, t);
+    aroma_node_invalidate(table_node);
+}
+
+void aroma_table_set_header_visible(AromaNode *table_node, bool visible)
+{
+    AromaTableInternal *t = get_table(table_node);
+    if (!t)
+        return;
+    t->header_visible = visible;
+    t->rect.height = table_header_h(t) + (t->num_rows * t->row_height);
+    _aroma_table_update_widgets(table_node);
+    table_sync_scroll_size(table_node, t);
+    aroma_node_invalidate(table_node);
+}
+
+void aroma_table_set_selected_row(AromaNode *table_node, int row_idx)
+{
+    AromaTableInternal *t = get_table(table_node);
+    if (!t)
+        return;
+    if (row_idx < -1 || row_idx >= t->num_rows)
+        return;
+    t->selected_row = row_idx;
+    aroma_node_invalidate(table_node);
+}
+
+int aroma_table_get_row_count(AromaNode *table_node)
+{
+    AromaTableInternal *t = get_table(table_node);
+    return t ? t->num_rows : 0;
+}
+
+void aroma_table_destroy(AromaNode *table_node)
+{
+    AromaTableInternal *t = get_table(table_node);
+    if (!t)
+        return;
+    for (int r = 0; r < t->num_rows; r++)
+    {
+        for (int c = 0; c < t->num_cols; c++)
+        {
+            if (t->cell_widgets[r][c])
+            {
+                __destroy_node_tree(t->cell_widgets[r][c]);
+                t->cell_widgets[r][c] = NULL;
+            }
+        }
+    }
+    t->num_rows = 0;
+    /* __destroy_node frees the internal struct (node_widget_ptr) itself. */
+    __destroy_node(table_node);
 }

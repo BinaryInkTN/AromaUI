@@ -4,6 +4,7 @@
 #include "helpers_vulkan.h"
 #include "core/aroma_logger.h"
 #include "aroma_abi.h"
+#include "aroma_font.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -228,17 +229,26 @@ static VulkanGlyph *vk_get_glyph(VulkanTextRenderer *renderer, uint32_t codepoin
     if (renderer->glyphCount >= VK_TEXT_MAX_GLYPHS || !renderer->face)
         return NULL;
 
+    /* Shared face: lock across load + slot consumption. */
+    aroma_font_lock();
     FT_Error error = FT_Load_Char(renderer->face, codepoint, FT_LOAD_RENDER);
     if (error)
+    {
+        aroma_font_unlock();
         return NULL;
+    }
 
     FT_GlyphSlot g = renderer->face->glyph;
     if (!g)
+    {
+        aroma_font_unlock();
         return NULL;
+    }
 
     VulkanGlyph *glyph = &renderer->glyphs[renderer->glyphCount];
     __init_glyph_from_slot(glyph, codepoint, g);
     renderer->glyphCount++;
+    aroma_font_unlock();
     return glyph;
 }
 
@@ -259,6 +269,7 @@ void vulkan_text_renderer_load_font(VulkanTextRenderer *renderer, FT_Face face)
     renderer->fontHeight = (int)(face->size->metrics.height >> 6);
     renderer->glyphCount = 0;
 
+    aroma_font_lock();
     for (uint32_t c = 32; c < 127; c++)
     {
         FT_Error error = FT_Load_Char(face, c, FT_LOAD_RENDER);
@@ -275,6 +286,7 @@ void vulkan_text_renderer_load_font(VulkanTextRenderer *renderer, FT_Face face)
         __init_glyph_from_slot(glyph, c, g);
         renderer->glyphCount++;
     }
+    aroma_font_unlock();
 
     LOG_INFO("Vulkan text: Loaded %d initial glyphs", renderer->glyphCount);
 }

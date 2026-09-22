@@ -252,6 +252,22 @@ static bool drawlist_proxy_get_pending_dirty_rect(int *x, int *y, int *w, int *h
     return false;
 }
 
+static void drawlist_proxy_blur_backdrop(size_t window_id, int x, int y,
+                                         int width, int height, float radius,
+                                         float corner_radius) {
+    AromaDrawList* list = aroma_drawlist_get_active();
+    if (list) {
+        aroma_drawlist_cmd_blur_backdrop(list, x, y, width, height, radius,
+                                         corner_radius);
+        return;
+    }
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->blur_backdrop) {
+        real->blur_backdrop(window_id, x, y, width, height, radius,
+                            corner_radius);
+    }
+}
+
 
 static AromaGraphicsInterface drawlist_proxy = {
     .setup_shared_window_resources = drawlist_proxy_setup_shared_window_resources,
@@ -276,6 +292,7 @@ static AromaGraphicsInterface drawlist_proxy = {
     .graphics_flush = drawlist_proxy_graphics_flush,
     .notify_dirty_region = drawlist_proxy_notify_dirty_region,
     .get_pending_dirty_rect = drawlist_proxy_get_pending_dirty_rect,
+    .blur_backdrop = drawlist_proxy_blur_backdrop,
 };
 
 void set_graphics_backend_type(AromaGraphicsBackendType type) {
@@ -292,6 +309,11 @@ AromaGraphicsBackendType aroma_get_graphics_backend_type(void) {
 
 AromaGraphicsInterface* get_graphics_interface(void) {
     return &drawlist_proxy;
+}
+
+bool aroma_graphics_supports_backdrop_blur(void) {
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    return real && real->blur_backdrop;
 }
 
 AromaPlatformInterface* aroma_get_platform_interface(void) {

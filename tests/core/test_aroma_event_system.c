@@ -262,6 +262,128 @@ static void test_unsubscribe_listener(void) {
     tests_passed++;
 }
 
+/* Regression test for the package-store click bug: a full-screen container
+ * sibling created AFTER a button steals its hits (equal z-index, later
+ * sibling wins), so panels must be sized to their content band. */
+static void test_hit_test_panel_overlap_steals_button(void) {
+    init_test_environment();
+
+    void* root_widget = aroma_widget_alloc(32);
+    AromaNode* root = __create_node(NODE_TYPE_ROOT, NULL, root_widget);
+    aroma_event_set_root(root);
+
+    void* btn_widget = aroma_widget_alloc(32);
+    AromaNode* btn = __add_child_node(NODE_TYPE_WIDGET, root, btn_widget);
+    AromaRect *br = aroma_node_get_rect(btn);
+    assert(br != NULL);
+    br->x = 40; br->y = 100; br->width = 140; br->height = 40;
+
+    void* panel_widget = aroma_widget_alloc(32);
+    AromaNode* panel = __add_child_node(NODE_TYPE_CONTAINER, root, panel_widget);
+    AromaRect *pr = aroma_node_get_rect(panel);
+    assert(pr != NULL);
+    pr->x = 0; pr->y = 0; pr->width = 1024; pr->height = 600;
+
+    /* Full-screen later sibling covers the button: panel wins. */
+    AromaNode *hit = aroma_event_hit_test(root, 100, 120);
+    assert(hit == panel);
+
+    /* Shrink the panel to its content band (the store fix): button wins. */
+    pr->y = 145; pr->height = 105;
+    hit = aroma_event_hit_test(root, 100, 120);
+    assert(hit == btn);
+
+    /* Clicks inside the band still reach the panel. */
+    hit = aroma_event_hit_test(root, 100, 180);
+    assert(hit == panel);
+
+    __destroy_node(root);
+    cleanup_test_environment();
+    tests_passed++;
+}
+
+static void test_hit_test_hidden_subtree_pruned(void) {
+    init_test_environment();
+
+    void* root_widget = aroma_widget_alloc(32);
+    AromaNode* root = __create_node(NODE_TYPE_ROOT, NULL, root_widget);
+    aroma_event_set_root(root);
+
+    void* full_widget = aroma_widget_alloc(32);
+    AromaNode* full = __add_child_node(NODE_TYPE_WIDGET, root, full_widget);
+    AromaRect *fr = aroma_node_get_rect(full);
+    assert(fr != NULL);
+    fr->x = 0; fr->y = 0; fr->width = 1024; fr->height = 600;
+    full->is_hidden = true;
+
+    /* A hidden node never wins, even with no competition. */
+    assert(aroma_event_hit_test(root, 500, 300) == NULL);
+
+    full->is_hidden = false;
+    assert(aroma_event_hit_test(root, 500, 300) == full);
+
+    __destroy_node(root);
+    cleanup_test_environment();
+    tests_passed++;
+}
+
+static void test_hit_test_container_yields_to_child(void) {
+    init_test_environment();
+
+    void* root_widget = aroma_widget_alloc(32);
+    AromaNode* root = __create_node(NODE_TYPE_ROOT, NULL, root_widget);
+    aroma_event_set_root(root);
+
+    void* panel_widget = aroma_widget_alloc(32);
+    AromaNode* panel = __add_child_node(NODE_TYPE_CONTAINER, root, panel_widget);
+    AromaRect *pr = aroma_node_get_rect(panel);
+    assert(pr != NULL);
+    pr->x = 0; pr->y = 0; pr->width = 1024; pr->height = 600;
+
+    /* A later overlapping widget still beats the earlier container. */
+    void* btn_widget = aroma_widget_alloc(32);
+    AromaNode* btn = __add_child_node(NODE_TYPE_WIDGET, root, btn_widget);
+    AromaRect *br = aroma_node_get_rect(btn);
+    assert(br != NULL);
+    br->x = 40; br->y = 100; br->width = 140; br->height = 40;
+
+    assert(aroma_event_hit_test(root, 100, 120) == btn);
+    assert(aroma_event_hit_test(root, 500, 400) == panel);
+
+    __destroy_node(root);
+    cleanup_test_environment();
+    tests_passed++;
+}
+
+static void test_hit_test_higher_z_wins(void) {
+    init_test_environment();
+
+    void* root_widget = aroma_widget_alloc(32);
+    AromaNode* root = __create_node(NODE_TYPE_ROOT, NULL, root_widget);
+    aroma_event_set_root(root);
+
+    void* low_widget = aroma_widget_alloc(32);
+    AromaNode* low = __add_child_node(NODE_TYPE_WIDGET, root, low_widget);
+    AromaRect *lr = aroma_node_get_rect(low);
+    assert(lr != NULL);
+    lr->x = 0; lr->y = 0; lr->width = 200; lr->height = 200;
+    low->z_index = 10;
+
+    void* high_widget = aroma_widget_alloc(32);
+    AromaNode* high = __add_child_node(NODE_TYPE_WIDGET, root, high_widget);
+    AromaRect *hr = aroma_node_get_rect(high);
+    assert(hr != NULL);
+    hr->x = 0; hr->y = 0; hr->width = 200; hr->height = 200;
+    high->z_index = 1;
+
+    /* Higher z wins regardless of sibling order. */
+    assert(aroma_event_hit_test(root, 100, 100) == low);
+
+    __destroy_node(root);
+    cleanup_test_environment();
+    tests_passed++;
+}
+
 static void test_invalid_event_parameters(void) {
     init_test_environment();
 
@@ -315,6 +437,22 @@ void run_event_tests(int* passed, int* failed) {
     LOG_PERFORMANCE(NULL);
     test_unsubscribe_listener();
     LOG_PERFORMANCE("test_unsubscribe_listener");
+
+    LOG_PERFORMANCE(NULL);
+    test_hit_test_panel_overlap_steals_button();
+    LOG_PERFORMANCE("test_hit_test_panel_overlap_steals_button");
+
+    LOG_PERFORMANCE(NULL);
+    test_hit_test_hidden_subtree_pruned();
+    LOG_PERFORMANCE("test_hit_test_hidden_subtree_pruned");
+
+    LOG_PERFORMANCE(NULL);
+    test_hit_test_container_yields_to_child();
+    LOG_PERFORMANCE("test_hit_test_container_yields_to_child");
+
+    LOG_PERFORMANCE(NULL);
+    test_hit_test_higher_z_wins();
+    LOG_PERFORMANCE("test_hit_test_higher_z_wins");
 
     LOG_PERFORMANCE(NULL);
     test_invalid_event_parameters();

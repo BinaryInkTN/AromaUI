@@ -978,6 +978,35 @@ extern "C"
     }
 
     /**
+     * @brief Create a frosted-glass card helper.
+     *
+     * A glass card whose backdrop is blurred in place (where the graphics
+     * backend supports it) before its translucent tint is drawn. Falls
+     * back to plain translucency otherwise.
+     *
+     * @param parent Parent node.
+     * @param x X-coordinate.
+     * @param y Y-coordinate.
+     * @param width Width.
+     * @param height Height.
+     * @param blur_radius Backdrop blur radius in pixels (0 = tint only).
+     * @return Pointer to the new card node.
+     */
+    static inline AromaNode *aroma_ui_frosted_card(
+        AromaNode *parent,
+        int x, int y, int width, int height,
+        float blur_radius)
+    {
+        AromaNode *card = aroma_card_create(parent, x, y, width, height,
+                                            CARD_TYPE_GLASS);
+        if (card)
+        {
+            aroma_card_set_backdrop_blur(card, blur_radius);
+        }
+        return card;
+    }
+
+    /**
      * @brief Create a progress bar helper.
      *
      * @param parent Parent node.

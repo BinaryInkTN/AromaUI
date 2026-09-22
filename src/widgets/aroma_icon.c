@@ -191,6 +191,8 @@ void aroma_icon_destroy(AromaNode* icon_node) {
     if (icon) {
         __icon_cleanup_texture(icon);
         aroma_widget_free(icon);
+        /* Detach so __destroy_node below does not free it a second time. */
+        icon_node->node_widget_ptr = NULL;
     }
     __destroy_node(icon_node);
 }

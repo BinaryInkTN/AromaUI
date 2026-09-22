@@ -92,6 +92,9 @@ static void viewer_draw(AromaNode *node, size_t window_id)
     if (!gfx || !gfx->fill_rectangle)
         return;
 
+    // Ensure 3D resources are initialized (GL context is current during draw)
+    aroma_3d_init();
+
     if (!viewer->model)
     {
         gfx->fill_rectangle(window_id, rect->x, rect->y, rect->width, rect->height,

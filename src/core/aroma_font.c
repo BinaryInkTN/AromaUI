@@ -85,6 +85,10 @@ void aroma_font_destroy(AromaFont* font)
     if (font) free(font);
 }
 
+/* Single-threaded target: no locking needed. */
+void aroma_font_lock(void) {}
+void aroma_font_unlock(void) {}
+
 int aroma_font_get_line_height(AromaFont* font)
 {
     return font ? font->line_height : FREESANS12_LINE_HEIGHT;
@@ -112,6 +116,7 @@ void* aroma_font_get_face(AromaFont* font)
 #include FT_FREETYPE_H
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 typedef struct {
     uint32_t codepoint;
@@ -137,6 +142,22 @@ struct AromaFont {
 };
 
 static FT_Library ft_library = NULL;
+
+/* Process-wide FreeType face lock. FT_Face is stateful (glyph slot,
+ * charmaps) and not thread-safe: the UI thread draws/measures while
+ * worker threads update labels. Every FT_Face touch in this file and in
+ * the graphics text renderers goes through aroma_font_lock(). */
+static pthread_mutex_t s_ft_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void aroma_font_lock(void)
+{
+    pthread_mutex_lock(&s_ft_mutex);
+}
+
+void aroma_font_unlock(void)
+{
+    pthread_mutex_unlock(&s_ft_mutex);
+}
 
 static bool init_freetype(void) {
     if (ft_library) return true;
@@ -171,12 +192,14 @@ AromaFont* aroma_font_create(const char* font_path, int size_px) {
         return NULL;
     }
 
+    aroma_font_lock();
     FT_Set_Pixel_Sizes(font->face, 0, size_px);
 
     font->size_px = size_px;
     font->line_height = font->face->size->metrics.height >> 6;
     font->ascender = font->face->size->metrics.ascender >> 6;
     font->descender = font->face->size->metrics.descender >> 6;
+    aroma_font_unlock();
     font->glyph_count = 0;
 
     return font;
@@ -210,12 +233,14 @@ AromaFont* aroma_font_create_from_memory(
 
     LOG_INFO("FT_New_Memory_Face succeeded: face=%p", (void*)font->face);
 
+    aroma_font_lock();
     FT_Set_Pixel_Sizes(font->face, 0, size_px);
 
     font->size_px = size_px;
     font->line_height = font->face->size->metrics.height >> 6;
     font->ascender = font->face->size->metrics.ascender >> 6;
     font->descender = font->face->size->metrics.descender >> 6;
+    aroma_font_unlock();
     font->glyph_count = 0;
 
     return font;
@@ -229,23 +254,78 @@ int aroma_font_get_px_size(AromaFont* font) {
 
 void aroma_font_destroy(AromaFont* font) {
     if (!font) return;
+    aroma_font_lock();
     if (font->face) FT_Done_Face(font->face);
+    aroma_font_unlock();
     free(font);
+}
+
+/* Decode one UTF-8 codepoint, advancing *pp past it. Returns 0 on
+ * malformed/empty input (caller skips it, matching render-side behavior
+ * which drops undecodable bytes via __utf8_next). */
+static uint32_t aroma_font_utf8_next(const char **pp)
+{
+    const unsigned char *p = (const unsigned char *)*pp;
+    uint32_t cp;
+    if (*p == '\0')
+        return 0;
+    if (*p < 0x80)
+    {
+        cp = *p++;
+    }
+    else if ((*p & 0xE0) == 0xC0)
+    {
+        cp = (*p++ & 0x1F) << 6;
+        cp |= (*p++ & 0x3F);
+    }
+    else if ((*p & 0xF0) == 0xE0)
+    {
+        cp = (*p++ & 0x0F) << 12;
+        cp |= (*p++ & 0x3F) << 6;
+        cp |= (*p++ & 0x3F);
+    }
+    else if ((*p & 0xF8) == 0xF0)
+    {
+        cp = (*p++ & 0x07) << 18;
+        cp |= (*p++ & 0x3F) << 12;
+        cp |= (*p++ & 0x3F) << 6;
+        cp |= (*p++ & 0x3F);
+    }
+    else
+    {
+        /* Malformed lead byte: skip it so we always make progress. */
+        p++;
+        *pp = (const char *)p;
+        return 0;
+    }
+    *pp = (const char *)p;
+    return cp;
 }
 
 int aroma_font_get_line_width(AromaFont* font, const char* text) {
     if (!font || !text || !font->face) return 0;
-    
+
+    aroma_font_lock();
     int width = 0;
     FT_GlyphSlot slot = font->face->glyph;
-    size_t len = strlen(text);
-    
-    for (size_t i = 0; i < len; i++) {
-        if (FT_Load_Char(font->face, text[i], FT_LOAD_DEFAULT) == 0) {
+
+    /* Measure per Unicode codepoint, not per byte: a 3-byte icon glyph
+     * (e.g. U+E5C3) previously summed three .notdef advances (~3x too
+     * wide), which pushed every centered icon off-center and forced
+     * callers to carry compensating shifts. Pure-ASCII text decodes to
+     * the same single-byte codepoints as before, so its width is
+     * unchanged. */
+    const char *p = text;
+    while (*p != '\0') {
+        uint32_t cp = aroma_font_utf8_next(&p);
+        if (cp == 0)
+            continue;
+        if (FT_Load_Char(font->face, cp, FT_LOAD_DEFAULT) == 0) {
             width += slot->advance.x >> 6;
         }
     }
-    
+    aroma_font_unlock();
+
     return width;
 }
 

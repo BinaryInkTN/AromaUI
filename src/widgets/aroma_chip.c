@@ -520,5 +520,10 @@ void aroma_chip_destroy(AromaNode *chip_node)
         return;
     AromaChip *chip = (AromaChip *)chip_node->node_widget_ptr;
     if (chip)
+    {
         aroma_widget_free(chip);
+        /* Detach so __destroy_node below does not free it a second time. */
+        chip_node->node_widget_ptr = NULL;
+    }
+    __destroy_node(chip_node);
 }

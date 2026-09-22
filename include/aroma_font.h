@@ -75,6 +75,18 @@ void* aroma_font_get_face(AromaFont* font);
 int aroma_font_get_line_width(AromaFont* font, const char* text);
 
 int aroma_font_get_px_size(AromaFont* font);
+
+/**
+ * @brief Lock the process-wide FreeType face mutex.
+ *
+ * FT_Face objects are shared across threads (UI thread draws/measures
+ * while worker threads update labels). All FreeType face access must
+ * happen under this lock. aroma_font measure/create/destroy take it
+ * internally; graphics text renderers must hold it across their own
+ * FT_Load and FT_Get call sequences (see aroma_gles3_text.c).
+ */
+void aroma_font_lock(void);
+void aroma_font_unlock(void);
 #ifdef __cplusplus
 }
 #endif

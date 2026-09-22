@@ -30,8 +30,32 @@ AromaNode *card = aroma_ui_card(root, 20, 20, 300, 100, CARD_TYPE_ELEVATED);
 |---|---|
 | `CARD_TYPE_FILLED` | Solid background blended with primary color |
 | `CARD_TYPE_TONAL` | Subtle variant of filled |
-| `CARD_TYPE_GLASS` | Translucent with glossy edge |
+| `CARD_TYPE_GLASS` | Frosted glass: blurs the backdrop in place, then draws a translucent tint with glossy edge |
 | `CARD_TYPE_OUTLINED` | Hollow with border |
+
+### Frosted glass
+
+Glass cards blur whatever was rendered behind them (backdrop blur) before
+drawing their translucent tint, so they read as frosted glass instead of
+flat translucency:
+
+```c
+AromaNode *glass = aroma_ui_frosted_card(root, 20, 20, 300, 100, 14.0f);
+aroma_card_set_backdrop_blur(glass, 20.0f); /* retune, 0 disables */
+```
+
+- Blur radius is in pixels. Glass cards default to a 14px blur; other card
+  types default to 0 (no blur).
+- Backdrop blur needs graphics-backend support (GLES3 implements it; query
+  with `aroma_graphics_supports_backdrop_blur()`). Unsupported backends
+  skip the blur and still draw the tint, so glass degrades gracefully.
+- The blur runs in draw order between background and foreground, and honors
+  the card's rounded corners.
+- One backdrop snapshot is shared per frame: stacked glass surfaces all
+  blur the same backdrop, so a sheet over a card (or pill over drawer)
+  adds tint without re-blurring and darkening the glass below. The snapshot
+  is captured on first use each frame, so blur is correct from the very
+  first frame, and is sampled mipmapped for a wide, smooth falloff.
 
 ## Progress Indicators
 

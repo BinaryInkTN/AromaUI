@@ -121,6 +121,21 @@ AromaWindow *IncenseLoadStringEx(const char *source,
                                  AromaFont *font, AromaFont *icon_font,
                                  IncenseRegistry **out_registry);
 
+/* Package support: build a document's Window children directly into an
+ * existing parent node (the Window's own geometry is ignored). Returns
+ * false on parse/build errors; check IncenseGetErrors() for details. */
+bool IncenseLoadStringIntoParent(const char *source, AromaNode *parent,
+                                 AromaFont *font, AromaFont *icon_font,
+                                 IncenseRegistry **out_registry);
+
+bool IncenseLoadFileIntoParent(const char *path, AromaNode *parent,
+                               AromaFont *font, AromaFont *icon_font,
+                               IncenseRegistry **out_registry);
+
+/* Resolve an "AROMA_ICON_*" name to its codepoint string (as used in
+ * .aroma files). Returns the input unchanged when unknown. */
+const char *aroma_icon_codepoint_from_name(const char *name);
+
 int          IncenseHotReloadStart(const char *path, AromaFont *font, AromaFont *icon_font, IncenseRegistry **out_registry);
 int          IncenseHotReloadCheck(void);
 bool         IncenseHotReloadForce(int watcher_index);

@@ -48,12 +48,39 @@ ListView is built on a scrollable container. Item heights are calculated dynamic
 ## Table
 
 ```c
-AromaNode *table = aroma_ui_table(root, 0, 0, 600, 300, 3);
-aroma_table_set_header(table, headers);
-aroma_table_add_row(table, cells);
+AromaNode *table = aroma_table_create(parent, 0, 0, 600, 300, 3);
+aroma_table_set_font(table, font);
+aroma_table_set_header(table, 0, "Name");
+aroma_table_set_header(table, 1, "Size");
+aroma_table_set_header(table, 2, "Action");
+int row = aroma_table_add_row(table);
+aroma_table_set_cell_text(table, row, 0, "Snake");
+aroma_table_set_cell_text(table, row, 1, "5.8 KB");
+AromaNode *btn = aroma_ui_button(table, "Get", 0, 0, 100, 32,
+                                 on_get, NULL, font);
+aroma_table_set_cell_widget(table, row, 2, btn);
 ```
 
-Tables use grid layout internally and support scrollable data grids.
+Tables render their own grid (headers, zebra rows, selection
+highlight, dividers) and position embedded cell widgets. They live
+inside a scroll container for long lists (`aroma_ui_table()` builds
+that pair for you).
+
+| Function | Purpose |
+| --- | --- |
+| `aroma_table_add_row` | Append a row, returns its index |
+| `aroma_table_clear_rows(table, destroy_widgets)` | Remove all rows (optionally freeing cell widgets) for rebuilds |
+| `aroma_table_set_cell_text` | Set a text cell (63 chars max) |
+| `aroma_table_set_cell_widget` | Embed a button/icon/progress widget in a cell |
+| `aroma_table_set_header` | Set a column header label |
+| `aroma_table_set_header_visible` | Hide the header band (e.g. app lists) |
+| `aroma_table_set_col_width` | Size a column in pixels |
+| `aroma_table_set_row_height` | Row height in pixels (default 40) |
+| `aroma_table_set_selected_row` / `aroma_table_get_selected_row` | Control/read selection (`-1` = none) |
+| `aroma_table_get_row_count` | Current row count |
+| `aroma_table_set_callback` | Row-tap callback with the row index |
+| `aroma_table_set_font` | Text font (required - nothing draws without it) |
+| `aroma_table_destroy` | Free rows, cell widgets and the table |
 
 ## Tabs
 

@@ -529,7 +529,11 @@ void aroma_button_destroy(AromaNode *button_node)
         return;
     AromaButton *button = (AromaButton *)button_node->node_widget_ptr;
     if (button)
+    {
         aroma_widget_free(button);
+        /* Detach so __destroy_node below does not free it a second time. */
+        button_node->node_widget_ptr = NULL;
+    }
     __destroy_node(button_node);
     LOG_INFO("Button destroyed");
 }

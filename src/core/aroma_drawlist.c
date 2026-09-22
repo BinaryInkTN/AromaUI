@@ -70,6 +70,14 @@ typedef struct AromaDrawCmd {
             int width;
             int height;
         } scissor;
+        struct {
+            int x;
+            int y;
+            int width;
+            int height;
+            float radius;
+            float corner_radius;
+        } blur;
     } data;
 } AromaDrawCmd;
 
@@ -311,6 +319,24 @@ void aroma_drawlist_cmd_scissor_pop(AromaDrawList* list)
     cmd->is_drawn = false;
 }
 
+void aroma_drawlist_cmd_blur_backdrop(AromaDrawList* list, int x, int y,
+                                      int width, int height, float radius,
+                                      float corner_radius)
+{
+    if (!list || width <= 0 || height <= 0 || radius <= 0.0f) return;
+    aroma_drawlist_reserve(list, 1);
+    if (list->count >= list->capacity) return;
+    AromaDrawCmd* cmd = &list->commands[list->count++];
+    cmd->type = AROMA_DRAW_CMD_BLUR_BACKDROP;
+    cmd->data.blur.x = x;
+    cmd->data.blur.y = y;
+    cmd->data.blur.width = width;
+    cmd->data.blur.height = height;
+    cmd->data.blur.radius = radius;
+    cmd->data.blur.corner_radius = corner_radius < 0.0f ? 0.0f : corner_radius;
+    cmd->is_drawn = false;
+}
+
 void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
 {
     if (!list || list->count == 0) return;
@@ -406,6 +432,16 @@ void aroma_drawlist_flush(AromaDrawList* list, size_t window_id)
             case AROMA_DRAW_CMD_SCISSOR_POP:
                 if (gfx->graphics_clear_clip)
                     gfx->graphics_clear_clip();
+                break;
+            case AROMA_DRAW_CMD_BLUR_BACKDROP:
+                if (gfx->blur_backdrop)
+                    gfx->blur_backdrop(window_id,
+                                       cmd->data.blur.x,
+                                       cmd->data.blur.y,
+                                       cmd->data.blur.width,
+                                       cmd->data.blur.height,
+                                       cmd->data.blur.radius,
+                                       cmd->data.blur.corner_radius);
                 break;
         }
     }
@@ -554,6 +590,22 @@ void aroma_drawlist_smart_flush(AromaDrawList* list,
             case AROMA_DRAW_CMD_SCISSOR_POP:
                 if (gfx->graphics_clear_clip)
                     gfx->graphics_clear_clip();
+                break;
+
+            case AROMA_DRAW_CMD_BLUR_BACKDROP:
+                if (gfx->blur_backdrop &&
+                    rect_intersects(cmd->data.blur.x,
+                                    cmd->data.blur.y,
+                                    cmd->data.blur.width,
+                                    cmd->data.blur.height,
+                                    x, y, width, height))
+                    gfx->blur_backdrop(window_id,
+                                       cmd->data.blur.x,
+                                       cmd->data.blur.y,
+                                       cmd->data.blur.width,
+                                       cmd->data.blur.height,
+                                       cmd->data.blur.radius,
+                                       cmd->data.blur.corner_radius);
                 break;
 
             default:

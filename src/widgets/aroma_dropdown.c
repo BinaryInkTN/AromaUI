@@ -397,6 +397,8 @@ void aroma_dropdown_destroy(AromaNode* dropdown_node) {
             free(dd->options);
         }
         aroma_widget_free(dd);
+        /* Detach so __destroy_node below does not free it a second time. */
+        dropdown_node->node_widget_ptr = NULL;
     }
     __destroy_node(dropdown_node);
 }

@@ -64,5 +64,6 @@ add_subdirectory(vendors/sqlite3)
 add_subdirectory(src)
 
 if(NOT EMSCRIPTEN AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests" AND IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+    enable_testing()
     add_subdirectory(tests)
 endif()

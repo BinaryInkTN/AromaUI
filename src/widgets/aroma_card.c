@@ -22,6 +22,10 @@ typedef struct   AromaCard
     uint32_t border_color;
     float border_radius;
     uint32_t shadow_color;
+    /* Frosted-glass backdrop blur radius in pixels. > 0 blurs the
+     * already-rendered pixels behind the card (when the backend
+     * supports it) before the translucent tint is drawn. 0 disables. */
+    float blur_radius;
     bool use_theme_colors;
     void (*click_callback)(void *user_data);
     void *user_data;
@@ -66,6 +70,8 @@ static void card_registry_remove(uint64_t node_id)
         }
     }
 }
+
+#define AROMA_CARD_DEFAULT_FROST_RADIUS 14.0f
 
 void aroma_card_draw(AromaNode *card_node, size_t window_id)
 {
@@ -115,6 +121,18 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
                             card->rect.x + 1, card->rect.y + 2,
                             card->rect.width, card->rect.height,
                             card->shadow_color, true, card->border_radius);
+    }
+
+    /* Frosted glass: blur the backdrop first so the translucent tint
+     * below reads as frosted rather than flat. Backends without blur
+     * support leave the pixels untouched and the tint still applies. */
+    if (card->type == CARD_TYPE_GLASS && card->blur_radius > 0.0f &&
+        gfx->blur_backdrop)
+    {
+        gfx->blur_backdrop(window_id,
+                           card->rect.x, card->rect.y,
+                           card->rect.width, card->rect.height,
+                           card->blur_radius, card->border_radius);
     }
 
     gfx->fill_rectangle(window_id,
@@ -179,6 +197,8 @@ AromaCard *card = (AromaCard *)calloc(1, sizeof(AromaCard));
     }
     card->border_radius = 12.0f;
     card->shadow_color = 0x40000000;
+    /* Glass cards blur their backdrop by default; other types do not. */
+    card->blur_radius = (type == CARD_TYPE_GLASS) ? AROMA_CARD_DEFAULT_FROST_RADIUS : 0.0f;
     card->use_theme_colors = true;
     card->click_callback = NULL;
     card->user_data = NULL;
@@ -212,6 +232,27 @@ void aroma_card_set_click_callback(AromaNode *card_node, void (*callback)(void *
         return;
     card->click_callback = callback;
     card->user_data = user_data;
+}
+
+void aroma_card_set_backdrop_blur(AromaNode *card_node, float radius_px)
+{
+    if (!card_node)
+        return;
+    AromaCard *card = card_registry_get(card_node->node_id);
+    if (!card)
+        return;
+    card->blur_radius = radius_px < 0.0f ? 0.0f : radius_px;
+    aroma_node_invalidate(card_node);
+}
+
+float aroma_card_get_backdrop_blur(AromaNode *card_node)
+{
+    if (!card_node)
+        return 0.0f;
+    AromaCard *card = card_registry_get(card_node->node_id);
+    if (!card)
+        return 0.0f;
+    return card->blur_radius;
 }
 bool aroma_card_is_card(AromaNode *node)
 {

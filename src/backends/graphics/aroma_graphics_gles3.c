@@ -43,6 +43,9 @@ typedef struct
     GLint lineCap;
     GLint arcAngles;
     GLint arcRadius;
+    GLint blurRadius;
+    GLint blurTexel;
+    GLint blurLod;
 } ShapeUniforms;
 
 typedef struct
@@ -111,6 +114,15 @@ typedef struct
     GLuint quad_texcoord_vbo;
     GLuint text_fragment_shader;
     GLuint text_vertex_shader;
+    /* Scratch textures for frosted-glass backdrop blur. The snapshot holds
+     * one full-window copy of the framebuffer, captured lazily by the
+     * first blur of each frame; every glass surface in the frame then
+     * samples that same snapshot, so stacked glass shares one consistent
+     * backdrop instead of re-blurring (and darkening) the glass below. */
+    GLuint snap_tex;
+    int snap_w;
+    int snap_h;
+    bool snap_valid;
     bool is_running;
     size_t num_windows;
     uint32_t current_frame;
@@ -324,6 +336,9 @@ static void init_shared_resources(void)
     ctx.shape_uniforms.lineCap = glGetUniformLocation(ctx.shape_program, "lineCap");
     ctx.shape_uniforms.arcAngles = glGetUniformLocation(ctx.shape_program, "arcAngles");
     ctx.shape_uniforms.arcRadius = glGetUniformLocation(ctx.shape_program, "arcRadius");
+    ctx.shape_uniforms.blurRadius = glGetUniformLocation(ctx.shape_program, "blurRadius");
+    ctx.shape_uniforms.blurTexel = glGetUniformLocation(ctx.shape_program, "blurTexel");
+    ctx.shape_uniforms.blurLod = glGetUniformLocation(ctx.shape_program, "blurLod");
 
     ctx.batch.count = 0;
     ctx.batch.mode = BATCH_MODE_NONE;
@@ -473,8 +488,6 @@ static void flush_shape_batch(void)
     if (ctx.batch.count == 0)
         return;
 
-    printf("flush_shape_batch mode=%d count=%d w=%.1f h=%.1f r=%.1f\n", ctx.batch.mode, ctx.batch.count, ctx.batch.u_width, ctx.batch.u_height, ctx.batch.u_radius);
-
     if (!ensure_frame_state(ctx.batch.window_id))
     {
         ctx.batch.count = 0;
@@ -501,6 +514,12 @@ static void flush_shape_batch(void)
     glUseProgram(ctx.shape_program);
     glUniformMatrix4fv(ctx.shape_uniforms.projection, 1, GL_FALSE,
                        (const GLfloat *)ctx.frame_cache.projection);
+    /* Batched geometry never samples the backdrop: make sure a previous
+     * immediate frosted-glass draw cannot leak its blur state into the
+     * shared shape program. */
+    glUniform1f(ctx.shape_uniforms.blurRadius, 0.0f);
+    glUniform2f(ctx.shape_uniforms.blurTexel, 0.0f, 0.0f);
+    glUniform1f(ctx.shape_uniforms.blurLod, 0.0f);
 
     switch (ctx.batch.mode)
     {
@@ -752,6 +771,8 @@ static void shutdown(void)
         glDeleteBuffers(1, &ctx.shape_vbo);
     if (ctx.quad_texcoord_vbo)
         glDeleteBuffers(1, &ctx.quad_texcoord_vbo);
+    if (ctx.snap_tex)
+        glDeleteTextures(1, &ctx.snap_tex);
 
     memset(&ctx, 0, sizeof(AromaGLES3Context));
 }
@@ -764,6 +785,8 @@ static void clear(size_t window_id, uint32_t color)
     ctx.batch.count = 0;
     ctx.batch.mode = BATCH_MODE_NONE;
     ctx.frame_cache.valid = false;
+    /* A new frame gets a fresh backdrop snapshot for frosted glass. */
+    ctx.snap_valid = false;
 
     if (!ensure_frame_state(window_id))
         return;
@@ -1322,8 +1345,6 @@ static void gles3_set_clip(int x, int y, int w, int h)
     if (gl_y < 0)
         gl_y = 0;
 
-    printf("gles3_set_clip x=%d y=%d w=%d h=%d -> gl_y=%d window_height=%d\n", x, y, w, h, gl_y, window_height);
-
     glEnable(GL_SCISSOR_TEST);
     glScissor(x, gl_y, w, h);
 }
@@ -1334,9 +1355,164 @@ static void gles3_clear_clip(void)
     glDisable(GL_SCISSOR_TEST);
 }
 
+/* Frosted-glass backdrop blur. The first blur of a frame snapshots the
+ * whole window framebuffer; every glass surface in that frame then
+ * samples the same snapshot, so stacked glass shares one consistent
+ * backdrop (no compounding blur/tint on widgets below). The snapshot is
+ * mipmapped once per capture and sampled at LOD 1 with a 9-tap tent
+ * filter, which reads as a wide, smooth gaussian. Drawn immediately (not
+ * batched) so it composites exactly at this point in the frame. */
+static void gles3_blur_backdrop(size_t window_id, int x, int y,
+                                int width, int height,
+                                float radius, float corner_radius)
+{
+    if (window_id >= MAX_WINDOWS || width <= 0 || height <= 0 || radius <= 0.0f)
+        return;
+    if (radius > 64.0f)
+        radius = 64.0f;
+    if (corner_radius < 0.0f)
+        corner_radius = 0.0f;
+
+    flush_shape_batch();
+
+    if (!ensure_frame_state(window_id))
+        return;
+
+    WindowResources *win = &ctx.windows[window_id];
+    if (!win->resources_initialized || win->shape_vao == 0)
+        return;
+
+    int fb_w = ctx.frame_cache.width;
+    int fb_h = ctx.frame_cache.height;
+
+    int cx = x < 0 ? 0 : x;
+    int cy = y < 0 ? 0 : y;
+    int cw = x + width > fb_w ? fb_w - cx : x + width - cx;
+    int ch = y + height > fb_h ? fb_h - cy : y + height - cy;
+    if (cw <= 0 || ch <= 0 || cx >= fb_w || cy >= fb_h)
+        return;
+
+    /* Capture the shared per-frame backdrop snapshot on first use. */
+    if (!ctx.snap_valid)
+    {
+        if (ctx.snap_tex == 0)
+        {
+            glGenTextures(1, &ctx.snap_tex);
+            ctx.snap_w = 0;
+            ctx.snap_h = 0;
+            if (ctx.snap_tex == 0)
+                return;
+        }
+        glBindTexture(GL_TEXTURE_2D, ctx.snap_tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        if (fb_w != ctx.snap_w || fb_h != ctx.snap_h)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_w, fb_h, 0,
+                         GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            if (glGetError() != GL_NO_ERROR)
+                return;
+            ctx.snap_w = fb_w;
+            ctx.snap_h = fb_h;
+        }
+        /* The backdrop lives in the default framebuffer. */
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, fb_w, fb_h);
+        if (glGetError() != GL_NO_ERROR)
+        {
+            glBindTexture(GL_TEXTURE_2D, 0);
+            return;
+        }
+        glGenerateMipmap(GL_TEXTURE_2D);
+        ctx.snap_valid = true;
+    }
+
+    /* Save GL state we are about to disturb. */
+    GLint prev_program = 0;
+    GLint prev_vao = 0;
+    GLint prev_array_buffer = 0;
+    GLint prev_active_tex = 0;
+    GLint prev_tex2d = 0;
+    GLboolean blend_enabled = GL_FALSE;
+    GLint blend_src = GL_SRC_ALPHA, blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &prev_program);
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prev_vao);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prev_array_buffer);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &prev_active_tex);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_tex2d);
+    blend_enabled = glIsEnabled(GL_BLEND);
+    glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src);
+    glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst);
+
+    /* Map the region into snapshot UVs. Texture row 0 is the framebuffer
+     * (UI) bottom row, so V is flipped relative to UI coordinates. */
+    float fx0 = (float)cx, fy0 = (float)cy;
+    float u0 = fx0 / (float)fb_w;
+    float u1 = (fx0 + (float)cw) / (float)fb_w;
+    float v_top = 1.0f - fy0 / (float)fb_h;
+    float v_bot = 1.0f - (fy0 + (float)ch) / (float)fb_h;
+    static const float qp[6][2] = {
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f},
+        {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
+    Vertex v[6];
+    for (int i = 0; i < 6; i++)
+    {
+        v[i].pos[0] = fx0 + qp[i][0] * (float)cw;
+        v[i].pos[1] = fy0 + qp[i][1] * (float)ch;
+        v[i].col[0] = 1.0f;
+        v[i].col[1] = 1.0f;
+        v[i].col[2] = 1.0f;
+        v[i].col[3] = 1.0f;
+        v[i].texCoord[0] = u0 + qp[i][0] * (u1 - u0);
+        v[i].texCoord[1] = v_top + qp[i][1] * (v_bot - v_top);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(v), v, GL_DYNAMIC_DRAW);
+
+    glUseProgram(ctx.shape_program);
+    glUniformMatrix4fv(ctx.shape_uniforms.projection, 1, GL_FALSE,
+                       (const GLfloat *)ctx.frame_cache.projection);
+    glUniform1i(ctx.shape_uniforms.useTexture, 1);
+    glUniform2f(ctx.shape_uniforms.size, (float)cw, (float)ch);
+    glUniform1f(ctx.shape_uniforms.radius, corner_radius);
+    glUniform1f(ctx.shape_uniforms.borderWidth, 0.0f);
+    glUniform1i(ctx.shape_uniforms.isRounded, corner_radius > 0.5f ? 1 : 0);
+    glUniform1i(ctx.shape_uniforms.isHollow, 0);
+    glUniform1i(ctx.shape_uniforms.shapeType, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ctx.snap_tex);
+    glUniform1i(ctx.shape_uniforms.tex, 0);
+    glUniform1f(ctx.shape_uniforms.blurRadius, radius);
+    glUniform2f(ctx.shape_uniforms.blurTexel,
+                1.0f / (float)fb_w, 1.0f / (float)fb_h);
+    glUniform1f(ctx.shape_uniforms.blurLod, 1.0f);
+    if (!blend_enabled)
+        glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBindVertexArray(win->shape_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    /* Restore. */
+    glBindTexture(GL_TEXTURE_2D, (GLuint)prev_tex2d);
+    glActiveTexture((GLenum)prev_active_tex);
+    glBindBuffer(GL_ARRAY_BUFFER, (GLuint)prev_array_buffer);
+    glBindVertexArray((GLuint)prev_vao);
+    glUseProgram((GLuint)prev_program);
+    if (!blend_enabled)
+        glDisable(GL_BLEND);
+    glBlendFunc((GLenum)blend_src, (GLenum)blend_dst);
+}
+
 static void gles3_flush(void)
 {
     flush_shape_batch();
+    /* End of frame: the next frame's glass re-snapshots its backdrop. */
+    ctx.snap_valid = false;
     ctx.current_frame++;
 }
 
@@ -1360,5 +1536,6 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .graphics_set_clip = gles3_set_clip,
     .graphics_clear_clip = gles3_clear_clip,
     .graphics_flush = gles3_flush,
+    .blur_backdrop = gles3_blur_backdrop,
 };
 #endif
