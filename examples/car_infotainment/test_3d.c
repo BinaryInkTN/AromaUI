@@ -5,7 +5,11 @@
 #include "../../src/core/cJSON.c"
 
 int main() {
+#if defined(__arm__) || defined(__aarch64__)
+    FILE *f = fopen("/usr/share/infotainment/assets/damaged_helmet.glb", "rb");
+#else
     FILE *f = fopen("assets/damaged_helmet.glb", "rb");
+#endif
     if (!f) return 1;
     fseek(f, 0, SEEK_END);
     size_t size = ftell(f);

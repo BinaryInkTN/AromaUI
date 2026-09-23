@@ -374,4 +374,16 @@ if(NOT EMSCRIPTEN)
     unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.game.memory
         "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory" memory_plugin FALSE)
+
+    # The app seeds/loads these at runtime, so building `infotainment`
+    # alone (e.g. `cmake --build . --target infotainment`, as packaging
+    # builds do) must also (re)build the first-party .apaks with the SAME
+    # toolchain/arch. Otherwise the app builds but ships/loads without
+    # (or stale, wrong-arch) packages.
+    foreach(_apak_target nav_plugin_apak media_plugin_apak contacts_plugin_apak
+                         tictactoe_plugin_apak memory_plugin_apak)
+        if(TARGET ${_apak_target})
+            add_dependencies(infotainment ${_apak_target})
+        endif()
+    endforeach()
 endif()

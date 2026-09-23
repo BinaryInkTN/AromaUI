@@ -2960,6 +2960,12 @@ static void build_settings_ui(AromaNode *settings_root)
     AromaNode *os_name_label = aroma_ui_label(updates_card, "Aroma Infotainment OS", (WIN_W - 350) / 2 - 50, 100, LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(os_name_label, Z_LAYER_STATUS_BAR + 14);
 
+    char build_date_text[64];
+    snprintf(build_date_text, sizeof(build_date_text), "Build %s %s", __DATE__, __TIME__);
+    AromaNode *build_date_label = aroma_ui_label(updates_card, build_date_text, (WIN_W - 350) / 2 - 50, 132, LABEL_STYLE_LABEL_SMALL, state.ui_font);
+    aroma_node_set_z_index(build_date_label, Z_LAYER_STATUS_BAR + 14);
+    aroma_label_set_color(build_date_label, state.theme.colors.text_secondary);
+
     AromaNode *swupdate_icon = aroma_ui_icon(updates_card, AROMA_ICON_FILE_DOWNLOAD, 60, 175, 32, IOS_COLOR_BLUE, state.icon_font);
     AromaNode *swupdate_label = aroma_ui_label(updates_card, "SWUpdate 2023.12", 90, 180, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(swupdate_icon, Z_LAYER_STATUS_BAR + 14);
