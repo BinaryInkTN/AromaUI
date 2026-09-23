@@ -3140,7 +3140,13 @@ Aroma3DModel *aroma_3d_create_cube(void)
  * behind the 3D viewport (background image, earlier UI) intact, and a
  * full clear every frame means nothing can smear across frames.
  * Per-pixel cost is near zero on tiled mobile GPUs. */
+#if defined(__arm__) || defined(__aarch64__)
+/* VideoCore-class GPUs: a fullscreen 4xMSAA resolve every frame is too
+ * costly, so AA defaults off here (still toggleable in Display settings). */
+static bool s_3d_aa_enabled = false;
+#else
 static bool s_3d_aa_enabled = true;
+#endif
 static GLuint s_msaa_fbo = 0;
 static GLuint s_msaa_color_rb = 0;
 static GLuint s_msaa_depth_rb = 0;

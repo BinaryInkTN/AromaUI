@@ -245,6 +245,9 @@ static bool on_dark_mode_switch_changed(AromaNode *switch_node, void *user_data)
 {
     (void)user_data;
     dark_mode_enabled = aroma_switch_get_state(switch_node);
+    state.dark_theme_enabled = dark_mode_enabled;
+    setup_store_set_int("dark_theme", dark_mode_enabled ? 1 : 0);
+    setup_store_save();
     apply_theme_colors();
     return true;
 }
@@ -2916,7 +2919,7 @@ static void build_settings_ui(AromaNode *settings_root)
 
     AromaNode *dark_mode_icon = aroma_ui_icon(display_card, AROMA_ICON_PALETTE, 40, 24, 32, IOS_COLOR_PURPLE, state.icon_font);
     AromaNode *dark_mode_label = aroma_ui_label(display_card, "Dark Mode", 90, 28, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-    settings_dark_mode_switch = aroma_ui_switch(display_card, WIN_W - 172, 18, 72, 44, false, on_dark_mode_switch_changed, NULL);
+    settings_dark_mode_switch = aroma_ui_switch(display_card, WIN_W - 172, 18, 72, 44, dark_mode_enabled, on_dark_mode_switch_changed, NULL);
     aroma_node_set_z_index(dark_mode_icon, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(dark_mode_label, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(settings_dark_mode_switch, Z_LAYER_STATUS_BAR + 14);
@@ -3107,6 +3110,9 @@ static void init_media_bt_services(void)
 
 void build_vehicle_view(AromaNode *window)
 {
+    // Seed vehicle theme state before building any UI so the Display
+    // switch and vehicle colors match the stored (dark-first) theme.
+    dark_mode_enabled = setup_store_get_int("dark_theme", 1) != 0;
     state.vehicle_view_root = aroma_ui_container(
         window, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW,
@@ -3447,6 +3453,10 @@ void build_vehicle_view(AromaNode *window)
     }
     build_settings_ui(settings_root);
     init_media_bt_services();
+
+    // Apply stored theme to vehicle surfaces (bg image, clocks) now that
+    // they exist; widget theme was already applied in main().
+    apply_theme_colors();
 
     build_lock_screen(window);
 }

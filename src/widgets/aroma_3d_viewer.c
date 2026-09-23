@@ -7,6 +7,7 @@
 #include "core/aroma_node.h"
 #include "aroma_3d.h"
 #include "aroma_event.h"
+#include "core/aroma_time.h"
 #include <string.h>
 #include <math.h>
 
@@ -20,6 +21,7 @@ struct Aroma3DViewer
     bool interactive;
     float last_x;
     float last_y;
+    uint64_t last_orbit_ms;
 };
 
 static bool point_in_rect(const AromaRect *rect, float x, float y)
@@ -104,8 +106,22 @@ static void viewer_draw(AromaNode *node, size_t window_id)
 
     if (viewer->auto_rotate && !viewer->is_dragging)
     {
-        aroma_3d_camera_orbit(&viewer->camera, 0.5f, 0.0f);
-        aroma_node_invalidate(node);
+        // Idle spin re-renders the whole model every frame. Cap it at
+        // ~30fps (scaled step keeps angular velocity identical); weak
+        // GPUs (e.g. Pi VideoCore) can't sustain 746k tris at 60fps.
+        uint64_t now = aroma_time_now_ms();
+        uint64_t elapsed = now - viewer->last_orbit_ms;
+        if (viewer->last_orbit_ms == 0 || elapsed >= 33)
+        {
+            float step = (viewer->last_orbit_ms == 0)
+                             ? 0.5f
+                             : 0.5f * (float)elapsed / 16.666f;
+            if (step > 2.0f)
+                step = 2.0f;
+            viewer->last_orbit_ms = now;
+            aroma_3d_camera_orbit(&viewer->camera, step, 0.0f);
+            aroma_node_invalidate(node);
+        }
     }
 
     int win_w = 0, win_h = 0;

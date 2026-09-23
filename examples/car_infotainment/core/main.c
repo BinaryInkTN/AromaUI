@@ -35,7 +35,11 @@ int main(int argc, char **argv)
 
     setup_store_load();
     state.g_voice_assistant_enabled = setup_store_get_int("voice_enabled", 1) != 0;
+#if defined(__arm__) || defined(__aarch64__)
+    aroma_3d_set_antialiasing(setup_store_get_int("aa_3d", 0) != 0);
+#else
     aroma_3d_set_antialiasing(setup_store_get_int("aa_3d", 1) != 0);
+#endif
 
     aroma_animation_manager_init();
 
@@ -52,7 +56,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     init_theme();
-    apply_theme(setup_store_get_int("dark_theme", 0) != 0);
+    apply_theme(setup_store_get_int("dark_theme", 1) != 0);
 
     if (!init_fonts())
     {

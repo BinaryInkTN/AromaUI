@@ -55,13 +55,22 @@ static void resolve_packages_dir(void)
     };
     for (int i = 0; candidates[i]; i++)
     {
-        if (is_dir(candidates[i]))
+        // Candidate must exist AND be writable: installs extract here, and
+        // on targets /usr/share is often read-only or owned by root while
+        // the app runs as another user.
+        if (is_dir(candidates[i]) &&
+            access(candidates[i], W_OK | X_OK) == 0)
         {
             snprintf(s_packages_dir, sizeof(s_packages_dir), "%s", candidates[i]);
             return;
         }
     }
-    mkdir("packages", 0755);
+    if (mkdir("packages", 0755) != 0 && errno != EEXIST)
+    {
+        fprintf(stderr, "[packages] FATAL: no writable packages dir "
+                        "(mkdir packages failed: %s); installs will fail\n",
+                strerror(errno));
+    }
     snprintf(s_packages_dir, sizeof(s_packages_dir), "packages");
 }
 
@@ -268,7 +277,12 @@ bool package_manager_seed_from_assets(void)
         }
     }
     if (!dir)
+    {
+        fprintf(stderr, "[packages] no assets dir found; skipping seed "
+                        "(expected *.apak in ./assets or "
+                        "/usr/share/infotainment/assets)\n");
         return false;
+    }
     DIR *d = opendir(dir);
     if (!d)
         return false;
