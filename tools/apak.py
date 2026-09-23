@@ -11,6 +11,7 @@ Usage:
     python3 tools/apak.py pack <package_dir> [-o out.apak]
     python3 tools/apak.py info <package.apak | package_dir>
     python3 tools/apak.py init <dir> --id com.example.myapp --name "My App"
+    python3 tools/apak.py init <dir> --id com.example.myapp --name "My App" --native
     python3 tools/apak.py validate <package.apak | package_dir>
 """
 
@@ -24,6 +25,19 @@ import tempfile
 import zipfile
 
 MANIFEST_NAME = "manifest.json"
+# Pruned from every .apak (build outputs, VCS, caches - never ship these).
+# C sources + CMake inputs are dev-only too: an .apak is an install
+# artifact (manifest + plugin.so + assets/ui), never source. First-party
+# packages are unaffected (they pack a staged manifest/plugin.so/assets
+# dir), but `pack .` on a native scaffold must not bundle plugin.c.
+PACK_SKIP_DIRS = frozenset({
+    "build", "dist", ".git", ".gradle", "__pycache__", "node_modules",
+    ".idea", ".vscode",
+})
+PACK_SKIP_FILES = frozenset({
+    "CMakeLists.txt", "Makefile", "CMakeCache.txt", "README.md",
+})
+PACK_SKIP_SUFFIXES = (".apak", ".pyc", ".o", ".a", ".c", ".h", ".cmake")
 ID_RE = re.compile(r"^[a-z0-9_]+(\.[a-z0-9_]+)+$")
 # Keep in sync with AROMA_PACKAGE_ABI_VERSION in include/aroma_package.h.
 AROMA_ABI_VERSION = 1
@@ -44,6 +58,210 @@ TEMPLATE_MANIFEST = {
     "downloads": 0,
     "featured": False,
 }
+
+# Scaffold for a separately-developed native app (own repo, own build):
+# manifest + plugin.c + CMakeLists.txt. The plugin owns its UI and logic
+# and ships bundled as plugin.so inside the .apak, Android-APK style.
+TEMPLATE_NATIVE_MANIFEST = {
+    "id": "{id}",
+    "name": "{name}",
+    "version": "1.0.0",
+    "version_code": 1,
+    "icon": "AROMA_ICON_WIDGETS",
+    "author": "",
+    "description": "",
+    "category": "Apps",
+    "plugin": "plugin.so",
+    "min_abi": 1,
+}
+
+TEMPLATE_PLUGIN_C = """/* {name} ({id}): standalone native AromaUI app.
+ *
+ * Develop this in its own repo and build it on its own (see
+ * CMakeLists.txt + README.md): the only input from AromaUI is the
+ * public include/ dir. The host loads plugin.so with dlopen and drives
+ * it through aroma_package_entry() - UI + logic ship bundled inside
+ * the .apak, Android-APK style.
+ *
+ * Rules for third-party plugins:
+ *   - use only the public aroma_* API (aroma.h) plus the AromaPackageHost
+ *     fonts; never include host-app headers.
+ *   - never link libaroma or the host; the host provides the symbols.
+ *   - any hook may be NULL; init must reset ALL static state (a
+ *     reinstall in the same process rebuilds from scratch).
+ */
+
+#include "aroma.h"
+#include "aroma_package.h"
+
+#include <stdio.h>
+#include <time.h>
+
+static AromaFont *s_font;
+static AromaNode *s_counter_label;
+static bool s_built;
+static long s_start_time;
+
+static bool on_reset_click(AromaNode *node, void *user_data)
+{{
+    (void)node;
+    (void)user_data;
+    s_start_time = (long)time(NULL);
+    return true;
+}}
+
+static bool app_init(const AromaPackageManifest *manifest,
+                     const char *install_dir,
+                     const AromaPackageHost *host,
+                     struct AromaNode *app_root)
+{{
+    (void)manifest;
+    (void)install_dir;
+    (void)app_root;
+    s_font = host ? host->ui_font : NULL;
+    s_counter_label = NULL;
+    s_built = false;
+    s_start_time = (long)time(NULL);
+    return true;
+}}
+
+static bool app_build_ui(struct AromaNode *app_root)
+{{
+    if (!app_root || s_built)
+        return s_built;
+    AromaNode *title = aroma_label_create(app_root, "{name}",
+                                          80, 24, LABEL_STYLE_LABEL_LARGE);
+    if (title && s_font)
+        aroma_label_set_font(title, s_font);
+    s_counter_label = aroma_label_create(app_root, "Running: 0s",
+                                         80, 70, LABEL_STYLE_LABEL_MEDIUM);
+    if (s_counter_label && s_font)
+        aroma_label_set_font(s_counter_label, s_font);
+    AromaNode *reset = aroma_button_create(app_root, "Reset timer",
+                                           80, 120, 160, 46);
+    if (reset)
+    {{
+        aroma_button_set_on_click(reset, on_reset_click, NULL);
+        if (s_font)
+            aroma_button_set_font(reset, s_font);
+        aroma_button_setup_events(reset, aroma_ui_request_redraw, NULL);
+    }}
+    s_built = true;
+    return true;
+}}
+
+static void app_update(struct AromaNode *app_root)
+{{
+    (void)app_root;
+    if (!s_built || !s_counter_label)
+        return;
+    char buf[64];
+    snprintf(buf, sizeof(buf), "Running: %lds",
+             (long)time(NULL) - s_start_time);
+    aroma_label_set_text(s_counter_label, buf);
+}}
+
+static void app_destroy(void)
+{{
+    s_built = false;
+    s_counter_label = NULL;
+    s_font = NULL;
+}}
+
+static const AromaPackageHooks s_app_hooks = {{
+    .init = app_init,
+    .build_ui = app_build_ui,
+    .show = NULL,
+    .hide = NULL,
+    .update = app_update,
+    .destroy = app_destroy,
+}};
+
+const AromaPackageHooks *aroma_package_entry(void)
+{{
+    return &s_app_hooks;
+}}
+"""
+
+TEMPLATE_NATIVE_CMAKE = """# {name}: standalone native AromaUI app (separate repo, separate build).
+# Only input from AromaUI is its public include/ dir - point at any
+# checkout (or an installed copy of include/):
+#
+#   cmake -S . -B build -DAromaUI_INCLUDE_DIR=/path/to/AromaUI/include
+#   cmake --build build -j
+#   python3 /path/to/AromaUI/tools/apak.py pack . -o {id}.apak
+cmake_minimum_required(VERSION 3.15)
+project({id}_plugin C)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+if(NOT DEFINED AromaUI_INCLUDE_DIR)
+    set(AromaUI_INCLUDE_DIR "" CACHE PATH
+        "AromaUI include directory (the include/ dir of an AromaUI checkout)")
+endif()
+if(NOT EXISTS "${{AromaUI_INCLUDE_DIR}}/aroma_package.h")
+    message(FATAL_ERROR
+        "AromaUI_INCLUDE_DIR is missing aroma_package.h: '${{AromaUI_INCLUDE_DIR}}'\\n"
+        "Configure with -DAromaUI_INCLUDE_DIR=/path/to/AromaUI/include")
+endif()
+
+add_library(app_plugin MODULE
+    plugin.c
+)
+set_target_properties(app_plugin PROPERTIES
+    PREFIX ""
+    SUFFIX ".so"
+    OUTPUT_NAME "plugin"
+)
+target_include_directories(app_plugin PRIVATE
+    "${{AromaUI_INCLUDE_DIR}}"
+)
+# NOTE: deliberately NOT linked against libaroma or the host - the host
+# process provides all aroma_* symbols at dlopen time (it links with
+# -rdynamic). Third-party plugins must use only the public aroma_* API.
+"""
+
+TEMPLATE_NATIVE_README = """# {name}
+
+Standalone native AromaUI app (`{id}`). Develop, version and build this
+like any own project - AromaUI is only a headers dependency.
+
+## Build
+
+```sh
+cmake -S . -B build -DAromaUI_INCLUDE_DIR=/path/to/AromaUI/include
+cmake --build build -j
+# produces build/plugin.so
+```
+
+## Pack
+
+```sh
+python3 /path/to/AromaUI/tools/apak.py pack . -o {id}.apak
+python3 /path/to/AromaUI/tools/apak.py info {id}.apak
+```
+
+Bump `version_code` in manifest.json on every update; the host refuses
+downgrades. UI + logic ship bundled as `plugin.so` inside the `.apak`,
+Android-APK style.
+
+## Install & run
+
+- Serve it: copy the `.apak` into a store repo and run
+  `python3 /path/to/AromaUI/tools/aroma_store_server.py --dir <repo>`,
+  then fetch it from the in-car Aroma Store store, or
+- Sideload it: Settings → Packages → enter the `.apak` path → Install,
+  then open it from the app drawer.
+
+## API rules
+
+- Public `aroma_*` API (aroma.h) plus the `AromaPackageHost` fonts only.
+- Never include host-app headers, never link libaroma or the host.
+- Any `AromaPackageHooks` hook may be NULL. `init` must reset ALL static
+  state: a reinstall in the same process rebuilds from scratch.
+"""
+
 
 TEMPLATE_UI = """Window {{
     width: 1024
@@ -215,7 +433,14 @@ def cmd_pack(args):
         with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as z:
             z.write(os.path.join(src, MANIFEST_NAME), MANIFEST_NAME)
             for root, _dirs, files in os.walk(src):
+                # Prune build/VCS/cache dirs in place (os.walk honors it).
+                _dirs[:] = sorted(
+                    d for d in _dirs
+                    if d not in PACK_SKIP_DIRS and not d.startswith("build-")
+                )
                 for fn in sorted(files):
+                    if fn in PACK_SKIP_FILES or fn.endswith(PACK_SKIP_SUFFIXES):
+                        continue
                     full = os.path.join(root, fn)
                     rel = os.path.relpath(full, src)
                     if rel == MANIFEST_NAME:
@@ -286,6 +511,8 @@ def cmd_init(args):
     mp = os.path.join(dest, MANIFEST_NAME)
     if os.path.exists(mp) and not args.force:
         return fail(f"{mp} exists (use --force to overwrite)")
+    if args.native:
+        return cmd_init_native(args, dest, mp)
     m = dict(TEMPLATE_MANIFEST)
     m["id"] = args.id
     m["name"] = args.name
@@ -299,6 +526,43 @@ def cmd_init(args):
     print(f"created template in {dest}")
     print(f"  edit {mp} and ui.aroma, then:")
     print(f"  python3 tools/apak.py pack {dest}")
+    return 0
+
+
+def _write_init_file(path, content, force):
+    if os.path.exists(path) and not force:
+        return fail(f"{path} exists (use --force to overwrite)")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return None
+
+
+def cmd_init_native(args, dest, mp):
+    """Scaffold a separately-developed native app: own repo, own CMake
+    build against AromaUI's public headers; UI + logic ship bundled as
+    plugin.so inside the .apak, Android-APK style."""
+    m = dict(TEMPLATE_NATIVE_MANIFEST)
+    m["id"] = args.id
+    m["name"] = args.name
+    with open(mp, "w", encoding="utf-8") as f:
+        json.dump(m, f, indent=2)
+        f.write("\n")
+    files = {
+        "plugin.c": TEMPLATE_PLUGIN_C.format(id=args.id, name=args.name),
+        "CMakeLists.txt": TEMPLATE_NATIVE_CMAKE.format(id=args.id,
+                                                        name=args.name),
+        "README.md": TEMPLATE_NATIVE_README.format(id=args.id,
+                                                    name=args.name),
+    }
+    for rel, content in files.items():
+        err = _write_init_file(os.path.join(dest, rel), content, args.force)
+        if err:
+            return err
+    print(f"created native app template in {dest}")
+    print("  plugin.c + CMakeLists.txt + manifest.json (+ README.md)")
+    print("  build:  cmake -S . -B build "
+          "-DAromaUI_INCLUDE_DIR=<AromaUI>/include && cmake --build build -j")
+    print(f"  pack:   python3 tools/apak.py pack {dest}")
     return 0
 
 
@@ -325,6 +589,10 @@ def main(argv=None):
     p.add_argument("--id", required=True)
     p.add_argument("--name", required=True)
     p.add_argument("--force", action="store_true")
+    p.add_argument("--native", action="store_true",
+                   help="scaffold a separately-developed native app "
+                        "(plugin.c + CMakeLists.txt, UI + logic bundled "
+                        "as plugin.so) instead of a pure-UI package")
     p.set_defaults(fn=cmd_init)
 
     args = ap.parse_args(argv)

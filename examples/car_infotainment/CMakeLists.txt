@@ -23,7 +23,6 @@ set(CMAKE_STRIP_FLAGS "--strip-all")
 
 option(ENABLE_VOICE_CONTROL "Enable voice control (requires libvosk)" OFF)
 option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
-option(ENABLE_BLUETOOTH_SPEAKER "Enable Bluetooth speaker functionality" ON)
 option(ENABLE_ASAN "Build with AddressSanitizer + LeakSanitizer instrumentation" OFF)
 option(ENABLE_TSAN "Build with ThreadSanitizer instrumentation (mutually exclusive with ENABLE_ASAN)" OFF)
 option(ENABLE_DEBUG_SYMBOLS "Keep debug symbols in release build" OFF)
@@ -99,43 +98,31 @@ target_link_options(aroma PRIVATE
     ${SANITIZER_LINK_FLAGS}
 )
 
-if(ENABLE_BLUETOOTH_SPEAKER AND NOT EMSCRIPTEN)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(DBUS REQUIRED dbus-1)
-    pkg_check_modules(PULSE REQUIRED libpulse)
-    if(NOT DBUS_FOUND)
-        message(FATAL_ERROR "D-Bus development package not found. Install libdbus-1-dev (Ubuntu) or dbus-devel (Fedora)")
-    endif()
-    if(NOT PULSE_FOUND)
-        message(FATAL_ERROR "PulseAudio development package not found. Install libpulse-dev (Ubuntu) or pulseaudio-libs-devel (Fedora)")
-    endif()
-endif()
-
 add_executable(infotainment
-        main.c 
-       main_loop.c 
-        app_state.c 
-        app_registry.c 
-        package_manager.c
-        setup_store.c
-        setup_wizard.c
-        apps/settings/settings_app.c 
-        apps/store/package_store_app.c
-        apps/store/store_client.c
-        voice_handler.c 
-        theme_manager.c 
-        font_manager.c 
-        ui_animation_utils.c 
-        vehicle_view.c 
-        lock_screen.c
-        vehicle_camera.c
-        interior_controls.c
-        media_home.c
-        easter_egg.c 
-        status_bar.c 
-        tabs_manager.c
-        apps/phone/bt_speaker_api.c
-        apps/phone/bt_speaker_hfp.c
+        core/main.c
+        core/main_loop.c
+        core/app_state.c
+        core/app_registry.c
+        pkg/package_manager.c
+        apak/aroma_package.c
+        apak/aroma_apak.c
+        apak/aroma_incense.c
+        apak/aroma_incense_loader.c
+        setup/setup_store.c
+        setup/setup_wizard.c
+        apps/settings/settings_app.c
+        voice/voice_handler.c
+        core/theme_manager.c
+        core/font_manager.c
+        core/ui_animation_utils.c
+        vehicle/vehicle_view.c
+        vehicle/lock_screen.c
+        vehicle/vehicle_camera.c
+        vehicle/interior_controls.c
+        vehicle/media_home.c
+        vehicle/easter_egg.c
+        vehicle/status_bar.c
+        vehicle/tabs_manager.c
  )
 
 target_compile_options(infotainment PRIVATE
@@ -184,7 +171,7 @@ if(ENABLE_VOICE_CONTROL)
 endif()
 
 if(ENABLE_VOICE_CONTROL)
-    target_sources(infotainment PRIVATE voice_control.c)
+    target_sources(infotainment PRIVATE voice/voice_control.c)
     target_compile_definitions(infotainment PRIVATE AROMA_USE_VOICE_CONTROL)
     target_link_libraries(infotainment PRIVATE vosk)
     message(STATUS "Voice control: ENABLED")
@@ -193,30 +180,44 @@ else()
 endif()
 
 target_include_directories(infotainment PRIVATE
+    # Public API first: bare "aroma_*.h" must resolve to include/,
+    # not to the src/core/ forwarding wrappers of the same name.
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
     "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib"
     "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vehicle"
+    "${CMAKE_CURRENT_SOURCE_DIR}/setup"
+    "${CMAKE_CURRENT_SOURCE_DIR}/voice"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pkg"
+    "${CMAKE_CURRENT_SOURCE_DIR}/apak"
+    # First-party BT service contracts (owned by the media/contacts
+    # packages; the host only includes the contract headers).
+    "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts/src"
+)
+# _GNU_SOURCE was previously pulled in by the Bluetooth block; keep it:
+# several host sources rely on GNU extensions.
+target_compile_definitions(infotainment PRIVATE _GNU_SOURCE)
+
+set(AROMA_APAK_SOURCES
+    apak/aroma_package.c
+    apak/aroma_apak.c
+    apak/aroma_incense.c
+    apak/aroma_incense_loader.c
+)
+set_source_files_properties(${AROMA_APAK_SOURCES} PROPERTIES
+    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../../src"
 )
 
-# cJSON lives in src/core next to stale internal headers that must NOT
-# shadow include/, so scope that directory to store_client.c only.
-set_source_files_properties(apps/store/store_client.c PROPERTIES
-    INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../../src/core"
-)
+find_package(ZLIB QUIET)
+if(ZLIB_FOUND AND NOT EMSCRIPTEN)
+    target_compile_definitions(infotainment PRIVATE AROMA_HAS_ZLIB=1)
+    target_link_libraries(infotainment PRIVATE ZLIB::ZLIB)
+endif()
 
-if(ENABLE_BLUETOOTH_SPEAKER AND NOT EMSCRIPTEN)
-    target_include_directories(infotainment PRIVATE
-        ${DBUS_INCLUDE_DIRS}
-        ${PULSE_INCLUDE_DIRS}
-    )
-    target_compile_definitions(infotainment PRIVATE 
-        BT_SPEAKER_ENABLED
-        _GNU_SOURCE
-    )
-    target_compile_options(infotainment PRIVATE
-        ${PRODUCTION_COMPILE_FLAGS}
-        ${DBUS_CFLAGS_OTHER}
-        ${PULSE_CFLAGS_OTHER}
-    )
+if(UNIX AND NOT EMSCRIPTEN)
+    target_link_libraries(infotainment PRIVATE ${CMAKE_DL_LIBS})
 endif()
 
 if(EMSCRIPTEN)
@@ -232,10 +233,6 @@ if(EMSCRIPTEN)
         "-sFETCH=1"
         "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
     )
-    if(ENABLE_BLUETOOTH_SPEAKER)
-        message(WARNING "Bluetooth speaker not available for Emscripten builds - disabling")
-        set(ENABLE_BLUETOOTH_SPEAKER OFF)
-    endif()
 elseif(ENABLE_GLFW)
     target_link_libraries(infotainment PRIVATE
         aroma
@@ -243,7 +240,6 @@ elseif(ENABLE_GLFW)
         pthread
         asound
         curl
-        dbus-1
     )
     message(STATUS "Windowing Backend: GLFW (Native)")
 else()
@@ -255,16 +251,6 @@ else()
         curl
     )
     message(STATUS "Windowing Backend: GLPS (Native)")
-endif()
-
-if(ENABLE_BLUETOOTH_SPEAKER AND NOT EMSCRIPTEN)
-    target_link_libraries(infotainment PRIVATE
-        ${DBUS_LIBRARIES}
-        ${PULSE_LIBRARIES}
-    )
-    message(STATUS "Bluetooth Speaker: ENABLED")
-else()
-    message(STATUS "Bluetooth Speaker: DISABLED")
 endif()
 
 if(UNIX AND NOT EMSCRIPTEN)
@@ -294,7 +280,6 @@ message(STATUS "=== Build Configuration Summary ===")
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Windowing Backend: ${ENABLE_GLFW}")
 message(STATUS "Voice Control: ${ENABLE_VOICE_CONTROL}")
-message(STATUS "Bluetooth Speaker: ${ENABLE_BLUETOOTH_SPEAKER}")
 message(STATUS "GPU Hardware: ${ENABLE_GPU_HARDWARE}")
 message(STATUS "Debug Symbols: ${ENABLE_DEBUG_SYMBOLS}")
 message(STATUS "Sanitizers: ${ENABLE_ASAN} / ${ENABLE_TSAN}")
@@ -306,7 +291,7 @@ message(STATUS "")
 # nav / media / contacts compile to native plugins, are packed with tools/apak.py
 # and staged into <build>/packages/ (preinstalled system packages). Native
 # plugins need dlopen, so this whole block is skipped for Emscripten (where the
-# web build keeps settings/store/third-party UI packages only).
+# web build keeps settings/third-party UI packages only).
 set(AROMA_PACKAGES_STAGING_DIR "${CMAKE_CURRENT_BINARY_DIR}/packages")
 set(AROMA_APAK_DIST_DIR "${CMAKE_CURRENT_BINARY_DIR}/dist")
 file(MAKE_DIRECTORY "${AROMA_PACKAGES_STAGING_DIR}" "${AROMA_APAK_DIST_DIR}")
@@ -315,14 +300,34 @@ if(NOT EMSCRIPTEN)
     find_package(Python3 COMPONENTS Interpreter QUIET)
 
     # Adds build + pack rules for one first-party package:
-    #   add_first_party_package(<leaf-id> <package-source-dir> <plugin-target>)
-    function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET)
-        set(PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
-        file(MAKE_DIRECTORY "${PKG_LEAF_DIR}")
+    #   add_first_party_package(<leaf-id> <package-source-dir> <plugin-target> <stage-system>)
+    # <stage-system> TRUE pre-installs into build/packages/ (system apps);
+    # FALSE packs build/dist/<leaf>.apak only, for manual installation
+    # (stale preinstalled copies are removed so rebuilds start clean).
+    # Staging (plugin.so -> leaf dir) happens here, in the pack target
+    # itself, and NOT as a POST_BUILD on the plugin: POST_BUILD only
+    # fires when the plugin relinks, so an up-to-date plugin would
+    # silently skip staging and the pack step would fail on the
+    # missing plugin.so.
+    function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET STAGE_SYSTEM)
+        if(STAGE_SYSTEM)
+            set(PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
+        else()
+            set(PKG_LEAF_DIR "${CMAKE_CURRENT_BINARY_DIR}/apak-dist-stage/${PKG_LEAF}")
+            file(REMOVE_RECURSE "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
+        endif()
         file(COPY "${PKG_SRC_DIR}/manifest.json" DESTINATION "${PKG_LEAF_DIR}")
+        # Bundled assets travel with the package (preinstalled and .apak).
+        if(EXISTS "${PKG_SRC_DIR}/assets")
+            file(COPY "${PKG_SRC_DIR}/assets" DESTINATION "${PKG_LEAF_DIR}")
+        endif()
         if(Python3_FOUND)
             add_custom_target(${PLUGIN_TARGET}_apak ALL
                 DEPENDS ${PLUGIN_TARGET}
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${PKG_LEAF_DIR}"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "$<TARGET_FILE:${PLUGIN_TARGET}>"
+                        "${PKG_LEAF_DIR}/plugin.so"
                 COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/apak.py"
                         pack "${PKG_LEAF_DIR}" -o "${AROMA_APAK_DIST_DIR}/${PKG_LEAF}.apak"
                 COMMENT "Packing ${PKG_LEAF}.apak"
@@ -337,7 +342,7 @@ if(NOT EMSCRIPTEN)
                      "${CMAKE_CURRENT_BINARY_DIR}/nav_plugin_build")
     unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.nav
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav" nav_plugin)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav" nav_plugin TRUE)
 
     # Media (Bluetooth AVRCP now playing + devices).
     set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.media")
@@ -345,7 +350,7 @@ if(NOT EMSCRIPTEN)
                      "${CMAKE_CURRENT_BINARY_DIR}/media_plugin_build")
     unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.media
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media" media_plugin)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media" media_plugin TRUE)
 
     # Contacts (dialer + contact list + PBAP sync).
     set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.contacts")
@@ -353,27 +358,20 @@ if(NOT EMSCRIPTEN)
                      "${CMAKE_CURRENT_BINARY_DIR}/contacts_plugin_build")
     unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.contacts
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts" contacts_plugin)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts" contacts_plugin TRUE)
 
     # --- Games (host-chrome native plugins, third-party pattern) ------------
-    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.snake")
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/snake"
-                     "${CMAKE_CURRENT_BINARY_DIR}/snake_plugin_build")
-    unset(AROMA_PKG_LEAF_DIR)
-    add_first_party_package(com.aroma.game.snake
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/snake" snake_plugin)
-
     set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.tictactoe")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe"
                      "${CMAKE_CURRENT_BINARY_DIR}/tictactoe_plugin_build")
     unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.game.tictactoe
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe" tictactoe_plugin)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe" tictactoe_plugin FALSE)
 
     set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.memory")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory"
                      "${CMAKE_CURRENT_BINARY_DIR}/memory_plugin_build")
     unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.game.memory
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory" memory_plugin)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory" memory_plugin FALSE)
 endif()

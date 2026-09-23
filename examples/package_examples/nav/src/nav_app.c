@@ -4,7 +4,6 @@
 #include "vehicle_view.h"
 #include "app_registry.h"
 #include "app_state.h"
-#include "theme_manager.h"
 #include <math.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -33,6 +32,24 @@ static int estimate_eta_minutes(double distance_km)
 }
 
 
+/* Owned map widget + fonts (were host AppState slots). Fonts come from
+ * the AromaPackageHost at init; the map node is created in build_ui. */
+static AromaNode *s_map_node = NULL;
+static AromaNode *s_map_close_btn = NULL;
+static AromaFont *s_ui_font = NULL;
+static AromaFont *s_icon_font = NULL;
+static AromaFont *s_settings_font = NULL;
+/* Install-dir-joined asset path for bundled map data (assets/...).
+ * Native targets only (native plugins don't ship on web). */
+static char s_install_dir[512] = "";
+
+static void nav_asset_path(char *out, size_t out_len, const char *file)
+{
+    if (s_install_dir[0])
+        snprintf(out, out_len, "%s/assets/%s", s_install_dir, file);
+    else
+        snprintf(out, out_len, "assets/%s", file);
+}
 static bool search_results_visible = false;
 static AromaNode *map_route_sheet = NULL;
 static AromaNode *map_end_nav_btn = NULL;
@@ -127,29 +144,17 @@ static bool on_satellite_switch_changed(AromaNode *switch_node, void *user_data)
     (void)user_data;
     if (aroma_switch_get_state(switch_node))
     {
-        aroma_map_set_mbtiles(state.map_node,
-#ifdef __EMSCRIPTEN__
-                              "/assets/ariana_sat.mbtiles"
-#elif defined(__arm__) || defined(__aarch64__)
-                              "/usr/share/infotainment/assets/ariana_sat.mbtiles"
-#else
-                              resolve_asset_path("../assets/ariana_sat.mbtiles")
-#endif
-        );
+        char tiles[768];
+        nav_asset_path(tiles, sizeof(tiles), "ariana_sat.mbtiles");
+        aroma_map_set_mbtiles(s_map_node, tiles);
     }
     else
     {
-        aroma_map_set_mbtiles(state.map_node,
-#ifdef __EMSCRIPTEN__
-                              "/assets/ariana_3d.mbtiles"
-#elif defined(__arm__) || defined(__aarch64__)
-                              "/usr/share/infotainment/assets/ariana_3d.mbtiles"
-#else
-                              resolve_asset_path("../assets/ariana_3d.mbtiles")
-#endif
-        );
+        char tiles[768];
+        nav_asset_path(tiles, sizeof(tiles), "ariana_3d.mbtiles");
+        aroma_map_set_mbtiles(s_map_node, tiles);
     }
-    aroma_node_invalidate(state.map_node);
+    aroma_node_invalidate(s_map_node);
     return true;
 }
 
@@ -224,7 +229,7 @@ static bool on_pois_switch_changed(AromaNode *switch_node, void *user_data)
     last_center_lon = 0.0;
     last_zoom = 0.0;
 
-    if (maps_screen_open && state.map_node && !map_nav.navigation_active)
+    if (maps_screen_open && s_map_node && !map_nav.navigation_active)
     {
         update_pois_markers();
     }
@@ -402,17 +407,17 @@ static void start_navigation(double from_lat, double from_lon, double to_lat, do
     map_nav.distance_km = calculate_distance_km(from_lat, from_lon, to_lat, to_lon);
     map_nav.eta_minutes = estimate_eta_minutes(map_nav.distance_km);
 
-    bool osrm_loaded = aroma_map_is_osrm_loaded(state.map_node);
+    bool osrm_loaded = aroma_map_is_osrm_loaded(s_map_node);
 
-    aroma_map_clear_markers(state.map_node);
-    aroma_map_clear_route(state.map_node);
+    aroma_map_clear_markers(s_map_node);
+    aroma_map_clear_route(s_map_node);
 
     if (osrm_loaded)
     {
-        aroma_map_set_route_offline(state.map_node, from_lat, from_lon, to_lat, to_lon, GMAPS_COLOR_PRIMARY);
+        aroma_map_set_route_offline(s_map_node, from_lat, from_lon, to_lat, to_lon, GMAPS_COLOR_PRIMARY);
         double *route_lats = NULL;
         double *route_lons = NULL;
-        map_nav.route_point_count = aroma_map_get_route_points(state.map_node, &route_lats, &route_lons);
+        map_nav.route_point_count = aroma_map_get_route_points(s_map_node, &route_lats, &route_lons);
 
         if (map_nav.route_point_count > 1)
         {
@@ -450,8 +455,8 @@ static void start_navigation(double from_lat, double from_lon, double to_lat, do
             map_nav.seg_length_m = nav_haversine_m(map_nav.path_lat[0], map_nav.path_lon[0],
                                                    map_nav.path_lat[1], map_nav.path_lon[1]);
 
-            aroma_map_add_popup_marker(state.map_node, to_lat, to_lon, GMAPS_COLOR_DESTINATION, "Destination");
-            aroma_map_add_marker(state.map_node, map_nav.current_lat, map_nav.current_lon, GMAPS_COLOR_PRIMARY);
+            aroma_map_add_popup_marker(s_map_node, to_lat, to_lon, GMAPS_COLOR_DESTINATION, "Destination");
+            aroma_map_add_marker(s_map_node, map_nav.current_lat, map_nav.current_lon, GMAPS_COLOR_PRIMARY);
 
             if (nav_banner_card)
             {
@@ -459,22 +464,22 @@ static void start_navigation(double from_lat, double from_lon, double to_lat, do
                 aroma_node_set_hidden(nav_bottom_card, false);
             }
 
-            aroma_map_set_center_instant(state.map_node, map_nav.current_lat, map_nav.current_lon);
-            aroma_map_set_zoom(state.map_node, 18);
+            aroma_map_set_center_instant(s_map_node, map_nav.current_lat, map_nav.current_lon);
+            aroma_map_set_zoom(s_map_node, 18);
 
             show_route_panel();
             return;
         }
     }
 
-    aroma_map_set_route(state.map_node, from_lat, from_lon, to_lat, to_lon, GMAPS_COLOR_PRIMARY);
-    aroma_map_add_popup_marker(state.map_node, from_lat, from_lon, GMAPS_COLOR_START, "Start");
-    aroma_map_add_popup_marker(state.map_node, to_lat, to_lon, GMAPS_COLOR_DESTINATION, "Destination");
+    aroma_map_set_route(s_map_node, from_lat, from_lon, to_lat, to_lon, GMAPS_COLOR_PRIMARY);
+    aroma_map_add_popup_marker(s_map_node, from_lat, from_lon, GMAPS_COLOR_START, "Start");
+    aroma_map_add_popup_marker(s_map_node, to_lat, to_lon, GMAPS_COLOR_DESTINATION, "Destination");
     map_nav.route_ready = false;
     map_nav.navigation_active = false;
     map_nav.simulation_started = false;
 
-    aroma_map_set_zoom(state.map_node, 18);
+    aroma_map_set_zoom(s_map_node, 18);
 
     if (map_route_sheet)
     {
@@ -625,10 +630,10 @@ bool open_maps(AromaNode *node, void *user_data)
     if (media_ui.media_card)
         aroma_node_set_hidden(media_ui.media_card, true);
     aroma_animation_set_easing(anim, APP_ANIM_OPEN_EASE);
-    aroma_node_set_hidden(state.map_node, false);
-    aroma_node_set_hidden(state.map_close_btn, false);
+    aroma_node_set_hidden(s_map_node, false);
+    aroma_node_set_hidden(s_map_close_btn, false);
     aroma_node_set_z_index(card_node, Z_LAYER_STATUS_BAR + 10);
-    aroma_map_set_zoom(state.map_node, 18);
+    aroma_map_set_zoom(s_map_node, 18);
     if (map_search_surface)
     {
         map_search_expanded = true;
@@ -648,7 +653,7 @@ void closing_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
-    AromaRect *maps_rect = aroma_node_get_rect(state.map_node);
+    AromaRect *maps_rect = aroma_node_get_rect(s_map_node);
     if (!maps_rect)
         return;
 
@@ -668,12 +673,12 @@ void closing_anim(AromaNode *target, float progress, void *user_data)
     if (progress >= 0.92f)
     {
         aroma_node_set_z_index(target, 1);
-        aroma_node_set_hidden(state.map_close_btn, true);
+        aroma_node_set_hidden(s_map_close_btn, true);
         aroma_node_set_hidden(map_search_surface, true);
         aroma_node_set_hidden(map_route_sheet, true);
         aroma_node_set_hidden(map_end_nav_btn, true);
         aroma_node_set_hidden(map_options_card, true);
-        aroma_node_set_hidden(state.map_node, true);
+        aroma_node_set_hidden(s_map_node, true);
         aroma_node_set_hidden(target, true);
         maps_screen_open = false;
         if (map_search_results_list)
@@ -705,7 +710,7 @@ void closing_anim(AromaNode *target, float progress, void *user_data)
             clear_navigation();
         }
     }
-    aroma_node_invalidate(state.map_node);
+    aroma_node_invalidate(s_map_node);
     aroma_node_invalidate(target);
 }
 
@@ -738,7 +743,7 @@ static void nav_app_hide(AromaAppPlugin *app) {
 }
 
 void nav_app_update(AromaAppPlugin *app) {
-    if (maps_screen_open && state.map_node && !map_nav.navigation_active)
+    if (maps_screen_open && s_map_node && !map_nav.navigation_active)
     {
         update_pois_markers();
     }
@@ -800,9 +805,9 @@ void nav_app_update(AromaAppPlugin *app) {
                 map_nav.display_heading += nav_shortest_angle_diff(map_nav.display_heading, raw_bearing) * 0.15;
             map_nav.display_heading = fmod(map_nav.display_heading + 360.0, 360.0);
 
-            aroma_map_set_gps_position(state.map_node, map_nav.current_lat, map_nav.current_lon,
+            aroma_map_set_gps_position(s_map_node, map_nav.current_lat, map_nav.current_lon,
                                        map_nav.display_heading, map_nav.speed);
-            aroma_map_set_center(state.map_node, map_nav.current_lat, map_nav.current_lon);
+            aroma_map_set_center(s_map_node, map_nav.current_lat, map_nav.current_lon);
 
             if (map_nav.reroute_cooldown_frames > 0)
                 map_nav.reroute_cooldown_frames--;
@@ -836,9 +841,9 @@ void nav_app_update(AromaAppPlugin *app) {
 
             if (map_nav.frame % 15 == 0 || reached_end)
             {
-                aroma_map_clear_markers(state.map_node);
-                aroma_map_add_popup_marker(state.map_node, map_nav.to_lat, map_nav.to_lon, GMAPS_COLOR_DESTINATION, "Destination");
-                aroma_map_add_marker(state.map_node, map_nav.current_lat, map_nav.current_lon, GMAPS_COLOR_PRIMARY);
+                aroma_map_clear_markers(s_map_node);
+                aroma_map_add_popup_marker(s_map_node, map_nav.to_lat, map_nav.to_lon, GMAPS_COLOR_DESTINATION, "Destination");
+                aroma_map_add_marker(s_map_node, map_nav.current_lat, map_nav.current_lon, GMAPS_COLOR_PRIMARY);
             }
 
             if (map_nav.frame % 15 == 0)
@@ -850,11 +855,11 @@ void nav_app_update(AromaAppPlugin *app) {
             {
                 aroma_label_set_text(nav_banner_label, "Arrived");
                 aroma_label_set_text(nav_banner_sub, "Destination reached");
-                aroma_icon_set_text(nav_turn_icon, AROMA_ICON_PLACE, state.icon_font);
+                aroma_icon_set_text(nav_turn_icon, AROMA_ICON_PLACE, s_icon_font);
                 map_nav.simulation_started = false;
                 map_nav.navigation_active = false;
                 map_nav.active = false;
-                aroma_map_clear_markers(state.map_node);
+                aroma_map_clear_markers(s_map_node);
                 aroma_node_set_hidden(nav_banner_card, true);
                 aroma_node_set_hidden(nav_bottom_card, true);
                 aroma_node_set_hidden(map_search_surface, false);
@@ -870,42 +875,24 @@ void nav_app_update(AromaAppPlugin *app) {
 
 static bool nav_app_build_ui(AromaAppPlugin *app, AromaNode *parent) {
     (void)app;
-state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
-    aroma_map_set_mbtiles(state.map_node,
-#ifdef __EMSCRIPTEN__
-                          "/assets/ariana_3d.mbtiles"
-#elif defined(__arm__) || defined(__aarch64__)
-                          "/usr/share/infotainment/assets/ariana_3d.mbtiles"
-#else
-                          resolve_asset_path("../assets/ariana_3d.mbtiles")
-#endif
-    );
-    aroma_map_load_osrm_data(state.map_node,
-#ifdef __EMSCRIPTEN__
-                             "/assets/routing_data.bin"
-#elif defined(__arm__) || defined(__aarch64__)
-                             "/usr/share/infotainment/assets/routing_data.bin"
-#else
-                             resolve_asset_path("../assets/routing_data.bin")
-#endif
-    );
-    aroma_map_load_poi_database(state.map_node,
-#ifdef __EMSCRIPTEN__
-                                "/assets/tunisia_pois.db"
-#elif defined(__arm__) || defined(__aarch64__)
-                                "/usr/share/infotainment/assets/tunisia_pois.db"
-#else
-                                resolve_asset_path("../assets/tunisia_pois.db")
-#endif
-    );
-    aroma_map_set_center(state.map_node, 36.8625, 10.1956);
-    aroma_map_set_animations_enabled(state.map_node, false);
+s_map_node = aroma_ui_map(parent, 0, 0, 48, 48);
+    {
+        char mbtiles[768], routing[768], pois[768];
+        nav_asset_path(mbtiles, sizeof(mbtiles), "ariana_3d.mbtiles");
+        nav_asset_path(routing, sizeof(routing), "routing_data.bin");
+        nav_asset_path(pois, sizeof(pois), "tunisia_pois.db");
+        aroma_map_set_mbtiles(s_map_node, mbtiles);
+        aroma_map_load_osrm_data(s_map_node, routing);
+        aroma_map_load_poi_database(s_map_node, pois);
+    }
+    aroma_map_set_center(s_map_node, 36.8625, 10.1956);
+    aroma_map_set_animations_enabled(s_map_node, false);
 
-    aroma_node_set_z_index(state.map_node, Z_LAYER_STATUS_BAR + 11);
-    state.map_close_btn = aroma_ui_iconbutton(parent, AROMA_ICON_CLOSE, 20, 20, 48, ICON_BUTTON_FILLED, close_maps, parent, state.icon_font);
-    aroma_node_set_z_index(state.map_close_btn, Z_LAYER_STATUS_BAR + 20);
-    aroma_node_set_hidden(state.map_node, true);
-    aroma_node_set_hidden(state.map_close_btn, true);
+    aroma_node_set_z_index(s_map_node, Z_LAYER_STATUS_BAR + 11);
+    s_map_close_btn = aroma_ui_iconbutton(parent, AROMA_ICON_CLOSE, 20, 20, 48, ICON_BUTTON_FILLED, close_maps, parent, s_icon_font);
+    aroma_node_set_z_index(s_map_close_btn, Z_LAYER_STATUS_BAR + 20);
+    aroma_node_set_hidden(s_map_node, true);
+    aroma_node_set_hidden(s_map_close_btn, true);
 
     for (int i = 0; i < NUM_POI_CATEGORIES; i++)
         category_enabled[i] = false;
@@ -926,7 +913,7 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
 
     AromaNode *map_options_btn = aroma_ui_iconbutton(
         parent, AROMA_ICON_MORE_VERT, WIN_W - 70, 20, 48, ICON_BUTTON_FILLED,
-        on_map_options_click, NULL, state.icon_font);
+        on_map_options_click, NULL, s_icon_font);
     aroma_node_set_z_index(map_options_btn, Z_LAYER_STATUS_BAR + 20);
 
     map_options_card = aroma_ui_card(
@@ -936,11 +923,11 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
 
     AromaNode *map_options_close_btn = aroma_ui_iconbutton(
         map_options_card, AROMA_ICON_CLOSE, 260, 8, 32, ICON_BUTTON_OUTLINED,
-        on_map_options_close_click, NULL, state.icon_font);
+        on_map_options_close_click, NULL, s_icon_font);
     aroma_node_set_z_index(map_options_close_btn, Z_LAYER_STATUS_BAR + 22);
 
     AromaNode *map_options_title = aroma_ui_label(
-        map_options_card, "Map Options", 16, 16, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+        map_options_card, "Map Options", 16, 16, LABEL_STYLE_LABEL_MEDIUM, s_settings_font);
     aroma_node_set_z_index(map_options_title, Z_LAYER_STATUS_BAR + 22);
 
     AromaNode *satellite_switch = aroma_ui_switch(
@@ -949,7 +936,7 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
     aroma_node_set_z_index(satellite_switch, Z_LAYER_STATUS_BAR + 22);
 
     AromaNode *satellite_label = aroma_ui_label(
-        map_options_card, "Satellite View", 16, 65, LABEL_STYLE_LABEL_SMALL, state.ui_font);
+        map_options_card, "Satellite View", 16, 65, LABEL_STYLE_LABEL_SMALL, s_ui_font);
     aroma_node_set_z_index(satellite_label, Z_LAYER_STATUS_BAR + 22);
 
     AromaNode *pois_switch = aroma_ui_switch(
@@ -957,7 +944,7 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
         true, on_pois_switch_changed, NULL);
     aroma_node_set_z_index(pois_switch, Z_LAYER_STATUS_BAR + 22);
     AromaNode *pois_label = aroma_ui_label(
-        map_options_card, "Show POIs", 16, 115, LABEL_STYLE_LABEL_SMALL, state.ui_font);
+        map_options_card, "Show POIs", 16, 115, LABEL_STYLE_LABEL_SMALL, s_ui_font);
     aroma_node_set_z_index(pois_label, Z_LAYER_STATUS_BAR + 22);
 
     map_search_surface = aroma_ui_card(parent, 0, 80, 340, 520, CARD_TYPE_ELEVATED);
@@ -965,12 +952,12 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
     aroma_node_set_hidden(map_search_surface, true);
 
     map_search_placeholder_label = aroma_ui_label(
-        map_search_surface, "Search here", 60, 18, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+        map_search_surface, "Search here", 60, 18, LABEL_STYLE_LABEL_MEDIUM, s_ui_font);
     aroma_node_set_z_index(map_search_placeholder_label, Z_LAYER_STATUS_BAR + 16);
 
     map_search_back_btn = aroma_ui_iconbutton(
         map_search_surface, AROMA_ICON_ARROW_BACK, 8, 8, 40, ICON_BUTTON_OUTLINED,
-        on_search_back_click, NULL, state.icon_font);
+        on_search_back_click, NULL, s_icon_font);
     aroma_iconbutton_set_colors(map_search_back_btn, GMAPS_COLOR_SURFACE, GMAPS_COLOR_ON_SURFACE_VARIANT);
     aroma_node_set_z_index(map_search_back_btn, Z_LAYER_STATUS_BAR + 16);
     aroma_node_set_hidden(map_search_back_btn, true);
@@ -978,18 +965,18 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
     AromaNode *dir_divider = aroma_ui_divider(map_search_surface, 16, 64, 308, DIVIDER_ORIENTATION_HORIZONTAL);
     aroma_node_set_z_index(dir_divider, Z_LAYER_STATUS_BAR + 16);
 
-    map_from_entry = aroma_ui_textbox(map_search_surface, 15, 72, 280, 40, "Search from...", on_from_text_changed, NULL, state.ui_font);
+    map_from_entry = aroma_ui_textbox(map_search_surface, 15, 72, 280, 40, "Search from...", on_from_text_changed, NULL, s_ui_font);
     aroma_textbox_enable_virtual_keyboard(map_from_entry, true);
     aroma_node_set_z_index(map_from_entry, Z_LAYER_STATUS_BAR + 16);
 
-    map_to_entry = aroma_ui_textbox(map_search_surface, 15, 122, 280, 40, "Search to...", on_to_text_changed, NULL, state.ui_font);
+    map_to_entry = aroma_ui_textbox(map_search_surface, 15, 122, 280, 40, "Search to...", on_to_text_changed, NULL, s_ui_font);
     aroma_textbox_enable_virtual_keyboard(map_to_entry, true);
     aroma_node_set_z_index(map_to_entry, Z_LAYER_STATUS_BAR + 16);
 
-    map_go_btn = aroma_ui_button(map_search_surface, "Directions", 16, 172, 308, 40, on_go_click, NULL, state.settings_font);
+    map_go_btn = aroma_ui_button(map_search_surface, "Directions", 16, 172, 308, 40, on_go_click, NULL, s_settings_font);
     aroma_node_set_z_index(map_go_btn, Z_LAYER_STATUS_BAR + 16);
 
-    AromaNode *preset_title = aroma_ui_label(map_search_surface, "Presets", 16, 232, LABEL_STYLE_LABEL_LARGE, state.settings_font);
+    AromaNode *preset_title = aroma_ui_label(map_search_surface, "Presets", 16, 232, LABEL_STYLE_LABEL_LARGE, s_settings_font);
     aroma_node_set_z_index(preset_title, Z_LAYER_STATUS_BAR + 16);
 
     AromaNode *preset_listview = aroma_listview_create(map_search_surface, 16, 260, 308, 240);
@@ -997,8 +984,8 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
     aroma_listview_add_item_with_icon(preset_listview, "Parad'Ice", "", AROMA_ICON_LOCAL_DINING, NULL);
     aroma_listview_add_item_with_icon(preset_listview, "ISI", "", AROMA_ICON_BOOK, NULL);
     aroma_listview_add_item_with_icon(preset_listview, "Agile", "", AROMA_ICON_LOCAL_GAS_STATION, NULL);
-    aroma_listview_set_font(preset_listview, state.ui_font);
-    aroma_listview_set_icon_font(preset_listview, state.icon_font);
+    aroma_listview_set_font(preset_listview, s_ui_font);
+    aroma_listview_set_icon_font(preset_listview, s_icon_font);
     aroma_node_set_z_index(preset_listview, Z_LAYER_STATUS_BAR + 16);
     aroma_listview_set_callback(preset_listview, on_preset_item_click, NULL);
 
@@ -1006,7 +993,7 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
     aroma_node_set_hidden(suggestion_page, true);
     aroma_node_set_z_index(suggestion_page, Z_LAYER_STATUS_BAR + 40);
 
-    AromaNode *suggestion_title = aroma_ui_label(suggestion_page, "Select Location", 280, 10, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+    AromaNode *suggestion_title = aroma_ui_label(suggestion_page, "Select Location", 280, 10, LABEL_STYLE_LABEL_MEDIUM, s_settings_font);
     aroma_node_set_z_index(suggestion_title, Z_LAYER_STATUS_BAR + 41);
 
     for (int slot = 0; slot < ITEMS_PER_PAGE; slot++)
@@ -1016,8 +1003,8 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
         AromaNode *card = aroma_ui_card(suggestion_page, 16, card_y, 672, 50, CARD_TYPE_ELEVATED);
         aroma_node_set_z_index(card, Z_LAYER_STATUS_BAR + 41);
 
-        AromaNode *name_label = aroma_ui_label(card, "", 10, 5, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
-        AromaNode *desc_label = aroma_ui_label(card, "", 10, 25, LABEL_STYLE_LABEL_SMALL, state.ui_font);
+        AromaNode *name_label = aroma_ui_label(card, "", 10, 5, LABEL_STYLE_LABEL_MEDIUM, s_ui_font);
+        AromaNode *desc_label = aroma_ui_label(card, "", 10, 25, LABEL_STYLE_LABEL_SMALL, s_ui_font);
         aroma_label_set_color(desc_label, GMAPS_COLOR_ON_SURFACE_VARIANT);
         aroma_node_set_z_index(name_label, Z_LAYER_STATUS_BAR + 42);
         aroma_node_set_z_index(desc_label, Z_LAYER_STATUS_BAR + 42);
@@ -1026,7 +1013,7 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
         suggestion_slot_contexts[slot].slot_index = slot;
 
         AromaNode *pick_btn = aroma_ui_button_with_icon(card, "Pick", 520, 8, 90, 34,
-                                                        on_suggestion_pick, &suggestion_slot_contexts[slot], state.ui_font, AROMA_ICON_CHECK, state.icon_font);
+                                                        on_suggestion_pick, &suggestion_slot_contexts[slot], s_ui_font, AROMA_ICON_CHECK, s_icon_font);
         aroma_node_set_z_index(pick_btn, Z_LAYER_STATUS_BAR + 42);
 
         aroma_node_set_hidden(card, true);
@@ -1037,34 +1024,34 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
         suggestion_pick_buttons[slot] = pick_btn;
     }
 
-    page_label_suggestions = aroma_ui_label(suggestion_page, "Page 1/1", 320, 490, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    page_label_suggestions = aroma_ui_label(suggestion_page, "Page 1/1", 320, 490, LABEL_STYLE_LABEL_MEDIUM, s_ui_font);
     aroma_node_set_z_index(page_label_suggestions, Z_LAYER_STATUS_BAR + 41);
 
-    AromaNode *prev_btn = aroma_ui_button_with_icon(suggestion_page, "Prev", 110, 400, 80, 50, on_prev_page, NULL, state.ui_font, AROMA_ICON_ARROW_LEFT, state.icon_font);
-    AromaNode *next_btn = aroma_ui_button_with_icon(suggestion_page, "Next", 290, 400, 80, 50, on_next_page, NULL, state.ui_font, AROMA_ICON_ARROW_RIGHT, state.icon_font);
-    AromaNode *close_btn = aroma_ui_button_with_icon(suggestion_page, "Close", 470, 400, 80, 50, on_close_suggestions, NULL, state.ui_font, AROMA_ICON_CLOSE, state.icon_font);
+    AromaNode *prev_btn = aroma_ui_button_with_icon(suggestion_page, "Prev", 110, 400, 80, 50, on_prev_page, NULL, s_ui_font, AROMA_ICON_ARROW_LEFT, s_icon_font);
+    AromaNode *next_btn = aroma_ui_button_with_icon(suggestion_page, "Next", 290, 400, 80, 50, on_next_page, NULL, s_ui_font, AROMA_ICON_ARROW_RIGHT, s_icon_font);
+    AromaNode *close_btn = aroma_ui_button_with_icon(suggestion_page, "Close", 470, 400, 80, 50, on_close_suggestions, NULL, s_ui_font, AROMA_ICON_CLOSE, s_icon_font);
     aroma_node_set_z_index(prev_btn, Z_LAYER_STATUS_BAR + 41);
     aroma_node_set_z_index(next_btn, Z_LAYER_STATUS_BAR + 41);
     aroma_node_set_z_index(close_btn, Z_LAYER_STATUS_BAR + 41);
 
     nav_banner_card = aroma_ui_card(parent, 80, 10, 864, 80, CARD_TYPE_ELEVATED);
-    nav_turn_icon = aroma_ui_icon(nav_banner_card, AROMA_ICON_ARROW_UPWARD, 30, 20, 40, GMAPS_COLOR_PRIMARY, state.icon_font);
-    nav_banner_label = aroma_ui_label(nav_banner_card, "Starting navigation...", 65, 10, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-    nav_banner_sub = aroma_ui_label(nav_banner_card, "", 65, 50, LABEL_STYLE_LABEL_SMALL, state.ui_font);
+    nav_turn_icon = aroma_ui_icon(nav_banner_card, AROMA_ICON_ARROW_UPWARD, 30, 20, 40, GMAPS_COLOR_PRIMARY, s_icon_font);
+    nav_banner_label = aroma_ui_label(nav_banner_card, "Starting navigation...", 65, 10, LABEL_STYLE_LABEL_MEDIUM, s_settings_font);
+    nav_banner_sub = aroma_ui_label(nav_banner_card, "", 65, 50, LABEL_STYLE_LABEL_SMALL, s_ui_font);
     aroma_node_set_hidden(nav_banner_card, true);
     aroma_node_set_z_index(nav_banner_card, Z_LAYER_STATUS_BAR + 30);
     aroma_node_set_z_index(nav_turn_icon, Z_LAYER_STATUS_BAR + 31);
     aroma_node_set_z_index(nav_banner_label, Z_LAYER_STATUS_BAR + 31);
     aroma_node_set_z_index(nav_banner_sub, Z_LAYER_STATUS_BAR + 31);
     nav_bottom_card = aroma_ui_card(parent, 80, WIN_H - 90, 864, 80, CARD_TYPE_ELEVATED);
-    AromaNode *eta_icon = aroma_ui_icon(nav_bottom_card, AROMA_ICON_SCHEDULE, 45, 32, 28, 0xFF00C853, state.icon_font);
-    nav_eta_label = aroma_ui_label(nav_bottom_card, "-- min", 80, 32, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-    AromaNode *dist_icon2 = aroma_ui_icon(nav_bottom_card, AROMA_ICON_PLACE, 230, 32, 28, 0xFFFF6D00, state.icon_font);
-    nav_dist_label = aroma_ui_label(nav_bottom_card, "-- km", 265, 32, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-    AromaNode *speed_icon = aroma_ui_icon(nav_bottom_card, AROMA_ICON_GRAPHIC_EQ, 420, 32, 28, 0xFF2979FF, state.icon_font);
-    nav_speed_label = aroma_ui_label(nav_bottom_card, "-- km/h", 455, 32, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
-    AromaNode *turn_dist_icon = aroma_ui_icon(nav_bottom_card, AROMA_ICON_NAVIGATION, 595, 32, 28, 0xFFD50000, state.icon_font);
-    nav_turn_dist_label = aroma_ui_label(nav_bottom_card, "--", 630, 32, LABEL_STYLE_LABEL_MEDIUM, state.settings_font);
+    AromaNode *eta_icon = aroma_ui_icon(nav_bottom_card, AROMA_ICON_SCHEDULE, 45, 32, 28, 0xFF00C853, s_icon_font);
+    nav_eta_label = aroma_ui_label(nav_bottom_card, "-- min", 80, 32, LABEL_STYLE_LABEL_MEDIUM, s_settings_font);
+    AromaNode *dist_icon2 = aroma_ui_icon(nav_bottom_card, AROMA_ICON_PLACE, 230, 32, 28, 0xFFFF6D00, s_icon_font);
+    nav_dist_label = aroma_ui_label(nav_bottom_card, "-- km", 265, 32, LABEL_STYLE_LABEL_MEDIUM, s_settings_font);
+    AromaNode *speed_icon = aroma_ui_icon(nav_bottom_card, AROMA_ICON_GRAPHIC_EQ, 420, 32, 28, 0xFF2979FF, s_icon_font);
+    nav_speed_label = aroma_ui_label(nav_bottom_card, "-- km/h", 455, 32, LABEL_STYLE_LABEL_MEDIUM, s_settings_font);
+    AromaNode *turn_dist_icon = aroma_ui_icon(nav_bottom_card, AROMA_ICON_NAVIGATION, 595, 32, 28, 0xFFD50000, s_icon_font);
+    nav_turn_dist_label = aroma_ui_label(nav_bottom_card, "--", 630, 32, LABEL_STYLE_LABEL_MEDIUM, s_settings_font);
     aroma_node_set_hidden(nav_bottom_card, true);
     aroma_node_set_z_index(nav_bottom_card, Z_LAYER_STATUS_BAR + 30);
     aroma_node_set_z_index(eta_icon, Z_LAYER_STATUS_BAR + 31);
@@ -1082,19 +1069,19 @@ state.map_node = aroma_ui_map(parent, 0, 0, 48, 48);
 
 static void update_pois_markers(void)
 {
-    if (!state.map_node)
+    if (!s_map_node)
         return;
 
     if (map_nav.navigation_active)
         return;
 
-    AromaMap *map_widget = (AromaMap *)state.map_node->node_widget_ptr;
+    AromaMap *map_widget = (AromaMap *)s_map_node->node_widget_ptr;
     if (!map_widget)
         return;
 
     double center_lat = map_widget->center_lat;
     double center_lon = map_widget->center_lon;
-    double zoom = aroma_map_get_zoom(state.map_node);
+    double zoom = aroma_map_get_zoom(s_map_node);
 
     if (poi_query_in_flight)
         return;
@@ -1122,7 +1109,7 @@ static void update_pois_markers(void)
     last_center_lon = center_lon;
     last_zoom = zoom;
 
-    AromaRect *map_rect = aroma_node_get_rect(state.map_node);
+    AromaRect *map_rect = aroma_node_get_rect(s_map_node);
     double half_w = map_rect ? map_rect->width / 2.0 : 512.0;
     double half_h = map_rect ? map_rect->height / 2.0 : 300.0;
 
@@ -1174,15 +1161,15 @@ static void update_pois_markers(void)
 
     if (enabled_category_count == 0)
     {
-        aroma_map_clear_markers(state.map_node);
-        aroma_node_invalidate(state.map_node);
+        aroma_map_clear_markers(s_map_node);
+        aroma_node_invalidate(s_map_node);
         poi_query_in_flight = false;
         return;
     }
 
     int result_count = 0;
     PointOfInterest *pois = aroma_map_query_pois_in_viewport(
-        state.map_node, view_min_lat, view_max_lat, view_min_lon, view_max_lon, &result_count);
+        s_map_node, view_min_lat, view_max_lat, view_min_lon, view_max_lon, &result_count);
 
     if (!pois || result_count == 0)
     {
@@ -1295,18 +1282,18 @@ static void update_pois_markers(void)
         return;
     }
 
-    aroma_map_clear_markers(state.map_node);
+    aroma_map_clear_markers(s_map_node);
     for (int i = 0; i < candidate_count; i++)
     {
-        aroma_map_add_icon_marker_with_font(state.map_node,
+        aroma_map_add_icon_marker_with_font(s_map_node,
                                             candidates[i].lat,
                                             candidates[i].lon,
                                             candidates[i].color,
                                             candidates[i].icon_code,
-                                            state.icon_font);
+                                            s_icon_font);
     }
 
-    aroma_node_invalidate(state.map_node);
+    aroma_node_invalidate(s_map_node);
 
     poi_query_in_flight = false;
 }
@@ -1328,7 +1315,7 @@ static void update_suggestions(const char *query)
     }
 
     int result_count = 0;
-    PointOfInterest *results = aroma_map_query_pois_by_name(state.map_node, query, MAX_SUGGESTIONS, &result_count);
+    PointOfInterest *results = aroma_map_query_pois_by_name(s_map_node, query, MAX_SUGGESTIONS, &result_count);
 
     if (result_count > 0 && results)
     {
@@ -1432,7 +1419,7 @@ static void perform_map_search(const char *query)
     strncpy(last_search_query, query, sizeof(last_search_query) - 1);
     last_search_query[sizeof(last_search_query) - 1] = '\0';
 
-    aroma_map_geocode_search(state.map_node, query, on_geocode_results, NULL);
+    aroma_map_geocode_search(s_map_node, query, on_geocode_results, NULL);
 }
 
 static void show_route_panel(void)
@@ -1473,18 +1460,18 @@ static void hide_route_panel(void)
 
 static bool recalculate_route_from_current_position(void)
 {
-    if (!state.map_node)
+    if (!s_map_node)
         return false;
 
-    if (!aroma_map_is_osrm_loaded(state.map_node))
+    if (!aroma_map_is_osrm_loaded(s_map_node))
         return false;
 
-    aroma_map_set_route_offline(state.map_node, map_nav.current_lat, map_nav.current_lon,
+    aroma_map_set_route_offline(s_map_node, map_nav.current_lat, map_nav.current_lon,
                                 map_nav.to_lat, map_nav.to_lon, GMAPS_COLOR_PRIMARY);
 
     double *route_lats = NULL;
     double *route_lons = NULL;
-    int new_count = aroma_map_get_route_points(state.map_node, &route_lats, &route_lons);
+    int new_count = aroma_map_get_route_points(s_map_node, &route_lats, &route_lons);
     if (new_count <= 1 || !route_lats || !route_lons)
         return false;
 
@@ -1527,9 +1514,9 @@ static void update_navigation_display(void)
         return;
 
     RouteProgress progress;
-    aroma_map_get_route_progress(state.map_node, &progress);
+    aroma_map_get_route_progress(s_map_node, &progress);
     TurnInstruction turn;
-    aroma_map_get_next_turn(state.map_node, &turn);
+    aroma_map_get_next_turn(s_map_node, &turn);
 
     const char *icon_code = AROMA_ICON_ARROW_UPWARD;
     char banner_text[128];
@@ -1585,7 +1572,7 @@ static void update_navigation_display(void)
         icon_code = AROMA_ICON_ARROW_UPWARD;
     }
 
-    aroma_icon_set_text(nav_turn_icon, icon_code, state.icon_font);
+    aroma_icon_set_text(nav_turn_icon, icon_code, s_icon_font);
     aroma_label_set_text(nav_banner_label, banner_text);
     aroma_label_set_text(nav_banner_sub, banner_sub_text);
 
@@ -1616,11 +1603,11 @@ static void clear_navigation(void)
         map_nav.path_lon = NULL;
     }
     map_nav.route_point_count = 0;
-    aroma_map_clear_route(state.map_node);
-    aroma_map_clear_markers(state.map_node);
+    aroma_map_clear_route(s_map_node);
+    aroma_map_clear_markers(s_map_node);
     hide_route_panel();
-    aroma_map_set_center(state.map_node, 36.8625f, 10.1956f);
-    aroma_map_set_zoom(state.map_node, 18);
+    aroma_map_set_center(s_map_node, 36.8625f, 10.1956f);
+    aroma_map_set_zoom(s_map_node, 18);
 
     if (nav_banner_card)
     {
@@ -1650,7 +1637,7 @@ void opening_anim(AromaNode *target, float progress, void *user_data)
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
-    AromaRect *maps_rect = aroma_node_get_rect(state.map_node);
+    AromaRect *maps_rect = aroma_node_get_rect(s_map_node);
     if (!maps_rect)
         return;
 
@@ -1669,10 +1656,10 @@ void opening_anim(AromaNode *target, float progress, void *user_data)
 
     if (progress >= 0.92f)
     {
-        aroma_node_set_hidden(state.map_close_btn, false);
+        aroma_node_set_hidden(s_map_close_btn, false);
         aroma_node_set_hidden(map_search_surface, false);
     }
-    aroma_node_invalidate(state.map_node);
+    aroma_node_invalidate(s_map_node);
     aroma_node_invalidate(target);
 }
 
@@ -1690,9 +1677,19 @@ static bool nav_hook_init(const AromaPackageManifest *manifest,
                           struct AromaNode *app_root)
 {
     (void)manifest;
-    (void)install_dir;
-    (void)host;
     (void)app_root;
+    if (host)
+    {
+        s_ui_font = host->ui_font;
+        s_icon_font = host->icon_font;
+        s_settings_font = host->settings_font ? host->settings_font
+                                              : host->ui_font;
+    }
+    /* Bundled map data resolves against our own install dir. */
+    if (install_dir)
+        snprintf(s_install_dir, sizeof(s_install_dir), "%s", install_dir);
+    else
+        s_install_dir[0] = '\0';
     memset(&s_nav_mirror, 0, sizeof(s_nav_mirror));
     s_nav_mirror.id = "com.aroma.nav";
     s_nav_mirror.name = "Navigation";
@@ -1733,11 +1730,10 @@ static void nav_hook_update(struct AromaNode *app_root)
 
 static void nav_hook_destroy(void)
 {
-    /* Clear every node pointer into the dying tree. Host globals
-     * (state.map_node / state.map_close_btn) survive dlclose: leaving them
-     * non-NULL makes the next install dereference freed nodes (crash) and
-     * leaves POI/update code running against a dead tree. The tree itself
-     * is freed by the host. */
+    /* Clear every node pointer into the dying tree. Owned statics
+     * survive dlclose in-process: leaving them non-NULL makes the next
+     * install dereference freed nodes (crash) and leaves POI/update code
+     * running against a dead tree. The tree itself is freed by the host. */
     if (filtered_pois)
     {
         free(filtered_pois);
@@ -1755,8 +1751,8 @@ static void nav_hook_destroy(void)
         map_nav.path_lon = NULL;
     }
     memset(&map_nav, 0, sizeof(map_nav));
-    state.map_node = NULL;
-    state.map_close_btn = NULL;
+    s_map_node = NULL;
+    s_map_close_btn = NULL;
     map_route_sheet = NULL;
     map_end_nav_btn = NULL;
     map_distance_label = NULL;

@@ -107,6 +107,33 @@ The host loads it with `dlopen` and checks the ABI (`min_abi` /
 `AROMA_PACKAGE_ABI_VERSION`, currently 1). Link plugin hosts with
 `-rdynamic` so the plugin resolves `aroma_*` from the host process.
 
+## Developing apps as separate projects
+
+Apps do not have to live in this repo. UI **and** logic ship bundled
+inside the `.apak` (like an Android APK: code + resources in one
+installable artifact), so an app is developed, versioned and built as
+its own project with AromaUI as a headers-only dependency:
+
+```sh
+# Scaffold (run anywhere - the output dir is the new project):
+python3 <aromaui>/tools/apak.py init my-app --id com.example.myapp \
+    --name "My App" --native
+cd my-app
+# Build against any AromaUI checkout (headers only, never link libaroma):
+cmake -S . -B build -DAromaUI_INCLUDE_DIR=<aromaui>/include
+cmake --build build -j          # -> build/plugin.so
+cp build/plugin.so .
+python3 <aromaui>/tools/apak.py pack . -o myapp.apak
+```
+
+`pack` prunes `build/`, `dist/`, `.git/`, C sources, CMake inputs and
+other dev junk automatically (an `.apak` ships only the manifest,
+`plugin.so`, UI markup and assets). Install the `.apak` through Aroma Store (store server or
+Settings → Packages sideload) and open it from the app drawer - the
+host `dlopen`s the bundled `plugin.so` and drives `update()` every
+frame, exactly like a first-party app. Keep the host close button clear
+(it sits top-left at 20,20): start content around x=80.
+
 ## First-party packages (nav / media / contacts)
 
 Navigation, Media and Contacts are not compiled into the infotainment
@@ -123,14 +150,41 @@ unchanged through a tiny in-file adapter (`aroma_package_entry` +
 a static `AromaAppPlugin` mirror). Host symbols the plugins need are pinned in
 `examples/car_infotainment/plugin_api.syms` (exported + LTO-protected via
 `--export-dynamic-symbol`), so update that list if a plugin imports a new
-host-only function. As first-party code they may use host
-globals (`state`, `g_bt_*`, `media_ui`) via the host's `-rdynamic` export;
-third-party plugins must stick to the public `aroma_*` API plus
-`AromaPackageHost` fonts. Native plugins need `dlopen`, so the Emscripten
-(web) build ships settings/store/third-party UI packages only.
+host-only function. As first-party code they may use host UI-chrome
+coordination (`state` nodes, `media_ui`, drawer/anim helpers) via the
+host's `-rdynamic` export; third-party plugins must stick to the public
+`aroma_*` API plus `AromaPackageHost` fonts. Native plugins need `dlopen`,
+so the Emscripten (web) build ships settings/store/third-party UI
+packages only.
 
+Bluetooth lives in the packages, not the host: the media package owns
+the A2DP/AVRCP speaker stack (`src/bt_speaker_api.c`) and the contacts
+package owns the HFP/PBAP telephony stack (`src/bt_speaker_hfp.c`) -
+each compiles its stack into its own `plugin.so` (linking system
+D-Bus/PulseAudio itself, like any third-party native app). The host
+owns no BT state and registers no BT callbacks; it reaches the stacks
+through small service contracts (`media_bt_service.h`,
+`contacts_bt_service.h`, resolved with `package_manager_symbol()`),
+and every consumer polls the thread-safe getters (mini card monitor,
+device card, call monitor, app update ticks). The contacts package
+also pumps its HFP bus on its update tick (`bt_hfp_poll()`). The contacts package reads
+connection/device identity from the media service (first-party
+interop - telephony gates on the same connected phone the A2DP side
+tracks).
+
+Navigation is likewise self-contained: the map widget, its close
+button and the fonts it uses live in the nav package (captured from
+`AromaPackageHost` at init), with routing/geocoding logic beside them
+- the host keeps no map state. The bundled games were born standalone
+(pure `aroma.h` + `aroma_package.h`, zero host coupling).
+
+Assets travel with their package: media bundles `assets/album_cover.jpg`,
+nav bundles its `.mbtiles` tiles, routing data and POI database under
+`assets/`. The build stages `assets/` into preinstalled packages and
+`apak pack` includes it in the `.apak`; plugins resolve files against
+the `install_dir` their `init` receives - never host asset paths.
 Shared home-screen pieces stay in the host: the mini media card
-(`media_home.c`), the Bluetooth stack, the incoming-call overlay, and the
+(`media_home.c`), the incoming-call overlay, and the
 `Packages` installer store itself.
 
 ## Host integration (for developers)
@@ -172,11 +226,12 @@ New Incense loader APIs (`aroma_incense_loader.h`):
 
 ## Online store (Python server + in-app client)
 
-The in-car store is **Aroma Play** (app drawer → Aroma Play), a simple,
+The in-car store is **Aroma Store** (app drawer → Aroma Store), a simple,
 generic client:
 
-- **Games / Apps** tabs: every server package in its category, with live
-  search across names, ids, authors and descriptions.
+- **Games / Apps** sections (sidebar): every server package in its
+  category, with live search across names, ids, authors and
+  descriptions, and a hero banner featuring the first visible package.
 - Each row shows the icon, name and one meta line built from real data
   only (author, category, version, size - plus rating and download
   counts when the publisher declared them; missing values are hidden,
@@ -187,9 +242,10 @@ generic client:
   live-update of loaded packages, drawer integration). Installed rows
   flip to **Open** (or **Update** when the server has a newer
   `version_code`) plus **Remove**.
-- **Installed** tab: local `.apak` path installer, the store server URL
-  setting (persisted, default `http://127.0.0.1:8080`), and the installed
-  list with Open/Remove.
+- **Installed** section: the installed list with Open (Remove only for
+  third-party packages - see below). Sideloading (local `.apak` path
+  installer) and the store server URL setting (persisted, default
+  `http://127.0.0.1:8080`) live in Settings → Packages.
 
 It talks to a running Python server. Seed + serve in one command:
 
@@ -211,14 +267,14 @@ Server endpoints (all JSON except `/`):
   `version_code` per id, with size + sha256 + download URL. Optional
   `q`/`query` (search), `category`, `featured=1`,
   `sort=downloads|rating|name`.
-- `GET /api/search?q=snake` - alias for a `q`-filtered index.
+- `GET /api/search?q=memory` - alias for a `q`-filtered index.
 - `GET /api/categories` - section list with counts.
 - `GET /api/featured` - carousel entries (top-rated fallback).
 - `GET /api/package/<id>` - one detail record.
 - `GET /api/download/<id>` streams the `.apak` bytes.
 - `/` shows a human-readable listing grouped by category.
 
-In the car, open Aroma Play → check the server URL → hit Refresh, then
+In the car, open Aroma Store → check the server URL → hit Refresh, then
 Get on any row (or View → Install). Downloads run on a worker thread
 with live progress, then install through the normal
 `package_manager_install_apak` path, so validation, downgrade refusal
@@ -230,20 +286,19 @@ and drawer integration all apply. Update-available rows are detected via
 
 ## Bundled games
 
-`examples/package_examples/games/` ships three real, playable,
+`examples/package_examples/games/` ships two real, playable,
 host-chrome native plugins (the recommended third-party pattern: the
 host owns the window chrome + close button, the plugin only builds game
 UI and drives itself from `update()`):
 
-- **Snake** (`com.aroma.game.snake`) - 12x12 arcade snake, D-pad,
-  score/best, 220ms tick in `update()`.
 - **Tic Tac Toe** (`com.aroma.game.tictactoe`) - you (X) vs the computer
   (O, win/block/random), score across rounds.
 - **Memory Match** (`com.aroma.game.memory`) - 4x4 flip-to-match, 8
   pairs, move counter, flip-back timer in `update()`.
 
-They build + pack with the infotainment (`build/dist/*.apak`,
-pre-installed into `build/packages/`) and show up in the Games tab.
+They build + pack with the infotainment (`build/dist/*.apak`, served by
+the store ready to install) but are deliberately **not** pre-installed,
+so a fresh image starts with no games - grab them from Aroma Store.
 Their manifests carry no ratings or download counts (those are only
 shown when a publisher declares them), so rows show the honest core:
 author, category, version and size. Cell buttons recolor via
@@ -254,7 +309,9 @@ label children since buttons have no public set-text API.
 
 On first boot (no completed setup in the settings file) the infotainment
 shows an Android-style setup wizard over the lock screen: Welcome → device
-name → Wi-Fi → Bluetooth → Display & voice → Finish. Everything is
+name → Wi-Fi → Bluetooth → Display & voice → Finish. To relive the
+first boot on purpose (testing), launch with `AROMA_FIRST_RUN=1` - the
+persisted completion flag is ignored for that boot. Everything is
 functional, not a mockup:
 
 - Wi-Fi credentials persist and the wizard attempts a real `nmcli`

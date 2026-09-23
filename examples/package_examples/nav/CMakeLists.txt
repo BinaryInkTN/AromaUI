@@ -25,18 +25,14 @@ set_target_properties(nav_plugin PROPERTIES
 target_include_directories(nav_plugin PRIVATE
     "${AromaUI_INCLUDE_DIR}"
     "${AromaApp_INCLUDE_DIR}"
+    "${AromaApp_INCLUDE_DIR}/core"
+    "${AromaApp_INCLUDE_DIR}/vehicle"
+    "${AromaApp_INCLUDE_DIR}/pkg"
+    "${AromaApp_INCLUDE_DIR}/setup"
+    "${AromaApp_INCLUDE_DIR}/voice"
+    "${AromaApp_INCLUDE_DIR}/apak"
 )
 # NOTE: deliberately NOT linked against libaroma or the host - the host
 # process provides all aroma_* and app symbols at dlopen time (it links
 # with -rdynamic).
 
-# Stage plugin.so next to manifest.json (the pack step reads this dir).
-if(DEFINED AROMA_PKG_LEAF_DIR)
-    add_custom_command(TARGET nav_plugin POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "$<TARGET_FILE:nav_plugin>"
-                "${AROMA_PKG_LEAF_DIR}/plugin.so"
-        COMMENT "Staging com.aroma.nav plugin"
-        VERBATIM
-    )
-endif()

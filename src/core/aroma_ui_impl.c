@@ -760,7 +760,13 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
 
     append_draw_task(node, tasks, task_count, max_tasks);
 
-    if (aroma_container_is_scrollable(node) && !aroma_card_is_card(node->parent_node))
+    /* A scrollable container is a draw boundary: its own draw callback
+     * paints the subtree itself (clipped + scroll-shifted). Recursing
+     * here would also emit one task per descendant, rendering the
+     * content a second time, unclipped, at its base position. This holds
+     * no matter what the container is parented to - a scrollview inside
+     * a card is still a scrollview. */
+    if (aroma_container_is_scrollable(node))
     {
         return;
     }

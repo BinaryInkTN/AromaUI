@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Seed + serve the Aroma Play store repo from freshly built .apak bundles.
+# Seed + serve the Aroma Store store repo from freshly built .apak bundles.
 #
 # Usage:
 #   ./tools/seed_store.sh [repo_dir] [port]
 #
 # Defaults: repo_dir=./store_repo  port=8080
-# Then in the car: open "Aroma Play" -> Installed tab -> check the server
+# Then in the car: open "Aroma Store" -> Installed tab -> check the server
 # URL (default http://127.0.0.1:8080) -> For You / Games / Apps -> Refresh.
 set -euo pipefail
 

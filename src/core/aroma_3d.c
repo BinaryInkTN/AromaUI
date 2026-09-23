@@ -1085,6 +1085,11 @@ static GLint g_u_model = -1, g_u_view = -1, g_u_proj = -1, g_u_normal_matrix = -
 static GLint g_u_base_color = -1, g_u_light_pos = -1, g_u_has_texture = -1, g_u_base_tex = -1;
 static GLint g_u_eye_pos = -1;
 static GLint g_u_alpha = -1, g_u_alpha_mode = -1, g_u_alpha_cutoff = -1;
+static void msaa_destroy(void);
+static GLuint s_msaa_comp_prog;
+static GLuint s_msaa_comp_vao;
+static GLuint s_msaa_comp_vbo;
+static GLint s_msaa_u_tex;
 static GLint g_u_emissive_factor = -1, g_u_emissive_strength = -1;
 static GLint g_u_emissive_tex = -1, g_u_has_emissive_texture = -1;
 static GLint g_u_metallic = -1;
@@ -2727,6 +2732,23 @@ void aroma_3d_shutdown(void)
         glDeleteProgram(g_3d_shader_program);
         g_3d_shader_program = 0;
     }
+    msaa_destroy();
+    if (s_msaa_comp_prog)
+    {
+        glDeleteProgram(s_msaa_comp_prog);
+        s_msaa_comp_prog = 0;
+    }
+    if (s_msaa_comp_vbo)
+    {
+        glDeleteBuffers(1, &s_msaa_comp_vbo);
+        s_msaa_comp_vbo = 0;
+    }
+    if (s_msaa_comp_vao)
+    {
+        glDeleteVertexArrays(1, &s_msaa_comp_vao);
+        s_msaa_comp_vao = 0;
+    }
+    s_msaa_u_tex = -1;
     g_3d_initialized = false;
 }
 
@@ -3111,6 +3133,193 @@ Aroma3DModel *aroma_3d_create_cube(void)
     return model;
 }
 
+/* MSAA resolve path: render the viewport into a multisampled
+ * renderbuffer FBO, resolve into a single-sampled texture, then
+ * alpha-blend that texture over the default framebuffer. Clearing to
+ * transparent + blending (instead of copy-blitting) keeps whatever is
+ * behind the 3D viewport (background image, earlier UI) intact, and a
+ * full clear every frame means nothing can smear across frames.
+ * Per-pixel cost is near zero on tiled mobile GPUs. */
+static bool s_3d_aa_enabled = true;
+static GLuint s_msaa_fbo = 0;
+static GLuint s_msaa_color_rb = 0;
+static GLuint s_msaa_depth_rb = 0;
+static GLuint s_msaa_resolve_fbo = 0;
+static GLuint s_msaa_resolve_tex = 0;
+static GLuint s_msaa_comp_prog = 0;
+static GLuint s_msaa_comp_vao = 0;
+static GLuint s_msaa_comp_vbo = 0;
+static GLint s_msaa_u_tex = -1;
+static int s_msaa_w = 0;
+static int s_msaa_h = 0;
+static int s_msaa_samples = 0;
+
+static const char *s_msaa_comp_vert =
+    "#version 300 es\n"
+    "layout(location=0) in vec2 a_pos;\n"
+    "out vec2 v_uv;\n"
+    "void main() {\n"
+    "    v_uv = a_pos * 0.5 + 0.5;\n"
+    "    gl_Position = vec4(a_pos, 0.0, 1.0);\n"
+    "}\n";
+
+static const char *s_msaa_comp_frag =
+    "#version 300 es\n"
+    "precision mediump float;\n"
+    "in vec2 v_uv;\n"
+    "uniform sampler2D u_tex;\n"
+    "out vec4 frag_color;\n"
+    "void main() {\n"
+    "    frag_color = texture(u_tex, v_uv);\n"
+    "}\n";
+
+static void msaa_destroy(void)
+{
+    if (s_msaa_fbo)
+    {
+        glDeleteFramebuffers(1, &s_msaa_fbo);
+        s_msaa_fbo = 0;
+    }
+    if (s_msaa_color_rb)
+    {
+        glDeleteRenderbuffers(1, &s_msaa_color_rb);
+        s_msaa_color_rb = 0;
+    }
+    if (s_msaa_depth_rb)
+    {
+        glDeleteRenderbuffers(1, &s_msaa_depth_rb);
+        s_msaa_depth_rb = 0;
+    }
+    if (s_msaa_resolve_fbo)
+    {
+        glDeleteFramebuffers(1, &s_msaa_resolve_fbo);
+        s_msaa_resolve_fbo = 0;
+    }
+    if (s_msaa_resolve_tex)
+    {
+        glDeleteTextures(1, &s_msaa_resolve_tex);
+        s_msaa_resolve_tex = 0;
+    }
+    s_msaa_w = s_msaa_h = s_msaa_samples = 0;
+}
+
+void aroma_3d_set_antialiasing(bool enabled)
+{
+    if (s_3d_aa_enabled == enabled)
+        return;
+    s_3d_aa_enabled = enabled;
+    if (!enabled)
+        msaa_destroy();
+}
+
+bool aroma_3d_get_antialiasing(void)
+{
+    return s_3d_aa_enabled;
+}
+
+static bool msaa_comp_ensure(void)
+{
+    if (s_msaa_comp_prog)
+        return true;
+    GLuint vs = compile_shader(GL_VERTEX_SHADER, s_msaa_comp_vert);
+    GLuint fs = compile_shader(GL_FRAGMENT_SHADER, s_msaa_comp_frag);
+    if (!vs || !fs)
+    {
+        if (vs)
+            glDeleteShader(vs);
+        if (fs)
+            glDeleteShader(fs);
+        return false;
+    }
+    s_msaa_comp_prog = glCreateProgram();
+    glAttachShader(s_msaa_comp_prog, vs);
+    glAttachShader(s_msaa_comp_prog, fs);
+    glLinkProgram(s_msaa_comp_prog);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+    GLint linked = 0;
+    glGetProgramiv(s_msaa_comp_prog, GL_LINK_STATUS, &linked);
+    if (!linked)
+    {
+        LOG_ERROR("aroma_3d: MSAA composite program link failed");
+        glDeleteProgram(s_msaa_comp_prog);
+        s_msaa_comp_prog = 0;
+        return false;
+    }
+    s_msaa_u_tex = glGetUniformLocation(s_msaa_comp_prog, "u_tex");
+    static const float tri[6] = {-1.0f, -1.0f, 3.0f, -1.0f, -1.0f, 3.0f};
+    glGenVertexArrays(1, &s_msaa_comp_vao);
+    glGenBuffers(1, &s_msaa_comp_vbo);
+    glBindVertexArray(s_msaa_comp_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, s_msaa_comp_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tri), tri, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glBindVertexArray(0);
+    return true;
+}
+
+static bool msaa_ensure(int w, int h)
+{
+    if (!s_3d_aa_enabled || w <= 0 || h <= 0)
+        return false;
+    GLint max_samples = 0;
+    glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
+    int samples = max_samples >= 4 ? 4 : (int)max_samples;
+    if (samples < 2)
+        return false;
+    if (s_msaa_fbo && s_msaa_w == w && s_msaa_h == h && s_msaa_samples == samples)
+        return true;
+    msaa_destroy();
+    glGenTextures(1, &s_msaa_resolve_tex);
+    glBindTexture(GL_TEXTURE_2D, s_msaa_resolve_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, NULL);
+    glGenFramebuffers(1, &s_msaa_resolve_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, s_msaa_resolve_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, s_msaa_resolve_tex, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        LOG_ERROR("aroma_3d: MSAA resolve FBO incomplete, rendering without AA");
+        msaa_destroy();
+        return false;
+    }
+    glGenFramebuffers(1, &s_msaa_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, s_msaa_fbo);
+    glGenRenderbuffers(1, &s_msaa_color_rb);
+    glBindRenderbuffer(GL_RENDERBUFFER, s_msaa_color_rb);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, w, h);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                              GL_RENDERBUFFER, s_msaa_color_rb);
+    glGenRenderbuffers(1, &s_msaa_depth_rb);
+    glBindRenderbuffer(GL_RENDERBUFFER, s_msaa_depth_rb);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples,
+                                     GL_DEPTH_COMPONENT24, w, h);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                              GL_RENDERBUFFER, s_msaa_depth_rb);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        LOG_ERROR("aroma_3d: MSAA %dx FBO incomplete, rendering without AA", samples);
+        msaa_destroy();
+        return false;
+    }
+    if (!msaa_comp_ensure())
+    {
+        LOG_ERROR("aroma_3d: MSAA composite setup failed, rendering without AA");
+        msaa_destroy();
+        return false;
+    }
+    s_msaa_w = w;
+    s_msaa_h = h;
+    s_msaa_samples = samples;
+    return true;
+}
+
 bool aroma_3d_render_to_rect(const Aroma3DModel *model, const Aroma3DCamera *camera, int x, int y, int w, int h, int win_w, int win_h)
 {
     if (!model || !camera || !g_3d_initialized || w <= 0 || h <= 0)
@@ -3137,18 +3346,78 @@ bool aroma_3d_render_to_rect(const Aroma3DModel *model, const Aroma3DCamera *cam
     GLboolean prev_depth_mask;
     glGetBooleanv(GL_DEPTH_WRITEMASK, &prev_depth_mask);
 
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(x, gl_y, w, h);
-    glViewport(x, gl_y, w, h);
+    GLint prev_draw_fbo = 0;
+    GLint prev_read_fbo = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &prev_draw_fbo);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &prev_read_fbo);
+    GLint prev_blend_src = GL_SRC_ALPHA;
+    GLint prev_blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    glGetIntegerv(GL_BLEND_SRC_RGB, &prev_blend_src);
+    glGetIntegerv(GL_BLEND_DST_RGB, &prev_blend_dst);
+    GLboolean prev_color_mask[4] = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
+    glGetBooleanv(GL_COLOR_WRITEMASK, prev_color_mask);
+
+    bool use_msaa = msaa_ensure(w, h);
+    if (use_msaa)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, s_msaa_fbo);
+        glViewport(0, 0, w, h);
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(0, 0, w, h);
+    }
+    else
+    {
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(x, gl_y, w, h);
+        glViewport(x, gl_y, w, h);
+    }
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
+    /* The UI backend leaves color/clear state dirty: force full writes
+     * and clear the resolve slate explicitly (transparent) so the
+     * blend composite below keeps the background intact. */
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    if (use_msaa)
+    {
+        static const GLfloat transparent[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        glClearBufferfv(GL_COLOR, 0, transparent);
+    }
     glClear(GL_DEPTH_BUFFER_BIT);
+    glColorMask(prev_color_mask[0], prev_color_mask[1],
+                prev_color_mask[2], prev_color_mask[3]);
     glDisable(GL_BLEND);
 
     float aspect = (float)w / (float)h;
     aroma_3d_render_frame(model, camera, aspect);
+
+    if (use_msaa)
+    {
+        /* Canonical multisample resolve into the texture. */
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, s_msaa_fbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, s_msaa_resolve_fbo);
+        glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
+                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        /* Blend the resolved image over whatever is behind the viewport
+         * (background image, earlier UI). */
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint)prev_read_fbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, (GLuint)prev_draw_fbo);
+        glViewport(x, gl_y, w, h);
+        glScissor(x, gl_y, w, h);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glUseProgram(s_msaa_comp_prog);
+        glBindVertexArray(s_msaa_comp_vao);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, s_msaa_resolve_tex);
+        glUniform1i(s_msaa_u_tex, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBlendFunc((GLenum)prev_blend_src, (GLenum)prev_blend_dst);
+    }
 
     glDepthMask(GL_TRUE);
     glClear(GL_DEPTH_BUFFER_BIT);

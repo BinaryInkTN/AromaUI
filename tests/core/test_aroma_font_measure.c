@@ -90,9 +90,11 @@ void run_font_measure_tests(int *passed, int *failed)
 {
     s_passed = 0;
     s_failed = 0;
+    printf("=== Aroma Font Measure Tests ===\n");
     test_null_safety();
     test_ascii_stable();
     test_utf8_codepoints();
+    printf("Aroma Font Measure: %d passed, %d failed\n", s_passed, s_failed);
     *passed += s_passed;
     *failed += s_failed;
 }

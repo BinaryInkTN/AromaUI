@@ -34,6 +34,7 @@ int aroma_listview_get_selected(AromaNode* list_node);
 size_t aroma_listview_get_count(AromaNode* list_node);
 void* aroma_listview_get_item_data(AromaNode* list_node, int index);
 void aroma_listview_set_callback(AromaNode* list_node, void (*callback)(int index, void* user_data), void* user_data);
+void aroma_listview_set_long_press_callback(AromaNode* list_node, void (*callback)(int index, void* user_data), void* user_data);
 void aroma_listview_set_font(AromaNode* list_node, AromaFont* font);
 void aroma_listview_set_secondary_font(AromaNode* list_node, AromaFont* font);
 void aroma_listview_set_icon_font(AromaNode* list_node, AromaFont* font);

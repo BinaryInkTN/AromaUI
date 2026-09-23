@@ -50,6 +50,12 @@ extern "C"
     bool aroma_3d_render_frame(const Aroma3DModel *model, const Aroma3DCamera *camera, float aspect);
     bool aroma_3d_render_to_rect(const Aroma3DModel *model, const Aroma3DCamera *camera, int x, int y, int w, int h, int win_w, int win_h);
 
+    /* MSAA antialiasing for 3D viewports (multisampled resolve - the
+     * cheapest quality AA on mobile GPUs). Enabled by default; toggle
+     * at runtime, no context restart needed. */
+    void aroma_3d_set_antialiasing(bool enabled);
+    bool aroma_3d_get_antialiasing(void);
+
     typedef struct Aroma3DLoadJob Aroma3DLoadJob;
 
     Aroma3DLoadJob *aroma_3d_load_model_async(const char *path);

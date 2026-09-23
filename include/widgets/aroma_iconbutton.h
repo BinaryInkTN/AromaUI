@@ -25,6 +25,9 @@ AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int
 void aroma_iconbutton_set_callback(AromaNode* button_node, void (*callback)(void* user_data), void* user_data);
 
 
+void aroma_iconbutton_set_long_press_callback(AromaNode* button_node, void (*callback)(void* user_data), void* user_data);
+
+
 void aroma_iconbutton_set_colors(AromaNode* button_node, uint32_t bg_color, uint32_t icon_color);
 
 void aroma_iconbutton_set_icon(AromaNode* button_node, const char* icon_text);

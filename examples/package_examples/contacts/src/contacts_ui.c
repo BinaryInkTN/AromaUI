@@ -4,17 +4,21 @@
  * Self-managed chrome: open_phone/close_phone own the drawer, z-order and
  * slide animation exactly as the former built-in app did.
  *
- * First-party privilege: this plugin uses host globals (state, g_bt_*,
- * media_ui) via the host's -rdynamic export. Third-party plugins must use
- * only the public aroma_* API + AromaPackageHost fonts.
+ * Self-contained Bluetooth: the HFP/PBAP stack (bt_speaker_hfp.c) compiles
+ * into this plugin.so, and the contact store lives here too. Connection /
+ * device identity comes from the media package's service (first-party
+ * interop). Remaining host coupling is UI chrome only (state nodes,
+ * drawer, animations, media card) via the host's -rdynamic export.
+ * Third-party plugins must use only the public aroma_* API +
+ * AromaPackageHost fonts.
  */
 #include "app_state.h"
 #include "app_registry.h"
 #include "vehicle_view.h"
 #include "aroma_animation.h"
 #include "apps/media/media_controls.h"
-#include "apps/phone/bt_speaker_api.h"
-#include "apps/phone/bt_speaker_hfp.h"
+#include "bt_speaker_hfp.h"
+#include "contacts_bt_service.h"
 
 #include <pthread.h>
 #include <stdio.h>
@@ -29,12 +33,26 @@
 #define CONTACTS_RETRY_INTERVAL_SEC 5
 #define MIN_EMPTY_RESULT_RETRIES 3
 
-extern pthread_mutex_t g_bt_mutex;
-extern bool g_bt_connected;
-extern bt_device_info_t g_bt_device_info;
-extern pthread_mutex_t contact_fetch_mutex;
-
 void populate_contact_listview(AromaNode *listview);
+
+/* ===== owned contact store (was host AppState) ===== */
+#define CONTACTS_MAX_STORE 100
+typedef struct
+{
+    char name[128];
+    char number[64];
+} ContactInfo;
+
+static ContactInfo s_contacts[CONTACTS_MAX_STORE];
+static int s_contact_count = 0;
+static bool s_contacts_fetched = false;
+static pthread_mutex_t s_fetch_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* Service shorthand: connection/device via the media package. */
+static const ContactsBtService *bt_svc(void)
+{
+    return contacts_bt_service();
+}
 
 /* ===== fetch globals ===== */
 int contact_fetch_retries = 0;
@@ -80,10 +98,8 @@ static bool on_dialer_call_click_icon(AromaNode *node, void *user_data)
     (void)user_data;
     if (dialer_number[0] != '\0')
     {
-        pthread_mutex_lock(&g_bt_mutex);
-        bool connected = g_bt_connected;
-        pthread_mutex_unlock(&g_bt_mutex);
-        if (connected)
+        const ContactsBtService *svc = bt_svc();
+        if (svc && svc->connected())
         {
             bt_hfp_dial(dialer_number);
         }
@@ -181,9 +197,10 @@ void populate_contact_listview(AromaNode *listview)
         return;
     pthread_mutex_lock(&contact_list_lock);
     aroma_listview_clear(listview);
-    if (!state.contacts_fetched)
+    if (!s_contacts_fetched)
     {
-        if (g_bt_connected)
+        const ContactsBtService *svc = bt_svc();
+        if (svc && svc->connected())
         {
             aroma_listview_add_item_with_icon(listview, "Loading contacts...", "Please wait", AROMA_ICON_PERSON, NULL);
         }
@@ -196,7 +213,7 @@ void populate_contact_listview(AromaNode *listview)
         pthread_mutex_unlock(&contact_list_lock);
         return;
     }
-    if (state.contact_count == 0)
+    if (s_contact_count == 0)
     {
         aroma_listview_add_item_with_icon(listview, "No contacts found", "Connect a phone with PBAP or sync contacts", AROMA_ICON_PERSON, NULL);
         if (pagination_card)
@@ -204,14 +221,14 @@ void populate_contact_listview(AromaNode *listview)
         pthread_mutex_unlock(&contact_list_lock);
         return;
     }
-    ContactInfo *sorted_contacts = malloc(sizeof(ContactInfo) * state.contact_count);
+    ContactInfo *sorted_contacts = malloc(sizeof(ContactInfo) * s_contact_count);
     if (!sorted_contacts)
     {
         aroma_listview_add_item_with_icon(listview, "Memory error", "", AROMA_ICON_PERSON, NULL);
         pthread_mutex_unlock(&contact_list_lock);
         return;
     }
-    int *orig_indices = malloc(sizeof(int) * state.contact_count);
+    int *orig_indices = malloc(sizeof(int) * s_contact_count);
     if (!orig_indices)
     {
         free(sorted_contacts);
@@ -219,33 +236,33 @@ void populate_contact_listview(AromaNode *listview)
         pthread_mutex_unlock(&contact_list_lock);
         return;
     }
-    for (int i = 0; i < state.contact_count; i++)
+    for (int i = 0; i < s_contact_count; i++)
     {
         orig_indices[i] = i;
     }
-    memcpy(sorted_contacts, state.contacts, sizeof(ContactInfo) * state.contact_count);
-    qsort(sorted_contacts, state.contact_count, sizeof(ContactInfo), compare_contacts);
-    for (int i = 0; i < state.contact_count; i++)
+    memcpy(sorted_contacts, s_contacts, sizeof(ContactInfo) * s_contact_count);
+    qsort(sorted_contacts, s_contact_count, sizeof(ContactInfo), compare_contacts);
+    for (int i = 0; i < s_contact_count; i++)
     {
-        for (int j = 0; j < state.contact_count; j++)
+        for (int j = 0; j < s_contact_count; j++)
         {
-            if (compare_contacts(&sorted_contacts[i], &state.contacts[j]) == 0 &&
-                strcmp(sorted_contacts[i].number, state.contacts[j].number) == 0)
+            if (compare_contacts(&sorted_contacts[i], &s_contacts[j]) == 0 &&
+                strcmp(sorted_contacts[i].number, s_contacts[j].number) == 0)
             {
                 orig_indices[i] = j;
                 break;
             }
         }
     }
-    total_pages = (state.contact_count + CONTACTS_PER_PAGE - 1) / CONTACTS_PER_PAGE;
+    total_pages = (s_contact_count + CONTACTS_PER_PAGE - 1) / CONTACTS_PER_PAGE;
     if (contact_page >= total_pages)
         contact_page = total_pages - 1;
     if (contact_page < 0)
         contact_page = 0;
     int start_idx = contact_page * CONTACTS_PER_PAGE;
     int end_idx = start_idx + CONTACTS_PER_PAGE;
-    if (end_idx > state.contact_count)
-        end_idx = state.contact_count;
+    if (end_idx > s_contact_count)
+        end_idx = s_contact_count;
     char current_header = 0;
     for (int i = start_idx; i < end_idx; i++)
     {
@@ -323,20 +340,18 @@ static void on_contact_click(int index, void *user_data)
     (void)user_data;
     int start_idx = contact_page * CONTACTS_PER_PAGE;
     int actual_index = start_idx + index;
-    if (actual_index >= 0 && actual_index < state.contact_count)
+    if (actual_index >= 0 && actual_index < s_contact_count)
     {
         int orig_idx = sorted_to_original[actual_index];
-        if (orig_idx >= 0 && orig_idx < state.contact_count)
+        if (orig_idx >= 0 && orig_idx < s_contact_count)
         {
             char number[64];
-            strncpy(number, state.contacts[orig_idx].number, sizeof(number) - 1);
+            strncpy(number, s_contacts[orig_idx].number, sizeof(number) - 1);
             number[sizeof(number) - 1] = '\0';
             if (number[0] != '\0')
             {
-                pthread_mutex_lock(&g_bt_mutex);
-                bool connected = g_bt_connected;
-                pthread_mutex_unlock(&g_bt_mutex);
-                if (connected)
+                const ContactsBtService *svc = bt_svc();
+                if (svc && svc->connected())
                 {
                     bt_hfp_dial(number);
                 }
@@ -593,7 +608,7 @@ void build_phone_app_ui(AromaNode *parent)
  * node tree. The old detached fire-and-forget thread kept running across
  * uninstall and reinstall: it touched freed phone and pagination nodes
  * (use-after-free crash) and raced the new install's UI (blank or corrupt).
- * The worker now only fetches data into host-owned state.contacts and sets
+ * The worker now only fetches data into the owned s_contacts store and sets
  * s_contacts_ui_dirty; contacts_hook_update (UI thread) does the actual
  * listview populate. Short sleeps keep uninstall latency ~100ms. */
 static pthread_t s_fetch_thread;
@@ -603,59 +618,62 @@ static volatile bool s_contacts_ui_dirty = false;
 
 static void contacts_fetch_data_only(void)
 {
-    pthread_mutex_lock(&contact_fetch_mutex);
+    pthread_mutex_lock(&s_fetch_mutex);
 
     if (s_fetch_stop || contact_fetch_in_progress)
     {
-        pthread_mutex_unlock(&contact_fetch_mutex);
+        pthread_mutex_unlock(&s_fetch_mutex);
         return;
     }
 
-    if (state.contacts_fetched)
+    if (s_contacts_fetched)
     {
-        pthread_mutex_unlock(&contact_fetch_mutex);
+        pthread_mutex_unlock(&s_fetch_mutex);
         return;
     }
 
-    pthread_mutex_lock(&g_bt_mutex);
-    bool connected = g_bt_connected;
-    bt_device_info_t device = g_bt_device_info;
-    pthread_mutex_unlock(&g_bt_mutex);
+    /* Connection + BlueZ device path via the media service (same phone
+     * the A2DP side tracks). */
+    const ContactsBtService *svc = bt_svc();
+    bool connected = svc && svc->connected();
+    bt_device_info_t device = {{0}};
+    if (svc)
+        svc->device_info(&device);
 
     if (s_fetch_stop || !connected || !device.name[0])
     {
-        pthread_mutex_unlock(&contact_fetch_mutex);
+        pthread_mutex_unlock(&s_fetch_mutex);
         return;
     }
 
     contact_fetch_in_progress = true;
-    pthread_mutex_unlock(&contact_fetch_mutex);
+    pthread_mutex_unlock(&s_fetch_mutex);
 
-    bt_contact_t bt_contacts[MAX_CONTACTS];
-    int count = bt_hfp_fetch_contacts(device.path, bt_contacts, MAX_CONTACTS);
+    bt_contact_t bt_contacts[CONTACTS_MAX_STORE];
+    int count = bt_hfp_fetch_contacts(device.path, bt_contacts, CONTACTS_MAX_STORE);
 
-    pthread_mutex_lock(&contact_fetch_mutex);
+    pthread_mutex_lock(&s_fetch_mutex);
     contact_fetch_in_progress = false;
     if (s_fetch_stop)
     {
-        pthread_mutex_unlock(&contact_fetch_mutex);
+        pthread_mutex_unlock(&s_fetch_mutex);
         return;
     }
 
     if (count > 0)
     {
-        state.contacts_fetched = true;
-        state.contact_count = count;
-        for (int i = 0; i < count && i < MAX_CONTACTS; i++)
+        s_contacts_fetched = true;
+        s_contact_count = count;
+        for (int i = 0; i < count && i < CONTACTS_MAX_STORE; i++)
         {
-            strncpy(state.contacts[i].name, bt_contacts[i].name, sizeof(state.contacts[i].name) - 1);
-            state.contacts[i].name[sizeof(state.contacts[i].name) - 1] = '\0';
-            strncpy(state.contacts[i].number, bt_contacts[i].number, sizeof(state.contacts[i].number) - 1);
-            state.contacts[i].number[sizeof(state.contacts[i].number) - 1] = '\0';
+            strncpy(s_contacts[i].name, bt_contacts[i].name, sizeof(s_contacts[i].name) - 1);
+            s_contacts[i].name[sizeof(s_contacts[i].name) - 1] = '\0';
+            strncpy(s_contacts[i].number, bt_contacts[i].number, sizeof(s_contacts[i].number) - 1);
+            s_contacts[i].number[sizeof(s_contacts[i].number) - 1] = '\0';
         }
         contact_fetch_retries = 0;
         s_contacts_ui_dirty = true;
-        pthread_mutex_unlock(&contact_fetch_mutex);
+        pthread_mutex_unlock(&s_fetch_mutex);
         return;
     }
 
@@ -664,17 +682,17 @@ static void contacts_fetch_data_only(void)
         contact_fetch_retries++;
         if (contact_fetch_retries >= MIN_EMPTY_RESULT_RETRIES)
         {
-            state.contacts_fetched = true;
-            state.contact_count = 0;
+            s_contacts_fetched = true;
+            s_contact_count = 0;
             contact_fetch_retries = 0;
             s_contacts_ui_dirty = true;
         }
-        pthread_mutex_unlock(&contact_fetch_mutex);
+        pthread_mutex_unlock(&s_fetch_mutex);
         return;
     }
 
     contact_fetch_retries++;
-    pthread_mutex_unlock(&contact_fetch_mutex);
+    pthread_mutex_unlock(&s_fetch_mutex);
 }
 
 static void *contacts_fetch_thread_func(void *arg)
@@ -688,9 +706,8 @@ static void *contacts_fetch_thread_func(void *arg)
             usleep(100000);
         if (s_fetch_stop)
             break;
-        pthread_mutex_lock(&g_bt_mutex);
-        bool connected = g_bt_connected;
-        pthread_mutex_unlock(&g_bt_mutex);
+        const ContactsBtService *svc = bt_svc();
+        bool connected = svc && svc->connected();
         if (s_fetch_stop)
             break;
         if (connected && !last_connected)
@@ -701,7 +718,7 @@ static void *contacts_fetch_thread_func(void *arg)
         last_connected = connected;
         if (!connected)
             continue;
-        bool fetched = state.contacts_fetched;
+        bool fetched = s_contacts_fetched;
         if (!fetched)
             contacts_fetch_data_only();
     }
@@ -737,6 +754,9 @@ static bool contacts_hook_init(const AromaPackageManifest *manifest,
     dialer_number[0] = '\0';
     s_contacts_ui_dirty = false;
     s_fetch_stop = false;
+    s_contact_count = 0;
+    s_contacts_fetched = false;
+    memset(s_contacts, 0, sizeof(s_contacts));
 
     if (!s_fetch_started)
     {
@@ -773,6 +793,9 @@ static void contacts_hook_hide(struct AromaNode *app_root)
 static void contacts_hook_update(struct AromaNode *app_root)
 {
     (void)app_root;
+    /* Pump the owned HFP stack: without this its private D-Bus bus is
+     * never dispatched (nothing else calls bt_hfp_poll). */
+    bt_hfp_poll();
     /* UI thread: apply worker-fetched contacts to the listview. The worker
      * never touches nodes, so no race with teardown/reinstall. */
     if (s_contacts_ui_dirty && !s_fetch_stop && state.contact_listview)
@@ -785,7 +808,7 @@ static void contacts_hook_update(struct AromaNode *app_root)
 static void contacts_hook_destroy(void)
 {
     /* Stop the worker BEFORE the host destroys nodes + dlcloses this .so.
-     * Joining here guarantees the thread no longer touches state.contacts
+     * Joining here guarantees the thread no longer touches s_contacts
      * (host memory, safe) nor any node pointer, and that no second thread
      * accumulates across reinstalls. */
     s_fetch_stop = true;
@@ -795,6 +818,9 @@ static void contacts_hook_destroy(void)
         s_fetch_started = false;
     }
     s_contacts_ui_dirty = false;
+    /* Stop the owned HFP stack so a live update can dlclose this .so
+     * without stranding its D-Bus state. */
+    contacts_bt_service()->set_enabled(false);
     /* Clear every node pointer into the dying tree: host globals (state.*)
      * survive dlclose, so leaving them non-NULL would make the next
      * install's build_phone_app_ui early-return (blank) and any access

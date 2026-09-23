@@ -19,6 +19,14 @@
 #define AROMA_LIST_ICON_PADDING 12
 #define AROMA_LIST_MIN_ITEM_HEIGHT 28
 #define AROMA_MATERIAL_COLOR_COUNT 16
+#define AROMA_LISTVIEW_LONG_PRESS_TIMEOUT_MS 500
+
+static long __listview_press_elapsed_ms(const struct timespec *down,
+                                        const struct timespec *up)
+{
+    return (long)(up->tv_sec - down->tv_sec) * 1000L +
+           (long)(up->tv_nsec - down->tv_nsec) / 1000000L;
+}
 
 typedef struct
 {
@@ -30,6 +38,10 @@ typedef struct
 
     void (*callback)(int index, void *user_data);
     void *user_data;
+    void (*long_press_callback)(int index, void *user_data);
+    void *long_press_user_data;
+    struct timespec press_down_ts;
+    bool press_down_valid;
     size_t item_count;
 
     uint32_t header_bg_color;
@@ -222,6 +234,8 @@ static bool listview_handle_event(AromaEvent *ev, void *user_data)
         if (hit >= 0 && is_selectable(list, hit))
         {
             list->pressed_index = hit;
+            list->press_down_ts = ev->timestamp;
+            list->press_down_valid = true;
             aroma_node_invalidate(node);
         }
         return true;
@@ -238,6 +252,8 @@ static bool listview_handle_event(AromaEvent *ev, void *user_data)
         if (hit >= 0 && is_selectable(list, hit))
         {
             list->pressed_index = hit;
+            list->press_down_ts = ev->timestamp;
+            list->press_down_valid = true;
             aroma_node_invalidate(node);
         }
         return false;
@@ -253,10 +269,24 @@ static bool listview_handle_event(AromaEvent *ev, void *user_data)
                          y >= bounds.y && y < bounds.y + bounds.height;
         int hit = in_bounds ? hit_test(node, list, y) : -1;
         bool activated = (list->pressed_index == hit && hit >= 0);
+        bool long_press = false;
+        if (activated && list->press_down_valid && list->long_press_callback)
+        {
+            long elapsed_ms = __listview_press_elapsed_ms(&list->press_down_ts,
+                                                           &ev->timestamp);
+            long_press = (elapsed_ms >= AROMA_LISTVIEW_LONG_PRESS_TIMEOUT_MS);
+        }
         list->pressed_index = -1;
+        list->press_down_valid = false;
         aroma_node_invalidate(node);
         if (activated && is_selectable(list, hit))
         {
+            if (long_press && list->long_press_callback)
+            {
+                list->long_press_callback(selectable_index(list, hit),
+                                          list->long_press_user_data);
+                return true;
+            }
             commit_selection(list, node, hit);
             return true;
         }
@@ -270,10 +300,24 @@ static bool listview_handle_event(AromaEvent *ev, void *user_data)
         list->active_pointer_id = -1;
         int hit = hit_test(node, list, ev->data.touch.y);
         bool activated = (list->pressed_index == hit && hit >= 0);
+        bool long_press = false;
+        if (activated && list->press_down_valid && list->long_press_callback)
+        {
+            long elapsed_ms = __listview_press_elapsed_ms(&list->press_down_ts,
+                                                           &ev->timestamp);
+            long_press = (elapsed_ms >= AROMA_LISTVIEW_LONG_PRESS_TIMEOUT_MS);
+        }
         list->pressed_index = -1;
+        list->press_down_valid = false;
         aroma_node_invalidate(node);
         if (activated && is_selectable(list, hit))
         {
+            if (long_press && list->long_press_callback)
+            {
+                list->long_press_callback(selectable_index(list, hit),
+                                          list->long_press_user_data);
+                return true;
+            }
             commit_selection(list, node, hit);
             return true;
         }
@@ -584,6 +628,17 @@ void aroma_listview_set_callback(AromaNode *n,
     {
         l->callback = cb;
         l->user_data = ud;
+    }
+}
+
+void aroma_listview_set_long_press_callback(AromaNode *n,
+                                            void (*cb)(int, void *), void *ud)
+{
+    AromaListViewInternal *l = get_internal(n);
+    if (l)
+    {
+        l->long_press_callback = cb;
+        l->long_press_user_data = ud;
     }
 }
 

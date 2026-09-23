@@ -1,10 +1,6 @@
 #ifndef MEDIA_CONTROLS_H
 #define MEDIA_CONTROLS_H
 
-/* Host-side mini media player. The full-screen Music app ships as the
- * com.aroma.media .apak package; only the home-screen mini card stays here.
- */
-
 #include "aroma.h"
 
 typedef struct

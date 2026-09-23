@@ -15,10 +15,6 @@ add_library(aroma
     core/aroma_drawlist.c
     core/aroma_native_utils.c
     core/utils/mpc.c
-    core/aroma_incense.c
-    core/aroma_incense_loader.c
-    core/aroma_package.c
-    core/aroma_apak.c
     core/aroma_3d.c
     core/cJSON.c
 
@@ -84,20 +80,8 @@ if(NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE GLESv2 EGL)
 endif()
 
-# .apak (zip) install support needs zlib for deflate decompression.
-find_package(ZLIB QUIET)
-if(ZLIB_FOUND AND NOT EMSCRIPTEN)
-    target_compile_definitions(aroma PRIVATE AROMA_HAS_ZLIB=1)
-    target_link_libraries(aroma PUBLIC ZLIB::ZLIB)
-endif()
-
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE curl pthread)
-endif()
-
-if(UNIX AND NOT EMSCRIPTEN)
-    # dlopen() for native .apak plugins (aroma_package.c).
-    target_link_libraries(aroma PUBLIC ${CMAKE_DL_LIBS})
 endif()
 
 find_package(Vulkan QUIET)

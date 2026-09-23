@@ -1,12 +1,7 @@
 #include "apps/media/media_controls.h"
-#include "apps/phone/bt_speaker_api.h"
+#include "bt_speaker_api.h"
+#include "media_bt_service.h"
 #include "vehicle_view.h"
-
-extern pthread_mutex_t g_bt_mutex;
-extern bt_media_info_t g_bt_media_info;
-extern bt_device_info_t g_bt_device_info;
-extern bt_stats_t g_bt_stats;
-extern bt_state_t g_bt_state;
 #include "aroma_animation.h"
 #include <string.h>
 #include <pthread.h>
@@ -22,6 +17,17 @@ void send_app_drawer_behind(void);
 bool is_any_app_open(void);
 
 AromaNode *music_app_tabs = NULL;
+
+/* Install-dir-joined asset path for bundled files (assets/...). */
+static char s_install_dir[512] = "";
+
+static void music_asset_path(char *out, size_t out_len, const char *file)
+{
+    if (s_install_dir[0])
+        snprintf(out, out_len, "%s/assets/%s", s_install_dir, file);
+    else
+        snprintf(out, out_len, "assets/%s", file);
+}
 
 AromaNode *music_now_playing_card = NULL;
 AromaNode *music_art_placeholder = NULL;
@@ -90,10 +96,10 @@ void update_music_now_playing_display(void)
     if (!music_now_playing_card)
         return;
 
-    pthread_mutex_lock(&g_bt_mutex);
-    bt_media_info_t media = g_bt_media_info;
-    bt_state_t current_state = g_bt_state;
-    pthread_mutex_unlock(&g_bt_mutex);
+    /* Owned stack in this same .so: thread-safe snapshots straight
+     * from it, no host mirrors. */
+    bt_media_info_t media = bt_speaker_get_media_info();
+    bt_state_t current_state = bt_speaker_get_state();
 
     bool is_playing = (current_state == BT_STATE_PLAYING);
     bool is_connected = (current_state == BT_STATE_CONNECTED || is_playing);
@@ -183,10 +189,8 @@ void update_music_device_display(void)
     if (!music_device_card)
         return;
 
-    pthread_mutex_lock(&g_bt_mutex);
-    bt_device_info_t device = g_bt_device_info;
-    bt_state_t current_state = g_bt_state;
-    pthread_mutex_unlock(&g_bt_mutex);
+    bt_device_info_t device = bt_speaker_get_device_info();
+    bt_state_t current_state = bt_speaker_get_state();
 
     bool is_connected = (current_state == BT_STATE_CONNECTED ||
                          current_state == BT_STATE_PLAYING);
@@ -233,9 +237,7 @@ void update_music_device_display(void)
     }
     if (music_device_stats_label)
     {
-        pthread_mutex_lock(&g_bt_mutex);
-        bt_stats_t stats = g_bt_stats;
-        pthread_mutex_unlock(&g_bt_mutex);
+        bt_stats_t stats = bt_speaker_get_stats();
         char stats_buf[160];
         unsigned long minutes = stats.connected_time_sec / 60;
         unsigned long seconds = stats.connected_time_sec % 60;
@@ -396,10 +398,10 @@ void build_music_app_ui(AromaNode *parent)
     aroma_node_set_z_index(music_now_playing_card, Z_LAYER_STATUS_BAR + 12);
     aroma_node_set_hidden(music_now_playing_card, true);
     
+    char art_path[768];
+    music_asset_path(art_path, sizeof(art_path), "album_cover.jpg");
     music_art_placeholder = aroma_ui_image(
-        music_now_playing_card,
-        resolve_asset_path("../assets/album_cover.jpg"),
-        60, 40, 200, 200);
+        music_now_playing_card, art_path, 60, 40, 200, 200);
     aroma_node_set_z_index(music_art_placeholder, Z_LAYER_STATUS_BAR + 13);
     
     music_track_title_label = aroma_ui_label(
@@ -498,21 +500,15 @@ void build_music_app_ui(AromaNode *parent)
 
 
 /* --- Full-app live refresh ----------------------------------------------
- * The host AVRCP callback only drives the mini card now; the plugin polls
- * shared BT media state (host-owned) on every frame while open. */
-#include "apps/phone/bt_speaker_api.h"
-
-extern pthread_mutex_t g_bt_mutex;
-extern bt_media_info_t g_bt_media_info;
+ * Polls the owned stack's thread-safe getters every frame while open. */
+#include "bt_speaker_api.h"
 
 static void music_hook_update(struct AromaNode *app_root)
 {
     (void)app_root;
     if (!music_app_open)
         return;
-    pthread_mutex_lock(&g_bt_mutex);
-    bt_media_info_t media = g_bt_media_info;
-    pthread_mutex_unlock(&g_bt_mutex);
+    bt_media_info_t media = bt_speaker_get_media_info();
     static char last_key[256] = "";
     char key[256];
     snprintf(key, sizeof(key), "%.80s|%.80s|%.32s",
@@ -540,9 +536,14 @@ static bool music_hook_init(const AromaPackageManifest *manifest,
                             struct AromaNode *app_root)
 {
     (void)manifest;
-    (void)install_dir;
     (void)host;
     (void)app_root;
+    /* Bundled assets resolve against our own install dir (self-contained
+     * package, not host asset paths). */
+    if (install_dir)
+        snprintf(s_install_dir, sizeof(s_install_dir), "%s", install_dir);
+    else
+        s_install_dir[0] = '\0';
     memset(&s_music_mirror, 0, sizeof(s_music_mirror));
     s_music_mirror.id = "com.aroma.media";
     s_music_mirror.name = "Media";
@@ -592,6 +593,9 @@ static void music_hook_hide(struct AromaNode *app_root)
 
 static void music_hook_destroy(void)
 {
+    /* Stop the owned stack so a live update can dlclose this .so without
+     * stranding its D-Bus/PulseAudio threads. */
+    media_bt_service()->set_enabled(false, NULL);
     /* Clear every node pointer into the dying tree so a reinstall rebuilds
      * instead of early-returning on a stale non-NULL guard (blank) or
      * touching freed nodes (crash). The tree itself is freed by the host. */

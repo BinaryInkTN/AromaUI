@@ -32,18 +32,39 @@ add_executable(aroma_tests
     widgets/test_aroma_table.c
     markup/test_aroma_incense.c
 )
-    
 
-target_link_libraries(aroma_tests aroma)
+# AROMA_ROOT must work whether tests are added from the top-level build
+# (CMAKE_SOURCE_DIR == repo root) or nested via
+# examples/car_infotainment (CMAKE_SOURCE_DIR == example dir).
+get_filename_component(AROMA_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
+set(AROMA_APAK_SOURCES
+    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_package.c"
+    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_apak.c"
+    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_incense.c"
+    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_incense_loader.c"
+)
+target_sources(aroma_tests PRIVATE ${AROMA_APAK_SOURCES})
+
+target_link_libraries(aroma_tests PRIVATE aroma)
 
 find_package(ZLIB QUIET)
 if(ZLIB_FOUND)
     target_compile_definitions(aroma_tests PRIVATE AROMA_HAS_ZLIB=1)
+    target_link_libraries(aroma_tests PRIVATE ZLIB::ZLIB)
+endif()
+
+if(UNIX)
+    target_link_libraries(aroma_tests PRIVATE ${CMAKE_DL_LIBS})
 endif()
 
 target_include_directories(aroma_tests 
-    PRIVATE ${CMAKE_SOURCE_DIR}/include
-    PRIVATE ${CMAKE_SOURCE_DIR}/src/
+    # Public API first: bare "aroma_*.h" must resolve to include/,
+    # not to the src/core/ forwarding wrappers of the same name.
+    PRIVATE ${AROMA_ROOT}/include
+    PRIVATE ${AROMA_ROOT}/src
+    PRIVATE ${AROMA_ROOT}/src/core
+    PRIVATE ${AROMA_ROOT}/examples/car_infotainment/apak
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/core
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/widgets
@@ -69,11 +90,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_library(GLESV2_LIB GLESv2 QUIET)
     if(EGL_INCLUDE_DIR AND EGL_LIB AND GLESV2_LIB)
         add_executable(aroma_blur_gl_tests test_aroma_blur_gl.c)
-        target_link_libraries(aroma_blur_gl_tests aroma ${EGL_LIB} ${GLESV2_LIB})
+        target_link_libraries(aroma_blur_gl_tests PRIVATE aroma ${EGL_LIB} ${GLESV2_LIB})
         target_include_directories(aroma_blur_gl_tests
             PRIVATE ${EGL_INCLUDE_DIR}
-            PRIVATE ${CMAKE_SOURCE_DIR}/include
-            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src/
+            PRIVATE ${AROMA_ROOT}/include
+            PRIVATE ${AROMA_ROOT}/src/
             PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
         )
         add_test(NAME aroma_blur_gl_tests COMMAND aroma_blur_gl_tests)

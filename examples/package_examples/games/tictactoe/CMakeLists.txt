@@ -16,15 +16,7 @@ set_target_properties(tictactoe_plugin PROPERTIES
 )
 target_include_directories(tictactoe_plugin PRIVATE
     "${AromaUI_INCLUDE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../car_infotainment/apak"
 )
 # NOTE: deliberately NOT linked against libaroma or the host.
 
-if(DEFINED AROMA_PKG_LEAF_DIR)
-    add_custom_command(TARGET tictactoe_plugin POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "$<TARGET_FILE:tictactoe_plugin>"
-                "${AROMA_PKG_LEAF_DIR}/plugin.so"
-        COMMENT "Staging com.aroma.game.tictactoe plugin"
-        VERBATIM
-    )
-endif()

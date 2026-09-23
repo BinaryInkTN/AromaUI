@@ -29,7 +29,7 @@ int main() {
         }
         offset += 8 + chunk_len;
     }
-    
+
     if (json_text) {
         cJSON *root = cJSON_Parse((const char *)json_text);
         if (root) {

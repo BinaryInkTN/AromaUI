@@ -13,6 +13,14 @@
 #endif
 
 #define AROMA_ICON_TEXT_MAX 16
+#define AROMA_ICONBUTTON_LONG_PRESS_TIMEOUT_MS 500
+
+static long __iconbutton_press_elapsed_ms(const struct timespec *down,
+                                          const struct timespec *up)
+{
+    return (long)(up->tv_sec - down->tv_sec) * 1000L +
+           (long)(up->tv_nsec - down->tv_nsec) / 1000000L;
+}
 
 typedef struct AromaIconButton
 {
@@ -21,6 +29,11 @@ typedef struct AromaIconButton
 
     void (*callback)(void *user_data);
     void *user_data;
+
+    void (*long_press_callback)(void *user_data);
+    void *long_press_user_data;
+    struct timespec press_down_ts;
+    bool press_down_valid;
 
     uint32_t bg_color;
     uint32_t icon_color;
@@ -95,6 +108,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
     case EVENT_TYPE_MOUSE_EXIT:
         btn->is_hovered = false;
         btn->is_pressed = false;
+        btn->press_down_valid = false;
         aroma_node_invalidate(event->target_node);
         aroma_ui_request_redraw(NULL);
         return false;
@@ -104,6 +118,8 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
         if (in_bounds)
         {
             btn->is_pressed = true;
+            btn->press_down_ts = event->timestamp;
+            btn->press_down_valid = true;
             aroma_node_invalidate(event->target_node);
             aroma_ui_request_redraw(NULL);
             return true;
@@ -116,7 +132,17 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
         {
             btn->is_pressed = false;
             aroma_node_invalidate(event->target_node);
-            if (in_bounds && btn->callback)
+            bool long_press = false;
+            if (btn->press_down_valid && btn->long_press_callback)
+            {
+                long elapsed_ms = __iconbutton_press_elapsed_ms(&btn->press_down_ts,
+                                                                &event->timestamp);
+                long_press = (elapsed_ms >= AROMA_ICONBUTTON_LONG_PRESS_TIMEOUT_MS);
+            }
+            btn->press_down_valid = false;
+            if (in_bounds && long_press && btn->long_press_callback)
+                btn->long_press_callback(btn->long_press_user_data);
+            else if (in_bounds && btn->callback)
                 btn->callback(btn->user_data);
             aroma_ui_request_redraw(NULL);
             return in_bounds;
@@ -171,6 +197,9 @@ AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int
     btn->is_pressed = false;
     btn->callback = NULL;
     btn->user_data = NULL;
+    btn->long_press_callback = NULL;
+    btn->long_press_user_data = NULL;
+    btn->press_down_valid = false;
     btn->font = NULL;
     btn->text_scale = 1.0f;
     btn->border_color = theme.colors.border;
@@ -223,6 +252,15 @@ void aroma_iconbutton_set_callback(AromaNode *button_node, void (*callback)(void
     AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
     btn->callback = callback;
     btn->user_data = user_data;
+}
+
+void aroma_iconbutton_set_long_press_callback(AromaNode *button_node, void (*callback)(void *user_data), void *user_data)
+{
+    if (!button_node || !button_node->node_widget_ptr)
+        return;
+    AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
+    btn->long_press_callback = callback;
+    btn->long_press_user_data = user_data;
 }
 
 void aroma_iconbutton_set_colors(AromaNode *button_node, uint32_t bg_color, uint32_t icon_color)

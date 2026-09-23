@@ -32,6 +32,7 @@ void register_settings_app(void) {
     app.destroy = settings_app_destroy;
     app.show = settings_app_show;
     app.hide = settings_app_hide;
+    app.fixed = true;
 
     app_registry_register_app(&app);
 }

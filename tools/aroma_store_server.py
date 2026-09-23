@@ -284,7 +284,7 @@ class StoreHandler(BaseHTTPRequestHandler):
                         e["downloads"])
                     for e in sorted(cats[cat], key=lambda x: x["name"]))
                 sections += "<h2>%s (%d)</h2><ul>%s</ul>" % (cat, len(cats[cat]), items)
-            html = ("<html><body><h1>Aroma Play - %d packages</h1>"
+            html = ("<html><body><h1>Aroma Store - %d packages</h1>"
                     "<p>API: /api/packages, /api/search?q=, /api/categories, "
                     "/api/featured, /api/package/&lt;id&gt;</p>%s"
                     "</body></html>" % (len(entries), sections))

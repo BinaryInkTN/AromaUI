@@ -21,6 +21,7 @@
 #include "aroma_material_icons.h"
 #include "aroma_drawlist.h"
 #include "aroma_material_font.h"
+#include "aroma_chrome_icon_font.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>

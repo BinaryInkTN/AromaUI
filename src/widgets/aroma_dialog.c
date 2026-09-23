@@ -36,7 +36,7 @@ typedef struct AromaDialog
     int action_button_spacing;
 
     char title[64];
-    char message[256];
+    char message[1024];
     AromaDialogType type;
     bool visible;
 
@@ -311,6 +311,199 @@ AromaNode *aroma_dialog_get_content_area(AromaNode *dialog_node)
     return dlg->content_node;
 }
 
+/* Word-wrap + render: greedy wrap on spaces (honoring embedded
+ * newlines), hard UTF-8-codepoint-safe breaks for overlong words, and
+ * an ellipsis when the text outgrows max_lines. Everything is measured
+ * with the real font so lines never overflow max_w. */
+static size_t dialog_utf8_step(const char *s)
+{
+    unsigned char c = (unsigned char)*s;
+    if (c < 0x80)
+        return 1;
+    if ((c & 0xE0) == 0xC0)
+        return 2;
+    if ((c & 0xF0) == 0xE0)
+        return 3;
+    if ((c & 0xF8) == 0xF0)
+        return 4;
+    return 1;
+}
+
+static float dialog_measure(AromaGraphicsInterface *gfx, size_t window_id,
+                            AromaFont *font, const char *text, size_t len)
+{
+    char buf[1024];
+    if (len >= sizeof(buf))
+        len = sizeof(buf) - 1;
+    memcpy(buf, text, len);
+    buf[len] = '\0';
+    return gfx->measure_text(window_id, font, buf, 1.0f);
+}
+
+static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
+                                AromaFont *font, const char *text, int x,
+                                int y_top, int max_w, int line_h,
+                                int max_lines, uint32_t color)
+{
+    if (!text || !text[0] || max_lines < 1 || max_w < 16 || line_h < 1)
+        return;
+    int line_no = 0;
+    const char *p = text;
+    char line[1024];
+    size_t line_len = 0;
+
+    /* Flush the pending line; when the last row is reached but text
+     * remains, squeeze in an ellipsis instead of silently clipping. */
+    bool truncated = false;
+    while (*p && line_no < max_lines)
+    {
+        /* Forced break: flush the pending row, then consume one row
+         * for the break itself (blank line). */
+        if (*p == '\n')
+        {
+            p++;
+            if (line_len > 0)
+            {
+                if (line_no + 1 >= max_lines)
+                {
+                    truncated = true;
+                    break;
+                }
+                line[line_len] = '\0';
+                gfx->render_text(window_id, font, line, x,
+                                 y_top + line_no * line_h, color, 1.0f);
+                line_no++;
+                line_len = 0;
+            }
+            else
+            {
+                if (line_no + 1 >= max_lines)
+                {
+                    if (*p)
+                        truncated = true;
+                    break;
+                }
+                line_no++;
+            }
+            continue;
+        }
+        /* Next word (runs of non-space, non-newline). */
+        while (*p == ' ' || *p == '\t')
+            p++;
+        if (!*p || *p == '\n')
+            continue;
+        const char *w = p;
+        size_t wlen = 0;
+        while (p[wlen] && p[wlen] != ' ' && p[wlen] != '\t' &&
+               p[wlen] != '\n')
+            wlen++;
+
+        /* Fits on the pending line? */
+        size_t need = line_len + (line_len ? 1 : 0) + wlen;
+        bool fits = false;
+        if (need < sizeof(line))
+        {
+            char probe[1024];
+            size_t at = 0;
+            if (line_len)
+            {
+                memcpy(probe, line, line_len);
+                at = line_len;
+                probe[at++] = ' ';
+            }
+            memcpy(probe + at, w, wlen);
+            probe[at + wlen] = '\0';
+            fits = dialog_measure(gfx, window_id, font, probe,
+                                  at + wlen) <= (float)max_w;
+        }
+        if (fits)
+        {
+            if (line_len)
+                line[line_len++] = ' ';
+            memcpy(line + line_len, w, wlen);
+            line_len += wlen;
+            p += wlen;
+            continue;
+        }
+        /* Flush pending line first. */
+        if (line_len > 0)
+        {
+            line[line_len] = '\0';
+            if (line_no + 1 >= max_lines)
+            {
+                truncated = true;
+                break;
+            }
+            gfx->render_text(window_id, font, line, x,
+                             y_top + line_no * line_h, color, 1.0f);
+            line_no++;
+            line_len = 0;
+            continue; /* retry the word on the fresh line */
+        }
+        /* Single word wider than the row: hard-break it. */
+        size_t used = 0;
+        while (used < wlen && line_no < max_lines)
+        {
+            size_t take = 0;
+            size_t step = 0;
+            while (used + take < wlen)
+            {
+                step = dialog_utf8_step(w + used + take);
+                if (used + take + step > wlen)
+                    step = wlen - used - take;
+                if (dialog_measure(gfx, window_id, font, w + used,
+                                   take + step) > (float)max_w)
+                    break;
+                take += step;
+            }
+            if (take == 0)
+                take = dialog_utf8_step(w + used);
+            if (used + take < wlen)
+            {
+                /* More word left after this chunk: chunk fills a row. */
+                memcpy(line, w + used, take);
+                line[take] = '\0';
+                if (line_no + 1 >= max_lines)
+                {
+                    line_len = take;
+                    truncated = true;
+                    used = wlen;
+                    break;
+                }
+                gfx->render_text(window_id, font, line, x,
+                                 y_top + line_no * line_h, color, 1.0f);
+                line_no++;
+                used += take;
+            }
+            else
+            {
+                memcpy(line, w + used, take);
+                line_len = take;
+                used = wlen;
+            }
+        }
+        p += wlen;
+    }
+    if (line_len > 0 && line_no < max_lines)
+    {
+        line[line_len] = '\0';
+        if (truncated || *p)
+        {
+            /* Make room for "..." on the final row. */
+            while (line_len > 0 &&
+                   dialog_measure(gfx, window_id, font, line, line_len) +
+                           dialog_measure(gfx, window_id, font, "...", 3) >
+                       (float)max_w)
+                line_len--;
+            memcpy(line + line_len, "...", 3);
+            line_len += 3;
+            line[line_len] = '\0';
+        }
+        gfx->render_text(window_id, font, line, x,
+                         y_top + line_no * line_h, color, 1.0f);
+    }
+}
+
 void aroma_dialog_draw(AromaNode *dialog_node, size_t window_id)
 {
     if (!dialog_node || !dialog_node->node_widget_ptr)
@@ -345,7 +538,27 @@ void aroma_dialog_draw(AromaNode *dialog_node, size_t window_id)
     if (dlg->font && gfx->render_text)
     {
         gfx->render_text(window_id, dlg->font, dlg->title, x + 16, y + 24, theme.colors.text_primary, 1.0f);
-        gfx->render_text(window_id, dlg->font, dlg->message, x + 16, y + 52, theme.colors.text_secondary, 1.0f);
+        /* Description wraps across the rows above the action buttons. */
+        int line_h = aroma_font_get_line_height(dlg->font);
+        if (line_h <= 0)
+            line_h = 20;
+        int msg_top = y + 52;
+        int msg_bottom = dlg->action_button_y - 8;
+        int max_lines = (msg_bottom > msg_top)
+                            ? (msg_bottom - msg_top) / line_h
+                            : 0;
+        if (max_lines < 1)
+            max_lines = 1;
+        int max_w = dlg->rect.width - 32;
+        if (max_w < 40)
+            max_w = 40;
+        if (gfx->measure_text)
+            dialog_draw_wrapped(gfx, window_id, dlg->font, dlg->message,
+                                x + 16, msg_top, max_w, line_h, max_lines,
+                                theme.colors.text_secondary);
+        else
+            gfx->render_text(window_id, dlg->font, dlg->message, x + 16, msg_top,
+                             theme.colors.text_secondary, 1.0f);
     }
 
     for (size_t i = 0; i < dlg->action_count; i++)
