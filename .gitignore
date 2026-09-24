@@ -27,7 +27,6 @@ build_native/
 .gradle/
 *.hprof
 local.properties
-# Generated Aroma Store seed repo (tools/seed_store.sh output).
 store_repo/
 tools/store_repo/
 

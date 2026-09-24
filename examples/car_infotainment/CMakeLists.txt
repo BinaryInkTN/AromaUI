@@ -106,8 +106,6 @@ add_executable(infotainment
         pkg/package_manager.c
         apak/aroma_package.c
         apak/aroma_apak.c
-        apak/aroma_incense.c
-        apak/aroma_incense_loader.c
         setup/setup_store.c
         setup/setup_wizard.c
         apps/settings/settings_app.c
@@ -203,8 +201,6 @@ target_compile_definitions(infotainment PRIVATE _GNU_SOURCE)
 set(AROMA_APAK_SOURCES
     apak/aroma_package.c
     apak/aroma_apak.c
-    apak/aroma_incense.c
-    apak/aroma_incense_loader.c
 )
 set_source_files_properties(${AROMA_APAK_SOURCES} PROPERTIES
     INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../../src"
@@ -294,23 +290,22 @@ message(STATUS "")
 
 # --- First-party .apak packages ------------------------------------------------
 # nav / media / contacts compile to native plugins, are packed with tools/apak.py
-# into <build>/dist/*.apak, staged into <build>/packages/ (preinstalled
-# system packages) AND into <build>/assets/ + the source assets dir
-# (examples/car_infotainment/assets/), where package_manager_seed_from_assets()
-# discovers them (./assets, ../assets, examples/car_infotainment/assets).
+# into <build>/dist/*.apak and staged into <build>/assets/ + the source assets
+# dir (examples/car_infotainment/assets/). The assets folder is the ONLY
+# source of truth for packages: at runtime package_manager_scan() reads the
+# *.apak files straight out of it (./assets, ../assets,
+# examples/car_infotainment/assets). Nothing is ever extracted at build time.
 # Native plugins need dlopen, so this whole block is skipped for Emscripten
 # (where the web build keeps settings/third-party UI packages only).
-set(AROMA_PACKAGES_STAGING_DIR "${CMAKE_CURRENT_BINARY_DIR}/packages")
 set(AROMA_APAK_DIST_DIR "${CMAKE_CURRENT_BINARY_DIR}/dist")
 set(AROMA_BUILD_ASSETS_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
 set(AROMA_SOURCE_ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
 file(MAKE_DIRECTORY
-    "${AROMA_PACKAGES_STAGING_DIR}"
     "${AROMA_APAK_DIST_DIR}"
     "${AROMA_BUILD_ASSETS_DIR}"
     "${AROMA_SOURCE_ASSETS_DIR}")
 
-# Sync freshly packed .apaks back to the source assets dir so seed runs
+# Sync freshly packed .apaks back to the source assets dir so runs
 # (build dir via ../assets, repo root via examples/.../assets), the
 # Emscripten --preload-file bundle, and firmware packaging all pick up
 # matching-arch packages. Turn off for read-only-source or packaging
@@ -323,32 +318,26 @@ if(NOT EMSCRIPTEN)
     find_package(Python3 COMPONENTS Interpreter QUIET)
 
     # Adds build + pack rules for one first-party package:
-    #   add_first_party_package(<leaf-id> <package-source-dir> <plugin-target> <stage-system>)
-    # <stage-system> TRUE pre-installs into build/packages/ (system apps);
-    # FALSE packs build/dist/<leaf>.apak only, for manual installation
-    # (stale preinstalled copies are removed so rebuilds start clean).
+    #   add_first_party_package(<leaf-id> <package-source-dir> <plugin-target>)
+    # Packs <build>/dist/<leaf>.apak from a leaf staging dir
+    # (<build>/apak-stage/<leaf>/ with manifest.json + assets/ + plugin.so).
     # Staging (plugin.so -> leaf dir) happens here, in the pack target
     # itself, and NOT as a POST_BUILD on the plugin: POST_BUILD only
     # fires when the plugin relinks, so an up-to-date plugin would
     # silently skip staging and the pack step would fail on the
     # missing plugin.so.
     # Every pack also stages the finished .apak into <build>/assets/
-    # (so ./assets seeds when running from the build dir) and, unless
+    # (so ./assets picks it up when running from the build dir) and, unless
     # AROMA_SYNC_APAK_TO_SOURCE_ASSETS is OFF, back into the source
-    # assets dir (so ../assets / repo-root / web-preload seeds find it).
+    # assets dir (so ../assets / repo-root / web-preload find it).
     # Deployment to /usr/share/infotainment/assets for target images
     # goes through the install() rules below (DESTDIR-aware), never a
     # raw POST_BUILD cp to /usr/share (needs root every build and
     # contaminates cross-build hosts).
-    function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET STAGE_SYSTEM)
-        if(STAGE_SYSTEM)
-            set(PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
-        else()
-            set(PKG_LEAF_DIR "${CMAKE_CURRENT_BINARY_DIR}/apak-dist-stage/${PKG_LEAF}")
-            file(REMOVE_RECURSE "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
-        endif()
+    function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET)
+        set(PKG_LEAF_DIR "${CMAKE_CURRENT_BINARY_DIR}/apak-stage/${PKG_LEAF}")
         file(COPY "${PKG_SRC_DIR}/manifest.json" DESTINATION "${PKG_LEAF_DIR}")
-        # Bundled assets travel with the package (preinstalled and .apak).
+        # Bundled assets travel with the package inside the .apak.
         if(EXISTS "${PKG_SRC_DIR}/assets")
             file(COPY "${PKG_SRC_DIR}/assets" DESTINATION "${PKG_LEAF_DIR}")
         endif()
@@ -383,49 +372,39 @@ if(NOT EMSCRIPTEN)
     endfunction()
 
     # Navigation (offline maps + routing).
-    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.nav")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav"
                      "${CMAKE_CURRENT_BINARY_DIR}/nav_plugin_build")
-    unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.nav
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav" nav_plugin TRUE)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav" nav_plugin)
 
     # Media (Bluetooth AVRCP now playing + devices).
-    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.media")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media"
                      "${CMAKE_CURRENT_BINARY_DIR}/media_plugin_build")
-    unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.media
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media" media_plugin TRUE)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media" media_plugin)
 
     # Contacts (dialer + contact list + PBAP sync).
-    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.contacts")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts"
                      "${CMAKE_CURRENT_BINARY_DIR}/contacts_plugin_build")
-    unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.contacts
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts" contacts_plugin TRUE)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts" contacts_plugin)
 
     # --- Games (host-chrome native plugins, third-party pattern) ------------
-    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.tictactoe")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe"
                      "${CMAKE_CURRENT_BINARY_DIR}/tictactoe_plugin_build")
-    unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.game.tictactoe
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe" tictactoe_plugin FALSE)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe" tictactoe_plugin)
 
-    set(AROMA_PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/com.aroma.game.memory")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory"
                      "${CMAKE_CURRENT_BINARY_DIR}/memory_plugin_build")
-    unset(AROMA_PKG_LEAF_DIR)
     add_first_party_package(com.aroma.game.memory
-        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory" memory_plugin FALSE)
+        "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory" memory_plugin)
 
-    # The app seeds/loads these at runtime, so building `infotainment`
-    # alone (e.g. `cmake --build . --target infotainment`, as packaging
-    # builds do) must also (re)build the first-party .apaks with the SAME
-    # toolchain/arch. Otherwise the app builds but ships/loads without
-    # (or stale, wrong-arch) packages.
+    # The app reads these at runtime straight out of the assets folder,
+    # so building `infotainment` alone (e.g. `cmake --build . --target
+    # infotainment`, as packaging builds do) must also (re)build the
+    # first-party .apaks with the SAME toolchain/arch. Otherwise the app
+    # builds but ships/loads without (or stale, wrong-arch) packages.
     foreach(_apak_target nav_plugin_apak media_plugin_apak contacts_plugin_apak
                          tictactoe_plugin_apak memory_plugin_apak)
         if(TARGET ${_apak_target})
@@ -435,7 +414,7 @@ if(NOT EMSCRIPTEN)
 
     # Deployment: `cmake --install --prefix /usr` (or DESTDIR for packaging)
     # places the freshly built ARM apaks straight into
-    # /usr/share/infotainment/assets, where seeding discovers them.
+    # /usr/share/infotainment/assets, where the package scan discovers them.
     # A raw POST_BUILD cp to /usr/share is deliberately avoided: it would
     # need root during every build and contaminate cross-build hosts.
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")

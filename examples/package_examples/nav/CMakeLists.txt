@@ -1,5 +1,5 @@
 # First-party nav package: built from this directory into plugin.so,
-# packed to com.aroma.nav.apak, preinstalled into the infotainment image.
+# packed to com.aroma.nav.apak, staged into the assets folder.
 # Needs the AromaUI include dir plus the car_infotainment dir (host API:
 # app_state.h, vehicle_view.h, theme_manager.h, media_controls.h).
 cmake_minimum_required(VERSION 3.15)

@@ -25,6 +25,8 @@
 #include "aroma_ubuntu_font.h"
 #include "aroma_android.h"
 #include "aroma_3d.h"
+#include "aroma_incense.h"
+#include "aroma_incense_loader.h"
 
 #endif 
 

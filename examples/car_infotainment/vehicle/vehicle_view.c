@@ -38,6 +38,7 @@
 void refresh_drawer_list(void);
 static void refresh_installed_list(void);
 static bool on_pkg_uninstall_click(AromaNode *node, void *user_data);
+static bool on_pkg_details_click(AromaNode *node, void *user_data);
 const char *resolve_asset_path(const char *filename)
 {
     static char resolved[512];
@@ -2017,6 +2018,61 @@ static void on_info_close_action(void *user_data)
     close_info_dialog();
 }
 
+/* Shared details body for an installed package: path, install time,
+ * version, author/category, entry/plugin and description. Fits the
+ * dialog's 1024-char message buffer; later lines are dropped first. */
+static void format_package_details(const InstalledPackage *pkg,
+                                   char *msg, size_t msg_len)
+{
+    if (!pkg || !msg || msg_len == 0)
+        return;
+    msg[0] = '\0';
+    char installed[32];
+    package_manager_format_install_time(pkg, installed, sizeof(installed));
+    char byline[200];
+    if (pkg->manifest.author[0] && pkg->manifest.category[0])
+        snprintf(byline, sizeof(byline), "%s - %s",
+                 pkg->manifest.author, pkg->manifest.category);
+    else
+        snprintf(byline, sizeof(byline), "%s%s",
+                 pkg->manifest.author, pkg->manifest.category);
+    size_t off = 0;
+    off += (size_t)snprintf(msg + off, msg_len - off,
+                            "Version %s (build %d)\n%s",
+                            pkg->manifest.version[0] ? pkg->manifest.version : "?",
+                            pkg->manifest.version_code,
+                            pkg->manifest.id);
+    if (off < msg_len - 1)
+        off += (size_t)snprintf(msg + off, msg_len - off,
+                                "\nPath: %s",
+                                pkg->apak_path[0] ? pkg->apak_path : "unknown");
+    if (off < msg_len - 1)
+        off += (size_t)snprintf(msg + off, msg_len - off,
+                                "\nInstalled: %s", installed);
+    if (off < msg_len - 1)
+        off += (size_t)snprintf(msg + off, msg_len - off,
+                                "\n%s package",
+                                package_manager_is_system(pkg->manifest.id)
+                                    ? "System" : "User");
+    if (byline[0] && off < msg_len - 1)
+        off += (size_t)snprintf(msg + off, msg_len - off, "\n%s", byline);
+    if (off < msg_len - 1 &&
+        (pkg->manifest.entry[0] || pkg->manifest.plugin[0]))
+    {
+        char srcs[300];
+        if (pkg->manifest.entry[0] && pkg->manifest.plugin[0])
+            snprintf(srcs, sizeof(srcs), "UI: %s, Plugin: %s",
+                     pkg->manifest.entry, pkg->manifest.plugin);
+        else if (pkg->manifest.entry[0])
+            snprintf(srcs, sizeof(srcs), "UI: %s", pkg->manifest.entry);
+        else
+            snprintf(srcs, sizeof(srcs), "Plugin: %s", pkg->manifest.plugin);
+        off += (size_t)snprintf(msg + off, msg_len - off, "\n%s", srcs);
+    }
+    if (pkg->manifest.description[0] && off < msg_len - 1)
+        snprintf(msg + off, msg_len - off, "\n%s", pkg->manifest.description);
+}
+
 static void show_app_info(int index)
 {
     if (index < 0 || index >= s_drawer_count)
@@ -2024,7 +2080,6 @@ static void show_app_info(int index)
     close_info_dialog();
     char title[64];
     char msg[1024];
-    bool can_uninstall = false;
     if (s_drawer_kind[index] == 0)
     {
         AromaAppPlugin *app = app_registry_get_app(s_drawer_app[index]);
@@ -2042,24 +2097,10 @@ static void show_app_info(int index)
         if (!pkg)
             return;
         snprintf(title, sizeof(title), "%s", pkg->manifest.name);
-        char desc[400];
-        snprintf(desc, sizeof(desc), "%s", pkg->manifest.description);
-        char byline[200];
-        if (pkg->manifest.author[0] && pkg->manifest.category[0])
-            snprintf(byline, sizeof(byline), "%s - %s", pkg->manifest.author, pkg->manifest.category);
-        else
-            snprintf(byline, sizeof(byline), "%s%s", pkg->manifest.author, pkg->manifest.category);
-        size_t off = 0;
-        off += (size_t)snprintf(msg + off, sizeof(msg) - off, "Version %s\n%s",
-                                pkg->manifest.version, pkg->manifest.id);
-        if (byline[0] && off < sizeof(msg) - 1)
-            off += (size_t)snprintf(msg + off, sizeof(msg) - off, "\n%s", byline);
-        if (desc[0] && off < sizeof(msg) - 1)
-            snprintf(msg + off, sizeof(msg) - off, "\n%s", desc);
+        format_package_details(pkg, msg, sizeof(msg));
         s_info_kind = 1;
         s_info_app = -1;
         snprintf(s_info_id, sizeof(s_info_id), "%s", pkg->manifest.id);
-        can_uninstall = !package_manager_is_system(pkg->manifest.id);
     }
     s_info_dialog = aroma_dialog_create(app_drawer, title, msg, 560, 340, DIALOG_TYPE_BASIC);
     if (!s_info_dialog)
@@ -2067,7 +2108,7 @@ static void show_app_info(int index)
     aroma_dialog_set_font(s_info_dialog, state.ui_font);
     aroma_node_set_z_index(s_info_dialog, APP_DRAWER_Z_INDEX + 10);
     aroma_dialog_add_action(s_info_dialog, "Open", on_info_open_action, NULL);
-    if (can_uninstall)
+    if (s_info_kind == 1)
         aroma_dialog_add_action(s_info_dialog, "Uninstall", on_info_uninstall_action, NULL);
     aroma_dialog_add_action(s_info_dialog, "Close", on_info_close_action, NULL);
     aroma_dialog_show(s_info_dialog);
@@ -2643,6 +2684,40 @@ static void pkg_page_reanchor(void)
     aroma_node_invalidate(settings_page_packages);
 }
 
+static bool on_pkg_details_click(AromaNode *node, void *user_data)
+{
+    (void)node;
+    int idx = (int)(intptr_t)user_data;
+    InstalledPackage *pkg = package_manager_get(idx);
+    if (!pkg)
+        return true;
+    close_info_dialog();
+    char title[64];
+    snprintf(title, sizeof(title), "%s", pkg->manifest.name[0] ? pkg->manifest.name : pkg->manifest.id);
+    char msg[1024];
+    format_package_details(pkg, msg, sizeof(msg));
+    s_info_kind = 1;
+    s_info_app = -1;
+    snprintf(s_info_id, sizeof(s_info_id), "%s", pkg->manifest.id);
+    AromaNode *parent = settings_page_packages
+                            ? settings_page_packages
+                            : (s_installed_card ? s_installed_card : app_drawer);
+    if (!parent)
+        return true;
+    s_info_dialog = aroma_dialog_create(parent, title, msg, 560, 400,
+                                        DIALOG_TYPE_BASIC);
+    if (!s_info_dialog)
+        return true;
+    aroma_dialog_set_font(s_info_dialog, state.ui_font);
+    aroma_node_set_z_index(s_info_dialog, Z_LAYER_STATUS_BAR + 16);
+    aroma_dialog_add_action(s_info_dialog, "Open", on_info_open_action, NULL);
+    aroma_dialog_add_action(s_info_dialog, "Uninstall",
+                            on_info_uninstall_action, NULL);
+    aroma_dialog_add_action(s_info_dialog, "Close", on_info_close_action, NULL);
+    aroma_dialog_show(s_info_dialog);
+    return true;
+}
+
 static void refresh_installed_list(void)
 {
     if (!s_installed_list || !settings_page_packages)
@@ -2695,7 +2770,7 @@ static void refresh_installed_list(void)
         return;
     }
     char name_buf[48];
-    char sub_buf[160];
+    char sub_buf[192];
     for (int i = 0; i < n; i++)
     {
         InstalledPackage *pkg = package_manager_get(i);
@@ -2711,9 +2786,10 @@ static void refresh_installed_list(void)
             drawer_shift_subtree(name, bake_x, bake_y);
             aroma_node_set_z_index(name, Z_LAYER_STATUS_BAR + 14);
         }
-        snprintf(sub_buf, sizeof(sub_buf), "%s v%s",
+        snprintf(sub_buf, sizeof(sub_buf), "%s v%s%s",
                  pkg->manifest.id,
-                 pkg->manifest.version[0] ? pkg->manifest.version : "?");
+                 pkg->manifest.version[0] ? pkg->manifest.version : "?",
+                 package_manager_is_system(pkg->manifest.id) ? " (System)" : "");
         AromaNode *sub = aroma_ui_label(s_installed_list, sub_buf, 16, y + 26,
                                         LABEL_STYLE_LABEL_SMALL, state.ui_font);
         if (sub)
@@ -2722,29 +2798,23 @@ static void refresh_installed_list(void)
             drawer_shift_subtree(sub, bake_x, bake_y);
             aroma_node_set_z_index(sub, Z_LAYER_STATUS_BAR + 14);
         }
-        if (package_manager_is_system(pkg->manifest.id))
-        {
-            AromaNode *tag = aroma_ui_label(s_installed_list, "System",
-                                            PKG_LIST_W - 110, y + 14,
-                                            LABEL_STYLE_LABEL_SMALL, state.ui_font);
-            if (tag)
-            {
-                aroma_label_set_color(tag, state.theme.colors.text_secondary);
-                drawer_shift_subtree(tag, bake_x, bake_y);
-                aroma_node_set_z_index(tag, Z_LAYER_STATUS_BAR + 14);
-            }
-        }
-        else
-        {
-            AromaNode *btn = aroma_ui_button(s_installed_list, "Uninstall",
-                                             PKG_LIST_W - 126, y + 14, 110, 36,
-                                             on_pkg_uninstall_click,
+        AromaNode *details = aroma_ui_button(s_installed_list, "Details",
+                                             PKG_LIST_W - 246, y + 14, 110, 36,
+                                             on_pkg_details_click,
                                              (void *)(intptr_t)i, state.ui_font);
-            if (btn)
-            {
-                drawer_shift_subtree(btn, bake_x, bake_y);
-                aroma_node_set_z_index(btn, Z_LAYER_STATUS_BAR + 14);
-            }
+        if (details)
+        {
+            drawer_shift_subtree(details, bake_x, bake_y);
+            aroma_node_set_z_index(details, Z_LAYER_STATUS_BAR + 14);
+        }
+        AromaNode *btn = aroma_ui_button(s_installed_list, "Uninstall",
+                                         PKG_LIST_W - 126, y + 14, 110, 36,
+                                         on_pkg_uninstall_click,
+                                         (void *)(intptr_t)i, state.ui_font);
+        if (btn)
+        {
+            drawer_shift_subtree(btn, bake_x, bake_y);
+            aroma_node_set_z_index(btn, Z_LAYER_STATUS_BAR + 14);
         }
     }
     aroma_container_set_content_size(s_installed_list, PKG_LIST_W, 16 + n * PKG_ROW_H);

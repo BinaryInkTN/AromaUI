@@ -98,6 +98,10 @@ bool aroma_apak_read_file(const char *apak_path, const char *inner_name,
                           char **out_buf, size_t *out_len,
                           char *err_buf, size_t err_buf_len);
 
+/* True when the archive contains an entry with exactly this inner path.
+ * Cheaper than aroma_apak_read_file() when only existence matters. */
+bool aroma_apak_contains(const char *apak_path, const char *inner_name);
+
 /* Extract every entry of a zip into dest_dir. Refuses absolute paths and
  * ".." components. Creates directories as needed. */
 bool aroma_apak_extract(const char *apak_path, const char *dest_dir,

@@ -21,9 +21,10 @@ python3 tools/apak.py info myapp.apak
 ```
 
 Install it on the device from the in-app **Packages** store
-(app drawer → Packages → enter the `.apak` path → Install), or drop an
-extracted package directory into the packages dir
-(`./packages/<id>/` by default, `$AROMA_PACKAGES_DIR` override).
+(app drawer → Packages → enter the `.apak` path → Install), or drop the
+`.apak` file into the assets folder (`./assets/` by default,
+`$AROMA_ASSETS_DIR` override). The assets folder is the only source of
+truth: installed packages are exactly the `*.apak` files found there.
 
 ## Manifest reference
 
@@ -143,7 +144,9 @@ binary - they are real `.apak` packages built from
 - each builds a `plugin.so` (`MODULE` library, never linked against
   libaroma or the host),
 - `tools/apak.py pack` produces `build/dist/com.aroma.<app>.apak`,
-- the same build pre-installs them into `build/packages/` (system packages).
+- the same build stages the `.apak` into `build/assets/` (and the source
+  `examples/car_infotainment/assets/`), which is where the runtime
+  package scan discovers it.
 
 They use `chrome: "self"` and reuse their battle-tested open/close code
 unchanged through a tiny in-file adapter (`aroma_package_entry` +
@@ -180,29 +183,32 @@ button and the fonts it uses live in the nav package (captured from
 
 Assets travel with their package: media bundles `assets/album_cover.jpg`,
 nav bundles its `.mbtiles` tiles, routing data and POI database under
-`assets/`. The build stages `assets/` into preinstalled packages and
-`apak pack` includes it in the `.apak`; plugins resolve files against
-the `install_dir` their `init` receives - never host asset paths.
+`assets/`. The build packs `assets/` into the `.apak`; at runtime native
+packages are extracted to a validated cache dir and plugins resolve files
+against the `install_dir` their `init` receives - never host asset paths.
 Shared home-screen pieces stay in the host: the mini media card
 (`media_home.c`), the incoming-call overlay, and the
 `Packages` installer store itself.
 
 ## Host integration (for developers)
 
-Core API (`include/aroma_package.h`, `src/core/aroma_package.c`,
-`src/core/aroma_apak.c`):
+Core API (`examples/car_infotainment/apak/aroma_package.h`):
 
 - `aroma_package_parse_manifest()` / `..._load_manifest_file()` /
   `aroma_package_validate_manifest()` - parsing + policy.
-- `aroma_apak_read_file()` / `aroma_apak_extract()` - minimal zip reader
-  (stored + deflated, CRC-checked, rejects `..`/absolute paths; needs
-  zlib, otherwise returns a clear error).
+- `aroma_apak_read_file()` / `aroma_apak_contains()` / `aroma_apak_extract()`
+  - minimal zip reader (stored + deflated, CRC-checked, rejects
+  `..`/absolute paths; needs zlib, otherwise returns a clear error).
+  `aroma_apak_extract()` is only used for the disposable native-plugin
+  runtime cache, never for installs.
 - `aroma_package_native_load()` / `..._unload()` - `dlopen` wrapper
   (stubbed on Emscripten).
 
-The car infotainment wires it up in `package_manager.{c,h}`:
-scan → drawer cards → mount UI → `dlopen` → show/hide/update, plus the
-`apps/store` installer app. New hosts can copy that pattern.
+The car infotainment wires it up in `pkg/package_manager.{c,h}`:
+scan assets → drawer cards → mount UI (straight out of the `.apak` for
+pure-UI packages) → extract to a validated runtime cache + `dlopen` for
+native plugins → show/hide/update, plus the `Packages` installer page in
+Settings. New hosts can copy that pattern.
 
 New Incense loader APIs (`aroma_incense_loader.h`):
 
@@ -212,15 +218,29 @@ New Incense loader APIs (`aroma_incense_loader.h`):
 
 ## Install / update / uninstall policy
 
+- The assets folder is the only source of truth: installed packages are
+  exactly the `*.apak` files it contains. Installing copies an `.apak`
+  into assets (named `<id>.apak`); uninstalling deletes it from assets.
+  No package folders are ever created.
 - Install validates the manifest, refuses unknown `min_abi`, refuses
-  archives with unsafe paths or CRC errors.
+  archives with unsafe paths or CRC errors, and refuses packages with
+  neither entry UI nor plugin file.
 - Reinstalling the same `version_code` is allowed; **downgrades are
-  refused**; upgrades replace the directory. A loaded package is
+  refused**; upgrades replace the `.apak` file. A loaded package is
   **live-updated**: its UI is torn down first (same path as uninstall),
-  then files are replaced and the host re-instantiates it - no restart
+  then the file is replaced and the host re-instantiates it - no restart
   needed, though a package open on screen will close.
-- Uninstall deletes files immediately and hides the UI; node memory is
-  reclaimed on restart (AromaUI has no node-tree destructor).
+- Any installed package can be uninstalled, including `com.aroma.*`
+  first-party packages (removing media/contacts disables the BT stacks
+  that live in those packages until they are reinstalled).
+- Uninstall deletes the `.apak` immediately and hides the UI; node memory
+  is reclaimed on restart (AromaUI has no node-tree destructor). Because
+  removal is just file deletion, it persists across restarts by itself.
+- At runtime, manifests and pure-UI markup are read straight out of each
+  `.apak`. Native plugins (`plugin.so` + bundled `assets/`) need real
+  files for `dlopen`/asset paths, so they are extracted once to a
+  disposable, validated runtime cache outside assets (reused while the
+  `.apak` is unchanged, dropped on uninstall, safe to wipe any time).
 - New installs appear in the drawer **without a restart**; the store shows
   the result in its status line.
 
@@ -242,8 +262,8 @@ generic client:
   live-update of loaded packages, drawer integration). Installed rows
   flip to **Open** (or **Update** when the server has a newer
   `version_code`) plus **Remove**.
-- **Installed** section: the installed list with Open (Remove only for
-  third-party packages - see below). Sideloading (local `.apak` path
+- **Installed** section: the installed list with Open and Remove for
+  every package. Sideloading (local `.apak` path
   installer) and the store server URL setting (persisted, default
   `http://127.0.0.1:8080`) live in Settings → Packages.
 

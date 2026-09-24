@@ -38,14 +38,8 @@ add_executable(aroma_tests
 # examples/car_infotainment (CMAKE_SOURCE_DIR == example dir).
 get_filename_component(AROMA_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
-set(AROMA_APAK_SOURCES
-    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_package.c"
-    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_apak.c"
-    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_incense.c"
-    "${AROMA_ROOT}/examples/car_infotainment/apak/aroma_incense_loader.c"
-)
-target_sources(aroma_tests PRIVATE ${AROMA_APAK_SOURCES})
-
+# Incense + package helpers now live in the framework (libaroma);
+# tests link `aroma` directly with no example sources.
 target_link_libraries(aroma_tests PRIVATE aroma)
 
 find_package(ZLIB QUIET)
@@ -64,7 +58,6 @@ target_include_directories(aroma_tests
     PRIVATE ${AROMA_ROOT}/include
     PRIVATE ${AROMA_ROOT}/src
     PRIVATE ${AROMA_ROOT}/src/core
-    PRIVATE ${AROMA_ROOT}/examples/car_infotainment/apak
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/core
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/widgets

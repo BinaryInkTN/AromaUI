@@ -16,10 +16,6 @@ endif()
 
 add_executable(incense_example
     main.c
-    ../car_infotainment/apak/aroma_package.c
-    ../car_infotainment/apak/aroma_apak.c
-    ../car_infotainment/apak/aroma_incense.c
-    ../car_infotainment/apak/aroma_incense_loader.c
 )
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/test.aroma"
@@ -79,16 +75,6 @@ endif()
 
 target_include_directories(incense_example PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../car_infotainment/apak"
-)
-
-set_source_files_properties(
-    ../car_infotainment/apak/aroma_package.c
-    ../car_infotainment/apak/aroma_apak.c
-    ../car_infotainment/apak/aroma_incense.c
-    ../car_infotainment/apak/aroma_incense_loader.c
-    PROPERTIES INCLUDE_DIRECTORIES
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../src"
 )
 
 if(UNIX AND NOT EMSCRIPTEN)

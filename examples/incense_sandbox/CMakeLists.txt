@@ -14,16 +14,11 @@ add_executable(incense_sandbox
     sandbox.c
     aroma_map_stub.c
     ../../src/widgets/aroma_textbox.c
-    ../car_infotainment/apak/aroma_package.c
-    ../car_infotainment/apak/aroma_apak.c
-    ../car_infotainment/apak/aroma_incense.c
-    ../car_infotainment/apak/aroma_incense_loader.c
 )
 
 target_include_directories(incense_sandbox PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../car_infotainment/apak"
 )
 
 if(UNIX AND NOT EMSCRIPTEN)

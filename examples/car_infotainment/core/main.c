@@ -47,7 +47,6 @@ int main(int argc, char **argv)
     register_settings_app();
 
     package_manager_init();
-    package_manager_seed_from_assets();
 
     if (!aroma_ui_init())
     {

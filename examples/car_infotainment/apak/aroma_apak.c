@@ -419,6 +419,30 @@ bool aroma_apak_read_file(const char *apak_path, const char *inner_name,
     return true;
 }
 
+bool aroma_apak_contains(const char *apak_path, const char *inner_name)
+{
+    if (!apak_path || !inner_name)
+        return false;
+    FILE *f = NULL;
+    ApakEntry *entries = NULL;
+    size_t count = 0;
+    char err[128];
+    if (!load_archive(apak_path, &f, &entries, &count, err, sizeof(err)))
+        return false;
+    bool found = false;
+    for (size_t i = 0; i < count; i++)
+    {
+        if (strcmp(entries[i].name, inner_name) == 0)
+        {
+            found = true;
+            break;
+        }
+    }
+    free_entries(entries, count);
+    fclose(f);
+    return found;
+}
+
 #ifndef __EMSCRIPTEN__
 static bool mkdir_p(const char *path)
 {
@@ -572,6 +596,13 @@ bool aroma_apak_extract(const char *apak_path, const char *dest_dir,
     if (err_buf && err_buf_len > 0)
         snprintf(err_buf, err_buf_len,
                  ".apak support needs zlib (rebuild with ZLIB found)");
+    return false;
+}
+
+bool aroma_apak_contains(const char *apak_path, const char *inner_name)
+{
+    (void)apak_path;
+    (void)inner_name;
     return false;
 }
 
