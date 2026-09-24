@@ -244,6 +244,27 @@ New Incense loader APIs (`aroma_incense_loader.h`):
 - New installs appear in the drawer **without a restart**; the store shows
   the result in its status line.
 
+## Troubleshooting: no packages on the device
+
+The app logs every step to stderr - look for the `[packages]` lines:
+
+- `[packages] assets: <dir>` tells you which folder was selected, and
+  `[packages] N package(s) from M .apak file(s) in <dir>` what it found.
+  Per-file `ignoring ...` lines say why an archive was skipped.
+- Empty but higher-priority folders are skipped automatically: on ARM,
+  an empty `/usr/share/infotainment/assets` does not shadow a populated
+  `./assets`. If the log shows `(none)`, no assets folder exists at all -
+  check the working directory (systemd `WorkingDirectory=`) or set
+  `$AROMA_ASSETS_DIR` explicitly.
+- `built without zlib, cannot read any .apak` (plus a CMake configure
+  warning) means zlib dev files were missing at build time - install
+  `zlib1g-dev` / `zlib-devel` and rebuild. Without zlib every archive is
+  unreadable, so the app shows Settings only.
+- On ARM the first-party `.apak`s reach `/usr/share/infotainment/assets`
+  only via `cmake --install --prefix /usr` (or the firmware packaging).
+  Just building is not enough - verify the files are really there:
+  `ls -l /usr/share/infotainment/assets/*.apak`.
+
 ## Online store (Python server + in-app client)
 
 The in-car store is **Aroma Store** (app drawer → Aroma Store), a simple,

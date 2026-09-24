@@ -210,6 +210,10 @@ find_package(ZLIB QUIET)
 if(ZLIB_FOUND AND NOT EMSCRIPTEN)
     target_compile_definitions(infotainment PRIVATE AROMA_HAS_ZLIB=1)
     target_link_libraries(infotainment PRIVATE ZLIB::ZLIB)
+elseif(NOT EMSCRIPTEN)
+    message(WARNING "ZLIB not found - .apak packages cannot be read, the app "
+            "will show no installed packages. Install zlib1g-dev (Debian) or "
+            "zlib-devel (Fedora) and reconfigure.")
 endif()
 
 if(UNIX AND NOT EMSCRIPTEN)

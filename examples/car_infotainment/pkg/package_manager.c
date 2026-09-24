@@ -160,6 +160,28 @@ static bool copy_file(const char *src, const char *dst,
     return true;
 }
 
+static bool dir_has_apak(const char *dir)
+{
+    if (!dir || !dir[0])
+        return false;
+    DIR *d = opendir(dir);
+    if (!d)
+        return false;
+    bool found = false;
+    struct dirent *ent;
+    while ((ent = readdir(d)) != NULL)
+    {
+        size_t n = strlen(ent->d_name);
+        if (n >= 6 && strcmp(ent->d_name + n - 5, ".apak") == 0)
+        {
+            found = true;
+            break;
+        }
+    }
+    closedir(d);
+    return found;
+}
+
 static void resolve_assets_dir(void)
 {
     const char *env = getenv("AROMA_ASSETS_DIR");
@@ -191,10 +213,23 @@ static void resolve_assets_dir(void)
         NULL,
     };
 #endif
+    /* Two passes: prefer the first folder that actually contains packages.
+     * A higher-priority but empty dir (e.g. a /usr/share staging dir whose
+     * install step never ran) must not shadow a populated one. */
+    for (int i = 0; candidates[i]; i++)
+    {
+        if (dir_has_apak(candidates[i]))
+        {
+            snprintf(s_assets_dir, sizeof(s_assets_dir), "%s", candidates[i]);
+            return;
+        }
+    }
     for (int i = 0; candidates[i]; i++)
     {
         if (is_dir(candidates[i]))
         {
+            fprintf(stderr, "[packages] '%s' has no .apak files\n",
+                    candidates[i]);
             snprintf(s_assets_dir, sizeof(s_assets_dir), "%s", candidates[i]);
             return;
         }
@@ -354,16 +389,22 @@ bool package_manager_scan(void)
     AromaPackageManifest found_manifests[PACKAGE_MAX_INSTALLED];
     char found_apaks[PACKAGE_MAX_INSTALLED][AROMA_PACKAGE_PATH_MAX];
     int found_count = 0;
+    int files_seen = 0;
 
     DIR *d = opendir(s_assets_dir);
     if (!d)
         return false;
+#ifndef AROMA_HAS_ZLIB
+    fprintf(stderr, "[packages] ERROR: built without zlib, cannot read "
+                    "any .apak (install zlib1g-dev / zlib-devel and rebuild)\n");
+#endif
     struct dirent *ent;
     while ((ent = readdir(d)) != NULL && found_count < PACKAGE_MAX_INSTALLED)
     {
         size_t n = strlen(ent->d_name);
         if (n < 6 || strcmp(ent->d_name + n - 5, ".apak") != 0)
             continue;
+        files_seen++;
         char apak[AROMA_PACKAGE_PATH_MAX];
         if (!aroma_package_join_path(apak, sizeof(apak),
                                      s_assets_dir, ent->d_name))
@@ -484,6 +525,9 @@ bool package_manager_scan(void)
 
     qsort(s_packages, (size_t)s_package_count, sizeof(s_packages[0]),
           compare_by_id);
+
+    fprintf(stderr, "[packages] %d package(s) from %d .apak file(s) in %s\n",
+            s_package_count, files_seen, s_assets_dir);
 
     /* Purge cache dirs with no corresponding .apak (fully managed dir). */
     {

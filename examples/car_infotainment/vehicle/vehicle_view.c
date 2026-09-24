@@ -37,6 +37,7 @@
 #define MIN_EMPTY_RESULT_RETRIES 3
 void refresh_drawer_list(void);
 static void refresh_installed_list(void);
+static void maybe_show_empty_packages_dialog(void);
 static bool on_pkg_uninstall_click(AromaNode *node, void *user_data);
 static bool on_pkg_details_click(AromaNode *node, void *user_data);
 const char *resolve_asset_path(const char *filename)
@@ -1136,6 +1137,8 @@ static void settings_show_page(int page)
     if (page == 3)
         refresh_installed_list();
     settings_navigate_to(target, false);
+    if (page == 3)
+        maybe_show_empty_packages_dialog();
 }
 
 static void settings_go_back(void *user_data)
@@ -2684,6 +2687,115 @@ static void pkg_page_reanchor(void)
     aroma_node_invalidate(settings_page_packages);
 }
 
+static AromaNode *s_pkg_alert_dialog = NULL;
+static bool s_empty_pkgs_alert_shown = false;
+
+static void close_pkg_alert_dialog(void)
+{
+    if (s_pkg_alert_dialog)
+    {
+        aroma_dialog_destroy(s_pkg_alert_dialog);
+        s_pkg_alert_dialog = NULL;
+    }
+}
+
+static void on_pkg_alert_close_action(void *user_data)
+{
+    (void)user_data;
+    close_pkg_alert_dialog();
+}
+
+static void on_pkg_alert_rescan_action(void *user_data)
+{
+    (void)user_data;
+    close_pkg_alert_dialog();
+    package_manager_scan();
+    refresh_drawer_list();
+    refresh_installed_list();
+    if (package_manager_count() > 0)
+        pkg_set_status("Found packages - list updated");
+    else
+        pkg_set_status("Still no packages found");
+}
+
+/* Error/info popup on the Packages page. Separate from s_info_dialog so
+ * package errors never clobber (or get clobbered by) detail dialogs. */
+static void show_pkg_alert(const char *title, const char *message)
+{
+    if (!settings_page_packages)
+        return;
+    close_pkg_alert_dialog();
+    s_pkg_alert_dialog = aroma_dialog_create(settings_page_packages,
+                                             title ? title : "Packages",
+                                             message ? message : "",
+                                             560, 320, DIALOG_TYPE_BASIC);
+    if (!s_pkg_alert_dialog)
+        return;
+    aroma_dialog_set_font(s_pkg_alert_dialog, state.ui_font);
+    aroma_node_set_z_index(s_pkg_alert_dialog, Z_LAYER_STATUS_BAR + 16);
+    aroma_dialog_add_action(s_pkg_alert_dialog, "Close",
+                            on_pkg_alert_close_action, NULL);
+    aroma_dialog_show(s_pkg_alert_dialog);
+}
+
+/* Once per run, when the user actually opens the Packages page and it is
+ * empty, explain why instead of leaving a bare "No packages installed."
+ * label. Never fires at boot (the page is hidden then). */
+static void maybe_show_empty_packages_dialog(void)
+{
+    if (s_empty_pkgs_alert_shown)
+        return;
+    if (!settings_page_packages ||
+        aroma_node_is_hidden(settings_page_packages))
+        return;
+    if (package_manager_count() > 0)
+        return;
+    s_empty_pkgs_alert_shown = true;
+    const char *dir = package_manager_dir();
+    char msg[1024];
+    if (!dir || !dir[0])
+    {
+        snprintf(msg, sizeof(msg),
+                 "No packages found.\n\nNo assets folder exists.\n"
+                 "Install an .apak with the path field above, or set "
+                 "$AROMA_ASSETS_DIR.\nSee the [packages] log lines for details.");
+    }
+    else
+    {
+        struct stat st;
+        bool exists = stat(dir, &st) == 0 && S_ISDIR(st.st_mode);
+        if (exists)
+        {
+            snprintf(msg, sizeof(msg),
+                     "No packages found.\n\nAssets folder:\n%s\n"
+                     "The folder exists but holds no readable .apak files.\n"
+                     "Install one with the path field above.\n"
+                     "See the [packages] log lines for details.", dir);
+        }
+        else
+        {
+            snprintf(msg, sizeof(msg),
+                     "No packages found.\n\nAssets folder:\n%s\n"
+                     "This folder does not exist.\n"
+                     "Create it with .apak files inside, or set "
+                     "$AROMA_ASSETS_DIR.\nSee the [packages] log lines for details.", dir);
+        }
+    }
+    close_pkg_alert_dialog();
+    s_pkg_alert_dialog = aroma_dialog_create(settings_page_packages,
+                                             "No packages",
+                                             msg, 560, 380, DIALOG_TYPE_BASIC);
+    if (!s_pkg_alert_dialog)
+        return;
+    aroma_dialog_set_font(s_pkg_alert_dialog, state.ui_font);
+    aroma_node_set_z_index(s_pkg_alert_dialog, Z_LAYER_STATUS_BAR + 16);
+    aroma_dialog_add_action(s_pkg_alert_dialog, "Rescan",
+                            on_pkg_alert_rescan_action, NULL);
+    aroma_dialog_add_action(s_pkg_alert_dialog, "Close",
+                            on_pkg_alert_close_action, NULL);
+    aroma_dialog_show(s_pkg_alert_dialog);
+}
+
 static bool on_pkg_details_click(AromaNode *node, void *user_data)
 {
     (void)node;
@@ -2839,6 +2951,7 @@ static bool on_pkg_uninstall_click(AromaNode *node, void *user_data)
         snprintf(buf, sizeof(buf), "Remove failed: %s",
                  err[0] ? err : "unknown error");
         pkg_set_status(buf);
+        show_pkg_alert("Remove failed", err[0] ? err : "unknown error");
         return true;
     }
     refresh_drawer_list();
@@ -2865,6 +2978,7 @@ static bool on_pkg_install_click(AromaNode *node, void *user_data)
         snprintf(buf, sizeof(buf), "Install failed: %s",
                  err[0] ? err : "unknown error");
         pkg_set_status(buf);
+        show_pkg_alert("Install failed", err[0] ? err : "unknown error");
         return true;
     }
     const char *id = package_manager_last_installed_id();
@@ -2873,6 +2987,7 @@ static bool on_pkg_install_click(AromaNode *node, void *user_data)
         char buf[320];
         snprintf(buf, sizeof(buf), "Installed %s but UI failed to load", id);
         pkg_set_status(buf);
+        show_pkg_alert("Installed with errors", buf);
         return true;
     }
     char buf[320];
