@@ -798,12 +798,9 @@
       function runCode() {
         var source = window.incenseEditor ? window.incenseEditor.getValue() : '';
         try {
-          var ptr = Module._malloc(Module.lengthBytesUTF8(source) + 1);
-          Module.stringToUTF8(source, ptr, Module.lengthBytesUTF8(source) + 1);
-          Module._aroma_sandbox_reload(ptr);
-          Module._free(ptr);
-          if (Module._aroma_sandbox_has_error()) {
-            setStatus('error', Module.UTF8ToString(Module._aroma_sandbox_get_last_error()));
+          Module.ccall('aroma_sandbox_reload', null, ['string'], [source]);
+          if (Module.ccall('aroma_sandbox_has_error', 'number', [], [])) {
+            setStatus('error', Module.ccall('aroma_sandbox_get_last_error', 'string', [], []));
           } else {
             setStatus('ok', 'Ready');
             document.getElementById('runBtn').classList.remove('pending');

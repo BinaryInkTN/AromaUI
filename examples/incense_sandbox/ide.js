@@ -254,24 +254,18 @@
     window.saveState();
     const code = state.files['src/ui.aroma'] || '';
 
-    if (window.Module && Module._aroma_sandbox_reload && Module._malloc) {
+    if (window.Module && Module.ccall) {
       applyCanvasSize();
       logConsole('Hot-reloading Emscripten Preview...', 'info');
 
       try {
-        const n = Module.lengthBytesUTF8(code) + 1;
-        const ptr = Module._malloc(n);
-        Module.stringToUTF8(code, ptr, n);
-        Module._aroma_sandbox_reload(ptr);
-        Module._free(ptr);
+        Module.ccall('aroma_sandbox_reload', null, ['string'], [code]);
 
-        if (Module._aroma_sandbox_has_error) {
-          if (Module._aroma_sandbox_has_error()) {
-            const msg = Module.UTF8ToString(Module._aroma_sandbox_get_last_error());
-            logConsole('Preview error: ' + msg, 'error');
-            setStatus('Preview error');
-            return;
-          }
+        if (Module.ccall('aroma_sandbox_has_error', 'number', [], [])) {
+          const msg = Module.ccall('aroma_sandbox_get_last_error', 'string', [], []);
+          logConsole('Preview error: ' + msg, 'error');
+          setStatus('Preview error');
+          return;
         }
       } catch (e) {
         logConsole('Preview reload failed: ' + (e && e.message ? e.message : e), 'error');
