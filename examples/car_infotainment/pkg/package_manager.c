@@ -308,8 +308,22 @@ bool package_manager_seed_from_assets(void)
             continue;
         }
         free(manifest_json);
-        if (!m.id[0] || find_index_by_id(m.id) >= 0)
+        if (!m.id[0])
             continue;
+        // Already-installed packages are skipped, but a stale install must
+        // not block a newer seed (e.g. reflash with older packages dir):
+        // upgrade when the seed carries a higher version_code. Downgrades
+        // stay refused inside package_manager_install_apak.
+        int live_idx = find_index_by_id(m.id);
+        if (live_idx >= 0)
+        {
+            InstalledPackage *live = package_manager_get(live_idx);
+            if (live && live->manifest.version_code >= m.version_code)
+                continue;
+            fprintf(stderr, "[packages] upgrading %s: version_code %d -> %d\n",
+                    m.id, live ? live->manifest.version_code : -1,
+                    m.version_code);
+        }
         char ierr[256] = {0};
         if (package_manager_install_apak(path, ierr, sizeof(ierr)))
             seeded++;

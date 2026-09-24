@@ -132,6 +132,7 @@ double monotonic_ms(void)
 }
 
 static bool dark_mode_enabled = false;
+static bool s_camera_transition_enabled = false;
 static AromaNode *settings_dark_mode_switch = NULL;
 static AromaNode *settings_aa_switch = NULL;
 
@@ -258,6 +259,17 @@ static bool on_settings_aa_changed(AromaNode *switch_node, void *user_data)
     bool enabled = aroma_switch_get_state(switch_node);
     aroma_3d_set_antialiasing(enabled);
     setup_store_set_int("aa_3d", enabled ? 1 : 0);
+    setup_store_save();
+    return true;
+}
+
+static bool on_settings_camera_transition_changed(AromaNode *switch_node,
+                                                  void *user_data)
+{
+    (void)user_data;
+    s_camera_transition_enabled = aroma_switch_get_state(switch_node);
+    setup_store_set_int("camera_transition",
+                        s_camera_transition_enabled ? 1 : 0);
     setup_store_save();
     return true;
 }
@@ -2937,6 +2949,19 @@ static void build_settings_ui(AromaNode *settings_root)
     aroma_node_set_z_index(aa_label, Z_LAYER_STATUS_BAR + 14);
     aroma_node_set_z_index(settings_aa_switch, Z_LAYER_STATUS_BAR + 14);
 
+    AromaNode *camtran_card = aroma_ui_card(
+        settings_page_display, 40, 300, WIN_W - 80, 80, CARD_TYPE_FILLED);
+    aroma_node_set_z_index(camtran_card, Z_LAYER_STATUS_BAR + 13);
+
+    AromaNode *camtran_icon = aroma_ui_icon(camtran_card, AROMA_ICON_VIDEOCAM, 40, 24, 32, IOS_COLOR_BLUE, state.icon_font);
+    AromaNode *camtran_label = aroma_ui_label(camtran_card, "Camera Transition", 90, 28, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
+    AromaNode *camtran_switch = aroma_ui_switch(camtran_card, WIN_W - 172, 18, 72, 44,
+                                                s_camera_transition_enabled,
+                                                on_settings_camera_transition_changed, NULL);
+    aroma_node_set_z_index(camtran_icon, Z_LAYER_STATUS_BAR + 14);
+    aroma_node_set_z_index(camtran_label, Z_LAYER_STATUS_BAR + 14);
+    aroma_node_set_z_index(camtran_switch, Z_LAYER_STATUS_BAR + 14);
+
     settings_page_updates = aroma_ui_container(
         settings_root, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
@@ -3113,6 +3138,9 @@ void build_vehicle_view(AromaNode *window)
     // Seed vehicle theme state before building any UI so the Display
     // switch and vehicle colors match the stored (dark-first) theme.
     dark_mode_enabled = setup_store_get_int("dark_theme", 1) != 0;
+    // Camera transitions default off (can be enabled in Display settings).
+    s_camera_transition_enabled =
+        setup_store_get_int("camera_transition", 0) != 0;
     state.vehicle_view_root = aroma_ui_container(
         window, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_ROW,
@@ -3492,6 +3520,31 @@ void update_vehicle_view(void)
                 aroma_node_set_hidden(vehicle_model_loading_spinner, true);
             if (vehicle_model_loaded_cb)
                 vehicle_model_loaded_cb(false, vehicle_model_loaded_cb_user_data);
+        }
+    }
+
+    if (state.camera_animating && state.viewer_3d && !s_camera_transition_enabled)
+    {
+        // Transitions disabled (Display settings): snap straight to the
+        // target. The second block below then sees camera_animating == false
+        // and skips interpolation.
+        Aroma3DCamera snap;
+        aroma_3d_viewer_get_camera(state.viewer_3d, &snap);
+        snap.theta = state.anim_target_theta;
+        snap.phi = state.anim_target_phi;
+        snap.radius = state.anim_target_radius;
+        snap.target[0] = state.anim_target_x;
+        snap.target[1] = state.anim_target_y;
+        snap.target[2] = state.anim_target_z;
+        aroma_3d_viewer_set_camera(state.viewer_3d, &snap);
+        state.camera_animating = false;
+        memcpy(&locked_vehicle_camera, &snap, sizeof(Aroma3DCamera));
+        has_locked_vehicle_camera = true;
+
+        if (state.startup_animating)
+        {
+            state.startup_animating = false;
+            aroma_3d_viewer_set_auto_rotate(state.viewer_3d, false);
         }
     }
 

@@ -309,6 +309,11 @@ if(NOT EMSCRIPTEN)
     # fires when the plugin relinks, so an up-to-date plugin would
     # silently skip staging and the pack step would fail on the
     # missing plugin.so.
+    # On ARM target builds the freshly packed (correct-arch) .apak is
+    # additionally copied back into the source assets dir, so firmware
+    # images and seed runs pick up matching-arch packages instead of
+    # stale host-built ones. Host builds skip this to avoid churning
+    # the tracked assets with wrong-arch binaries.
     function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET STAGE_SYSTEM)
         if(STAGE_SYSTEM)
             set(PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
@@ -333,6 +338,15 @@ if(NOT EMSCRIPTEN)
                 COMMENT "Packing ${PKG_LEAF}.apak"
                 VERBATIM
             )
+            if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+                add_custom_command(TARGET ${PLUGIN_TARGET}_apak POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                            "${AROMA_APAK_DIST_DIR}/${PKG_LEAF}.apak"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/${PKG_LEAF}.apak"
+                    COMMENT "Staging ${PKG_LEAF}.apak into source assets"
+                    VERBATIM
+                )
+            endif()
         endif()
     endfunction()
 
@@ -386,4 +400,19 @@ if(NOT EMSCRIPTEN)
             add_dependencies(infotainment ${_apak_target})
         endif()
     endforeach()
+
+    # Deployment: `cmake --install --prefix /usr` (or DESTDIR for packaging)
+    # places the freshly built ARM apaks straight into
+    # /usr/share/infotainment/assets, where seeding discovers them.
+    # A raw POST_BUILD cp to /usr/share is deliberately avoided: it would
+    # need root during every build and contaminate cross-build hosts.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+        install(FILES
+            "${AROMA_APAK_DIST_DIR}/com.aroma.nav.apak"
+            "${AROMA_APAK_DIST_DIR}/com.aroma.media.apak"
+            "${AROMA_APAK_DIST_DIR}/com.aroma.contacts.apak"
+            "${AROMA_APAK_DIST_DIR}/com.aroma.game.tictactoe.apak"
+            "${AROMA_APAK_DIST_DIR}/com.aroma.game.memory.apak"
+            DESTINATION share/infotainment/assets)
+    endif()
 endif()
