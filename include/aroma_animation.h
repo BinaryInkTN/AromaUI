@@ -49,6 +49,10 @@ typedef struct _AromaAnimation {
     
     // Pointer to completion callback
     AromaAnimationCompleteCallback on_complete;
+
+    // Last rendered progress (0..1). Used to clamp per-tick advances so a
+    // stalled frame cannot teleport the animation past intermediate states.
+    float last_progress;
     
     struct _AromaAnimation* next;
 } AromaAnimation;

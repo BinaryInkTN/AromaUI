@@ -42,6 +42,43 @@ static inline int get_win_h(void) {
 #define WIN_H get_win_h()
 #define NAV_ANIM_MS 250
 
+static void shift_subtree_x(AromaNode *node, int dx)
+{
+    uint64_t i;
+
+    if (!node || dx == 0)
+        return;
+
+    if (node->child_count > AROMA_MAX_CHILD_NODES)
+        return;
+
+    for (i = 0; i < node->child_count; i++)
+    {
+        AromaNode *child = node->child_nodes[i];
+        AromaRect *r;
+
+        if (!child)
+            continue;
+        r = aroma_node_get_rect(child);
+        if (r)
+            r->x += dx;
+        shift_subtree_x(child, dx);
+    }
+}
+
+static void set_page_x(AromaNode *page, int x)
+{
+    AromaRect *r = aroma_node_get_rect(page);
+    int dx;
+
+    if (!r)
+        return;
+    dx = x - r->x;
+    r->x = x;
+    shift_subtree_x(page, dx);
+    aroma_node_invalidate_tree(page);
+}
+
 static void on_nav_complete(AromaNode *target, void *user_data)
 {
     (void)target;
@@ -56,8 +93,7 @@ static void on_nav_complete(AromaNode *target, void *user_data)
 
     if (g_current_page)
     {
-        AromaRect *r = aroma_node_get_rect(g_current_page);
-        if (r) r->x = 0;
+        set_page_x(g_current_page, 0);
         aroma_node_update_layout(g_current_page, 0, 0, WIN_W, WIN_H);
         aroma_node_invalidate_tree(g_current_page);
     }
@@ -69,13 +105,7 @@ static void on_nav_complete(AromaNode *target, void *user_data)
 static void slide_cb(AromaNode *target, float val, void *user_data)
 {
     (void)user_data;
-    AromaRect *r = aroma_node_get_rect(target);
-    if (r)
-    {
-        r->x = (int)val;
-        aroma_node_update_layout(target, 0, 0, WIN_W, WIN_H);
-        aroma_node_invalidate_tree(target);
-    }
+    set_page_x(target, (int)val);
 }
 
 static void navigate_to(AromaNode *target, bool is_back)
@@ -106,8 +136,7 @@ static void navigate_to(AromaNode *target, bool is_back)
     g_current_page = target;
 
     aroma_node_set_hidden(target, false);
-    tgt_rect->x = tgt_start_x;
-    aroma_node_invalidate_tree(target);
+    set_page_x(target, tgt_start_x);
 
     AromaAnimation *cur_anim = aroma_animation_start_custom(
         current, (float)cur_start_x, (float)cur_end_x,
@@ -701,15 +730,14 @@ int main(int argc, char **argv)
 
     aroma_sandbox_reload(default_source);
 
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(em_main_loop, 0, 1);
+#else
     while (aroma_ui_is_running())
     {
         aroma_ui_process_events();
         aroma_ui_render(g_window);
-        #ifdef __EMSCRIPTEN__
-        emscripten_sleep(16);
-#else
         usleep(16000);
-#endif
     }
 
     if (g_window)
@@ -723,6 +751,7 @@ int main(int argc, char **argv)
     aroma_font_destroy(g_text_font);
     aroma_font_destroy(g_icon_font);
     aroma_ui_shutdown();
+#endif
 
     return 0;
 }

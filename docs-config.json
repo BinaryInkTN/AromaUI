@@ -6,6 +6,8 @@
     "hero": {
         "title": "AromaSDK",
         "description": "Cross-platform application framework featuring a modern UI toolkit, rendering engine, backend abstraction layer, and tooling for Linux, Android, Windows, and Embedded devices.",
+        "announcement": "AromaSDK 0.0.2 is here",
+        "background": "#0066CC",
         "image": "images/hero_image.png",
 
         "actions": [

@@ -125,6 +125,45 @@
 
   <script>
     window.Module = window.Module || {};
+    // Theme cascade: follow the embedding docs page theme when present,
+    // otherwise fall back to the sandbox's own stored preference.
+    window.getPreferredSandboxTheme = function() {
+      try {
+        if (window.parent && window.parent !== window) {
+          var pt = window.parent.localStorage.getItem('docs-theme');
+          if (pt === 'light' || pt === 'dark') return pt;
+        }
+      } catch (e) {}
+      var st = null;
+      try { st = localStorage.getItem('sandbox-theme'); } catch (e) {}
+      return (st === 'light' || st === 'dark') ? st : 'light';
+    };
+    window.applySandboxTheme = function(next) {
+      if (next !== 'light' && next !== 'dark') return;
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('sandbox-theme', next); } catch (e) {}
+      var icon = document.querySelector('#themeBtn svg');
+      if (icon) {
+        icon.innerHTML = next === 'dark'
+          ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>'
+          : '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+      }
+      try {
+        if (window.monaco && window.monaco.editor && window.incenseEditor) {
+          window.monaco.editor.setTheme(next === 'dark' ? 'incense-dark' : 'incense-light');
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('message', function(e) {
+      var d = e && e.data;
+      if (d && d.type === 'aroma-theme') window.applySandboxTheme(d.theme);
+    });
+    (function() {
+      try {
+        var t = window.getPreferredSandboxTheme();
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
     Module.onRuntimeInitialized = function() {
       var c = Module.canvas;
       if (c) {
@@ -172,7 +211,7 @@
 
     require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
     require(['vs/editor/editor.main'], function() {
-      var savedTheme = localStorage.getItem('sandbox-theme') || 'light';
+      var savedTheme = getPreferredSandboxTheme();
       document.documentElement.setAttribute('data-theme', savedTheme);
       monaco.editor.defineTheme('incense-light', {
         base: 'vs',
@@ -817,15 +856,8 @@
         var html = document.documentElement;
         var current = html.getAttribute('data-theme');
         var next = current === 'light' ? 'dark' : 'light';
-        html.setAttribute('data-theme', next);
         localStorage.setItem('sandbox-theme', next);
-        var icon = document.querySelector('#themeBtn svg');
-        if (icon) {
-          icon.innerHTML = next === 'dark'
-            ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>'
-            : '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
-        }
-        monaco.editor.setTheme(next === 'dark' ? 'incense-dark' : 'incense-light');
+        window.applySandboxTheme(next);
       };
     });
   </script>

@@ -5,72 +5,93 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AromaSDK Documentation</title>
 <meta name="description" content="Lightweight development toolkit for cross-platform applications on Linux, Android, Windows, and embedded systems.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Google+Sans+Display:wght@400&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
 :root{
-  --md-primary: #02569B;
+  --md-primary: #4F8EF7;
   --md-on-primary: #FFFFFF;
-  --md-primary-container: #E1F5FE;
-  --md-on-primary-cont: #01579B;
-  --md-secondary: #0175C2;
+  --md-primary-container: #EAF2FB;
+  --md-on-primary-cont: #0B60EF;
+  --md-secondary: #697177;
   --md-on-secondary: #FFFFFF;
-  --md-secondary-cont: #E1F5FE;
-  --md-on-secondary-cont: #01579B;
+  --md-secondary-cont: #F5F5F7;
+  --md-on-secondary-cont: #333333;
   --md-background: #FFFFFF;
   --md-surface: #FFFFFF;
-  --md-surface-variant: #F5F7F9;
-  --md-on-surface: #202124;
-  --md-on-surface-var: #5F6368;
-  --md-on-surface-3: #80868B;
-  --md-outline: #DADCE0;
-  --md-outline-variant: #E8EAED;
-  --md-surf-1: #F8F9FA;
-  --md-surf-2: #F1F3F4;
-  --md-surf-3: #EAEDEE;
-  --md-surf-4: #E3E7E8;
-  --md-state-hover: rgba(1, 117, 194, 0.08);
-  --md-state-focus: rgba(1, 117, 194, 0.12);
-  --md-state-pressed: rgba(1, 117, 194, 0.16);
-  --md-elev-1: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
-  --md-elev-2: 0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15);
-  --md-elev-3: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
-  --nav-drawer-w: 300px;
-  --top-bar-h: 64px;
-  --toc-w: 260px;
-  --content-max: 840px;
-  --fb: 'Google Sans', 'Roboto', system-ui, sans-serif;
-  --fd: 'Google Sans Display', 'Google Sans', sans-serif;
-  --fm: 'Roboto Mono', monospace;
+  --md-surface-variant: #F7F7F7;
+  --md-on-surface: #333333;
+  --md-on-surface-var: #697177;
+  --md-on-surface-3: #999999;
+  --md-outline: #DDDDDD;
+  --md-outline-variant: #EEEEEE;
+  --md-surf-1: #F7F7F7;
+  --md-surf-2: #F0F3F8;
+  --md-surf-3: #E8EBF0;
+  --md-surf-4: #D7DBE4;
+  --md-state-hover: rgba(0, 0, 0, 0.04);
+  --md-state-focus: rgba(0, 102, 204, 0.12);
+  --md-state-pressed: rgba(0, 0, 0, 0.08);
+  --md-elev-1: 0 1px 2px rgba(0,0,0,0.08);
+  --md-elev-2: 0 2px 8px rgba(0,0,0,0.10);
+  --md-elev-3: 0 4px 16px rgba(0,0,0,0.12);
+  --nav-drawer-w: 280px;
+  --top-bar-h: 56px;
+  --toc-w: 240px;
+  --content-max: 720px;
+  --fb: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --fd: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  --fm: Monaco, Menlo, Consolas, "Courier New", monospace;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 }
 
 [data-theme="dark"]{
-  --md-primary: #40CAFF;
-  --md-on-primary: #003355;
-  --md-primary-container: #004C80;
-  --md-on-primary-cont: #B3E5FC;
-  --md-secondary: #40CAFF;
-  --md-on-secondary: #003355;
-  --md-secondary-cont: #004C80;
-  --md-on-secondary-cont: #B3E5FC;
-  --md-background: #202124;
-  --md-surface: #202124;
-  --md-surface-variant: #303134;
+  --md-primary: #6EA8FE;
+  --md-on-primary: #06233F;
+  --md-primary-container: #14365E;
+  --md-on-primary-cont: #B9D4FD;
+  --md-secondary: #9AA0A6;
+  --md-on-secondary: #1D1D1F;
+  --md-secondary-cont: #2C2C2E;
+  --md-on-secondary-cont: #E5E5EA;
+  --md-background: #1D1D1F;
+  --md-surface: #1D1D1F;
+  --md-surface-variant: #262628;
   --md-on-surface: #E8EAED;
   --md-on-surface-var: #9AA0A6;
-  --md-on-surface-3: #80868B;
-  --md-outline: #5F6368;
-  --md-outline-variant: #3C4043;
-  --md-surf-1: #292A2D;
-  --md-surf-2: #303134;
-  --md-surf-3: #37383B;
-  --md-surf-4: #3E3F42;
-  --md-state-hover: rgba(64, 202, 255, 0.08);
-  --md-state-focus: rgba(64, 202, 255, 0.12);
-  --md-state-pressed: rgba(64, 202, 255, 0.16);
+  --md-on-surface-3: #6E6E73;
+  --md-outline: #48484A;
+  --md-outline-variant: #2E2E30;
+  --md-surf-1: #242426;
+  --md-surf-2: #2C2C2E;
+  --md-surf-3: #333336;
+  --md-surf-4: #3A3A3C;
+  --md-state-hover: rgba(255, 255, 255, 0.06);
+  --md-state-focus: rgba(110, 168, 254, 0.18);
+  --md-state-pressed: rgba(255, 255, 255, 0.10);
 }
+[data-theme="dark"] .nav-dest{color:#C7C7CC;}
+[data-theme="dark"] .nav-section-header{color:#8E8E93;}
+[data-theme="dark"] .md code{color:#8FBDF9;background-color:#2A2D33;}
+[data-theme="dark"] .md pre,[data-theme="dark"] .codehilite{
+  background-color:#232629!important;
+  border-color:#3A3D42!important;
+}
+[data-theme="dark"] .copy-btn{background:#2C2C2E;border-color:#48484A;color:#E5E5EA;}
+[data-theme="dark"] .md th{background-color:#26262A;}
+[data-theme="dark"] .md th,[data-theme="dark"] .md td{border-color:#3A3A3C;}
+[data-theme="dark"] .md blockquote{border-color:#3A3A3C;}
+[data-theme="dark"] .doc-back-btn,[data-theme="dark"] .dbtn{
+  background:transparent;border-color:#48484A;color:#E5E5EA;
+}
+[data-theme="dark"] .doc-back-btn:hover,[data-theme="dark"] .dbtn:hover{background:#2C2C2E;}
+[data-theme="dark"] .doc-pn-link{border-color:#3A3A3C;}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+::selection{background:#B6D1FF;}
+:focus-visible{outline:2px solid var(--md-primary);outline-offset:2px;border-radius:4px}
 body{
   font-family:var(--fb);
   background:var(--md-background);
@@ -79,32 +100,46 @@ body{
   -webkit-font-smoothing:antialiased;
   transition:background 200ms, color 200ms;
   font-weight:400;
+  font-size:15px;
+  line-height:1.42857;
 }
 
 .top-app-bar{
   position:fixed;top:0;left:0;right:0;
   height:var(--top-bar-h);
-  background:var(--md-surface);
+  background:#296ad4;
+  background:linear-gradient(to right,#296ad4 0%,#4e8ef7 100%);
   display:flex;align-items:center;
-  padding:0 16px 0 8px;
+  padding:0 16px;
   z-index:200;
-  border-bottom:1px solid var(--md-outline-variant);
-  transition:background 200ms,border-color 200ms;
+  box-shadow:0 1px 0 rgba(0,0,0,0.08),0 4px 14px rgba(41,106,212,0.22);
 }
-.top-app-bar.scrolled{
-  box-shadow:var(--md-elev-2);
-  border-bottom-color:transparent;
-}
+.top-app-bar.scrolled{}
 
 .tab-logo-name{
   font-family:var(--fd);
-  font-size:22px;
-  font-weight:400;
-  margin-left:8px;
-  color:var(--md-on-surface);
-  letter-spacing:-0.01em;
+  font-size:19px;
+  font-weight:500;
+  color:#FFFFFF;
+  letter-spacing:0;
   white-space:nowrap;
+  cursor:pointer;
+  margin-right:24px;
 }
+.ionic-nav{
+  display:flex;align-items:center;gap:2px;
+}
+.ionic-nav a{
+  color:#FFFFFF;
+  opacity:.85;
+  font-size:14px;
+  text-decoration:none;
+  padding:8px 14px;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.ionic-nav a:hover{opacity:1;text-decoration:underline}
+.ionic-nav a i{display:none}
 
 .top-bar-center{
   flex:1;
@@ -118,30 +153,35 @@ body{
 
 .search-bar{
   width:100%;
-  max-width:480px;
-  height:40px;
+  max-width:420px;
+  height:34px;
   border-radius:20px;
-  background:var(--md-surface-variant);
+  background:rgba(255,255,255,0.3);
   border:none;
   display:flex;
   align-items:center;
-  gap:10px;
-  padding:0 8px 0 16px;
-  transition:background 150ms,box-shadow 150ms,border-radius 150ms;
+  gap:8px;
+  padding:0 8px 0 12px;
+  transition:background 150ms;
   position:relative;
   z-index:210;
 }
 .search-bar:hover{
-  background:var(--md-surf-2);
+  background:rgba(255,255,255,0.4);
 }
-.search-bar.open{
-  background:var(--md-surf-3);
-  box-shadow:var(--md-elev-2);
+.search-bar.open,.search-bar:focus-within{
+  background:#FFFFFF;
   border-radius:20px 20px 0 0;
+  box-shadow:0 6px 18px rgba(20,40,80,0.25);
 }
+.search-bar svg{color:#FFFFFF;}
+.search-bar.open svg,.search-bar:focus-within svg{color:#296AD4;}
+.search-bar-input{color:#FFFFFF;}
+.search-bar-input::placeholder{color:rgba(255,255,255,0.85);}
+.search-bar.open .search-bar-input,.search-bar:focus-within .search-bar-input{color:#296AD4;}
+.search-bar.open .search-bar-input::placeholder,.search-bar:focus-within .search-bar-input::placeholder{color:#697177;}
 .search-bar svg{
   width:18px;height:18px;
-  color:var(--md-on-surface-var);
   flex-shrink:0;
 }
 .search-bar-input{
@@ -149,7 +189,6 @@ body{
   height:100%;
   background:none;border:none;outline:none;
   font-family:var(--fb);font-size:14px;font-weight:400;
-  color:var(--md-on-surface);
 }
 .search-bar-input::placeholder{color:var(--md-on-surface-var)}
 .search-bar-kbd{
@@ -227,62 +266,42 @@ body{
 }
 
 .m3-icon-btn{
-  width:40px;height:40px;
-  border-radius:20px;
+  width:36px;height:36px;
+  border-radius:4px;
   border:none;background:transparent;
-  color:var(--md-on-surface-var);
+  color:#FFFFFF;
+  opacity:.85;
   cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  position:relative;
-  overflow:hidden;
 }
-.m3-icon-btn::before{
-  content:'';
-  position:absolute;inset:0;
+.m3-icon-btn:hover{opacity:1;background:rgba(255,255,255,0.12);}
+.m3-icon-btn i{width:18px;height:18px;}
+.theme-toggle{
+  display:flex;align-items:center;
+  background:rgba(255,255,255,0.18);
   border-radius:20px;
-  background:var(--md-on-surface);
-  opacity:0;
-  transition:opacity 150ms;
+  padding:2px;
+  gap:2px;
+  flex-shrink:0;
 }
-.m3-icon-btn:hover::before{opacity:.04}
-.m3-icon-btn i{width:20px;height:20px;position:relative;z-index:1}
+.theme-toggle button{
+  width:30px;height:30px;
+  border-radius:15px;
+  border:none;background:transparent;
+  color:#FFFFFF;
+  opacity:.7;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.theme-toggle button:hover{opacity:1;}
+.theme-toggle button.active{
+  background:#FFFFFF;
+  color:#296AD4;
+  opacity:1;
+}
+.theme-toggle button i{width:15px;height:15px;}
 
-.m3-segmented{
-  display:flex;
-  border:1px solid var(--md-outline);
-  border-radius:20px;
-  overflow:hidden;
-  height:36px;
-}
-.m3-seg-opt{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:0 12px;
-  font-family:var(--fb);
-  font-size:13px;
-  font-weight:500;
-  color:var(--md-on-surface);
-  border:none;background:transparent;cursor:pointer;
-  transition:background 150ms,color 150ms;
-}
-.m3-seg-opt + .m3-seg-opt{border-left:1px solid var(--md-outline)}
-.m3-seg-opt i{width:16px;height:16px}
-.m3-seg-opt.active{
-  background:var(--md-secondary-cont);
-  color:var(--md-on-secondary-cont);
-}
 
-.version-chip{
-  display:inline-flex;align-items:center;
-  height:28px;padding:0 10px;
-  border-radius:6px;
-  background:var(--md-secondary-cont);
-  color:var(--md-on-secondary-cont);
-  font-size:11px;
-  font-weight:500;font-family:var(--fm);
-  letter-spacing:.02em;
-  border:none;
-  white-space:nowrap;
-}
 
 .layout{
   display:flex;
@@ -303,7 +322,7 @@ body{
 
 .nav-drawer-content{
   flex:1;overflow-y:auto;
-  padding:16px 0 24px;
+  padding:8px 0 24px 20px;
   scrollbar-width:thin;
   scrollbar-color:var(--md-outline-variant) transparent;
 }
@@ -313,18 +332,21 @@ body{
 }
 
 .nav-section-header{
-  padding:20px 24px 6px;
-  font-size:13px;
-  font-weight:500;
-  letter-spacing:.02em;
-  color:var(--md-on-surface-var);
+  padding:0;
+  font-size:11px;
+  font-weight:400;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:#AAAAAA;
   display:flex;align-items:center;gap:6px;
   cursor:pointer;user-select:none;
+  margin:8px 0;
+  line-height:20px;
 }
-.nav-section-header:hover{color:var(--md-on-surface)}
+.nav-section-header:hover{color:var(--md-on-surface-var)}
 .nav-sec-chev{
   margin-left:auto;
-  width:16px;height:16px;
+  width:12px;height:12px;
   color:var(--md-on-surface-3);
   transition:transform 200ms cubic-bezier(0.2,0,0,1);
   flex-shrink:0;
@@ -334,83 +356,80 @@ body{
 
 .nav-dest{
   display:flex;align-items:center;
-  padding:0 24px;
-  height:40px;
-  font-size:14px;
+  height:auto;
+  font-size:12px;
   font-weight:400;
-  color:var(--md-on-surface-var);
+  color:#444444;
   cursor:pointer;
   position:relative;
   text-decoration:none;
+  border-radius:0;
+  margin:8px 0;
+  padding:1px 0;
+  border-right:2px solid transparent;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.nav-dest::before{
-  content:'';
-  position:absolute;inset:2px 6px;
-  border-radius:20px;
-  background:transparent;
-  transition:background 150ms;
-}
-.nav-dest:hover::before{background:var(--md-state-hover)}
+.nav-dest:hover{background:transparent;color:var(--md-on-surface);}
 .nav-dest.active{
   color:var(--md-primary);
-  background:transparent;
+  background:rgba(79,142,247,0.08);
+  font-weight:400;
+  border-right:2px solid var(--md-primary);
 }
-.nav-dest.active::before{
-  background:var(--md-primary-container);
-}
+.nav-dest.active::before{content:none}
+.nav-dest::before{content:none}
 .nav-dest i{display:none}
 .nav-dest.ph{display:none!important}
 .nav-dest-text{position:relative;z-index:1;}
 
 .nav-sub-header{
   display:flex;align-items:center;
-  padding:6px 24px 2px 32px;
-  height:36px;
-  font-size:13px;
-  font-weight:500;
+  padding:6px 0 2px 0;
+  height:30px;
+  font-size:12px;
+  font-weight:400;
   color:var(--md-on-surface-var);
   cursor:pointer;user-select:none;
   gap:4px;
 }
 .nav-sub-header:hover{color:var(--md-on-surface)}
 .nav-sub-chev{
-  margin-left:auto;width:14px;height:14px;
+  margin-left:auto;width:12px;height:12px;
   color:var(--md-on-surface-3);
   transition:transform 200ms cubic-bezier(0.2,0,0,1);
   flex-shrink:0;
 }
 .nav-sub-chev.c{transform:rotate(-90deg)}
 .sub-items.c{display:none}
-.nav-dest.sub{padding-left:40px;height:36px;font-size:13px}
+.nav-dest.sub{padding-left:12px;height:auto;font-size:12px}
 
 .nav-all{
-  display:block;padding:6px 24px;
-  font-size:13px;
+  display:block;padding:6px 0;
+  font-size:12px;
   color:var(--md-primary);
   cursor:pointer;
-  font-weight:500;
+  font-weight:400;
 }
 .nav-all:hover{text-decoration:underline}
-.nav-all.sub{padding-left:40px}
+.nav-all.sub{padding-left:12px}
 
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
-.breadcrumb-strip{
+.nav-crumbs{
   display:flex;align-items:center;
-  padding:0 32px;height:40px;
-  background:var(--md-surf-1);
-  border-bottom:1px solid var(--md-outline-variant);
-  font-size:12px;
-  color:var(--md-on-surface-var);
-  gap:8px;flex-shrink:0;
+  gap:8px;flex-shrink:1;min-width:0;
+  margin-left:8px;
+  font-size:13px;
+  white-space:nowrap;overflow:hidden;
 }
-.bc-seg{
-  color:var(--md-on-surface-var);cursor:pointer;
+.nav-crumbs .bc-seg{
+  color:rgba(255,255,255,.82);cursor:pointer;font-weight:400;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.bc-seg:hover{color:var(--md-primary)}
-.bc-seg.cur{color:var(--md-on-surface);cursor:default;font-weight:500}
-.bc-sep{color:var(--md-on-surface-3);font-size:.7rem}
+.nav-crumbs .bc-seg:hover{color:#FFFFFF;text-decoration:underline;}
+.nav-crumbs .bc-seg.cur{color:#FFFFFF;cursor:default;font-weight:600}
+.nav-crumbs .bc-sep{color:rgba(255,255,255,.6);font-size:.75rem}
+@media(max-width:1180px){.nav-crumbs{display:none}}
 
 .c-layout{flex:1;display:flex;overflow:hidden}
 .c-scroll{
@@ -428,6 +447,13 @@ body{
   padding:48px 48px 96px;
   animation:fl-fade-up 200ms cubic-bezier(0,0,0,1);
 }
+.c-inner.wide{
+  max-width:none;
+  padding:0 0 96px;
+}
+.c-inner.wide .sandbox-spotlight{
+  padding:0 48px;
+}
 @keyframes fl-fade-up{
   from{opacity:0;transform:translateY(8px)}
   to{opacity:1;transform:translateY(0)}
@@ -435,17 +461,17 @@ body{
 
 .toc-panel{
   width:var(--toc-w);flex-shrink:0;
-  background:var(--md-surf-1);
+  background:var(--md-background);
   border-left:1px solid var(--md-outline-variant);
-  overflow-y:auto;padding:28px 0 24px;
+  overflow-y:auto;padding:24px 0 24px;
   display:none;
 }
 .toc-panel.vis{display:block}
 .toc-label{
   padding:0 20px 12px;
   font-size:13px;
-  font-weight:500;letter-spacing:.01em;
-  color:var(--md-on-surface-var);
+  font-weight:700;
+  color:var(--md-on-surface);
 }
 .toc-progress{
   margin:0 20px 16px;
@@ -473,193 +499,248 @@ body{
 .toc-item.active{
   color:var(--md-primary);
   border-left-color:var(--md-primary);
-  font-weight:500;
+  font-weight:600;
 }
 
 .section-heading{
   font-family:var(--fd);
-  font-size:28px;
-  font-weight:400;color:var(--md-on-surface);
-  margin-bottom:24px;letter-spacing:-.01em;
+  font-size:20px;
+  font-weight:600;color:var(--md-on-surface);
+  margin-bottom:16px;letter-spacing:0;line-height:1.3;
 }
+.metro-tiles{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:8px;
+  margin:0 auto 48px;
+  max-width:780px;
+}
+.metro-tile{
+  position:relative;
+  width:180px;height:180px;flex:0 0 auto;
+  border-radius:0;
+  cursor:pointer;
+  overflow:hidden;
+  padding:14px 12px;
+  background:#FFFFFF;
+  border:1px solid #DDDDDD;
+}
+.metro-tile:hover{border-color:var(--md-primary);}
+.metro-icon{
+  position:absolute;top:14px;left:12px;
+  width:26px;height:26px;
+  color:var(--md-primary);
+}
+.metro-label{
+  position:absolute;left:12px;bottom:34px;right:12px;
+  color:var(--md-primary);
+  font-size:16px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.metro-desc{
+  position:absolute;left:12px;bottom:10px;right:12px;
+  color:var(--md-on-surface-var);
+  font-size:12px;font-weight:400;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+[data-theme="dark"] .metro-tile{background:#242426;border-color:#38383A;}
+[data-theme="dark"] .metro-tile:hover{border-color:#6EA8FE;}
+[data-theme="dark"] .metro-label,[data-theme="dark"] .metro-icon{color:#8FBDF9;}
+[data-theme="dark"] .metro-desc{color:#9AA0A6;}
+@media(max-width:760px){.metro-tile{width:44vw;height:44vw;max-width:200px;max-height:200px;}}
 .sandbox-spotlight{margin-bottom:64px}
 .sandbox-head{
-  display:flex;align-items:baseline;justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;
   gap:12px;flex-wrap:wrap;margin-bottom:12px;
 }
 .sandbox-open{
-  font-size:14px;font-weight:500;color:var(--md-primary);
+  font-size:13px;font-weight:400;color:var(--md-primary);
   text-decoration:none;white-space:nowrap;
 }
 .sandbox-open:hover{text-decoration:underline}
 .sandbox-sub{
-  color:var(--md-on-surface-var);margin:0 0 20px;font-size:15px;line-height:1.6;
+  color:var(--md-on-surface-var);margin:0 0 16px;font-size:14px;line-height:1.6;
   max-width:720px;
 }
 .sandbox-frame{
-  border:1px solid var(--md-outline);border-radius:16px;overflow:hidden;
-  background:var(--md-surface);box-shadow:var(--md-elev-2);
+  border:1px solid var(--md-outline);border-radius:var(--radius-sm);overflow:hidden;
+  background:var(--md-surface);
 }
-.sandbox-frame iframe{width:100%;height:800px;border:none;display:block}
-@media(max-width:760px){.sandbox-frame iframe{height:640px}}
+.sandbox-frame iframe{width:100%;height:800px;border:none;display:block;background:#111318}
+@media(max-width:760px){.sandbox-frame iframe{height:640px}.hero-inner{padding:52px 20px 44px;}.home-title{font-size:30px;}}
 
-.welcome-page{padding:8px 0 16px;animation:fl-fade-up 200ms cubic-bezier(0,0,0,1)}
+.welcome-page{padding:8px 0 16px;}
 .home-hero{
-  padding:24px 0 48px;
-  border-bottom:1px solid var(--md-outline-variant);
-  margin-bottom:48px;
+  margin:0 0 40px;
+  padding:0;
+  background:#FFFFFF;
+  color:#333333;
+  border-bottom:1px solid #EEEEEE;
 }
+[data-theme="dark"] .home-hero{background:#1D1D1F;border-bottom-color:#2E2E30;color:#E8EAED;}
+[data-theme="dark"] .home-title{color:#E8EAED;}
+[data-theme="dark"] .home-tagline{color:#9AA0A6;}
+[data-theme="dark"] .home-hero .m3-btn-outlined{background:transparent;color:#E8EAED;border-color:#48484A;}
+[data-theme="dark"] .home-hero .m3-btn-outlined:hover{background:#2C2C2E;}
+[data-theme="dark"] .hero-release{border-top-color:#2E2E30;}
+[data-theme="dark"] .hero-dl-meta{color:#9AA0A6;}
+.hero-inner{
+  margin:0 auto;
+  max-width:960px;
+  padding:52px 48px 44px;
+  display:flex;
+  align-items:center;
+  gap:56px;
+}
+.hero-copy{
+  flex:1 1 auto;
+  min-width:0;
+}
+.hero-graphic{
+  flex:0 0 340px;
+  max-width:340px;
+}
+.hero-graphic svg{display:block;width:100%;height:auto;}
+@media(max-width:900px){.hero-graphic{display:none;}.hero-inner{gap:0;}}
 .home-title{
   font-family:var(--fd);
-  font-size:clamp(40px,6vw,56px);
-  font-weight:400;color:var(--md-on-surface);
-  letter-spacing:-.02em;line-height:1.1;margin-bottom:16px;
+  font-size:36px;
+  font-weight:500;color:#333333;
+  line-height:1.2;margin:0 0 10px;
 }
 .home-tagline{
-  font-size:18px;line-height:1.6;color:var(--md-on-surface-var);
-  max-width:640px;margin-bottom:32px;
+  font-size:15px;line-height:1.5;color:#697177;
+  max-width:640px;margin:0 0 22px;
 }
-.home-hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+.home-hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:0}
+.home-hero .m3-btn-filled,.home-hero .m3-btn-outlined{
+  height:36px;padding:0 20px;
+  border-radius:2px;
+  font-size:14px;font-weight:400;
+}
+.home-hero .m3-btn-filled{
+  background:#4F8EF7;color:#FFFFFF;border:1px solid transparent;
+}
+.home-hero .m3-btn-filled:hover{
+  background:#2875F5;
+}
+.home-hero .m3-btn-outlined{
+  background:#FFFFFF;color:#333333;
+  border:1px solid #CCCCCC;
+}
+.home-hero .m3-btn-outlined:hover{background:#EBEBEB;}
+.hero-release{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  margin-top:24px;
+  padding-top:20px;
+  border-top:1px solid #EEEEEE;
+  max-width:640px;
+}
+.hero-dl-btn{
+  display:inline-block;
+  padding:8px 18px;
+  background:#4F8EF7;color:#FFFFFF;
+  border-radius:2px;
+  font-size:14px;font-weight:400;
+  text-decoration:none;white-space:nowrap;
+}
+.hero-dl-btn:hover{background:#2875F5;text-decoration:none;color:#FFFFFF;}
+.hero-dl-meta{
+  font-size:13px;
+  color:#697177;
+}
 .m3-btn-filled,.m3-btn-outlined{
-  display:inline-flex;align-items:center;gap:10px;
-  height:44px;padding:0 24px;
-  border-radius:22px;
-  font-family:var(--fb);font-size:14px;font-weight:500;
-  cursor:pointer;position:relative;overflow:hidden;
-  transition:box-shadow 150ms,border-color 150ms;
+  display:inline-block;
+  padding:6px 14px;
+  font-size:15px;font-weight:400;line-height:1.42857;
+  text-align:center;vertical-align:middle;white-space:nowrap;
+  border-radius:2px;
+  border:1px solid transparent;
+  cursor:pointer;
+  transition:background-color .1s ease-in-out;
 }
 .m3-btn-filled{
-  background:var(--md-primary);color:var(--md-on-primary);border:none;
+  color:#FFFFFF;background-color:var(--md-primary);border-color:var(--md-primary);
 }
-.m3-btn-filled::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;
-  background:var(--md-on-primary);opacity:0;transition:opacity 150ms;
-}
-.m3-btn-filled:hover{box-shadow:var(--md-elev-1)}
-.m3-btn-filled:hover::before{opacity:.08}
+.m3-btn-filled:hover{background-color:#2875f5;border-color:#2875f5;box-shadow:0 2px 6px rgba(40,117,245,0.35);}
 .m3-btn-outlined{
-  background:transparent;color:var(--md-primary);
-  border:1px solid var(--md-outline);
+  color:var(--md-on-surface);
+  background-color:#FFFFFF;border-color:var(--md-outline);
 }
-.m3-btn-outlined::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;
-  background:var(--md-primary);opacity:0;transition:opacity 150ms;
-}
-.m3-btn-outlined:hover{border-color:var(--md-primary)}
-.m3-btn-outlined:hover::before{opacity:.08}
-.m3-btn-filled i,.m3-btn-outlined i{width:18px;height:18px;position:relative;z-index:1}
+.m3-btn-outlined:hover{background-color:#EBEBEB;}
+.m3-btn-filled i,.m3-btn-outlined i{display:none}
 .m3-btn-filled span,.m3-btn-outlined span{position:relative;z-index:1}
 
-.home-section{margin-bottom:56px}
-.home-cat-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:16px;
-}
-.home-cat-card{
-  background:var(--md-surface);
-  border:1px solid var(--md-outline-variant);
-  border-radius:12px;
-  padding:24px;cursor:pointer;
-  transition:box-shadow 150ms,border-color 150ms;
-}
-.home-cat-card:hover{
-  box-shadow:var(--md-elev-1);
-  border-color:var(--md-primary);
-}
-.home-cat-icon{
-  width:48px;height:48px;border-radius:10px;
-  background:var(--md-primary-container);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--md-on-primary-cont);margin-bottom:16px;
-}
-.home-cat-icon i{width:24px;height:24px}
-.home-cat-title{font-size:17px;font-weight:500;color:var(--md-on-surface);margin-bottom:6px}
-.home-cat-desc{font-size:13px;color:var(--md-on-surface-var);line-height:1.5;margin-bottom:16px}
-.home-cat-count{font-size:12px;font-weight:500;color:var(--md-on-surface-3)}
+.home-section{margin-bottom:48px}
 
-.category-page{padding:8px 0;animation:fl-fade-up 200ms cubic-bezier(0,0,0,1)}
-.category-header{margin-bottom:40px}
-.cat-icon-wrap{
-  width:56px;height:56px;border-radius:12px;
-  background:var(--md-primary-container);
-  display:flex;align-items:center;justify-content:center;margin-bottom:20px;
-}
-.cat-icon-wrap i{width:28px;height:28px;color:var(--md-on-primary-cont)}
+.category-page{padding:8px 0;}
+.category-header{margin-bottom:24px}
 .category-title{
   font-family:var(--fd);
-  font-size:36px;
-  font-weight:400;color:var(--md-on-surface);
-  margin-bottom:12px;letter-spacing:-.01em;
+  font-size:32px;
+  font-weight:500;color:var(--md-on-surface);
+  margin:21px 0 10.5px;line-height:1.1;
 }
-.category-description{font-size:16px;color:var(--md-on-surface-var);line-height:1.6}
+.category-description{font-size:14px;color:var(--md-on-surface-var);line-height:1.6;max-width:68ch}
 .subcategories-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-  gap:16px;margin-top:24px;
+  gap:12px;margin-top:20px;
 }
 .subcategory-card{
   background:var(--md-surface);
-  border:1px solid var(--md-outline-variant);
-  border-radius:8px;
-  padding:24px;cursor:pointer;
+  border:none;
+  border-radius:0;
+  padding:0 0 21px;cursor:pointer;
   position:relative;overflow:hidden;
-  transition:box-shadow 150ms,border-color 150ms;
 }
-.subcategory-card:hover{
-  box-shadow:var(--md-elev-1);
-  border-color:var(--md-primary);
-}
-.card-header{display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px}
+.subcategory-card:hover .card-title{text-decoration:underline;}
+.card-header{display:flex;align-items:center;justify-content:flex-end;margin-bottom:6px}
 .card-count{
-  font-size:11px;font-weight:500;
-  background:var(--md-secondary-cont);
-  color:var(--md-on-secondary-cont);
-  padding:4px 10px;border-radius:16px;
+  font-size:12px;font-weight:400;
+  color:var(--md-on-surface-3);
+  padding:0;
   position:relative;z-index:1;
 }
-.card-title{font-size:18px;font-weight:500;color:var(--md-on-surface);margin-bottom:8px;position:relative;z-index:1;}
-.card-desc{font-size:13px;color:var(--md-on-surface-var);margin-bottom:16px;line-height:1.5;position:relative;z-index:1;}
+.card-title{font-size:22px;font-weight:500;color:var(--md-primary);margin:21px 0 10.5px;position:relative;z-index:1;}
+.subcategory-card:hover .card-title{text-decoration:underline}
+.card-desc{font-size:13px;color:var(--md-on-surface-var);margin-bottom:10px;line-height:1.5;position:relative;z-index:1;}
 .card-preview{display:flex;flex-wrap:wrap;gap:6px;position:relative;z-index:1}
 .preview-tag{
-  font-size:12px;padding:4px 10px;
-  background:var(--md-surf-2);border:1px solid var(--md-outline-variant);
-  border-radius:16px;color:var(--md-on-surface-var);
+  font-size:14px;padding:0;
+  background:transparent;border:none;
+  border-radius:0;color:var(--md-primary);
 }
-.preview-more{font-size:12px;color:var(--md-on-surface-3);padding:4px}
+.preview-more{font-size:14px;color:var(--md-on-surface-3);padding:0}
 
 .subcategory-page{padding:8px 0;animation:fl-fade-up 200ms cubic-bezier(0,0,0,1)}
 .subcategory-header{margin-bottom:32px}
 .back-button{
   display:inline-flex;align-items:center;gap:8px;
-  height:36px;padding:0 16px;
-  border-radius:18px;
+  height:32px;padding:0 14px;
+  border-radius:var(--radius-sm);
   background:transparent;
   border:1px solid var(--md-outline-variant);
-  font-size:14px;font-weight:500;
+  font-size:13px;font-weight:400;
   color:var(--md-on-surface-var);cursor:pointer;margin-bottom:20px;
-  transition:border-color 150ms,box-shadow 150ms;
 }
 .back-button:hover{
-  box-shadow:var(--md-elev-1);
-  border-color:var(--md-primary);
+  border-color:var(--md-outline);
+  color:var(--md-on-surface);
 }
-.back-button i{width:18px;height:18px}
-.subcategory-title{font-family:var(--fd);font-size:32px;font-weight:400;color:var(--md-on-surface);margin-bottom:8px;letter-spacing:-.01em;}
-.subcategory-description{font-size:16px;color:var(--md-on-surface-var)}
+.back-button i{width:15px;height:15px}
+.subcategory-title{font-family:var(--fd);font-size:24px;font-weight:700;color:var(--md-on-surface);margin-bottom:8px;letter-spacing:0;line-height:1.25;}
+.subcategory-description{font-size:14px;color:var(--md-on-surface-var);line-height:1.6;max-width:68ch}
 .documents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 .doc-card{
-  display:flex;align-items:center;gap:16px;
-  padding:16px 20px;
-  background:var(--md-surface);
-  border:1px solid var(--md-outline-variant);
-  border-radius:8px;cursor:pointer;
-  transition:box-shadow 150ms,border-color 150ms;
+  display:flex;align-items:center;gap:14px;
+  padding:10px 0;
+  background:transparent;
+  border:none;
+  border-radius:0;cursor:pointer;
 }
-.doc-card:hover{
-  box-shadow:var(--md-elev-1);
-  border-color:var(--md-primary);
-}
+.doc-card:hover .doc-card-title{text-decoration:underline;}
 .doc-card-icon{
   width:40px;height:40px;border-radius:8px;
   background:var(--md-primary-container);
@@ -667,8 +748,8 @@ body{
 }
 .doc-card-icon i{width:20px;height:20px;color:var(--md-on-primary-cont)}
 .doc-card-content{flex:1;min-width:0}
-.doc-card-title{font-size:15px;font-weight:500;color:var(--md-on-surface);margin-bottom:4px}
-.doc-card-desc{font-size:13px;color:var(--md-on-surface-var);line-height:1.4}
+.doc-card-title{font-size:19px;font-weight:500;color:var(--md-primary);margin-bottom:4px}
+.doc-card-desc{font-size:14px;color:var(--md-on-surface-var);line-height:1.4}
 .doc-card-platforms{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .platform-tag{
   font-size:11px;padding:2px 8px;
@@ -696,133 +777,149 @@ body{
 .doc-nav-buttons{margin-bottom:20px}
 .doc-back-btn{
   display:inline-flex;align-items:center;gap:8px;
-  height:36px;padding:0 16px 0 12px;
-  border-radius:18px;
-  background:transparent;border:1px solid var(--md-outline-variant);
-  font-size:14px;font-weight:500;
-  color:var(--md-on-surface-var);cursor:pointer;
-  transition:border-color 150ms,box-shadow 150ms;
+  height:32px;padding:0 14px 0 10px;
+  border-radius:2px;
+  background:#FFFFFF;border:1px solid #CCCCCC;
+  font-size:14px;font-weight:400;
+  color:#333333;cursor:pointer;
 }
 .doc-back-btn:hover{
-  box-shadow:var(--md-elev-1);
-  border-color:var(--md-primary);
+  background:#EBEBEB;
 }
-.doc-back-btn i{width:18px;height:18px}
+.doc-back-btn i{width:15px;height:15px}
 
 .doc-hdr{
-  margin-bottom:32px;
-  padding-bottom:24px;
-  border-bottom:1px solid var(--md-outline-variant);
+  margin-bottom:21px;
+  padding-bottom:0;
+  border-bottom:none;
 }
-.doc-title-row{display:flex;align-items:flex-start;gap:20px;margin-bottom:16px}
-.doc-title-icon{
-  width:52px;height:52px;
-  border-radius:12px;
-  background:var(--md-primary-container);
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;margin-top:4px;
-}
-.doc-title-icon i{width:26px;height:26px;color:var(--md-on-primary-cont)}
+.doc-title-row{display:block;margin-bottom:12px}
 .doc-title{
   font-family:var(--fd);
-  font-size:clamp(28px,4vw,40px);
-  font-weight:400;color:var(--md-on-surface);
-  letter-spacing:-.02em;line-height:1.2;
+  font-size:32px;
+  font-weight:500;color:var(--md-on-surface);
+  letter-spacing:0;line-height:1.1;
+  margin:21px 0 10.5px;
 }
-.doc-meta{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.doc-acts{display:flex;gap:12px;margin-top:12px}
+.doc-sub{
+  color:#888888;font-size:15px;margin:0;
+}
+.doc-meta{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.doc-acts{display:flex;gap:8px;margin-top:12px}
 .dbtn{
-  display:inline-flex;align-items:center;gap:8px;
-  height:36px;padding:0 16px;
-  border-radius:18px;background:transparent;border:none;
-  font-family:var(--fb);font-size:14px;font-weight:500;
-  color:var(--md-primary);cursor:pointer;
-  position:relative;overflow:hidden;
+  display:inline-flex;align-items:center;gap:6px;
+  height:32px;padding:0 12px;
+  border-radius:2px;background:transparent;
+  border:1px solid #CCCCCC;
+  font-family:var(--fb);font-size:13px;font-weight:400;
+  color:#333333;cursor:pointer;
 }
-.dbtn::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;
-  background:var(--md-primary);opacity:0;transition:opacity 150ms;
-}
-.dbtn:hover::before{opacity:.04}
-.dbtn.ok{color:var(--md-on-secondary-cont)}
-.dbtn.ok::before{background:var(--md-secondary-cont);opacity:1}
-.dbtn i{width:18px;height:18px;position:relative;z-index:1}
-.dbtn span{position:relative;z-index:1}
+.dbtn:hover{background:#EBEBEB;}
+.dbtn.ok{color:var(--md-primary);border-color:var(--md-primary)}
+.dbtn i{width:15px;height:15px;}
+.dbtn span{}
 
 .md{
-  color:var(--md-on-surface);
-  line-height:1.8;font-size:16px;
+  color:#333333;
+  line-height:1.7;font-size:15px;
   font-weight:400;
 }
 .md h1,.md h2,.md h3,.md h4{
   font-family:var(--fd);
-  color:var(--md-on-surface);font-weight:400;
-  letter-spacing:-.01em;scroll-margin-top:24px;line-height:1.3;
+  color:var(--md-on-surface);font-weight:500;
+  letter-spacing:0;scroll-margin-top:24px;line-height:1.1;
 }
-.md h1{font-size:32px;margin:0 0 24px;padding-bottom:16px;border-bottom:1px solid var(--md-outline-variant);}
-.md h2{font-size:24px;margin:48px 0 20px}
-.md h3{font-size:18px;margin:32px 0 16px;font-weight:500}
-.md h4{font-size:16px;margin:24px 0 12px;color:var(--md-on-surface-var);font-weight:500}
-.md p{margin:0 0 20px}
-.md a{color:var(--md-primary);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--md-primary) 30%,transparent);font-weight:500;}
-.md a:hover{border-bottom-color:var(--md-primary)}
+.md h1{font-size:32px;margin:21px 0 10.5px;padding-bottom:0;border-bottom:none;}
+.md h2{font-size:26px;margin:21px 0 10.5px;padding-bottom:0;border-bottom:none;}
+.md h3{font-size:22px;margin:21px 0 10.5px;font-weight:500}
+.md h4{font-size:19px;margin:10.5px 0 10.5px;color:var(--md-on-surface);font-weight:500}
+.md p{margin:0 0 10.5px;color:var(--md-on-surface)}
+.md p strong,.md li strong{color:var(--md-on-surface)}
+.md a{color:var(--md-primary);text-decoration:none;}
+.md a:hover{color:#0b60ef;text-decoration:underline}
+.md ul,.md ol{margin:0 0 10.5px 0;padding-left:24px;}
+.subheading{color:#888888;font-size:15px;}
 .md code{
-  font-family:var(--fm);font-size:.875em;
-  padding:2px 6px;
-  background:var(--md-surf-2);
-  border:1px solid var(--md-outline-variant);
-  border-radius:4px;color:var(--md-primary);
+  font-family:var(--fm);
+  margin-left:3px;margin-right:3px;
+  padding:2px 4px;
+  font-size:85%;
+  color:#4D8CF4;
+  background-color:whitesmoke;
+  white-space:nowrap;
+  border:none;border-radius:2px;
 }
 .md pre{
-  margin:24px 0;border-radius:8px;
-  border:1px solid var(--md-outline-variant);
-  overflow:hidden;background:var(--md-surf-1);position:relative;
+  display:block;
+  margin:0 0 10.5px;border-radius:2px;
+  border:none;
+  border-left:4px solid #D7DBE4;
+  overflow:hidden;background:#F0F3F8;position:relative;
+  padding:10px;
 }
 .md pre code{
-  display:block;padding:20px 24px;overflow-x:auto;
-  line-height:1.7;background:transparent;border:none;border-radius:0;
-  font-size:.8125rem;color:var(--md-on-surface);tab-size:2;
+  display:block;padding:0;overflow-x:auto;
+  line-height:1.42857;background:transparent;border:none;border-radius:0;
+  font-size:14px;color:#333333;tab-size:4;
+  white-space:pre-wrap;
 }
-.codehilite{background:var(--md-surf-1)!important;margin:0!important;padding:0!important}
-.codehilite pre{margin:0!important;padding:20px 24px!important;background:var(--md-surf-1)!important;border-radius:0!important;border:none!important}
+.codehilite{
+  background:#F0F3F8!important;
+  border:none!important;
+  border-left:4px solid #D7DBE4!important;
+  border-radius:2px!important;
+  overflow:hidden;margin:0 0 10.5px!important;padding:10px!important;
+  box-shadow:0 1px 2px rgba(30,50,90,0.05);
+}
+.codehilite pre{margin:0!important;padding:0!important;background:transparent!important;border-radius:0!important;border:none!important;box-shadow:none!important}
 .copy-btn{
-  position:absolute;top:10px;right:12px;
+  position:absolute;top:8px;right:10px;
   display:flex;align-items:center;gap:6px;
-  height:32px;padding:0 12px;
-  border-radius:16px;
-  background:var(--md-surf-3);border:1px solid var(--md-outline-variant);
-  font-family:var(--fb);font-size:12px;font-weight:500;
-  color:var(--md-on-surface-var);cursor:pointer;
+  height:28px;padding:0 10px;
+  border-radius:2px;
+  background:#FFFFFF;border:1px solid #CCCCCC;
+  font-family:var(--fb);font-size:12px;font-weight:400;
+  color:#333333;cursor:pointer;
   opacity:0;
-  transition:opacity 150ms,box-shadow 150ms;
+  transition:opacity 150ms;
 }
-.md pre:hover .copy-btn{opacity:1}
-.copy-btn:hover{box-shadow:var(--md-elev-1)}
-.copy-btn.ok{background:var(--md-secondary-cont);color:var(--md-on-secondary-cont);opacity:1;border-color:transparent}
-.copy-btn i{width:14px;height:14px}
+.md pre:hover .codehilite:hover .copy-btn,.md pre:hover .copy-btn,.codehilite:hover .copy-btn{opacity:1}
+.copy-btn:hover{background:#EBEBEB;}
+.copy-btn.ok{color:var(--md-primary);border-color:var(--md-primary);opacity:1}
+.copy-btn i{width:13px;height:13px}
 
-.md table{width:100%;margin:24px 0;border-collapse:collapse;border:1px solid var(--md-outline-variant);border-radius:8px;overflow:hidden;font-size:14px;}
-.md th{padding:12px 16px;background:var(--md-surf-2);font-weight:500;font-size:13px;text-align:left;color:var(--md-on-surface-var);border-bottom:1px solid var(--md-outline-variant);}
-.md td{padding:12px 16px;border-bottom:1px solid var(--md-outline-variant);color:var(--md-on-surface-var)}
+.md table{
+  width:100%;margin:0 0 21px;border-collapse:collapse;
+  font-size:14px;background:transparent;
+}
+.md th{
+  padding:8px 12px;background:#F7F9FC;font-weight:bold;font-size:14px;
+  text-align:left;color:var(--md-on-surface);
+  border-top:1px solid #DDDDDD;
+  border-bottom:2px solid #DDDDDD;
+  white-space:nowrap;
+  vertical-align:bottom;
+}
+.md td{padding:8px;border-top:1px solid #DDDDDD;color:var(--md-on-surface);vertical-align:top;}
 .md tr:last-child td{border-bottom:none}
-.md tr:hover td{background:var(--md-surf-1)}
+.md tbody tr:hover td{background-color:#F5F5F5;}
 .md ul,.md ol{margin:0 0 20px 24px}
 .md li{margin:8px 0;color:var(--md-on-surface-var)}
 .md li strong{color:var(--md-on-surface)}
 .md blockquote{
-  margin:24px 0;padding:20px 24px;
-  border-radius:8px;
+  margin:0 0 21px;padding:10.5px 21px;
+  border-radius:0;
   border:none;
-  background:var(--md-primary-container);
+  border-left:5px solid #EEEEEE;
+  background:transparent;
   position:relative;
 }
-.md blockquote::before{
-  content:'';position:absolute;left:0;top:10px;bottom:10px;
-  width:4px;border-radius:4px;background:var(--md-primary);
-}
-.md blockquote p{color:var(--md-on-primary-cont);margin:0;font-size:15px}
+.md blockquote::before{content:none}
+.md blockquote p{color:var(--md-on-surface-var);margin:0 0 10.5px;font-size:14px;font-weight:400;line-height:1.6;}
+.md blockquote p:last-child{margin-bottom:0}
+.md blockquote strong{color:var(--md-on-surface)}
 .md hr{border:none;border-top:1px solid var(--md-outline-variant);margin:48px 0}
-.md img{max-width:100%;border-radius:8px;border:1px solid var(--md-outline-variant)}
+.md img{max-width:100%;border-radius:var(--radius-md);border:1px solid var(--md-outline-variant);box-shadow:var(--md-elev-1)}
 
 .mermaid-wrapper{
   background:var(--md-surf-1);
@@ -859,14 +956,13 @@ body{
 .doc-pn-nav:empty{display:none;border-top:none;margin-top:0;padding-top:0}
 .doc-pn-link{
   display:flex;align-items:center;gap:14px;
-  padding:16px 20px;
-  border:1px solid var(--md-outline-variant);
-  border-radius:16px;
+  padding:14px 18px;
+  border:1px solid #DDDDDD;
+  border-radius:2px;
   cursor:pointer;text-decoration:none;
-  transition:border-color 150ms,box-shadow 150ms;
   min-width:0;
 }
-.doc-pn-link:hover{border-color:var(--md-primary);box-shadow:var(--md-elev-1)}
+.doc-pn-link:hover{border-color:var(--md-primary);}
 .doc-pn-link.next{grid-column:2;flex-direction:row-reverse;text-align:right}
 .doc-pn-link i{width:20px;height:20px;color:var(--md-on-surface-var);flex-shrink:0}
 .doc-pn-text{min-width:0;display:flex;flex-direction:column;gap:4px}
@@ -880,18 +976,12 @@ body{
   .doc-pn-link.next{grid-column:1}
 }
 
-.pg-footer{
-  margin-top:64px;padding-top:24px;
-  border-top:1px solid var(--md-outline-variant);
-  display:flex;align-items:center;justify-content:space-between;
-  font-size:13px;color:var(--md-on-surface-3);
-}
 
 .pf-wrap{position:relative}
 .pf-chip{
   display:inline-flex;align-items:center;gap:8px;
-  height:36px;padding:0 14px;
-  border-radius:18px;
+  height:32px;padding:0 12px;
+  border-radius:2px;
   background:transparent;
   border:1px solid var(--md-outline);
   font-family:var(--fb);font-size:13px;font-weight:500;
@@ -968,6 +1058,10 @@ body{
   .sb-scrim.open{display:block}
   .mob-btn{display:flex!important}
   .c-inner{padding:28px 20px 72px}
+  .c-inner.wide{padding:0 0 72px}
+  .c-inner.wide .sandbox-spotlight{padding:0 20px}
+  .home-hero{margin:-28px -20px 28px;padding:48px 20px;}
+  .home-title{font-size:32px;}
   .top-bar-center{justify-content:flex-start}
 }
 
@@ -1130,7 +1224,22 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <body>
 
 <header class="top-app-bar" id="topAppBar">
-  <span class="tab-logo-name">AromaSDK</span>
+  <div class="tab-logo-name" onclick="showFirstPage()" title="AromaSDK home">AromaSDK</div>
+  <nav class="ionic-nav">
+    <a onclick="showFirstDoc()">Getting Started</a>
+    <a href="sandbox.html" target="_blank" rel="noopener">Sandbox</a>
+    <a onclick="window.open('https://github.com/BinaryInkTN/AromaUI','_blank')">GitHub</a>
+  </nav>
+
+  <div class="nav-crumbs" id="bcrumb">
+    <span class="bc-seg" onclick="showFirstPage()">AromaSDK</span>
+    <span class="bc-sep" id="bcHomeSep" style="display:none">›</span>
+    <span class="bc-seg" id="bcCategory" style="display:none" onclick="showCategoryFromBc()"></span>
+    <span class="bc-sep" id="bcCatSep" style="display:none">›</span>
+    <span class="bc-seg" id="bcSubcategory" style="display:none" onclick="showSubcategoryFromBc()"></span>
+    <span class="bc-sep" id="bcSubSep" style="display:none">›</span>
+    <span class="bc-seg cur" id="bcCur"></span>
+  </div>
 
   <div class="top-bar-center">
     <button class="mob-btn" onclick="openDrawer()" style="margin-right:8px;flex-shrink:0">
@@ -1177,16 +1286,15 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
       <i data-lucide="file-down"></i>
     </button>
 
-    <div class="version-chip">v0.0.1 (alpha)</div>
-
-    <div class="m3-segmented">
-      <button class="m3-seg-opt active" id="lightBtn" onclick="setTheme('light')" title="Light theme">
+    <div class="theme-toggle">
+      <button id="lightBtn" onclick="setTheme('light')" title="Light theme">
         <i data-lucide="sun"></i>
       </button>
-      <button class="m3-seg-opt" id="darkBtn" onclick="setTheme('dark')" title="Dark theme">
+      <button id="darkBtn" onclick="setTheme('dark')" title="Dark theme">
         <i data-lucide="moon"></i>
       </button>
     </div>
+
   </div>
 </header>
 
@@ -1228,38 +1336,58 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
   </nav>
 
   <div class="main">
-    <div class="breadcrumb-strip" id="bcrumb">
-      <span class="bc-seg" onclick="showFirstPage()">AromaSDK</span>
-      <span class="bc-sep" id="bcHomeSep" style="display:none">›</span>
-      <span class="bc-seg" id="bcCategory" style="display:none" onclick="showCategoryFromBc()"></span>
-      <span class="bc-sep" id="bcCatSep" style="display:none">›</span>
-      <span class="bc-seg" id="bcSubcategory" style="display:none" onclick="showSubcategoryFromBc()"></span>
-      <span class="bc-sep" id="bcSubSep" style="display:none">›</span>
-      <span class="bc-seg cur" id="bcCur"></span>
-    </div>
-
     <div class="c-layout">
       <div class="c-scroll" id="cScroll">
-        <div class="c-inner">
+        <div class="c-inner wide" id="cInner">
           <div id="welcomeView">
         <div class="welcome-page">
             <div class="home-hero">
-                <h1 class="home-title">AromaSDK</h1>
-                <p class="home-tagline">Lightweight development toolkit for cross-platform applications on Linux, Android, Windows, and embedded systems.</p>
-                <div class="home-hero-actions">
-                    <button class="m3-btn-filled" onclick="showFirstDoc()">
-                        <i data-lucide="book-open"></i>
-                        <span>Start reading</span>
-                    </button>
-                    <button class="m3-btn-outlined" onclick="openSearch()">
-                        <i data-lucide="search"></i>
-                        <span>Search docs</span>
-                    </button>
+                <div class="hero-inner">
+                  <div class="hero-copy">
+                    <h1 class="home-title">AromaSDK</h1>
+                    <p class="home-tagline">Cross-platform application framework featuring a modern UI toolkit, rendering engine, backend abstraction layer, and tooling for Linux, Android, Windows, and Embedded devices.</p>
+                    <div class="home-hero-actions">
+                        <button class="m3-btn-filled" onclick="showCategory('Overview')"><span>Get Started</span></button><button class="m3-btn-outlined" onclick="window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"><span>View on GitHub</span></button>
+                    </div>
+                    <div class="hero-release">
+                        <a class="hero-dl-btn" id="heroDlBtn" href="https://github.com/BinaryInkTN/AromaUI/releases">
+                            <span id="heroDlTxt">Download</span>
+                        </a>
+                        <span class="hero-dl-meta" id="heroDlMeta">Latest release</span>
+                    </div>
+                  </div>
+                  <div class="hero-graphic" aria-hidden="true">
+                    <svg viewBox="0 0 360 300" width="100%" role="img">
+                      <circle cx="180" cy="150" r="128" fill="#EAF2FB"/>
+                      <circle cx="64" cy="52" r="10" fill="#B6D1FF"/>
+                      <circle cx="302" cy="248" r="14" fill="#B6D1FF"/>
+                      <rect x="126" y="38" width="118" height="224" rx="16" fill="#FFFFFF" stroke="#4F8EF7" stroke-width="4"/>
+                      <clipPath id="phoneClip"><rect x="126" y="38" width="118" height="224" rx="16"/></clipPath>
+                      <g clip-path="url(#phoneClip)">
+                        <rect x="126" y="38" width="118" height="34" fill="#4F8EF7"/>
+                        <circle cx="185" cy="48" r="3" fill="#FFFFFF"/>
+                        <rect x="140" y="88" width="90" height="12" rx="6" fill="#296AD4"/>
+                        <rect x="140" y="108" width="64" height="8" rx="4" fill="#B6D1FF"/>
+                        <rect x="140" y="132" width="90" height="34" rx="4" fill="#EAF2FB"/>
+                        <rect x="140" y="174" width="90" height="34" rx="4" fill="#EAF2FB"/>
+                        <rect x="140" y="216" width="58" height="20" rx="10" fill="#4F8EF7"/>
+                      </g>
+                      <rect x="30" y="96" width="76" height="60" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="2"/>
+                      <text x="42" y="122" font-family="monospace" font-size="16" font-weight="bold" fill="#4F8EF7">&lt;/&gt;</text>
+                      <text x="42" y="142" font-family="monospace" font-size="9" fill="#697177">aroma_ui</text>
+                      <circle cx="286" cy="104" r="26" fill="#4F8EF7"/>
+                      <path d="M279 92 L297 104 L279 116 Z" fill="#FFFFFF"/>
+                      <rect x="262" y="190" width="68" height="44" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="2"/>
+                      <rect x="272" y="202" width="48" height="8" rx="4" fill="#8CBF26"/>
+                      <rect x="272" y="214" width="32" height="8" rx="4" fill="#B6D1FF"/>
+                    </svg>
+                  </div>
                 </div>
             </div>
+            <div class="metro-tiles"><div class="metro-tile" onclick="showPage(SLUG_TO_ID['architecture-overview'],'Overview',null)"><i data-lucide="layers" class="metro-icon"></i><span class="metro-label">Cross-platform core</span><span class="metro-desc">One codebase for Linux, Android, Web and embedded.</span></div><div class="metro-tile" onclick="showPage(SLUG_TO_ID['incense-declarative-ui'],'Widget Library',null)"><i data-lucide="code" class="metro-icon"></i><span class="metro-label">Incense UI language</span><span class="metro-desc">Describe interfaces in code, preview them instantly.</span></div><div class="metro-tile" onclick="showPage(SLUG_TO_ID['input-controls'],'Widget Library',null)"><i data-lucide="layout-grid" class="metro-icon"></i><span class="metro-label">Widget library</span><span class="metro-desc">Buttons, lists, maps, dialogs and more, ready to use.</span></div><div class="metro-tile" onclick="showPage(SLUG_TO_ID['building-deployment'],'Build & Deploy',null)"><i data-lucide="terminal" class="metro-icon"></i><span class="metro-label">CLI toolchain</span><span class="metro-desc">Scaffold, build and deploy from one command.</span></div></div>
             <div class="home-section sandbox-spotlight">
                 <div class="sandbox-head">
-                    <h2 class="section-heading" style="margin-bottom:0">Try it live: Incense sandbox</h2>
+                    <h2 class="section-heading" style="margin-bottom:0">Try it in your browser</h2>
                     <a class="sandbox-open" href="sandbox.html" target="_blank" rel="noopener">Open fullscreen</a>
                 </div>
                 <p class="sandbox-sub">Write Incense UI code and click Run. The preview renders instantly in your browser via WebAssembly.</p>
@@ -1267,7 +1395,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
                     <iframe src="sandbox.html" title="Incense live sandbox" style="width:100%;height:800px;border:none;display:block"></iframe>
                 </div>
             </div>
-            <div class="home-section"><h2 class="section-heading">Browse the Docs</h2><div class="home-cat-grid"><div class="home-cat-card" onclick="showCategory('Overview')"><div class="home-cat-icon"><i data-lucide="home"></i></div><h3 class="home-cat-title">Overview</h3><p class="home-cat-desc">Get started quickly and understand the big picture.</p><span class="home-cat-count">2 documents</span></div><div class="home-cat-card" onclick="showCategory('Core Framework')"><div class="home-cat-icon"><i data-lucide="layers"></i></div><h3 class="home-cat-title">Core Framework</h3><p class="home-cat-desc">Scene graph, events, layout, rendering, animation, and theming.</p><span class="home-cat-count">6 documents</span></div><div class="home-cat-card" onclick="showCategory('Widget Library')"><div class="home-cat-icon"><i data-lucide="component"></i></div><h3 class="home-cat-title">Widget Library</h3><p class="home-cat-desc">UI widgets, controls, navigation, and the Incense declarative language.</p><span class="home-cat-count">5 documents</span></div><div class="home-cat-card" onclick="showCategory('Build & Deploy')"><div class="home-cat-icon"><i data-lucide="terminal"></i></div><h3 class="home-cat-title">Build & Deploy</h3><p class="home-cat-desc">CLI toolchain, project scaffolding, and cross-platform deployment.</p><span class="home-cat-count">3 documents</span></div><div class="home-cat-card" onclick="showCategory('Reference')"><div class="home-cat-icon"><i data-lucide="book-open"></i></div><h3 class="home-cat-title">Reference</h3><p class="home-cat-desc">Fonts, testing, glossary, and advanced topics.</p><span class="home-cat-count">3 documents</span></div></div></div>
         </div>
         </div>
           <div id="categoryView" style="display:none"></div>
@@ -1281,10 +1408,8 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             </div>
             <div class="doc-hdr">
               <div class="doc-title-row">
-                <div class="doc-title-icon" id="docTitleIcon">
-                  <i data-lucide="file-text" id="docTitleIconInner"></i>
-                </div>
                 <h1 class="doc-title" id="docTitle"></h1>
+                <p class="subheading" id="docSub"></p>
               </div>
               <div class="doc-meta" id="docMeta"></div>
               <div class="doc-acts">
@@ -1296,10 +1421,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
             </div>
             <div class="md" id="docContent"></div>
             <div class="doc-pn-nav" id="docPnNav"></div>
-            <div class="pg-footer">
-              <span>© 2026 AromaSDK</span>
-              <span>v0.0.1 (alpha) · September 24, 2026</span>
-            </div>
           </div>
         </div>
       </div>
@@ -1322,7 +1443,7 @@ const TITLES = {"bf647454": "Getting Started", "b1fcf769": "Architecture Overvie
 const CATS = {"bf647454": "Overview", "b1fcf769": "Overview", "da735d8f": "Core Framework", "09cac35d": "Core Framework", "7a6cfe1d": "Core Framework", "fb405e37": "Core Framework", "3e190c2e": "Core Framework", "8b7545b4": "Core Framework", "f478ad49": "Widget Library", "4a7f122b": "Widget Library", "dccd3015": "Widget Library", "dc7611f4": "Widget Library", "e5d3a6b8": "Widget Library", "6c2a3ba8": "Build & Deploy", "de21d9f8": "Build & Deploy", "f64fb834": "Build & Deploy", "3a912755": "Reference", "f75a1207": "Reference", "31d109d1": "Reference"};
 const SUBCATS = {};
 const PAGE_PLATFORMS = {"bf647454": [], "b1fcf769": [], "da735d8f": [], "09cac35d": [], "7a6cfe1d": [], "fb405e37": [], "3e190c2e": [], "8b7545b4": [], "f478ad49": [], "4a7f122b": [], "dccd3015": [], "dc7611f4": [], "e5d3a6b8": [], "6c2a3ba8": [], "de21d9f8": [], "f64fb834": [], "3a912755": [], "f75a1207": [], "31d109d1": []};
-const CATEGORY_PAGES = {"Overview": "\n        <div class=\"category-page\" data-category=\"Overview\">\n            <div class=\"category-header\">\n                <div class=\"cat-icon-wrap\">\n                    <i data-lucide=\"home\"></i>\n                </div>\n                <h1 class=\"category-title\">Overview</h1>\n                <p class=\"category-description\">Get started quickly and understand the big picture.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Core Framework": "\n        <div class=\"category-page\" data-category=\"Core Framework\">\n            <div class=\"category-header\">\n                <div class=\"cat-icon-wrap\">\n                    <i data-lucide=\"layers\"></i>\n                </div>\n                <h1 class=\"category-title\">Core Framework</h1>\n                <p class=\"category-description\">Scene graph, events, layout, rendering, animation, and theming.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Widget Library": "\n        <div class=\"category-page\" data-category=\"Widget Library\">\n            <div class=\"category-header\">\n                <div class=\"cat-icon-wrap\">\n                    <i data-lucide=\"component\"></i>\n                </div>\n                <h1 class=\"category-title\">Widget Library</h1>\n                <p class=\"category-description\">UI widgets, controls, navigation, and the Incense declarative language.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Build & Deploy": "\n        <div class=\"category-page\" data-category=\"Build & Deploy\">\n            <div class=\"category-header\">\n                <div class=\"cat-icon-wrap\">\n                    <i data-lucide=\"terminal\"></i>\n                </div>\n                <h1 class=\"category-title\">Build & Deploy</h1>\n                <p class=\"category-description\">CLI toolchain, project scaffolding, and cross-platform deployment.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Reference": "\n        <div class=\"category-page\" data-category=\"Reference\">\n            <div class=\"category-header\">\n                <div class=\"cat-icon-wrap\">\n                    <i data-lucide=\"book-open\"></i>\n                </div>\n                <h1 class=\"category-title\">Reference</h1>\n                <p class=\"category-description\">Fonts, testing, glossary, and advanced topics.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        "};
+const CATEGORY_PAGES = {"Overview": "\n        <div class=\"category-page\" data-category=\"Overview\">\n            <div class=\"category-header\">\n                <h1 class=\"category-title\">Overview</h1>\n                <p class=\"category-description\">Get started quickly and understand the big picture.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Core Framework": "\n        <div class=\"category-page\" data-category=\"Core Framework\">\n            <div class=\"category-header\">\n                <h1 class=\"category-title\">Core Framework</h1>\n                <p class=\"category-description\">Scene graph, events, layout, rendering, animation, and theming.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Widget Library": "\n        <div class=\"category-page\" data-category=\"Widget Library\">\n            <div class=\"category-header\">\n                <h1 class=\"category-title\">Widget Library</h1>\n                <p class=\"category-description\">UI widgets, controls, navigation, and the Incense declarative language.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Build & Deploy": "\n        <div class=\"category-page\" data-category=\"Build & Deploy\">\n            <div class=\"category-header\">\n                <h1 class=\"category-title\">Build & Deploy</h1>\n                <p class=\"category-description\">CLI toolchain, project scaffolding, and cross-platform deployment.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        ", "Reference": "\n        <div class=\"category-page\" data-category=\"Reference\">\n            <div class=\"category-header\">\n                <h1 class=\"category-title\">Reference</h1>\n                <p class=\"category-description\">Fonts, testing, glossary, and advanced topics.</p>\n            </div>\n            <div class=\"subcategories-grid\">\n                \n            </div>\n        </div>\n        "};
 const SUBCATEGORY_PAGES = {};
 const PDF_URL = '';
 const SEARCH_INDEX = [{"id": "bf647454", "title": "Getting Started", "category": "Overview", "subcategory": "", "content": "Get up and running with AromaUI in under five minutes. This guide covers cloning, building, and running your first cross-platform app.\nPrerequisites\n\nLinux (primary development host)\nCMake 3.22.1+\nPython 3.8+\nGit with submodule support\nOptional: Java JDK 17, Android SDK/NDK for mobile builds\n\n1. Clone the Repository\ngit clone https://github.com/BinaryInkTN/AromaUI.git --recursive\ncd AromaUI\n\nThe --recursive flag is required. AromaUI vendors FreeType, GLES headers, and other dependencies as git submodules.\n2. Validate Your Environment\npython3 bin/aroma doctor\n\nThis checks for CMake, GCC/Clang, Java, and Android SDK/NDK. If Android components are missing:\npython3 bin/aroma install-sdk\n\n3. Create a Project\npython3 bin/aroma create MyApp\ncd MyApp\n\nThis scaffolds a cross-platform project with:\n- src/main.c - application entry point\n- CMakeLists.txt - Linux/Web build config\n- android/ - Android Studio project with JNI bridge\n4. Build and Run\nLinux\nmkdir build && cd build\ncmake ..\nmake -j$(np"}, {"id": "b1fcf769", "title": "Architecture Overview", "category": "Overview", "subcategory": "", "content": "AromaUI is structured in four layers. Understanding these layers helps you write efficient, portable UI code.\nSystem Layers\n\n\n\n\n\n\nflowchart TD\n    App[\"Application Layeraroma_ui_button(), aroma_ui_label()\"]\n    Core[\"Core FrameworkAromaNode, Layout, Events, DrawList\"]\n    ABI[\"Backend Abstraction LayerAromaBackendABI proxy\"]\n    Backends[\"Platform & Graphics BackendsGLES3, Vulkan, TFT_eSPI, Android\"]\n\n    App --> Core\n    Core --> ABI\n    ABI --> Backends\n\n\n\nApplication Layer - Your code. Uses factory functions from include/aroma_ui.h to build the scene graph.\nCore Framework - Platform-agnostic logic: AromaNode tree, recursive layout, event dispatch, deferred rendering.\nABI - A switchboard that routes generic draw calls to the active backend.\nBackends - Hardware-specific implementations for windowing, input, and GPU rendering.\n\nKey Concepts\nAromaNode\nEvery visible element is an AromaNode. Nodes form a tree with a 64-child limit per parent. Each node stores:\n- Geometry (AromaRect)\n- Lay"}, {"id": "da735d8f", "title": "Scene Graph & Nodes", "category": "Core Framework", "subcategory": "", "content": "Every UI element in AromaUI is an AromaNode. Nodes form a tree, and the framework traverses this tree for layout, hit-testing, and rendering.\nThe AromaNode Struct\ntypedef struct AromaNode {\n    uint64_t node_id;\n    AromaNodeType node_type;        // ROOT, CONTAINER, WIDGET\n    int32_t z_index;\n    AromaRect rect;                 // x, y, width, height\n    AromaLayout layout;             // layout hints\n    bool visible;\n    bool is_dirty;\n    bool subtree_dirty;\n    AromaNode *parent_node;\n    AromaNode *child_nodes[64];     // max 64 children\n    int child_count;\n    void *node_widget_ptr;          // widget-specific data\n    AromaNodeDrawFn draw_cb;\n    // ... padding for alignment\n} AromaNode;\n\nKey limits:\n- 64 children per node - fixed-size array avoids dynamic allocation\n- 64 properties per widget - enforced by the Incense loader\n- 1024 dirty nodes per frame - global dirty list capacity\nNode Lifecycle\nCreation\nAromaNode *node = aroma_node_create(parent, NODE_TYPE_WIDGET, x, y, w,"}, {"id": "09cac35d", "title": "Event System", "category": "Core Framework", "subcategory": "", "content": "AromaUI's event system captures raw platform input and dispatches it to the correct AromaNode. It supports hit-testing, priority-based listeners, event bubbling, and touch-to-scroll interception.\nEvent Lifecycle\n\n\n\n\n\n\nflowchart LR\n    Platform[\"Platform capturesraw input\"] --> Create[\"aroma_event_create()allocates from static pool\"]\n    Create --> Queue[\"aroma_event_queue()adds to thread-safe queue\"]\n    Queue --> Process[\"aroma_event_process_queue()drains queue\"]\n    Process --> Dispatch[\"aroma_event_dispatch()finds target\"]\n    Dispatch --> Listeners[\"Listeners execute(sorted by priority)\"]\n    Listeners --> Consumed{\"Consumed?\"}\n    Consumed -->|No| Bubble[\"Bubble to parent\"]\n    Consumed -->|Yes| End[\"End propagation\"]\n\n\nHit-Testing\nWhen a pointer event arrives, aroma_event_hit_test() recursively searches the scene graph from the root. It respects:\n- Z-order - top-most nodes are tested first\n- Visibility - hidden nodes are skipped\n- Clipping - nodes outside their parent's clip rect"}, {"id": "7a6cfe1d", "title": "Layout Engine", "category": "Core Framework", "subcategory": "", "content": "The layout engine calculates the screen-space position and size of every AromaNode. It runs every frame for dirty subtrees and supports absolute positioning, flexbox, and grid layouts.\nLayout Types\nEach node has an AromaLayout struct that determines how it positions itself relative to its parent.\nSelf-Layout (how a node positions itself)\n\n\n\nMode\nAPI\nDescription\n\n\n\n\nNone\naroma_node_set_layout_none(node, x, y, w, h)\nAbsolute positioning\n\n\nFill Parent\naroma_node_set_layout_fill(node)\nMatch parent bounds exactly\n\n\nCenter\naroma_node_set_layout_center(node, w, h)\nCenter within parent\n\n\nAnchor\naroma_node_set_layout_anchor(node, left, top, right, bottom)\nPin to edges; supports stretching\n\n\n\nContainer Layout (how a node arranges its children)\nSet via aroma_node_set_layout_mode(node, mode):\n\n\n\nMode\nDescription\n\n\n\n\nAROMA_LAYOUT_MODE_NONE\nChildren use their own self-layout\n\n\nAROMA_LAYOUT_MODE_FLEX\nFlexbox: row or column layout\n\n\nAROMA_LAYOUT_MODE_GRID\nEqual-sized cells in row-major order\n\n\n\nFlexbo"}, {"id": "fb405e37", "title": "Rendering Pipeline", "category": "Core Framework", "subcategory": "", "content": "AromaUI uses deferred rendering. Instead of drawing immediately, widgets record commands into an AromaDrawList. At the end of each frame, commands are sorted by Z-index and flushed to the graphics backend.\nFrame Lifecycle\n\n\n\n\n\n\nflowchart TD\n    A[\"1. Invalidationnodes marked dirty\"] --> B[\"2. Layoutrecalculate dirty subtree\"]\n    B --> C[\"3. Collectiondraw_cb records tasks\"]\n    C --> D[\"4. Sortingqsort by z_index\"]\n    D --> E[\"5. Recordingtasks execute to DrawList\"]\n    E --> F[\"6. Flushdispatch to ABI\"]\n    F --> G[\"7. Swappresent framebuffer\"]\n\n\nDrawList Benefits\n\nZ-sorting: Nodes with higher z_index draw on top, regardless of tree order\nBatching: Multiple rectangles can be merged into a single glDrawArrays call\nFrustum culling: Offscreen nodes are skipped during collection\n\nAromaBackendABI\nThe ABI sits between the core framework and hardware backends. When a DrawList is active, it records commands. Otherwise, it passes calls directly to the backend (immediate mode).\n// Typical wid"}, {"id": "3e190c2e", "title": "Animation Engine", "category": "Core Framework", "subcategory": "", "content": "AromaUI includes a lightweight animation engine for smooth property transitions. It interpolates values over time using easing functions and integrates with the dirty-region system to trigger redraws automatically.\nQuick Start\n// Animate a node sliding in from the left\naroma_animation_start(node, AROMA_ANIM_SLIDE_X, -100.0f, 0.0f, 300);\n\n// Fade out over 500ms\naroma_animation_start(node, AROMA_ANIM_FADE, 1.0f, 0.0f, 500);\n\n// Custom animation (e.g., color blend)\naroma_animation_start_custom(node, 400, [](AromaNode *n, float progress, void *ud) {\n    uint32_t color = aroma_color_blend(start_color, end_color, progress);\n    aroma_node_set_bg_color(n, color);\n}, NULL);\n\nAnimation Types\n\n\n\nType\nProperty Modified\n\n\n\n\nAROMA_ANIM_SLIDE_X\nnode->rect.x\n\n\nAROMA_ANIM_SLIDE_Y\nnode->rect.y\n\n\nAROMA_ANIM_SCALE_X\nnode->rect.width\n\n\nAROMA_ANIM_SCALE_Y\nnode->rect.height\n\n\nAROMA_ANIM_FADE\nnode->opacity\n\n\nAROMA_ANIM_CUSTOM\nUser-defined callback\n\n\n\nEasing Functions\n\n\n\nEasing\nEffect\n\n\n\n\nAROMA_EASE_LINEAR\nCo"}, {"id": "8b7545b4", "title": "Theming & Styling", "category": "Core Framework", "subcategory": "", "content": "AromaUI's theming system provides centralized control over colors, typography, spacing, and shadows. It supports built-in presets (Material, Dark, High Contrast) and runtime theme switching.\nQuick Start\n// Use a built-in dark theme\nAromaTheme theme = aroma_theme_create_dark();\naroma_ui_set_theme(&theme);\n\n// Customize colors\ntheme.colors.background = 0xFF1A1A1A;\ntheme.colors.primary = 0xBB86FC;\n\n// Adjust spacing\ntheme.spacing.padding = 16;\ntheme.spacing.border_radius = 8.0f;\n\n// Apply to a specific widget style\nAromaStyle style;\naroma_style_create_from_theme(&style, &theme, true);\naroma_button_set_style(btn, &style);\n\nTheme Structure\n\n\n\nStruct\nPurpose\nKey Fields\n\n\n\n\nAromaColorPalette\nColor scheme\nprimary, background, surface, text_primary, border\n\n\nAromaSpacing\nLayout metrics\npadding, margin, border_radius, border_width\n\n\nAromaTypography\nText appearance\nfont_size, line_height, font_name, font_color\n\n\nAromaTheme\nTop-level container\nCombines Palette, Spacing, Typography\n\n\nAromaStyle\nCom"}, {"id": "f478ad49", "title": "Display & Feedback", "category": "Widget Library", "subcategory": "", "content": "Visual and informational widgets: labels, images, cards, progress indicators, snackbars, and dialogs.\nLabels and Icons\nAromaNode *label = aroma_ui_label(root, \"Hello World\", 20, 20, LABEL_STYLE_LARGE, font);\nAromaNode *icon = aroma_ui_icon(root, AROMA_ICON_HOME, 100, 20, 32, 0xFF0000);\n\n\nLABEL_STYLE_LARGE, LABEL_STYLE_MEDIUM, LABEL_STYLE_SMALL\nIcons render a single glyph from the icon font\n\nImages and GIFs\nAromaNode *img = aroma_ui_image(root, \"assets/photo.png\", 0, 0, 200, 150);\naroma_gif_play(gif_node);  // start animation\n\nImages are loaded via stb_image and cached as GPU textures. GIFs maintain a frame timer for automatic playback.\nCards\nAromaNode *card = aroma_ui_card(root, 20, 20, 300, 100, CARD_TYPE_ELEVATED);\n\n\n\n\nType\nDescription\n\n\n\n\nCARD_TYPE_FILLED\nSolid background blended with primary color\n\n\nCARD_TYPE_TONAL\nSubtle variant of filled\n\n\nCARD_TYPE_GLASS\nFrosted glass: blurs the backdrop in place, then draws a translucent tint with glossy edge\n\n\nCARD_TYPE_OUTLINED\nHollow with bo"}, {"id": "4a7f122b", "title": "Input & Controls", "category": "Widget Library", "subcategory": "", "content": "Interactive widgets: buttons, checkboxes, switches, sliders, textboxes, and chips.\nButtons\nAromaNode *btn = aroma_ui_button(root, \"Click Me\", 20, 20, 160, 48);\naroma_button_set_on_click(btn, [](AromaNode *node, void *ud) {\n    // handle click\n}, NULL);\n\nVariants: standard, filled, tonal, outlined\nIcon Button\nAromaNode *ib = aroma_ui_icon_button(root, AROMA_ICON_SETTINGS, 300, 20, 48, 48);\n\nCheckbox\nAromaNode *cb = aroma_ui_checkbox(root, \"Enable notifications\", 20, 100, 300, 32);\naroma_checkbox_set_on_change(cb, [](bool checked, void *ud) {\n    // handle toggle\n}, NULL);\n\nRadio Button\nAromaRadioGroup group;\naroma_radiobutton_group_init(&group);\nAromaNode *rb1 = aroma_ui_radiobutton(root, \"Option A\", &group, 20, 140, 200, 32);\nAromaNode *rb2 = aroma_ui_radiobutton(root, \"Option B\", &group, 20, 180, 200, 32);\n\nRadio buttons in the same group are mutually exclusive.\nSwitch\nAromaNode *sw = aroma_ui_switch(root, 20, 220, 56, 28, true);\naroma_switch_set_on_change(sw, [](bool value, void *ud)"}, {"id": "dccd3015", "title": "Layout & Navigation", "category": "Widget Library", "subcategory": "", "content": "Structural widgets that arrange children, handle scrolling, and provide navigation patterns.\nContainer\nAromaNode *container = aroma_container_create(root, 0, 0, 800, 480);\naroma_container_set_layout_mode(container, AROMA_LAYOUT_MODE_FLEX);\naroma_node_set_flex_direction(container, AROMA_FLEX_COLUMN);\n\nContainers are the primary structural widget. They support flexbox, grid, and scrolling.\nScrollable Container\naroma_container_set_scrollable(container, true);\naroma_container_set_scroll_direction(container, AROMA_SCROLL_VERTICAL);\n\nFeatures:\n- Velocity tracking for fling gestures\n- Overscroll bounce with spring-back animation\n- Auto content sizing based on children\nListView\nAromaNode *list = aroma_ui_listview(root, 0, 0, 300, 400, on_item_select, NULL, font);\naroma_listview_add_item(list, \"Item 1\", \"Secondary text\", NULL);\naroma_listview_add_header(list, \"Section\");\naroma_listview_add_separator(list);\n\n\n\n\nFunction\nPurpose\n\n\n\n\naroma_listview_add_item\nAdd a normal row\n\n\naroma_listview_add_it"}, {"id": "dc7611f4", "title": "Map Widget", "category": "Widget Library", "subcategory": "", "content": "A high-performance, interactive map component supporting OpenStreetMap tiles, markers, and routing.\nQuick Start\nAromaNode *map = aroma_ui_map(root, 0, 0, 700, 400);\naroma_map_set_center(map, 33.8869f, 9.5375f);\naroma_map_add_icon_marker(map, 33.8869f, 9.5375f, 0xFF0000, AROMA_ICON_HOME);\naroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);\n\nFeatures\n\nTile caching: LRU cache with 128 tiles by default\nCross-platform: Uses libcurl on native, emscripten_fetch on web\nMarkers: Icon and popup markers with click interaction\nRouting: OSRM polyline routing with mutex-safe decoding\nPhysics: Inertial panning with velocity-based fling\n\nAPI Reference\n\n\n\nFunction\nPurpose\n\n\n\n\naroma_map_set_center(lat, lon)\nSet map center\n\n\naroma_map_set_zoom(level)\nSet zoom level (1\u201318)\n\n\naroma_map_add_icon_marker(lat, lon, color, icon)\nAdd icon marker\n\n\naroma_map_add_popup_marker(lat, lon, color, text)\nAdd clickable popup\n\n\naroma_map_set_route(lat1, lon1, lat2, lon2, color)\nDraw route polyline\n\n\nar"}, {"id": "e5d3a6b8", "title": "Incense Declarative UI", "category": "Widget Library", "subcategory": "", "content": "Incense is AromaUI's declarative language for building UIs. Write widget trees in a clean syntax and see results instantly in the browser sandbox.\nOpen the Sandbox\nLaunch Incense Sandbox\nEdit code on the left, click Run, and see the preview update instantly via WebAssembly.\nSyntax\nWindow {\n    width: 320\n    height: 480\n    title: \"My App\"\n\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        layout: flex\n        direction: column\n\n        Label {\n            text: \"Hello\"\n            style: large\n            color: #333333\n        }\n\n        Button {\n            text: \"Click Me\"\n            x: 20\n            y: 100\n            width: 120\n            height: 40\n            on_click: \"handle_click\"\n        }\n    }\n}\n\nSupported Widgets\n\n\n\nWidget\nKey Properties\nChildren\n\n\n\n\nButton\ntext, x, y, width, height, on_click\n-\n\n\nLabel\ntext, x, y, style, color\n-\n\n\nContainer\nx, y, width, height, layout, direction\nAny widget\n\n\nCard\nx, y, width, height, type\n-\n\n\nChe"}, {"id": "6c2a3ba8", "title": "Project Creation", "category": "Build & Deploy", "subcategory": "", "content": "aroma create initializes a new cross-platform project in seconds.\nUsage\npython3 bin/aroma create MyApp\ncd MyApp\n\nThe CLI prompts for a project name and package name (e.g., com.example.myapp).\nWhat Gets Generated\nMyApp/\n  src/main.c          # Entry point (Linux/Android/Web)\n  CMakeLists.txt      # Root build config\n  android/            # Android Studio project\n    app/\n      src/main/\n        AndroidManifest.xml\n        java/         # JNI bridge (AromaHelper.java)\n        cpp/          # Native CMake config\n\nGenerated Entry Point\nThe main.c template shows the standard AromaUI lifecycle:\nint main(int argc, char **argv) {\n    AromaUIState state;\n    aroma_ui_init(&state);\n    AromaNode *window = aroma_ui_create_window(&state, 800, 480, \"MyApp\");\n    // ... build UI ...\n    while (aroma_ui_is_running()) {\n        aroma_ui_process_events(&state);\n        aroma_ui_render(window);\n    }\n    aroma_ui_shutdown(&state);\n    return 0;\n}\n\nFor Android, the template includes android_main() which "}, {"id": "de21d9f8", "title": "Building & Deployment", "category": "Build & Deploy", "subcategory": "", "content": "AromaUI supports three platforms: Linux, Android, and Web (WASM). The aroma CLI abstracts the build toolchain for each.\nCommands\n\n\n\nCommand\nAction\n\n\n\n\naroma build linux\nNative compilation via CMake + Make\n\n\naroma build android\nGradle build (Debug APK)\n\n\naroma build android --release\nSigned release APK/AAB\n\n\naroma build web\nEmscripten \u2192 WASM + HTML\n\n\naroma run linux\nBuild and run on Linux\n\n\naroma run android --emu\nBuild, install, and run on AVD\n\n\naroma run web\nBuild and open in browser\n\n\n\nEnvironment Setup\n# Validate dependencies\npython3 bin/aroma doctor\n\n# Install Android SDK if needed\npython3 bin/aroma install-sdk\n\nLinux Build\nmkdir build && cd build\ncmake ..\nmake -j$(nproc)\n./MyApp\n\nAndroid Build\n# Debug\npython3 ../bin/aroma build android\n\n# Release (requires signing)\npython3 ../bin/aroma build android --release\n\n# App Bundle for Google Play\npython3 ../bin/aroma build android --aab\n\nSigning requires a keystore. Generate one with:\npython3 bin/aroma sign\n\nWeb Build\npython3 bin/aroma bu"}, {"id": "f64fb834", "title": "SDK Downloads", "category": "Build & Deploy", "subcategory": "", "content": "\n\nSDK Downloads\nGet the latest AromaUI release for your platform\n\n\n\nFetching latest release from GitHub...\n\n\nUnable to load release information. Please check your connection or visit the GitHub Releases page.\nRetry\n\n\n\n\n\n\n\n\n\n\nPlatform Downloads\n\n\nSystem Requirements\n\nLinux: CMake 3.22.1+, GCC 9+ or Clang 10+\nAndroid: NDK 25.1.8937393, SDK 34, Java JDK 17\nWeb: Emscripten 3.1+ with CMake support\nWindows: Visual Studio 2019+ or MinGW-w64\n\n\n\n\n\n"}, {"id": "3a912755", "title": "Font System", "category": "Reference", "subcategory": "", "content": "AromaUI's font system loads, manages, and renders typography across Linux, Android, Web, and embedded targets.\nQuick Start\n// Load from bundled Ubuntu font\nAromaFont *font = aroma_font_create_from_memory(\n    aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 24);\n\n// Or from disk\nAromaFont *font = aroma_font_create(\"/path/to/font.ttf\", 24);\n\n// Measure text\nint w = aroma_font_get_text_width(font, \"Hello\", 12);\nint h = aroma_font_get_line_height(font);\n\nArchitecture\n\nCore (aroma_font.c) - platform-agnostic font loading and metrics\nFreeType - vector rasterization on Linux/Android/Web\nGLES3 backend - GPU glyph cache with LRU eviction\nESP32/TFT - bypasses FreeType, uses built-in bitmap fonts\n\nKey APIs\n\n\n\nFunction\nPurpose\n\n\n\n\naroma_font_create(path, size)\nLoad font from filesystem\n\n\naroma_font_create_from_memory(data, len, size)\nLoad from memory buffer\n\n\naroma_font_destroy(font)\nRelease font resources\n\n\naroma_font_get_text_width(font, text, max_width)\nMeasure text width\n\n\naroma_font_get_line_height(f"}, {"id": "f75a1207", "title": "Testing & Quality", "category": "Reference", "subcategory": "", "content": "The AromaUI test suite provides a comprehensive set of unit and integration tests designed to ensure the stability of core UI primitives, memory management, and event propagation. The testing architecture is decoupled from any specific platform backend, allowing tests to run in a headless environment (typically Linux) to validate logic without requiring a GPU or display.\nTest Suite Architecture\nThe test suite is organized into modular components targeting specific subsystems. The entry point is test_main.c, which orchestrates the execution of different test modules and aggregates results.\nTest Execution Flow\nTitle: AromaUI Test Execution Pipeline\n\n\n\n\n\n\nflowchart LR\n    subgraph subGraph1 [\"Subsystem Modules\"]\n        SLAB_MOD[\"test_aroma_slab_alloc.c\"]\n        NODE_MOD[\"test_aroma_node.c\"]\n        EVENT_MOD[\"test_aroma_event_system.c\"]\n    end\n    subgraph subGraph0 [\"Test Runner #91;test_main.c#93;\"]\n        START[\"main()\"]\n        SLAB[\"run_slab_allocator_tests()\"]\n        NODE[\"run_"}, {"id": "31d109d1", "title": "Glossary", "category": "Reference", "subcategory": "", "content": "This page provides definitions for codebase-specific terms, abbreviations, and domain concepts used throughout the AromaUI framework. It serves as a technical reference for onboarding engineers to understand the internal nomenclature and implementation pointers.\nCore Concepts\nAromaNode\nThe fundamental building block of the AromaUI scene graph. Every UI element (windows, buttons, containers) is an AromaNode. It manages the hierarchical parent-child relationship (limited to 64 children for performance) and maintains spatial properties like AromaRect.\n\nImplementation:include/aroma_node.h1-50\nLifecycle: Initialized via __node_system_initsrc/core/aroma_ui_impl.c165\n\nAromaBackendABI\nThe \"Application Binary Interface\" proxy layer that decouples the core framework from specific graphics and platform implementations. It routes generic draw calls (e.g., draw_rect) to the active backend (GLES3, Vulkan, or TFT_eSPI).\n\nImplementation:src/backends/aroma_abi.c1-100\nAccess: Accessed via the global aro"}];
@@ -1339,19 +1460,34 @@ let searchIdx=-1, searchResults=[];
 
 const ic = () => typeof lucide!=='undefined' && lucide.createIcons();
 
+function syncSandboxTheme(t){
+  if(t!=='light'&&t!=='dark') return;
+  document.querySelectorAll('.sandbox-frame iframe').forEach(function(f){
+    try{
+      var d=f.contentDocument;
+      if(d&&d.documentElement) d.documentElement.setAttribute('data-theme',t);
+    }catch(e){}
+    try{f.contentWindow.postMessage({type:'aroma-theme',theme:t},'*');}catch(e){}
+  });
+}
+
 function setTheme(t) {
   document.documentElement.setAttribute('data-theme',t);
   localStorage.setItem('docs-theme',t);
-  document.getElementById('lightBtn').classList.toggle('active',t==='light');
-  document.getElementById('darkBtn').classList.toggle('active',t==='dark');
+  var l=document.getElementById('lightBtn'),d=document.getElementById('darkBtn');
+  if(l) l.classList.toggle('active',t==='light');
+  if(d) d.classList.toggle('active',t==='dark');
+  syncSandboxTheme(t);
   setTimeout(()=>rerenderMermaid(t),80);
 }
 
 function initTheme() {
   const saved=localStorage.getItem('docs-theme')||'light';
   document.documentElement.setAttribute('data-theme',saved);
-  document.getElementById('lightBtn').classList.toggle('active',saved==='light');
-  document.getElementById('darkBtn').classList.toggle('active',saved==='dark');
+  var l=document.getElementById('lightBtn'),d=document.getElementById('darkBtn');
+  if(l) l.classList.toggle('active',saved==='light');
+  if(d) d.classList.toggle('active',saved==='dark');
+  setTimeout(()=>syncSandboxTheme(saved),500);
 }
 
 function updateBreadcrumbs() {
@@ -1386,8 +1522,34 @@ function _hideAll(){
     document.getElementById(id).style.display='none');
 }
 
+function initHeroRelease(){
+  if(window._heroReleaseDone) return;
+  window._heroReleaseDone=true;
+  fetch('https://api.github.com/repos/BinaryInkTN/AromaUI/releases?per_page=5',{headers:{'Accept':'application/vnd.github.v3+json'}})
+  .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+  .then(function(rels){
+    if(!rels||!rels.length) return;
+    var rel=null;
+    for(var i=0;i<rels.length;i++){ if(!rels[i].draft){ rel=rels[i]; break; } }
+    if(!rel) rel=rels[0];
+    var assets=rel.assets||[];
+    var btn=document.getElementById('heroDlBtn'),txt=document.getElementById('heroDlTxt'),meta=document.getElementById('heroDlMeta');
+    if(!btn||!txt||!assets.length) return;
+    var a=assets[0];
+    btn.href=a.browser_download_url;
+    txt.textContent='Download '+(rel.tag_name||rel.name||'latest');
+    function fmt(n){ if(!n) return ''; var mb=n/1048576; return mb>=1?mb.toFixed(1)+' MB':Math.round(n/1024)+' KB'; }
+    var bits=[];
+    if(a.name) bits.push(a.name);
+    if(a.size) bits.push(fmt(a.size));
+    if(meta) meta.textContent=bits.join(' · ');
+  }).catch(function(){});
+}
+
 function showWelcome(){
   _hideAll();
+  initHeroRelease();
+  document.getElementById('cInner').classList.add('wide');
   document.getElementById('welcomeView').style.display='';
   document.getElementById('tocPanel').classList.remove('vis');
   currentCategory=null; currentSubcategory=null; currentId=null;
@@ -1553,6 +1715,7 @@ function loadFromURL() {
 function showCategory(category){
   if (!CATEGORY_PAGES[category]) return;
   _hideAll();
+  document.getElementById('cInner').classList.remove('wide');
   document.getElementById('categoryView').style.display='';
   document.getElementById('categoryView').innerHTML=CATEGORY_PAGES[category];
   document.getElementById('tocPanel').classList.remove('vis');
@@ -1567,6 +1730,7 @@ function showSubcategory(category,subcategory){
   const key=category+'||'+subcategory;
   if (!SUBCATEGORY_PAGES[key]) return;
   _hideAll();
+  document.getElementById('cInner').classList.remove('wide');
   document.getElementById('subcategoryView').style.display='';
   document.getElementById('subcategoryView').innerHTML=SUBCATEGORY_PAGES[key];
   document.getElementById('tocPanel').classList.remove('vis');
@@ -1591,11 +1755,9 @@ function showPage(id, category=null, subcategory=null){
   }
 
   _hideAll();
+  document.getElementById('cInner').classList.remove('wide');
   document.getElementById('docContent').innerHTML = PAGES[id];
   document.getElementById('docTitle').textContent = TITLES[id] || id;
-
-  const iconEl = document.getElementById('docTitleIconInner');
-  if (iconEl) iconEl.setAttribute('data-lucide', PAGE_ICONS[id] || 'file-text');
 
   const meta = document.getElementById('docMeta');
   meta.innerHTML = '';

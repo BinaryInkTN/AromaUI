@@ -63,12 +63,18 @@ static void update_animations(void* arg)
             continue;
         }
 
-        float progress = (curr->duration_ms > 0)
+        float raw_progress = (curr->duration_ms > 0)
             ? (float)(now - curr->start_time) / (float)curr->duration_ms
             : 1.0f;
 
-        bool finished = (progress >= 1.0f);
-        if (finished) progress = 1.0f;
+        bool finished = (raw_progress >= 1.0f);
+        float progress = finished ? 1.0f : raw_progress;
+
+        if (!finished && curr->duration_ms > 0 &&
+            progress > curr->last_progress + 0.2f) {
+            progress = curr->last_progress + 0.2f;
+        }
+        curr->last_progress = progress;
 
         float ease        = apply_easing(curr->easing, progress);
         curr->current_val = curr->start_val
