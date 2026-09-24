@@ -232,6 +232,11 @@ if(EMSCRIPTEN)
         "-sINITIAL_MEMORY=134217728"
         "-sFETCH=1"
         "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
+        # Native .apak bundles embed arch-specific plugin.so files that
+        # cannot dlopen on the web (and nav alone is >100MB): keep them
+        # out of the preloaded web bundle. The web build keeps
+        # settings/third-party UI packages only.
+        "--exclude-file" "*.apak"
     )
 elseif(ENABLE_GLFW)
     target_link_libraries(infotainment PRIVATE
@@ -289,12 +294,30 @@ message(STATUS "")
 
 # --- First-party .apak packages ------------------------------------------------
 # nav / media / contacts compile to native plugins, are packed with tools/apak.py
-# and staged into <build>/packages/ (preinstalled system packages). Native
-# plugins need dlopen, so this whole block is skipped for Emscripten (where the
-# web build keeps settings/third-party UI packages only).
+# into <build>/dist/*.apak, staged into <build>/packages/ (preinstalled
+# system packages) AND into <build>/assets/ + the source assets dir
+# (examples/car_infotainment/assets/), where package_manager_seed_from_assets()
+# discovers them (./assets, ../assets, examples/car_infotainment/assets).
+# Native plugins need dlopen, so this whole block is skipped for Emscripten
+# (where the web build keeps settings/third-party UI packages only).
 set(AROMA_PACKAGES_STAGING_DIR "${CMAKE_CURRENT_BINARY_DIR}/packages")
 set(AROMA_APAK_DIST_DIR "${CMAKE_CURRENT_BINARY_DIR}/dist")
-file(MAKE_DIRECTORY "${AROMA_PACKAGES_STAGING_DIR}" "${AROMA_APAK_DIST_DIR}")
+set(AROMA_BUILD_ASSETS_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
+set(AROMA_SOURCE_ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+file(MAKE_DIRECTORY
+    "${AROMA_PACKAGES_STAGING_DIR}"
+    "${AROMA_APAK_DIST_DIR}"
+    "${AROMA_BUILD_ASSETS_DIR}"
+    "${AROMA_SOURCE_ASSETS_DIR}")
+
+# Sync freshly packed .apaks back to the source assets dir so seed runs
+# (build dir via ../assets, repo root via examples/.../assets), the
+# Emscripten --preload-file bundle, and firmware packaging all pick up
+# matching-arch packages. Turn off for read-only-source or packaging
+# builds that must not touch the source tree:
+#   cmake -DAROMA_SYNC_APAK_TO_SOURCE_ASSETS=OFF ...
+option(AROMA_SYNC_APAK_TO_SOURCE_ASSETS
+    "Copy built .apak files into examples/car_infotainment/assets/" ON)
 
 if(NOT EMSCRIPTEN)
     find_package(Python3 COMPONENTS Interpreter QUIET)
@@ -309,11 +332,14 @@ if(NOT EMSCRIPTEN)
     # fires when the plugin relinks, so an up-to-date plugin would
     # silently skip staging and the pack step would fail on the
     # missing plugin.so.
-    # On ARM target builds the freshly packed (correct-arch) .apak is
-    # additionally copied back into the source assets dir, so firmware
-    # images and seed runs pick up matching-arch packages instead of
-    # stale host-built ones. Host builds skip this to avoid churning
-    # the tracked assets with wrong-arch binaries.
+    # Every pack also stages the finished .apak into <build>/assets/
+    # (so ./assets seeds when running from the build dir) and, unless
+    # AROMA_SYNC_APAK_TO_SOURCE_ASSETS is OFF, back into the source
+    # assets dir (so ../assets / repo-root / web-preload seeds find it).
+    # Deployment to /usr/share/infotainment/assets for target images
+    # goes through the install() rules below (DESTDIR-aware), never a
+    # raw POST_BUILD cp to /usr/share (needs root every build and
+    # contaminates cross-build hosts).
     function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET STAGE_SYSTEM)
         if(STAGE_SYSTEM)
             set(PKG_LEAF_DIR "${AROMA_PACKAGES_STAGING_DIR}/${PKG_LEAF}")
@@ -330,19 +356,25 @@ if(NOT EMSCRIPTEN)
             add_custom_target(${PLUGIN_TARGET}_apak ALL
                 DEPENDS ${PLUGIN_TARGET}
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${PKG_LEAF_DIR}"
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${AROMA_BUILD_ASSETS_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                         "$<TARGET_FILE:${PLUGIN_TARGET}>"
                         "${PKG_LEAF_DIR}/plugin.so"
                 COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/apak.py"
                         pack "${PKG_LEAF_DIR}" -o "${AROMA_APAK_DIST_DIR}/${PKG_LEAF}.apak"
-                COMMENT "Packing ${PKG_LEAF}.apak"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${AROMA_APAK_DIST_DIR}/${PKG_LEAF}.apak"
+                        "${AROMA_BUILD_ASSETS_DIR}/${PKG_LEAF}.apak"
+                COMMENT "Packing ${PKG_LEAF}.apak (dist + build/assets)"
                 VERBATIM
             )
-            if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+            if(AROMA_SYNC_APAK_TO_SOURCE_ASSETS)
                 add_custom_command(TARGET ${PLUGIN_TARGET}_apak POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E make_directory
+                            "${AROMA_SOURCE_ASSETS_DIR}"
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
                             "${AROMA_APAK_DIST_DIR}/${PKG_LEAF}.apak"
-                            "${CMAKE_CURRENT_SOURCE_DIR}/assets/${PKG_LEAF}.apak"
+                            "${AROMA_SOURCE_ASSETS_DIR}/${PKG_LEAF}.apak"
                     COMMENT "Staging ${PKG_LEAF}.apak into source assets"
                     VERBATIM
                 )

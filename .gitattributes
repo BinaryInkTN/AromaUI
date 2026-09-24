@@ -1,4 +1,4 @@
-# Git LFS only for the two blobs that exceed GitHub 100MB plain-file limit.
-# Everything else is stored as plain blobs.
-examples/car_infotainment/assets/com.aroma.nav.apak filter=lfs diff=lfs merge=lfs -text
+# Git LFS only for blobs that exceed GitHub's 100MB plain-file limit.
+# Built .apak packages are git-ignored (see .gitignore): every build packs
+# its own matching-arch copies, so they are never committed.
 examples/package_examples/nav/assets/ariana_sat.mbtiles filter=lfs diff=lfs merge=lfs -text

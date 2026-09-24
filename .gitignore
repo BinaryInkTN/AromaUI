@@ -18,6 +18,11 @@ build_native/
 *.a
 *.o
 *.so
+# Built AromaUI packages: CMake packs these from plugin sources on every
+# native build (build/dist/, build/assets/, source assets dir) and installs
+# them to /usr/share/infotainment/assets on target images. Never commit
+# binaries - Yocto / packaging builds produce their own matching-arch copies.
+*.apak
 # Android / IDE runtime junk.
 .gradle/
 *.hprof
