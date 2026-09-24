@@ -259,6 +259,20 @@ bool package_manager_init(void)
 
 bool package_manager_seed_from_assets(void)
 {
+#if defined(__arm__) || defined(__aarch64__)
+    // On ARM targets the first-party .apaks are deployed (via
+    // `cmake --install --prefix /usr`) to /usr/share/infotainment/assets,
+    // so prefer that location over any working-directory ./assets copy
+    // (which may be stale or wrong-arch).
+    static const char *candidates[] = {
+        "/usr/share/infotainment/assets",
+        "assets",
+        "../assets",
+        "examples/car_infotainment/assets",
+        "/assets",
+        NULL,
+    };
+#else
     static const char *candidates[] = {
         "assets",
         "../assets",
@@ -267,6 +281,7 @@ bool package_manager_seed_from_assets(void)
         "/usr/share/infotainment/assets",
         NULL,
     };
+#endif
     const char *dir = NULL;
     for (int i = 0; candidates[i]; i++)
     {
