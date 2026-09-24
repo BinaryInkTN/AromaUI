@@ -11,20 +11,20 @@
   <link href="dropdown.css" rel="stylesheet">
 </head>
 <body>
-  <!-- Home Screen -->
+
   <div id="home-screen">
     <div class="home-card">
       <div class="home-title">Incense IDE</div>
-      
+
       <div class="form-group">
         <label>Recent Projects</label>
         <div class="home-list" id="home-projects-list">
           <div class="home-item">Loading...</div>
         </div>
       </div>
-      
+
       <hr style="border:0; border-top:1px solid var(--ide-border); margin: 10px 0;">
-      
+
       <div class="form-group">
         <label>Create New Project</label>
         <div style="display:flex; gap:10px;">
@@ -36,7 +36,7 @@
   </div>
 
   <div id="app">
-    <!-- Menu Bar -->
+
     <div id="menubar">
       <div class="menu-item" onclick="window.showHomeScreen()">Home</div>
       <div class="menu-item">File
@@ -58,7 +58,7 @@
       </div>
     </div>
 
-    <!-- Tool Bar -->
+
     <div id="toolbar">
       <button class="icon-btn" id="themeBtn" title="Toggle theme">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -75,9 +75,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <span>Run Preview</span>
       </button>
-      
+
       <div style="width: 20px;"></div>
-      
+
       <select id="nativeTarget" style="background: var(--ide-input-bg); border: 1px solid var(--ide-border); color: var(--ide-text); padding: 4px; border-radius: 4px;">
         <option value="linux">Linux</option>
         <option value="android">Android</option>
@@ -88,27 +88,27 @@
       </button>
     </div>
 
-    <!-- Main Workspace -->
+
     <div id="main-layout">
-      
-      <!-- Project Explorer -->
+
+
       <div id="sidebar-left">
         <div class="panel-header">Project Explorer</div>
         <div class="panel-content" id="file-tree">
-          <!-- Populated by JS -->
+
         </div>
       </div>
 
-      <!-- Editor Area -->
+
       <div id="center-area">
         <div id="editor-tabs">
-          <!-- Populated by JS -->
+
         </div>
         <div id="editor-container">
           <div id="editor"></div>
         </div>
-        
-        <!-- Bottom Panel -->
+
+
         <div id="bottom-panel">
           <div id="bottom-tabs">
             <div class="bottom-tab active">Console</div>
@@ -119,7 +119,7 @@
         </div>
       </div>
 
-      <!-- Preview Panel -->
+
       <div id="preview-panel">
         <div class="preview-toolbar">
           <span>Preview</span>
@@ -135,7 +135,7 @@
 
     </div>
 
-    <!-- Status Bar -->
+
     <footer id="status-bar">
       <div class="status-left">
         <span id="status-msg">Ready</span>
@@ -148,7 +148,7 @@
     </footer>
   </div>
 
-  <!-- Scripts -->
+
   <script>
     window.Module = window.Module || {};
     Module.onRuntimeInitialized = function() {
@@ -161,7 +161,7 @@
         Module.keyboardInput = null;
       }
     };
-  </script>
+</script>
   <script src="incense_sandbox.js"></script>
   <script src="ide.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.min.js"></script>
@@ -255,12 +255,12 @@
         scrollBeyondLastLine: false,
         wordWrap: 'on'
       });
-      
-      // Initialize IDE Logic
+
+
       if (window.initIDE) {
         window.initIDE(editor);
       }
     });
-  </script>
+</script>
 </body>
 </html>

@@ -1,10 +1,10 @@
-/* Memory Match (com.aroma.game.memory): 4x4 flip-to-match puzzle.
- *
- * Host-chrome plugin. Each tile is a button (click target) with a label
- * child showing "?" face-down or the tile value face-up.
- */
 
-/* Clock needs POSIX.1b: define before any system header. */
+
+
+
+
+
+
 #if !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 199309L
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
@@ -139,7 +139,7 @@ static bool on_tile_click(AromaNode *node, void *user_data)
     if (s_won || s_matched[idx] || s_shown[idx])
         return true;
     if (s_lock_until_ms > now_ms())
-        return true; /* flip-back animation pending */
+        return true;
     s_shown[idx] = true;
     if (s_first < 0)
     {
@@ -160,7 +160,7 @@ static bool on_tile_click(AromaNode *node, void *user_data)
         }
         else
         {
-            /* Keep both visible briefly, then hide in update(). */
+
             s_lock_until_ms = now_ms() + MEM_FLIP_BACK_MS;
         }
     }
@@ -277,7 +277,7 @@ static void mem_update(struct AromaNode *app_root)
     }
     else
     {
-        /* Keep the status line fresh while waiting. */
+
         refresh_all();
     }
 }

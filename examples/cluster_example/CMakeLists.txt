@@ -34,7 +34,7 @@ target_compile_options(ev_cluster PRIVATE
 
 
 
-install(TARGETS ev_cluster 
+install(TARGETS ev_cluster
     RUNTIME DESTINATION bin
 )
 
@@ -47,6 +47,6 @@ add_custom_target(run_cluster
 
 add_custom_target(run_ev
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/run_ev_cluster.sh
-    DEPENDS ev_cluster 
+    DEPENDS ev_cluster
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )

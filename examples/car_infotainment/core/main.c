@@ -111,9 +111,9 @@ int main(int argc, char **argv)
     if (state.g_voice_assistant_enabled)
         start_voice_control_thread();
 
-    // Initial setup disabled for now: go straight to the main UI.
-    // Re-enable with setup_wizard_maybe_show().
-    // setup_wizard_maybe_show();
+
+
+
 
     {
         const char *dbg = getenv("AROMA_DEBUG_SCREEN");

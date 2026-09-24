@@ -18,7 +18,7 @@
 
 static InstalledPackage *s_packages[PACKAGE_MAX_INSTALLED];
 static int s_package_count = 0;
-/* The ONLY source of truth: .apak files live here, nothing else. */
+
 static char s_assets_dir[AROMA_PACKAGE_PATH_MAX] = "";
 static char s_last_installed[AROMA_PACKAGE_ID_MAX] = "";
 
@@ -114,7 +114,7 @@ static bool copy_file(const char *src, const char *dst,
         set_err(err_buf, err_buf_len, "cannot read .apak file");
         return false;
     }
-    /* Write aside + rename so a failed copy never leaves a half .apak. */
+
     char tmp[AROMA_PACKAGE_PATH_MAX];
     if (snprintf(tmp, sizeof(tmp), "%s.tmp", dst) >= (int)sizeof(tmp))
     {
@@ -191,10 +191,10 @@ static void resolve_assets_dir(void)
         return;
     }
 #if defined(__arm__) || defined(__aarch64__)
-    /* On ARM targets the first-party .apaks are deployed (via
-     * `cmake --install --prefix /usr`) to /usr/share/infotainment/assets,
-     * so prefer that location over any working-directory ./assets copy
-     * (which may be stale or wrong-arch). */
+
+
+
+
     static const char *candidates[] = {
         "/usr/share/infotainment/assets",
         "assets",
@@ -213,9 +213,9 @@ static void resolve_assets_dir(void)
         NULL,
     };
 #endif
-    /* Two passes: prefer the first folder that actually contains packages.
-     * A higher-priority but empty dir (e.g. a /usr/share staging dir whose
-     * install step never ran) must not shadow a populated one. */
+
+
+
     for (int i = 0; candidates[i]; i++)
     {
         if (dir_has_apak(candidates[i]))
@@ -234,35 +234,67 @@ static void resolve_assets_dir(void)
             return;
         }
     }
-    /* No creation: without an assets folder there is simply nothing
-     * installed. The sideload UI reports this on install attempts. */
+
+
     s_assets_dir[0] = '\0';
 }
 
-/* Disposable runtime cache for native packages (plugin.so + bundled
- * assets need real files for dlopen/asset paths). Derived purely from
- * the .apak, validated on every load, safe to wipe any time: the assets
- * folder stays the only source of truth. */
-static void cache_root_path(char *out, size_t out_len)
+
+
+
+
+
+
+
+static char s_runtime_root[AROMA_PACKAGE_PATH_MAX] = "";
+
+static bool ensure_runtime_root(char *err_buf, size_t err_buf_len)
+{
+    if (s_runtime_root[0] && is_dir(s_runtime_root))
+        return true;
+    if (s_runtime_root[0])
+    {
+
+        s_runtime_root[0] = '\0';
+    }
+    const char *parent = getenv("AROMA_RUNTIME_DIR");
+    if (!parent || !parent[0] || !is_dir(parent))
+        parent = getenv("TMPDIR");
+    if (!parent || !parent[0] || !is_dir(parent))
+        parent = "/tmp";
+    char root[AROMA_PACKAGE_PATH_MAX];
+    if (snprintf(root, sizeof(root), "%s/aroma/packages", parent) >=
+        (int)sizeof(root))
+    {
+        set_err(err_buf, err_buf_len, "runtime dir path too long");
+        return false;
+    }
+    if (!mkdir_p(root))
+    {
+        if (err_buf && err_buf_len > 0)
+            snprintf(err_buf, err_buf_len,
+                     "cannot create runtime dir '%s' (read-only? set TMPDIR"
+                     " or AROMA_RUNTIME_DIR to a writable path)",
+                     root);
+        return false;
+    }
+    snprintf(s_runtime_root, sizeof(s_runtime_root), "%s", root);
+    return true;
+}
+
+static void runtime_root_path(char *out, size_t out_len)
 {
     if (!out || out_len == 0)
         return;
-    const char *xdg = getenv("XDG_CACHE_HOME");
-    if (xdg && xdg[0])
+    if (!s_runtime_root[0] && !ensure_runtime_root(NULL, 0))
     {
-        snprintf(out, out_len, "%s/aroma/packages", xdg);
+        out[0] = '\0';
         return;
     }
-    const char *home = getenv("HOME");
-    if (home && home[0])
-    {
-        snprintf(out, out_len, "%s/.cache/aroma/packages", home);
-        return;
-    }
-    snprintf(out, out_len, "/tmp/aroma_packages");
+    snprintf(out, out_len, "%s", s_runtime_root);
 }
 
-static void package_cache_dir(const char *id, char *out, size_t out_len)
+static void package_runtime_dir(const char *id, char *out, size_t out_len)
 {
     if (!out || out_len == 0)
         return;
@@ -270,21 +302,21 @@ static void package_cache_dir(const char *id, char *out, size_t out_len)
     if (!id || !id[0])
         return;
     char root[AROMA_PACKAGE_PATH_MAX];
-    cache_root_path(root, sizeof(root));
+    runtime_root_path(root, sizeof(root));
     if (!root[0])
         return;
     aroma_package_join_path(out, out_len, root, id);
 }
 
-static void drop_package_cache(const char *id)
+static void drop_package_runtime(const char *id)
 {
     char dir[AROMA_PACKAGE_PATH_MAX];
-    package_cache_dir(id, dir, sizeof(dir));
+    package_runtime_dir(id, dir, sizeof(dir));
     if (!dir[0] || !is_dir(dir))
         return;
-    /* Best effort: a stale cache is harmless (validated on load). */
+
     if (rm_rf(dir) != 0)
-        fprintf(stderr, "[packages] warning: cannot drop cache '%s'\n", dir);
+        fprintf(stderr, "[packages] warning: cannot drop runtime dir '%s'\n", dir);
 }
 
 static int compare_by_id(const void *a, const void *b)
@@ -367,14 +399,14 @@ static void teardown_package(InstalledPackage *pkg)
     pkg->loaded = false;
 }
 
-/* The assets folder is the only source of truth: installed packages
- * are exactly the *.apak files found here. Manifests are read straight
- * out of each archive; nothing is extracted or copied at scan time. */
+
+
+
 bool package_manager_scan(void)
 {
     if (!s_assets_dir[0])
     {
-        /* No assets folder: nothing installed (not an error). */
+
         for (int i = 0; i < s_package_count;)
         {
             teardown_package(s_packages[i]);
@@ -429,8 +461,8 @@ bool package_manager_scan(void)
             continue;
         }
         free(manifest_json);
-        /* One file per id wins deterministically: highest version_code,
-         * ties broken by first filename seen. */
+
+
         int dup = -1;
         for (int j = 0; j < found_count; j++)
         {
@@ -464,7 +496,7 @@ bool package_manager_scan(void)
     }
     closedir(d);
 
-    /* Drop records whose .apak is gone (deleted from assets). */
+
     for (int i = 0; i < s_package_count;)
     {
         bool still_there = false;
@@ -481,7 +513,7 @@ bool package_manager_scan(void)
         if (!still_there)
         {
             teardown_package(s_packages[i]);
-            drop_package_cache(s_packages[i]->manifest.id);
+            drop_package_runtime(s_packages[i]->manifest.id);
             free(s_packages[i]);
             for (int k = i; k < s_package_count - 1; k++)
                 s_packages[k] = s_packages[k + 1];
@@ -498,12 +530,12 @@ bool package_manager_scan(void)
         int idx = find_index_by_id(found_manifests[j].id);
         if (idx >= 0)
         {
-            /* Same id, different file (upgrade/downgrade on disk):
-             * retire the loaded tree so it rebuilds from the new file. */
+
+
             if (strcmp(s_packages[idx]->apak_path, found_apaks[j]) != 0)
             {
                 teardown_package(s_packages[idx]);
-                drop_package_cache(s_packages[idx]->manifest.id);
+                drop_package_runtime(s_packages[idx]->manifest.id);
                 s_packages[idx]->rundir[0] = '\0';
             }
             s_packages[idx]->manifest = found_manifests[j];
@@ -529,10 +561,10 @@ bool package_manager_scan(void)
     fprintf(stderr, "[packages] %d package(s) from %d .apak file(s) in %s\n",
             s_package_count, files_seen, s_assets_dir);
 
-    /* Purge cache dirs with no corresponding .apak (fully managed dir). */
+
     {
         char root[AROMA_PACKAGE_PATH_MAX];
-        cache_root_path(root, sizeof(root));
+        runtime_root_path(root, sizeof(root));
         DIR *cd = root[0] ? opendir(root) : NULL;
         if (cd)
         {
@@ -560,6 +592,36 @@ bool package_manager_init(void)
     for (int i = 0; i < PACKAGE_MAX_INSTALLED; i++)
         s_packages[i] = NULL;
     s_package_count = 0;
+    s_runtime_root[0] = '\0';
+
+
+    char rt_err[256] = "";
+    if (!ensure_runtime_root(rt_err, sizeof(rt_err)))
+        fprintf(stderr, "[packages] warning: %s\n", rt_err);
+    else
+        fprintf(stderr, "[packages] runtime: %s\n", s_runtime_root);
+
+
+    {
+        const char *xdg = getenv("XDG_CACHE_HOME");
+        const char *home = getenv("HOME");
+        char legacy[2][AROMA_PACKAGE_PATH_MAX];
+        int n = 0;
+        if (xdg && xdg[0])
+            snprintf(legacy[n++], sizeof(legacy[0]), "%s/aroma/packages", xdg);
+        if (home && home[0] && n < 2)
+            snprintf(legacy[n++], sizeof(legacy[0]),
+                     "%s/.cache/aroma/packages", home);
+        for (int i = 0; i < n; i++)
+        {
+            if (strcmp(legacy[i], s_runtime_root) != 0 && is_dir(legacy[i]))
+            {
+                fprintf(stderr, "[packages] removing legacy dir %s\n",
+                        legacy[i]);
+                rm_rf(legacy[i]);
+            }
+        }
+    }
     resolve_assets_dir();
     fprintf(stderr, "[packages] assets: %s\n",
             s_assets_dir[0] ? s_assets_dir : "(none)");
@@ -571,10 +633,13 @@ void package_manager_shutdown(void)
     for (int i = 0; i < s_package_count; i++)
     {
         teardown_package(s_packages[i]);
+        if (s_packages[i])
+            drop_package_runtime(s_packages[i]->manifest.id);
         free(s_packages[i]);
         s_packages[i] = NULL;
     }
     s_package_count = 0;
+
 }
 
 const char *package_manager_dir(void)
@@ -693,8 +758,8 @@ bool package_manager_install_apak(const char *apak_path,
         return false;
     }
 
-    /* The package must carry something loadable: its UI markup and/or
-     * its native plugin, checked inside the archive (nothing extracted). */
+
+
     bool has_entry = m.entry[0] && aroma_apak_contains(apak_path, m.entry);
     bool has_plugin = m.plugin[0] && aroma_apak_contains(apak_path, m.plugin);
     if (!has_entry && !has_plugin)
@@ -704,7 +769,7 @@ bool package_manager_install_apak(const char *apak_path,
         return false;
     }
 
-    /* Install = the .apak file lives in assets, named <id>.apak. */
+
     char dest[AROMA_PACKAGE_PATH_MAX];
     {
         char fname[AROMA_PACKAGE_ID_MAX + 8];
@@ -724,7 +789,7 @@ bool package_manager_install_apak(const char *apak_path,
         return false;
     }
 
-    /* Already in place: just refresh the in-memory record. */
+
     if (resident && same_file(apak_path, resident->apak_path) &&
         strcmp(resident->apak_path, dest) == 0)
     {
@@ -748,9 +813,9 @@ bool package_manager_install_apak(const char *apak_path,
     if (!copy_file(apak_path, dest, err_buf, err_buf_len))
         return false;
 
-    /* A same-id file under a different name is now stale: the <id>.apak
-     * copy above is the package. (Atomic copy first, so a failed copy
-     * never loses the previous file.) */
+
+
+
     if (resident && strcmp(resident->apak_path, dest) != 0)
     {
         if (unlink(resident->apak_path) != 0 && errno != ENOENT)
@@ -763,10 +828,10 @@ bool package_manager_install_apak(const char *apak_path,
         set_err(err_buf, err_buf_len, "installed but rescan failed");
         return false;
     }
-    /* The scan above drops the stale same-id record (different file) and
-     * picks up the new one; its cache is rebuilt on next load. */
+
+
     if (resident)
-        drop_package_cache(m.id);
+        drop_package_runtime(m.id);
     snprintf(s_last_installed, sizeof(s_last_installed), "%s", m.id);
     fprintf(stderr, "[packages] installed %s %s\n", m.id, m.version);
     return true;
@@ -786,8 +851,8 @@ bool package_manager_uninstall(const char *id,
         set_err(err_buf, err_buf_len, "package is not installed");
         return false;
     }
-    /* Uninstall = the .apak leaves the assets folder. Nothing else to do:
-     * no folders to delete, nothing to remember. */
+
+
     teardown_package(s_packages[idx]);
     if (unlink(s_packages[idx]->apak_path) != 0 && errno != ENOENT)
     {
@@ -796,7 +861,7 @@ bool package_manager_uninstall(const char *id,
         (void)err_buf;
         (void)err_buf_len;
     }
-    drop_package_cache(id);
+    drop_package_runtime(id);
     free(s_packages[idx]);
     for (int k = idx; k < s_package_count - 1; k++)
         s_packages[k] = s_packages[k + 1];
@@ -805,10 +870,10 @@ bool package_manager_uninstall(const char *id,
     return true;
 }
 
-/* Validated runtime cache for a native package: extracts the .apak to
- * a disposable dir (plugin.so needs a real file for dlopen, and bundled
- * assets need real paths) and reuses it while the .apak is unchanged.
- * Pure-UI packages never touch the filesystem. */
+
+
+
+
 static bool ensure_package_rundir(InstalledPackage *pkg,
                                   char *err_buf, size_t err_buf_len)
 {
@@ -837,16 +902,16 @@ static bool ensure_package_rundir(InstalledPackage *pkg,
         }
     }
     char dir[AROMA_PACKAGE_PATH_MAX];
-    package_cache_dir(pkg->manifest.id, dir, sizeof(dir));
+    package_runtime_dir(pkg->manifest.id, dir, sizeof(dir));
     if (!dir[0])
     {
-        set_err(err_buf, err_buf_len, "cannot resolve package cache dir");
+        set_err(err_buf, err_buf_len, "cannot resolve package runtime dir");
         return false;
     }
     rm_rf(dir);
     if (!mkdir_p(dir))
     {
-        set_err(err_buf, err_buf_len, "cannot create package cache dir");
+        set_err(err_buf, err_buf_len, "cannot create package runtime dir");
         return false;
     }
     if (!aroma_apak_extract(pkg->apak_path, dir, err_buf, err_buf_len))
@@ -913,8 +978,8 @@ bool package_manager_instantiate(InstalledPackage *pkg, AromaNode *ui_parent,
         bool present = false;
         if (has_plugin)
         {
-            /* Native package: UI loads from the validated cache dir, so
-             * relative @embed/@include refs keep working. */
+
+
             char entry_path[AROMA_PACKAGE_PATH_MAX];
             if (aroma_package_join_path(entry_path, sizeof(entry_path),
                                         pkg->rundir, pkg->manifest.entry) &&
@@ -927,7 +992,7 @@ bool package_manager_instantiate(InstalledPackage *pkg, AromaNode *ui_parent,
         }
         else
         {
-            /* Pure-UI package: markup reads straight out of the .apak. */
+
             char *source = NULL;
             if (aroma_apak_read_file(pkg->apak_path, pkg->manifest.entry,
                                      &source, NULL, NULL, 0) && source)

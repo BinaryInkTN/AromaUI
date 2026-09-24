@@ -1,16 +1,16 @@
-// ide.js - Eclipse-like layout and logic for Incense IDE
+
 
 (function() {
   const state = {
     theme: 'dark',
     currentProject: null,
     currentFile: null,
-    files: {}, // { 'aroma.json': content, ... }
+    files: {},
     editorInstance: null,
     canvasConfig: { width: 320, height: 480 }
   };
 
-  // UI Elements
+
   const elems = {
     themeBtn: document.getElementById('themeBtn'),
     buildBtn: document.getElementById('buildBtn'),
@@ -45,7 +45,7 @@
     elems.consoleOutput.scrollTop = elems.consoleOutput.scrollHeight;
   }
 
-  // --- API Backend Calls ---
+
   async function api(endpoint, payload = {}) {
     try {
       const res = await fetch(endpoint, {
@@ -91,20 +91,20 @@
     try {
       logConsole(`Creating project: ${name}...`, 'info');
       await api('/api/project/create', { name });
-      
-      // Also provide a default ui.aroma
-      const defaultAroma = 
+
+
+      const defaultAroma =
 `Window {
   title: "New App";
   width: 320;
   height: 480;
   layout: flex;
   direction: column;
-  
+
   Label { text: "Hello from ${name}"; }
 }`;
       await api('/api/project/save', { name, files: { 'src/ui.aroma': defaultAroma } });
-      
+
       logConsole(`Project ${name} created!`, 'success');
       elems.newProjName.value = '';
       await openProject(name);
@@ -121,13 +121,13 @@
       const data = await api('/api/project/open', { name });
       state.currentProject = name;
       state.files = data.files || {};
-      
-      // Default missing files
+
+
       if (!state.files['src/ui.aroma']) state.files['src/ui.aroma'] = 'Window { width: 320; height: 480; }\\n';
-      
+
       elems.currentProjectLabel.textContent = name;
       elems.homeScreen.classList.add('hidden');
-      
+
       renderFileTree();
       openFile('src/ui.aroma');
       logConsole(`Project ${name} loaded.`, 'success');
@@ -149,7 +149,7 @@
     } catch (e) {}
   };
 
-  // --- UI Logic ---
+
   function renderFileTree() {
     elems.fileTree.innerHTML = '';
     const keys = Object.keys(state.files).sort();
@@ -187,8 +187,8 @@
       monaco.editor.setModelLanguage(state.editorInstance.getModel(), lang);
       state.editorInstance.setValue(state.files[file] || '');
     }
-    
-    // Parse dimensions if aroma
+
+
     if (file === 'src/ui.aroma') {
       parseAromaDimensions();
     }
@@ -211,7 +211,7 @@
     elems.canvas.height = state.canvasConfig.height;
   }
 
-  // --- Resizing ---
+
   let isResizing = false;
   elems.resizeHandle.addEventListener('mousedown', (e) => {
     isResizing = true;
@@ -221,12 +221,12 @@
     if (!isResizing) return;
     const rect = elems.canvasWrap.getBoundingClientRect();
     const frameRect = elems.phoneFrame.getBoundingClientRect();
-    // Calculate new width/height based on mouse pos
+
     let newW = e.clientX - frameRect.left;
     let newH = e.clientY - frameRect.top;
     newW = Math.max(100, Math.min(newW, 2000));
     newH = Math.max(100, Math.min(newH, 2000));
-    
+
     state.canvasConfig.width = Math.round(newW);
     state.canvasConfig.height = Math.round(newH);
     applyCanvasSize();
@@ -236,7 +236,7 @@
       isResizing = false;
       syncCanvasSizeToCode();
       window.saveState();
-      compilePreview(); // hot reload canvas
+      compilePreview();
     }
   });
 
@@ -249,19 +249,36 @@
     state.files['src/ui.aroma'] = code;
   }
 
-  // --- Actions ---
+
   function compilePreview() {
     window.saveState();
     const code = state.files['src/ui.aroma'] || '';
-    
-    if (window.Module && Module._aroma_sandbox_reload) {
+
+    if (window.Module && Module._aroma_sandbox_reload && Module._malloc) {
       applyCanvasSize();
       logConsole('Hot-reloading Emscripten Preview...', 'info');
-      
-      const ptr = Module.allocate(Module.intArrayFromString(code), Module.ALLOC_NORMAL);
-      Module._aroma_sandbox_reload(ptr);
-      Module._free(ptr);
-      
+
+      try {
+        const n = Module.lengthBytesUTF8(code) + 1;
+        const ptr = Module._malloc(n);
+        Module.stringToUTF8(code, ptr, n);
+        Module._aroma_sandbox_reload(ptr);
+        Module._free(ptr);
+
+        if (Module._aroma_sandbox_has_error) {
+          if (Module._aroma_sandbox_has_error()) {
+            const msg = Module.UTF8ToString(Module._aroma_sandbox_get_last_error());
+            logConsole('Preview error: ' + msg, 'error');
+            setStatus('Preview error');
+            return;
+          }
+        }
+      } catch (e) {
+        logConsole('Preview reload failed: ' + (e && e.message ? e.message : e), 'error');
+        setStatus('Preview error');
+        return;
+      }
+
       logConsole('Preview running.', 'success');
     } else {
       logConsole('Emscripten module not ready.', 'error');
@@ -277,24 +294,24 @@
     try {
       const data = await api('/api/project/build', { name: state.currentProject, target });
       logConsole(data.log || 'Build finished', 'success');
-      
+
       if (data.success) {
         logConsole(`Running project on ${target}...`, 'info');
         setStatus('Running...');
         const runData = await api('/api/project/run', { name: state.currentProject, target });
         logConsole(runData.log || 'Run command dispatched', 'info');
       }
-      
+
       setStatus('Ready');
     } catch (e) {
       setStatus('Build Error');
     }
   }
 
-  // Initialize
+
   window.initIDE = function(editor) {
     state.editorInstance = editor;
-    
+
     elems.themeBtn.onclick = () => {
       state.theme = state.theme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', state.theme);
@@ -309,7 +326,7 @@
     logConsole('IDE Ready. Select or create a project.', 'info');
   };
 
-  // C interop for dynamic sizing
+
   window.aroma_sandbox_get_width = function() { return state.canvasConfig.width; };
   window.aroma_sandbox_get_height = function() { return state.canvasConfig.height; };
 

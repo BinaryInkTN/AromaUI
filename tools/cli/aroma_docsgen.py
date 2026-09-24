@@ -664,34 +664,10 @@ class DocGenerator:
             f"<span>{p['name']}</span></span>"
         )
 
-    def _quick_links_html(self, config: Dict, slug_to_id: Optional[Dict[str, str]] = None) -> str:
-        cards = config.get("quick_links", [])
-        if not cards:
-            return ""
-        slug_to_id = slug_to_id or {}
-        items = "".join(
-            f'<div class="quick-link" onclick="showPage(\'{slug_to_id.get(c.get("page_id", ""), c.get("page_id", ""))}\')">'
-            f'<div class="ql-icon"><i data-lucide="{c.get("icon", "link")}"></i></div>'
-            f'<div class="ql-body">'
-            f'<div class="ql-title">{c.get("title", "")}</div>'
-            f'<div class="ql-desc">{c.get("description", "")}</div>'
-            f"</div>"
-            f'<i data-lucide="chevron-right" class="ql-arrow"></i>'
-            f"</div>"
-            for c in cards
-        )
-        return (
-            '<div class="quick-links-section">'
-            '<h2 class="section-heading">Quick Links</h2>'
-            f'<div class="quick-links">{items}</div>'
-            "</div>"
-        )
-
     def _welcome_page_html(
         self,
         project_name: str,
         description: str,
-        quick_links_html: str,
         categories: List[Dict],
         sidebar_sections: Dict[str, Dict[str, List]],
     ) -> str:
@@ -740,12 +716,14 @@ class DocGenerator:
                     </button>
                 </div>
             </div>
-            {quick_links_html}
-            <div class="home-section">
-                <h2 class="section-heading">Want to separate UI from business logic? Use Aroma's Incense.</h2>
-                <p style="color:var(--md-on-surface-var);margin:8px 0 16px;font-size:15px">Interactive Incense language playground. Edit the code and click Run.</p>
-                <div style="border:1px solid var(--md-outline);border-radius:12px;overflow:hidden;background:var(--md-surface)">
-                    <iframe src="sandbox.html" style="width:100%;height:720px;border:none;display:block"></iframe>
+            <div class="home-section sandbox-spotlight">
+                <div class="sandbox-head">
+                    <h2 class="section-heading" style="margin-bottom:0">Try it live: Incense sandbox</h2>
+                    <a class="sandbox-open" href="sandbox.html" target="_blank" rel="noopener">Open fullscreen</a>
+                </div>
+                <p class="sandbox-sub">Write Incense UI code and click Run. The preview renders instantly in your browser via WebAssembly.</p>
+                <div class="sandbox-frame">
+                    <iframe src="sandbox.html" title="Incense live sandbox" style="width:100%;height:800px;border:none;display:block"></iframe>
                 </div>
             </div>
             {browse_section}
@@ -1513,49 +1491,32 @@ body{{
   font-weight:500;
 }}
 
-.quick-links-section{{margin-top:8px}}
 .section-heading{{
   font-family:var(--fd);
   font-size:28px;
   font-weight:400;color:var(--md-on-surface);
   margin-bottom:24px;letter-spacing:-.01em;
 }}
-.quick-links{{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:16px;margin-bottom:56px;
+.sandbox-spotlight{{margin-bottom:64px}}
+.sandbox-head{{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;margin-bottom:12px;
 }}
-.quick-link{{
-  display:flex;align-items:center;gap:16px;
-  padding:20px;
-  background:var(--md-surface);
-  border:1px solid var(--md-outline-variant);
-  border-radius:8px;
-  cursor:pointer;
-  position:relative;overflow:hidden;
-  transition:box-shadow 150ms,border-color 150ms;
+.sandbox-open{{
+  font-size:14px;font-weight:500;color:var(--md-primary);
+  text-decoration:none;white-space:nowrap;
 }}
-.quick-link:hover{{
-  box-shadow:var(--md-elev-1);
-  border-color:var(--md-primary);
+.sandbox-open:hover{{text-decoration:underline}}
+.sandbox-sub{{
+  color:var(--md-on-surface-var);margin:0 0 20px;font-size:15px;line-height:1.6;
+  max-width:720px;
 }}
-.ql-icon{{
-  width:44px;height:44px;border-radius:8px;
-  background:var(--md-primary-container);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--md-on-primary-cont);flex-shrink:0;
-  position:relative;z-index:1;
+.sandbox-frame{{
+  border:1px solid var(--md-outline);border-radius:16px;overflow:hidden;
+  background:var(--md-surface);box-shadow:var(--md-elev-2);
 }}
-.ql-icon i{{width:22px;height:22px}}
-.ql-body{{flex:1;min-width:0;position:relative;z-index:1}}
-.ql-title{{font-size:15px;font-weight:500;color:var(--md-on-surface);margin-bottom:4px}}
-.ql-desc{{font-size:13px;color:var(--md-on-surface-var);line-height:1.5}}
-.ql-arrow{{
-  color:var(--md-on-surface-var);flex-shrink:0;
-  width:20px;height:20px;position:relative;z-index:1;
-  transition:transform 150ms,color 150ms;
-}}
-.quick-link:hover .ql-arrow{{transform:translateX(4px);color:var(--md-primary)}}
+.sandbox-frame iframe{{width:100%;height:800px;border:none;display:block}}
+@media(max-width:760px){{.sandbox-frame iframe{{height:640px}}}}
 
 .welcome-page{{padding:8px 0 16px;animation:fl-fade-up 200ms cubic-bezier(0,0,0,1)}}
 .home-hero{{
@@ -3118,9 +3079,8 @@ window.addEventListener('hashchange', () => {{
                 "content": content_text[:1000],
             })
 
-        quick_links_html = self._quick_links_html(config, slug_to_id)
         welcome_html = self._welcome_page_html(
-            project_name, description, quick_links_html, categories, sidebar_sections
+            project_name, description, categories, sidebar_sections
         )
 
         sb = []

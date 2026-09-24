@@ -1,17 +1,17 @@
-/* Contacts package (com.aroma.contacts): dialer, contact list and contact
- * sync over Bluetooth HFP/PBAP.
- *
- * Self-managed chrome: open_phone/close_phone own the drawer, z-order and
- * slide animation exactly as the former built-in app did.
- *
- * Self-contained Bluetooth: the HFP/PBAP stack (bt_speaker_hfp.c) compiles
- * into this plugin.so, and the contact store lives here too. Connection /
- * device identity comes from the media package's service (first-party
- * interop). Remaining host coupling is UI chrome only (state nodes,
- * drawer, animations, media card) via the host's -rdynamic export.
- * Third-party plugins must use only the public aroma_* API +
- * AromaPackageHost fonts.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "app_state.h"
 #include "app_registry.h"
 #include "vehicle_view.h"
@@ -35,7 +35,7 @@
 
 void populate_contact_listview(AromaNode *listview);
 
-/* ===== owned contact store (was host AppState) ===== */
+
 #define CONTACTS_MAX_STORE 100
 typedef struct
 {
@@ -48,26 +48,26 @@ static int s_contact_count = 0;
 static bool s_contacts_fetched = false;
 static pthread_mutex_t s_fetch_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/* Service shorthand: connection/device via the media package. */
+
 static const ContactsBtService *bt_svc(void)
 {
     return contacts_bt_service();
 }
 
-/* ===== fetch globals ===== */
+
 int contact_fetch_retries = 0;
 bool contact_fetch_in_progress = false;
 
-/* ===== contact list lock ===== */
+
 pthread_mutex_t contact_list_lock = PTHREAD_MUTEX_INITIALIZER;
 
-/* ===== dialer globals ===== */
+
 char dialer_number[MAX_DIALER_DIGITS] = "";
 AromaNode *dialer_display_label = NULL;
 AromaNode *dialer_card = NULL;
 int sorted_to_original[100];
 
-/* ===== pagination globals ===== */
+
 int contact_page = 0;
 int total_pages = 0;
 AromaNode *prev_page_btn = NULL;
@@ -75,7 +75,7 @@ AromaNode *next_page_btn = NULL;
 AromaNode *page_label = NULL;
 AromaNode *pagination_card = NULL;
 
-/* ===== dialer handlers ===== */
+
 static bool on_dialer_delete_click_icon(AromaNode *node, void *user_data)
 {
     (void)node;
@@ -127,7 +127,7 @@ static bool on_dialer_button_click(AromaNode *node, void *user_data)
 }
 
 
-/* ===== tab changed ===== */
+
 static void on_tab_changed(AromaNode *tabs, int tab_index, void *user_data)
 {
     (void)tabs;
@@ -152,7 +152,7 @@ static void on_tab_changed(AromaNode *tabs, int tab_index, void *user_data)
 }
 
 
-/* ===== contacts list + pagination ===== */
+
 static int compare_contacts(const void *a, const void *b)
 {
     const ContactInfo *ca = (const ContactInfo *)a;
@@ -334,7 +334,7 @@ static void on_next_page_click(void *user_data)
 }
 
 
-/* ===== phone open/close ===== */
+
 static void on_contact_click(int index, void *user_data)
 {
     (void)user_data;
@@ -368,10 +368,10 @@ static void on_contact_click(int index, void *user_data)
 void phone_opening_anim(AromaNode *target, float progress, void *user_data)
 {
     (void)user_data;
-    // Animate ONLY the app card. The phone content nodes keep their creation
-    // geometry: the tabs widget draws/hit-tests from an internal rect that
-    // does not follow node-rect writes, so moving them here desyncs the tab
-    // bar from its content (bar/labels end up mid-screen over the list).
+
+
+
+
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
@@ -426,7 +426,7 @@ bool open_phone(AromaNode *node, void *user_data)
 void phone_closing_anim(AromaNode *target, float progress, void *user_data)
 {
     (void)user_data;
-    // See phone_opening_anim: only the app card moves.
+
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
@@ -475,21 +475,21 @@ void close_phone(void *user_data)
 }
 
 
-/* ===== contact fetch ===== */
+
 static void contacts_fetch_data_only(void);
-/* Legacy entry point: fetch data only, defer listview populate to the UI
- * thread via s_contacts_ui_dirty (calling populate directly from a worker
- * races teardown/reinstall -> crash). */
+
+
+
 void attempt_contact_fetch(void)
 {
     contacts_fetch_data_only();
 }
 
 
-/* ===== build phone ui ===== */
+
 void build_phone_app_ui(AromaNode *parent)
 {
-    if (!parent || state.phone_node) return; // Already built
+    if (!parent || state.phone_node) return;
 
     state.phone_node = aroma_ui_container(
         parent, 0, 0, WIN_W, WIN_H,
@@ -506,8 +506,8 @@ void build_phone_app_ui(AromaNode *parent)
     aroma_node_set_hidden(state.phone_close_btn, true);
 
     const char *labels[] = {"Contacts", "Dialer"};
-    // Header-strip height (see build_music_app_ui): full-height here draws
-    // the tab bar over the contact list.
+
+
     state.phone_app_tabs = aroma_tabs_create(
         state.phone_node, 0, 60, WIN_W, 50,
         labels, 2);
@@ -516,7 +516,7 @@ void build_phone_app_ui(AromaNode *parent)
     aroma_tabs_set_on_change(state.phone_app_tabs, on_tab_changed, NULL);
     aroma_tabs_setup_events(state.phone_app_tabs, aroma_ui_request_redraw, NULL);
 
-    // Contacts tab content
+
     state.contact_listview = aroma_listview_create(
         state.phone_app_tabs, 20, 90, WIN_W - 40, WIN_H - 200);
     aroma_node_set_z_index(state.contact_listview, Z_LAYER_STATUS_BAR + 13);
@@ -546,7 +546,7 @@ void build_phone_app_ui(AromaNode *parent)
         on_next_page_click, NULL, state.icon_font);
     aroma_node_set_z_index(next_page_btn, Z_LAYER_STATUS_BAR + 14);
 
-    // Dialer tab content (previously left empty, so the Dialer tab was blank)
+
     dialer_card = aroma_ui_card(
         state.phone_app_tabs, 20, 90, WIN_W - 40, WIN_H - 160, CARD_TYPE_GLASS);
     aroma_node_set_z_index(dialer_card, Z_LAYER_STATUS_BAR + 13);
@@ -557,8 +557,8 @@ void build_phone_app_ui(AromaNode *parent)
         LABEL_STYLE_LABEL_LARGE, state.settings_font);
     aroma_node_set_z_index(dialer_display_label, Z_LAYER_STATUS_BAR + 14);
 
-    // Compact centered keypad grid (3 cols x 5 rows, 12px gaps) instead of
-    // widely spaced absolute buttons.
+
+
     AromaNode *dialer_grid = aroma_ui_container(
         dialer_card, (984 - 280) / 2, 70, 280, 330,
         AROMA_LAYOUT_MODE_GRID, AROMA_FLEX_ROW,
@@ -591,7 +591,7 @@ void build_phone_app_ui(AromaNode *parent)
         aroma_node_set_z_index(call_btn, Z_LAYER_STATUS_BAR + 15);
     }
 
-    // Register content with tabs
+
     AromaNode *contacts_content[] = {state.contact_listview, pagination_card};
     AromaNode *dialer_content[] = {dialer_card};
     aroma_tabs_set_content(state.phone_app_tabs, 0, contacts_content, 2);
@@ -599,18 +599,18 @@ void build_phone_app_ui(AromaNode *parent)
 }
 
 
-/* --- Contact sync poll ----------------------------------------------------
- * Replaces the old per-frame check in update_vehicle_view: fetch contacts
- * shortly after (re)connect, independent of whether the app is visible.
- *
- * Lifecycle (reinstall-safe): the thread is joinable and stopped in
- * contacts_hook_destroy BEFORE the host dlcloses this .so and destroys the
- * node tree. The old detached fire-and-forget thread kept running across
- * uninstall and reinstall: it touched freed phone and pagination nodes
- * (use-after-free crash) and raced the new install's UI (blank or corrupt).
- * The worker now only fetches data into the owned s_contacts store and sets
- * s_contacts_ui_dirty; contacts_hook_update (UI thread) does the actual
- * listview populate. Short sleeps keep uninstall latency ~100ms. */
+
+
+
+
+
+
+
+
+
+
+
+
 static pthread_t s_fetch_thread;
 static volatile bool s_fetch_stop = false;
 static bool s_fetch_started = false;
@@ -632,8 +632,8 @@ static void contacts_fetch_data_only(void)
         return;
     }
 
-    /* Connection + BlueZ device path via the media service (same phone
-     * the A2DP side tracks). */
+
+
     const ContactsBtService *svc = bt_svc();
     bool connected = svc && svc->connected();
     bt_device_info_t device = {{0}};
@@ -701,7 +701,7 @@ static void *contacts_fetch_thread_func(void *arg)
     bool last_connected = false;
     while (!s_fetch_stop)
     {
-        /* 5s poll in 100ms slices so destroy joins promptly. */
+
         for (int i = 0; i < CONTACTS_RETRY_INTERVAL_SEC * 10 && !s_fetch_stop; i++)
             usleep(100000);
         if (s_fetch_stop)
@@ -712,7 +712,7 @@ static void *contacts_fetch_thread_func(void *arg)
             break;
         if (connected && !last_connected)
         {
-            /* Fresh (re)connect: allow a full retry budget again. */
+
             contact_fetch_retries = 0;
         }
         last_connected = connected;
@@ -725,7 +725,7 @@ static void *contacts_fetch_thread_func(void *arg)
     return NULL;
 }
 
-/* --- .apak plugin entry --------------------------------------------------- */
+
 #include "aroma_package.h"
 
 static AromaAppPlugin s_contacts_mirror;
@@ -743,10 +743,10 @@ static bool contacts_hook_init(const AromaPackageManifest *manifest,
     s_contacts_mirror.id = "com.aroma.contacts";
     s_contacts_mirror.name = "Contacts";
 
-    /* Fresh-install defaults. Node pointers are (re)created in build_ui;
-     * destroy clears them back to NULL so a reinstall never sees a stale
-     * non-NULL guard (build_phone_app_ui early-returns on
-     * state.phone_node != NULL -> empty app_root -> blank app). */
+
+
+
+
     contact_fetch_retries = 0;
     contact_fetch_in_progress = false;
     contact_page = 0;
@@ -793,11 +793,11 @@ static void contacts_hook_hide(struct AromaNode *app_root)
 static void contacts_hook_update(struct AromaNode *app_root)
 {
     (void)app_root;
-    /* Pump the owned HFP stack: without this its private D-Bus bus is
-     * never dispatched (nothing else calls bt_hfp_poll). */
+
+
     bt_hfp_poll();
-    /* UI thread: apply worker-fetched contacts to the listview. The worker
-     * never touches nodes, so no race with teardown/reinstall. */
+
+
     if (s_contacts_ui_dirty && !s_fetch_stop && state.contact_listview)
     {
         s_contacts_ui_dirty = false;
@@ -807,10 +807,10 @@ static void contacts_hook_update(struct AromaNode *app_root)
 
 static void contacts_hook_destroy(void)
 {
-    /* Stop the worker BEFORE the host destroys nodes + dlcloses this .so.
-     * Joining here guarantees the thread no longer touches s_contacts
-     * (host memory, safe) nor any node pointer, and that no second thread
-     * accumulates across reinstalls. */
+
+
+
+
     s_fetch_stop = true;
     if (s_fetch_started)
     {
@@ -818,13 +818,13 @@ static void contacts_hook_destroy(void)
         s_fetch_started = false;
     }
     s_contacts_ui_dirty = false;
-    /* Stop the owned HFP stack so a live update can dlclose this .so
-     * without stranding its D-Bus state. */
+
+
     contacts_bt_service()->set_enabled(false);
-    /* Clear every node pointer into the dying tree: host globals (state.*)
-     * survive dlclose, so leaving them non-NULL would make the next
-     * install's build_phone_app_ui early-return (blank) and any access
-     * use-after-free (crash). The tree itself is freed by the host. */
+
+
+
+
     state.phone_node = NULL;
     state.phone_close_btn = NULL;
     state.phone_app_tabs = NULL;

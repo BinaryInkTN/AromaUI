@@ -1,7 +1,7 @@
-# First-party media package: full-screen Music app + owned A2DP/AVRCP
-# Bluetooth speaker stack (bt_speaker_api.c). Self-contained: the only
-# host coupling left is UI-chrome coordination (documented first-party
-# privilege); all BT logic and state live in this plugin.so.
+
+
+
+
 cmake_minimum_required(VERSION 3.15)
 
 if(NOT DEFINED AromaUI_INCLUDE_DIR)
@@ -13,9 +13,9 @@ if(NOT DEFINED AromaApp_INCLUDE_DIR)
         "Host app include directory")
 endif()
 
-# D-Bus (BlueZ) + PulseAudio are system libs: the plugin links them
-# itself, like any third-party native app would. The host does not
-# provide BT symbols.
+
+
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(DBUS REQUIRED dbus-1)
 pkg_check_modules(PULSE REQUIRED libpulse)
@@ -47,6 +47,6 @@ target_link_libraries(media_plugin PRIVATE
     ${DBUS_LIBRARIES}
     ${PULSE_LIBRARIES}
 )
-# NOTE: deliberately NOT linked against libaroma or the host - the host
-# process provides all aroma_* and app symbols at dlopen time (it links
-# with -rdynamic).
+
+
+

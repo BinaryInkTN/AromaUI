@@ -59,26 +59,26 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     if(NOT ENABLE_DEBUG_SYMBOLS)
-        set(PRODUCTION_COMPILE_FLAGS 
+        set(PRODUCTION_COMPILE_FLAGS
             -fno-omit-frame-pointer
             -flto=auto
         )
-        set(PRODUCTION_LINK_FLAGS 
+        set(PRODUCTION_LINK_FLAGS
             -flto=auto
         )
         message(STATUS "Production build: LTO enabled, symbols stripped")
     else()
-        set(PRODUCTION_COMPILE_FLAGS 
+        set(PRODUCTION_COMPILE_FLAGS
             -g
             -flto=auto
         )
-        set(PRODUCTION_LINK_FLAGS 
+        set(PRODUCTION_LINK_FLAGS
             -flto=auto
         )
         message(STATUS "Production build: Debug symbols kept")
     endif()
 else()
-    set(PRODUCTION_COMPILE_FLAGS 
+    set(PRODUCTION_COMPILE_FLAGS
         -g
     )
     set(PRODUCTION_LINK_FLAGS "")
@@ -88,7 +88,7 @@ if(NOT TARGET aroma)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../.." aroma_root)
 endif()
 
-target_compile_options(aroma PRIVATE 
+target_compile_options(aroma PRIVATE
     ${PRODUCTION_COMPILE_FLAGS}
     ${SANITIZER_COMPILE_FLAGS}
 )
@@ -145,7 +145,7 @@ if(NOT EMSCRIPTEN AND NOT ENABLE_GLFW AND ENABLE_GPU_HARDWARE)
     target_compile_definitions(infotainment PRIVATE
         AROMA_FORCE_HARDWARE_GPU=1
     )
-    target_compile_definitions(aroma PRIVATE 
+    target_compile_definitions(aroma PRIVATE
         GLPS_USE_EGL=1
         AROMA_FORCE_HARDWARE_GPU=1
     )
@@ -178,8 +178,8 @@ else()
 endif()
 
 target_include_directories(infotainment PRIVATE
-    # Public API first: bare "aroma_*.h" must resolve to include/,
-    # not to the src/core/ forwarding wrappers of the same name.
+
+
     "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
     "${CMAKE_CURRENT_SOURCE_DIR}/vosk_lib"
     "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -189,13 +189,13 @@ target_include_directories(infotainment PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/voice"
     "${CMAKE_CURRENT_SOURCE_DIR}/pkg"
     "${CMAKE_CURRENT_SOURCE_DIR}/apak"
-    # First-party BT service contracts (owned by the media/contacts
-    # packages; the host only includes the contract headers).
+
+
     "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts/src"
 )
-# _GNU_SOURCE was previously pulled in by the Bluetooth block; keep it:
-# several host sources rely on GNU extensions.
+
+
 target_compile_definitions(infotainment PRIVATE _GNU_SOURCE)
 
 set(AROMA_APAK_SOURCES
@@ -232,10 +232,10 @@ if(EMSCRIPTEN)
         "-sINITIAL_MEMORY=134217728"
         "-sFETCH=1"
         "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
-        # Native .apak bundles embed arch-specific plugin.so files that
-        # cannot dlopen on the web (and nav alone is >100MB): keep them
-        # out of the preloaded web bundle. The web build keeps
-        # settings/third-party UI packages only.
+
+
+
+
         "--exclude-file" "*.apak"
     )
 elseif(ENABLE_GLFW)
@@ -259,10 +259,10 @@ else()
 endif()
 
 if(UNIX AND NOT EMSCRIPTEN)
-    # Native .apak plugins resolve aroma_* and host symbols from the host
-    # process at dlopen time: export dynamic symbols, and pin the
-    # plugin-facing API (plugin_api.syms) so LTO/GC cannot drop functions
-    # only referenced by plugins.
+
+
+
+
     target_link_options(infotainment PRIVATE -rdynamic)
     file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/plugin_api.syms" _plugin_api_syms)
     foreach(_sym IN LISTS _plugin_api_syms)
@@ -292,15 +292,15 @@ message(STATUS "LTO Enabled: ${CMAKE_BUILD_TYPE}==Release")
 message(STATUS "=====================================")
 message(STATUS "")
 
-# --- First-party .apak packages ------------------------------------------------
-# nav / media / contacts compile to native plugins, are packed with tools/apak.py
-# into <build>/dist/*.apak and staged into <build>/assets/ + the source assets
-# dir (examples/car_infotainment/assets/). The assets folder is the ONLY
-# source of truth for packages: at runtime package_manager_scan() reads the
-# *.apak files straight out of it (./assets, ../assets,
-# examples/car_infotainment/assets). Nothing is ever extracted at build time.
-# Native plugins need dlopen, so this whole block is skipped for Emscripten
-# (where the web build keeps settings/third-party UI packages only).
+
+
+
+
+
+
+
+
+
 set(AROMA_APAK_DIST_DIR "${CMAKE_CURRENT_BINARY_DIR}/dist")
 set(AROMA_BUILD_ASSETS_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
 set(AROMA_SOURCE_ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
@@ -309,39 +309,39 @@ file(MAKE_DIRECTORY
     "${AROMA_BUILD_ASSETS_DIR}"
     "${AROMA_SOURCE_ASSETS_DIR}")
 
-# Sync freshly packed .apaks back to the source assets dir so runs
-# (build dir via ../assets, repo root via examples/.../assets), the
-# Emscripten --preload-file bundle, and firmware packaging all pick up
-# matching-arch packages. Turn off for read-only-source or packaging
-# builds that must not touch the source tree:
-#   cmake -DAROMA_SYNC_APAK_TO_SOURCE_ASSETS=OFF ...
+
+
+
+
+
+
 option(AROMA_SYNC_APAK_TO_SOURCE_ASSETS
     "Copy built .apak files into examples/car_infotainment/assets/" ON)
 
 if(NOT EMSCRIPTEN)
     find_package(Python3 COMPONENTS Interpreter QUIET)
 
-    # Adds build + pack rules for one first-party package:
-    #   add_first_party_package(<leaf-id> <package-source-dir> <plugin-target>)
-    # Packs <build>/dist/<leaf>.apak from a leaf staging dir
-    # (<build>/apak-stage/<leaf>/ with manifest.json + assets/ + plugin.so).
-    # Staging (plugin.so -> leaf dir) happens here, in the pack target
-    # itself, and NOT as a POST_BUILD on the plugin: POST_BUILD only
-    # fires when the plugin relinks, so an up-to-date plugin would
-    # silently skip staging and the pack step would fail on the
-    # missing plugin.so.
-    # Every pack also stages the finished .apak into <build>/assets/
-    # (so ./assets picks it up when running from the build dir) and, unless
-    # AROMA_SYNC_APAK_TO_SOURCE_ASSETS is OFF, back into the source
-    # assets dir (so ../assets / repo-root / web-preload find it).
-    # Deployment to /usr/share/infotainment/assets for target images
-    # goes through the install() rules below (DESTDIR-aware), never a
-    # raw POST_BUILD cp to /usr/share (needs root every build and
-    # contaminates cross-build hosts).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function(add_first_party_package PKG_LEAF PKG_SRC_DIR PLUGIN_TARGET)
         set(PKG_LEAF_DIR "${CMAKE_CURRENT_BINARY_DIR}/apak-stage/${PKG_LEAF}")
         file(COPY "${PKG_SRC_DIR}/manifest.json" DESTINATION "${PKG_LEAF_DIR}")
-        # Bundled assets travel with the package inside the .apak.
+
         if(EXISTS "${PKG_SRC_DIR}/assets")
             file(COPY "${PKG_SRC_DIR}/assets" DESTINATION "${PKG_LEAF_DIR}")
         endif()
@@ -375,25 +375,25 @@ if(NOT EMSCRIPTEN)
         endif()
     endfunction()
 
-    # Navigation (offline maps + routing).
+
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav"
                      "${CMAKE_CURRENT_BINARY_DIR}/nav_plugin_build")
     add_first_party_package(com.aroma.nav
         "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/nav" nav_plugin)
 
-    # Media (Bluetooth AVRCP now playing + devices).
+
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media"
                      "${CMAKE_CURRENT_BINARY_DIR}/media_plugin_build")
     add_first_party_package(com.aroma.media
         "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/media" media_plugin)
 
-    # Contacts (dialer + contact list + PBAP sync).
+
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts"
                      "${CMAKE_CURRENT_BINARY_DIR}/contacts_plugin_build")
     add_first_party_package(com.aroma.contacts
         "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/contacts" contacts_plugin)
 
-    # --- Games (host-chrome native plugins, third-party pattern) ------------
+
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/tictactoe"
                      "${CMAKE_CURRENT_BINARY_DIR}/tictactoe_plugin_build")
     add_first_party_package(com.aroma.game.tictactoe
@@ -404,11 +404,11 @@ if(NOT EMSCRIPTEN)
     add_first_party_package(com.aroma.game.memory
         "${CMAKE_CURRENT_SOURCE_DIR}/../package_examples/games/memory" memory_plugin)
 
-    # The app reads these at runtime straight out of the assets folder,
-    # so building `infotainment` alone (e.g. `cmake --build . --target
-    # infotainment`, as packaging builds do) must also (re)build the
-    # first-party .apaks with the SAME toolchain/arch. Otherwise the app
-    # builds but ships/loads without (or stale, wrong-arch) packages.
+
+
+
+
+
     foreach(_apak_target nav_plugin_apak media_plugin_apak contacts_plugin_apak
                          tictactoe_plugin_apak memory_plugin_apak)
         if(TARGET ${_apak_target})
@@ -416,11 +416,11 @@ if(NOT EMSCRIPTEN)
         endif()
     endforeach()
 
-    # Deployment: `cmake --install --prefix /usr` (or DESTDIR for packaging)
-    # places the freshly built ARM apaks straight into
-    # /usr/share/infotainment/assets, where the package scan discovers them.
-    # A raw POST_BUILD cp to /usr/share is deliberately avoided: it would
-    # need root during every build and contaminate cross-build hosts.
+
+
+
+
+
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
         install(FILES
             "${AROMA_APAK_DIST_DIR}/com.aroma.nav.apak"

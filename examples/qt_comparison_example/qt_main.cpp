@@ -20,13 +20,13 @@
 
 static constexpr bool REPRODUCE_ORIGINAL_QUIT_ON_PRIMARY_WIRING = false;
 
-// ---------------------------------------------------------------------------
-// Shared benchmark contract (must match the Aroma harness exactly):
-//   - fixed total wall-clock script duration, split evenly across the 9 steps
-//   - fixed settle delay before the script starts
-//   - repaint tick and FPS sampling run on their own independent cadence
-//   - a trailing partial FPS window is reported, never silently dropped
-// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
 static constexpr int SETTLE_DELAY_MS = 200;
 static constexpr int STEP_COUNT = 9;
 static constexpr double TOTAL_SCRIPT_DURATION_MS = 6000.0;
@@ -87,8 +87,8 @@ public:
 
     int frameCountSnapshot() const { return frameCount; }
 
-    // Mark the window dirty only when a driven action actually happened,
-    // instead of forcing a repaint every loop turn regardless of state.
+
+
     void markDirtyFromAction() { update(); }
 
 protected:
@@ -262,8 +262,8 @@ private:
         frameCount = 0;
         timer.start();
 
-        // Repaint tick is independent of the test-driving cadence below, so FPS
-        // reflects render cost rather than however fast the script happens to run.
+
+
         QTimer *repaintTimer = new QTimer(this);
         QObject::connect(repaintTimer, &QTimer::timeout, [this]()
                          { this->update(); });
@@ -275,17 +275,17 @@ public:
     static QElapsedTimer g_fpsWindowTimer;
     static int g_fpsWindowFrameCount;
 
-    // Called once per paint to also drive windowed FPS sampling independent of
-    // any single-second boundary check, so a trailing partial window is still
-    // captured instead of silently discarded.
+
+
+
 };
 
 std::vector<double> PerfTestWindow::g_fpsSamples;
 
 static void sampleFpsWindow(PerfTestWindow *win, QElapsedTimer &windowTimer, int &windowFrames, bool forceFlush)
 {
-    // Kept separate from paintEvent so both a full 1s window and a final
-    // partial window at shutdown are recorded the same way.
+
+
     double elapsedMs = windowTimer.elapsed();
     if (elapsedMs >= FPS_WINDOW_MS || (forceFlush && windowFrames > 0 && elapsedMs > 0))
     {
@@ -305,17 +305,17 @@ static void runStressScript(PerfTestWindow *win)
 {
     using namespace std;
 
-    // Independent bookkeeping for windowed FPS sampling; runs alongside the
-    // fixed-duration step budget below rather than being tied to step count.
+
+
     QElapsedTimer fpsWindowTimer;
     int fpsWindowFrames = 0;
     fpsWindowTimer.start();
 
     auto waitAndSample = [&](int ms)
     {
-        // qWait already pumps the event loop (and therefore paintEvent, which
-        // increments frameCount); we piggyback windowed sampling on top of it
-        // so both harnesses use the same "did a paint happen" bookkeeping.
+
+
+
         int elapsedSoFar = 0;
         const int slice = 16;
         while (elapsedSoFar < ms)
@@ -327,9 +327,9 @@ static void runStressScript(PerfTestWindow *win)
         }
     };
 
-    // Each step gets an equal, fixed share of the total script duration
-    // (PER_STEP_BUDGET_MS), matching the Aroma harness's per-step budget.
-    // Sub-actions within a step split that budget evenly among themselves.
+
+
+
 
     qDebug() << "\n--- Step 1: Clicking top buttons ---";
     {
@@ -477,8 +477,8 @@ static void runStressScript(PerfTestWindow *win)
 
     qDebug() << "\n=== Qt Scripted Stress Test Complete ===";
 
-    // Flush whatever's left in the current window instead of discarding it,
-    // so a run that doesn't land exactly on a window boundary still counts.
+
+
     sampleFpsWindow(win, fpsWindowTimer, fpsWindowFrames, true);
 
     const auto &samples = PerfTestWindow::g_fpsSamples;
@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
     PerfTestWindow window;
     window.show();
 
-    // Fixed settle delay before the script starts, matching the Aroma harness.
+
     QTimer::singleShot(SETTLE_DELAY_MS, [&window]()
                        { runStressScript(&window); });
 

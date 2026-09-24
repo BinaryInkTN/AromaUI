@@ -1,16 +1,16 @@
-/* Contacts Bluetooth service implementation: owns the HFP/PBAP
- * telephony stack (bt_speaker_hfp.c, same .so) and exposes it to the
- * host through ContactsBtService. Nobody registers the HFP call
- * callback: the host call monitor polls active_calls (as it always
- * did), and bt_hfp_poll() runs on this plugin's update tick so HFP
- * signal dispatch actually happens (it never did when the host owned
- * the stack - nothing pumped the private bus).
- *
- * Lifecycle mirrors the old host toggle exactly: the plugin init does
- * NOT start the stack; set_enabled(true) inits, set_enabled(false)
- * cleans up. Destroy stops the stack so a live update can dlclose
- * this .so without stranding D-Bus state.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "contacts_bt_service.h"
 #include "media_bt_service.h"
@@ -20,9 +20,9 @@
 
 static bool s_hfp_enabled = false;
 
-/* First-party interop: telephony gates on the same connected phone the
- * media package's A2DP side tracks. Resolved per call (dlsym is cheap;
- * system packages can be live-updated, so no stale caching). */
+
+
+
 static const MediaBtService *media_svc(void)
 {
     typedef const MediaBtService *(*svc_fn)(void);

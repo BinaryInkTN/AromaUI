@@ -1,13 +1,13 @@
-/* Media Bluetooth service implementation: owns the A2DP/AVRCP speaker
- * stack (bt_speaker_api.c, same .so) and exposes it to the host through
- * MediaBtService. No callbacks are registered anywhere: every consumer
- * polls the thread-safe getters (the host mini card has its monitor
- * thread, the Music UI refreshes on its update tick).
- *
- * Lifecycle mirrors the old host toggle exactly: enable = init (once)
- * + start, disable = stop + cleanup. Destroy stops the stack so a live
- * update can dlclose this .so without stranding threads.
- */
+
+
+
+
+
+
+
+
+
+
 
 #include "media_bt_service.h"
 

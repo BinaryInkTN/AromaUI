@@ -30,3 +30,21 @@ local.properties
 store_repo/
 tools/store_repo/
 
+# --- Large generated binaries: never commit, never LFS; rebuild locally. ---
+# Node dependencies (restore with npm ci / npm install).
+node_modules/
+# Generated WebAssembly (rebuild with Emscripten). Prebuilt docs/ copies stay
+# tracked for GitHub Pages; everything else is a build artifact.
+*.wasm
+!docs/**/*.wasm
+!docs/*.wasm
+# Emscripten glue copied next to the sandbox IDE for local ide_server.py runs.
+examples/incense_sandbox/incense_sandbox.js
+# Offline map tiles + SQLite sidecars (regenerate with tools/mbtiles/map_export_tool.py).
+*.mbtiles
+*.mbtiles-shm
+*.mbtiles-wal
+*-shm
+*-wal
+# Sandbox IDE runtime workspaces (created via ide_server.py / aroma CLI).
+examples/incense_sandbox/workspace/

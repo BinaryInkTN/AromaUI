@@ -1,7 +1,7 @@
-# First-party contacts package: dialer + contact list + PBAP sync, plus the
-# owned HFP telephony stack (bt_speaker_hfp.c). Self-contained: the only
-# host coupling left is UI-chrome coordination (documented first-party
-# privilege); all BT logic lives in this plugin.so.
+
+
+
+
 cmake_minimum_required(VERSION 3.15)
 
 if(NOT DEFINED AromaUI_INCLUDE_DIR)
@@ -13,8 +13,8 @@ if(NOT DEFINED AromaApp_INCLUDE_DIR)
         "Host app include directory")
 endif()
 
-# D-Bus (BlueZ/oFono) is a system lib: the plugin links it itself, like
-# any third-party native app would. The host does not provide BT symbols.
+
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(DBUS REQUIRED dbus-1)
 
@@ -44,6 +44,6 @@ target_include_directories(contacts_plugin PRIVATE
 target_link_libraries(contacts_plugin PRIVATE
     ${DBUS_LIBRARIES}
 )
-# NOTE: deliberately NOT linked against libaroma or the host - the host
-# process provides all aroma_* and app symbols at dlopen time (it links
-# with -rdynamic).
+
+
+

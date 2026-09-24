@@ -42,18 +42,18 @@ typedef enum
 
 
 
-#define VEH_FLAG_DOOR_OPEN      0x0002  
-#define VEH_FLAG_ENGINE_FAULT   0x0004  
-#define VEH_FLAG_ABS_FAULT      0x0008  
-#define VEH_FLAG_LOW_FUEL       0x0010  
-#define VEH_FLAG_INDICATOR_L    0x0020  
-#define VEH_FLAG_INDICATOR_R    0x0040  
-#define VEH_FLAG_CRASH          0x0080  
-#define VEH_FLAG_AIRBAG         0x0100  
-#define VEH_FLAG_SEATBELT_WARN  0x0200  
-#define VEH_FLAG_BATTERY_WARN   0x0400  
-#define VEH_FLAG_HARSH_BRAKE    0x1000  
-#define VEH_FLAG_HARD_ACCEL     0x2000  
+#define VEH_FLAG_DOOR_OPEN      0x0002
+#define VEH_FLAG_ENGINE_FAULT   0x0004
+#define VEH_FLAG_ABS_FAULT      0x0008
+#define VEH_FLAG_LOW_FUEL       0x0010
+#define VEH_FLAG_INDICATOR_L    0x0020
+#define VEH_FLAG_INDICATOR_R    0x0040
+#define VEH_FLAG_CRASH          0x0080
+#define VEH_FLAG_AIRBAG         0x0100
+#define VEH_FLAG_SEATBELT_WARN  0x0200
+#define VEH_FLAG_BATTERY_WARN   0x0400
+#define VEH_FLAG_HARSH_BRAKE    0x1000
+#define VEH_FLAG_HARD_ACCEL     0x2000
 
 
 #define FAULT_FLAG_GENERIC        0x01
@@ -191,7 +191,7 @@ static inline ScenarioFrame scenario_hard_accel(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = 0;
-    
+
     float shape;
     if (elapsed_ms < HARD_ACCEL_RAMP_MS)
     {
@@ -211,15 +211,15 @@ static inline ScenarioFrame scenario_hard_accel(uint32_t elapsed_ms)
         shape = 0.0f;
         f.done = true;
     }
-    
+
     f.veh_accel_x100 = (int16_t)clampi((int32_t)(HARD_ACCEL_PEAK_X100 * shape), VEH_ACCEL_X100_MIN, VEH_ACCEL_X100_MAX);
     f.acm_throttle_x100 = (uint16_t)clampi((int32_t)(2000 + shape * 7500), 0, ACM_THROTTLE_X100_MAX);
 
     float speed_shape = (elapsed_ms < HARD_ACCEL_RAMP_MS) ? shape : 1.0f;
     f.veh_speed_x10 = (uint16_t)clampi((int32_t)(VEH_CRUISE_SPEED_X10 * speed_shape), 0, VEH_SPEED_X10_MAX);
-    
+
     f.veh_flags = (shape > 0.05f) ? VEH_FLAG_HARD_ACCEL : 0;
-    
+
     return f;
 }
 
@@ -232,7 +232,7 @@ static inline ScenarioFrame scenario_hard_accel(uint32_t elapsed_ms)
 static inline ScenarioFrame scenario_hard_brake(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
-    
+
     float shape;
     if (elapsed_ms < HARD_BRAKE_RAMP_MS)
     {
@@ -252,16 +252,16 @@ static inline ScenarioFrame scenario_hard_brake(uint32_t elapsed_ms)
         shape = 0.0f;
         f.done = true;
     }
-    
+
     f.veh_accel_x100 = (int16_t)clampi((int32_t)(-HARD_BRAKE_PEAK_X100 * shape), VEH_ACCEL_X100_MIN, VEH_ACCEL_X100_MAX);
     f.acm_brake_pa = (uint16_t)clampi((int32_t)(shape * ACM_BRAKE_PA_MAX * 0.85f), 0, ACM_BRAKE_PA_MAX);
     f.acm_throttle_x100 = 0;
 
     float speed_shape = (elapsed_ms < HARD_BRAKE_RAMP_MS) ? (1.0f - shape) : 0.0f;
     f.veh_speed_x10 = (uint16_t)clampi((int32_t)(VEH_CRUISE_SPEED_X10 * speed_shape), 0, VEH_SPEED_X10_MAX);
-    
+
     f.veh_flags = (shape > 0.05f) ? VEH_FLAG_HARSH_BRAKE : 0;
-    
+
     return f;
 }
 
@@ -271,15 +271,15 @@ static inline ScenarioFrame scenario_hard_brake(uint32_t elapsed_ms)
 static inline ScenarioFrame scenario_acm_fault(uint32_t elapsed_ms, uint8_t variant)
 {
     ScenarioFrame f = scenario_driving_base();
-    
+
     if (elapsed_ms >= ACM_FAULT_TOTAL_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.fault_flags |= FAULT_FLAG_ACM;
-    
+
     if (variant == 0)
     {
         f.acm_status = ACM_STATUS_FAULT_SENSOR;
@@ -295,7 +295,7 @@ static inline ScenarioFrame scenario_acm_fault(uint32_t elapsed_ms, uint8_t vari
         f.veh_speed_x10 = 400;
         f.veh_flags = VEH_FLAG_HARD_ACCEL;
     }
-    
+
     return f;
 }
 
@@ -306,7 +306,7 @@ static inline ScenarioFrame scenario_acm_fault(uint32_t elapsed_ms, uint8_t vari
 static inline ScenarioFrame scenario_sched_overload(uint32_t elapsed_ms, uint32_t cycle)
 {
     ScenarioFrame f = scenario_driving_base();
-    
+
     float shape;
     if (elapsed_ms < SCHED_OVERLOAD_RAMP_MS)
     {
@@ -321,15 +321,15 @@ static inline ScenarioFrame scenario_sched_overload(uint32_t elapsed_ms, uint32_
         f.done = true;
         return f;
     }
-    
+
     f.cpu_load_x100 = (uint16_t)clampi((int32_t)(2500 + shape * 7000), 0, 10000);
     f.task0_resp_max_x10us = (uint16_t)clampi((int32_t)(120 + shape * 900), 0, 65535);
     f.task0_deadline_misses = (uint16_t)(shape > 0.5f ? (cycle % 8) : 0);
     f.fault_flags |= (shape > 0.8f ? FAULT_FLAG_SCHED_OVERLOAD : 0);
-    
+
     f.veh_speed_x10 = VEH_CRUISE_SPEED_X10;
     f.veh_flags = 0;
-    
+
     return f;
 }
 
@@ -338,21 +338,21 @@ static inline ScenarioFrame scenario_sched_overload(uint32_t elapsed_ms, uint32_
 static inline ScenarioFrame scenario_sensor_fault(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
-    
+
     if (elapsed_ms >= SENSOR_FAULT_HOLD_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.env_temp_x10 = 850;
     f.env_hum_x100 = 0;
     f.gps_satellites = 0;
     f.fault_flags |= FAULT_FLAG_SENSOR;
-    
+
     f.veh_speed_x10 = VEH_CRUISE_SPEED_X10;
     f.veh_flags = 0;
-    
+
     return f;
 }
 
@@ -363,15 +363,15 @@ static inline ScenarioFrame scenario_turn_signals(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = VEH_CRUISE_SPEED_X10;
-    
+
     if (elapsed_ms >= SIGNAL_TEST_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     uint32_t phase = (elapsed_ms / SIGNAL_BLINK_INTERVAL_MS) % 4;
-    
+
     switch (phase)
     {
         case 0:  f.veh_flags = VEH_FLAG_INDICATOR_L; break;
@@ -379,7 +379,7 @@ static inline ScenarioFrame scenario_turn_signals(uint32_t elapsed_ms)
         case 2:  f.veh_flags = VEH_FLAG_INDICATOR_R; break;
         case 3:  f.veh_flags = 0; break;
     }
-    
+
     return f;
 }
 
@@ -390,16 +390,16 @@ static inline ScenarioFrame scenario_hazard_lights(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = 0;
-    
+
     if (elapsed_ms >= HAZARD_TEST_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     bool lights_on = ((elapsed_ms / HAZARD_BLINK_INTERVAL_MS) % 2) == 0;
     f.veh_flags = lights_on ? (VEH_FLAG_INDICATOR_L | VEH_FLAG_INDICATOR_R) : 0;
-    
+
     return f;
 }
 
@@ -411,20 +411,20 @@ static inline ScenarioFrame scenario_door_open(uint32_t elapsed_ms)
     f.veh_speed_x10 = 0;
     f.veh_accel_x100 = 0;
     f.acm_throttle_x100 = 0;
-    
+
     if (elapsed_ms >= DOOR_OPEN_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.veh_flags = VEH_FLAG_DOOR_OPEN;
-    
+
     if (elapsed_ms > 1500)
     {
         f.veh_flags = 0;
     }
-    
+
     return f;
 }
 
@@ -433,17 +433,17 @@ static inline ScenarioFrame scenario_door_open(uint32_t elapsed_ms)
 static inline ScenarioFrame scenario_seatbelt_warning(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
-    
+
     if (elapsed_ms >= SEATBELT_WARN_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.veh_speed_x10 = (uint16_t)(elapsed_ms * 10 / 100);
     f.veh_speed_x10 = (uint16_t)clampi((int32_t)f.veh_speed_x10, 0, 200);
     f.veh_flags = VEH_FLAG_SEATBELT_WARN;
-    
+
     return f;
 }
 
@@ -453,13 +453,13 @@ static inline ScenarioFrame scenario_seatbelt_warning(uint32_t elapsed_ms)
 static inline ScenarioFrame scenario_crash(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
-    
+
     if (elapsed_ms >= CRASH_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     if (elapsed_ms < CRASH_IMPACT_MS)
     {
         f.veh_speed_x10 = 600;
@@ -480,7 +480,7 @@ static inline ScenarioFrame scenario_crash(uint32_t elapsed_ms)
         f.veh_flags = VEH_FLAG_CRASH | VEH_FLAG_AIRBAG;
         f.acm_brake_pa = ACM_BRAKE_PA_MAX;
     }
-    
+
     return f;
 }
 
@@ -490,16 +490,16 @@ static inline ScenarioFrame scenario_rain_wiper(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = VEH_CRUISE_SPEED_X10;
-    
+
     if (elapsed_ms >= WIPER_TEST_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.env_temp_x10 = 150;
     f.env_hum_x100 = 9500;
-    
+
     if (elapsed_ms < 800)
     {
         f.bcm_wiper_speed = WIPER_OFF;
@@ -512,7 +512,7 @@ static inline ScenarioFrame scenario_rain_wiper(uint32_t elapsed_ms)
     {
         f.bcm_wiper_speed = WIPER_HIGH;
     }
-    
+
     return f;
 }
 
@@ -527,13 +527,13 @@ static inline ScenarioFrame scenario_rain_wiper(uint32_t elapsed_ms)
 static inline ScenarioFrame scenario_engine_fault(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
-    
+
     if (elapsed_ms >= ENGINE_FAULT_TOTAL_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     float t = (float)elapsed_ms / ENGINE_FAULT_TOTAL_MS;
     f.veh_speed_x10 = (uint16_t)(400 + 100.0f * sin(t * 10.0f));
     f.veh_accel_x100 = (int16_t)(-300.0f + 200.0f * sin(t * 15.0f));
@@ -541,7 +541,7 @@ static inline ScenarioFrame scenario_engine_fault(uint32_t elapsed_ms)
     f.fault_flags |= FAULT_FLAG_ENGINE;
     f.acm_throttle_x100 = (uint16_t)(1500 + 500.0f * sin(t * 8.0f));
     f.env_temp_x10 = 950;
-    
+
     return f;
 }
 
@@ -551,24 +551,24 @@ static inline ScenarioFrame scenario_abs_fault(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = 600;
-    
+
     if (elapsed_ms >= ABS_FAULT_HOLD_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.veh_flags = VEH_FLAG_ABS_FAULT;
     f.fault_flags |= FAULT_FLAG_ABS;
     f.acm_brake_pa = 5000;
     f.acm_status = ACM_STATUS_DEGRADED;
-    
+
     if (elapsed_ms > 1200)
     {
         f.veh_accel_x100 = (int16_t)(-400 + 200.0f * sin(elapsed_ms * 0.02f));
         f.veh_speed_x10 = (uint16_t)(600 - (elapsed_ms - 1200) / 5);
     }
-    
+
     return f;
 }
 
@@ -578,15 +578,15 @@ static inline ScenarioFrame scenario_low_fuel(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = 450;
-    
+
     if (elapsed_ms >= LOW_FUEL_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.veh_flags = VEH_FLAG_LOW_FUEL;
-    
+
     if (elapsed_ms > 1200)
     {
         f.veh_speed_x10 = (uint16_t)(450 - (elapsed_ms - 1200) / 4);
@@ -594,7 +594,7 @@ static inline ScenarioFrame scenario_low_fuel(uint32_t elapsed_ms)
         f.veh_accel_x100 = -300;
         f.acm_throttle_x100 = 500;
     }
-    
+
     return f;
 }
 
@@ -604,23 +604,23 @@ static inline ScenarioFrame scenario_battery_warn(uint32_t elapsed_ms)
 {
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = VEH_CRUISE_SPEED_X10;
-    
+
     if (elapsed_ms >= BATTERY_WARN_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.veh_flags = VEH_FLAG_BATTERY_WARN;
     f.fault_flags |= FAULT_FLAG_BATTERY;
-    
+
     if (elapsed_ms > 1500)
     {
         f.gps_satellites = 2;
         f.env_temp_x10 = 250;
         f.acm_fsr_raw = (uint16_t)(200 + 100.0f * sin(elapsed_ms * 0.05f));
     }
-    
+
     return f;
 }
 
@@ -631,17 +631,17 @@ static inline ScenarioFrame scenario_combined_driving(uint32_t elapsed_ms)
     ScenarioFrame f = scenario_driving_base();
     f.veh_speed_x10 = VEH_CRUISE_SPEED_X10;
     f.bcm_wiper_speed = WIPER_LOW;
-    
+
     if (elapsed_ms >= COMBINED_TEST_DURATION_MS)
     {
         f.done = true;
         return f;
     }
-    
+
     f.env_hum_x100 = 8000;
-    
+
     uint32_t phase = elapsed_ms / 1000;
-    
+
     switch (phase)
     {
         case 0:
@@ -664,8 +664,8 @@ static inline ScenarioFrame scenario_combined_driving(uint32_t elapsed_ms)
             f.veh_speed_x10 = VEH_CRUISE_SPEED_X10;
             break;
     }
-    
+
     return f;
 }
 
-#endif 
+#endif

@@ -117,7 +117,7 @@ static void main_loop_iteration(void *arg)
     if(!aroma_ui_is_running())
     {
         return;
-    } 
+    }
     (void)arg;
 
     static uint64_t last_update = 0;

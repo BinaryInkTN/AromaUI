@@ -1,4 +1,4 @@
-/* ide.css - Eclipse-like layout for Incense IDE */
+
 :root {
   --ide-bg: #1e1e1e;
   --ide-sidebar: #252526;
@@ -48,7 +48,7 @@ html, body {
   height: 100%;
 }
 
-/* Home Screen Overlay */
+
 #home-screen {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -104,7 +104,7 @@ html, body {
 .home-item svg { width: 24px; height: 24px; color: var(--ide-accent); }
 
 
-/* Menu Bar */
+
 #menubar {
   height: 28px;
   background: var(--ide-toolbar-bg);
@@ -125,7 +125,7 @@ html, body {
   background: var(--ide-hover);
 }
 
-/* Tool Bar */
+
 #toolbar {
   height: 36px;
   display: flex;
@@ -177,14 +177,14 @@ html, body {
 .action-btn.primary { background: var(--ide-accent); color: white; border: none; }
 .action-btn.primary:hover { background: var(--ide-accent-hover); }
 
-/* Main Layout */
+
 #main-layout {
   display: flex;
   flex: 1;
   min-height: 0;
 }
 
-/* Sidebars & Editor */
+
 #sidebar-left, #sidebar-right {
   width: 250px;
   background: var(--ide-sidebar);
@@ -218,7 +218,7 @@ html, body {
   font-size: 13px;
 }
 
-/* File Tree */
+
 .file-tree-item {
   display: flex;
   align-items: center;
@@ -236,7 +236,7 @@ html, body {
 }
 .file-tree-item svg { width: 14px; height: 14px; }
 
-/* Editor Area */
+
 #center-area {
   flex: 1;
   display: flex;
@@ -306,7 +306,7 @@ html, body {
   border-bottom: 1px solid var(--ide-border);
 }
 
-/* Bottom Panel */
+
 #bottom-panel {
   height: 150px;
   border-top: 1px solid var(--ide-border);
@@ -346,7 +346,7 @@ html, body {
 .log-error { color: var(--ide-error); }
 .log-success { color: var(--ide-success); }
 
-/* Status Bar */
+
 #status-bar {
   height: 22px;
   background: var(--ide-accent);
@@ -359,7 +359,7 @@ html, body {
 }
 .status-left, .status-right { display: flex; align-items: center; gap: 15px; }
 
-/* Modals */
+
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -432,7 +432,7 @@ html, body {
   border-color: var(--ide-accent);
 }
 
-/* Phone Frame */
+
 #canvas-wrap {
   flex: 1;
   display: flex;

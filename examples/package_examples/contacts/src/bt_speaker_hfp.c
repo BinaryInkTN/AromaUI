@@ -10,9 +10,9 @@
 
 #include <dbus/dbus.h>
 
-/* Local copy (bt_speaker_api.c has its own): each stack is compiled
- * into a different plugin.so, so shared helpers are duplicated rather
- * than linked across packages. */
+
+
+
 static void safe_strncpy(char *dest, const char *src, size_t n)
 {
     if (!dest || n == 0)

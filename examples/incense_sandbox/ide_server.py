@@ -30,7 +30,7 @@ class IDEHandler(http.server.SimpleHTTPRequestHandler):
         parsed_path = urllib.parse.urlparse(self.path)
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
-        
+
         try:
             data = json.loads(post_data.decode('utf-8'))
         except json.JSONDecodeError:
@@ -66,11 +66,11 @@ class IDEHandler(http.server.SimpleHTTPRequestHandler):
         name = data.get('name')
         if not name:
             return self._send_json({"error": "Project name is required"}, 400)
-        
+
         proj_dir = os.path.join(WORKSPACE, name)
         if os.path.exists(proj_dir):
             return self._send_json({"error": "Project already exists"}, 400)
-        
+
         try:
             cmd = f'python3 "{AROMA_CLI}" create {name}'
             proc = subprocess.run(cmd, shell=True, cwd=WORKSPACE, input="\n" * 20, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -85,13 +85,13 @@ class IDEHandler(http.server.SimpleHTTPRequestHandler):
         proj_dir = os.path.join(WORKSPACE, name)
         if not os.path.exists(proj_dir):
             return self._send_json({"error": "Project not found"}, 404)
-        
+
         files_to_read = [
             "aroma.json",
             "src/main.c",
             "src/ui.aroma"
         ]
-        
+
         result = {}
         for f in files_to_read:
             fpath = os.path.join(proj_dir, f)
@@ -100,20 +100,20 @@ class IDEHandler(http.server.SimpleHTTPRequestHandler):
                     result[f] = file.read()
             else:
                 result[f] = ""
-                
+
         self._send_json({"files": result})
 
     def handle_save_project(self, data):
         name = data.get('name')
         files = data.get('files', {})
         proj_dir = os.path.join(WORKSPACE, name)
-        
+
         if not os.path.exists(proj_dir):
             return self._send_json({"error": "Project not found"}, 404)
-            
+
         try:
             for filepath, content in files.items():
-                # Prevent directory traversal
+
                 safe_path = os.path.abspath(os.path.join(proj_dir, filepath))
                 if not safe_path.startswith(proj_dir):
                     continue
@@ -128,10 +128,10 @@ class IDEHandler(http.server.SimpleHTTPRequestHandler):
         name = data.get('name')
         target = data.get('target', 'linux')
         proj_dir = os.path.join(WORKSPACE, name)
-        
+
         if not os.path.exists(proj_dir):
             return self._send_json({"error": "Project not found"}, 404)
-            
+
         try:
             cmd = f'python3 "{AROMA_CLI}" build {target}'
             proc = subprocess.Popen(cmd, shell=True, cwd=proj_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -146,13 +146,13 @@ class IDEHandler(http.server.SimpleHTTPRequestHandler):
         name = data.get('name')
         target = data.get('target', 'linux')
         proj_dir = os.path.join(WORKSPACE, name)
-        
+
         if not os.path.exists(proj_dir):
             return self._send_json({"error": "Project not found"}, 404)
-            
+
         try:
             cmd = f'python3 "{AROMA_CLI}" run {target}'
-            # Use Popen to run asynchronously so we don't block the server
+
             subprocess.Popen(cmd, shell=True, cwd=proj_dir)
             self._send_json({"success": True, "log": f"Running native app on {target} natively..."})
         except Exception as e:

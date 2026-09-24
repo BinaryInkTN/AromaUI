@@ -75,7 +75,7 @@ int main()
 
     AromaWindow *window = aroma_ui_create_window("Telemetry Dashboard", 1024, 600);
     AromaTheme theme = aroma_theme_create_material_black();
-    // material blue
+
     theme.colors.primary = 0xFF2196F3;
     aroma_ui_set_theme(&theme);
     shm_reader_t *reader = shm_reader_init("/sdv_telemetry_shm");
@@ -298,7 +298,7 @@ int main()
                 acm_status_text = "DEGR";
                 acm_color = ICON_COLOR_WARNING;
             }
-          
+
             float target_x = accel_to_target_x(0.0f);
             float target_y = accel_to_target_y(accel_ms2);
 

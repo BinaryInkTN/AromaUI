@@ -243,7 +243,7 @@ def run_trial_with_timing(args_tuple: Tuple[int, str, str, int], skip_perf: bool
         )
         pgid = os.getpgid(process.pid)
         memory_results = [None, None, None]
-        
+
         def memory_sampler():
             memory_results[0], memory_results[1], memory_results[2] = sample_memory_during_run(pgid)
 
@@ -266,11 +266,11 @@ def run_trial_with_timing(args_tuple: Tuple[int, str, str, int], skip_perf: bool
                 else:
                     process.kill()
                 stdout, stderr = process.communicate()
-        
+
         metrics.stdout_raw = stdout[:1000] if stdout else ""
         metrics.stderr_raw = stderr[:1000] if stderr else ""
         memory_thread.join(timeout=5)
-        
+
         metrics.uss_kb = memory_results[0]
         metrics.pss_kb = memory_results[1]
         metrics.rss_kb = memory_results[2]

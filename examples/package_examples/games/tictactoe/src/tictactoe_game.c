@@ -1,8 +1,8 @@
-/* Tic Tac Toe (com.aroma.game.tictactoe): you (X) vs the computer (O).
- *
- * Host-chrome plugin: board cells are buttons (click targets) with a label
- * child each for the X/O face (buttons have no public set-text API).
- */
+
+
+
+
+
 
 #include "aroma.h"
 #include "aroma_package.h"
@@ -93,7 +93,7 @@ static void cpu_move(void)
     }
     if (n == 0)
         return;
-    /* Win if possible, block if needed, else random. */
+
     for (int k = 0; k < n; k++)
     {
         s_board[empty[k]] = 'O';
@@ -232,7 +232,7 @@ static bool ttt_build_ui(struct AromaNode *app_root)
                 aroma_button_set_font(b, s_font);
             aroma_button_setup_events(b, aroma_ui_request_redraw, NULL);
             s_cells[idx] = b;
-            /* Face label centered inside the button. */
+
             AromaNode *face = aroma_label_create(b, "", 38, 28,
                                                  LABEL_STYLE_LABEL_LARGE);
             if (face && s_font)

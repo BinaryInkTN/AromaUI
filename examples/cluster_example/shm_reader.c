@@ -8,7 +8,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-/* Internal: shared memory layout - not exposed in header */
+
 typedef struct {
     volatile uint32_t write_seq;
     sdv_telemetry_t telemetry;
@@ -100,8 +100,8 @@ shm_reader_t *shm_reader_init(const char *shm_name)
         return NULL;
     }
 
-    reader->shm = (shm_layout_t *)mmap(NULL, sizeof(shm_layout_t), 
-                                        PROT_READ, MAP_SHARED, 
+    reader->shm = (shm_layout_t *)mmap(NULL, sizeof(shm_layout_t),
+                                        PROT_READ, MAP_SHARED,
                                         reader->shm_fd, 0);
     if (reader->shm == MAP_FAILED) {
         fprintf(stderr, "[SHM Reader] mmap failed (errno=%d)\n", errno);

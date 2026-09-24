@@ -424,7 +424,7 @@ static AromaNode *settings_current_page = NULL;
 static AromaNode *settings_nav_from_page = NULL;
 static bool settings_nav_animating = false;
 static char s_settings_search[128] = "";
-// Selectable-row -> detail page (0=general, 1=display, 2=updates, 3=packages)
+
 static int s_settings_row_page[8];
 static int s_settings_row_count = 0;
 static AromaNode *settings_bluetooth_switch = NULL;
@@ -1037,7 +1037,7 @@ void update_swupdate_service_status(void)
     }
 }
 
-// --- iOS-style settings navigation (list -> drill-in detail page) -----------
+
 #define SETTINGS_NAV_MS 250
 
 static void update_ota_display(void);
@@ -1545,12 +1545,12 @@ bool open_settings(AromaNode *node, void *user_data)
         send_app_drawer_behind();
     }
 
-    // NOTE: open is intentionally instant (no slide animation). The card
-    // used to slide in vertically, but moving it while detail pages are
-    // hidden desyncs their layout caches (per-frame layout skips hidden
-    // subtrees), which threw the packages list/rows off-screen on the next
-    // show. Detail drill-in/out slides are unaffected: both pages stay
-    // visible and tracked for their whole animation.
+
+
+
+
+
+
     AromaRect *card_rect = aroma_node_get_rect(card_node);
     if (card_rect)
     {
@@ -1574,8 +1574,8 @@ bool open_settings(AromaNode *node, void *user_data)
             mr->x = 0;
         aroma_node_set_hidden(settings_main_page, false);
     }
-    // Reset any stray slide offsets so every detail page restarts from a
-    // known-good position; all are hidden until drilled into.
+
+
     AromaNode *detail_pages[] = {
         settings_page_general, settings_page_display,
         settings_page_updates, settings_page_packages
@@ -1635,8 +1635,8 @@ void close_settings(void *user_data)
     AromaNode *card_node = (AromaNode *)user_data;
     if (!card_node)
         return;
-    // Instant close (see open_settings): hiding everything synchronously
-    // keeps rects/caches consistent, since no parent moves while hidden.
+
+
     settings_nav_animating = false;
     settings_nav_from_page = NULL;
     settings_current_page = NULL;
@@ -2021,9 +2021,9 @@ static void on_info_close_action(void *user_data)
     close_info_dialog();
 }
 
-/* Shared details body for an installed package: path, install time,
- * version, author/category, entry/plugin and description. Fits the
- * dialog's 1024-char message buffer; later lines are dropped first. */
+
+
+
 static void format_package_details(const InstalledPackage *pkg,
                                    char *msg, size_t msg_len)
 {
@@ -2718,8 +2718,8 @@ static void on_pkg_alert_rescan_action(void *user_data)
         pkg_set_status("Still no packages found");
 }
 
-/* Error/info popup on the Packages page. Separate from s_info_dialog so
- * package errors never clobber (or get clobbered by) detail dialogs. */
+
+
 static void show_pkg_alert(const char *title, const char *message)
 {
     if (!settings_page_packages)
@@ -2738,9 +2738,9 @@ static void show_pkg_alert(const char *title, const char *message)
     aroma_dialog_show(s_pkg_alert_dialog);
 }
 
-/* Once per run, when the user actually opens the Packages page and it is
- * empty, explain why instead of leaving a bare "No packages installed."
- * label. Never fires at boot (the page is hidden then). */
+
+
+
 static void maybe_show_empty_packages_dialog(void)
 {
     if (s_empty_pkgs_alert_shown)
@@ -2834,15 +2834,15 @@ static void refresh_installed_list(void)
 {
     if (!s_installed_list || !settings_page_packages)
         return;
-    // Rects are absolute screen coordinates. Freshly created rows use
-    // parent-relative coordinates and rely on the first layout pass to
-    // convert them (each parent's first delta shifts its children into
-    // place). Manually baking absolute positions is only correct once the
-    // subtree has been laid out at least once. NOTE: this must be tested
-    // on the list itself, not the page: the detail page sits at (0,0),
-    // whose caches are indistinguishable from "never laid out", so a
-    // page-based check would never pass and the list would stay at its
-    // creation position (16,48), spilling its rows over the sideload card.
+
+
+
+
+
+
+
+
+
     bool anchored = (s_installed_list->layout._cache_x != 0 ||
                      s_installed_list->layout._cache_y != 0);
     int bake_x = 0;
@@ -3014,7 +3014,7 @@ static void build_settings_ui(AromaNode *settings_root)
         close_settings, settings_root, state.icon_font);
     aroma_node_set_z_index(settings_close_btn, Z_LAYER_STATUS_BAR + 16);
 
-    // --- Main page: iOS-style grouped list with search --------------------
+
     settings_main_page = aroma_ui_container(
         settings_root, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
@@ -3049,7 +3049,7 @@ static void build_settings_ui(AromaNode *settings_root)
     refresh_settings_list();
     settings_current_page = settings_main_page;
 
-    // --- Detail pages (full-screen, pushed with back button) ---------------
+
     settings_page_general = aroma_ui_container(
         settings_root, 0, 0, WIN_W, WIN_H,
         AROMA_LAYOUT_MODE_NONE, AROMA_FLEX_COLUMN,
@@ -3320,10 +3320,10 @@ static void init_media_bt_services(void)
 
 void build_vehicle_view(AromaNode *window)
 {
-    // Seed vehicle theme state before building any UI so the Display
-    // switch and vehicle colors match the stored (dark-first) theme.
+
+
     dark_mode_enabled = setup_store_get_int("dark_theme", 1) != 0;
-    // Camera transitions default off (can be enabled in Display settings).
+
     s_camera_transition_enabled =
         setup_store_get_int("camera_transition", 0) != 0;
     state.vehicle_view_root = aroma_ui_container(
@@ -3667,8 +3667,8 @@ void build_vehicle_view(AromaNode *window)
     build_settings_ui(settings_root);
     init_media_bt_services();
 
-    // Apply stored theme to vehicle surfaces (bg image, clocks) now that
-    // they exist; widget theme was already applied in main().
+
+
     apply_theme_colors();
 
     build_lock_screen(window);
@@ -3710,9 +3710,9 @@ void update_vehicle_view(void)
 
     if (state.camera_animating && state.viewer_3d && !s_camera_transition_enabled)
     {
-        // Transitions disabled (Display settings): snap straight to the
-        // target. The second block below then sees camera_animating == false
-        // and skips interpolation.
+
+
+
         Aroma3DCamera snap;
         aroma_3d_viewer_get_camera(state.viewer_3d, &snap);
         snap.theta = state.anim_target_theta;

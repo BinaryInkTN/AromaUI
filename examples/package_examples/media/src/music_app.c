@@ -18,7 +18,7 @@ bool is_any_app_open(void);
 
 AromaNode *music_app_tabs = NULL;
 
-/* Install-dir-joined asset path for bundled files (assets/...). */
+
 static char s_install_dir[512] = "";
 
 static void music_asset_path(char *out, size_t out_len, const char *file)
@@ -96,8 +96,8 @@ void update_music_now_playing_display(void)
     if (!music_now_playing_card)
         return;
 
-    /* Owned stack in this same .so: thread-safe snapshots straight
-     * from it, no host mirrors. */
+
+
     bt_media_info_t media = bt_speaker_get_media_info();
     bt_state_t current_state = bt_speaker_get_state();
 
@@ -261,8 +261,8 @@ void update_music_device_display(void)
 void music_opening_anim(AromaNode *target, float progress, void *user_data)
 {
     (void)user_data;
-    // See phone_opening_anim: only the app card moves; the tabs widget
-    // keeps its creation geometry for draw/hit-test.
+
+
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
@@ -314,7 +314,7 @@ bool open_music(AromaNode *node, void *user_data)
 void music_closing_anim(AromaNode *target, float progress, void *user_data)
 {
     (void)user_data;
-    // See phone_opening_anim: only the app card moves.
+
     AromaRect *rect = aroma_node_get_rect(target);
     if (!rect)
         return;
@@ -378,11 +378,11 @@ static void on_music_tab_changed(AromaNode *tabs, int tab_index, void *user_data
 
 void build_music_app_ui(AromaNode *parent)
 {
-    if (!parent || music_app_tabs) return; // Already built
-    
+    if (!parent || music_app_tabs) return;
+
     const char *labels[] = {"Now Playing", "Devices"};
-    // Header-strip height: the tabs widget draws its bar/labels from this
-    // rect, so a full-screen height here paints the bar over the content.
+
+
     music_app_tabs = aroma_tabs_create(
         parent, 0, 0, WIN_W, 50,
         labels, 2);
@@ -391,106 +391,106 @@ void build_music_app_ui(AromaNode *parent)
     aroma_tabs_set_font(music_app_tabs, state.ui_font);
     aroma_tabs_set_on_change(music_app_tabs, on_music_tab_changed, NULL);
     aroma_tabs_setup_events(music_app_tabs, aroma_ui_request_redraw, NULL);
-    
-    // Now Playing tab content
+
+
     music_now_playing_card = aroma_ui_card(
         music_app_tabs, 0, 90, WIN_W, WIN_H - 90, CARD_TYPE_ELEVATED);
     aroma_node_set_z_index(music_now_playing_card, Z_LAYER_STATUS_BAR + 12);
     aroma_node_set_hidden(music_now_playing_card, true);
-    
+
     char art_path[768];
     music_asset_path(art_path, sizeof(art_path), "album_cover.jpg");
     music_art_placeholder = aroma_ui_image(
         music_now_playing_card, art_path, 60, 40, 200, 200);
     aroma_node_set_z_index(music_art_placeholder, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_track_title_label = aroma_ui_label(
         music_now_playing_card, "No Track Playing",
         60, 260, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(music_track_title_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_track_artist_label = aroma_ui_label(
         music_now_playing_card, "No Artist",
         60, 290, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(music_track_artist_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_track_album_label = aroma_ui_label(
         music_now_playing_card, "No Album",
         60, 320, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(music_track_album_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_status_label = aroma_ui_label(
         music_now_playing_card, "Not connected",
         60, 350, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(music_status_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_prev_button = aroma_ui_iconbutton(
         music_now_playing_card, AROMA_ICON_SKIP_PREVIOUS,
         120, 400, 50, ICON_BUTTON_OUTLINED,
         on_music_prev_click, NULL, state.icon_font);
     aroma_node_set_z_index(music_prev_button, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_play_pause_button = aroma_ui_iconbutton(
         music_now_playing_card, AROMA_ICON_PLAY_ARROW,
         195, 400, 50, ICON_BUTTON_OUTLINED,
         on_music_play_pause_click, NULL, state.icon_font);
     aroma_node_set_z_index(music_play_pause_button, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_next_button = aroma_ui_iconbutton(
         music_now_playing_card, AROMA_ICON_SKIP_NEXT,
         270, 400, 50, ICON_BUTTON_OUTLINED,
         on_music_next_click, NULL, state.icon_font);
     aroma_node_set_z_index(music_next_button, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_no_media_label = aroma_ui_label(
         music_now_playing_card, "No media playing",
         WIN_W / 2 - 100, 150, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(music_no_media_label, Z_LAYER_STATUS_BAR + 13);
     aroma_node_set_hidden(music_no_media_label, false);
-    
-    // Device tab content
+
+
     music_device_card = aroma_ui_card(
         music_app_tabs, 0, 90, WIN_W, WIN_H - 90, CARD_TYPE_ELEVATED);
     aroma_node_set_z_index(music_device_card, Z_LAYER_STATUS_BAR + 12);
     aroma_node_set_hidden(music_device_card, true);
-    
+
     music_device_status_icon = aroma_ui_icon(
         music_device_card, AROMA_ICON_BLUETOOTH,
         60, 60, 48, 0xFF888888, state.icon_font);
     aroma_node_set_z_index(music_device_status_icon, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_device_status_label = aroma_ui_label(
         music_device_card, "No device connected",
         120, 55, LABEL_STYLE_LABEL_MEDIUM, state.ui_font);
     aroma_node_set_z_index(music_device_status_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_device_name_label = aroma_ui_label(
         music_device_card, "",
         60, 110, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(music_device_name_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_device_address_label = aroma_ui_label(
         music_device_card, "",
         60, 140, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(music_device_address_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_device_stats_label = aroma_ui_label(
         music_device_card, "",
         60, 170, LABEL_STYLE_LABEL_SMALL, state.ui_font);
     aroma_node_set_z_index(music_device_stats_label, Z_LAYER_STATUS_BAR + 13);
-    
+
     music_device_no_phone_label = aroma_ui_label(
         music_device_card, "No Bluetooth phone connected",
         WIN_W / 2 - 150, WIN_H / 2 - 50, LABEL_STYLE_LABEL_LARGE, state.ui_font);
     aroma_node_set_z_index(music_device_no_phone_label, Z_LAYER_STATUS_BAR + 13);
 
-    // Register content nodes with tabs
+
     AromaNode *now_playing_content[] = {music_now_playing_card};
     AromaNode *devices_content[] = {music_device_card};
     aroma_tabs_set_content(music_app_tabs, 0, now_playing_content, 1);
     aroma_tabs_set_content(music_app_tabs, 1, devices_content, 1);
 
-    // Below the tab header (y 0..50) so it never covers a tab.
+
     AromaNode *music_close_btn = aroma_ui_iconbutton(
         parent, AROMA_ICON_CLOSE, WIN_W - 68, 54, 40, ICON_BUTTON_FILLED,
         close_music, parent, state.icon_font);
@@ -499,8 +499,8 @@ void build_music_app_ui(AromaNode *parent)
 
 
 
-/* --- Full-app live refresh ----------------------------------------------
- * Polls the owned stack's thread-safe getters every frame while open. */
+
+
 #include "bt_speaker_api.h"
 
 static void music_hook_update(struct AromaNode *app_root)
@@ -523,9 +523,9 @@ static void music_hook_update(struct AromaNode *app_root)
     }
 }
 
-/* --- .apak plugin entry ---------------------------------------------------
- * Self-managed chrome: open_music/close_music own the drawer, z-order and
- * slide animation exactly as the former built-in app did. */
+
+
+
 #include "aroma_package.h"
 
 static AromaAppPlugin s_music_mirror;
@@ -538,8 +538,8 @@ static bool music_hook_init(const AromaPackageManifest *manifest,
     (void)manifest;
     (void)host;
     (void)app_root;
-    /* Bundled assets resolve against our own install dir (self-contained
-     * package, not host asset paths). */
+
+
     if (install_dir)
         snprintf(s_install_dir, sizeof(s_install_dir), "%s", install_dir);
     else
@@ -547,9 +547,9 @@ static bool music_hook_init(const AromaPackageManifest *manifest,
     memset(&s_music_mirror, 0, sizeof(s_music_mirror));
     s_music_mirror.id = "com.aroma.media";
     s_music_mirror.name = "Media";
-    /* Defensive reset: build_music_app_ui early-returns when
-     * music_app_tabs != NULL (blank app_root on reinstall). Destroy clears
-     * these, but reset here too in case a previous teardown was missed. */
+
+
+
     music_app_tabs = NULL;
     music_now_playing_card = NULL;
     music_art_placeholder = NULL;
@@ -593,12 +593,12 @@ static void music_hook_hide(struct AromaNode *app_root)
 
 static void music_hook_destroy(void)
 {
-    /* Stop the owned stack so a live update can dlclose this .so without
-     * stranding its D-Bus/PulseAudio threads. */
+
+
     media_bt_service()->set_enabled(false, NULL);
-    /* Clear every node pointer into the dying tree so a reinstall rebuilds
-     * instead of early-returning on a stale non-NULL guard (blank) or
-     * touching freed nodes (crash). The tree itself is freed by the host. */
+
+
+
     music_app_tabs = NULL;
     music_now_playing_card = NULL;
     music_art_placeholder = NULL;

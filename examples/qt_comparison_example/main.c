@@ -18,15 +18,15 @@ typedef struct
 static inline int rect_center_x(Rect r) { return r.x + r.w / 2; }
 static inline int rect_center_y(Rect r) { return r.y + r.h / 2; }
 
-/* ---------------------------------------------------------------------
- * Shared benchmark contract (must match the Qt harness exactly):
- *   - fixed total wall-clock script duration, split evenly across 9 steps
- *   - fixed settle delay before the script starts
- *   - repaint tick and FPS sampling run on their own independent cadence
- *   - a trailing partial FPS window is reported, never silently dropped
- *   - the window is invalidated only when a driven action actually
- *     happened, never unconditionally every loop iteration
- * --------------------------------------------------------------------- */
+
+
+
+
+
+
+
+
+
 static const double SETTLE_DELAY_MS = 200.0;
 static const int STEP_COUNT = 9;
 static const double TOTAL_SCRIPT_DURATION_MS = 6000.0;
@@ -39,8 +39,8 @@ static double g_min_frame_ms = 1e9;
 static double g_max_frame_ms = 0.0;
 static double g_run_start_time;
 
-/* Windowed FPS sampling, independent of the test-driving cadence below,
- * mirroring the Qt harness's sampleFpsWindow(). */
+
+
 static int g_fps_window_frames = 0;
 static double g_fps_window_start = 0.0;
 static double *g_fps_samples = NULL;
@@ -57,15 +57,15 @@ static void fps_samples_push(double fps)
     g_fps_samples[g_fps_samples_count++] = fps;
 }
 
-/* Wall-clock time source. clock() measures CPU time consumed by the
- * process, not wall time -- and these loops spend most of each iteration
- * inside usleep(), which yields the CPU without necessarily accumulating
- * CPU time. That mismatch means a clock()-based "wait 200ms" can take far
- * longer than 200ms of real time to satisfy, which is why the settle loop
- * (and every sub-action / drag deadline below it) appeared to hang.
- * CLOCK_MONOTONIC tracks actual elapsed time and isn't affected by
- * wall-clock adjustments (NTP, DST, manual changes), which is what every
- * deadline in this file actually wants. */
+
+
+
+
+
+
+
+
+
 static double now_ms(void)
 {
     struct timespec ts;
@@ -73,15 +73,15 @@ static double now_ms(void)
     return (double)ts.tv_sec * 1000.0 + (double)ts.tv_nsec / 1e6;
 }
 
-/* Elapsed milliseconds between two now_ms() samples. */
+
 static double ms_between(double start, double end)
 {
     return end - start;
 }
 
-/* Flushes the current FPS window either when it reaches the shared
- * FPS_WINDOW_MS boundary, or when force_flush is set at shutdown so a
- * trailing partial window is still reported instead of discarded. */
+
+
+
 static void sample_fps_window(bool force_flush)
 {
     double now = now_ms();
@@ -108,7 +108,7 @@ typedef struct
     int sub_index;
     int sub_count;
     bool running;
-    double step_deadline;    /* wall-clock deadline (ms, monotonic) for the current sub-action */
+    double step_deadline;
     bool in_drag;
     int drag_x0, drag_y0, drag_x1, drag_y1;
     int drag_steps;
@@ -129,16 +129,16 @@ static Rect g_input_name, g_input_email, g_input_message;
 static Rect g_list_rect, g_btn_save, g_btn_reset, g_btn_export;
 static int g_list_row_height = 0;
 
-/* Marks the window dirty only when a driven action actually happened,
- * instead of invalidating unconditionally on every loop iteration. */
+
+
 static void mark_dirty_from_action(AromaWindow *window)
 {
     aroma_node_invalidate((AromaNode *)window);
 }
 
-/* Periodic repaint tick, decoupled from the test-driving cadence, so FPS
- * reflects render cost rather than however fast the script happens to run.
- * This is the Aroma equivalent of Qt's repaintTimer firing every 16ms. */
+
+
+
 static double g_last_repaint_tick = 0.0;
 static void maybe_periodic_repaint_tick(AromaWindow *window)
 {
@@ -184,10 +184,10 @@ static void do_click(AromaWindow *window, int x, int y)
     dispatch_mouse_event_at(window, EVENT_TYPE_MOUSE_EXIT, x, y, "MouseExit");
 }
 
-/* Begins a drag. step_budget_ms is this step's total wall-clock allowance
- * (PER_STEP_BUDGET_MS), subdivided evenly across `steps` substeps -- so drag
- * smoothness scales with whatever budget the step owns, rather than a
- * hardcoded per-substep constant that only matched the Qt side by luck. */
+
+
+
+
 static void start_drag(AromaWindow *window, int x0, int y0, int x1, int y1, int steps, double step_budget_ms)
 {
     g_test_state.in_drag = true;
@@ -197,8 +197,8 @@ static void start_drag(AromaWindow *window, int x0, int y0, int x1, int y1, int 
     g_test_state.drag_y1 = y1;
     g_test_state.drag_steps = steps;
     g_test_state.drag_current_step = 0;
-    /* Reserve 15% of the step budget for the release settle, same split the
-     * Qt harness uses. */
+
+
     g_test_state.drag_step_ms = (step_budget_ms * 0.85) / steps;
 
     dispatch_mouse_event_at(window, EVENT_TYPE_MOUSE_ENTER, x0, y0, "DragEnter");
@@ -208,9 +208,9 @@ static void start_drag(AromaWindow *window, int x0, int y0, int x1, int y1, int 
     g_test_state.drag_step_deadline = now_ms() + g_test_state.drag_step_ms;
 }
 
-/* Advances the drag by wall-clock deadline rather than "one substep per loop
- * iteration" -- so drag pacing is real time, matching QTest::qWait, and
- * doesn't silently speed up or slow down if the frame rate changes. */
+
+
+
 static bool continue_drag(AromaWindow *window)
 {
     if (!g_test_state.in_drag)
@@ -218,7 +218,7 @@ static bool continue_drag(AromaWindow *window)
 
     double now = now_ms();
     if (now < g_test_state.drag_step_deadline)
-        return true; /* still waiting out this substep's time slice */
+        return true;
 
     g_test_state.drag_current_step++;
 
@@ -244,9 +244,9 @@ static bool continue_drag(AromaWindow *window)
     }
 }
 
-/* Starts a fresh sub-action's wall-clock wait window: this step's total
- * budget (PER_STEP_BUDGET_MS) divided evenly across sub_count sub-actions,
- * mirroring the Qt harness's per-substep waitAndSample() slices. */
+
+
+
 static void begin_sub_action(int sub_count)
 {
     g_test_state.sub_count = sub_count;
@@ -284,13 +284,13 @@ static void run_test_step(AromaWindow *window)
         return;
     }
 
-    /* Wall-clock gate: wait out the current sub-action's deadline before
-     * firing the next one, matching QTest::qWait semantics instead of
-     * gating on a fixed number of frames. */
+
+
+
     if (g_test_state.sub_count > 0 && !sub_action_deadline_reached())
         return;
 
-    printf("DEBUG: step=%d sub_index=%d sub_count=%d\n", 
+    printf("DEBUG: step=%d sub_index=%d sub_count=%d\n",
            g_test_state.step, g_test_state.sub_index, g_test_state.sub_count);
     fflush(stdout);
 
@@ -365,30 +365,30 @@ static void run_test_step(AromaWindow *window)
         {
             printf("\n--- Step 5: Opening dropdown and clicking through options ---\n");
             printf("DEBUG: Starting dropdown interaction\n");
-            /* 11 sub-actions: 1 initial open + 5 cycles of (reopen + click) */
+
             begin_sub_action(11);
             do_click(window, rect_center_x(g_dropdown_rect), rect_center_y(g_dropdown_rect));
             advance_sub_action();
         }
         else if (g_test_state.sub_index >= 1 && g_test_state.sub_index <= 10)
         {
-            /* Odd sub_index (1,3,5,7,9): reopen dropdown
-             * Even sub_index (2,4,6,8,10): click option */
+
+
             if (g_test_state.sub_index % 2 == 1)
             {
-                /* Reopen dropdown */
+
                 printf("DEBUG: Reopening dropdown\n");
                 do_click(window, rect_center_x(g_dropdown_rect), rect_center_y(g_dropdown_rect));
                 advance_sub_action();
             }
             else
             {
-                /* Click the option */
-                int option_idx = (g_test_state.sub_index - 2) / 2; /* 0,1,2,3,4 */
+
+                int option_idx = (g_test_state.sub_index - 2) / 2;
                 int opt_y = g_dropdown_rect.y + g_dropdown_rect.h + option_idx * 30 + 15;
                 printf("DEBUG: Clicking dropdown option %d at y=%d\n", option_idx + 1, opt_y);
                 do_click(window, rect_center_x(g_dropdown_rect), opt_y);
-                
+
                 if (g_test_state.sub_index == 10)
                 {
                     printf("DEBUG: Step 5 complete, advancing to step 6\n");
@@ -615,7 +615,7 @@ int main(void)
 
     aroma_event_set_root((AromaNode *)window);
 
-    /* Fixed settle delay before the script starts, matching the Qt harness. */
+
     printf("DEBUG: entering settle loop\n");
     fflush(stdout);
     double settle_start = now_ms();
@@ -652,8 +652,8 @@ int main(void)
     while (g_test_state.running)
     {
         run_test_step(window);
-        
-        /* Exit immediately when the test finishes */
+
+
         if (!g_test_state.running)
             break;
 
@@ -679,7 +679,7 @@ int main(void)
 #endif
     }
 
-    /* Flush any remaining FPS window data and print final summary */
+
     sample_fps_window(true);
 
     double total_elapsed_s = ms_between(g_run_start_time, now_ms()) / 1000.0;

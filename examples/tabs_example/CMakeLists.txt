@@ -43,7 +43,7 @@ if(EMSCRIPTEN)
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=134217728"
         "-sFETCH=1"
-      #  "--preload-file" "${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
+
     )
     message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
 

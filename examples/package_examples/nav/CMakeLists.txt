@@ -1,7 +1,7 @@
-# First-party nav package: built from this directory into plugin.so,
-# packed to com.aroma.nav.apak, staged into the assets folder.
-# Needs the AromaUI include dir plus the car_infotainment dir (host API:
-# app_state.h, vehicle_view.h, theme_manager.h, media_controls.h).
+
+
+
+
 cmake_minimum_required(VERSION 3.15)
 
 if(NOT DEFINED AromaUI_INCLUDE_DIR)
@@ -32,7 +32,7 @@ target_include_directories(nav_plugin PRIVATE
     "${AromaApp_INCLUDE_DIR}/voice"
     "${AromaApp_INCLUDE_DIR}/apak"
 )
-# NOTE: deliberately NOT linked against libaroma or the host - the host
-# process provides all aroma_* and app symbols at dlopen time (it links
-# with -rdynamic).
+
+
+
 

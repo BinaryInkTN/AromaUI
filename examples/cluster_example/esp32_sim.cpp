@@ -68,9 +68,9 @@ sdv_telemetry_t pkt;
 uint8_t seq_counter = 0;
 uint32_t cycle_counter = 0;
 
-// ---------------------------------------------------------------------------
-// Scenario runtime state
-// ---------------------------------------------------------------------------
+
+
+
 ScenarioId active_scenario = SCN_IDLE;
 uint32_t   scenario_start_ms = 0;
 uint32_t   scenario_variant_counter = 0;
@@ -149,9 +149,9 @@ String arg_or(const String &name, const String &fallback) {
     return fallback;
 }
 
-// ---------------------------------------------------------------------------
-// Validation helpers
-// ---------------------------------------------------------------------------
+
+
+
 bool validate_range_i32(const String &field, long val, long lo, long hi, String &err) {
     if (val < lo || val > hi) {
         err += field + " must be between " + String(lo) + " and " + String(hi) + " (got " + String(val) + ").<br>";
@@ -160,9 +160,9 @@ bool validate_range_i32(const String &field, long val, long lo, long hi, String 
     return true;
 }
 
-// -----------------------------------------------------------------------
-// HTML page shell
-// -----------------------------------------------------------------------
+
+
+
 String page_style() {
     String css = "<style>";
     css += "body{background:#f5f5f7;font-family:Roboto,Arial,sans-serif;margin:0;padding:24px;color:#202124}";
@@ -217,9 +217,9 @@ String page_header(const String &active_tab, const String &status_html) {
     return html;
 }
 
-// -----------------------------------------------------------------------
-// Scenario page
-// -----------------------------------------------------------------------
+
+
+
 void handle_root() {
     String status_html = "";
     bool is_active = (active_scenario != SCN_IDLE);
@@ -282,9 +282,9 @@ void handle_scenario_stop() {
     server.send(303);
 }
 
-// -----------------------------------------------------------------------
-// Manual field-by-field form
-// -----------------------------------------------------------------------
+
+
+
 String slider_row(const String &label, const String &name, long min_v, long max_v, long step, long default_v,
                    float display_divisor = 1.0f, const String &unit = "",
                    const char **status_labels = nullptr, int label_count = 0) {
@@ -532,9 +532,9 @@ void handle_not_found() {
     server.send(404, "text/plain", "Not found: " + server.uri());
 }
 
-// ---------------------------------------------------------------------------
-// Emit scenario frame
-// ---------------------------------------------------------------------------
+
+
+
 void emit_scenario_frame(const ScenarioFrame &f) {
     pkt.magic       = MAGIC;
     pkt.version     = 1;

@@ -32,15 +32,15 @@ static int estimate_eta_minutes(double distance_km)
 }
 
 
-/* Owned map widget + fonts (were host AppState slots). Fonts come from
- * the AromaPackageHost at init; the map node is created in build_ui. */
+
+
 static AromaNode *s_map_node = NULL;
 static AromaNode *s_map_close_btn = NULL;
 static AromaFont *s_ui_font = NULL;
 static AromaFont *s_icon_font = NULL;
 static AromaFont *s_settings_font = NULL;
-/* Install-dir-joined asset path for bundled map data (assets/...).
- * Native targets only (native plugins don't ship on web). */
+
+
 static char s_install_dir[512] = "";
 
 static void nav_asset_path(char *out, size_t out_len, const char *file)
@@ -66,9 +66,9 @@ static bool map_options_visible = false;
 
 static bool poi_query_in_flight = false;
 static double last_poi_query_time_ms = 0;
-// POI category table (mirrors the 14-category subset used by the UI).
-// Indices match category_enabled[]; defaults enabled in nav_app_build_ui are
-// [0]=gas, [5]=supermarket, [10]=hospital, [11]=parking, [12]=charging.
+
+
+
 static const POICategory nav_poi_categories[NUM_POI_CATEGORIES] = {
     POI_CATEGORY_GAS_STATION,
     POI_CATEGORY_RESTAURANT,
@@ -128,7 +128,7 @@ static SuggestionSlotContext suggestion_slot_contexts[ITEMS_PER_PAGE];
 static void start_navigation(double from_lat, double from_lon, double to_lat, double to_lon);
 bool open_maps(AromaNode *node, void *user_data);
 
-// Map palette (shared constants; thresholds/counts come from navigation.h).
+
 #define GMAPS_COLOR_PRIMARY 0xFF1A73E8
 #define GMAPS_COLOR_SURFACE 0xFFFFFFFF
 #define GMAPS_COLOR_ON_SURFACE 0xFF202124
@@ -1062,7 +1062,7 @@ s_map_node = aroma_ui_map(parent, 0, 0, 48, 48);
     aroma_node_set_z_index(nav_speed_label, Z_LAYER_STATUS_BAR + 31);
     aroma_node_set_z_index(turn_dist_icon, Z_LAYER_STATUS_BAR + 31);
     aroma_node_set_z_index(nav_turn_dist_label, Z_LAYER_STATUS_BAR + 31);
-    
+
     return true;
 }
 
@@ -1663,10 +1663,10 @@ void opening_anim(AromaNode *target, float progress, void *user_data)
     aroma_node_invalidate(target);
 }
 
-/* --- .apak plugin entry -------------------------------------------------
- * Self-managed chrome: open_maps/close_maps own the drawer, z-order and slide
- * animation exactly as the former built-in app did. The adapter mirrors the
- * old registry entry so the implementation below is untouched. */
+
+
+
+
 #include "aroma_package.h"
 
 static AromaAppPlugin s_nav_mirror;
@@ -1685,7 +1685,7 @@ static bool nav_hook_init(const AromaPackageManifest *manifest,
         s_settings_font = host->settings_font ? host->settings_font
                                               : host->ui_font;
     }
-    /* Bundled map data resolves against our own install dir. */
+
     if (install_dir)
         snprintf(s_install_dir, sizeof(s_install_dir), "%s", install_dir);
     else
@@ -1693,8 +1693,8 @@ static bool nav_hook_init(const AromaPackageManifest *manifest,
     memset(&s_nav_mirror, 0, sizeof(s_nav_mirror));
     s_nav_mirror.id = "com.aroma.nav";
     s_nav_mirror.name = "Navigation";
-    /* Defensive: update must not touch a previous install's nodes before
-     * build_ui overwrites them. Destroy clears these; reset here too. */
+
+
     maps_screen_open = false;
     poi_query_in_flight = false;
     selecting_from = false;
@@ -1730,10 +1730,10 @@ static void nav_hook_update(struct AromaNode *app_root)
 
 static void nav_hook_destroy(void)
 {
-    /* Clear every node pointer into the dying tree. Owned statics
-     * survive dlclose in-process: leaving them non-NULL makes the next
-     * install dereference freed nodes (crash) and leaves POI/update code
-     * running against a dead tree. The tree itself is freed by the host. */
+
+
+
+
     if (filtered_pois)
     {
         free(filtered_pois);

@@ -154,8 +154,8 @@ void apply_vehicle_model_to_viewer(Aroma3DModel *model, float metallic, float cl
         aroma_3d_viewer_set_camera(state.viewer_3d, &current);
         state.startup_animating = false;
         state.camera_animating = false;
-        /* Auto-rotate disabled: the idle spin costs a full 746k-tri
-         * re-render every frame on weak GPUs. */
+
+
         aroma_3d_viewer_set_auto_rotate(state.viewer_3d, false);
     }
 

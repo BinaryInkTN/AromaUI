@@ -1,4 +1,4 @@
-# Tic Tac Toe game package (host chrome).
+
 cmake_minimum_required(VERSION 3.15)
 
 if(NOT DEFINED AromaUI_INCLUDE_DIR)
@@ -18,5 +18,5 @@ target_include_directories(tictactoe_plugin PRIVATE
     "${AromaUI_INCLUDE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../car_infotainment/apak"
 )
-# NOTE: deliberately NOT linked against libaroma or the host.
+
 

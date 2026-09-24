@@ -39,8 +39,8 @@ static const char *json_str(const cJSON *obj, const char *key)
     return item->valuestring;
 }
 
-/* Reverse-dns id: 2+ dot-separated parts, each starting with alnum and
- * containing only [a-z0-9_]. Lowercase enforced by convention. */
+
+
 static bool id_part_ok(const char *start, size_t len)
 {
     if (len == 0 || len >= 64)
@@ -158,7 +158,7 @@ bool aroma_package_parse_manifest(const char *json,
         return false;
     }
     memset(out, 0, sizeof(*out));
-    /* Sensible defaults before parsing. */
+
     copy_str_field(out->icon, sizeof(out->icon), "AROMA_ICON_WIDGETS");
     copy_str_field(out->entry, sizeof(out->entry), "ui.aroma");
     copy_str_field(out->chrome, sizeof(out->chrome), "host");
@@ -193,8 +193,8 @@ bool aroma_package_parse_manifest(const char *json,
     const cJSON *downloads_j = cJSON_GetObjectItemCaseSensitive(root, "downloads");
     const cJSON *featured_j = cJSON_GetObjectItemCaseSensitive(root, "featured");
 
-    /* Reject over-long fields instead of silently truncating them into
-     * a different (but valid-looking) manifest. */
+
+
     struct
     {
         const char *key;
@@ -223,8 +223,8 @@ bool aroma_package_parse_manifest(const char *json,
             return false;
         }
     }
-    /* version_code / min_abi must be plain integers (booleans are not
-     * numbers for this purpose; floats are truncated by cJSON). */
+
+
     if (vc && !cJSON_IsNumber(vc))
     {
         cJSON_Delete(root);
@@ -405,7 +405,7 @@ int aroma_package_compare_versions(const char *a, const char *b)
             return -1;
         if (na > nb)
             return 1;
-        /* Skip one separator run (".", "-", ...). */
+
         a = (end_a == a) ? a : end_a;
         b = (end_b == b) ? b : end_b;
         while (*a && !isdigit((unsigned char)*a))

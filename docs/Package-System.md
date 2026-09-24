@@ -184,7 +184,7 @@ button and the fonts it uses live in the nav package (captured from
 Assets travel with their package: media bundles `assets/album_cover.jpg`,
 nav bundles its `.mbtiles` tiles, routing data and POI database under
 `assets/`. The build packs `assets/` into the `.apak`; at runtime native
-packages are extracted to a validated cache dir and plugins resolve files
+packages are extracted to a validated runtime dir and plugins resolve files
 against the `install_dir` their `init` receives - never host asset paths.
 Shared home-screen pieces stay in the host: the mini media card
 (`media_home.c`), the incoming-call overlay, and the
@@ -200,7 +200,7 @@ Core API (`examples/car_infotainment/apak/aroma_package.h`):
   - minimal zip reader (stored + deflated, CRC-checked, rejects
   `..`/absolute paths; needs zlib, otherwise returns a clear error).
   `aroma_apak_extract()` is only used for the disposable native-plugin
-  runtime cache, never for installs.
+  runtime dir, never for installs.
 - `aroma_package_native_load()` / `..._unload()` - `dlopen` wrapper
   (stubbed on Emscripten).
 

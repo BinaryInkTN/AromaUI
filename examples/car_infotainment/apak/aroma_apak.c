@@ -37,8 +37,8 @@ static uint32_t read_u32(const unsigned char *p)
 
 typedef struct
 {
-    char *name;              /* NUL-terminated inner path */
-    uint16_t method;         /* 0 = stored, 8 = deflated */
+    char *name;
+    uint16_t method;
     uint32_t comp_size;
     uint32_t uncomp_size;
     uint32_t crc;
@@ -54,7 +54,7 @@ static void free_entries(ApakEntry *entries, size_t count)
     free(entries);
 }
 
-/* Reject absolute paths, drive letters and ".." components. */
+
 static bool inner_path_safe(const char *name, size_t len)
 {
     if (!name || len == 0 || len >= AROMA_PACKAGE_PATH_MAX)
@@ -218,7 +218,7 @@ static bool load_archive(const char *apak_path, FILE **out_f,
         set_err(err_buf, err_buf_len, "file is too small to be an .apak");
         return false;
     }
-    /* EOCD lives in the last 64KB + 22 bytes. */
+
     long search_start = file_size - 22;
     long search_end = file_size - 22 - 65536;
     if (search_end < 0)
@@ -256,8 +256,8 @@ static bool load_archive(const char *apak_path, FILE **out_f,
     return true;
 }
 
-/* Decompress one entry into a fresh buffer (NUL-terminated for text use).
- * Caller frees *out_data. */
+
+
 static bool extract_entry_data(FILE *f, const ApakEntry *e,
                                unsigned char **out_data, size_t *out_len,
                                char *err_buf, size_t err_buf_len)
@@ -317,9 +317,9 @@ static bool extract_entry_data(FILE *f, const ApakEntry *e,
     }
     if (e->method == 0)
     {
-        /* Stored entries must carry identical sizes; otherwise the tail
-         * of the output buffer would stay uninitialized (and a claimed
-         * crc of 0 would previously have skipped the check below). */
+
+
+
         if (e->comp_size != e->uncomp_size)
         {
             free(comp);
@@ -358,9 +358,9 @@ static bool extract_entry_data(FILE *f, const ApakEntry *e,
     }
     free(comp);
     raw[e->uncomp_size] = '\0';
-    /* Always verify the CRC (crc32 of empty input is 0, so empty files
-     * still pass). Skipping the check when the claimed CRC is 0 would
-     * let a corrupt/tampered entry through. */
+
+
+
     {
         uint32_t actual = (uint32_t)crc32(0L, raw, e->uncomp_size);
         if (actual != e->crc)
@@ -488,7 +488,7 @@ bool aroma_apak_extract(const char *apak_path, const char *dest_dir,
     size_t count = 0;
     if (!load_archive(apak_path, &f, &entries, &count, err_buf, err_buf_len))
         return false;
-    /* Validate all names before writing anything. */
+
     for (size_t i = 0; i < count; i++)
     {
         if (!inner_path_safe(entries[i].name, strlen(entries[i].name)))
@@ -526,7 +526,7 @@ bool aroma_apak_extract(const char *apak_path, const char *dest_dir,
             }
             continue;
         }
-        /* Ensure the parent directory exists. */
+
         char parent[AROMA_PACKAGE_PATH_MAX];
         snprintf(parent, sizeof(parent), "%s", out_path);
         char *slash = strrchr(parent, '/');
@@ -572,7 +572,7 @@ bool aroma_apak_extract(const char *apak_path, const char *dest_dir,
 #endif
 }
 
-#else /* !AROMA_HAS_ZLIB */
+#else
 
 bool aroma_apak_read_file(const char *apak_path, const char *inner_name,
                           char **out_buf, size_t *out_len,
@@ -606,4 +606,4 @@ bool aroma_apak_contains(const char *apak_path, const char *inner_name)
     return false;
 }
 
-#endif /* AROMA_HAS_ZLIB */
+#endif

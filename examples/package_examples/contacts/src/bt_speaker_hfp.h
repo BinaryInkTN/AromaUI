@@ -22,9 +22,9 @@ typedef enum {
 } bt_call_state_t;
 
 typedef struct {
-    char             path[256];  
+    char             path[256];
     char             line_id[64];
-    char             name[128];  
+    char             name[128];
     bt_call_state_t  state;
     bool             multiparty;
 } bt_call_info_t;

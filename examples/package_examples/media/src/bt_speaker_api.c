@@ -14,8 +14,8 @@
 #include <dbus/dbus.h>
 #include <pulse/pulseaudio.h>
 
-/* Static: each BT stack compiles into its own plugin.so (the HFP side
- * carries its own copy). */
+
+
 static void safe_strncpy(char *dest, const char *src, size_t n)
 {
     if (!dest || n == 0) return;
