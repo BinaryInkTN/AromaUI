@@ -24,6 +24,7 @@
 
 static AromaTheme g_global_theme;
 static bool g_theme_initialized = false;
+static uint64_t g_theme_version = 0;
 
 static uint8_t color_clamp(int value) {
     if (value < 0) return 0;
@@ -368,7 +369,24 @@ void aroma_theme_set_global(const AromaTheme* theme) {
     if (theme) {
         memcpy(&g_global_theme, theme, sizeof(AromaTheme));
         g_theme_initialized = true;
+        g_theme_version++;
     }
+}
+
+uint64_t aroma_theme_get_version(void) {
+    if (!g_theme_initialized) {
+        g_global_theme = aroma_theme_create_default();
+        g_theme_initialized = true;
+    }
+    return g_theme_version;
+}
+
+bool aroma_theme_is_dark(const AromaTheme* theme) {
+    AromaTheme t = theme ? *theme : aroma_theme_get_global();
+    uint8_t r, g, b;
+    aroma_color_extract_rgb(t.colors.background, &r, &g, &b);
+    float luminance = (0.2126f * r + 0.7152f * g + 0.0722f * b) / 255.0f;
+    return luminance < 0.5f;
 }
 
 AromaTheme aroma_theme_get_global(void) {

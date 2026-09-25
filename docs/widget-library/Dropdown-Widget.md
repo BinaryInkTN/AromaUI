@@ -13,6 +13,20 @@ AromaNode *dropdown = aroma_ui_dropdown(
 
 The `AromaDropdown` widget provides a compact select input that expands into a floating list of options. It supports theme-aware styling, hover highlighting, and selection change callbacks.
 
+## Render loop (required)
+
+The expanded list is drawn in a separate overlay pass. Call
+`aroma_dropdown_render_overlays()` every frame after `aroma_ui_render()`,
+or the open list will never appear:
+
+```c
+while (aroma_ui_is_running()) {
+    aroma_ui_process_events();
+    aroma_ui_render(window);
+    aroma_dropdown_render_overlays(window->window_id);
+}
+```
+
 ## Widget Structure
 
 | Field | Type | Description |

@@ -33,7 +33,7 @@ struct AromaTabs {
     uint32_t selected_color;
     uint32_t text_color;
     uint32_t text_selected_color;
-    bool use_theme_color;
+    bool use_theme_colors;
     AromaFont* font;
     uint32_t hover_overlay_color;
     int indicator_height;
@@ -225,7 +225,7 @@ height = aroma_android_dp_to_px(height);
     tabs->text_color = theme.colors.text_primary;
     tabs->text_selected_color = theme.colors.text_primary;
     tabs->hover_overlay_color = aroma_color_blend(tabs->bg_color, tabs->selected_color, 0.12f);
-    tabs->use_theme_color = true;
+    tabs->use_theme_colors = true;
     tabs->indicator_height = 3;
     tabs->indicator_padding = 8;
     tabs->corner_radius = 0.0f;
@@ -443,7 +443,7 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
     if (!gfx || !gfx->fill_rectangle || !gfx->render_text) return;
 
     
-    if (tabs->use_theme_color) {
+    if (tabs->use_theme_colors) {
         AromaTheme theme = aroma_theme_get_global();
         tabs->bg_color = theme.colors.surface;
         tabs->selected_color = theme.colors.primary;

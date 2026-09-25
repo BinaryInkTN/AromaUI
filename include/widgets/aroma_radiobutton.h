@@ -10,9 +10,16 @@ extern "C" {
 #endif
 // Material Design 3 Radio Button
 typedef struct  AromaRadioButton AromaRadioButton;
+typedef struct  AromaRadioGroup AromaRadioGroup;
 
 // Create radio button
 AromaNode* aroma_radiobutton_create(AromaNode* parent, const char* label, int x, int y, int width, int height, int group_id);
+
+// Radio groups: buttons sharing a group id are mutually exclusive.
+// Groups are created on demand; these helpers manage them explicitly.
+AromaRadioGroup* aroma_radio_group_create(void);
+void aroma_radio_group_destroy(AromaRadioGroup* group);
+int aroma_radio_group_get_selected(const AromaRadioGroup* group);
 
 // Set/get selected state
 void aroma_radiobutton_set_selected(AromaNode* radio_node, bool selected);

@@ -4,10 +4,15 @@ Interactive widgets: buttons, checkboxes, switches, sliders, textboxes, and chip
 ## Buttons
 
 ```c
-AromaNode *btn = aroma_ui_button(root, "Click Me", 20, 20, 160, 48);
-aroma_button_set_on_click(btn, [](AromaNode *node, void *ud) {
-    // handle click
-}, NULL);
+static bool on_button_click(AromaNode *node, void *ud) {
+    (void)node;
+    (void)ud;
+    /* handle click */
+    return true;
+}
+
+AromaNode *btn = aroma_ui_button(root, "Click Me", 20, 20, 160, 48,
+                                 on_button_click, NULL, NULL);
 ```
 
 Variants: `standard`, `filled`, `tonal`, `outlined`
@@ -21,19 +26,25 @@ AromaNode *ib = aroma_ui_icon_button(root, AROMA_ICON_SETTINGS, 300, 20, 48, 48)
 ## Checkbox
 
 ```c
-AromaNode *cb = aroma_ui_checkbox(root, "Enable notifications", 20, 100, 300, 32);
-aroma_checkbox_set_on_change(cb, [](bool checked, void *ud) {
-    // handle toggle
-}, NULL);
+static void on_checkbox_toggle(bool checked, void *ud) {
+    (void)checked;
+    (void)ud;
+    /* handle toggle */
+}
+
+AromaNode *cb = aroma_ui_checkbox(root, "Enable notifications", 20, 100, 300, 32,
+                                  on_checkbox_toggle, NULL, NULL);
 ```
 
 ## Radio Button
 
 ```c
-AromaRadioGroup group;
-aroma_radiobutton_group_init(&group);
-AromaNode *rb1 = aroma_ui_radiobutton(root, "Option A", &group, 20, 140, 200, 32);
-AromaNode *rb2 = aroma_ui_radiobutton(root, "Option B", &group, 20, 180, 200, 32);
+#define SETTINGS_GROUP 1
+
+AromaNode *rb1 = aroma_ui_radiobutton(root, "Option A", 20, 140, 200, 32,
+                                      SETTINGS_GROUP, NULL, NULL, NULL);
+AromaNode *rb2 = aroma_ui_radiobutton(root, "Option B", 20, 180, 200, 32,
+                                      SETTINGS_GROUP, NULL, NULL, NULL);
 ```
 
 Radio buttons in the same group are mutually exclusive.
@@ -41,31 +52,44 @@ Radio buttons in the same group are mutually exclusive.
 ## Switch
 
 ```c
-AromaNode *sw = aroma_ui_switch(root, 20, 220, 56, 28, true);
-aroma_switch_set_on_change(sw, [](bool value, void *ud) {
-    // handle toggle
-}, NULL);
+static bool on_switch_toggle(AromaNode *node, void *ud) {
+    (void)node;
+    (void)ud;
+    /* handle toggle */
+    return true;
+}
+
+AromaNode *sw = aroma_ui_switch(root, 20, 220, 56, 28, true,
+                                on_switch_toggle, NULL);
 ```
 
 ## Slider
 
 ```c
-AromaNode *slider = aroma_ui_slider(root, 20, 280, 260, 32, 0, 100, 50);
-aroma_slider_set_on_change(slider, [](int value, void *ud) {
-    // handle value change
-}, NULL);
+static bool on_slider_change(AromaNode *node, void *ud) {
+    (void)node;
+    (void)ud;
+    /* handle value change */
+    return true;
+}
+
+AromaNode *slider = aroma_ui_slider(root, 20, 280, 260, 32, 0, 100, 50,
+                                    on_slider_change, NULL);
 ```
 
 ## Textbox
 
 ```c
-AromaNode *tb = aroma_ui_textbox(root, "Enter name...", 20, 340, 260, 48);
-aroma_textbox_set_on_change(tb, [](const char *text, void *ud) {
-    // handle text change
-}, NULL);
-aroma_textbox_set_on_submit(tb, [](const char *text, void *ud) {
-    // handle Enter key
-}, NULL);
+static bool on_text_change(AromaNode *node, const char *text, void *ud) {
+    (void)node;
+    (void)text;
+    (void)ud;
+    /* handle text change */
+    return true;
+}
+
+AromaNode *tb = aroma_ui_textbox(root, 20, 340, 260, 48, "Enter name...",
+                                 on_text_change, NULL, NULL);
 ```
 
 ## Chip
@@ -94,6 +118,9 @@ aroma_chip_set_selected(chip, true);
 ```
 
 ```incense-demo dropdown
+```
+
+```incense-demo toggles
 ```
 
 ## What's Next

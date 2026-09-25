@@ -176,7 +176,7 @@ sequenceDiagram
 
 ## Usage Example: Automotive Camera
 
-The Car Infotainment example (`AromaOS`) uses the 3D viewer for the vehicle exterior and interior views. The camera is animated between predefined states to simulate orbit, pan, and zoom transitions.
+The Car Infotainment example uses the 3D viewer for the vehicle exterior and interior views. The camera is animated between predefined states to simulate orbit, pan, and zoom transitions.
 
 ```c
 // Exterior camera state
@@ -197,7 +197,7 @@ state.camera_animating = true;
 aroma_3d_viewer_set_camera(state.viewer_3d, &state.camera);
 ```
 
-**Sources:**[examples/car_infotainment/vehicle_camera.c15-60](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L15-L60)[examples/car_infotainment/vehicle_camera.c164-168](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_camera.c#L164-L168)
+**Sources:**[examples/car_infotainment/vehicle/vehicle_camera.c15-60](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/vehicle/vehicle_camera.c#L15-L60)[examples/car_infotainment/vehicle/vehicle_camera.c164-168](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/vehicle/vehicle_camera.c#L164-L168)
 
 ---
 

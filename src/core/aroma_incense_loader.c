@@ -3220,6 +3220,8 @@ static AromaNode *build_dialog(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     if (title && msg)
     {
         built = aroma_ui_dialog(parent, title, msg, props_int(&bag, "width", 320), props_int(&bag, "height", 200), type, _widget_font);
+        if (built)
+            aroma_dialog_show(built);
     }
     free(title);
     free(msg);
@@ -3549,6 +3551,8 @@ static AromaNode *build_menu(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     }
     if (!item_count)
         ERR_WARN_N(node, "Menu has no items");
+    else
+        aroma_menu_show(built);
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
@@ -3581,6 +3585,7 @@ static AromaNode *build_radiobutton(IncenseNode *node, AromaNode *sp, BuildCtx *
             aroma_radiobutton_set_selected(built, true);
         if (on_click)
             aroma_radiobutton_set_callback(built, bridge_void_ptr, on_click);
+        aroma_radio_button_setup_events(built, NULL, NULL);
         int zi = props_int(&bag, "z_index", 0);
         if (zi)
             aroma_node_set_z_index(built, zi);
@@ -3678,6 +3683,8 @@ static AromaNode *build_sidebar(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     }
     if (on_select)
         aroma_sidebar_set_on_select(built, bridge_node_int, on_select);
+    if (built)
+        aroma_sidebar_setup_events(built, NULL, NULL);
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
@@ -3823,6 +3830,8 @@ static AromaNode *build_tabs(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     int selected = props_int(&bag, "selected", 0);
     if (selected)
         aroma_tabs_set_selected(built, selected);
+    if (built)
+        aroma_tabs_setup_events(built, NULL, NULL);
     apply_widget_animations(built, &bag, node);
     maybe_register(&bag, built, ctx);
     props_free(&bag);

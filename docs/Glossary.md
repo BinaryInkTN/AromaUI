@@ -78,10 +78,10 @@ flowchart LR
 | **ABI** | Aroma Backend Interface; the abstraction layer for graphics/platform. | `aroma_backend_abi`[src/backends/aroma_abi.c10-15](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/aroma_abi.c#L10-L15) |
 | **Slab Allocator** | A memory management system for fixed-size node allocations, critical for embedded targets. | [src/core/aroma_slab_alloc.c1-100](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_slab_alloc.c#L1-L100) |
 | **Hit-Testing** | The process of determining which node an input event (touch/click) belongs to. | `aroma_event_hit_test`[src/core/aroma_event.c50-80](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L50-L80) |
-| **Z-Layer** | Integer priority determining the stack order of UI elements. | `aroma_node_set_z_index`[examples/car_infotainment/vehicle_view.c67](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_view.c#L67-L67) |
+| **Z-Layer** | Integer priority determining the stack order of UI elements. | `aroma_node_set_z_index`[examples/car_infotainment/vehicle/vehicle_view.c180](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/vehicle/vehicle_view.c#L180-L180) |
 | **DP/SP** | Density-independent Pixels / Scale-independent Pixels (for fonts). | `android_sp_to_px`[src/backends/platforms/aroma_platform_android.c98-99](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_android.c#L98-L99) |
-| **Vosk** | The offline speech recognition engine used for voice commands. | `vosk_model_new`[examples/car_infotainment/voice_control.c153](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L153-L153) |
-| **Telemetery Bridge** | Shared memory interface for IPC (Inter-Process Communication) of vehicle data. | `telemetry_bridge_open`[examples/car_infotainment/main.c70](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/main.c#L70-L70) |
+| **Vosk** | The offline speech recognition engine used for voice commands. | `vosk_model_new`[examples/car_infotainment/voice/voice_control.c153](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/voice/voice_control.c#L153-L153) |
+| **Telemetery Bridge** | Shared memory interface for IPC (Inter-Process Communication) of vehicle data. | `telemetry_bridge_open`[examples/car_infotainment/core/shared_memory_bridge.h32](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/core/shared_memory_bridge.h#L32-L32) |
 
 ---
 
@@ -134,7 +134,7 @@ flowchart LR
     L1 --> L2
 ```
 
-**Sources:**[src/core/aroma_event.c1-100](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L1-L100)[src/backends/platforms/aroma_platform_android.c86-114](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_android.c#L86-L114)[examples/car_infotainment/vehicle_view.c6-14](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_view.c#L6-L14)
+**Sources:**[src/core/aroma_event.c1-100](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L1-L100)[src/backends/platforms/aroma_platform_android.c86-114](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_android.c#L86-L114)[examples/car_infotainment/vehicle/vehicle_view.c6-14](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/vehicle/vehicle_view.c#L6-L14)
 
 ---
 
@@ -152,5 +152,5 @@ flowchart LR
 - [src/core/aroma_ui_impl.c1-250](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L1-L250)
 - [src/backends/platforms/aroma_platform_android.c1-230](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_android.c#L1-L230)
 - [include/aroma_node.h1-50](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L1-L50)
-- [examples/car_infotainment/main.c1-125](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/main.c#L1-L125)
+- [examples/car_infotainment/core/main.c1-125](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/core/main.c#L1-L125)
 - [src/widgets/aroma_map.c1-260](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_map.c#L1-L260)

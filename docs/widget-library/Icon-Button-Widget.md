@@ -131,7 +131,7 @@ The draw function renders the button in three steps:
 
 ---
 
-## Usage in AromaOS
+## Usage in Apps
 
 In the Car Infotainment example, icon buttons are used extensively for the status bar (Bluetooth, Wi-Fi, voice), tab navigation icons, and the settings panel. They are created with `aroma_ui_iconbutton` and styled using the global theme.
 

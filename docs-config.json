@@ -86,6 +86,11 @@
             "description": "CLI toolchain, project scaffolding, and cross-platform deployment."
         },
         {
+            "name": "Backend Abstraction",
+            "icon": "cpu",
+            "description": "Graphics and platform backends behind the ABI."
+        },
+        {
             "name": "Reference",
             "icon": "book-open",
             "description": "Fonts, testing, glossary, and advanced topics."
@@ -226,6 +231,23 @@
         },
 
         {
+            "title": "Graphics Backends",
+            "description": "GLES3, Vulkan, and TFT_eSPI rendering backends.",
+            "icon": "monitor",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "file": "docs/backend-abstraction-layer/Graphics-Backends.md"
+        },
+        {
+            "title": "Platform Backends",
+            "description": "Linux, Android, Web, and ESP32 platform integration.",
+            "icon": "cpu",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "file": "docs/backend-abstraction-layer/Platform-Backends.md"
+        },
+
+        {
             "title": "Font System",
             "description": "Font loading, glyph caching, FreeType integration, and platform specifics.",
             "icon": "type",
@@ -248,6 +270,14 @@
             "color": "#4A4458",
             "category": "Reference",
             "file": "docs/Glossary.md"
+        },
+        {
+            "title": "API Reference",
+            "description": "Core API functions grouped by subsystem.",
+            "icon": "book",
+            "color": "#4A4458",
+            "category": "Reference",
+            "file": "docs/API-Reference.md"
         }
     ]
 }

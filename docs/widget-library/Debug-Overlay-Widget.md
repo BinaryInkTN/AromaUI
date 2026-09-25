@@ -70,7 +70,7 @@ AromaNode *aroma_debug_overlay_create(
 
 ---
 
-## Usage in AromaOS
+## Usage in Apps
 
 In the Car Infotainment example, the debug overlay is toggled via the Easter Egg developer mode. When activated, `build_easter_egg_ui()` injects the overlay into the scene graph, and the user can drag it to any position on screen [examples/car_infotainment/easter_egg.c1-50](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/easter_egg.c#L1-L50).
 

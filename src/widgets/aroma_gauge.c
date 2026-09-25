@@ -21,6 +21,7 @@ typedef struct AromaGauge
     float max_val;
     uint32_t track_color;
     uint32_t fill_color;
+    bool use_theme_colors;
     float start_angle;
     float end_angle;
     int track_thickness;
@@ -82,6 +83,13 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->draw_arc)
         return;
+
+    if (gauge->use_theme_colors)
+    {
+        AromaTheme theme = aroma_theme_get_global();
+        gauge->track_color = aroma_color_blend(theme.colors.surface, theme.colors.border, 0.45f);
+        gauge->fill_color = theme.colors.primary;
+    }
 
     int cx = gauge->rect.x + gauge->rect.width / 2;
     int cy = gauge->rect.y + gauge->rect.height / 2;
@@ -323,6 +331,7 @@ AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height
 
     gauge->track_color = aroma_color_blend(theme.colors.surface, theme.colors.border, 0.45f);
     gauge->fill_color = theme.colors.primary;
+    gauge->use_theme_colors = true;
 
     gauge->start_angle = 2.35619f;
     gauge->end_angle = 7.06858f;
@@ -393,6 +402,7 @@ void aroma_gauge_set_colors(AromaNode *node, uint32_t track_color, uint32_t fill
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
     gauge->track_color = track_color;
     gauge->fill_color = fill_color;
+    gauge->use_theme_colors = false;
     aroma_node_invalidate(node);
 }
 

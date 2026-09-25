@@ -72,6 +72,6 @@ flowchart LR
 
 ## What's Next
 
-* Read [Scene Graph](Scene-Graph-and-Node-System.md) for node lifecycle.
-* Read [Events](Event-System.md) for input flow.
-* Read [Rendering Pipeline](Rendering-Pipeline-and-DrawList.md) for draw details.
+* Read [Scene Graph](../core-framework/Scene-Graph-and-Node-System.md) for node lifecycle.
+* Read [Events](../core-framework/Event-System.md) for input flow.
+* Read [Rendering Pipeline](../core-framework/Rendering-Pipeline-and-DrawList.md) for draw details.

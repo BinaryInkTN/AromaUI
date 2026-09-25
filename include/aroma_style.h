@@ -113,6 +113,12 @@ AromaStyle aroma_style_create_error(void);
 /* Theme management */
 void aroma_theme_set_global(const AromaTheme* theme);
 AromaTheme aroma_theme_get_global(void);
+/* Monotonic generation counter, bumped by every set_global. Widgets that
+   cache theme-derived colors compare against this to refresh themselves. */
+uint64_t aroma_theme_get_version(void);
+/* True when the theme background is dark (relative luminance < 0.5).
+   NULL selects the global theme. */
+bool aroma_theme_is_dark(const AromaTheme* theme);
 void aroma_style_apply_theme_colors(AromaStyle* style, const AromaTheme* theme, bool is_primary);
 
 /* Color functions */

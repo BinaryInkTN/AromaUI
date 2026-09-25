@@ -11,10 +11,15 @@ aroma_animation_start(node, AROMA_ANIM_SLIDE_X, -100.0f, 0.0f, 300);
 aroma_animation_start(node, AROMA_ANIM_FADE, 1.0f, 0.0f, 500);
 
 // Custom animation (e.g., color blend)
-aroma_animation_start_custom(node, 400, [](AromaNode *n, float progress, void *ud) {
-    uint32_t color = aroma_color_blend(start_color, end_color, progress);
-    aroma_node_set_bg_color(n, color);
-}, NULL);
+static uint32_t s_anim_from;
+static uint32_t s_anim_to;
+
+static void on_tint_step(AromaNode *n, float current_val, void *ud) {
+    (void)ud;
+    aroma_node_set_bg_color(n, aroma_color_blend(s_anim_from, s_anim_to, current_val));
+}
+
+aroma_animation_start_custom(node, 0.0f, 1.0f, 400, on_tint_step, NULL);
 ```
 
 ## Animation Types
@@ -77,6 +82,8 @@ The animation engine exposes these functions for property transitions:
 | `aroma_animation_stop(target)` | Cancel all active animations on a node |
 
 Animations update node properties directly and integrate with the dirty-region system. The layout engine picks up changes automatically during the next frame.
+
+
 
 ## What's Next
 

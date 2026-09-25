@@ -32,7 +32,7 @@ flowchart LR
     EVENT -.-> EVENT_MOD
 ```
 
-Sources: [tests/test_main.c27-55](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_main.c#L27-L55)[tests/test_aroma_slab_alloc.c232-242](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.c#L232-L242)
+Sources: [tests/test_main.c84-100](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_main.c#L84-L100)[tests/core/test_aroma_slab_alloc.c232-242](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_slab_alloc.c#L232-L242)
 
 ## Memory Allocator Tests (`test_aroma_slab_alloc.c`)
 
@@ -40,12 +40,12 @@ These tests validate the `AromaSlabAllocator`, which is critical for determinist
 
 Key functions tested:
 
-- **Initialization**: `test_memory_system_init` ensures `aroma_memory_system_init` and `aroma_memory_system_destroy` correctly manage the global allocator state [tests/test_aroma_slab_alloc.c37-45](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.c#L37-L45)
-- **Widget Allocation**: `test_widget_allocation` verifies that `aroma_widget_alloc` provides memory for different sizes and that `aroma_widget_free` allows for subsequent re-allocation [tests/test_aroma_slab_alloc.c47-74](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.c#L47-L74)
-- **Stress Testing**: `test_widget_allocation_stress` performs 100 interleaved allocations and deallocations of varying sizes to detect fragmentation or pool exhaustion [tests/test_aroma_slab_alloc.c76-110](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.c#L76-L110)
-- **Node Pooling**: `test_node_allocation` specifically targets the fixed-size pool used for `AromaNode` structs via `__slab_pool_alloc`[tests/test_aroma_slab_alloc.c112-140](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.c#L112-L140)
+- **Initialization**: `test_memory_system_init` ensures `aroma_memory_system_init` and `aroma_memory_system_destroy` correctly manage the global allocator state [tests/core/test_aroma_slab_alloc.c37-45](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_slab_alloc.c#L37-L45)
+- **Widget Allocation**: `test_widget_allocation` verifies that `aroma_widget_alloc` provides memory for different sizes and that `aroma_widget_free` allows for subsequent re-allocation [tests/core/test_aroma_slab_alloc.c47-74](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_slab_alloc.c#L47-L74)
+- **Stress Testing**: `test_widget_allocation_stress` performs 100 interleaved allocations and deallocations of varying sizes to detect fragmentation or pool exhaustion [tests/core/test_aroma_slab_alloc.c76-110](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_slab_alloc.c#L76-L110)
+- **Node Pooling**: `test_node_allocation` specifically targets the fixed-size pool used for `AromaNode` structs via `__slab_pool_alloc`[tests/core/test_aroma_slab_alloc.c112-140](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_slab_alloc.c#L112-L140)
 
-Sources: [tests/test_aroma_slab_alloc.c1-242](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_slab_alloc.c#L1-L242)
+Sources: [tests/core/test_aroma_slab_alloc.c1-242](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_slab_alloc.c#L1-L242)
 
 ## Scene Graph Tests (`test_aroma_node.c`)
 
@@ -79,11 +79,11 @@ flowchart LR
 
 Key validation logic:
 
-- **ID Uniqueness**: `test_node_id_generation` asserts that every call to `__generate_node_id` returns a strictly increasing, unique identifier [tests/test_aroma_node.c59-73](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_node.c#L59-L73)
-- **Hierarchy Integrity**: `test_node_hierarchy` builds a tree (Root -> Container -> Button) and asserts that `child_count` and `parent_node` pointers are correctly maintained across levels [tests/test_aroma_node.c140-160](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_node.c#L140-L160)
-- **Partial Tree Removal**: `test_remove_child_node` verifies that removing a node from the middle of a child array correctly shifts the remaining siblings to maintain array density [tests/test_aroma_node.c162-196](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_node.c#L162-L196)
+- **ID Uniqueness**: `test_node_id_generation` asserts that every call to `__generate_node_id` returns a strictly increasing, unique identifier [tests/core/test_aroma_node.c59-73](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_node.c#L59-L73)
+- **Hierarchy Integrity**: `test_node_hierarchy` builds a tree (Root -> Container -> Button) and asserts that `child_count` and `parent_node` pointers are correctly maintained across levels [tests/core/test_aroma_node.c140-160](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_node.c#L140-L160)
+- **Partial Tree Removal**: `test_remove_child_node` verifies that removing a node from the middle of a child array correctly shifts the remaining siblings to maintain array density [tests/core/test_aroma_node.c162-196](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_node.c#L162-L196)
 
-Sources: [tests/test_aroma_node.c59-196](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_node.c#L59-L196)
+Sources: [tests/core/test_aroma_node.c59-196](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_node.c#L59-L196)
 
 ## Event System Tests (`test_aroma_event_system.c`)
 
@@ -110,12 +110,12 @@ sequenceDiagram
 
 Key behaviors verified:
 
-- **Subscription**: `test_event_subscription_and_dispatch` ensures that `aroma_event_subscribe` correctly registers a callback and that `aroma_event_dispatch` triggers it when the target ID matches [tests/test_aroma_event_system.c95-123](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_event_system.c#L95-L123)
-- **Bubbling**: `test_event_bubbling` verifies that an event targeting a leaf node (Button) propagates up to the Root if not consumed [tests/test_aroma_event_system.c125-159](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_event_system.c#L125-L159)
-- **Consumption**: `test_event_consumption_stops_bubbling` validates that calling `aroma_event_consume` inside a high-priority handler prevents lower-priority or parent-node handlers from receiving the event [tests/test_aroma_event_system.c161-199](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_event_system.c#L161-L199)
-- **Queueing**: `test_event_queue_processing` tests the asynchronous event path where events are added via `aroma_event_queue` and processed later during `aroma_event_process_queue`[tests/test_aroma_event_system.c201-231](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_event_system.c#L201-L231)
+- **Subscription**: `test_event_subscription_and_dispatch` ensures that `aroma_event_subscribe` correctly registers a callback and that `aroma_event_dispatch` triggers it when the target ID matches [tests/core/test_aroma_event_system.c95-123](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_event_system.c#L95-L123)
+- **Bubbling**: `test_event_bubbling` verifies that an event targeting a leaf node (Button) propagates up to the Root if not consumed [tests/core/test_aroma_event_system.c125-159](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_event_system.c#L125-L159)
+- **Consumption**: `test_event_consumption_stops_bubbling` validates that calling `aroma_event_consume` inside a high-priority handler prevents lower-priority or parent-node handlers from receiving the event [tests/core/test_aroma_event_system.c161-199](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_event_system.c#L161-L199)
+- **Queueing**: `test_event_queue_processing` tests the asynchronous event path where events are added via `aroma_event_queue` and processed later during `aroma_event_process_queue`[tests/core/test_aroma_event_system.c201-231](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_event_system.c#L201-L231)
 
-Sources: [tests/test_aroma_event_system.c95-231](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/test_aroma_event_system.c#L95-L231)
+Sources: [tests/core/test_aroma_event_system.c95-231](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/tests/core/test_aroma_event_system.c#L95-L231)
 
 ## Build Configuration
 

@@ -11,6 +11,9 @@ aroma_node_set_flex_direction(container, AROMA_FLEX_COLUMN);
 
 Containers are the primary structural widget. They support flexbox, grid, and scrolling.
 
+```incense-demo layout
+```
+
 ## Scrollable Container
 
 ```c
@@ -22,6 +25,9 @@ Features:
 - **Velocity tracking** for fling gestures
 - **Overscroll bounce** with spring-back animation
 - **Auto content sizing** based on children
+
+```incense-demo scroll
+```
 
 ## ListView
 
@@ -110,6 +116,9 @@ aroma_menu_add_item(menu, "Delete", AROMA_MENU_ITEM_DESTRUCTIVE, on_delete);
 ```
 
 Floating context menu with click-away dismiss.
+
+```incense-demo menu
+```
 
 ## Live demo
 

@@ -68,7 +68,8 @@
       height: 32px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 10px; border-bottom: 1px solid var(--ide-border); font-size: 11px; color: var(--ide-text-muted);
     }
-    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; background: #111318; min-height: 0; padding: 20px; box-sizing: border-box; }
+    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; background: #F7F7F7; min-height: 0; padding: 20px; box-sizing: border-box; }
+    [data-theme="dark"] #canvas-wrap { background: #111318; }
     #phone-frame { display: inline-block; max-width: 100%; max-height: 100%; border-radius: 24px; box-shadow: 0 0 0 8px #1a1a1a, 0 0 0 10px #333, 0 20px 50px rgba(0,0,0,0.5); overflow: hidden; background: #000; line-height: 0; flex-shrink: 0; }
     #phone-frame canvas { display: block; max-width: 100%; max-height: 100%; touch-action: none; }
     body.embed #editor-pane { display: none; }
@@ -129,7 +130,7 @@
     window.Module = window.Module || {};
     // Bust cached wasm/js after fixes ship: keep this version in sync
     // with the <script src="incense_sandbox.js?v=N"> tag below.
-    window.Module.locateFile = function(path) { return path + '?v=3'; };
+    window.Module.locateFile = function(path) { return path + '?v=4'; };
     // Embed mode for docs pages: ?embed=1 shows preview only (no editor),
     // ?example=NAME loads a curated demo, ?autorun=1 runs on boot.
     // Theme cascade: follow the embedding docs page theme when present,
@@ -160,6 +161,22 @@
           window.monaco.editor.setTheme(next === 'dark' ? 'incense-dark' : 'incense-light');
         }
       } catch (e) {}
+      window.syncPreviewAppTheme();
+    };
+    // Mirror the docs light/dark mode into the preview app itself:
+    // light -> Material Blue, dark -> Material Black. Stashes the
+    // request when the wasm runtime is not up yet; it is flushed
+    // after the first runCode().
+    window.syncPreviewAppTheme = function() {
+      try {
+        var t = document.documentElement.getAttribute('data-theme') || 'light';
+        if (window.__aromaReady && window.Module && typeof window.Module.ccall === 'function') {
+          window.Module.ccall('aroma_sandbox_set_theme', null, ['number'], [t === 'dark' ? 1 : 0]);
+          window.__pendingPreviewTheme = null;
+        } else {
+          window.__pendingPreviewTheme = t;
+        }
+      } catch (e) {}
     };
     window.addEventListener('message', function(e) {
       var d = e && e.data;
@@ -174,14 +191,22 @@
     // Curated demos for docs embeds (?example=NAME). Keep props to the
     // documented Incense set so every demo loads with status Ready.
     window.incenseExamples = {
-      'buttons': 'Window {\n    width: 320\n    height: 480\n    title: "Buttons"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Buttons"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Button {\n            text: "Standard"\n            x: 20\n            y: 80\n            width: 280\n            height: 44\n        }\n        Button {\n            text: "Filled"\n            x: 20\n            y: 136\n            width: 280\n            height: 44\n        }\n        IconButton {\n            x: 20\n            y: 192\n            width: 48\n            height: 48\n            icon: "AROMA_ICON_ADD"\n            variant: standard\n        }\n    }\n}\n',
-      'inputs': 'Window {\n    width: 320\n    height: 480\n    title: "Inputs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Inputs"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Checkbox {\n            label: "Enable notifications"\n            x: 20\n            y: 80\n            width: 280\n            height: 32\n            checked: true\n        }\n        Checkbox {\n            label: "Dark mode"\n            x: 20\n            y: 124\n            width: 280\n            height: 32\n            checked: false\n        }\n        Switch {\n            x: 20\n            y: 168\n            width: 56\n            height: 28\n            value: true\n        }\n        Textbox {\n            text: ""\n            placeholder: "Type here"\n            x: 20\n            y: 212\n            width: 280\n            height: 44\n        }\n    }\n}\n',
-      'slider': 'Window {\n    width: 320\n    height: 480\n    title: "Slider"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Volume"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Slider {\n            x: 20\n            y: 80\n            width: 280\n            height: 32\n            min: 0\n            max: 100\n            value: 40\n        }\n        ProgressBar {\n            x: 20\n            y: 140\n            width: 280\n            height: 8\n            value: 0.4\n            type: determinate\n        }\n        Loading {\n            x: 140\n            y: 200\n            radius: 24\n            thickness: 6\n        }\n    }\n}\n',
-      'dropdown': 'Window {\n    width: 320\n    height: 480\n    title: "Dropdown"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Pick one"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Dropdown {\n            x: 20\n            y: 80\n            width: 280\n            height: 44\n            Option { text: "First" }\n            Option { text: "Second" }\n            Option { text: "Third" }\n        }\n    }\n}\n',
+      'buttons': 'Window {\n    width: 320\n    height: 480\n    title: "Buttons"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Buttons"\n            style: large\n            x: 20\n            y: 20\n        }\n        Button {\n            text: "Standard"\n            x: 20\n            y: 80\n            width: 280\n            height: 44\n        }\n        Button {\n            text: "Filled"\n            x: 20\n            y: 136\n            width: 280\n            height: 44\n        }\n        IconButton {\n            x: 20\n            y: 192\n            width: 48\n            height: 48\n            icon: "AROMA_ICON_ADD"\n            variant: standard\n        }\n    }\n}\n',
+      'inputs': 'Window {\n    width: 320\n    height: 480\n    title: "Inputs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Inputs"\n            style: large\n            x: 20\n            y: 20\n        }\n        Checkbox {\n            label: "Enable notifications"\n            x: 20\n            y: 80\n            width: 280\n            height: 32\n            checked: true\n        }\n        Checkbox {\n            label: "Dark mode"\n            x: 20\n            y: 124\n            width: 280\n            height: 32\n            checked: false\n        }\n        Switch {\n            x: 20\n            y: 168\n            width: 56\n            height: 28\n            value: true\n        }\n        Textbox {\n            text: ""\n            placeholder: "Type here"\n            x: 20\n            y: 212\n            width: 280\n            height: 44\n        }\n    }\n}\n',
+      'slider': 'Window {\n    width: 320\n    height: 480\n    title: "Slider"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Volume"\n            style: large\n            x: 20\n            y: 20\n        }\n        Slider {\n            x: 20\n            y: 80\n            width: 280\n            height: 32\n            min: 0\n            max: 100\n            value: 40\n        }\n        ProgressBar {\n            x: 20\n            y: 140\n            width: 280\n            height: 8\n            value: 0.4\n            type: determinate\n        }\n        Loading {\n            x: 140\n            y: 200\n            radius: 24\n            thickness: 6\n        }\n    }\n}\n',
+      'dropdown': 'Window {\n    width: 320\n    height: 480\n    title: "Dropdown"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Pick one"\n            style: large\n            x: 20\n            y: 20\n        }\n        Dropdown {\n            x: 20\n            y: 80\n            width: 280\n            height: 44\n            Option { text: "First" }\n            Option { text: "Second" }\n            Option { text: "Third" }\n        }\n    }\n}\n',
       'list': 'Window {\n    width: 320\n    height: 480\n    title: "List"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        visible: 1\n        ListView {\n            x: 0\n            y: 0\n            width: 320\n            height: 480\n            Header { text: "General" }\n            ListItem { text: "Airplane Mode" secondary: "Off" icon: "AROMA_ICON_AIRPLANEMODE_INACTIVE" }\n            ListItem { text: "Wi-Fi" secondary: "Not Connected" icon: "AROMA_ICON_NETWORK_WIFI" }\n            ListItem { text: "Bluetooth" secondary: "On" icon: "AROMA_ICON_BLUETOOTH" }\n            Header { text: "Display" }\n            ListItem { text: "Brightness" secondary: "50%" icon: "AROMA_ICON_BRIGHTNESS_MEDIUM" }\n        }\n    }\n}\n',
-      'cards': 'Window {\n    width: 320\n    height: 480\n    title: "Cards"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Cards"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Card {\n            x: 20\n            y: 80\n            width: 280\n            height: 120\n            type: elevated\n        }\n        Divider {\n            x: 20\n            y: 220\n            length: 280\n            orientation: horizontal\n        }\n        Chip {\n            x: 20\n            y: 250\n            label: "New"\n            selected: true\n        }\n        ProgressBar {\n            x: 20\n            y: 310\n            width: 280\n            height: 8\n            value: 0.65\n            type: determinate\n        }\n    }\n}\n',
-      'tabs': 'Window {\n    width: 320\n    height: 480\n    title: "Tabs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Tabs {\n            x: 0\n            y: 0\n            width: 320\n            height: 120\n            Tab { text: "Home" }\n            Tab { text: "Settings" }\n        }\n        Label {\n            text: "Tab content goes here"\n            style: medium\n            color: #FFFFFF\n            x: 20\n            y: 160\n        }\n    }\n}\n',
-      'gauge': 'Window {\n    width: 320\n    height: 480\n    title: "Gauge"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Speed"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Gauge {\n            x: 60\n            y: 80\n            width: 200\n            height: 200\n            value: 65\n        }\n        ProgressBar {\n            x: 20\n            y: 310\n            width: 280\n            height: 8\n            value: 0.65\n            type: determinate\n        }\n    }\n}\n'
+      'cards': 'Window {\n    width: 320\n    height: 480\n    title: "Cards"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Cards"\n            style: large\n            x: 20\n            y: 20\n        }\n        Card {\n            x: 20\n            y: 80\n            width: 280\n            height: 120\n            type: elevated\n        }\n        Divider {\n            x: 20\n            y: 220\n            length: 280\n            orientation: horizontal\n        }\n        Chip {\n            x: 20\n            y: 250\n            label: "New"\n            selected: true\n        }\n        ProgressBar {\n            x: 20\n            y: 310\n            width: 280\n            height: 8\n            value: 0.65\n            type: determinate\n        }\n    }\n}\n',
+      'tabs': 'Window {\n    width: 320\n    height: 480\n    title: "Tabs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Tabs {\n            x: 0\n            y: 0\n            width: 320\n            height: 120\n            Tab { text: "Home" }\n            Tab { text: "Settings" }\n        }\n        Label {\n            text: "Tab content goes here"\n            style: medium\n            x: 20\n            y: 160\n        }\n    }\n}\n',
+      'gauge': 'Window {\n    width: 320\n    height: 480\n    title: "Gauge"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Speed"\n            style: large\n            x: 20\n            y: 20\n        }\n        Gauge {\n            x: 60\n            y: 80\n            width: 200\n            height: 200\n            value: 65\n        }\n        ProgressBar {\n            x: 20\n            y: 310\n            width: 280\n            height: 8\n            value: 0.65\n            type: determinate\n        }\n    }\n}\n',
+      'toggles': 'Window {\n    width: 320\n    height: 480\n    title: "Toggles"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Pick a plan"\n            style: large\n            x: 20\n            y: 20\n        }\n        RadioButton {\n            label: "Monthly"\n            x: 20\n            y: 80\n            width: 280\n            height: 32\n            group: 1\n            selected: true\n        }\n        RadioButton {\n            label: "Yearly"\n            x: 20\n            y: 124\n            width: 280\n            height: 32\n            group: 1\n        }\n    }\n}\n',
+      'dialog': 'Window {\n    width: 320\n    height: 480\n    title: "Dialog"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Overlays"\n            style: large\n            x: 20\n            y: 20\n        }\n        Dialog {\n            title: "Delete item?"\n            message: "This cannot be undone."\n            x: 20\n            y: 80\n            width: 280\n            height: 200\n        }\n    }\n}\n',
+      'menu': 'Window {\n    width: 320\n    height: 480\n    title: "Menu"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Options"\n            style: large\n            x: 20\n            y: 20\n        }\n        Menu {\n            x: 20\n            y: 80\n            MenuItem { text: "Share" }\n            MenuItem { text: "Edit" }\n            MenuItem { text: "Delete" }\n        }\n    }\n}\n',
+      'scroll': 'Window {\n    width: 320\n    height: 480\n    title: "Scroll"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Feed"\n            style: large\n            x: 20\n            y: 20\n        }\n        ScrollView {\n            x: 0\n            y: 70\n            width: 320\n            height: 410\n            direction: vertical\n            Label {\n                text: "Item one"\n                x: 20\n                y: 0\n            }\n            Label {\n                text: "Item two"\n                x: 20\n                y: 60\n            }\n            Label {\n                text: "Item three"\n                x: 20\n                y: 120\n            }\n            Label {\n                text: "Item four"\n                x: 20\n                y: 180\n            }\n            Label {\n                text: "Item five"\n                x: 20\n                y: 240\n            }\n            Label {\n                text: "Item six"\n                x: 20\n                y: 300\n            }\n            Label {\n                text: "Item seven"\n                x: 20\n                y: 360\n            }\n            Label {\n                text: "Item eight"\n                x: 20\n                y: 420\n            }\n        }\n    }\n}\n',
+      'animation': 'Window {\n    width: 320\n    height: 480\n    title: "Animation"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Hello"\n            style: large\n            x: 20\n            y: 20\n            animation: slide_y\n            animation_start_val: -40\n            animation_end_val: 0\n            animation_duration: 600\n        }\n        Button {\n            text: "Get started"\n            x: 20\n            y: 100\n            width: 200\n            height: 44\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 800\n        }\n        Card {\n            x: 20\n            y: 170\n            width: 280\n            height: 120\n            type: elevated\n            animation: scale_x\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n        }\n    }\n}\n',
+      'theming': 'Window {\n    width: 320\n    height: 480\n    title: "Theming"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Material You"\n            style: large\n            x: 20\n            y: 20\n        }\n        Button {\n            text: "Primary action"\n            x: 20\n            y: 80\n            width: 200\n            height: 44\n        }\n        Card {\n            x: 20\n            y: 150\n            width: 280\n            height: 110\n            type: tonal\n        }\n        Switch {\n            x: 20\n            y: 290\n            width: 56\n            height: 28\n            value: true\n        }\n        Checkbox {\n            label: "Follow system theme"\n            x: 20\n            y: 334\n            width: 280\n            height: 32\n            checked: true\n        }\n    }\n}\n',
+      'layout': 'Window {\n    width: 320\n    height: 480\n    title: "Layout"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        layout: flex\n        direction: column\n        Label {\n            text: "Flexbox"\n            style: large\n            x: 20\n            y: 20\n        }\n        Container {\n            x: 0\n            y: 0\n            width: 320\n            height: 120\n            layout: flex\n            direction: row\n            Button {\n                text: "Left"\n                width: 140\n                height: 44\n            }\n            Button {\n                text: "Right"\n                width: 140\n                height: 44\n            }\n        }\n        Card {\n            x: 0\n            y: 0\n            width: 280\n            height: 120\n            type: elevated\n        }\n    }\n}\n',
+      'map': 'Window {\n    width: 320\n    height: 480\n    title: "Map"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "World"\n            style: large\n            x: 20\n            y: 20\n        }\n        Map {\n            x: 0\n            y: 80\n            width: 320\n            height: 400\n            zoom: 2\n            lat: 20\n            lon: 10\n            Marker {\n                lat: 48.85\n                lon: 2.35\n                popup: "Paris"\n            }\n        }\n    }\n}\n',
     };
     window.incenseQuery = {};
     try {
@@ -210,7 +235,7 @@
     };
 
   </script>
-  <script src="incense_sandbox.js?v=3"></script>
+  <script src="incense_sandbox.js?v=4"></script>
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.min.js"></script>
   <script>
     window.setStatus = function(type, msg) {
@@ -232,6 +257,7 @@
           setStatus('ok', 'Ready');
           document.getElementById('runBtn').classList.remove('pending');
         }
+        if (typeof window.syncPreviewAppTheme === 'function') window.syncPreviewAppTheme();
       } catch (e) {
         console.error('[sandbox] Runtime error:', e);
         if (typeof e === 'object' && e.stack) console.error('[sandbox] Stack:', e.stack);
@@ -265,6 +291,32 @@
       // Preview-only embed for docs pages: no editor, auto-run the demo.
       document.body.classList.add('embed');
       window.incenseEditor = { getValue: function() { return window.incenseInitialSource || ''; } };
+      // Docs pages can embed several live previews at once (e.g. the
+      // Input & Controls page runs inputs, buttons, slider and dropdown
+      // side by side). Freeze the wasm main loop while an embed is
+      // offscreen so the visible preview stays responsive.
+      window.__embedVisible = true;
+      function setEmbedLoopRunning() {
+        try {
+          if (!window.__aromaReady || !window.Module) return;
+          var run = window.__embedVisible && !document.hidden;
+          if (run) {
+            if (typeof window.Module.resumeMainLoop === 'function') window.Module.resumeMainLoop();
+          } else {
+            if (typeof window.Module.pauseMainLoop === 'function') window.Module.pauseMainLoop();
+          }
+        } catch (e) {}
+      }
+      window.__setEmbedLoopRunning = setEmbedLoopRunning;
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function(entries) {
+          for (var i = 0; i < entries.length; i++) {
+            window.__embedVisible = !!entries[i].isIntersecting;
+          }
+          setEmbedLoopRunning();
+        }, { threshold: 0.05 }).observe(document.body);
+      }
+      document.addEventListener('visibilitychange', setEmbedLoopRunning);
       autoRunWhenReady();
     } else {
     require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
@@ -577,7 +629,6 @@
             width: 320
             height: 120
         
-            color: #121212
 
             IconButton {
                 x: 8
@@ -593,7 +644,6 @@
             Label {
                 text: "Settings"
                 style: large
-                color: #FFFFFF
                 y:20
                 x: 10
             }
@@ -655,7 +705,6 @@
             width: 320
             height: 56
     
-            color: #121212
 
             IconButton {
                 x: 8
@@ -670,7 +719,6 @@
             Label {
                 text: "Airplane Mode"
                 style: large
-                color: #FFFFFF
                 y: 20
                 x: 60
             }
@@ -708,7 +756,6 @@
             width: 320
             height: 56
   
-            color: #121212
 
             IconButton {
                 x: 8
@@ -723,7 +770,6 @@
             Label {
                 text: "Wi-Fi"
                 style: large
-                color: #FFFFFF
                 y: 20
                 x: 60
             }
@@ -768,7 +814,6 @@
             y: 0
             width: 320
             height: 56
-            color: #121212
 
             IconButton {
                 x: 8
@@ -783,7 +828,6 @@
             Label {
                 text: "Wi-Fi"
                 style: large
-                color: #FFFFFF
                 y: 20
                 x: 60
             }
@@ -839,7 +883,6 @@
             y: 0
             width: 320
             height: 56
-            color: #121212
 
             IconButton {
                 x: 8
@@ -854,7 +897,6 @@
             Label {
                 text: "Bluetooth"
                 style: large
-                color: #FFFFFF
                 y: 20
                 x: 60 
             }

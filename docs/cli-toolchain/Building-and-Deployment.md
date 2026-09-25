@@ -90,5 +90,5 @@ aroma build <target>
 ## What's next
 
 * Learn [Project Creation](Project-Creation-and-Scaffolding.md) to scaffold a new app.
-* Explore the [Widget Library](Input-and-Control-Widgets.md) to build your UI.
+* Explore the [Widget Library](../widget-library/Input-and-Control-Widgets.md) to build your UI.
 * Check [Testing and Quality](../Testing-and-Quality.md) for CI setup.

@@ -28,8 +28,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <curl/curl.h>
-#include <sqlite3.h>
 #endif
+#include <sqlite3.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

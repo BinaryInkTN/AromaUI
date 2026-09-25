@@ -106,6 +106,12 @@ void aroma_radio_group_destroy(AromaRadioGroup* group)
     free(group);
 }
 
+int aroma_radio_group_get_selected(const AromaRadioGroup* group)
+{
+    if (!group) return -1;
+    return group->selected_index;
+}
+
 static void __radio_group_add(AromaRadioGroup* group, AromaRadioButton* button)
 {
     if (!group || !button) return;

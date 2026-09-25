@@ -85,6 +85,9 @@ aroma_dialog_add_action(dialog, "Delete", DIALOG_ACTION_DESTRUCTIVE, on_delete);
 
 Dialogs are modal overlays with up to 3 action buttons.
 
+```incense-demo dialog
+```
+
 ## Live demo
 
 ```incense-demo cards

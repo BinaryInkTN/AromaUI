@@ -33,6 +33,7 @@ struct AromaSidebar
     uint32_t selected_color;
     uint32_t selected_bg_color;
     uint32_t hover_bg_color;
+    bool use_theme_colors;
     void (*on_select)(AromaNode *, int, void *);
     void *user_data;
 
@@ -263,8 +264,9 @@ height = aroma_android_dp_to_px(height);
     sidebar->text_color = theme.colors.text_primary;
     sidebar->selected_color = theme.colors.primary;
 
-    sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, 0xFFFFFFFF, 0.88f);
+    sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, theme.colors.surface, 0.88f);
     sidebar->hover_bg_color = aroma_color_blend(theme.colors.surface, 0xFF000000, 0.05f);
+    sidebar->use_theme_colors = true;
 
     for (int i = 0; i < sidebar->count; i++)
     {
@@ -520,11 +522,14 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
     }
 
     AromaTheme theme = aroma_theme_get_global();
-    sidebar->bg_color = theme.colors.surface;
-    sidebar->text_color = theme.colors.text_primary;
-    sidebar->selected_color = theme.colors.primary;
-    sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, theme.colors.surface, 0.88f);
-    sidebar->hover_bg_color = aroma_color_blend(theme.colors.surface, 0xFF000000, 0.05f);
+    if (sidebar->use_theme_colors)
+    {
+        sidebar->bg_color = theme.colors.surface;
+        sidebar->text_color = theme.colors.text_primary;
+        sidebar->selected_color = theme.colors.primary;
+        sidebar->selected_bg_color = aroma_color_blend(sidebar->selected_color, theme.colors.surface, 0.88f);
+        sidebar->hover_bg_color = aroma_color_blend(theme.colors.surface, 0xFF000000, 0.05f);
+    }
 
     float bg_radius = sidebar->apple_style ? (float)sidebar->corner_radius : 12.0f;
     gfx->fill_rectangle(window_id, sidebar->rect.x, sidebar->rect.y,

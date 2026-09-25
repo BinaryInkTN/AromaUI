@@ -20,6 +20,7 @@
  */
 
 #include "widgets/aroma_menu.h"
+#include "widgets/aroma_container.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_style.h"
@@ -59,7 +60,20 @@ static bool __menu_handle_event(AromaEvent* event, void* user_data)
 
     if (event->event_type != EVENT_TYPE_MOUSE_CLICK) return false;
 
-    int rel_y = event->data.mouse.y - menu->rect.y;
+    int adjusted_y = event->data.mouse.y;
+    AromaNode *cur = event->target_node->parent_node;
+    while (cur)
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER && aroma_container_is_scrollable(cur))
+        {
+            int scroll_x = 0, scroll_y = 0;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            adjusted_y += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+
+    int rel_y = adjusted_y - menu->rect.y;
     int item_height = menu->item_height;
     int index = rel_y / item_height;
     if (index >= 0 && index < (int)menu->item_count) {
@@ -120,6 +134,23 @@ y = aroma_android_dp_to_px(y);
     return node;
 }
 
+/* Keep the scene-graph hit-test rect in sync with the widget rect:
+   the node starts at height 0 and grows as items are added. */
+static void __menu_sync_rect(AromaNode* menu_node)
+{
+    if (!menu_node || !menu_node->node_widget_ptr) return;
+    AromaMenu* menu = (AromaMenu*)menu_node->node_widget_ptr;
+    AromaRect *r = aroma_node_get_rect(menu_node);
+    if (r)
+    {
+        r->x = menu->rect.x;
+        r->y = menu->rect.y;
+        r->width = menu->rect.width;
+        r->height = menu->rect.height;
+    }
+    aroma_node_invalidate(menu_node);
+}
+
 void aroma_menu_add_item(AromaNode* menu_node, const char* text, void (*callback)(void* user_data), void* user_data)
 {
     if (!menu_node || !menu_node->node_widget_ptr || !text) return;
@@ -134,6 +165,7 @@ void aroma_menu_add_item(AromaNode* menu_node, const char* text, void (*callback
     item->callback = callback;
     item->user_data = user_data;
     menu->rect.height = (int)menu->item_count * menu->item_height;
+    __menu_sync_rect(menu_node);
 }
 
 void aroma_menu_add_item_with_icon(AromaNode* menu_node, const char* text, const char* icon_code, void (*callback)(void* user_data), void* user_data)
@@ -154,6 +186,7 @@ void aroma_menu_add_item_with_icon(AromaNode* menu_node, const char* text, const
     item->callback = callback;
     item->user_data = user_data;
     menu->rect.height = (int)menu->item_count * menu->item_height;
+    __menu_sync_rect(menu_node);
 }
 
 void aroma_menu_add_separator(AromaNode* menu_node)
@@ -165,6 +198,7 @@ void aroma_menu_add_separator(AromaNode* menu_node)
     memset(item, 0, sizeof(AromaMenuItem));
     item->separator = true;
     menu->rect.height = (int)menu->item_count * menu->item_height;
+    __menu_sync_rect(menu_node);
 }
 
 void aroma_menu_show(AromaNode* menu_node)
@@ -229,8 +263,9 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
             continue;
         }
         if (menu->font && gfx->render_text) {
+            int line_h = aroma_font_get_line_height(menu->font);
             int text_x = menu->rect.x + 12;
-            int text_y = y + (menu->item_height/2);
+            int text_y = y + (menu->item_height - line_h) / 2;
             
             if (menu->items[i].icon[0] != '\0' && menu->icon_font) {
                  int line_h = aroma_font_get_line_height(menu->icon_font);

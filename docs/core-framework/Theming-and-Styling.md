@@ -17,8 +17,7 @@ theme.spacing.padding = 16;
 theme.spacing.border_radius = 8.0f;
 
 // Apply to a specific widget style
-AromaStyle style;
-aroma_style_create_from_theme(&style, &theme, true);
+AromaStyle style = aroma_style_create_from_theme(&theme);
 aroma_button_set_style(btn, &style);
 ```
 
@@ -68,9 +67,28 @@ Presets: `aroma_shadow_create_soft()`, `aroma_shadow_create_subtle()`, `aroma_sh
 ## How Themes Apply
 
 1. Set a global theme with `aroma_ui_set_theme(&theme)`
-2. Widgets read the global theme during creation
-3. Call `aroma_style_create_from_theme()` to map theme colors to a widget's state colors
-4. The widget uses these colors during its `draw_cb`
+2. `aroma_ui_set_theme()` invalidates every window and requests a redraw,
+   so the switch paints on the next frame with no manual tree walk
+3. Widgets follow the live global theme on every draw; widgets that cache
+   derived colors keep a `use_theme_colors` flag and refresh from the
+   current theme unless you overrode them with an explicit setter
+   (e.g. `aroma_button_set_colors()`, `aroma_listview_set_header_colors()`,
+   `aroma_gauge_set_colors()`), which opts that widget out
+4. Call `aroma_style_create_from_theme(&theme)` to map theme colors to a
+   widget's state colors
+5. The widget uses these colors during its `draw_cb`
+
+Helpers for theme-aware code:
+
+```c
+uint64_t v0 = aroma_theme_get_version();
+aroma_ui_set_theme(&black);
+bool changed = (aroma_theme_get_version() != v0); /* true */
+
+if (aroma_theme_is_dark(NULL)) { /* NULL selects the global theme */
+    /* pick inverse-surface colors */
+}
+```
 
 ## Theming APIs
 
@@ -78,18 +96,27 @@ The theme system exposes these functions for runtime customization:
 
 | Function | Purpose |
 |---|---|
-| `aroma_ui_set_theme(&theme)` | Install a global theme for all widgets |
-| `aroma_theme_create_custom(&palette, &spacing, &typo)` | Build a theme from scratch |
-| `aroma_style_create_from_theme(&style, &theme, is_primary)` | Map theme colors to a widget style |
+| `aroma_ui_set_theme(&theme)` | Install a global theme; invalidates all windows and redraws |
+| `aroma_theme_get_version()` | Generation counter, bumped on every theme switch |
+| `aroma_theme_is_dark(theme)` | True when the theme background is dark (`NULL` = global) |
+| `aroma_theme_create_custom()` | Zero-initialized theme to fill in from scratch |
+| `aroma_style_create_from_theme(&theme)` | Map theme colors to a widget style (returns `AromaStyle`) |
 | `aroma_color_blend(c1, c2, factor)` | Linearly interpolate between two colors |
 | `aroma_color_adjust(color, factor)` | Brighten or darken a color |
 | `aroma_shadow_create_soft/subtle/deep()` | Generate shadow presets |
 | `aroma_style_apply_shadow(&style, &shadow)` | Bind shadow to a widget style |
 
-Widgets read the global theme during creation. Override per-widget appearance by creating a custom `AromaStyle` and attaching it to the node.
+Widgets follow the live global theme on every draw. Override per-widget appearance with an explicit setter (e.g. `aroma_button_set_colors()`); the override persists across theme switches for that widget.
+
+## Live demo
+
+Toggle the docs light/dark switch and watch this preview follow it:
+
+```incense-demo theming
+```
 
 ## What's Next
 
-- Explore [Widget Library](Layout-and-Navigation-Widgets.md) to see theming in action.
+- Explore [Widget Library](../widget-library/Layout-and-Navigation-Widgets.md) to see theming in action.
 - Learn [Rendering](Rendering-Pipeline-and-DrawList.md) for draw optimization.
 - Check [Animation](Animation-Engine.md) for property transitions.

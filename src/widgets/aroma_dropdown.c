@@ -205,10 +205,10 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
         }
         bool hover = in_main || in_list;
         bool state_changed = (hover != dd->is_hovered) || (previous_hover_index != dd->hover_index);
-        if (hover != dd->is_hovered) dd->is_hovered = false;
-        if (state_changed && user_data) {
+        if (hover != dd->is_hovered) dd->is_hovered = hover;
+        if (state_changed) {
             aroma_node_invalidate(event->target_node);
-            __dropdown_request_redraw(user_data);
+            if (user_data) __dropdown_request_redraw(user_data);
         }
         return hover;
     }
@@ -232,9 +232,9 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
             }
             __dropdown_unregister_overlay(event->target_node);
         }
-        if (consumed && user_data) {
+        if (consumed) {
             aroma_node_invalidate(event->target_node);
-            __dropdown_request_redraw(user_data);
+            if (user_data) __dropdown_request_redraw(user_data);
         }
         return consumed;
     }
@@ -243,9 +243,9 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
         bool changed = dd->is_hovered || dd->hover_index != -1;
         dd->is_hovered = false;
         dd->hover_index = -1;
-        if (changed && user_data) {
+        if (changed) {
             aroma_node_invalidate(event->target_node);
-            __dropdown_request_redraw(user_data);
+            if (user_data) __dropdown_request_redraw(user_data);
         }
         return false;
     }

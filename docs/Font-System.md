@@ -60,6 +60,6 @@ AromaFont *font = aroma_font_create_from_memory(ttf, len, px);
 
 ## What's Next
 
-- Explore [Theming](Theming-and-Styling.md) for typography configuration.
-- Learn [Rendering](Rendering-Pipeline-and-DrawList.md) for text draw optimization.
+- Explore [Theming](core-framework/Theming-and-Styling.md) for typography configuration.
+- Learn [Rendering](core-framework/Rendering-Pipeline-and-DrawList.md) for text draw optimization.
 - Check [Testing & Quality](Testing-and-Quality.md) for font rendering tests.

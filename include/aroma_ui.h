@@ -185,6 +185,13 @@ extern "C"
 
     /**
      * @brief Set the global theme for UI.
+     *
+     * Applies the theme globally, then invalidates every window and
+     * requests a redraw so the switch paints on the next frame. Widgets
+     * that cache theme-derived colors refresh themselves from the live
+     * theme on draw (see use_theme_colors), so callers never need to
+     * walk the tree manually after switching themes.
+     *
      * @param theme Pointer to the theme structure.
      */
     static inline void aroma_ui_set_theme(const AromaTheme *theme)
@@ -192,6 +199,12 @@ extern "C"
         if (theme)
         {
             aroma_theme_set_global(theme);
+            for (int i = 0; i < g_window_count; i++)
+            {
+                if (g_windows[i].root_node)
+                    aroma_node_invalidate_tree(g_windows[i].root_node);
+            }
+            aroma_ui_request_redraw(NULL);
             LOG_INFO("Theme updated");
         }
     }

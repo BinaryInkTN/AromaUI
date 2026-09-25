@@ -38,7 +38,7 @@ typedef struct   AromaLabel {
     AromaLabelStyle style;
     uint32_t color;
     float text_scale;
-    bool use_theme_color;
+    bool use_theme_colors;
     
     // WASM padding to align char array to 4-byte boundary
     uint8_t _padding[3];
@@ -97,7 +97,7 @@ y = aroma_android_dp_to_px(y);
     label->rect.height = 0;
     label->style = style;
     label->color = __label_default_color();
-    label->use_theme_color = true;
+    label->use_theme_colors = true;
     label->font = NULL;
     strncpy(label->text, text, AROMA_LABEL_TEXT_MAX - 1);
     label->text[AROMA_LABEL_TEXT_MAX - 1] = '\0';
@@ -141,7 +141,7 @@ void aroma_label_set_color(AromaNode* label_node, uint32_t color)
     if (!label_node || !label_node->node_widget_ptr) return;
     AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
     label->color = color;
-    label->use_theme_color = false;
+    label->use_theme_colors = false;
     aroma_node_invalidate(label_node);
 }
 
@@ -204,7 +204,7 @@ void aroma_label_draw(AromaNode* label_node, size_t window_id)
     if (!gfx || !gfx->render_text) return;  
     
     uint32_t color = label->color;
-    if (label->use_theme_color) {
+    if (label->use_theme_colors) {
         AromaTheme theme = aroma_theme_get_global();
         color = theme.colors.text_primary;
     }

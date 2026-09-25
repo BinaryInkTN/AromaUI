@@ -36,7 +36,7 @@ typedef struct AromaSnackbar
     char message[AROMA_SNACKBAR_TEXT_MAX];
     char action_label[32];
     bool visible;
-    bool use_theme_color;
+    bool use_theme_colors;
     int active_pointer_id;
     int base_x;
     int base_y;
@@ -125,10 +125,23 @@ void aroma_snackbar_draw(AromaNode *snackbar_node, size_t window_id)
         return;
 
 
-    if (bar->use_theme_color)
+    if (bar->use_theme_colors)
     {
         AromaTheme theme = aroma_theme_get_global();
         bar->action_color = theme.colors.primary;
+        if (aroma_theme_is_dark(&theme))
+        {
+            /* Dark mode: inverse bar (light surface, dark text) so the
+               snackbar stays readable against a near-black background. */
+            bar->bg_color = aroma_color_blend(theme.colors.text_primary,
+                                              theme.colors.surface, 0.12f);
+            bar->text_color = theme.colors.surface;
+        }
+        else
+        {
+            bar->bg_color = 0x333333FF;
+            bar->text_color = 0xFFFFFFFF;
+        }
     }
 
     gfx->fill_rectangle(window_id,
@@ -179,7 +192,7 @@ AromaNode *aroma_snackbar_create(AromaNode *parent, const char *message, int dur
     bar->bg_color = 0x333333FF;
     bar->text_color = 0xFFFFFFFF;
     bar->action_color = theme.colors.primary;
-    bar->use_theme_color = true;
+    bar->use_theme_colors = true;
 
     __calculate_snackbar_size(bar, 0);
 

@@ -4,7 +4,7 @@ Window {
     title: "Incense Sandbox"
 
     Label { text: "Incense Sandbox" x: 20 y: 20 style: "large" }
-    Label { text: "Edit the code, see real-time results" x: 20 y: 60 style: "medium" color: "#888888" }
+    Label { text: "Edit the code, see real-time results" x: 20 y: 60 style: "medium" }
 
     Button { text: "Click Me" x: 20 y: 120 width: 120 height: 40 }
     Switch { x: 160 y: 120 }

@@ -1,5 +1,5 @@
 
-The AromaUI Voice Control System is a high-performance, offline-capable voice assistant integrated into the AromaOS reference application. It leverages the **Vosk** speech recognition engine and **ALSA** for low-latency audio capture on Linux-based systems. The system provides a natural language interface for vehicle functions such as climate control, media playback, navigation, and system settings.
+The AromaUI Voice Control System is a high-performance, offline-capable voice assistant integrated into the Car Infotainment reference application. It leverages the **Vosk** speech recognition engine and **ALSA** for low-latency audio capture on Linux-based systems. The system provides a natural language interface for vehicle functions such as climate control, media playback, navigation, and system settings.
 
 ## System Architecture
 

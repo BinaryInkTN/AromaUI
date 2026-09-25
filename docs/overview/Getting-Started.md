@@ -49,7 +49,6 @@ Window {
         Label {
             text: "Hello"
             style: large
-            color: #333333
         }
 
         Button {

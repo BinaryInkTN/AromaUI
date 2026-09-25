@@ -58,7 +58,8 @@ typedef struct
     float secondary_text_scale;
 
     bool show_headers;
-    uint8_t _padding[3];
+    bool use_theme_colors;
+    uint8_t _padding[2];
 
     uint8_t item_types[AROMA_LIST_MAX_ITEMS];
     bool item_hidden[AROMA_LIST_MAX_ITEMS];
@@ -358,6 +359,7 @@ height = aroma_android_dp_to_px(height);
     list->text_scale = 1.0f;
     list->secondary_text_scale = 0.8f;
     list->show_headers = true;
+    list->use_theme_colors = true;
 
     for (int i = 0; i < AROMA_LIST_MAX_ITEMS; i++)
         list->item_types[i] = AROMA_LIST_ITEM_NORMAL;
@@ -748,6 +750,7 @@ void aroma_listview_set_header_colors(AromaNode *n, uint32_t bg, uint32_t text)
     {
         l->header_bg_color = bg;
         l->header_text_color = text;
+        l->use_theme_colors = false;
         aroma_node_invalidate(n);
     }
 }
@@ -770,6 +773,12 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
         return;
 
     AromaTheme theme = aroma_theme_get_global();
+    if (list->use_theme_colors)
+    {
+        list->header_bg_color = aroma_color_blend(theme.colors.surface,
+                                                  theme.colors.primary, 0.1f);
+        list->header_text_color = theme.colors.text_secondary;
+    }
     int width = list->rect.width;
 
     int current_y = list->rect.y;

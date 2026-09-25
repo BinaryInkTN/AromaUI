@@ -8,6 +8,7 @@ import re
 import subprocess
 import shutil
 import tempfile
+import urllib.parse
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -1684,12 +1685,12 @@ body{{
   border:1px solid var(--md-outline);border-radius:var(--radius-sm);overflow:hidden;
   background:var(--md-surface);
 }}
-.sandbox-frame iframe{{width:100%;height:800px;border:none;display:block;background:#111318}}
+.sandbox-frame iframe{{width:100%;height:800px;border:none;display:block;background:var(--md-surf-1);}}
 .demo-frame{{border:1px solid var(--md-outline);border-radius:var(--radius-sm);overflow:hidden;background:var(--md-surface);margin:0 0 21px;}}
 .demo-head{{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid var(--md-outline-variant);font-size:13px;color:var(--md-on-surface-var);}}
 .demo-head a{{font-size:13px;color:var(--md-primary);text-decoration:none;white-space:nowrap;}}
 .demo-head a:hover{{text-decoration:underline}}
-.demo-frame iframe{{width:100%;height:560px;border:none;display:block;background:#111318}}
+.demo-frame iframe{{width:100%;height:660px;border:none;display:block;background:var(--md-surf-1);}}
 @media(max-width:760px){{.sandbox-frame iframe{{height:640px}}.hero-inner{{padding:52px 20px 44px;}}.home-title{{font-size:30px;}}}}
 
 .welcome-page{{padding:8px 0 16px;}}
@@ -2346,7 +2347,7 @@ const ic = () => typeof lucide!=='undefined' && lucide.createIcons();
 
 function syncSandboxTheme(t){{
   if(t!=='light'&&t!=='dark') return;
-  document.querySelectorAll('.sandbox-frame iframe').forEach(function(f){{
+  document.querySelectorAll('.sandbox-frame iframe, .demo-frame iframe').forEach(function(f){{
     try{{
       var d=f.contentDocument;
       if(d&&d.documentElement) d.documentElement.setAttribute('data-theme',t);
@@ -3302,6 +3303,58 @@ window.addEventListener('hashchange', () => {{
                 "subcategory": s.get("subcategory", ""),
                 "platforms": s.get("platforms", []),
             }
+
+        # Map markdown basenames to (slug, category) so intra-doc links can
+        # be rewritten to in-site hash routes instead of dead .md URLs.
+        # Keyed by lowercase basename; docs slugs come from titles so the
+        # source .md files can keep GitHub-friendly relative paths.
+        file_to_route: Dict[str, str] = {}
+        for s in sections:
+            f = s.get("file", "")
+            if f and f.lower().endswith(".md"):
+                title = s.get("title", "Untitled")
+                sid = hashlib.md5(title.encode()).hexdigest()[:8]
+                slug = id_to_slug.get(sid)
+                if slug:
+                    cat = urllib.parse.quote(s.get("category", "General"), safe="")
+                    key = os.path.basename(f).lower()
+                    if key in file_to_route:
+                        print(f"  ⚠ duplicate doc basename: {key} (keeping first)")
+                        continue
+                    file_to_route[key] = f"#/category/{cat}/page/{slug}"
+
+        def _rewrite_doc_links(html: str) -> str:
+            def _sub(m):
+                url = m.group(1)
+                if url.startswith(("http://", "https://", "mailto:", "#", "data:")):
+                    return m.group(0)
+                # Split off ?query and #fragment so they survive the rewrite.
+                # parseHash() looks up the slug exactly, so a trailing
+                # #anchor would break the lookup; keep the route clean and
+                # drop in-page anchors (the SPA has no heading deep-links).
+                query = ""
+                base_url = url
+                if "?" in base_url:
+                    base_url, qs = base_url.split("?", 1)
+                    qs = qs.split("#", 1)[0]
+                    if qs:
+                        query = "?" + qs
+                base_url = base_url.split("#", 1)[0]
+                if not base_url:
+                    return m.group(0)
+                base = os.path.basename(base_url).lower()
+                if base.endswith(".md") and base in file_to_route:
+                    return f'href="{file_to_route[base]}{query}"'
+                if base.endswith(".md"):
+                    print(f"  ⚠ unmapped .md link target: {url}")
+                    return m.group(0)
+                if base == "sandbox.html":
+                    return f'href="sandbox.html{query}"'
+                return m.group(0)
+            return re.sub(r'href="([^"]+)"', _sub, html)
+
+        for sid in pages_dict:
+            pages_dict[sid] = _rewrite_doc_links(pages_dict[sid])
 
         sidebar_sections: Dict[str, Dict[str, List]] = {}
         page_categories: Dict[str, str] = {}

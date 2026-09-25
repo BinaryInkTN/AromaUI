@@ -33,9 +33,6 @@ aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);
 
 The map widget runs tile fetching on background worker threads to avoid blocking the UI. It uses spherical mercator projection to convert lat/lon to pixel coordinates and supports pan/zoom gestures with momentum.
 
-## Try It
-
-Run the map example in `examples/` on Linux to see tiles, markers, and routes.
 
 ## What's Next
 
