@@ -101,3 +101,4 @@ Colors default to the global theme but can be overridden. The track and thumb ar
 | Thumb size | `rect.height` |
 
 **Sources:**[src/widgets/aroma_slider.c61-120](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_slider.c#L61-L120)
+

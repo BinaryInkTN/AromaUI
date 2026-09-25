@@ -322,7 +322,7 @@ with live progress, then install through the normal
 and drawer integration all apply. Update-available rows are detected via
 `version_code` comparison.
 - Server is stdlib-only (`tools/aroma_store_server.py`); client is
-  `apps/store/` on libcurl (native builds only — the web
+  `apps/store/` on libcurl (native builds only. The web
   build shows a "needs native build" notice instead).
 
 ## Bundled games

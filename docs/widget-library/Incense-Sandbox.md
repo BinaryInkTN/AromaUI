@@ -1,13 +1,18 @@
 
-Incense is AromaUI's declarative language for building UIs. Write widget trees in a clean syntax and see results instantly in the browser sandbox.
+Incense is the AromaUI language for describing UI in plain text. Write widgets, click Run, and see the result in the browser at once.
 
 ## Open the Sandbox
 
 **[Launch Incense Sandbox](https://binaryinktn.github.io/AromaUI/sandbox.html)**
 
-Edit code on the left, click **Run**, and see the preview update instantly via WebAssembly.
+Edit code on the left, click **Run**, and see the preview update at once with WebAssembly.
 
 ## Syntax
+
+A container with `layout: flex` positions its children itself. Inside a flex
+container, a child keeps its size but its `x` and `y` are set by the flex
+row or column, so explicit `x` and `y` on direct children are ignored. Use a
+plain container (no `layout`) when you want exact `x` and `y` positions.
 
 ```aroma
 Window {
@@ -208,6 +213,6 @@ Container {
 
 ## What's Next
 
-- Learn the underlying C APIs in [Widget Library](Layout-and-Navigation-Widgets.md).
-- Explore [Core Framework](Scene-Graph-and-Node-System.md) to understand how Incense maps to `AromaNode`.
-- Try the [interactive sandbox](wasm/incense_sandbox/index.html).
+- Learn the C APIs in [Widget Library](Layout-and-Navigation-Widgets.md).
+- Read [Core Framework](../core-framework/Scene-Graph-and-Node-System.md) to see how Incense maps to `AromaNode`.
+- Try the [live sandbox](../sandbox.html).

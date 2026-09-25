@@ -540,6 +540,45 @@ class SandboxExtension(Extension):
     def extendMarkdown(self, md):
         md.preprocessors.register(SandboxPreprocessor(md), "sandbox", 176)
 
+
+class IncenseDemoPreprocessor(Preprocessor):
+    """Turn ```incense-demo NAME blocks into live preview embeds.
+
+    The demo code lives in sandbox.html's curated EXAMPLES map, so docs
+    pages stay small and every demo is verified to load cleanly.
+    """
+
+    def run(self, lines):
+        new_lines = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            m = re.match(r"```incense-demo\s+([A-Za-z0-9_-]+)\s*$", line.strip())
+            if m:
+                name = m.group(1)
+                i += 1
+                while i < len(lines) and lines[i].strip() != "```":
+                    i += 1
+                if i < len(lines):
+                    i += 1
+                html = (
+                    '<div class="demo-frame">\n'
+                    '  <div class="demo-head"><span>Live demo</span>'
+                    f'<a href="sandbox.html?example={name}" target="_blank" rel="noopener">Open in sandbox</a></div>\n'
+                    f'  <iframe src="sandbox.html?embed=1&example={name}" title="Live {name} demo" loading="lazy"></iframe>\n'
+                    "</div>"
+                )
+                new_lines.append(html)
+                continue
+            new_lines.append(line)
+            i += 1
+        return new_lines
+
+
+class IncenseDemoExtension(Extension):
+    def extendMarkdown(self, md):
+        md.preprocessors.register(IncenseDemoPreprocessor(md), "incense-demo", 174)
+
 def _title_to_slug(title: str) -> str:
     slug = title.lower().strip()
     slug = re.sub(r'[^\w\s-]', '', slug)
@@ -774,6 +813,17 @@ class DocGenerator:
                     <iframe src="sandbox.html" title="Incense live sandbox" style="width:100%;height:800px;border:none;display:block"></iframe>
                 </div>
             </div>
+            <footer class="home-footer">
+                <div class="home-footer-inner">
+                    <h2>What are you building today? Share it with us</h2>
+                    <p>Built an app, a widget, or an example with AromaUI? Show it off, ask for feedback, or report a snag. The project grows through community builds.</p>
+                    <div class="home-footer-actions">
+                        <a class="m3-btn-filled" href="https://github.com/BinaryInkTN/AromaUI/discussions" target="_blank" rel="noopener"><span>Start a discussion</span></a>
+                        <a class="m3-btn-outlined" href="https://github.com/BinaryInkTN/AromaUI/issues" target="_blank" rel="noopener"><span>Report an issue</span></a>
+                        <a class="m3-btn-outlined" href="https://github.com/BinaryInkTN/AromaUI" target="_blank" rel="noopener"><span>View on GitHub</span></a>
+                    </div>
+                </div>
+            </footer>
         </div>
         '''
 
@@ -894,7 +944,7 @@ class DocGenerator:
             "md_in_html",
         ]
         md = markdown.Markdown(extensions=exts)
-        md.registerExtensions([MermaidExtension(), SandboxExtension()], {})
+        md.registerExtensions([MermaidExtension(), SandboxExtension(), IncenseDemoExtension()], {})
         return md.convert(content)
 
     def load_markdown(self, path: str) -> str:
@@ -1236,9 +1286,12 @@ body{{
 .search-bar svg{{color:#FFFFFF;}}
 .search-bar.open svg,.search-bar:focus-within svg{{color:#296AD4;}}
 .search-bar-input{{color:#FFFFFF;}}
-.search-bar-input::placeholder{{color:rgba(255,255,255,0.85);}}
+.search-bar-input::placeholder{{color:#FFFFFF;opacity:1;}}
+.search-bar-input::-webkit-input-placeholder{{color:#FFFFFF;opacity:1;}}
+.search-bar-input::-moz-placeholder{{color:#FFFFFF;opacity:1;}}
+.search-bar-input:-ms-input-placeholder{{color:#FFFFFF;opacity:1;}}
 .search-bar.open .search-bar-input,.search-bar:focus-within .search-bar-input{{color:#296AD4;}}
-.search-bar.open .search-bar-input::placeholder,.search-bar:focus-within .search-bar-input::placeholder{{color:#697177;}}
+.search-bar.open .search-bar-input::placeholder,.search-bar:focus-within .search-bar-input::placeholder{{color:#697177;opacity:1;}}
 .search-bar svg{{
   width:18px;height:18px;
   flex-shrink:0;
@@ -1249,7 +1302,6 @@ body{{
   background:none;border:none;outline:none;
   font-family:var(--fb);font-size:14px;font-weight:400;
 }}
-.search-bar-input::placeholder{{color:var(--md-on-surface-var)}}
 .search-bar-kbd{{
   display:flex;gap:4px;align-items:center;
   font-size:11px;color:var(--md-on-surface-3);
@@ -1609,6 +1661,12 @@ body{{
 [data-theme="dark"] .metro-desc{{color:#9AA0A6;}}
 @media(max-width:760px){{.metro-tile{{width:44vw;height:44vw;max-width:200px;max-height:200px;}}}}
 .sandbox-spotlight{{margin-bottom:64px}}
+.home-footer{{margin:64px 0 0;border-top:1px solid var(--md-outline-variant);background:var(--md-surf-1);}}
+.home-footer-inner{{max-width:960px;margin:0 auto;padding:40px 48px 48px;text-align:center;}}
+.home-footer h2{{font-family:var(--fd);font-size:22px;font-weight:500;color:var(--md-on-surface);margin:0 0 10px;line-height:1.3;}}
+.home-footer p{{font-size:14px;line-height:1.6;color:var(--md-on-surface-var);margin:0 auto 20px;max-width:640px;}}
+.home-footer-actions{{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}}
+.home-footer-actions a.m3-btn-filled,.home-footer-actions a.m3-btn-outlined{{text-decoration:none;}}
 .sandbox-head{{
   display:flex;align-items:center;justify-content:space-between;
   gap:12px;flex-wrap:wrap;margin-bottom:12px;
@@ -1627,6 +1685,11 @@ body{{
   background:var(--md-surface);
 }}
 .sandbox-frame iframe{{width:100%;height:800px;border:none;display:block;background:#111318}}
+.demo-frame{{border:1px solid var(--md-outline);border-radius:var(--radius-sm);overflow:hidden;background:var(--md-surface);margin:0 0 21px;}}
+.demo-head{{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid var(--md-outline-variant);font-size:13px;color:var(--md-on-surface-var);}}
+.demo-head a{{font-size:13px;color:var(--md-primary);text-decoration:none;white-space:nowrap;}}
+.demo-head a:hover{{text-decoration:underline}}
+.demo-frame iframe{{width:100%;height:560px;border:none;display:block;background:#111318}}
 @media(max-width:760px){{.sandbox-frame iframe{{height:640px}}.hero-inner{{padding:52px 20px 44px;}}.home-title{{font-size:30px;}}}}
 
 .welcome-page{{padding:8px 0 16px;}}
@@ -2534,17 +2597,10 @@ function loadFromURL() {{
 }}
 
 function showCategory(category){{
-  if (!CATEGORY_PAGES[category]) return;
-  _hideAll();
-  document.getElementById('cInner').classList.remove('wide');
-  document.getElementById('categoryView').style.display='';
-  document.getElementById('categoryView').innerHTML=CATEGORY_PAGES[category];
-  document.getElementById('tocPanel').classList.remove('vis');
-  currentCategory=category; currentSubcategory=null; currentId=null;
-  previousView={{type:'category',category,subcategory:null,id:null}};
-  updateBreadcrumbs(); setActiveNav(null);
-  updateURL();
-  document.getElementById('cScroll').scrollTop=0; closeDrawer(); setTimeout(ic,50);
+  // Categories have no landing page: go to the first document instead.
+  const firstId=PAGE_ORDER.find(id=>CATS[id]===category&&PAGES[id]);
+  if(firstId){{showPage(firstId,category,SUBCATS[firstId]||null);return;}}
+  showFirstPage();
 }}
 
 function showSubcategory(category,subcategory){{
@@ -2855,16 +2911,34 @@ function buildToc(){{
     list.appendChild(item);
   }});
   document.getElementById('tocPanel').classList.toggle('vis',tocSections.length>0);
+  setTimeout(updateTocActive,60);
 }}
 
 document.getElementById('cScroll').addEventListener('scroll',function(){{
   const tot=this.scrollHeight-this.clientHeight;
   document.getElementById('tocFill').style.width=(tot>0?Math.min(100,Math.round(this.scrollTop/tot*100)):0)+'%';
-  let active=null; const top=this.scrollTop+88;
-  tocSections.forEach(s=>{{if(s.el.offsetTop<=top) active=s.id;}});
-  document.querySelectorAll('.toc-item').forEach(el=>el.classList.toggle('active',el.dataset.id===active));
+  updateTocActive();
   document.getElementById('topAppBar').classList.toggle('scrolled',this.scrollTop>8);
 }});
+
+function updateTocActive(){{
+  const scroller=document.getElementById('cScroll');
+  if(!scroller||!tocSections.length) return;
+  // Measure bottom-up: the active title is the last heading at or above
+  // the viewport top (with a small margin), i.e. the title you are over
+  // or the closest one you have scrolled past.
+  const line=scroller.scrollTop+120;
+  let active=null;
+  for(let i=tocSections.length-1;i>=0;i--){{
+    if(tocSections[i].el.offsetTop<=line){{active=tocSections[i].id;break;}}
+  }}
+  // Past the end: the last section stays active.
+  if(scroller.scrollTop+scroller.clientHeight>=scroller.scrollHeight-4)
+    active=tocSections[tocSections.length-1].id;
+  // Above everything: you are over the first title.
+  if(active===null) active=tocSections[0].id;
+  document.querySelectorAll('.toc-item').forEach(el=>el.classList.toggle('active',el.dataset.id===active));
+}}
 
 function addCopyBtns(){{
   document.querySelectorAll('.md pre').forEach(pre=>{{

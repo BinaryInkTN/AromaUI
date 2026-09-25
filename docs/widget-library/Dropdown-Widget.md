@@ -90,3 +90,4 @@ Colors default to the global theme. The dropdown renders a rounded rectangle bac
 | Border | `theme.colors.outline` |
 
 **Sources:**[src/widgets/aroma_dropdown.c60-120](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_dropdown.c#L60-L120)
+

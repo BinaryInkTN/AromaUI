@@ -633,14 +633,6 @@ static void render_dirty_window_internal(size_t window_id, uint32_t clear_color)
             continue;
         }
 
-#ifdef __EMSCRIPTEN__
-        LOG_INFO("render_dirty: draw task i=%zu node_id=%llu widget_ptr=%p child_count=%llu",
-                 i,
-                 (unsigned long long)n->node_id,
-                 (void *)n->node_widget_ptr,
-                 (unsigned long long)n->child_count);
-#endif
-
         bool is_immediate_draw = frame_list && (tasks[i].draw_cb == immediate_draw_cb);
 
         if (is_immediate_draw)
@@ -654,10 +646,6 @@ static void render_dirty_window_internal(size_t window_id, uint32_t clear_color)
         }
 
         tasks[i].draw_cb(n, window_id);
-
-#ifdef __EMSCRIPTEN__
-        LOG_INFO("render_dirty: done task i=%zu", i);
-#endif
 
 #ifndef __EMSCRIPTEN__
         if (gfx && gfx->fill_rectangle && n->node_widget_ptr)
@@ -793,7 +781,7 @@ static void window_update_callback(size_t window_id, void *data)
     }
     s_in_update = true;
 
-    aroma_frame_advance(); puts("window_update_callback running");
+    aroma_frame_advance();
 
     size_t actual_window_id = (g_window_count > 0) ? g_windows[0].window_id : 0;
 
@@ -861,9 +849,6 @@ static void window_update_callback(size_t window_id, void *data)
         return;
     }
 
-    LOG_INFO("render: window=%zu clear=0x%08X bg=0x%08X surface=0x%08X text=0x%08X",
-             actual_window_id, theme.colors.background, theme.colors.background,
-             theme.colors.surface, theme.colors.text_primary);
     aroma_graphics_clear(actual_window_id, theme.colors.background);
     g_frame_cleared = true;
 

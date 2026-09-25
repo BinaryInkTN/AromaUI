@@ -17,6 +17,9 @@
 #include <limits.h>
 
 #include "utils/stb_image.h"
+#include "utils/nanosvg.h"
+#include "utils/nanosvgrast.h"
+#include "aroma_native_utils.h"
 
 #include "utils/aroma_vulkan_shaders.h"
 
@@ -1320,6 +1323,64 @@ static void batch_add_rect(size_t window_id, int x, int y, int w, int h, uint32_
     vk_batch.count += VK_VERTS_PER_QUAD;
 }
 
+/* CPU-tessellated primitives. The shape pipeline only implements the plain
+   and rounded-rect SDF (shapeType 0), so arcs and thick lines are
+   triangulated on the CPU into the same flat-color batch. Sweep semantics
+   match the GLES3 arcSDF: angles in radians, atan2(y, x) convention, round
+   caps at both ends of open sweeps. */
+
+#ifndef VK_TWO_PI
+#define VK_TWO_PI 6.28318530717958647692f
+#endif
+
+static void batch_add_tri(size_t window_id,
+                          float ax, float ay,
+                          float bx, float by,
+                          float cx, float cy,
+                          const float rgba[4])
+{
+    if (vk_batch.count > 0 && vk_batch.windowId != window_id)
+        flush_shape_batch();
+    if (vk_batch.count + 3 > VK_MAX_BATCH_VERTICES)
+        flush_shape_batch();
+
+    vk_batch.windowId = window_id;
+
+    VkVertex *v = &vk_batch.vertices[vk_batch.count];
+    v[0].pos[0] = ax;
+    v[0].pos[1] = ay;
+    v[1].pos[0] = bx;
+    v[1].pos[1] = by;
+    v[2].pos[0] = cx;
+    v[2].pos[1] = cy;
+    for (int i = 0; i < 3; i++)
+    {
+        v[i].col[0] = rgba[0];
+        v[i].col[1] = rgba[1];
+        v[i].col[2] = rgba[2];
+        v[i].col[3] = rgba[3];
+        v[i].texCoord[0] = 0.0f;
+        v[i].texCoord[1] = 0.0f;
+    }
+    vk_batch.count += 3;
+}
+
+static void batch_add_disc(size_t window_id, float cx, float cy,
+                           float radius, const float rgba[4])
+{
+    const int segs = 20;
+    for (int i = 0; i < segs; i++)
+    {
+        float a0 = VK_TWO_PI * (float)i / (float)segs;
+        float a1 = VK_TWO_PI * (float)(i + 1) / (float)segs;
+        batch_add_tri(window_id,
+                      cx, cy,
+                      cx + radius * cosf(a0), cy + radius * sinf(a0),
+                      cx + radius * cosf(a1), cy + radius * sinf(a1),
+                      rgba);
+    }
+}
+
 static int vk_setup_shared_window_resources(void)
 {
     if (vk_ctx.initialized)
@@ -1745,14 +1806,106 @@ static void vk_draw_hollow_rectangle(size_t window_id, int x, int y, int width, 
 static void vk_draw_arc(size_t window_id, int cx, int cy, int radius,
                         float start_angle, float end_angle, uint32_t color, int thickness)
 {
-    (void)window_id;
-    (void)cx;
-    (void)cy;
-    (void)radius;
-    (void)start_angle;
-    (void)end_angle;
-    (void)color;
-    (void)thickness;
+    if (radius <= 0 || thickness <= 0 || window_id >= VK_MAX_WINDOWS)
+        return;
+
+    float rgba[4];
+    vk_convert_hex_to_rgba(rgba, color);
+
+    float a0 = fmodf(start_angle, VK_TWO_PI);
+    float a1 = fmodf(end_angle, VK_TWO_PI);
+    if (a0 < 0.0f) a0 += VK_TWO_PI;
+    if (a1 < 0.0f) a1 += VK_TWO_PI;
+    float sweep = a1 - a0;
+    if (sweep < 0.0f) sweep += VK_TWO_PI;
+    if (sweep < 1e-6f)
+    {
+        /* Degenerate sweep: a round dot like the SDF caps would draw. */
+        batch_add_disc(window_id, (float)cx, (float)cy,
+                       (float)thickness * 0.5f, rgba);
+        return;
+    }
+    bool full = sweep >= VK_TWO_PI - 1e-4f;
+
+    float half = (float)thickness * 0.5f;
+    float r_out = (float)radius + half;
+    float r_in = (float)radius - half;
+    if (r_in < 0.0f) r_in = 0.0f;
+    float fx = (float)cx, fy = (float)cy;
+
+    int segs = (int)ceilf(sweep * (float)radius / 6.0f);
+    if (segs < 8) segs = 8;
+    if (segs > 180) segs = 180;
+
+    for (int i = 0; i < segs; i++)
+    {
+        float t0 = a0 + sweep * (float)i / (float)segs;
+        float t1 = a0 + sweep * (float)(i + 1) / (float)segs;
+        float c0 = cosf(t0), s0 = sinf(t0);
+        float c1 = cosf(t1), s1 = sinf(t1);
+        batch_add_tri(window_id,
+                      fx + r_out * c0, fy + r_out * s0,
+                      fx + r_out * c1, fy + r_out * s1,
+                      fx + r_in * c0, fy + r_in * s0,
+                      rgba);
+        batch_add_tri(window_id,
+                      fx + r_out * c1, fy + r_out * s1,
+                      fx + r_in * c1, fy + r_in * s1,
+                      fx + r_in * c0, fy + r_in * s0,
+                      rgba);
+    }
+
+    if (!full)
+    {
+        /* Round caps: full discs at both ends, same union as the SDF. */
+        batch_add_disc(window_id,
+                       fx + (float)radius * cosf(a0),
+                       fy + (float)radius * sinf(a0), half, rgba);
+        batch_add_disc(window_id,
+                       fx + (float)radius * cosf(a0 + sweep),
+                       fy + (float)radius * sinf(a0 + sweep), half, rgba);
+    }
+}
+
+static void vk_draw_line(size_t window_id, int x0, int y0,
+                         int x1, int y1, uint32_t color,
+                         float thickness, bool round_cap)
+{
+    if (thickness <= 0.0f || window_id >= VK_MAX_WINDOWS)
+        return;
+
+    float dx = (float)(x1 - x0);
+    float dy = (float)(y1 - y0);
+    float length = sqrtf(dx * dx + dy * dy);
+    if (length <= 0.0f)
+        return;
+
+    float rgba[4];
+    vk_convert_hex_to_rgba(rgba, color);
+
+    float nx = -dy / length;
+    float ny = dx / length;
+    float half = thickness * 0.5f;
+    float fx0 = (float)x0, fy0 = (float)y0;
+    float fx1 = (float)x1, fy1 = (float)y1;
+
+    /* Body quad, same corners as the GLES3 rotated quad. */
+    batch_add_tri(window_id,
+                  fx0 + nx * half, fy0 + ny * half,
+                  fx1 + nx * half, fy1 + ny * half,
+                  fx0 - nx * half, fy0 - ny * half,
+                  rgba);
+    batch_add_tri(window_id,
+                  fx1 + nx * half, fy1 + ny * half,
+                  fx1 - nx * half, fy1 - ny * half,
+                  fx0 - nx * half, fy0 - ny * half,
+                  rgba);
+
+    if (round_cap)
+    {
+        batch_add_disc(window_id, fx0, fy0, half, rgba);
+        batch_add_disc(window_id, fx1, fy1, half, rgba);
+    }
 }
 
 static void vk_render_text(size_t window_id, AromaFont *font, const char *text,
@@ -1927,10 +2080,58 @@ static unsigned int vk_load_image(const char *image_path)
     if (!image_path || !vk_ctx.initialized)
         return 0;
 
-    FILE *f = fopen(image_path, "rb");
+    char resolved_image_path[1024];
+    const char *load_path = aroma_resolve_asset_path(image_path, resolved_image_path,
+                                                     sizeof(resolved_image_path));
+    if (!load_path)
+        load_path = image_path;
+
+    const char *ext = strrchr(load_path, '.');
+    if (ext && strcasecmp(ext, ".svg") == 0)
+    {
+        NSVGimage *image = nsvgParseFromFile(load_path, "px", 96.0f);
+        if (!image)
+        {
+            LOG_ERROR("Vulkan: NanoSVG failed to parse: %s", load_path);
+            return 0;
+        }
+        int img_width = (int)image->width;
+        int img_height = (int)image->height;
+        if (img_width <= 0 || img_height <= 0)
+        {
+            LOG_ERROR("Vulkan: Invalid SVG dimensions: %dx%d", img_width, img_height);
+            nsvgDelete(image);
+            return 0;
+        }
+        NSVGrasterizer *rast = nsvgCreateRasterizer();
+        if (!rast)
+        {
+            LOG_ERROR("Vulkan: Failed to create NanoSVG rasterizer: %s", load_path);
+            nsvgDelete(image);
+            return 0;
+        }
+        size_t data_size = (size_t)img_width * (size_t)img_height * 4u;
+        unsigned char *data = (unsigned char *)malloc(data_size);
+        if (!data)
+        {
+            LOG_ERROR("Vulkan: Failed to allocate for SVG rasterisation: %s", load_path);
+            nsvgDeleteRasterizer(rast);
+            nsvgDelete(image);
+            return 0;
+        }
+        memset(data, 0, data_size);
+        nsvgRasterize(rast, image, 0, 0, 1, data, img_width, img_height, img_width * 4);
+        nsvgDeleteRasterizer(rast);
+        nsvgDelete(image);
+        unsigned int tex_id = vk_load_image_from_rgba(data, img_width, img_height);
+        free(data);
+        return tex_id;
+    }
+
+    FILE *f = fopen(load_path, "rb");
     if (!f)
     {
-        LOG_ERROR("Vulkan: Cannot open image: %s", image_path);
+        LOG_ERROR("Vulkan: Cannot open image: %s", load_path);
         return 0;
     }
     fseek(f, 0, SEEK_END);
@@ -2167,6 +2368,7 @@ AromaGraphicsInterface aroma_graphics_vulkan = {
     .load_image_from_rgba = vk_load_image_from_rgba,
     .load_image_from_memory = vk_load_image_from_memory,
     .draw_image = vk_draw_image,
+    .draw_line = vk_draw_line,
     .shutdown = vk_shutdown,
     .graphics_set_clip = vk_set_clip,
     .graphics_clear_clip = vk_clear_clip,

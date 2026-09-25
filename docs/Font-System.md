@@ -37,7 +37,7 @@ int h = aroma_font_get_line_height(font);
 
 ## Glyph Caching (GLES3)
 
-The GLES3 backend maintains a per-window glyph cache. Characters 32–127 (ASCII) are pre-loaded on font initialization. Extended characters are loaded on demand and cached as GL textures.
+The GLES3 backend maintains a per-window glyph cache. Characters 32 to 127 (ASCII) are pre-loaded on font initialization. Extended characters are loaded on demand and cached as GL textures.
 
 - Cache limit: 16 fonts per window (LRU eviction)
 - Texture format: `GL_RED` (single channel) for memory efficiency

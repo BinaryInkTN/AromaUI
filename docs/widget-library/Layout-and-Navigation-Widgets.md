@@ -111,8 +111,16 @@ aroma_menu_add_item(menu, "Delete", AROMA_MENU_ITEM_DESTRUCTIVE, on_delete);
 
 Floating context menu with click-away dismiss.
 
+## Live demo
+
+```incense-demo tabs
+```
+
+```incense-demo list
+```
+
 ## What's Next
 
 - Learn [Input & Controls](Input-and-Control-Widgets.md) for interactive elements.
 - Explore the [Map Widget](Map-Widget.md) for geographic data.
-- Try [Incense](../widget-library/wasm/incense_sandbox/index.html) for declarative UI.
+- Try [Incense](Incense-Sandbox.md) for declarative UI.

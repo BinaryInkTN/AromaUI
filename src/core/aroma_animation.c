@@ -70,10 +70,10 @@ static void update_animations(void* arg)
         bool finished = (raw_progress >= 1.0f);
         float progress = finished ? 1.0f : raw_progress;
 
-        if (!finished && curr->duration_ms > 0 &&
-            progress > curr->last_progress + 0.2f) {
-            progress = curr->last_progress + 0.2f;
-        }
+        /* Keep animation time locked to the wall clock: after a hitch the
+           next tick jumps to the correct position instead of replaying
+           missed time in slow motion, so transitions always take
+           duration_ms and never linger half-finished. */
         curr->last_progress = progress;
 
         float ease        = apply_easing(curr->easing, progress);

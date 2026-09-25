@@ -68,9 +68,11 @@
       height: 32px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 10px; border-bottom: 1px solid var(--ide-border); font-size: 11px; color: var(--ide-text-muted);
     }
-    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #111318; }
-    #phone-frame { display: inline-block; max-width: 100%; max-height: 100%; border-radius: 24px; box-shadow: 0 0 0 8px #1a1a1a, 0 0 0 10px #333, 0 20px 50px rgba(0,0,0,0.5); overflow: hidden; background: #000; line-height: 0; }
+    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; background: #111318; min-height: 0; padding: 20px; box-sizing: border-box; }
+    #phone-frame { display: inline-block; max-width: 100%; max-height: 100%; border-radius: 24px; box-shadow: 0 0 0 8px #1a1a1a, 0 0 0 10px #333, 0 20px 50px rgba(0,0,0,0.5); overflow: hidden; background: #000; line-height: 0; flex-shrink: 0; }
     #phone-frame canvas { display: block; max-width: 100%; max-height: 100%; touch-action: none; }
+    body.embed #editor-pane { display: none; }
+    body.embed #preview-pane { border-left: none; }
     #status-bar {
       height: 22px; background: var(--ide-sidebar); border-top: 1px solid var(--ide-border);
       display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; gap: 10px;
@@ -125,6 +127,11 @@
 
   <script>
     window.Module = window.Module || {};
+    // Bust cached wasm/js after fixes ship: keep this version in sync
+    // with the <script src="incense_sandbox.js?v=N"> tag below.
+    window.Module.locateFile = function(path) { return path + '?v=3'; };
+    // Embed mode for docs pages: ?embed=1 shows preview only (no editor),
+    // ?example=NAME loads a curated demo, ?autorun=1 runs on boot.
     // Theme cascade: follow the embedding docs page theme when present,
     // otherwise fall back to the sandbox's own stored preference.
     window.getPreferredSandboxTheme = function() {
@@ -164,6 +171,32 @@
         document.documentElement.setAttribute('data-theme', t);
       } catch (e) {}
     })();
+    // Curated demos for docs embeds (?example=NAME). Keep props to the
+    // documented Incense set so every demo loads with status Ready.
+    window.incenseExamples = {
+      'buttons': 'Window {\n    width: 320\n    height: 480\n    title: "Buttons"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Buttons"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Button {\n            text: "Standard"\n            x: 20\n            y: 80\n            width: 280\n            height: 44\n        }\n        Button {\n            text: "Filled"\n            x: 20\n            y: 136\n            width: 280\n            height: 44\n        }\n        IconButton {\n            x: 20\n            y: 192\n            width: 48\n            height: 48\n            icon: "AROMA_ICON_ADD"\n            variant: standard\n        }\n    }\n}\n',
+      'inputs': 'Window {\n    width: 320\n    height: 480\n    title: "Inputs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Inputs"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Checkbox {\n            label: "Enable notifications"\n            x: 20\n            y: 80\n            width: 280\n            height: 32\n            checked: true\n        }\n        Checkbox {\n            label: "Dark mode"\n            x: 20\n            y: 124\n            width: 280\n            height: 32\n            checked: false\n        }\n        Switch {\n            x: 20\n            y: 168\n            width: 56\n            height: 28\n            value: true\n        }\n        Textbox {\n            text: ""\n            placeholder: "Type here"\n            x: 20\n            y: 212\n            width: 280\n            height: 44\n        }\n    }\n}\n',
+      'slider': 'Window {\n    width: 320\n    height: 480\n    title: "Slider"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Volume"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Slider {\n            x: 20\n            y: 80\n            width: 280\n            height: 32\n            min: 0\n            max: 100\n            value: 40\n        }\n        ProgressBar {\n            x: 20\n            y: 140\n            width: 280\n            height: 8\n            value: 0.4\n            type: determinate\n        }\n        Loading {\n            x: 140\n            y: 200\n            radius: 24\n            thickness: 6\n        }\n    }\n}\n',
+      'dropdown': 'Window {\n    width: 320\n    height: 480\n    title: "Dropdown"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Pick one"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Dropdown {\n            x: 20\n            y: 80\n            width: 280\n            height: 44\n            Option { text: "First" }\n            Option { text: "Second" }\n            Option { text: "Third" }\n        }\n    }\n}\n',
+      'list': 'Window {\n    width: 320\n    height: 480\n    title: "List"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        visible: 1\n        ListView {\n            x: 0\n            y: 0\n            width: 320\n            height: 480\n            Header { text: "General" }\n            ListItem { text: "Airplane Mode" secondary: "Off" icon: "AROMA_ICON_AIRPLANEMODE_INACTIVE" }\n            ListItem { text: "Wi-Fi" secondary: "Not Connected" icon: "AROMA_ICON_NETWORK_WIFI" }\n            ListItem { text: "Bluetooth" secondary: "On" icon: "AROMA_ICON_BLUETOOTH" }\n            Header { text: "Display" }\n            ListItem { text: "Brightness" secondary: "50%" icon: "AROMA_ICON_BRIGHTNESS_MEDIUM" }\n        }\n    }\n}\n',
+      'cards': 'Window {\n    width: 320\n    height: 480\n    title: "Cards"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Cards"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Card {\n            x: 20\n            y: 80\n            width: 280\n            height: 120\n            type: elevated\n        }\n        Divider {\n            x: 20\n            y: 220\n            length: 280\n            orientation: horizontal\n        }\n        Chip {\n            x: 20\n            y: 250\n            label: "New"\n            selected: true\n        }\n        ProgressBar {\n            x: 20\n            y: 310\n            width: 280\n            height: 8\n            value: 0.65\n            type: determinate\n        }\n    }\n}\n',
+      'tabs': 'Window {\n    width: 320\n    height: 480\n    title: "Tabs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Tabs {\n            x: 0\n            y: 0\n            width: 320\n            height: 120\n            Tab { text: "Home" }\n            Tab { text: "Settings" }\n        }\n        Label {\n            text: "Tab content goes here"\n            style: medium\n            color: #FFFFFF\n            x: 20\n            y: 160\n        }\n    }\n}\n',
+      'gauge': 'Window {\n    width: 320\n    height: 480\n    title: "Gauge"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Speed"\n            style: large\n            color: #FFFFFF\n            x: 20\n            y: 20\n        }\n        Gauge {\n            x: 60\n            y: 80\n            width: 200\n            height: 200\n            value: 65\n        }\n        ProgressBar {\n            x: 20\n            y: 310\n            width: 280\n            height: 8\n            value: 0.65\n            type: determinate\n        }\n    }\n}\n'
+    };
+    window.incenseQuery = {};
+    try {
+      var qs = new URLSearchParams(window.location.search);
+      var exName = qs.get('example') || '';
+      window.incenseQuery = {
+        example: exName,
+        embed: qs.get('embed') === '1',
+        autorun: qs.get('autorun') === '1' || qs.get('embed') === '1' || !!exName
+      };
+    } catch (e) {}
+    window.incenseInitialSource = null;
+    if (window.incenseQuery.example && window.incenseExamples[window.incenseQuery.example]) {
+      window.incenseInitialSource = window.incenseExamples[window.incenseQuery.example];
+    }
     Module.onRuntimeInitialized = function() {
       var c = Module.canvas;
       if (c) {
@@ -173,31 +206,11 @@
         c.onkeyup = null;
         Module.keyboardInput = null;
       }
+      window.__aromaReady = true;
     };
 
-    function resizeCanvas() {
-      var wrap = document.getElementById('canvas-wrap');
-      var frame = document.getElementById('phone-frame');
-      if (!wrap || !frame) return;
-      var rect = wrap.getBoundingClientRect();
-      var targetRatio = 2 / 3;
-      var maxWidth = rect.width - 40;
-      var maxHeight = rect.height - 40;
-      var wrapRatio = maxWidth / maxHeight;
-      var newWidth, newHeight;
-      if (wrapRatio > targetRatio) {
-        newHeight = Math.floor(maxHeight);
-        newWidth = Math.floor(newHeight * targetRatio);
-      } else {
-        newWidth = Math.floor(maxWidth);
-        newHeight = Math.floor(newWidth / targetRatio);
-      }
-      frame.style.width = newWidth + 'px';
-      frame.style.height = newHeight + 'px';
-    }
-    window.addEventListener('resize', resizeCanvas);
   </script>
-  <script src="incense_sandbox.js"></script>
+  <script src="incense_sandbox.js?v=3"></script>
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.min.js"></script>
   <script>
     window.setStatus = function(type, msg) {
@@ -209,6 +222,51 @@
       if (errorMsg) errorMsg.textContent = type === 'error' ? msg : '';
     };
 
+    function runCode() {
+      var source = window.incenseEditor ? window.incenseEditor.getValue() : '';
+      try {
+        Module.ccall('aroma_sandbox_reload', null, ['string'], [source]);
+        if (Module.ccall('aroma_sandbox_has_error', 'number', [], [])) {
+          setStatus('error', Module.ccall('aroma_sandbox_get_last_error', 'string', [], []));
+        } else {
+          setStatus('ok', 'Ready');
+          document.getElementById('runBtn').classList.remove('pending');
+        }
+      } catch (e) {
+        console.error('[sandbox] Runtime error:', e);
+        if (typeof e === 'object' && e.stack) console.error('[sandbox] Stack:', e.stack);
+        setStatus('error', 'Runtime error: ' + (e.message || String(e)));
+      }
+    }
+    window.runCode = runCode;
+    document.getElementById('runBtn').onclick = runCode;
+    document.getElementById('themeBtn').onclick = function() {
+      var html = document.documentElement;
+      var current = html.getAttribute('data-theme');
+      var next = current === 'light' ? 'dark' : 'light';
+      localStorage.setItem('sandbox-theme', next);
+      window.applySandboxTheme(next);
+    };
+
+    function autoRunWhenReady() {
+      var tries = 0;
+      var t = setInterval(function() {
+        tries++;
+        if (window.__aromaReady) {
+          clearInterval(t);
+          try { window.runCode(); } catch (e) {}
+        } else if (tries > 150) {
+          clearInterval(t);
+        }
+      }, 200);
+    }
+
+    if (window.incenseQuery && window.incenseQuery.embed) {
+      // Preview-only embed for docs pages: no editor, auto-run the demo.
+      document.body.classList.add('embed');
+      window.incenseEditor = { getValue: function() { return window.incenseInitialSource || ''; } };
+      autoRunWhenReady();
+    } else {
     require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
     require(['vs/editor/editor.main'], function() {
       var savedTheme = getPreferredSandboxTheme();
@@ -816,7 +874,7 @@
 }
 `;
       var editor = monaco.editor.create(document.getElementById('editor'), {
-        value: defaultSource,
+        value: (window.incenseInitialSource || defaultSource),
         language: 'incense',
         theme: savedTheme === 'dark' ? 'incense-dark' : 'incense-light',
         automaticLayout: true,
@@ -834,32 +892,9 @@
         editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
       });
 
-      function runCode() {
-        var source = window.incenseEditor ? window.incenseEditor.getValue() : '';
-        try {
-          Module.ccall('aroma_sandbox_reload', null, ['string'], [source]);
-          if (Module.ccall('aroma_sandbox_has_error', 'number', [], [])) {
-            setStatus('error', Module.ccall('aroma_sandbox_get_last_error', 'string', [], []));
-          } else {
-            setStatus('ok', 'Ready');
-            document.getElementById('runBtn').classList.remove('pending');
-          }
-        } catch (e) {
-          console.error('[sandbox] Runtime error:', e);
-          if (typeof e === 'object' && e.stack) console.error('[sandbox] Stack:', e.stack);
-          setStatus('error', 'Runtime error: ' + (e.message || String(e)));
-        }
-      }
-      window.runCode = runCode;
-      document.getElementById('runBtn').onclick = runCode;
-      document.getElementById('themeBtn').onclick = function() {
-        var html = document.documentElement;
-        var current = html.getAttribute('data-theme');
-        var next = current === 'light' ? 'dark' : 'light';
-        localStorage.setItem('sandbox-theme', next);
-        window.applySandboxTheme(next);
-      };
+      if (window.incenseQuery && window.incenseQuery.autorun) autoRunWhenReady();
     });
+    }
   </script>
 </body>
 </html>

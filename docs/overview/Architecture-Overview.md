@@ -1,5 +1,5 @@
 
-AromaUI is structured in four layers. Understanding these layers helps you write efficient, portable UI code.
+AromaUI has four layers. Learn these layers once and the rest of the framework makes sense.
 
 ## System Layers
 
@@ -15,31 +15,33 @@ flowchart TD
     ABI --> Backends
 ```
 
-1. **Application Layer** - Your code. Uses factory functions from `include/aroma_ui.h` to build the scene graph.
-2. **Core Framework** - Platform-agnostic logic: `AromaNode` tree, recursive layout, event dispatch, deferred rendering.
-3. **ABI** - A switchboard that routes generic draw calls to the active backend.
-4. **Backends** - Hardware-specific implementations for windowing, input, and GPU rendering.
+1. **Application Layer**: your code. Call factory functions from `include/aroma_ui.h` to build the scene graph.
+2. **Core Framework**: shared logic. It owns the `AromaNode` tree, layout, events, and rendering.
+3. **ABI**: a switchboard. It sends generic draw calls to the active backend.
+4. **Backends**: platform code. It handles windows, input, and GPU output.
 
 ## Key Concepts
 
 ### AromaNode
 
-Every visible element is an `AromaNode`. Nodes form a tree with a 64-child limit per parent. Each node stores:
-- Geometry (`AromaRect`)
-- Layout hints (`AromaLayout`)
-- Visibility and Z-index
-- A `draw_cb` function pointer for rendering
+Each visible item is an `AromaNode`. Nodes form a tree. Each parent holds up to 64 children. Each node stores:
 
-### Dirty-Region Tracking
+* Geometry (`AromaRect`)
+* Layout hints (`AromaLayout`)
+* Visibility and Z-index
+* A `draw_cb` function for rendering
 
-Only changed nodes are redrawn. When you update a property, call `aroma_node_invalidate()`. The framework tracks dirty nodes in a global array and re-renders only what changed.
+### Dirty Region Tracking
 
-### DrawList (Deferred Rendering)
+Only changed nodes redraw. After you change a property, call `aroma_node_invalidate()`. The framework tracks dirty nodes and skips the rest.
 
-Instead of drawing immediately, widgets record commands into an `AromaDrawList`. On flush, commands are sorted by Z-index and batched for the GPU. This enables:
-- Correct Z-ordering regardless of tree position
-- Frustum culling (skip offscreen nodes)
-- Efficient batching on embedded hardware
+### DrawList
+
+Widgets do not draw at once. They record commands into an `AromaDrawList`. On flush, the list sorts by Z-index and sends batches to the GPU. This gives you:
+
+* Correct Z order in any tree order
+* Skipped offscreen nodes
+* Fast batches on small hardware
 
 ## Data Flow: A Button Click
 
@@ -58,7 +60,7 @@ flowchart LR
 
 ## File Map
 
-| Concern | Key Files |
+| Area | Key Files |
 |---|---|
 | Entry points | `include/aroma_ui.h`, `src/core/aroma_ui_impl.c` |
 | Node system | `include/aroma_node.h`, `src/core/aroma_node.c` |
@@ -70,6 +72,6 @@ flowchart LR
 
 ## What's Next
 
-- Dive into the [Scene Graph](Scene-Graph-and-Node-System.md) to understand node lifecycle.
-- Learn how [Events](Event-System.md) flow through the system.
-- Explore the [Rendering Pipeline](Rendering-Pipeline-and-DrawList.md) for draw optimization details.
+* Read [Scene Graph](Scene-Graph-and-Node-System.md) for node lifecycle.
+* Read [Events](Event-System.md) for input flow.
+* Read [Rendering Pipeline](Rendering-Pipeline-and-DrawList.md) for draw details.

@@ -42,40 +42,18 @@ static inline int get_win_h(void) {
 #define WIN_H get_win_h()
 #define NAV_ANIM_MS 250
 
-static void shift_subtree_x(AromaNode *node, int dx)
-{
-    uint64_t i;
-
-    if (!node || dx == 0)
-        return;
-
-    if (node->child_count > AROMA_MAX_CHILD_NODES)
-        return;
-
-    for (i = 0; i < node->child_count; i++)
-    {
-        AromaNode *child = node->child_nodes[i];
-        AromaRect *r;
-
-        if (!child)
-            continue;
-        r = aroma_node_get_rect(child);
-        if (r)
-            r->x += dx;
-        shift_subtree_x(child, dx);
-    }
-}
-
 static void set_page_x(AromaNode *page, int x)
 {
     AromaRect *r = aroma_node_get_rect(page);
-    int dx;
 
-    if (!r)
+    if (!r || r->x == x)
         return;
-    dx = x - r->x;
     r->x = x;
-    shift_subtree_x(page, dx);
+    /* Do not shift descendants here. The per-frame layout pass in
+       window_update_callback propagates the page offset to children
+       exactly once. Shifting the subtree here as well would move
+       grandchildren twice per frame, so pages would smear over each
+       other mid-transition. */
     aroma_node_invalidate_tree(page);
 }
 
@@ -108,6 +86,17 @@ static void slide_cb(AromaNode *target, float val, void *user_data)
     set_page_x(target, (int)val);
 }
 
+static void paint_page_opaque(AromaNode *page)
+{
+    if (!page)
+        return;
+    /* Fullscreen pages must be opaque: during a slide transition two
+       pages share the screen, and transparent pages would let both
+       pages' text show through each other as ghosting. */
+    aroma_container_set_debug_bg(page, aroma_ui_get_theme().colors.background);
+    aroma_node_invalidate(page);
+}
+
 static void navigate_to(AromaNode *target, bool is_back)
 {
     if (!g_window || !target || g_is_animating)
@@ -136,6 +125,8 @@ static void navigate_to(AromaNode *target, bool is_back)
     g_current_page = target;
 
     aroma_node_set_hidden(target, false);
+    paint_page_opaque(current);
+    paint_page_opaque(target);
     set_page_x(target, tgt_start_x);
 
     AromaAnimation *cur_anim = aroma_animation_start_custom(

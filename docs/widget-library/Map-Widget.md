@@ -23,7 +23,7 @@ aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);
 | Function | Purpose |
 |---|---|
 | `aroma_map_set_center(lat, lon)` | Set map center |
-| `aroma_map_set_zoom(level)` | Set zoom level (1–18) |
+| `aroma_map_set_zoom(level)` | Set zoom level (1 to 18) |
 | `aroma_map_add_icon_marker(lat, lon, color, icon)` | Add icon marker |
 | `aroma_map_add_popup_marker(lat, lon, color, text)` | Add clickable popup |
 | `aroma_map_set_route(lat1, lon1, lat2, lon2, color)` | Draw route polyline |
@@ -35,10 +35,10 @@ The map widget runs tile fetching on background worker threads to avoid blocking
 
 ## Try It
 
-Open the [Map Example](../widget-library/wasm/map_example/index.html) in the sandbox.
+Run the map example in `examples/` on Linux to see tiles, markers, and routes.
 
 ## What's Next
 
 - Learn [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
 - Explore [Input & Controls](Input-and-Control-Widgets.md) for interactive elements.
-- Try [Incense](../widget-library/wasm/incense_sandbox/index.html) for rapid prototyping.
+- Try [Incense](Incense-Sandbox.md) for rapid prototyping.

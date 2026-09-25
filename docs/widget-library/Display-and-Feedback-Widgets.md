@@ -64,7 +64,7 @@ AromaNode *bar = aroma_ui_progressbar(root, 20, 200, 260, 4, 0.75f);
 AromaNode *gauge = aroma_ui_gauge(root, 300, 20, 120, 120, 0.6f);
 ```
 
-- ProgressBar: linear, 0.0–1.0 value
+- ProgressBar: linear, 0.0 to 1.0 value
 - Gauge: circular arc with needle
 
 ## Snackbar
@@ -85,8 +85,16 @@ aroma_dialog_add_action(dialog, "Delete", DIALOG_ACTION_DESTRUCTIVE, on_delete);
 
 Dialogs are modal overlays with up to 3 action buttons.
 
+## Live demo
+
+```incense-demo cards
+```
+
+```incense-demo gauge
+```
+
 ## What's Next
 
 - Learn [Input & Controls](Input-and-Control-Widgets.md) for interactive widgets.
 - Explore [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
-- Try [Incense](../widget-library/wasm/incense_sandbox/index.html) for rapid UI prototyping.
+- Try [Incense](Incense-Sandbox.md) for rapid UI prototyping.

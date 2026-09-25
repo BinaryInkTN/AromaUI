@@ -62,23 +62,40 @@ EMSCRIPTEN_KEEPALIVE int               aroma_test_get_last_mouse_event_x(void)  
 EMSCRIPTEN_KEEPALIVE int               aroma_test_get_last_mouse_event_y(void)       { return g_last_y;      }
 EMSCRIPTEN_KEEPALIVE unsigned long long aroma_test_get_last_mouse_event_target(void) { return g_last_target; }
 
-static inline void _client_to_canvas(double cx, double cy,
-                                     double *out_x, double *out_y)
+static inline void _css_to_canvas_scale(double *out_sx, double *out_sy)
 {
     double css_w = 0.0, css_h = 0.0;
     emscripten_get_element_css_size("#canvas", &css_w, &css_h);
 
+    double span_w = (double)platform_ctx.canvas_width;
+    double span_h = (double)platform_ctx.canvas_height;
+
     double dpr = platform_ctx.device_pixel_ratio;
     if (dpr < 1.0) dpr = 1.0;
 
-    double physical_w = css_w * dpr;
-    double physical_h = css_h * dpr;
+    if (out_sx)
+        *out_sx = (span_w > 0.0 && css_w > 0.0) ? (span_w / css_w) : dpr;
+    if (out_sy)
+        *out_sy = (span_h > 0.0 && css_h > 0.0) ? (span_h / css_h) : dpr;
+}
 
-    double sx = (css_w > 0.0) ? (physical_w / css_w) : 1.0;
-    double sy = (css_h > 0.0) ? (physical_h / css_h) : 1.0;
+static inline void _client_to_canvas(double cx, double cy,
+                                     double *out_x, double *out_y)
+{
+    /* Map displayed CSS px to layout units. The layout spans the full
+       drawing buffer (platform_ctx.canvas_width/height), which the browser
+       scales to the displayed CSS size, so scale by that ratio instead of
+       assuming the displayed size matches. */
+    double sx = 1.0, sy = 1.0;
+    _css_to_canvas_scale(&sx, &sy);
 
     *out_x = cx * sx;
     *out_y = cy * sy;
+}
+
+static inline void _css_to_canvas(int x, int y, double *out_x, double *out_y)
+{
+    _client_to_canvas((double)x, (double)y, out_x, out_y);
 }
 
 static bool _queue_mouse_event(AromaEventType type,
@@ -111,9 +128,6 @@ static bool _queue_mouse_event(AromaEventType type,
                          g_last_x, g_last_y, (int)button);
     }
 
-    LOG_INFO("mouse_event: type=%d target=%llu x=%.1f y=%.1f btn=%d d=(%d,%d) ok=%d",
-             type, (unsigned long long)target_id, mx, my, button,
-             ev->data.mouse.delta_x, ev->data.mouse.delta_y, queued);
     return queued;
 }
 
@@ -130,14 +144,10 @@ EM_JS(void, _aroma_emscripten_dispatch_mouse_js, (int action, int x, int y, int 
 EMSCRIPTEN_KEEPALIVE
 void aroma_emscripten_dispatch_mouse(int action, int x, int y, int button)
 {
-    LOG_INFO("dispatch_mouse: action=%d x=%d y=%d btn=%d", action, x, y, button);
-
     _aroma_emscripten_dispatch_mouse_js(action, x, y, button);
 
-    double dpr = platform_ctx.device_pixel_ratio;
-    if (dpr < 1.0) dpr = 1.0;
-    double dx = (double)x * dpr;
-    double dy = (double)y * dpr;
+    double dx = 0.0, dy = 0.0;
+    _css_to_canvas(x, y, &dx, &dy);
 
     switch (action) {
     case 0:
@@ -264,8 +274,7 @@ static EM_BOOL _cb_mouse_down(int et, const EmscriptenMouseEvent *e, void *ud)
 
     bool ok = _queue_mouse_event(EVENT_TYPE_MOUSE_CLICK, cx, cy,
                                  (uint8_t)e->button);
-    LOG_INFO("mouse_down: target=(%.1f,%.1f) canvas=(%.1f,%.1f) btn=%d ok=%d",
-             (double)e->targetX, (double)e->targetY, cx, cy, e->button, ok);
+    (void)ok;
     return EM_TRUE;
 }
 
@@ -281,8 +290,7 @@ static EM_BOOL _cb_mouse_up(int et, const EmscriptenMouseEvent *e, void *ud)
 
     bool ok = _queue_mouse_event(EVENT_TYPE_MOUSE_RELEASE, cx, cy,
                                  (uint8_t)e->button);
-    LOG_INFO("mouse_up: target=(%.1f,%.1f) canvas=(%.1f,%.1f) btn=%d ok=%d",
-             (double)e->targetX, (double)e->targetY, cx, cy, e->button, ok);
+    (void)ok;
     aroma_event_handle_pointer_move((int)cx, (int)cy, false);
     return EM_TRUE;
 }
@@ -299,12 +307,12 @@ static EM_BOOL _cb_wheel(int et, const EmscriptenWheelEvent *e, void *ud)
     AromaNode *target = aroma_event_hit_test(root, mx, my);
     uint64_t   nid    = target ? target->node_id : root->node_id;
 
-    double dpr = platform_ctx.device_pixel_ratio;
-    if (dpr < 1.0) dpr = 1.0;
+    double sx = 1.0, sy = 1.0;
+    _css_to_canvas_scale(&sx, &sy);
 
     AromaEvent *ev = aroma_event_create_scroll(nid, mx, my,
-                                               (float)(e->deltaX * dpr),
-                                               (float)(e->deltaY * dpr));
+                                               (float)(e->deltaX * sx),
+                                               (float)(e->deltaY * sy));
     if (ev) aroma_event_queue(ev);
     return EM_TRUE;
 }

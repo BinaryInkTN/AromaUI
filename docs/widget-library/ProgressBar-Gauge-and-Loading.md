@@ -122,3 +122,4 @@ The spinner uses the animation engine to rotate a partial arc. The `aroma_animat
 `aroma_ui_loading` in `aroma_ui.h` provides a convenience wrapper [include/aroma_ui.h135-141](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L135-L141).
 
 **Sources:**[include/widgets/aroma_loading.h11](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_loading.h#L11-L11)[src/widgets/aroma_loading.c1-60](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_loading.c#L1-L60)
+

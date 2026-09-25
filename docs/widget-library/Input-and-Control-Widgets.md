@@ -82,8 +82,22 @@ aroma_chip_set_selected(chip, true);
 | `CHIP_TYPE_FILTER` | Toggleable filter |
 | `CHIP_TYPE_INPUT` | Text input chip |
 
+## Live demo
+
+```incense-demo inputs
+```
+
+```incense-demo buttons
+```
+
+```incense-demo slider
+```
+
+```incense-demo dropdown
+```
+
 ## What's Next
 
 - Learn [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
 - Explore the [Map Widget](Map-Widget.md) for interactive maps.
-- Try [Incense](../widget-library/wasm/incense_sandbox/index.html) for rapid prototyping.
+- Try [Incense](Incense-Sandbox.md) for rapid prototyping.

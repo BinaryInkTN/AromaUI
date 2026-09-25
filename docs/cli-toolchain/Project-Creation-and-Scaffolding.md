@@ -1,5 +1,5 @@
 
-`aroma create` initializes a new cross-platform project in seconds.
+`aroma create` makes a new cross platform project in seconds. Run it from the AromaUI repo root.
 
 ## Usage
 
@@ -8,54 +8,53 @@ python3 bin/aroma create MyApp
 cd MyApp
 ```
 
-The CLI prompts for a project name and package name (e.g., `com.example.myapp`).
+Type a project name. Use a plain name with no spaces, such as `MyApp`.
 
-## What Gets Generated
+## What you get
 
 ```
 MyApp/
-  src/main.c          # Entry point (Linux/Android/Web)
-  CMakeLists.txt      # Root build config
-  android/            # Android Studio project
+  src/main.c          # Entry point
+  CMakeLists.txt      # Build config for Linux and Web
+  android/            # Android project
     app/
       src/main/
         AndroidManifest.xml
-        java/         # JNI bridge (AromaHelper.java)
-        cpp/          # Native CMake config
+        java/         # JNI bridge
+        cpp/          # Native build config
 ```
 
-## Generated Entry Point
+## Starter code
 
-The `main.c` template shows the standard AromaUI lifecycle:
+`src/main.c` is a full working app. It opens a window, shows text, and runs the main loop:
 
 ```c
-int main(int argc, char **argv) {
-    AromaUIState state;
-    aroma_ui_init(&state);
-    AromaNode *window = aroma_ui_create_window(&state, 800, 480, "MyApp");
+int main(void) {
+    aroma_ui_init();
+    AromaWindow *window = aroma_ui_create_window("Hello World", 400, 600);
     // ... build UI ...
     while (aroma_ui_is_running()) {
-        aroma_ui_process_events(&state);
+        aroma_ui_process_events();
         aroma_ui_render(window);
     }
-    aroma_ui_shutdown(&state);
+    aroma_ui_shutdown();
     return 0;
 }
 ```
 
-For Android, the template includes `android_main()` which bridges the NDK app state to the AromaUI platform backend.
+On Android, the template also wires `android_main()` to the NDK app state. You do not need to change this to start.
 
-## Build After Creation
+## Build it
 
 ```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-./MyApp
+python3 ../bin/aroma build linux
+python3 ../bin/aroma run linux
 ```
 
-## What's Next
+Run Android and Web builds from the same folder. See [Building and Deployment](Building-and-Deployment.md).
 
-- Learn to [build for all platforms](Building-and-Deployment.md).
-- Explore the [Widget Library](Input-and-Control-Widgets.md) to build your UI.
-- Try [Incense](../widget-library/wasm/incense_sandbox/index.html) for rapid prototyping.
+## What's next
+
+* Learn to [build for all platforms](Building-and-Deployment.md).
+* Explore the [Widget Library](../widget-library/Input-and-Control-Widgets.md) to build your UI.
+* Try [Incense](../widget-library/Incense-Sandbox.md) to prototype screens in your browser.
