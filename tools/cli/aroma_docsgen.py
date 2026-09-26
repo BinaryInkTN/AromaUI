@@ -816,14 +816,15 @@ class DocGenerator:
                 </div>
             </div>
             {tiles}
-            <div class="home-section sandbox-spotlight">
-                <div class="sandbox-head">
-                    <h2 class="section-heading" style="margin-bottom:0">Try it in your browser</h2>
-                    <a class="sandbox-open" href="sandbox.html" target="_blank" rel="noopener">Open fullscreen</a>
+            <div class="home-section home-live">
+                <div class="home-live-copy">
+                    <h2 class="section-heading">One framework, every screen</h2>
+                    <p class="home-live-text">The dashboard on the right is real AromaUI running in your browser: the same Incense code and the same widgets that ship on device. Write once and deploy to Linux desktops, Android, Windows, and embedded displays, with themes, animations, and input to match each screen.</p>
+                    <p class="home-live-text">Cards, switches, progress bars, and buttons all render from one codebase and follow the docs theme. Pan the map, flip the switch, and picture this UI on a wall panel, a phone, or a dashboard cluster.</p>
+                    <a class="sandbox-open" href="sandbox.html?example=dashboard" target="_blank" rel="noopener">Open in sandbox</a>
                 </div>
-                <p class="sandbox-sub">Write Incense UI code and click Run. The preview renders instantly in your browser via WebAssembly.</p>
-                <div class="sandbox-frame">
-                    <iframe src="sandbox.html" title="Incense live sandbox" style="width:100%;height:800px;border:none;display:block"></iframe>
+                <div class="home-live-demo">
+                    <iframe src="sandbox.html?embed=1&example=dashboard" title="Live home dashboard demo" loading="lazy"></iframe>
                 </div>
             </div>
             <footer class="home-footer">
@@ -1597,7 +1598,7 @@ body.has-announce .announce-bar{{display:flex}}
   max-width:none;
   padding:0 0 96px;
 }}
-.c-inner.wide .sandbox-spotlight{{
+.c-inner.wide .home-live{{
   padding:0 48px;
 }}
 @keyframes fl-fade-up{{
@@ -1695,37 +1696,30 @@ body.has-announce .announce-bar{{display:flex}}
 [data-theme="dark"] .metro-label,[data-theme="dark"] .metro-icon{{color:#8FBDF9;}}
 [data-theme="dark"] .metro-desc{{color:#9AA0A6;}}
 @media(max-width:760px){{.metro-tile{{width:44vw;height:44vw;max-width:200px;max-height:200px;}}}}
-.sandbox-spotlight{{margin-bottom:64px}}
+.home-live{{display:flex;gap:40px;align-items:center;margin-bottom:64px}}
+.home-live-copy{{flex:1 1 0;min-width:0}}
+.home-live-copy .section-heading{{margin-bottom:12px}}
+.home-live-text{{color:var(--md-on-surface-var);margin:0 0 14px;font-size:14px;line-height:1.65;max-width:60ch}}
+.home-live-demo{{flex:0 0 360px;max-width:360px;border:1px solid var(--md-outline);border-radius:var(--radius-sm);overflow:hidden;background:var(--md-surface)}}
+.home-live-demo iframe{{width:100%;height:600px;border:none;display:block;background:var(--md-surf-1)}}
+@media(max-width:900px){{.home-live{{flex-direction:column;align-items:stretch}}.home-live-demo{{flex-basis:auto;width:100%;max-width:430px;margin:0 auto}}}}
 .home-footer{{margin:64px 0 0;border-top:1px solid var(--md-outline-variant);background:var(--md-surf-1);}}
 .home-footer-inner{{max-width:960px;margin:0 auto;padding:40px 48px 48px;text-align:center;}}
 .home-footer h2{{font-family:var(--fd);font-size:22px;font-weight:500;color:var(--md-on-surface);margin:0 0 10px;line-height:1.3;}}
 .home-footer p{{font-size:14px;line-height:1.6;color:var(--md-on-surface-var);margin:0 auto 20px;max-width:640px;}}
 .home-footer-actions{{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}}
 .home-footer-actions a.m3-btn-filled,.home-footer-actions a.m3-btn-outlined{{text-decoration:none;}}
-.sandbox-head{{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:12px;flex-wrap:wrap;margin-bottom:12px;
-}}
 .sandbox-open{{
   font-size:13px;font-weight:400;color:var(--md-primary);
   text-decoration:none;white-space:nowrap;
 }}
 .sandbox-open:hover{{text-decoration:underline}}
-.sandbox-sub{{
-  color:var(--md-on-surface-var);margin:0 0 16px;font-size:14px;line-height:1.6;
-  max-width:720px;
-}}
-.sandbox-frame{{
-  border:1px solid var(--md-outline);border-radius:var(--radius-sm);overflow:hidden;
-  background:var(--md-surface);
-}}
-.sandbox-frame iframe{{width:100%;height:800px;border:none;display:block;background:var(--md-surf-1);}}
 .demo-frame{{border:1px solid var(--md-outline);border-radius:var(--radius-sm);overflow:hidden;background:var(--md-surface);margin:0 0 21px;}}
 .demo-head{{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid var(--md-outline-variant);font-size:13px;color:var(--md-on-surface-var);}}
 .demo-head a{{font-size:13px;color:var(--md-primary);text-decoration:none;white-space:nowrap;}}
 .demo-head a:hover{{text-decoration:underline}}
 .demo-frame iframe{{width:100%;height:660px;border:none;display:block;background:var(--md-surf-1);}}
-@media(max-width:760px){{.sandbox-frame iframe{{height:640px}}.hero-inner{{padding:52px 20px 44px;}}.home-title{{font-size:30px;}}}}
+@media(max-width:760px){{.hero-inner{{padding:52px 20px 44px;}}.home-title{{font-size:30px;}}}}
 
 .welcome-page{{padding:8px 0 16px;}}
 .home-hero{{
@@ -2217,7 +2211,7 @@ body.has-announce .announce-bar{{display:flex}}
   .mob-btn{{display:flex!important}}
   .c-inner{{padding:28px 20px 72px}}
   .c-inner.wide{{padding:0 0 72px}}
-  .c-inner.wide .sandbox-spotlight{{padding:0 20px}}
+  .c-inner.wide .home-live{{padding:0 20px}}
   .home-hero{{margin:-28px -20px 28px;padding:48px 20px;}}
   .home-title{{font-size:32px;}}
   .top-bar-center{{justify-content:flex-start}}
@@ -2382,7 +2376,7 @@ const ic = () => typeof lucide!=='undefined' && lucide.createIcons();
 
 function syncSandboxTheme(t){{
   if(t!=='light'&&t!=='dark') return;
-  document.querySelectorAll('.sandbox-frame iframe, .demo-frame iframe').forEach(function(f){{
+  document.querySelectorAll('.home-live-demo iframe, .demo-frame iframe').forEach(function(f){{
     try{{
       var d=f.contentDocument;
       if(d&&d.documentElement) d.documentElement.setAttribute('data-theme',t);
