@@ -339,7 +339,7 @@ void aroma_sandbox_init(void)
     g_text_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);
     g_icon_font = aroma_font_create_from_memory(icon_ttf, icon_ttf_len, 24);
     /* Sandbox previews default to the light Material Blue app theme.
-       The embedding docs page may switch this to Material Black at
+       The embedding docs page may switch this to Material Blue dark at
        runtime via aroma_sandbox_set_theme() when dark mode is on. */
     AromaTheme theme = aroma_theme_create_material_blue();
     aroma_ui_set_theme(&theme);
@@ -356,7 +356,7 @@ EMSCRIPTEN_KEEPALIVE
 #endif
 void aroma_sandbox_set_theme(int dark)
 {
-    AromaTheme theme = dark ? aroma_theme_create_material_black()
+    AromaTheme theme = dark ? aroma_theme_create_material_blue_dark()
                             : aroma_theme_create_material_blue();
     /* aroma_ui_set_theme() applies globally and invalidates every
        window, so the switch paints on the next frame. */
