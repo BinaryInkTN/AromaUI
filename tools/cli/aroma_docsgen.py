@@ -2,6 +2,7 @@
 
 import argparse
 import hashlib
+import html as _htmlesc
 import json
 import os
 import re
@@ -1421,6 +1422,28 @@ body{{
   padding-top:var(--top-bar-h);
   overflow:hidden;
 }}
+body.has-announce .top-app-bar{{top:36px}}
+body.has-announce .layout{{padding-top:calc(var(--top-bar-h) + 36px)}}
+.announce-bar{{
+  position:fixed;top:0;left:0;right:0;height:36px;z-index:300;
+  display:none;align-items:center;justify-content:center;gap:8px;
+  padding:0 44px 0 16px;
+  background:linear-gradient(to right,#0B2A5B 0%,#123A7D 100%);
+  color:#FFFFFF;font-size:13px;white-space:nowrap;
+  box-shadow:0 1px 0 rgba(0,0,0,0.08),0 4px 14px rgba(11,42,91,0.25);
+}}
+body.has-announce .announce-bar{{display:flex}}
+.announce-bar span{{overflow:hidden;text-overflow:ellipsis}}
+.announce-bar a{{color:#B9D4FD;text-decoration:none;font-weight:500}}
+.announce-bar a:hover{{color:#FFFFFF;text-decoration:underline}}
+.announce-close{{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:14px;
+  border:none;background:transparent;color:#FFFFFF;opacity:.75;
+  cursor:pointer;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}}
+.announce-close:hover{{opacity:1;background:rgba(255,255,255,0.12)}}
 
 .nav-drawer{{
   width:var(--nav-drawer-w);
@@ -2177,6 +2200,7 @@ body{{
     transition:transform 300ms cubic-bezier(0.2,0,0,1);
     z-index:50;box-shadow:var(--md-elev-3);
   }}
+  body.has-announce .nav-drawer{{top:calc(var(--top-bar-h) + 36px)}}
   .nav-drawer.open{{transform:translateX(0)}}
   .sb-scrim.open{{display:block}}
   .mob-btn{{display:flex!important}}
@@ -2192,7 +2216,7 @@ body{{
 </style>
 </head>
 <body>
-
+{announce_html}
 <header class="top-app-bar" id="topAppBar">
   <div class="tab-logo-name" onclick="showFirstPage()" title="{project_name} home">{project_name}</div>
   <nav class="ionic-nav">
@@ -3138,6 +3162,11 @@ function openMermaidInNewPage(btn){{
   win.document.close();
 }}
 
+function dismissAnnounce(){{
+  document.body.classList.remove('has-announce');
+  try{{localStorage.setItem('docs-announce-dismissed','1');}}catch(e){{}}
+}}
+
 function toggleSec(id){{
   const el=document.getElementById('si-'+id);
   if(!el) return;
@@ -3390,6 +3419,30 @@ window.addEventListener('hashchange', () => {{
             version=project_version,
         )
 
+        hero_cfg = config.get("hero", {}) or {}
+        announce_text = (hero_cfg.get("announcement") or "").strip()
+        changelog_url = (hero_cfg.get("changelog_url") or "").strip()
+        if announce_text:
+            announce_link = (
+                f' <a href="{_htmlesc.escape(changelog_url, quote=True)}"'
+                ' target="_blank" rel="noopener">read changelog</a>'
+                if changelog_url
+                else ""
+            )
+            announce_html = (
+                '<div class="announce-bar" id="announceBar" role="note">'
+                f"<span>{_htmlesc.escape(announce_text)}</span>{announce_link}"
+                '<button class="announce-close" onclick="dismissAnnounce()"'
+                ' aria-label="Dismiss announcement">&times;</button>'
+                "</div>"
+                "<script>(function(){try{if(localStorage.getItem("
+                '"docs-announce-dismissed")!=="1")'
+                "{document.body.classList.add(\"has-announce\");}}"
+                'catch(e){document.body.classList.add("has-announce");}})();</script>'
+            )
+        else:
+            announce_html = ""
+
         sb = []
         page_order: List[str] = []
         for cat in categories:
@@ -3495,6 +3548,7 @@ window.addEventListener('hashchange', () => {{
             last_updated=datetime.now().strftime("%B %d, %Y"),
             pdf_url=pdf_url,
             page_icons_js=page_icons_js,
+            announce_html=announce_html,
         )
 
         os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
