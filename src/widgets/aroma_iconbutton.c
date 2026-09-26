@@ -187,12 +187,16 @@ AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int
     btn->rect.width = size;
     btn->rect.height = size;
     btn->variant = variant;
-    btn->bg_color = (variant == ICON_BUTTON_FILLED || variant == ICON_BUTTON_TONAL)
+    btn->bg_color = (variant == ICON_BUTTON_FILLED)
                         ? theme.colors.primary
-                        : theme.colors.surface;
-    btn->icon_color = (variant == ICON_BUTTON_FILLED || variant == ICON_BUTTON_TONAL)
+                        : (variant == ICON_BUTTON_TONAL)
+                              ? theme.colors.primary_light
+                              : theme.colors.surface;
+    btn->icon_color = (variant == ICON_BUTTON_FILLED)
                           ? theme.colors.surface
-                          : theme.colors.text_primary;
+                          : (variant == ICON_BUTTON_TONAL)
+                                ? theme.colors.primary_dark
+                                : theme.colors.text_primary;
     btn->is_hovered = false;
     btn->is_pressed = false;
     btn->callback = NULL;
@@ -316,12 +320,16 @@ void aroma_iconbutton_draw(AromaNode *button_node, size_t window_id)
     if (btn->use_theme_colors)
     {
         AromaTheme theme = aroma_theme_get_global();
-        btn->bg_color = (btn->variant == ICON_BUTTON_FILLED || btn->variant == ICON_BUTTON_TONAL)
+        btn->bg_color = (btn->variant == ICON_BUTTON_FILLED)
                             ? theme.colors.primary
-                            : theme.colors.surface;
-        btn->icon_color = (btn->variant == ICON_BUTTON_FILLED || btn->variant == ICON_BUTTON_TONAL)
+                            : (btn->variant == ICON_BUTTON_TONAL)
+                                  ? theme.colors.primary_light
+                                  : theme.colors.surface;
+        btn->icon_color = (btn->variant == ICON_BUTTON_FILLED)
                               ? theme.colors.surface
-                              : theme.colors.text_primary;
+                              : (btn->variant == ICON_BUTTON_TONAL)
+                                    ? theme.colors.primary_dark
+                                    : theme.colors.text_primary;
         btn->border_color = theme.colors.border;
     }
 

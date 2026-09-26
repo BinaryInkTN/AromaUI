@@ -2489,18 +2489,9 @@ function showFirstDoc() {{
   }}
 }}
 
-function getBasePath() {{
-  if (window.location.hostname.includes('github.io')) {{
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    if (parts.length > 0) {{
-      return '/' + parts[0];
-    }}
-  }}
-  return '';
-}}
-
 function updateURL() {{
-  const basePath = getBasePath();
+  const path = window.location.pathname;
+  const dir = path.substring(0, path.lastIndexOf('/') + 1);
   let hash = '';
   
   if (currentId) {{
@@ -2523,7 +2514,7 @@ function updateURL() {{
     hash = '#/';
   }}
   
-  const newUrl = basePath + '/index.html' + hash;
+  const newUrl = dir + 'index.html' + hash;
   history.replaceState(null, '', newUrl);
 }}
 

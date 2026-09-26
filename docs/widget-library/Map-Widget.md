@@ -13,7 +13,9 @@ aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);
 ## Features
 
 - **Tile caching**: LRU cache with 128 tiles by default
-- **Cross-platform**: Uses libcurl on native, `emscripten_fetch` on web
+- **Online tiles**: OpenStreetMap only (`tile.openstreetmap.org`), no API key
+- **Dark mode**: follows the app theme automatically; dark tiles are derived client-side from the cached OSM tiles
+- **Smooth zoom**: previous-level tiles stay on screen while the new level loads; pending tiles show a loading grid- **Cross-platform**: Uses libcurl on native, `emscripten_fetch` on web
 - **Markers**: Icon and popup markers with click interaction
 - **Routing**: OSRM polyline routing with mutex-safe decoding
 - **Physics**: Inertial panning with velocity-based fling
@@ -34,6 +36,10 @@ aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);
 
 The map widget runs tile fetching on background worker threads to avoid blocking the UI. It uses spherical mercator projection to convert lat/lon to pixel coordinates and supports pan/zoom gestures with momentum.
 
+## Live demo
+
+```incense-demo map
+```
 
 ## What's Next
 

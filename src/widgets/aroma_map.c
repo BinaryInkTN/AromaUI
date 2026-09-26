@@ -199,6 +199,7 @@ struct AromaMapExtra
     pthread_mutex_t geocode_mutex;
     bool geocode_loading;
     bool animations_enabled;
+    uint64_t theme_version;
     OSRMGraph osrm_graph;
     OSRMGridIndex osrm_grid;
     TurnInstruction *turn_instructions;
@@ -1353,6 +1354,79 @@ static bool __map_apply_route_response(struct AromaMapExtra *extra, AromaNode *n
     return true;
 }
 
+extern unsigned char *stbi_load_from_memory(const unsigned char *buffer, int len, int *x, int *y, int *channels_in_file, int desired_channels);
+extern unsigned char *stbi_load(const char *filename, int *x, int *y, int *channels_in_file, int desired_channels);
+extern void stbi_image_free(void *retval_from_stbi_load);
+
+/* Dark-mode tiles are derived client-side from OpenStreetMap light tiles
+   (no second tile provider, no API key). This is the per-pixel equivalent
+   of CSS `invert(100%) hue-rotate(180deg)`: out = c + (255 - max - min),
+   which preserves hue while darkening, so water stays blue-ish and parks
+   stay green-ish. */
+static void __map_apply_dark_filter(unsigned char *rgba, int width, int height)
+{
+    if (!rgba || width <= 0 || height <= 0)
+        return;
+    size_t n = (size_t)width * (size_t)height;
+    for (size_t i = 0; i < n; i++)
+    {
+        unsigned char *px = rgba + i * 4;
+        int r = px[0], g = px[1], b = px[2];
+        int mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+        int mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+        int shift = 255 - mn - mx;
+        int v;
+        v = r + shift;
+        px[0] = (unsigned char)(v < 0 ? 0 : (v > 255 ? 255 : v));
+        v = g + shift;
+        px[1] = (unsigned char)(v < 0 ? 0 : (v > 255 ? 255 : v));
+        v = b + shift;
+        px[2] = (unsigned char)(v < 0 ? 0 : (v > 255 ? 255 : v));
+    }
+}
+
+static unsigned int __map_dark_texture_from_png(const unsigned char *png, size_t len)
+{
+    if (!png || len == 0 || len > (size_t)1 << 24)
+        return 0;
+    int w = 0, h = 0, c = 0;
+    unsigned char *rgba = stbi_load_from_memory(png, (int)len, &w, &h, &c, 4);
+    if (!rgba || w <= 0 || h <= 0)
+    {
+        if (rgba)
+            stbi_image_free(rgba);
+        return 0;
+    }
+    __map_apply_dark_filter(rgba, w, h);
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    unsigned int tex = 0;
+    if (gfx && gfx->load_image_from_rgba)
+        tex = gfx->load_image_from_rgba(rgba, w, h);
+    stbi_image_free(rgba);
+    return tex;
+}
+
+static unsigned int __map_dark_texture_from_file(const char *path)
+{
+    if (!path || !path[0])
+        return 0;
+    int w = 0, h = 0, c = 0;
+    unsigned char *rgba = stbi_load(path, &w, &h, &c, 4);
+    if (!rgba || w <= 0 || h <= 0)
+    {
+        if (rgba)
+            stbi_image_free(rgba);
+        return 0;
+    }
+    __map_apply_dark_filter(rgba, w, h);
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    unsigned int tex = 0;
+    if (gfx && gfx->load_image_from_rgba)
+        tex = gfx->load_image_from_rgba(rgba, w, h);
+    stbi_image_free(rgba);
+    return tex;
+}
+
 #ifndef __EMSCRIPTEN__
 static void *route_fetch_worker(void *arg)
 {
@@ -1470,8 +1544,6 @@ static void *geocode_fetch_worker(void *arg)
     return NULL;
 }
 
-extern unsigned char *stbi_load_from_memory(const unsigned char *buffer, int len, int *x, int *y, int *channels_in_file, int desired_channels);
-extern void stbi_image_free(void *retval_from_stbi_load);
 
 static void *tile_fetch_worker(void *arg)
 {
@@ -1562,10 +1634,10 @@ static void *tile_fetch_worker(void *arg)
                 continue;
             }
             char url[512];
-            if (req.is_dark)
-                snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", req.z, req.x, req.y);
-            else
-                snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
+            /* Online tiles are OpenStreetMap only. Dark mode is derived
+               client-side from the light tile (see __map_dark_texture_from_png);
+               no second provider, no API key. */
+            snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
             char tmp_path[512];
             snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", req.filepath);
             CURL *curl = curl_easy_init();
@@ -1843,14 +1915,33 @@ static void update_chunks(struct AromaMapExtra *extra, int center_tile_x, int ce
 
     for (int i = 0; i < MAX_CHUNKS; i++)
     {
-        if (extra->chunks[i].is_loaded)
+        if (!extra->chunks[i].is_loaded)
+            continue;
+        if (extra->chunks[i].z == z)
         {
             if (!is_chunk_in_view(extra, extra->chunks[i].chunk_x, extra->chunks[i].chunk_y,
-                                  center_chunk_x, center_chunk_y) ||
-                extra->chunks[i].z != z)
+                                  center_chunk_x, center_chunk_y))
             {
                 unload_chunk(extra, &extra->chunks[i]);
             }
+        }
+        else if (extra->chunks[i].z == z - 1)
+        {
+            /* Retain in-view parent tiles: they render scaled during the
+               zoom animation and serve as fallback while the new level
+               downloads. Anything older still goes (bounds memory; chunk
+               slots LRU-evict via get_empty_chunk_slot). */
+            int p_center_cx = (wrapped_center_tile_x / 2) / CHUNK_SIZE;
+            int p_center_cy = (center_tile_y / 2) / CHUNK_SIZE;
+            if (!is_chunk_in_view(extra, extra->chunks[i].chunk_x, extra->chunks[i].chunk_y,
+                                  p_center_cx, p_center_cy))
+            {
+                unload_chunk(extra, &extra->chunks[i]);
+            }
+        }
+        else
+        {
+            unload_chunk(extra, &extra->chunks[i]);
         }
     }
 
@@ -2013,11 +2104,19 @@ static void __map_tile_fetch_success(emscripten_fetch_t *fetch)
     unsigned int texture_id = 0;
     if (req && fetch->data && fetch->numBytes > 0)
     {
-        AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
-        if (gfx && gfx->load_image_from_memory)
+        if (req->is_dark)
         {
-            texture_id = gfx->load_image_from_memory(
-                (unsigned char *)fetch->data, fetch->numBytes);
+            texture_id = __map_dark_texture_from_png(
+                (const unsigned char *)fetch->data, (size_t)fetch->numBytes);
+        }
+        else
+        {
+            AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+            if (gfx && gfx->load_image_from_memory)
+            {
+                texture_id = gfx->load_image_from_memory(
+                    (unsigned char *)fetch->data, fetch->numBytes);
+            }
         }
         __map_em_tile_settle(req->extra, req->z, req->x, req->y,
                              req->is_dark, texture_id);
@@ -2155,10 +2254,9 @@ static bool request_tile_download(int z, int x, int y, bool is_dark, const char 
     req->is_dark = is_dark;
     req->extra = extra;
     char url[512];
-    if (is_dark)
-        snprintf(url, sizeof(url), "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png", z, x, y);
-    else
-        snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", z, x, y);
+    /* Online tiles are OpenStreetMap only (see __map_dark_texture_from_png
+       for dark mode: derived client-side, no second provider, no API key). */
+    snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", z, x, y);
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
@@ -3421,6 +3519,15 @@ static void __map_draw(AromaNode *node, size_t window_id)
     uint8_t g = (bg_color >> 8) & 0xFF;
     uint8_t b = bg_color & 0xFF;
     bool theme_is_dark = ((r * 299 + g * 587 + b * 114) / 1000) < 128;
+    /* Theme switches don't invalidate widgets by themselves, so force one
+       redraw here; the is_dark-aware tile lookup below then swaps the
+       tile variant on the very next frame. */
+    uint64_t theme_version = aroma_theme_get_version();
+    if (extra->theme_version != theme_version)
+    {
+        extra->theme_version = theme_version;
+        aroma_node_invalidate(node);
+    }
     gfx->fill_rectangle(window_id, map->rect.x, map->rect.y, map->rect.width, map->rect.height, bg_color, false, 0.0f);
     gfx->graphics_set_clip(map->rect.x, map->rect.y, map->rect.width, map->rect.height);
     int z = (int)round(extra->display_zoom);
@@ -3460,7 +3567,8 @@ static void __map_draw(AromaNode *node, size_t window_id)
                 if (chunk->tiles[i] &&
                     chunk->tiles[i]->z == z &&
                     chunk->tiles[i]->x == wrapped_x &&
-                    chunk->tiles[i]->y == y)
+                    chunk->tiles[i]->y == y &&
+                    chunk->tiles[i]->is_dark == theme_is_dark)
                 {
                     found_tile = chunk->tiles[i];
                     break;
@@ -3491,14 +3599,30 @@ static void __map_draw(AromaNode *node, size_t window_id)
             {
                 found_tile->is_loading = true;
                 char filepath[256];
-                snprintf(filepath, sizeof(filepath), "%s/osm_%s_%d_%d_%d.png",
-                         TILE_CACHE_DIR, theme_is_dark ? "dark" : "light", z, wrapped_x, y);
+                /* Disk cache is OSM light tiles only; the dark variant is
+                   derived in memory (see __map_dark_texture_from_png). */
+                snprintf(filepath, sizeof(filepath), "%s/osm_light_%d_%d_%d.png",
+                         TILE_CACHE_DIR, z, wrapped_x, y);
 #ifdef __EMSCRIPTEN__
                 if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath,
                                            node->node_id, extra))
                     found_tile->is_loading = false;
 #else
-                if (access(filepath, F_OK) != -1)
+                if (theme_is_dark)
+                {
+                    if (access(filepath, F_OK) != -1)
+                    {
+                        found_tile->texture_id = __map_dark_texture_from_file(filepath);
+                        if (found_tile->texture_id != 0)
+                            found_tile->is_ready = true;
+                        else
+                            found_tile->is_loading = false;
+                    }
+                    else if (!request_tile_download(z, wrapped_x, y, false, filepath,
+                                                    node->node_id, extra))
+                        found_tile->is_loading = false;
+                }
+                else if (access(filepath, F_OK) != -1)
                 {
                     if (gfx && gfx->load_image)
                     {
@@ -3512,7 +3636,7 @@ static void __map_draw(AromaNode *node, size_t window_id)
                         }
                     }
                 }
-                else if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath,
+                else if (!request_tile_download(z, wrapped_x, y, false, filepath,
                                                 node->node_id, extra))
                     found_tile->is_loading = false;
 #endif
@@ -3561,6 +3685,18 @@ static void __map_draw(AromaNode *node, size_t window_id)
                             drawn_fallback = true;
                         }
                     }
+                }
+                if (!drawn_fallback && gfx && gfx->fill_rectangle)
+                {
+                    /* Loading placeholder: tile grid cell so pending areas
+                       read as "map incoming" instead of blank background. */
+                    uint32_t grid_fill = theme_is_dark ? 0xFF23262B : 0xFFE8ECF1;
+                    uint32_t grid_line = theme_is_dark ? 0xFF343A41 : 0xFFC9D1D9;
+                    gfx->fill_rectangle(window_id, draw_x, draw_y, draw_size, draw_size,
+                                        grid_fill, false, 0.0f);
+                    if (gfx->draw_hollow_rectangle)
+                        gfx->draw_hollow_rectangle(window_id, draw_x, draw_y, draw_size, draw_size,
+                                                   grid_line, 1, false, 0.0f);
                 }
             }
         }
@@ -3787,7 +3923,9 @@ void aroma_map_zoom_in(AromaNode *node)
         extra->display_px_x *= 2.0;
         extra->center_px_y *= 2.0;
         extra->display_px_y *= 2.0;
-        unload_old_zoom_tiles(extra);
+        /* Keep old-zoom tiles: the display_zoom lerp scales them during the
+           animation and the parent-level fallback keeps the view covered
+           while the new level downloads. */
     }
     aroma_node_invalidate(node);
 }
@@ -3808,7 +3946,7 @@ void aroma_map_zoom_out(AromaNode *node)
         extra->display_px_x /= 2.0;
         extra->center_px_y /= 2.0;
         extra->display_px_y /= 2.0;
-        unload_old_zoom_tiles(extra);
+        /* Old-zoom tiles are intentionally kept (see zoom_in). */
 
         if (extra->zoom < 15)
         {
@@ -3885,7 +4023,8 @@ void aroma_map_set_zoom(AromaNode *node, int zoom)
     double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << zoom) * TILE_SIZE;
     extra->center_px_x = px_x;
     extra->center_px_y = px_y;
-    unload_old_zoom_tiles(extra);
+    /* No cache purge here: retained tiles animate the zoom transition and
+       serve as scaled fallback (and instant zoom-back). */
     aroma_node_invalidate(node);
 }
 

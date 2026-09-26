@@ -42,7 +42,7 @@ The widget supports four Material Design-inspired variants:
 | --- | --- | --- | --- |
 | `ICON_BUTTON_STANDARD` | Theme surface | Theme text_primary | None |
 | `ICON_BUTTON_FILLED` | Theme primary | Theme surface | None |
-| `ICON_BUTTON_TONAL` | Theme primary (low opacity) | Theme primary | None |
+| `ICON_BUTTON_TONAL` | Theme primary_light | Theme primary_dark | None |
 | `ICON_BUTTON_OUTLINED` | Theme surface | Theme text_primary | 1px theme border |
 
 When `use_theme_colors` is true (the default), colors are resolved from the global `AromaTheme` on every draw call, allowing theme switches to propagate instantly without explicit updates.
