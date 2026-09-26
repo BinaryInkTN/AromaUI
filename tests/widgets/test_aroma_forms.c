@@ -118,6 +118,17 @@ static void test_dropdown(void)
     aroma_dropdown_set_font(dd, NULL);
     aroma_dropdown_set_text_color(dd, 0xFF000000);
 
+    AromaDropdown *priv = (AromaDropdown *)dd->node_widget_ptr;
+    CHECK(priv != NULL, "dropdown exposes state");
+    CHECK(priv->max_visible_rows == AROMA_DROPDOWN_DEFAULT_MAX_ROWS &&
+              priv->scroll_offset == 0,
+          "list capped at 6 rows by default, unscrolled");
+    aroma_dropdown_set_max_visible_rows(dd, 2);
+    CHECK(priv->max_visible_rows == 2, "row cap configurable");
+    aroma_dropdown_set_max_visible_rows(dd, 0);
+    CHECK(priv->max_visible_rows == 0, "row cap removable");
+    aroma_dropdown_set_max_visible_rows(NULL, 3); /* guarded */
+
     /* Destroy unregisters the overlay: later hit tests must not touch it. */
     aroma_dropdown_destroy(dd);
     aroma_dropdown_destroy(NULL);

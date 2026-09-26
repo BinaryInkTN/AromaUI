@@ -12,7 +12,7 @@ AromaFont *font = aroma_font_create_from_memory(
 AromaFont *font = aroma_font_create("/path/to/font.ttf", 24);
 
 // Measure text
-int w = aroma_font_get_text_width(font, "Hello", 12);
+int w = aroma_font_get_line_width(font, "Hello");
 int h = aroma_font_get_line_height(font);
 ```
 
@@ -30,7 +30,7 @@ int h = aroma_font_get_line_height(font);
 | `aroma_font_create(path, size)` | Load font from filesystem |
 | `aroma_font_create_from_memory(data, len, size)` | Load from memory buffer |
 | `aroma_font_destroy(font)` | Release font resources |
-| `aroma_font_get_text_width(font, text, max_width)` | Measure text width |
+| `aroma_font_get_line_width(font, text)` | Measure text width |
 | `aroma_font_get_line_height(font)` | Get recommended line spacing |
 | `aroma_font_get_ascender(font)` | Distance from baseline to top |
 | `aroma_font_get_descender(font)` | Distance from baseline to bottom |
@@ -48,7 +48,7 @@ AromaUI supports density-independent pixels (DP) for layouts and scale-independe
 
 ```c
 #define FONT_TITLE_SP 36
-int px = sp(FONT_TITLE_SP);
+int px = aroma_android_px_to_sp(FONT_TITLE_SP);
 AromaFont *font = aroma_font_create_from_memory(ttf, len, px);
 ```
 

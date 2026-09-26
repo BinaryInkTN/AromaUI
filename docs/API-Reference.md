@@ -87,7 +87,7 @@ This page provides a high-level index of the public AromaUI API. For detailed do
 | Helper | Underlying Factory | Description | Source |
 | --- | --- | --- | --- |
 | `aroma_ui_map` | `aroma_map_create` | Creates an interactive OpenStreetMap widget. | [include/aroma_ui.h153-158](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L153-L158) |
-| `aroma_ui_3d_viewer` | `aroma_3d_viewer_create` | Creates a 3D model viewer widget. | [include/widgets/aroma_3d_viewer.h14](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_3d_viewer.h#L14-L14) |
+| `aroma_3d_viewer_create` | `aroma_3d_viewer_create` | Creates a 3D model viewer widget. | [include/widgets/aroma_3d_viewer.h14](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_3d_viewer.h#L14-L14) |
 
 ## Node Manipulation
 
@@ -96,9 +96,9 @@ This page provides a high-level index of the public AromaUI API. For detailed do
 | `aroma_node_set_hidden` | Shows or hides a node and its subtree. | [src/core/aroma_node.c1012](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_node.c#L1012-L1012) |
 | `aroma_node_set_z_index` | Sets the draw order priority. | [include/aroma_node.h95-98](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L95-L98) |
 | `aroma_node_set_layout_mode` | Sets container layout mode (NONE, FLEX, GRID). | [src/core/aroma_layout.c59-61](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_layout.c#L59-L61) |
-| `aroma_node_set_layout_fill` | Makes a node fill its parent bounds. | [docs/ui/layouts.md41-54](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md#L41-L54) |
-| `aroma_node_set_layout_center` | Centers a node within its parent. | [docs/ui/layouts.md58-71](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md#L58-L71) |
-| `aroma_node_set_layout_anchor` | Pins a node to parent edges. | [docs/ui/layouts.md75-100](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/ui/layouts.md#L75-L100) |
+| `aroma_node_set_layout_fill` | Makes a node fill its parent bounds. | [include/aroma_node.h154](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L154-L154) |
+| `aroma_node_set_layout_center` | Centers a node within its parent. | [include/aroma_node.h156](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L156-L156) |
+| `aroma_node_set_layout_anchor` | Pins a node to parent edges. | [include/aroma_node.h152](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L152-L152) |
 | `aroma_node_invalidate` | Marks a node as dirty for the next render. | [src/core/aroma_ui_impl.c221](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L221-L221) |
 | `aroma_node_set_draw_cb` | Assigns a custom draw callback to a node. | [include/aroma_node.h160-165](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_node.h#L160-L165) |
 
@@ -109,15 +109,17 @@ This page provides a high-level index of the public AromaUI API. For detailed do
 | `aroma_animation_start` | Starts a standard property animation. | [src/core/aroma_animation.c121-142](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_animation.c#L121-L142) |
 | `aroma_animation_start_custom` | Starts a custom animation with a user callback. | [src/core/aroma_animation.c155-162](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_animation.c#L155-L162) |
 | `aroma_animation_stop` | Stops all animations on a target node. | [src/core/aroma_animation.c144-152](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_animation.c#L144-L152) |
+| `aroma_animation_set_loop` | Loops an animation instead of completing it. | [src/core/aroma_animation.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_animation.c) |
+| `aroma_animation_set_loop_mode` | Restart or ping-pong loop behavior. | [include/aroma_animation.h](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_animation.h) |
 
 ### Animation Types
 
-| Type | Property Modified |
+| Type | Property animated |
 | --- | --- |
-| `AROMA_ANIM_SLIDE_X` | `node->rect.x` |
-| `AROMA_ANIM_SLIDE_Y` | `node->rect.y` |
-| `AROMA_ANIM_SCALE_X` | `node->rect.width` |
-| `AROMA_ANIM_SCALE_Y` | `node->rect.height` |
+| `AROMA_ANIM_SLIDE_X` | Node x position |
+| `AROMA_ANIM_SLIDE_Y` | Node y position |
+| `AROMA_ANIM_SCALE_X` | Node width |
+| `AROMA_ANIM_SCALE_Y` | Node height |
 | `AROMA_ANIM_FADE` | `node->opacity` |
 | `AROMA_ANIM_CUSTOM` | User-defined callback |
 
@@ -160,7 +162,6 @@ This page provides a high-level index of the public AromaUI API. For detailed do
 | `EVENT_TYPE_TOUCH_DOWN` | Touch contact began. |
 | `EVENT_TYPE_TOUCH_MOVE` | Touch contact moved. |
 | `EVENT_TYPE_TOUCH_UP` | Touch contact ended. |
-| `EVENT_TYPE_TOUCH_CANCEL` | Touch contact was cancelled. |
 
 **Sources:**[include/aroma_event.h40-80](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_event.h#L40-L80)[src/core/aroma_event.c146-160](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L146-L160)
 

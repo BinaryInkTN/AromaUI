@@ -26,10 +26,10 @@ flowchart LR
         SHM["Telemetry Bridge (SHM)"]
     end
     subgraph subGraph0 ["Main Thread (main_loop)"]
-        A["aroma_ui_poll_events()"]
+        A["aroma_ui_process_events()"]
         B["process_voice_commands()"]
         C["update_telemetry_ui()"]
-        D["aroma_ui_render_frame()"]
+        D["aroma_ui_render(window)"]
     end
     A --> B
     B --> C
@@ -85,9 +85,9 @@ Layers are defined in `app_state.h` to ensure consistent depth sorting [examples
 
 ### Key Components
 
-- **Gear Selector**: Uses a two-card system (`gear_bg_card` and `gear_fg_card`). The foreground card is animated to slide over the active gear letter (P, R, N, D) [examples/car_infotainment/vehicle_view.c115-132](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_view.c#L115-L132)
-- **Interactive Labels**: Includes "Frunk" and "Trunk" labels that act as touch targets for vehicle actuators [examples/car_infotainment/vehicle_view.c156-170](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_view.c#L156-L170)
-- **Battery Diagnostics**: The `battery_diagnostics()` callback triggers a transition that hides standard vehicle info and displays a detailed battery health overlay using `AROMA_ANIM_SLIDE_Y` and `AROMA_ANIM_FADE`[examples/car_infotainment/vehicle_view.c26-60](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle_view.c#L26-L60)
+- **Gear Selector**: Uses a two-card system (`gear_bg_card` and `gear_fg_card`). The foreground card is animated to slide over the active gear letter (P, R, N, D) [examples/car_infotainment/vehicle/vehicle_view.c115-132](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/vehicle_view.c#L115-L132)
+- **Interactive Labels**: Includes "Frunk" and "Trunk" labels that act as touch targets for vehicle actuators [examples/car_infotainment/vehicle/vehicle_view.c156-170](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/vehicle_view.c#L156-L170)
+- **Battery Diagnostics**: The `battery_diagnostics()` callback triggers a transition that hides standard vehicle info and displays a detailed battery health overlay using `AROMA_ANIM_SLIDE_Y` and `AROMA_ANIM_FADE`[examples/car_infotainment/vehicle/vehicle_view.c26-60](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/vehicle_view.c#L26-L60)
 
 **Sources:**[examples/car_infotainment/vehicle/vehicle_view.c3321-3340](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/vehicle/vehicle_view.c#L3321-L3340)[examples/car_infotainment/core/app_state.h13-25](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/core/app_state.h#L13-L25)
 
@@ -166,12 +166,12 @@ The Car Infotainment example features an integrated voice assistant using the Vo
 
 ### Intent Processing Pipeline
 
-The voice thread captures audio via ALSA at 16kHz and processes it through `process_intent()`[examples/car_infotainment/voice_control.c39-144](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L39-L144)
+The voice thread captures audio via ALSA at 16kHz and processes it through `process_intent()`[examples/car_infotainment/voice/voice_control.c39-144](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_control.c#L39-L144)
 
-1. **Wake Word**: Listens for "hey aroma" or a manual trigger via `trigger_manual_wake()`[examples/car_infotainment/voice_control.c40](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L40-L40)[examples/car_infotainment/voice_control.c35-37](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L35-L37)
-2. **Keyword Mapping**: Uses `strstr` to map phrases to UI actions (e.g., "dark mode" calls `queue_voice_theme(1)`) [examples/car_infotainment/voice_control.c66-70](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L66-L70)
-3. **UI Feedback**: Commands are queued via `queue_voice_action()`, which the main loop picks up to update `state.voice_status_label`[examples/car_infotainment/voice_control.c14-18](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L14-L18)
-4. **TTS**: Uses `pico2wave` and `aplay` to provide audible confirmation [examples/car_infotainment/voice_control.c27-33](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L27-L33)
+1. **Wake Word**: Listens for "hey aroma" or a manual trigger via `trigger_manual_wake()`[examples/car_infotainment/voice/voice_control.c40](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_control.c#L40-L40)[examples/car_infotainment/voice/voice_control.c35-37](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_control.c#L35-L37)
+2. **Keyword Mapping**: Uses `strstr` to map phrases to UI actions (e.g., "dark mode" calls `queue_voice_theme(1)`) [examples/car_infotainment/voice/voice_control.c66-70](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_control.c#L66-L70)
+3. **UI Feedback**: Commands are queued via `queue_voice_action()`, which the main loop picks up to update `state.voice_status_label`[examples/car_infotainment/voice/voice_control.c14-18](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_control.c#L14-L18)
+4. **TTS**: Uses `pico2wave` and `aplay` to provide audible confirmation [examples/car_infotainment/voice/voice_control.c27-33](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_control.c#L27-L33)
 
 ```mermaid
 flowchart LR
@@ -196,7 +196,7 @@ flowchart LR
     PROC --> UI
 ```
 
-**Sources:**[examples/car_infotainment/voice_control.c146-160](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_control.c#L146-L160)[examples/car_infotainment/voice_handler.h14-20](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice_handler.h#L14-L20)
+**Sources:**[examples/car_infotainment/voice/voice_control.c146-160](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_control.c#L146-L160)[examples/car_infotainment/voice/voice_handler.h14-20](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/voice/voice_handler.h#L14-L20)
 
 ---
 
@@ -206,7 +206,7 @@ The settings interface demonstrates dynamic layout and theme switching.
 
 ### UI Structure
 
-- **Slide Animation**: The settings panel is built into `state.settings_panel_node` and is toggled using `AROMA_ANIM_SLIDE_X` for a smooth transition from the side of the screen [examples/car_infotainment/app_state.h30](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/app_state.h#L30-L30)
+- **Slide Animation**: The settings panel is built into `state.settings_panel_node` and is toggled using `AROMA_ANIM_SLIDE_X` for a smooth transition from the side of the screen [examples/car_infotainment/core/app_state.h30](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/core/app_state.h#L30-L30)
 - **System Info**: Displays hardware telemetry by reading from `/proc` (e.g., CPU usage, memory) and formatting it into AromaUI `ListView` widgets.
 
 ### Theme Manager
@@ -225,11 +225,11 @@ The `theme_manager.c` handles global style shifts. When `state.dark_theme_enable
 
 The application uses a specialized tab manager to switch between the high-level views.
 
-- **Tab Bar**: Located at the bottom of the screen (`WIN_H - 80`), it uses `aroma_ui_tabs_with_icons` to provide navigation between "Vehicle View" and "Settings" [examples/car_infotainment/tabs_manager.c6-10](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/tabs_manager.c#L6-L10)
-- **Content Switching**: `aroma_tabs_set_content()` associates specific container nodes (like `state.vehicle_view_root`) with tab indices [examples/car_infotainment/tabs_manager.c15-16](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/tabs_manager.c#L15-L16)
-- **Z-Index**: The tab bar is kept at `Z_LAYER_MAP_BUTTON` (15) to remain visible above the vehicle background but below top-level overlays [examples/car_infotainment/tabs_manager.c13](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/tabs_manager.c#L13-L13)
+- **Tab Bar**: Located at the bottom of the screen (`WIN_H - 80`), it uses `aroma_ui_tabs_with_icons` to provide navigation between "Vehicle View" and "Settings" [examples/car_infotainment/vehicle/tabs_manager.c6-10](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/tabs_manager.c#L6-L10)
+- **Content Switching**: `aroma_tabs_set_content()` associates specific container nodes (like `state.vehicle_view_root`) with tab indices [examples/car_infotainment/vehicle/tabs_manager.c15-16](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/tabs_manager.c#L15-L16)
+- **Z-Index**: The tab bar is kept at `Z_LAYER_MAP_BUTTON` (15) to remain visible above the vehicle background but below top-level overlays [examples/car_infotainment/vehicle/tabs_manager.c13](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/tabs_manager.c#L13-L13)
 
-**Sources:**[examples/car_infotainment/tabs_manager.c4-25](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/tabs_manager.c#L4-L25)[examples/car_infotainment/core/app_state.h13-25](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/core/app_state.h#L13-L25)
+**Sources:**[examples/car_infotainment/vehicle/tabs_manager.c4-25](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/tabs_manager.c#L4-L25)[examples/car_infotainment/core/app_state.h13-25](https://github.com/BinaryInkTN/AromaUI/blob/main/examples/car_infotainment/core/app_state.h#L13-L25)
 
 ---
 

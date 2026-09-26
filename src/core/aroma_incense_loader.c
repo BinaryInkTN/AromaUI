@@ -2430,10 +2430,11 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
     if (!bag)
         return;
   static const char *const valid[] = {
-    "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_start_val",
-    "attribution", "autoplay", "color", "columns", "condition", "direction", "duration", "fill_color", "font", "group",
-    "header", "height", "hidden", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "label", "lat", "layout", "length", "lon", "max", "message",
-    "min", "model", "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "placeholder",
+    "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_loop", "animation_start_val",
+    "attribution", "auto_rotate", "autoplay", "checked", "color", "columns", "condition", "direction", "duration", "fill_color", "fill_thickness", "font", "group",
+    "header", "height", "hidden", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "interactive", "label", "lat", "layout", "length",
+    "light_x", "light_y", "light_z", "lon", "major_length", "major_ticks", "max", "message",
+    "min", "minor_length", "minor_ticks", "max_visible", "model", "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "placeholder", "popup",
     "position", "progress", "radius", "selected", "secondary", "show", "size", "src", "start_angle", "end_angle", "style", "text", "thickness", "title", "track_color", "track_thickness", "ticks", "tick_color", "tick_thickness", "type", "value",
     "variant", "visible", "width", "x", "y", "zoom", "z_index", NULL};
     for (int i = 0; i < bag->count; i++)
@@ -2543,6 +2544,14 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
                     break;
                 }
             }
+        }
+        {
+            const char *loop_mode = props_get(bag, "animation_loop");
+            if (loop_mode && (strcmp(loop_mode, "pingpong") == 0 ||
+                              strcmp(loop_mode, "alternate") == 0))
+                aroma_animation_set_loop_mode(anim_obj, AROMA_LOOP_PINGPONG);
+            else if (props_bool(bag, "animation_loop", false))
+                aroma_animation_set_loop(anim_obj, true);
         }
     }
     if (props_bool(bag, "hidden", false))
@@ -2883,6 +2892,8 @@ static AromaNode *build_checkbox(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
     {
         built = aroma_ui_checkbox(parent, label, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
                                   props_int(&bag, "width", 160), props_int(&bag, "height", 32), on_change ? bridge_checkbox_change : NULL, on_change, _widget_font);
+        if (built && props_bool(&bag, "checked", false))
+            aroma_checkbox_set_checked(built, true);
     }
     free(label);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
@@ -3221,11 +3232,65 @@ static AromaNode *build_dialog(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     {
         built = aroma_ui_dialog(parent, title, msg, props_int(&bag, "width", 320), props_int(&bag, "height", 200), type, _widget_font);
         if (built)
+        {
+            /* Action buttons: DialogAction { text: "Cancel" on_click: "..." }
+             * (bare `Action` accepted as an alias). Up to 3 actions. */
+            if (node)
+            {
+                for (IncenseNode *cur = node->first_child; cur; cur = cur->next_sibling)
+                {
+                    if (!cur || cur->type != INCENSE_OBJECT || !cur->name)
+                        continue;
+                    if (strcmp(cur->name, "DialogAction") != 0 && strcmp(cur->name, "Action") != 0)
+                        continue;
+                    PropBag ab;
+                    props_collect(cur, &ab);
+                    char *label = props_str_dup(&ab, "text", NULL);
+                    if (!label || !label[0])
+                    {
+                        free(label);
+                        label = props_str_dup(&ab, "label", "");
+                    }
+                    CallbackEntry *oc = resolve_callback(cur, &ab, "on_click");
+                    if (label && label[0])
+                        aroma_dialog_add_action(built, label, oc ? bridge_void_ptr : NULL, oc);
+                    free(label);
+                    props_free(&ab);
+                }
+            }
             aroma_dialog_show(built);
+        }
     }
     free(title);
     free(msg);
-    WIDGET_POSTAMBLE(built, bag, node, ctx);
+    if (built)
+    {
+        if (node)
+            node->id = built->node_id;
+        int _zi = props_int(&bag, "z_index", 0);
+        if (_zi)
+            aroma_node_set_z_index(built, _zi);
+        int _vis = props_int(&bag, "visible", -1);
+        if (_vis == 0)
+            aroma_dialog_hide(built);
+        apply_widget_animations(built, &bag, node);
+        maybe_register(&bag, built, ctx);
+        /* Route remaining children into the dialog content area so custom
+         * widgets render above the message and below the action buttons.
+         * DialogAction/Action children are skipped (already consumed above;
+         * also registered as NULL widgets so a generic build would ignore
+         * them, but we skip explicitly for clarity). */
+        AromaNode *content = aroma_dialog_get_content_area(built);
+        build_children(node, content ? content : built, ctx);
+        props_free(&bag);
+        return built;
+    }
+    ERR_SYNTAX_N(node, "Failed to create widget");
+    apply_widget_animations(built, &bag, node);
+    maybe_register(&bag, built, ctx);
+    build_children(node, built, ctx);
+    props_free(&bag);
+    return built;
 }
 
 static AromaNode *build_image(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
@@ -3311,6 +3376,8 @@ static AromaNode *build_dropdown(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
     }
     if (on_change)
         aroma_dropdown_set_on_change(built, bridge_dropdown_change, on_change);
+    if (props_get(&bag, "max_visible"))
+        aroma_dropdown_set_max_visible_rows(built, props_int(&bag, "max_visible", 6));
     aroma_dropdown_setup_events(built, NULL, NULL);
     aroma_dropdown_set_font(built, _widget_font);
     int zi = props_int(&bag, "z_index", 0);
@@ -3931,6 +3998,7 @@ static AromaNode *build_chip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 static const WidgetEntry WIDGET_TABLE[] = {
+    {"Action", NULL},
     {"Button", build_button},
     {"Canvas", build_canvas},
     {"Card", build_card},
@@ -3940,6 +4008,7 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Container", build_container},
     {"DebugOverlay", build_debugoverlay},
     {"Dialog", build_dialog},
+    {"DialogAction", NULL},
     {"Divider", build_divider},
     {"Dropdown", build_dropdown},
     {"GIF", build_gif},
@@ -3955,6 +4024,7 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"ListView", build_listview},
     {"Loading", build_loading},
     {"Map", build_map},
+    {"Marker", NULL},
     {"Menu", build_menu},
     {"MenuItem", NULL},
     {"Option", NULL},

@@ -146,5 +146,5 @@ state.bt_btn = aroma_ui_iconbutton(
 );
 ```
 
-**Sources:**[examples/car_infotainment/status_bar.c1-40](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/status_bar.c#L1-L40)
+**Sources:**[examples/car_infotainment/vehicle/status_bar.c1-40](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/status_bar.c#L1-L40)
 

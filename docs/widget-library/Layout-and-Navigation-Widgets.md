@@ -5,7 +5,7 @@ Structural widgets that arrange children, handle scrolling, and provide navigati
 
 ```c
 AromaNode *container = aroma_container_create(root, 0, 0, 800, 480);
-aroma_container_set_layout_mode(container, AROMA_LAYOUT_MODE_FLEX);
+aroma_node_set_layout_mode(container, AROMA_LAYOUT_MODE_FLEX);
 aroma_node_set_flex_direction(container, AROMA_FLEX_COLUMN);
 ```
 
@@ -91,9 +91,9 @@ that pair for you).
 ## Tabs
 
 ```c
-AromaNode *tabs = aroma_ui_tabs(root, 0, 0, 800, 48);
-aroma_tabs_add_tab(tabs, "Home", home_content);
-aroma_tabs_add_tab(tabs, "Settings", settings_content);
+const char *labels[] = { "Home", "Settings" };
+AromaNode *tabs = aroma_ui_tabs(root, 0, 0, 800, 48, labels, 2, NULL, NULL, font);
+aroma_tabs_set_content(tabs, 0, home_content, 1);
 ```
 
 Supports animated transitions (`AROMA_ANIM_SLIDE_X`, `AROMA_ANIM_FADE`).
@@ -101,8 +101,10 @@ Supports animated transitions (`AROMA_ANIM_SLIDE_X`, `AROMA_ANIM_FADE`).
 ## Sidebar
 
 ```c
-AromaNode *sidebar = aroma_ui_sidebar(root, 0, 0, 280, 480);
-aroma_sidebar_add_item(sidebar, AROMA_ICON_HOME, "Home", home_content);
+const char *items[] = { "Home", "Search", "Settings" };
+AromaNode *sidebar = aroma_ui_sidebar(root, 0, 0, 280, 480, items, 3, NULL, NULL, font);
+aroma_sidebar_set_icon(sidebar, 0, AROMA_ICON_HOME, icon_font);
+aroma_sidebar_set_content(sidebar, 0, home_content, 1);
 ```
 
 Responsive: retracts to icon-only mode below a breakpoint.
@@ -110,9 +112,10 @@ Responsive: retracts to icon-only mode below a breakpoint.
 ## Menu
 
 ```c
-AromaNode *menu = aroma_menu_create(root, x, y, 200);
-aroma_menu_add_item(menu, "Edit", AROMA_MENU_ITEM_NORMAL, on_edit);
-aroma_menu_add_item(menu, "Delete", AROMA_MENU_ITEM_DESTRUCTIVE, on_delete);
+AromaNode *menu = aroma_menu_create(root, x, y);
+aroma_menu_add_item(menu, "Edit", on_edit, NULL);
+aroma_menu_add_item(menu, "Delete", on_delete, NULL);
+aroma_menu_show(menu);
 ```
 
 Floating context menu with click-away dismiss.

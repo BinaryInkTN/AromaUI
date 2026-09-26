@@ -1,6 +1,6 @@
 {
     "name": "AromaSDK",
-    "version": "0.0.1 (alpha)",
+    "version": "0.0.2 (alpha)",
     "description": "Lightweight development toolkit for cross-platform applications on Linux, Android, Windows, and embedded systems.",
 
     "hero": {
@@ -8,7 +8,7 @@
         "description": "Cross-platform application framework featuring a modern UI toolkit, rendering engine, backend abstraction layer, and tooling for Linux, Android, Windows, and Embedded devices.",
         "announcement": "AromaSDK 0.0.2 is here",
         "background": "#0066CC",
-        "image": "images/hero_image.png",
+        "image": "images/hero.png",
 
         "actions": [
             {

@@ -15,12 +15,13 @@ AromaNode *btn = aroma_ui_button(root, "Click Me", 20, 20, 160, 48,
                                  on_button_click, NULL, NULL);
 ```
 
-Variants: `standard`, `filled`, `tonal`, `outlined`
+Variants are supported on icon buttons (`ICON_BUTTON_STANDARD`, `ICON_BUTTON_FILLED`, `ICON_BUTTON_TONAL`, `ICON_BUTTON_OUTLINED`).
 
 ## Icon Button
 
 ```c
-AromaNode *ib = aroma_ui_icon_button(root, AROMA_ICON_SETTINGS, 300, 20, 48, 48);
+AromaNode *ib = aroma_ui_iconbutton(root, AROMA_ICON_SETTINGS, 300, 20, 48,
+                                    ICON_BUTTON_STANDARD, on_icon_click, NULL, font);
 ```
 
 ## Checkbox
@@ -95,16 +96,17 @@ AromaNode *tb = aroma_ui_textbox(root, 20, 340, 260, 48, "Enter name...",
 ## Chip
 
 ```c
-AromaNode *chip = aroma_ui_chip(root, "Filter", 20, 400, 100, 36, CHIP_TYPE_FILTER);
+AromaNode *chip = aroma_ui_chip(root, "Filter", 20, 400, CHIP_TYPE_FILTER,
+                                NULL, NULL, font);
 aroma_chip_set_selected(chip, true);
 ```
 
 | Type | Use Case |
 |---|---|
-| `CHIP_TYPE_ACTION` | Single action |
-| `CHIP_TYPE_CHOICE` | Selection from options |
+| `CHIP_TYPE_ASSIST` | Single action |
 | `CHIP_TYPE_FILTER` | Toggleable filter |
 | `CHIP_TYPE_INPUT` | Text input chip |
+| `CHIP_TYPE_SUGGESTION` | Selection from options |
 
 ## Live demo
 

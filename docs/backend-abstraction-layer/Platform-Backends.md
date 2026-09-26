@@ -76,9 +76,9 @@ The GLFW backend provides a portable implementation for Windows, macOS, and Linu
 For environments without a display server (e.g., GStreamer pipelines), the backend initializes an EGL context using `EGL_KHR_surfaceless_context`[src/backends/platforms/aroma_platform_glfw.c63-182](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L63-L182)
 
 - **Context**: Uses `eglGetDisplay(EGL_DEFAULT_DISPLAY)` and `eglCreateContext` with `EGL_PBUFFER_BIT`[src/backends/platforms/aroma_platform_glfw.c103-157](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L103-L157)
-- **Use Case**: Integrated in `examples/gstreamer_example/ev_cluster.c` to render UI frames directly into shared memory (`/aroma_frame_shm`) for video encoding [examples/gstreamer_example/ev_cluster.c1-18](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c#L1-L18)
+- **Use Case**: Pairs with `aroma_ui_read_pixels()` to render UI frames directly into shared memory (`/aroma_frame_shm`) for video encoding pipelines
 
-Sources: [src/backends/platforms/aroma_platform_glfw.c1-219](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L1-L219)[examples/gstreamer_example/ev_cluster.c1-102](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c#L1-L102)
+Sources: [src/backends/platforms/aroma_platform_glfw.c1-219](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L1-L219)[include/aroma_ui.h378-388](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L378-L388)
 
 ---
 

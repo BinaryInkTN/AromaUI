@@ -24,11 +24,13 @@ flowchart TD
 The ABI sits between the core framework and hardware backends. When a DrawList is active, it records commands. Otherwise, it passes calls directly to the backend (immediate mode).
 
 ```c
-// Typical widget draw callback
+// Typical widget draw callback: record into the DrawList,
+// the pipeline flushes it to the backend after Z-sorting.
 void aroma_button_draw(AromaNode *node, size_t window_id) {
-    AromaGraphicsInterface *gfx = aroma_graphics_get_interface(window_id);
-    gfx->fill_rectangle(window_id, rect.x, rect.y, rect.w, rect.h, bg_color, true, radius);
-    gfx->render_text(window_id, font, text, tx, ty, text_color);
+    AromaRect *r = aroma_node_get_rect(node);
+    aroma_drawlist_cmd_fill_rect(list, r->x, r->y, r->width, r->height,
+                                 bg_color, true, radius);
+    aroma_drawlist_cmd_text(list, font, text, tx, ty, text_color);
 }
 ```
 
@@ -57,7 +59,7 @@ The rendering pipeline relies on these internal mechanisms:
 |---|---|
 | Force redraw | `aroma_ui_request_redraw(window)` marks the window dirty |
 | Draw order | Higher `z_index` draws later (on top) |
-| Clip region | Set via `gfx->set_clip(rect)` before drawing |
+| Clip region | Set via `graphics_set_clip(x, y, w, h)` before drawing |
 | Backend selection | Configured at platform init (`aroma_backend_abi_init`) |
 
 Most render control happens automatically through the DrawList and dirty-region system. Direct manipulation is rarely needed in application code.

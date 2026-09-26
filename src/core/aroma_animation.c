@@ -103,11 +103,27 @@ static void update_animations(void* arg)
         needs_redraw = true;
 
         if (finished) {
-            curr->is_running = false;
-            
-            // Invoke completion callback if registered
-            if (curr->on_complete) {
-                curr->on_complete(curr->target, curr->user_data);
+            if (curr->loop_mode == AROMA_LOOP_RESTART && curr->duration_ms > 0) {
+                /* Loop: restart the cycle from start_val. The end value
+                   was already written above, so the next tick continues
+                   seamlessly from the beginning. */
+                curr->start_time = now;
+                curr->last_progress = 0.0f;
+            } else if (curr->loop_mode == AROMA_LOOP_PINGPONG && curr->duration_ms > 0) {
+                /* Ping-pong: swap direction so the next cycle eases back
+                   toward the start value with no visible jump. */
+                float tmp = curr->start_val;
+                curr->start_val = curr->end_val;
+                curr->end_val = tmp;
+                curr->start_time = now;
+                curr->last_progress = 0.0f;
+            } else {
+                curr->is_running = false;
+
+                // Invoke completion callback if registered
+                if (curr->on_complete) {
+                    curr->on_complete(curr->target, curr->user_data);
+                }
             }
         }
 
@@ -125,6 +141,14 @@ void aroma_animation_manager_init(void)
 {
     if (!anim_timer) {
         anim_timer = aroma_timer_create(16, true, update_animations, NULL);
+    }
+}
+
+void aroma_animation_manager_shutdown(void)
+{
+    if (anim_timer) {
+        aroma_timer_cancel(anim_timer);
+        anim_timer = NULL;
     }
 }
 
@@ -228,4 +252,14 @@ void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing)
 void aroma_animation_set_on_complete(AromaAnimation* anim, AromaAnimationCompleteCallback cb)
 {
     if (anim) anim->on_complete = cb;
+}
+
+void aroma_animation_set_loop(AromaAnimation* anim, bool loop)
+{
+    if (anim) anim->loop_mode = loop ? AROMA_LOOP_RESTART : AROMA_LOOP_OFF;
+}
+
+void aroma_animation_set_loop_mode(AromaAnimation* anim, AromaLoopMode mode)
+{
+    if (anim) anim->loop_mode = mode;
 }

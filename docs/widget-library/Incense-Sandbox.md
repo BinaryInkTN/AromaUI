@@ -50,37 +50,49 @@ Window {
 
 | Widget | Key Properties | Children |
 |---|---|---|
+| `Window` | `width`, `height`, `title` | Any widget |
 | `Button` | `text`, `x`, `y`, `width`, `height`, `on_click` | - |
 | `Label` | `text`, `x`, `y`, `style`, `color` | - |
 | `Container` | `x`, `y`, `width`, `height`, `layout`, `direction` | Any widget |
 | `Card` | `x`, `y`, `width`, `height`, `type` | - |
-| `Checkbox` | `label`, `x`, `y`, `checked`, `on_change` | - |
+| `Checkbox` | `label`, `x`, `y`, `width`, `height`, `checked`, `on_change` | - |
 | `Switch` | `x`, `y`, `width`, `height`, `value`, `on_change` | - |
 | `Slider` | `x`, `y`, `width`, `height`, `min`, `max`, `value`, `on_change` | - |
-| `Textbox` | `x`, `y`, `width`, `height`, `placeholder`, `on_change` | - |
-| `ProgressBar` | `x`, `y`, `width`, `height`, `value` | - |
+| `Textbox` | `x`, `y`, `width`, `height`, `placeholder`, `on_change`, `on_submit` | - |
+| `ProgressBar` | `x`, `y`, `width`, `height`, `value`, `type` | - |
 | `Divider` | `x`, `y`, `length`, `orientation` | - |
-| `IconButton` | `x`, `y`, `width`, `height`, `icon`, `on_click` | - |
-| `Icon` | `x`, `y`, `size`, `text`, `color` | - |
+| `IconButton` | `x`, `y`, `size`, `icon`, `variant`, `on_click` | - |
+| `Icon` | `x`, `y`, `size`, `text`, `src`, `color` | - |
 | `Image` | `x`, `y`, `width`, `height`, `src` | - |
-| `Dropdown` | `x`, `y`, `width`, `height`, `on_change` | `Option` |
-| `RadioButton` | `label`, `x`, `y`, `width`, `height`, `group`, `checked`, `on_click` | - |
-| `Tabs` | `x`, `y`, `width`, `height`, `on_change` | `Tab` |
-| `Sidebar` | `x`, `y`, `width`, `height` | `Item` |
-| `Menu` | `x`, `y`, `width` | `MenuItem` |
+| `Dropdown` | `x`, `y`, `width`, `height`, `max_visible`, `on_change` | `Option` |
+| `RadioButton` | `label`, `x`, `y`, `width`, `height`, `group`, `selected`, `on_click` | - |
+| `Tabs` | `x`, `y`, `width`, `height`, `selected`, `on_change` | `Tab` |
+| `Sidebar` | `x`, `y`, `width`, `height`, `on_select` | `Item` |
+| `Menu` | `x`, `y` | `MenuItem`, `Separator` |
 | `Chip` | `x`, `y`, `label`, `icon`, `type`, `selected` | - |
 | `Tooltip` | `text`, `x`, `y`, `position` | - |
 | `GIF` | `x`, `y`, `width`, `height`, `src`, `autoplay` | - |
-| `Loading` | `x`, `y`, `radius`, `thickness` | - |
-| `Gauge` | `x`, `y`, `width`, `height`, `value` | - |
+| `Loading` | `x`, `y`, `radius`, `thickness`, `color` | - |
+| `Gauge` | `x`, `y`, `width`, `height`, `value`, `min`, `max` | - |
 | `Canvas` | `x`, `y`, `width`, `height` | - |
-| `DebugOverlay` | `x`, `y`, `width`, `height`, `visible` | - |
-| `Map` | `x`, `y`, `width`, `height`, `lat`, `lon`, `zoom` | - |
-| `Snackbar` | `message`, `duration`, `action`, `on_click` | - |
+| `DebugOverlay` | `x`, `y`, `width`, `visible` | - |
+| `Map` | `x`, `y`, `width`, `height`, `lat`, `lon`, `zoom`, `attribution` | `Marker` |
+| `Marker` | `lat`, `lon`, `color`, `popup`, `icon` | - |
+| `ThreeDViewer` | `x`, `y`, `width`, `height`, `model`, `auto_rotate`, `interactive` | - |
+| `Snackbar` | `message`, `duration`, `action`, `on_click`, `show` | - |
 | `ListView` | `x`, `y`, `width`, `height`, `on_select` | `ListItem`, `Header`, `Separator` |
-| `Dialog` | `title`, `message`, `width`, `height`, `type` | - |
+| `Dialog` | `title`, `message`, `width`, `height`, `type` | `DialogAction`, `Action` |
+| `DialogAction` | `text`, `label`, `on_click` | - |
 | `ScrollView` | `x`, `y`, `width`, `height`, `direction` | Any widget |
-| `Table` | `x`, `y`, `width`, `height` | `Column`, `Row`, `HeaderCell` |
+| `Table` | `x`, `y`, `width`, `height`, `columns` | `Column` |
+
+Every widget also accepts `id`, `font`, `visible`, `z_index`, `parent`, and the
+animation props `animation`, `animation_duration`, `animation_start_val`,
+`animation_end_val`, `animation_easing`, `animation_loop` (`true` restarts
+each cycle, `pingpong` reverses direction for a seamless loop). `Card` types are
+`elevated`/`outlined`/`filled`; `RadioButton` uses `selected` (not `checked`);
+`IconButton` is sized with `size` (not `width`/`height`); `Table` columns are
+`Column { header, width }` items.
 
 ## Property Types
 
@@ -104,18 +116,17 @@ Window {
 - **Icons**: Material icon names: `AROMA_ICON_*` constants for `IconButton` and `Icon` widgets
 - **Virtual Keyboard**: Textbox widgets automatically show a responsive virtual keyboard when focused on Emscripten/WebAssembly builds. The keyboard anchors at the bottom of the canvas, keys scale to fit screen width, and labels abbreviate when space is limited. Enable it programmatically with `aroma_textbox_enable_virtual_keyboard(root, true)`.
 
-## Known Limitations
+## Capabilities and Limits
 
-1. No arrays/lists as property values - use child objects instead
-2. No control flow - all widgets render every frame
-3. No data binding - properties are static literals
-4. No expressions - cannot compute values from other values
-5. No component system - no user-defined widgets yet
-6. No declarative animations
-7. Limited event types - `on_click`, `on_change`, `on_select`, `on_submit`
-8. Single window per file
-9. No string interpolation
-10. Hard limits: 64 children per parent, 64 properties per widget
+1. No arrays/lists as property values - use child objects instead (`Option`, `Marker`, `Column`, `Tab`, `Item`).
+2. Conditional UI via `If { condition: "state.key == value" }` with `Then`/`Else` branches. Conditions compare `state.*` values with `==`, `!=`, `>`, `<`, `>=`, `<=`, and re-evaluate when state changes.
+3. Data binding via `state.*` property values (e.g. `value: state.volume`), driven from C with `IncenseStateSetInt/Float/Bool/String`.
+4. No arithmetic or string interpolation - conditions support comparisons only, and values substitute whole `state.*` / `embed_*` references.
+5. No user-defined widget types - reuse files with `@embed "shared.aroma"` instead.
+6. Declarative animations on any widget via `animation` (`fade`, `slide_x`, `slide_y`, `scale_x`, `scale_y`) plus `animation_duration`, `animation_start_val`, `animation_end_val`, `animation_easing`.
+7. Limited event types - `on_click`, `on_change`, `on_select`, `on_submit` (Textbox only).
+8. One `Window` root per file; hosts can mount several documents into one parent.
+9. Hard limits: 64 properties per widget, 64 items per `Option`/`Marker`/`Column` list, 128 child nodes per parent.
 
 ## Emscripten Build
 

@@ -4,55 +4,60 @@ Every UI element in AromaUI is an `AromaNode`. Nodes form a tree, and the framew
 ## The AromaNode Struct
 
 ```c
-typedef struct AromaNode {
+struct AromaNode {
+    AromaNodeType node_type;        // NODE_TYPE_ROOT, NODE_TYPE_CONTAINER, NODE_TYPE_WIDGET
     uint64_t node_id;
-    AromaNodeType node_type;        // ROOT, CONTAINER, WIDGET
     int32_t z_index;
-    AromaRect rect;                 // x, y, width, height
-    AromaLayout layout;             // layout hints
-    bool visible;
+    float opacity;                  // animated by AROMA_ANIM_FADE
+    AromaNode *parent_node;
+    AromaNode **child_nodes;        // growable array (see limits below)
+    void *node_widget_ptr;          // widget-specific data (geometry lives here)
+    AromaNodeDrawFn draw_cb;        // void (*)(AromaNode *node, size_t window_id)
+    void (*destroy_cb)(struct AromaNode *node);
+    uint64_t child_count;
+    uint64_t child_capacity;
     bool is_dirty;
     bool subtree_dirty;
-    AromaNode *parent_node;
-    AromaNode *child_nodes[64];     // max 64 children
-    int child_count;
-    void *node_widget_ptr;          // widget-specific data
-    AromaNodeDrawFn draw_cb;
-    // ... padding for alignment
-} AromaNode;
+    bool is_hidden;                 // set via aroma_node_set_hidden()
+    // ... plus AromaLayout layout hints
+};
 ```
 
 **Key limits:**
-- **64 children per node** - fixed-size array avoids dynamic allocation
+- **128 children per node** (`AROMA_MAX_CHILD_NODES`) - growable array avoids per-node over-allocation
 - **64 properties per widget** - enforced by the Incense loader
-- **1024 dirty nodes per frame** - global dirty list capacity
+- **1024 dirty nodes per frame** (`AROMA_MAX_DIRTY_NODES`) - global dirty list capacity
+
+Geometry (`x, y, width, height`) lives in each widget's own struct and is
+reached through `aroma_node_get_rect(node)` - there is no `rect` field on
+`AromaNode` itself. Visibility is `is_hidden`, toggled with
+`aroma_node_set_hidden()`.
 
 ## Node Lifecycle
 
 ### Creation
 
 ```c
-AromaNode *node = aroma_node_create(parent, NODE_TYPE_WIDGET, x, y, w, h);
+AromaNode *container = aroma_container_create(root, 0, 0, 800, 480);
 ```
 
-Nodes are allocated from a slab allocator. For embedded targets (ESP32), this avoids heap fragmentation. For desktop/web, standard `malloc` is used as a fallback.
+Build nodes with the widget factory functions in `include/aroma_ui.h`
+(containers, buttons, labels, …). Nodes are allocated from a slab allocator. For embedded targets (ESP32), this avoids heap fragmentation. For desktop/web, standard `malloc` is used as a fallback.
 
 ### Parenting
 
-```c
-aroma_node_add_child(parent, child);
-```
+Factories attach the new node to its parent automatically.
 
-- Child limit is enforced at 64.
+- Child limit is enforced at 128 (`AROMA_MAX_CHILD_NODES`).
 - `subtree_dirty` propagates up to the root on invalidation.
 
 ### Destruction
 
 ```c
-aroma_node_destroy(node);
+aroma_ui_destroy_window(window);
 ```
 
-Recursively destroys all children. Widgets can provide a `destroy_cb` to free internal state.
+Destroying a window recursively destroys its subtree. Widgets can provide a `destroy_cb` to free internal state.
 
 ## Dirty-Region Tracking
 
@@ -89,14 +94,11 @@ The framework exposes these lower-level functions for advanced use cases and int
 
 | Function | Role |
 |---|---|
-| `aroma_node_create()` | Allocates a node from the slab allocator |
-| `aroma_node_add_child()` | Links a child into the parent's fixed-size array |
-| `aroma_node_remove_child()` | Shifts siblings to maintain array density |
-| `aroma_node_destroy()` | Recursively frees a subtree |
 | `aroma_node_invalidate()` | Marks a node dirty and propagates `subtree_dirty` upward |
-| `aroma_node_set_layout_none()` | Absolute positioning |
+| `aroma_node_set_layout_mode()` | Selects NONE, FLEX, or GRID child arrangement |
 | `aroma_node_set_layout_fill()` | Match parent bounds |
 | `aroma_node_set_layout_center()` | Center within parent |
+| `aroma_node_set_layout_anchor()` | Pin to parent edges |
 | `aroma_node_set_z_index()` | Controls draw order |
 | `aroma_node_set_hidden()` | Toggles visibility without destruction |
 

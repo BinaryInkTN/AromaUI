@@ -302,6 +302,35 @@ static void em_main_loop(void)
 }
 #endif
 
+static void on_theme_select(int index, const char *option, void *user_data)
+{
+    (void)option;
+    (void)user_data;
+    /* Order must match the theming demo's Dropdown options. */
+    static AromaTheme (*makers[])(void) = {
+        aroma_theme_create_default,
+        aroma_theme_create_dark,
+        aroma_theme_create_high_contrast,
+        aroma_theme_create_material_blue,
+        aroma_theme_create_material_teal,
+        aroma_theme_create_material_green,
+        aroma_theme_create_material_orange,
+        aroma_theme_create_material_pink,
+        aroma_theme_create_material_black,
+        aroma_theme_create_high_contrast_dark,
+        aroma_theme_create_material_blue_dark,
+        aroma_theme_create_material_teal_dark,
+        aroma_theme_create_material_green_dark,
+        aroma_theme_create_material_orange_dark,
+        aroma_theme_create_material_pink_dark,
+    };
+    size_t count = sizeof(makers) / sizeof(makers[0]);
+    if (index < 0 || (size_t)index >= count)
+        return;
+    AromaTheme theme = makers[index]();
+    aroma_ui_set_theme(&theme);
+}
+
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
@@ -319,6 +348,7 @@ void aroma_sandbox_init(void)
     IncenseRegisterCallback("navigate_wifi_connect", INCENSE_CALLBACK_VOID_PTR, (void *)navigate_to_wifi_connect, NULL);
     IncenseRegisterCallback("wifi_connect", INCENSE_CALLBACK_VOID_PTR, (void *)on_wifi_connect, NULL);
     IncenseRegisterCallback("on_search_change", INCENSE_CALLBACK_NODE_STRING_PTR, (void *)on_search_change, NULL);
+    IncenseRegisterCallback("select_theme", INCENSE_CALLBACK_INT_STRING_PTR, (void *)on_theme_select, NULL);
 }
 
 #ifdef __EMSCRIPTEN__

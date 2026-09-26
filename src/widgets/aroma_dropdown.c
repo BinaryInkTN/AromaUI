@@ -106,6 +106,13 @@ height = aroma_android_dp_to_px(height);
     dd->hover_index = -1;
     dd->is_expanded = false;
     dd->is_hovered = false;
+    dd->scroll_offset = 0;
+    dd->max_visible_rows = AROMA_DROPDOWN_DEFAULT_MAX_ROWS;
+    dd->touch_id = -1;
+    dd->touch_start_y = 0;
+    dd->touch_last_y = 0;
+    dd->touch_accum_dy = 0;
+    dd->touch_moved = false;
     dd->on_selection_changed = NULL;
     dd->user_data = NULL;
     dd->bridge.node = NULL;
@@ -159,6 +166,62 @@ void aroma_dropdown_set_on_change(AromaNode* dropdown_node,
     }
 }
 
+/* Rows actually shown when expanded (capped by max_visible_rows). */
+static int __dropdown_visible_rows(AromaDropdown* dd)
+{
+    if (!dd || dd->option_count <= 0)
+        return 0;
+    if (dd->max_visible_rows > 0 && dd->option_count > dd->max_visible_rows)
+        return dd->max_visible_rows;
+    return dd->option_count;
+}
+
+static void __dropdown_clamp_scroll(AromaDropdown* dd)
+{
+    if (!dd)
+        return;
+    int max_off = dd->option_count - __dropdown_visible_rows(dd);
+    if (max_off < 0)
+        max_off = 0;
+    if (dd->scroll_offset > max_off)
+        dd->scroll_offset = max_off;
+    if (dd->scroll_offset < 0)
+        dd->scroll_offset = 0;
+}
+
+/* Scroll just enough to bring an option into view. */
+static void __dropdown_ensure_visible(AromaDropdown* dd, int index)
+{
+    if (!dd || index < 0)
+        return;
+    int visible = __dropdown_visible_rows(dd);
+    if (index < dd->scroll_offset)
+        dd->scroll_offset = index;
+    else if (index >= dd->scroll_offset + visible)
+        dd->scroll_offset = index - visible + 1;
+    __dropdown_clamp_scroll(dd);
+}
+
+/* Scroll by whole rows; returns true when the offset changed. */
+static bool __dropdown_scroll_by(AromaDropdown* dd, int rows)
+{
+    if (!dd || rows == 0)
+        return false;
+    int before = dd->scroll_offset;
+    dd->scroll_offset += rows;
+    __dropdown_clamp_scroll(dd);
+    return dd->scroll_offset != before;
+}
+
+void aroma_dropdown_set_max_visible_rows(AromaNode* dropdown_node, int rows) {
+    if (!dropdown_node) return;
+    AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
+    if (!dd) return;
+    dd->max_visible_rows = rows;
+    __dropdown_clamp_scroll(dd);
+    aroma_node_invalidate(dropdown_node);
+}
+
 static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node) return false;
     AromaDropdown* dd = (AromaDropdown*)event->target_node->node_widget_ptr;
@@ -186,13 +249,17 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
     bool in_list = false;
     int clicked_index = -1;
     if (dd->is_expanded && dd->option_count > 0) {
+        int visible = __dropdown_visible_rows(dd);
         int list_top = dd->rect.y + dd->rect.height;
-        int list_bottom = list_top + option_height * dd->option_count;
+        int list_bottom = list_top + option_height * visible;
         in_list = (adjusted_x >= dd->rect.x && adjusted_x <= dd->rect.x + dd->rect.width &&
                    adjusted_y >= list_top && adjusted_y <= list_bottom);
         if (in_list) {
-            clicked_index = (adjusted_y - list_top) / option_height;
-            if (clicked_index < 0 || clicked_index >= dd->option_count) clicked_index = -1;
+            clicked_index = dd->scroll_offset + (adjusted_y - list_top) / option_height;
+            if (clicked_index < dd->scroll_offset ||
+                clicked_index >= dd->scroll_offset + visible ||
+                clicked_index < 0 || clicked_index >= dd->option_count)
+                clicked_index = -1;
         }
     }
 
@@ -213,11 +280,27 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
         return hover;
     }
 
+    if (event->event_type == EVENT_TYPE_MOUSE_SCROLL) {
+        if (dd->is_expanded && dd->option_count > __dropdown_visible_rows(dd) &&
+            (in_main || in_list)) {
+            /* Wheel down reveals later options, wheel up earlier ones. */
+            int dir = (event->data.mouse.scroll_y > 0.0f) ? 1 : -1;
+            if (__dropdown_scroll_by(dd, dir)) {
+                aroma_node_invalidate(event->target_node);
+                if (user_data) __dropdown_request_redraw(user_data);
+            }
+            return true;
+        }
+        return false;
+    }
+
     if (event->event_type == EVENT_TYPE_MOUSE_CLICK) {
         bool consumed = false;
         if (in_main) {
             dd->is_expanded = !dd->is_expanded;
-            if (!dd->is_expanded) {
+            if (dd->is_expanded) {
+                __dropdown_ensure_visible(dd, dd->selected_index);
+            } else {
                 dd->hover_index = -1;
                 __dropdown_unregister_overlay(event->target_node);
             }
@@ -262,12 +345,117 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
     return false;
 }
 
+/* Touch support: tap opens/selects, vertical drag scrolls a capped list. */
+static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
+    if (!event || !event->target_node) return false;
+    AromaDropdown* dd = (AromaDropdown*)event->target_node->node_widget_ptr;
+    if (!dd) return false;
+
+    int tx = event->data.touch.x;
+    int ty = event->data.touch.y;
+    int option_height = (dd->rect.height > 0) ? dd->rect.height : 1;
+    bool in_main = (tx >= dd->rect.x && tx <= dd->rect.x + dd->rect.width &&
+                    ty >= dd->rect.y && ty <= dd->rect.y + dd->rect.height);
+    int visible = __dropdown_visible_rows(dd);
+    int list_top = dd->rect.y + dd->rect.height;
+    int list_bottom = list_top + option_height * visible;
+    bool in_list = dd->is_expanded && visible > 0 &&
+        (tx >= dd->rect.x && tx <= dd->rect.x + dd->rect.width &&
+         ty >= list_top && ty <= list_bottom);
+
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN) {
+        if (in_main) {
+            dd->is_expanded = !dd->is_expanded;
+            if (dd->is_expanded) {
+                __dropdown_ensure_visible(dd, dd->selected_index);
+            } else {
+                dd->hover_index = -1;
+                __dropdown_unregister_overlay(event->target_node);
+            }
+            dd->touch_id = -1;
+            aroma_node_invalidate(event->target_node);
+            if (user_data) __dropdown_request_redraw(user_data);
+            return true;
+        }
+        if (in_list) {
+            dd->touch_id = event->data.touch.id;
+            dd->touch_start_y = ty;
+            dd->touch_last_y = ty;
+            dd->touch_accum_dy = 0;
+            dd->touch_moved = false;
+            return true;
+        }
+        return false;
+    }
+
+    if (event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        if (!dd->is_expanded || event->data.touch.id != dd->touch_id)
+            return false;
+        dd->touch_accum_dy += ty - dd->touch_last_y;
+        dd->touch_last_y = ty;
+        int rows = dd->touch_accum_dy / option_height;
+        if (rows != 0) {
+            /* Finger follows content: drag down reveals earlier options. */
+            if (__dropdown_scroll_by(dd, -rows)) {
+                dd->touch_moved = true;
+                aroma_node_invalidate(event->target_node);
+                if (user_data) __dropdown_request_redraw(user_data);
+            }
+            dd->touch_accum_dy -= rows * option_height;
+        } else if (dd->touch_accum_dy < -8 || dd->touch_accum_dy > 8) {
+            dd->touch_moved = true;
+        }
+        return true;
+    }
+
+    if (event->event_type == EVENT_TYPE_TOUCH_UP) {
+        if (event->data.touch.id != dd->touch_id && !in_main && !in_list) {
+            if (dd->is_expanded) {
+                dd->is_expanded = false;
+                dd->hover_index = -1;
+                dd->touch_id = -1;
+                __dropdown_unregister_overlay(event->target_node);
+                aroma_node_invalidate(event->target_node);
+                if (user_data) __dropdown_request_redraw(user_data);
+                return true;
+            }
+            return false;
+        }
+        dd->touch_id = -1;
+        if (!dd->is_expanded || dd->touch_moved)
+            return in_main || in_list;
+        if (in_list) {
+            int index = dd->scroll_offset + (ty - list_top) / option_height;
+            if (index >= dd->scroll_offset && index < dd->scroll_offset + visible &&
+                index >= 0 && index < dd->option_count) {
+                dd->selected_index = index;
+                dd->is_expanded = false;
+                dd->hover_index = -1;
+                if (dd->on_selection_changed) {
+                    dd->on_selection_changed(index, dd->options[index], dd->user_data);
+                }
+                __dropdown_unregister_overlay(event->target_node);
+                aroma_node_invalidate(event->target_node);
+                if (user_data) __dropdown_request_redraw(user_data);
+                return true;
+            }
+        }
+        return in_main || in_list;
+    }
+
+    return false;
+}
+
 void aroma_dropdown_setup_events(AromaNode* dropdown_node, void (*on_redraw_callback)(void*), void* user_data) {
     if (!dropdown_node) return;
     aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_MOUSE_MOVE, __dropdown_default_mouse_handler, (void*)on_redraw_callback, 50);
     aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_MOUSE_CLICK, __dropdown_default_mouse_handler, (void*)on_redraw_callback, 50);
+    aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_MOUSE_SCROLL, __dropdown_default_mouse_handler, (void*)on_redraw_callback, 50);
     aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_MOUSE_EXIT, __dropdown_default_mouse_handler, (void*)on_redraw_callback, 50);
     aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_MOUSE_ENTER, __dropdown_default_mouse_handler, (void*)on_redraw_callback, 50);
+    aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_TOUCH_DOWN, __dropdown_touch_handler, (void*)on_redraw_callback, 50);
+    aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_TOUCH_MOVE, __dropdown_touch_handler, (void*)on_redraw_callback, 50);
+    aroma_event_subscribe(dropdown_node->node_id, EVENT_TYPE_TOUCH_UP, __dropdown_touch_handler, (void*)on_redraw_callback, 50);
 }
 
 void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
@@ -300,7 +488,7 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
         int option_height = dd->rect.height;
         int list_x = dd->rect.x;
         int list_y = dd->rect.y + dd->rect.height;
-        int list_height = option_height * dd->option_count;
+        int list_height = option_height * __dropdown_visible_rows(dd);
         __dropdown_register_overlay(dropdown_node, window_id, list_x, list_y, dd->rect.width, list_height);
     } else {
         __dropdown_unregister_overlay(dropdown_node);
@@ -334,10 +522,18 @@ void aroma_dropdown_render_overlays(size_t window_id) {
         int list_y = entry.y;
         int list_width = entry.width;
         int list_height = entry.height;
+        int visible = __dropdown_visible_rows(dd);
+        int first = dd->scroll_offset;
+        if (first < 0) first = 0;
+        if (first + visible > dd->option_count)
+            first = dd->option_count - visible;
+        if (first < 0) first = 0;
         gfx->fill_rectangle(window_id, list_x, list_y, list_width, list_height, dd->list_bg_color, true, 0.0f);
         gfx->draw_hollow_rectangle(window_id, list_x, list_y, list_width, list_height, 0x222222, 1.0f, true, 0.0f);
-        for (int opt = 0; opt < dd->option_count; ++opt) {
-            int y = list_y + opt * option_height;
+        for (int row = 0; row < visible; ++row) {
+            int opt = first + row;
+            if (opt < 0 || opt >= dd->option_count) continue;
+            int y = list_y + row * option_height;
             uint32_t row_color = dd->list_bg_color;
             if (opt == dd->selected_index) row_color = dd->selected_bg_color;
             else if (opt == dd->hover_index) row_color = dd->hover_bg_color;
@@ -351,6 +547,19 @@ void aroma_dropdown_render_overlays(size_t window_id) {
                 int baseline = y + (option_height - line_height) / 2;
                 gfx->render_text(window_id, dd->font, dd->options[opt], text_x, baseline, dd->text_color, 1.0f);
             }
+        }
+        if (dd->option_count > visible && visible > 0) {
+            int sb_w = 6;
+            int track_x = list_x + list_width - sb_w;
+            gfx->fill_rectangle(window_id, track_x, list_y, sb_w, list_height, 0xEEEEEE, true, 3.0f);
+            int thumb_h = (list_height * visible) / dd->option_count;
+            if (thumb_h < 16) thumb_h = 16;
+            if (thumb_h > list_height) thumb_h = list_height;
+            int range = dd->option_count - visible;
+            int thumb_y = list_y;
+            if (range > 0)
+                thumb_y += ((list_height - thumb_h) * first) / range;
+            gfx->fill_rectangle(window_id, track_x, thumb_y, sb_w, thumb_h, 0xBBBBBB, true, 3.0f);
         }
         ++i;
     }

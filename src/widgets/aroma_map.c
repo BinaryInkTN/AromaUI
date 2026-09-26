@@ -1982,6 +1982,163 @@ static void *osrm_loading_worker(void *arg)
     return NULL;
 }
 
+#ifdef __EMSCRIPTEN__
+static void __map_em_tile_settle(struct AromaMapExtra *extra, int z, int x, int y,
+                                 bool is_dark, unsigned int texture_id)
+{
+    if (!extra)
+        return;
+    for (int i = 0; i < MAX_TILES_MEM; i++)
+    {
+        if (extra->tiles[i].valid && extra->tiles[i].z == z &&
+            extra->tiles[i].x == x && extra->tiles[i].y == y &&
+            extra->tiles[i].is_dark == is_dark)
+        {
+            extra->tiles[i].is_loading = false;
+            if (texture_id != 0)
+            {
+                extra->tiles[i].texture_id = texture_id;
+                extra->tiles[i].is_ready = true;
+            }
+            break;
+        }
+    }
+    if (extra->node_ptr)
+        aroma_node_invalidate(extra->node_ptr);
+}
+
+static void __map_tile_fetch_success(emscripten_fetch_t *fetch)
+{
+    EmscriptenTileRequest *req = (EmscriptenTileRequest *)fetch->userData;
+    unsigned int texture_id = 0;
+    if (req && fetch->data && fetch->numBytes > 0)
+    {
+        AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+        if (gfx && gfx->load_image_from_memory)
+        {
+            texture_id = gfx->load_image_from_memory(
+                (unsigned char *)fetch->data, fetch->numBytes);
+        }
+        __map_em_tile_settle(req->extra, req->z, req->x, req->y,
+                             req->is_dark, texture_id);
+    }
+    else if (req)
+    {
+        __map_em_tile_settle(req->extra, req->z, req->x, req->y,
+                             req->is_dark, 0);
+    }
+    if (req)
+        free(req);
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_tile_fetch_error(emscripten_fetch_t *fetch)
+{
+    EmscriptenTileRequest *req = (EmscriptenTileRequest *)fetch->userData;
+    if (req)
+    {
+        __map_em_tile_settle(req->extra, req->z, req->x, req->y,
+                             req->is_dark, 0);
+        free(req);
+    }
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_geocode_fetch_success(emscripten_fetch_t *fetch)
+{
+    EmscriptenGeocodeRequest *req = (EmscriptenGeocodeRequest *)fetch->userData;
+    GeocodeResult results[MAX_GEOCODE_RESULTS];
+    memset(results, 0, sizeof(results));
+    int count = 0;
+    if (fetch->data && fetch->numBytes > 0)
+    {
+        char *json = (char *)malloc(fetch->numBytes + 1);
+        if (json)
+        {
+            memcpy(json, fetch->data, fetch->numBytes);
+            json[fetch->numBytes] = '\0';
+            parse_photon_json(json, results, &count);
+            free(json);
+        }
+    }
+    if (req)
+    {
+        if (req->callback)
+            req->callback(results, count, req->user_data);
+        free(req);
+    }
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_geocode_fetch_error(emscripten_fetch_t *fetch)
+{
+    EmscriptenGeocodeRequest *req = (EmscriptenGeocodeRequest *)fetch->userData;
+    if (req)
+    {
+        if (req->callback)
+            req->callback(NULL, 0, req->user_data);
+        free(req);
+    }
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_route_fetch_success(emscripten_fetch_t *fetch)
+{
+    EmscriptenRouteRequest *req = (EmscriptenRouteRequest *)fetch->userData;
+    if (req && req->extra)
+    {
+        if (fetch->data && fetch->numBytes > 0)
+        {
+            char *body = (char *)malloc(fetch->numBytes + 1);
+            if (body)
+            {
+                memcpy(body, fetch->data, fetch->numBytes);
+                body[fetch->numBytes] = '\0';
+                if (!__map_apply_route_response(req->extra, req->node, body))
+                {
+                    MAP_ROUTE_MUTEX_LOCK(req->extra);
+                    req->extra->route_loading = false;
+                    req->extra->route_active = false;
+                    MAP_ROUTE_MUTEX_UNLOCK(req->extra);
+                }
+                free(body);
+            }
+            else
+            {
+                MAP_ROUTE_MUTEX_LOCK(req->extra);
+                req->extra->route_loading = false;
+                req->extra->route_active = false;
+                MAP_ROUTE_MUTEX_UNLOCK(req->extra);
+            }
+        }
+        else
+        {
+            MAP_ROUTE_MUTEX_LOCK(req->extra);
+            req->extra->route_loading = false;
+            req->extra->route_active = false;
+            MAP_ROUTE_MUTEX_UNLOCK(req->extra);
+        }
+    }
+    if (req)
+        free(req);
+    emscripten_fetch_close(fetch);
+}
+
+static void __map_route_fetch_error(emscripten_fetch_t *fetch)
+{
+    EmscriptenRouteRequest *req = (EmscriptenRouteRequest *)fetch->userData;
+    if (req && req->extra)
+    {
+        MAP_ROUTE_MUTEX_LOCK(req->extra);
+        req->extra->route_loading = false;
+        req->extra->route_active = false;
+        MAP_ROUTE_MUTEX_UNLOCK(req->extra);
+        free(req);
+    }
+    emscripten_fetch_close(fetch);
+}
+#endif
+
 static bool request_tile_download(int z, int x, int y, bool is_dark, const char *filepath, uint64_t node_id, struct AromaMapExtra *extra)
 {
 #ifdef __EMSCRIPTEN__
@@ -3197,20 +3354,22 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
                         extra->tiles[i].is_loading = false;
                         extra->tiles[i].is_ready = true;
 
+#ifndef __EMSCRIPTEN__
                         if (req->image_data)
                         {
-#ifndef __EMSCRIPTEN__
                             AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
                             if (gfx && gfx->load_image_from_rgba)
                             {
                                 extra->tiles[i].texture_id = gfx->load_image_from_rgba(req->image_data, req->img_w, req->img_h);
                             }
-#endif
                         }
                         else
                         {
                             extra->tiles[i].texture_id = 0;
                         }
+#else
+                        extra->tiles[i].texture_id = 0;
+#endif
                         break;
                     }
                 }

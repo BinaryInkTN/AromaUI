@@ -20,9 +20,9 @@ The demo utilizes a fixed-size canvas of 380x380 pixels [examples/smartwatch_exa
 
 To handle input on the web, AromaUI provides a specialized bridge between the browser's DOM events and the C core.
 
-- **`aroma_emscripten_dispatch_mouse`**: A JS-exported function that translates browser mouse/touch coordinates into the framework's internal event system [docs/website/smartwatch_example.js58](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/smartwatch_example.js#L58-L58)
-- **WASM Heap Management**: The project is compiled with `ALLOW_MEMORY_GROWTH=1` and an initial memory of 128MB to accommodate the font caches and high-resolution assets [examples/map_example/CMakeLists.txt43-44](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt#L43-L44)
-- **DPR Scaling**: The function `aroma_emscripten_device_pixel_ratio`[src/core/aroma_ui_impl.c85-88](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L85-L88) queries the browser's `window.devicePixelRatio` to ensure crisp rendering on Retina/High-DPI displays.
+- **`aroma_emscripten_dispatch_mouse`**: A JS-exported function that translates browser mouse/touch coordinates into the framework's internal event system [src/backends/platforms/aroma_platform_emscripten.c151](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_emscripten.c#L151-L151)
+- **WASM Heap Management**: The project is compiled with `ALLOW_MEMORY_GROWTH=1` and an initial memory of 128MB to accommodate the font caches and high-resolution assets [examples/incense_sandbox/CMakeLists.txt37-38](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/incense_sandbox/CMakeLists.txt#L37-L38)
+- **DPR Scaling**: The emscripten backend queries the browser's `window.devicePixelRatio` to ensure crisp rendering on Retina/High-DPI displays [src/backends/platforms/aroma_platform_emscripten.c36-37](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_emscripten.c#L36-L37)
 
 ### Smartwatch Component Architecture
 
@@ -50,32 +50,32 @@ flowchart LR
     UI_IMPL -->|"DrawList"| DOM
 ```
 
-**Sources:**[examples/smartwatch_example/main.c21-28](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/main.c#L21-L28)[src/core/aroma_ui_impl.c84-88](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L84-L88)[docs/website/smartwatch_example.js58](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/docs/website/smartwatch_example.js#L58-L58)[examples/map_example/CMakeLists.txt34-45](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt#L34-L45)
+**Sources:**[examples/smartwatch_example/main.c21-28](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/main.c#L21-L28)[src/backends/platforms/aroma_platform_emscripten.c36-37](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_emscripten.c#L36-L37)[examples/incense_sandbox/CMakeLists.txt37-38](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/incense_sandbox/CMakeLists.txt#L37-L38)
 
 ---
 
-## Headless Rendering (GStreamer Example)
+## Headless Rendering (Offscreen EGL)
 
-The GStreamer example demonstrates how to use AromaUI as a graphics overlay engine for video pipelines. This is achieved by rendering the UI into a shared memory buffer without an active windowing system (headless).
+AromaUI can render into a shared memory buffer without an active windowing system (headless), which suits graphics overlay engines for video pipelines. Enable it with `aroma_ui_set_offscreen_mode(true)` and `aroma_ui_set_use_surfaceless(true)` [include/aroma_ui.h378-388](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L378-L388).
 
 ### Surfaceless EGL
 
-The example uses the `AROMA_USE_EGL_SURFACELESS` flag [examples/gstreamer_example/ev_cluster.c1](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c#L1-L1) to initialize the GLFW/GLES3 backend without a native window.
+The GLFW backend initializes an EGL context without a native window (`initialize_egl_surfaceless`) [src/backends/platforms/aroma_platform_glfw.c60](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L60-L60).
 
-- **Initialization**: The `initialize_egl_surfaceless` function [src/backends/platforms/aroma_platform_glfw.c63-182](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L63-L182) creates an EGL context using `EGL_PBUFFER_BIT` and the `EGL_KHR_surfaceless_context` extension.
-- **Pixel Readback**: Instead of `swap_buffers`, the system can use `aroma_ui_read_pixels` (implemented via `glReadPixels`) to extract the frame into a Shared Memory (SHM) segment [examples/gstreamer_example/ev_cluster.c15](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c#L15-L15)
+- **Initialization**: Surfaceless mode creates an EGL context using `EGL_PBUFFER_BIT` and the `EGL_KHR_surfaceless_context` extension.
+- **Pixel Readback**: Instead of `swap_buffers`, call `aroma_ui_read_pixels(window, buffer, width, height)` (implemented via `glReadPixels`) to extract the frame into a Shared Memory (SHM) segment.
 
 ### Data Flow: Headless Overlay
 
 ```mermaid
 flowchart LR
-    subgraph subGraph1 ["GStreamer Pipeline"]
+    subgraph subGraph1 ["Video Pipeline"]
         SINK["shmsrc"]
         CAPS["video/x-raw, format=RGBA"]
         ENC["x264enc / vaapih264enc"]
     end
     subgraph subGraph0 ["AromaUI Process"]
-        UI["UI Logic (ev_cluster.c)"]
+        UI["UI Logic"]
         ABI["AromaBackendABI"]
         EGL["Surfaceless EGL Context"]
         SHM_OUT["/aroma_frame_shm"]
@@ -88,7 +88,7 @@ flowchart LR
     CAPS --> ENC
 ```
 
-**Sources:**[examples/gstreamer_example/ev_cluster.c1-18](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/gstreamer_example/ev_cluster.c#L1-L18)[src/backends/platforms/aroma_platform_glfw.c63-172](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L63-L172)
+**Sources:**[include/aroma_ui.h378-388](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L378-L388)[src/backends/platforms/aroma_platform_glfw.c60-61](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/platforms/aroma_platform_glfw.c#L60-L61)
 
 ---
 
@@ -98,28 +98,28 @@ The Map example demonstrates the `AromaMap` widget, which provides a high-perfor
 
 ### Technical Implementation
 
-- **Tile Fetching**: Uses `libcurl` for native platforms and `emscripten_fetch` for the web [examples/map_example/CMakeLists.txt56-67](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt#L56-L67)
+- **Tile Fetching**: Uses `libcurl` for native platforms and `emscripten_fetch` for the web (see `request_tile_download` in [src/widgets/aroma_map.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_map.c))
 - **Projection**: Implements Spherical Mercator (EPSG:3857) to map geographic coordinates to pixel space.
 - **Integration**: Created via the factory function `aroma_ui_map(parent, x, y, w, h)`[include/aroma_ui.h153-158](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L153-L158)
-- **Build Configuration**: Requires Vulkan or GLES3 and specifically links `curl` and `pthread` for asynchronous tile loading [examples/map_example/CMakeLists.txt51-69](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt#L51-L69)
+- **Build Configuration**: Requires GLES3 and links `curl` and `pthread` for asynchronous tile loading (see the `aroma` target in [src/CMakeLists.txt](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/CMakeLists.txt))
 
-**Sources:**[include/aroma_ui.h153-158](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L153-L158)[examples/map_example/CMakeLists.txt1-71](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/map_example/CMakeLists.txt#L1-L71)
+**Sources:**[include/aroma_ui.h153-158](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L153-L158)[src/widgets/aroma_map.c](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_map.c)
 
 ---
 
-## Buzzer Quiz-Game App
+## Game-Style UI Pattern
 
-The Buzzer project serves as a standalone example of an AromaUI consumer. It showcases:
+Game-show style interfaces (large icon buttons, cards, animated scoreboards) compose from two primitives. This pattern is used across the example applications:
 
 1. **Custom Styling**: Heavy use of `aroma_iconbutton_create`[src/widgets/aroma_iconbutton.c89](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_iconbutton.c#L89-L89) and `aroma_card_create` to build a game-show aesthetic.
-2. **State Synchronization**: Uses the event system to synchronize "buzzer" presses across multiple simulated clients.
-3. **Animation Transitions**: Utilizes `aroma_animation_start`[examples/smartwatch_example/main.c75](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/main.c#L75-L75) for sliding scoreboards and pulsing feedback icons.
+2. **State Synchronization**: Uses the event system to synchronize presses across UI regions.
+3. **Animation Transitions**: Utilizes `aroma_animation_start`[examples/smartwatch_example/main.c75](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/main.c#L75-L75) for sliding panels and pulsing feedback icons.
 
 ### Key Widget: IconButton
 
-The Buzzer app relies on the `AromaIconButton` for its main interface [src/widgets/aroma_iconbutton.c13](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_iconbutton.c#L13-L13)
+Game-style touch targets rely on the `AromaIconButton` for the main interface [src/widgets/aroma_iconbutton.c13](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_iconbutton.c#L13-L13)
 
-- **Variants**: Supports `ICON_BUTTON_FILLED`, `ICON_BUTTON_TONAL`, and `ICON_BUTTON_OUTLINED`[src/widgets/aroma_iconbutton.c102-107](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_iconbutton.c#L102-L107)
+- **Variants**: Supports `ICON_BUTTON_STANDARD`, `ICON_BUTTON_FILLED`, `ICON_BUTTON_TONAL`, and `ICON_BUTTON_OUTLINED`[include/widgets/aroma_iconbutton.h13-16](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_iconbutton.h#L13-L16)
 - **Interactivity**: Implements internal hit-testing and state tracking (`is_hovered`, `is_pressed`) to trigger visual updates via `aroma_node_invalidate`[src/widgets/aroma_iconbutton.c46-68](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_iconbutton.c#L46-L68)
 
 **Sources:**[src/widgets/aroma_iconbutton.c13-138](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_iconbutton.c#L13-L138)[examples/smartwatch_example/main.c71-108](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/smartwatch_example/main.c#L71-L108)

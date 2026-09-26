@@ -27,15 +27,16 @@ When a pointer event arrives, `aroma_event_hit_test()` recursively searches the 
 Register callbacks on any node:
 
 ```c
-aroma_event_subscribe(node_id, EVENT_TYPE_MOUSE_CLICK, handler, user_data);
+aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, handler, user_data, 100);
 ```
 
 | Parameter | Description |
 |---|---|
-| `node_id` | Target node (returned by `aroma_node_create`) |
+| `node_id` | Target node id (`node->node_id`) |
 | `event_type` | `EVENT_TYPE_MOUSE_CLICK`, `EVENT_TYPE_TOUCH_DOWN`, etc. |
-| `handler` | `bool (*)(AromaNode *target, AromaEvent *event, void *user_data)` |
+| `handler` | `bool (*)(AromaEvent *event, void *user_data)` |
 | `user_data` | Optional context passed to the handler |
+| `priority` | Higher runs first (e.g. dialogs use `100`) |
 
 Return `true` from the handler to consume the event and stop bubbling.
 
@@ -44,8 +45,8 @@ Return `true` from the handler to consume the event and stop bubbling.
 Scrollable containers (like `AromaContainer`) intercept touch events to implement kinetic scrolling:
 
 1. `TOUCH_DOWN` - identifies scrollable ancestor
-2. `TOUCH_MOVE` - tracks delta; if movement exceeds 8px threshold, intercepts
-3. Once intercepted, child nodes receive `TOUCH_CANCEL` and the container handles scrolling
+2. `TOUCH_MOVE` - tracks delta; if movement exceeds the 8px slop threshold (`SCROLL_SLOP`), the container intercepts
+3. Once intercepted, the container handles scrolling and children stop receiving the gesture
 
 ## Memory: Static Event Pool
 

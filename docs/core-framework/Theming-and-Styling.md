@@ -14,11 +14,11 @@ theme.colors.primary = 0xBB86FC;
 
 // Adjust spacing
 theme.spacing.padding = 16;
-theme.spacing.border_radius = 8.0f;
+theme.spacing.border_radius = 8;
 
 // Apply to a specific widget style
 AromaStyle style = aroma_style_create_from_theme(&theme);
-aroma_button_set_style(btn, &style);
+aroma_button_apply_style(btn, &style);
 ```
 
 ## Theme Structure
@@ -38,7 +38,7 @@ aroma_button_set_style(btn, &style);
 | `aroma_theme_create_default()` | Standard light theme |
 | `aroma_theme_create_dark()` | Standard dark theme |
 | `aroma_theme_create_material_preset(preset)` | Material light theme (6 color variants) |
-| `aroma_theme_create_material_preset_dark(preset)` | Material dark theme |
+| `aroma_theme_create_material_blue_dark()` (and `_teal/green/orange/pink_dark`) | Material dark theme variants |
 
 Material presets: `PURPLE`, `BLUE`, `TEAL`, `GREEN`, `ORANGE`, `PINK`
 
@@ -110,7 +110,9 @@ Widgets follow the live global theme on every draw. Override per-widget appearan
 
 ## Live demo
 
-Toggle the docs light/dark switch and watch this preview follow it:
+Toggle the docs light/dark switch and watch this preview follow it. The
+dropdown at the top lists every built-in theme - picking one re-themes the
+whole preview instantly:
 
 ```incense-demo theming
 ```

@@ -4,11 +4,11 @@ Visual and informational widgets: labels, images, cards, progress indicators, sn
 ## Labels and Icons
 
 ```c
-AromaNode *label = aroma_ui_label(root, "Hello World", 20, 20, LABEL_STYLE_LARGE, font);
-AromaNode *icon = aroma_ui_icon(root, AROMA_ICON_HOME, 100, 20, 32, 0xFF0000);
+AromaNode *label = aroma_ui_label(root, "Hello World", 20, 20, LABEL_STYLE_LABEL_LARGE, font);
+AromaNode *icon = aroma_ui_icon(root, AROMA_ICON_HOME, 100, 20, 32, 0xFF0000, font);
 ```
 
-- `LABEL_STYLE_LARGE`, `LABEL_STYLE_MEDIUM`, `LABEL_STYLE_SMALL`
+- `LABEL_STYLE_LABEL_LARGE`, `LABEL_STYLE_LABEL_MEDIUM`, `LABEL_STYLE_LABEL_SMALL`
 - Icons render a single glyph from the icon font
 
 ## Images and GIFs
@@ -28,8 +28,8 @@ AromaNode *card = aroma_ui_card(root, 20, 20, 300, 100, CARD_TYPE_ELEVATED);
 
 | Type | Description |
 |---|---|
+| `CARD_TYPE_ELEVATED` | Raised card with shadow |
 | `CARD_TYPE_FILLED` | Solid background blended with primary color |
-| `CARD_TYPE_TONAL` | Subtle variant of filled |
 | `CARD_TYPE_GLASS` | Frosted glass: blurs the backdrop in place, then draws a translucent tint with glossy edge |
 | `CARD_TYPE_OUTLINED` | Hollow with border |
 
@@ -60,8 +60,9 @@ aroma_card_set_backdrop_blur(glass, 20.0f); /* retune, 0 disables */
 ## Progress Indicators
 
 ```c
-AromaNode *bar = aroma_ui_progressbar(root, 20, 200, 260, 4, 0.75f);
-AromaNode *gauge = aroma_ui_gauge(root, 300, 20, 120, 120, 0.6f);
+AromaNode *bar = aroma_ui_progressbar(root, 20, 200, 260, 4, PROGRESS_TYPE_DETERMINATE, 0.75f);
+AromaNode *gauge = aroma_ui_gauge(root, 300, 20, 120, 120);
+aroma_gauge_set_value(gauge, 0.6f);
 ```
 
 - ProgressBar: linear, 0.0 to 1.0 value
@@ -70,7 +71,9 @@ AromaNode *gauge = aroma_ui_gauge(root, 300, 20, 120, 120, 0.6f);
 ## Snackbar
 
 ```c
-aroma_snackbar_show(window, "Item deleted", 3000, "UNDO", on_undo_callback);
+AromaNode *bar = aroma_snackbar_create(root, "Item deleted", 3000);
+aroma_snackbar_set_action(bar, "UNDO", on_undo_callback, NULL);
+aroma_snackbar_show(bar);
 ```
 
 Snackbars appear at the bottom with an optional action button. They auto-dismiss after the duration (ms).
@@ -78,12 +81,27 @@ Snackbars appear at the bottom with an optional action button. They auto-dismiss
 ## Dialog
 
 ```c
-AromaNode *dialog = aroma_ui_dialog(root, "Confirm", "Delete this item?", 320, 180);
-aroma_dialog_add_action(dialog, "Cancel", DIALOG_ACTION_CANCEL, on_cancel);
-aroma_dialog_add_action(dialog, "Delete", DIALOG_ACTION_DESTRUCTIVE, on_delete);
+AromaNode *dialog = aroma_ui_dialog(root, "Confirm", "Delete this item?",
+                                    320, 180, DIALOG_TYPE_BASIC, font);
+aroma_dialog_add_action(dialog, "Cancel", on_cancel, NULL);
+aroma_dialog_add_action(dialog, "Delete", on_delete, NULL);
+aroma_dialog_show(dialog);
 ```
 
 Dialogs are modal overlays with up to 3 action buttons.
+
+In Incense, declare actions as `DialogAction` children (bare `Action` works too):
+
+```aroma
+Dialog {
+    title: "Delete item?"
+    message: "This cannot be undone."
+    width: 280
+    height: 200
+    DialogAction { text: "Cancel" }
+    DialogAction { text: "Delete" }
+}
+```
 
 ```incense-demo dialog
 ```

@@ -72,14 +72,14 @@ AromaNode *aroma_debug_overlay_create(
 
 ## Usage in Apps
 
-In the Car Infotainment example, the debug overlay is toggled via the Easter Egg developer mode. When activated, `build_easter_egg_ui()` injects the overlay into the scene graph, and the user can drag it to any position on screen [examples/car_infotainment/easter_egg.c1-50](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/easter_egg.c#L1-L50).
+In the Car Infotainment example, the debug overlay is toggled via the Easter Egg developer mode. When activated, `build_easter_egg_ui()` injects the overlay into the scene graph, and the user can drag it to any position on screen [examples/car_infotainment/vehicle/easter_egg.c1-50](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/vehicle/easter_egg.c#L1-L50).
 
 ```c
 state.debug_overlay = aroma_ui_debug_overlay(
     state.root_node,
-    10, 10, 280
+    10, 10, 280,
+    state.font_small
 );
-aroma_debug_overlay_set_font(state.debug_overlay, state.font_small);
 ```
 
-**Sources:**[examples/car_infotainment/app_state.h136-137](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/app_state.h#L136-L137)[include/widgets/aroma_debug_overlay.h14-17](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_debug_overlay.h#L14-L17)
+**Sources:**[examples/car_infotainment/core/app_state.h136-137](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/examples/car_infotainment/core/app_state.h#L136-L137)[include/widgets/aroma_debug_overlay.h14-17](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_debug_overlay.h#L14-L17)

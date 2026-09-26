@@ -23,9 +23,11 @@ or the open list will never appear:
 while (aroma_ui_is_running()) {
     aroma_ui_process_events();
     aroma_ui_render(window);
-    aroma_dropdown_render_overlays(window->window_id);
+    aroma_dropdown_render_overlays(window_id);
 }
 ```
+
+`window_id` is the `size_t` id of the rendered window (not a struct field).
 
 ## Widget Structure
 
@@ -85,6 +87,11 @@ AromaNode *aroma_dropdown_create(
 | `aroma_dropdown_set_on_change` | Sets the selection change callback. |
 | `aroma_dropdown_set_font` | Sets the font for option text. |
 | `aroma_dropdown_set_text_color` | Overrides the text color. |
+| `aroma_dropdown_set_max_visible_rows` | Caps the expanded list height in rows (default 6, `<= 0` shows all). |
+
+The expanded list shows at most `max_visible_rows` at once with a scrollbar.
+Longer lists scroll with the mouse wheel or touch drag; opening the list
+scrolls the current selection into view.
 
 ### Helper Wrapper
 
@@ -100,8 +107,8 @@ Colors default to the global theme. The dropdown renders a rounded rectangle bac
 | --- | --- |
 | Background | `theme.colors.surface` |
 | Text | `theme.colors.text_primary` |
-| Hover highlight | `theme.colors.surface_variant` |
-| Border | `theme.colors.outline` |
+| Hover highlight | `theme.colors.primary_light` |
+| Border | `theme.colors.border` |
 
 **Sources:**[src/widgets/aroma_dropdown.c60-120](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_dropdown.c#L60-L120)
 

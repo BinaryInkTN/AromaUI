@@ -9,9 +9,9 @@ Each node has an `AromaLayout` struct that determines how it positions itself re
 
 | Mode | API | Description |
 |---|---|---|
-| None | `aroma_node_set_layout_none(node, x, y, w, h)` | Absolute positioning |
+| None | _(default)_ explicit `x, y, width, height` in factory calls | Absolute positioning |
 | Fill Parent | `aroma_node_set_layout_fill(node)` | Match parent bounds exactly |
-| Center | `aroma_node_set_layout_center(node, w, h)` | Center within parent |
+| Center | `aroma_node_set_layout_center(node)` | Center within parent |
 | Anchor | `aroma_node_set_layout_anchor(node, left, top, right, bottom)` | Pin to edges; supports stretching |
 
 ### Container Layout (how a node arranges its children)
@@ -44,8 +44,8 @@ aroma_node_set_align_items(container, AROMA_ALIGN_STRETCH);
 
 ```c
 aroma_node_set_layout_mode(container, AROMA_LAYOUT_MODE_GRID);
-aroma_container_set_grid_cols(container, 3);
-aroma_container_set_grid_rows(container, 2);
+aroma_node_set_grid_cols(container, 3);
+aroma_node_set_grid_rows(container, 2);
 ```
 
 Children are placed into equal-sized cells automatically.
@@ -69,7 +69,7 @@ The container tracks `scroll_fx` / `scroll_fy` offsets, which are subtracted fro
 
 ```mermaid
 flowchart TD
-    Start["aroma_layout_update()"] --> Dirty{"Node dirty?"}
+    Start["aroma_node_update_layout()"] --> Dirty{"Node dirty?"}
     Dirty -->|No| Skip["Skip subtree"]
     Dirty -->|Yes| Self["Resolve self-layout<br/>(calculate node rect)"]
     Self --> Container{"Has children?"}
@@ -84,7 +84,7 @@ flowchart TD
     Done --> Next["Next dirty node"]
 ```
 
-1. `aroma_layout_update()` is called during the frame update
+1. `aroma_node_update_layout()` is called during the frame update
 2. For each dirty node, resolve self-layout first (calculate node's own rect)
 3. Then resolve container layout (position children)
 4. Write final pixel values into `AromaRect`
@@ -95,11 +95,10 @@ These functions control node layout behavior:
 
 | Function | Purpose |
 |---|---|
-| `aroma_node_set_layout_none(node, x, y, w, h)` | Absolute positioning |
-| `aroma_node_set_layout_fill(node)` | Match parent bounds exactly |
-| `aroma_node_set_layout_center(node, w, h)` | Center within parent |
-| `aroma_node_set_layout_anchor(node, l, t, r, b)` | Pin to edges with optional stretch |
 | `aroma_node_set_layout_mode(node, mode)` | Set container layout mode (none/flex/grid) |
+| `aroma_node_set_layout_fill(node)` | Match parent bounds exactly |
+| `aroma_node_set_layout_center(node)` | Center within parent |
+| `aroma_node_set_layout_anchor(node, l, t, r, b)` | Pin to edges with optional stretch |
 | `aroma_node_set_flex_direction(node, dir)` | Set flex direction (row/column) |
 | `aroma_node_set_justify_content(node, mode)` | Set main-axis alignment |
 | `aroma_node_set_align_items(node, mode)` | Set cross-axis alignment |
