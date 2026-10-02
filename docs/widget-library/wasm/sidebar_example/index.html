@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>sidebar_example</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #111318; color: #f2f4f8; font-family: sans-serif; overflow:hidden;} }
+    canvas { width: 100vw; height: 100vh; display: block; background: #111318; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+    window.appLogs = [];
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error(message, source, lineno, colno, error);
+    };
+
+    var Module = {
+      canvas: document.getElementById('canvas'),
+      print: (...args) => window.appLogs.push(args.join(' ')),
+      printErr: (...args) => window.appLogs.push(args.join(' ')),
+      onRuntimeInitialized: function () {
+        var canvas = Module.canvas;
+        function toCanvasCoords(event) {
+          var rect = canvas.getBoundingClientRect();
+          var scaleX = canvas.width / rect.width;
+          var scaleY = canvas.height / rect.height;
+          return { x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY };
+        }
+        function sendMouse(action, event) {
+          if (typeof Module._aroma_emscripten_dispatch_mouse !== 'function') return;
+          var p = toCanvasCoords(event);
+          Module._aroma_emscripten_dispatch_mouse(action, p.x | 0, p.y | 0, 0);
+        }
+        window.addEventListener('mousemove', function (event) { sendMouse(0, event); }, { passive: true });
+        window.addEventListener('mousedown', function (event) { sendMouse(1, event); event.preventDefault(); }, { passive: false });
+        window.addEventListener('mouseup', function (event) { sendMouse(2, event); event.preventDefault(); }, { passive: false });
+      }
+    };
+  </script>
+  <script src="sidebar_example.js?v=1780500965"></script>
+</body>
+</html>

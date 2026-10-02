@@ -1,0 +1,497 @@
+{
+    "name": "AromaSDK",
+    "version": "0.0.2 (alpha)",
+    "description": "Lightweight development toolkit for cross-platform applications on Linux, Android, Windows, and embedded systems.",
+
+    "author": {
+        "name": "Yassine Ahmed Ali",
+        "role": "Maintainer"
+    },
+
+    "hero": {
+        "title": "AromaSDK",
+        "description": "Cross-platform application framework featuring a modern UI toolkit, rendering engine, backend abstraction layer, and tooling for Linux, Android, Windows, and Embedded devices.",
+        "announcement": "AromaSDK 0.0.2 alpha is here",
+        "changelog_url": "https://github.com/BinaryInkTN/AromaUI/releases",
+        "background": "#0066CC",
+        "image": "images/hero.png",
+
+        "actions": [
+            {
+                "icon": "rocket",
+                "text": "Get Started",
+                "primary": true,
+                "onclick": "showCategory('Overview')"
+            },
+            {
+                "icon": "github",
+                "text": "View on GitHub",
+                "primary": false,
+                "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"
+            }
+        ],
+
+        "stats": [
+            {
+                "value": "5",
+                "label": "Platforms"
+            },
+            {
+                "value": "100%",
+                "label": "Open Source"
+            },
+            {
+                "value": "MIT",
+                "label": "License"
+            }
+        ],
+
+        "platformIcons": [
+            {
+                "icon": "terminal",
+                "title": "Linux"
+            },
+            {
+                "icon": "monitor",
+                "title": "Windows"
+            },
+            {
+                "icon": "smartphone",
+                "title": "Android"
+            },
+            {
+                "icon": "cpu",
+                "title": "Embedded"
+            },
+            {
+                "icon": "layers",
+                "title": "Cross Platform"
+            }
+        ]
+    },
+
+    "categories": [
+        {
+            "name": "Overview",
+            "icon": "home",
+            "description": "Get started quickly and understand the big picture."
+        },
+        {
+            "name": "Core Framework",
+            "icon": "layers",
+            "description": "Scene graph, events, layout, rendering, animation, and theming."
+        },
+        {
+            "name": "Widget Library",
+            "icon": "component",
+            "description": "UI widgets, controls, navigation, and the Incense declarative language."
+        },
+        {
+            "name": "Build & Deploy",
+            "icon": "terminal",
+            "description": "CLI toolchain, project scaffolding, and cross-platform deployment."
+        },
+        {
+            "name": "Backend Abstraction",
+            "icon": "cpu",
+            "description": "Graphics and platform backends behind the ABI."
+        },
+        {
+            "name": "Reference",
+            "icon": "book-open",
+            "description": "Fonts, testing, glossary, and advanced topics."
+        }
+    ],
+
+    "sections": [
+        {
+            "title": "Getting Started",
+            "description": "Install, build, and run your first AromaUI app in under 5 minutes.",
+            "icon": "rocket",
+            "color": "#4285F4",
+            "category": "Overview",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/overview/Getting-Started.md"
+        },
+        {
+            "title": "Architecture Overview",
+            "description": "How AromaUI works under the hood: layers, data flow, and key abstractions.",
+            "icon": "boxes",
+            "color": "#4285F4",
+            "category": "Overview",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/overview/Architecture-Overview.md"
+        },
+
+        {
+            "title": "Scene Graph & Nodes",
+            "description": "AromaNode lifecycle, hierarchy, memory management, and dirty-region tracking.",
+            "icon": "git-branch",
+            "color": "#006875",
+            "category": "Core Framework",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/core-framework/Scene-Graph-and-Node-System.md"
+        },
+        {
+            "title": "Event System",
+            "description": "Input capture, hit-testing, event bubbling, and scroll interception.",
+            "icon": "mouse-pointer",
+            "color": "#006875",
+            "category": "Core Framework",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/core-framework/Event-System.md"
+        },
+        {
+            "title": "Layout Engine",
+            "description": "Self-layout, flexbox, grid, scroll containers, and content sizing.",
+            "icon": "layout-dashboard",
+            "color": "#006875",
+            "category": "Core Framework",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/core-framework/Layout-Engine.md"
+        },
+        {
+            "title": "Rendering Pipeline",
+            "description": "DrawList, deferred rendering, Z-sorting, and backend flush.",
+            "icon": "layers",
+            "color": "#006875",
+            "category": "Core Framework",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/core-framework/Rendering-Pipeline-and-DrawList.md"
+        },
+        {
+            "title": "Animation Engine",
+            "description": "Property transitions, easing functions, and widget integration.",
+            "icon": "play",
+            "color": "#006875",
+            "category": "Core Framework",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/core-framework/Animation-Engine.md"
+        },
+        {
+            "title": "Theming & Styling",
+            "description": "Color palettes, typography, shadows, and runtime theme switching.",
+            "icon": "palette",
+            "color": "#006875",
+            "category": "Core Framework",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/core-framework/Theming-and-Styling.md"
+        },
+
+        {
+            "title": "Display & Feedback",
+            "description": "Labels, images, cards, progress bars, snackbars, and dialogs.",
+            "icon": "monitor",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/widget-library/Display-and-Feedback-Widgets.md"
+        },
+        {
+            "title": "Input & Controls",
+            "description": "Buttons, checkboxes, switches, sliders, textboxes, and chips.",
+            "icon": "toggle-left",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/widget-library/Input-and-Control-Widgets.md"
+        },
+        {
+            "title": "Layout & Navigation",
+            "description": "Containers, scrolling, ListView, tabs, sidebars, and menus.",
+            "icon": "navigation",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/widget-library/Layout-and-Navigation-Widgets.md"
+        },
+        {
+            "title": "Map Widget",
+            "description": "Interactive maps with markers, routes, and tile caching.",
+            "icon": "map",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/widget-library/Map-Widget.md"
+        },
+        {
+            "title": "3D Viewer",
+            "description": "Interactive 3D viewport with orbit, zoom, pan, and auto-rotation.",
+            "icon": "box",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "experimental",
+            "file": "docs/widget-library/3D-Viewer-Widget.md"
+        },
+        {
+            "title": "Incense Declarative UI",
+            "description": "Write UIs in a declarative language with live preview in the browser.",
+            "icon": "code",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/widget-library/Incense-Sandbox.md"
+        },
+
+        {
+            "title": "Project Creation",
+            "description": "Scaffold new projects with `aroma create` and understand the generated structure.",
+            "icon": "folder-plus",
+            "color": "#386A20",
+            "category": "Build & Deploy",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/cli-toolchain/Project-Creation-and-Scaffolding.md"
+        },
+        {
+            "title": "Building & Deployment",
+            "description": "Compile for Linux, Android, and Web. Sign, package, and run.",
+            "icon": "hammer",
+            "color": "#386A20",
+            "category": "Build & Deploy",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/cli-toolchain/Building-and-Deployment.md"
+        },
+        {
+            "title": "SDK Downloads",
+            "description": "Download the latest AromaUI SDK release for your platform.",
+            "icon": "download",
+            "color": "#386A20",
+            "category": "Build & Deploy",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/downloads.html"
+        },
+
+        {
+            "title": "Graphics Backends",
+            "description": "GLES3, Vulkan, and TFT_eSPI rendering backends.",
+            "icon": "monitor",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/Graphics-Backends.md"
+        },
+        {
+            "title": "Platform Backends",
+            "description": "Linux, Android, Web, and ESP32 platform integration.",
+            "icon": "cpu",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/Platform-Backends.md"
+        },
+        {
+            "title": "Android Overview",
+            "description": "How Android support is laid out. Read this first.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Overview.md"
+        },
+        {
+            "title": "Android App Setup",
+            "description": "Entry point, manifest, and JNI handles.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/App-Setup.md"
+        },
+        {
+            "title": "Android Permissions",
+            "description": "Check and request runtime permissions.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Permissions.md"
+        },
+        {
+            "title": "Android System UI",
+            "description": "Toast, settings screen, and vibration.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/System-UI.md"
+        },
+        {
+            "title": "Android Bluetooth Scan",
+            "description": "Scan modes, device types, and discovery.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Bluetooth-Scan.md"
+        },
+        {
+            "title": "Android Bluetooth Connect",
+            "description": "Pair, connect, send data, and check status.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Bluetooth-Connect.md"
+        },
+        {
+            "title": "Android Device APIs",
+            "description": "Battery, WiFi, camera, gallery, and storage.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Device-APIs.md"
+        },
+        {
+            "title": "Android Display",
+            "description": "Density, screen size, and orientation.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Display.md"
+        },
+        {
+            "title": "Android Preferences",
+            "description": "Save small settings with SharedPreferences.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Preferences.md"
+        },
+        {
+            "title": "Android Internals",
+            "description": "Backend lifecycle and Java bridge reference.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-09-29",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Internals.md"
+        },
+
+        {
+            "title": "Font System",
+            "description": "Font loading, glyph caching, FreeType integration, and platform specifics.",
+            "icon": "type",
+            "color": "#4A4458",
+            "category": "Reference",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/Font-System.md"
+        },
+        {
+            "title": "Material Icons",
+            "description": "Searchable browser for the embedded Material Icons font shipped on device.",
+            "icon": "star",
+            "color": "#4A4458",
+            "category": "Reference",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/icons.html"
+        },
+        {
+            "title": "Testing & Quality",
+            "description": "Unit tests, memory sanitization, and CI integration.",
+            "icon": "check-circle",
+            "color": "#4A4458",
+            "category": "Reference",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/Testing-and-Quality.md"
+        },
+        {
+            "title": "Glossary",
+            "description": "Definitions, abbreviations, and code references.",
+            "icon": "book-open",
+            "color": "#4A4458",
+            "category": "Reference",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/Glossary.md"
+        },
+        {
+            "title": "API Reference",
+            "description": "Core API functions grouped by subsystem.",
+            "icon": "book",
+            "color": "#4A4458",
+            "category": "Reference",
+            "version": "0.0.2",
+            "updated": "2026-09-28",
+            "status": "stable",
+            "file": "docs/API-Reference.md"
+        }
+    ]
+}

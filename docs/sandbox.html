@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Incense Sandbox</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --ide-bg: #1e1e1e;
+      --ide-sidebar: #252526;
+      --ide-border: #3e3e42;
+      --ide-text: #cccccc;
+      --ide-text-muted: #858585;
+      --ide-accent: #007acc;
+      --ide-accent-hover: #0098ff;
+      --ide-input-bg: #3c3c3c;
+      --ide-hover: #2a2d2e;
+      --ide-success: #4ec9b0;
+      --ide-error: #f48771;
+      --ide-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --ide-mono: 'Roboto Mono', 'Consolas', monospace;
+    }
+    [data-theme="light"] {
+      --ide-bg: #ffffff;
+      --ide-sidebar: #f3f3f3;
+      --ide-border: #e4e4e4;
+      --ide-text: #333333;
+      --ide-text-muted: #616161;
+      --ide-accent: #0064b0;
+      --ide-accent-hover: #005a9e;
+      --ide-input-bg: #f3f3f3;
+      --ide-hover: #e8e8e8;
+      --ide-success: #107c41;
+      --ide-error: #a1260d;
+    }
+    .ghost-text { opacity: 0.4; pointer-events: none; }
+    [data-theme="light"] .ghost-text { opacity: 0.35; }
+    html, body { height: 100%; background: var(--ide-bg); color: var(--ide-text); font-family: var(--ide-font); overflow: hidden; margin: 0; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+    #toolbar {
+      height: 36px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; border-bottom: 1px solid var(--ide-border); background: var(--ide-sidebar); gap: 8px;
+    }
+    .toolbar-title { font-size: 12px; font-weight: 600; color: var(--ide-text); }
+    .toolbar-actions { display: flex; gap: 6px; align-items: center; }
+    #runBtn {
+      height: 28px; padding: 0 10px; border-radius: 4px; border: none; font-family: var(--ide-font);
+      font-size: 12px; font-weight: 500; cursor: pointer; background: var(--ide-accent); color: #fff;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    #runBtn:hover { background: var(--ide-accent-hover); }
+    #runBtn.pending { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .icon-btn {
+      width: 28px; height: 28px; border-radius: 4px; border: none; cursor: pointer;
+      background: transparent; color: var(--ide-text-muted); display: flex; align-items: center; justify-content: center;
+    }
+    .icon-btn:hover { background: var(--ide-hover); color: var(--ide-text); }
+    .icon-btn svg { width: 14px; height: 14px; }
+    #workspace { display: flex; flex-direction: row; flex: 1; min-height: 0; }
+    #editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--ide-border); }
+    #editor { flex: 1; }
+    #preview-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+    #preview-header {
+      height: 32px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; border-bottom: 1px solid var(--ide-border); font-size: 11px; color: var(--ide-text-muted);
+    }
+    #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; background: #F7F7F7; min-height: 0; padding: 20px; box-sizing: border-box; }
+    [data-theme="dark"] #canvas-wrap { background: #111318; }
+    #phone-frame { display: inline-block; max-width: 100%; max-height: 100%; border-radius: 24px; box-shadow: 0 0 0 8px #1a1a1a, 0 0 0 10px #333, 0 20px 50px rgba(0,0,0,0.5); overflow: hidden; background: #000; line-height: 0; flex-shrink: 0; }
+    #phone-frame canvas { display: block; max-width: 100%; max-height: 100%; touch-action: none; }
+    body.embed #editor-pane { display: none; }
+    body.embed #preview-pane { border-left: none; }
+    #status-bar {
+      height: 22px; background: var(--ide-sidebar); border-top: 1px solid var(--ide-border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; gap: 10px;
+    }
+    .status-left, .status-right { display: flex; align-items: center; gap: 8px; }
+    .status-item { display: flex; align-items: center; gap: 6px; color: var(--ide-text-muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.ok { background: var(--ide-success); }
+    .status-dot.error { background: var(--ide-error); }
+    .status-dot.pending { background: currentColor; animation: pulse 1.5s infinite; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toolbar">
+      <div class="toolbar-title">Incense Sandbox</div>
+      <div class="toolbar-actions">
+        <button class="icon-btn" id="themeBtn" title="Toggle theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <button id="runBtn" title="Run">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Run</span>
+        </button>
+      </div>
+    </div>
+    <div id="workspace">
+      <div id="editor-pane">
+        <div id="editor"></div>
+      </div>
+      <div id="preview-pane">
+        <div id="preview-header">
+          <span>Preview</span>
+        </div>
+        <div id="canvas-wrap">
+          <div id="phone-frame">
+            <canvas id="canvas" width="320" height="480"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer id="status-bar">
+      <div class="status-left">
+        <span class="status-item"><span class="status-dot ok" id="statusDot"></span><span id="statusText">Ready</span></span>
+        <span class="status-item" id="errorMsg"></span>
+      </div>
+      <div class="status-right">
+        <span class="status-item">Incense</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    window.Module = window.Module || {};
+    // Bust cached wasm/js after fixes ship: keep this version in sync
+    // with the <script src="incense_sandbox.js?v=N"> tag below.
+    window.Module.locateFile = function(path) { return path + '?v=19'; };
+    // Embed mode for docs pages: ?embed=1 shows preview only (no editor),
+    // ?example=NAME loads a curated demo, ?autorun=1 runs on boot.
+    // Theme cascade: follow the embedding docs page theme when present,
+    // otherwise fall back to the sandbox's own stored preference.
+    window.getPreferredSandboxTheme = function() {
+      try {
+        if (window.parent && window.parent !== window) {
+          var pt = window.parent.localStorage.getItem('docs-theme');
+          if (pt === 'light' || pt === 'dark') return pt;
+        }
+      } catch (e) {}
+      var st = null;
+      try { st = localStorage.getItem('sandbox-theme'); } catch (e) {}
+      return (st === 'light' || st === 'dark') ? st : 'light';
+    };
+    window.applySandboxTheme = function(next) {
+      if (next !== 'light' && next !== 'dark') return;
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('sandbox-theme', next); } catch (e) {}
+      var icon = document.querySelector('#themeBtn svg');
+      if (icon) {
+        icon.innerHTML = next === 'dark'
+          ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>'
+          : '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+      }
+      try {
+        if (window.monaco && window.monaco.editor && window.incenseEditor) {
+          window.monaco.editor.setTheme(next === 'dark' ? 'incense-dark' : 'incense-light');
+        }
+      } catch (e) {}
+      window.syncPreviewAppTheme();
+    };
+    // Mirror the docs light/dark mode into the preview app itself:
+    // light -> Material Blue, dark -> Material Black. Stashes the
+    // request when the wasm runtime is not up yet; it is flushed
+    // after the first runCode().
+    window.syncPreviewAppTheme = function() {
+      try {
+        var t = document.documentElement.getAttribute('data-theme') || 'light';
+        if (window.__aromaReady && window.Module && typeof window.Module.ccall === 'function') {
+          window.Module.ccall('aroma_sandbox_set_theme', null, ['number'], [t === 'dark' ? 1 : 0]);
+          window.__pendingPreviewTheme = null;
+        } else {
+          window.__pendingPreviewTheme = t;
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('message', function(e) {
+      var d = e && e.data;
+      if (d && d.type === 'aroma-theme') window.applySandboxTheme(d.theme);
+    });
+    (function() {
+      try {
+        var t = window.getPreferredSandboxTheme();
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+    // Curated demos for docs embeds (?example=NAME). Keep props to the
+    // documented Incense set so every demo loads with status Ready.
+    window.incenseExamples = {
+            'buttons': 'Window {\n    width: 320\n    height: 480\n    title: "Buttons"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Image {\n            x: 0\n            y: 0\n            width: 320\n            height: 140\n            src: "https://images.pexels.com/photos/34109832/pexels-photo-34109832.jpeg?auto=compress&cs=tinysrgb&w=600"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            scale: cover\n        }\n        Image {\n            x: 20\n            y: 116\n            width: 48\n            height: 48\n            src: "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            scale: cover\n            corner_radius: 24\n        }\n        Label {\n            text: "Stay connected."\n            animation: slide_y\n            animation_start_val: 180\n            animation_end_val: 156\n            animation_duration: 600\n            animation_easing: ease_out_cubic\n            style: small\n            x: 80\n            y: 156\n        }\n        Textbox {\n            text: ""\n            placeholder: "Mobile number or email"\n            x: 20\n            y: 204\n            width: 280\n            height: 44\n        }\n        Textbox {\n            text: ""\n            placeholder: "Password"\n            x: 20\n            y: 256\n            width: 280\n            height: 44\n        }\n        Button {\n            text: "Log In"\n            animation: slide_y\n            animation_start_val: 336\n            animation_end_val: 312\n            animation_duration: 600\n            animation_easing: ease_out_back\n            x: 20\n            y: 312\n            width: 280\n            height: 48\n            icon: "AROMA_ICON_ARROW_FORWARD"\n        }\n        Label {\n            text: "Forgot password?"\n            style: small\n            x: 104\n            y: 372\n        }\n        Button {\n            text: "Create new account"\n            animation: slide_y\n            animation_start_val: 420\n            animation_end_val: 396\n            animation_duration: 700\n            animation_easing: ease_out_back\n            x: 60\n            y: 396\n            width: 200\n            height: 44\n            icon: "AROMA_ICON_PERSON"\n        }\n    }\n}\n',
+            'inputs': 'Window {\n    width: 320\n    height: 480\n    title: "Inputs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Sell an item"\n            animation: slide_y\n            animation_start_val: -8\n            animation_end_val: 16\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            style: large\n            x: 20\n            y: 16\n        }\n        Label {\n            text: "Sell in a minute"\n            style: small\n            x: 20\n            y: 48\n        }\n        Image {\n            x: 20\n            y: 76\n            width: 80\n            height: 80\n            src: "https://images.pexels.com/photos/7054718/pexels-photo-7054718.jpeg?auto=compress&cs=tinysrgb&w=300"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            scale: cover\n            corner_radius: 12\n        }\n        Card {\n            x: 112\n            y: 76\n            width: 80\n            height: 80\n            type: outlined\n        }\n        IconButton {\n            x: 136\n            y: 96\n            size: 32\n            icon: "AROMA_ICON_ADD"\n            variant: standard\n        }\n        Label {\n            text: "1 of 4"\n            style: small\n            x: 204\n            y: 106\n        }\n        Textbox {\n            text: ""\n            placeholder: "What are you selling?"\n            x: 20\n            y: 168\n            width: 280\n            height: 44\n        }\n        Textbox {\n            text: ""\n            placeholder: "Price"\n            x: 20\n            y: 220\n            width: 280\n            height: 44\n        }\n        Label {\n            text: "Condition"\n            style: medium\n            x: 20\n            y: 276\n        }\n        Checkbox {\n            label: "Like new"\n            x: 20\n            y: 304\n            width: 280\n            height: 32\n            checked: true\n        }\n        Switch {\n            x: 20\n            y: 348\n            width: 52\n            height: 30\n            value: true\n        }\n        Label {\n            text: "Meet in person"\n            style: small\n            x: 84\n            y: 354\n        }\n        Button {\n            text: "Post listing"\n            animation: slide_y\n            animation_start_val: 416\n            animation_end_val: 392\n            animation_duration: 600\n            animation_easing: ease_out_back\n            x: 20\n            y: 392\n            width: 280\n            height: 48\n            icon: "AROMA_ICON_ADD"\n        }\n    }\n}\n',
+            'slider': 'Window {\n    width: 320\n    height: 480\n    title: "Slider"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Now Playing"\n            style: small\n            x: 20\n            y: 16\n        }\n        Image {\n            x: 70\n            y: 48\n            width: 180\n            height: 180\n            src: "https://images.pexels.com/photos/19829189/pexels-photo-19829189.jpeg?auto=compress&cs=tinysrgb&w=300"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            scale: cover\n            corner_radius: 12\n        }\n        Label {\n            text: "Midnight Drive"\n            animation: slide_x\n            animation_start_val: 44\n            animation_end_val: 20\n            animation_duration: 600\n            animation_easing: ease_out_cubic\n            style: medium\n            x: 20\n            y: 240\n        }\n        Label {\n            text: "Neon Coast"\n            style: small\n            x: 20\n            y: 264\n        }\n        ProgressBar {\n            x: 20\n            y: 304\n            width: 280\n            height: 8\n            value: 0.32\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 800\n            type: determinate\n        }\n        Label {\n            text: "12:40"\n            style: small\n            x: 20\n            y: 324\n        }\n        Label {\n            text: "-3:12"\n            style: small\n            x: 272\n            y: 324\n        }\n        Icon {\n            x: 20\n            y: 360\n            size: 20\n            text: "AROMA_ICON_VOLUME_DOWN"\n        }\n        Slider {\n            x: 48\n            y: 356\n            width: 224\n            height: 32\n            min: 0\n            max: 100\n            value: 60\n        }\n        Icon {\n            x: 280\n            y: 360\n            size: 20\n            text: "AROMA_ICON_VOLUME_UP"\n        }\n        IconButton {\n            x: 94\n            y: 404\n            size: 44\n            icon: "AROMA_ICON_SKIP_PREVIOUS"\n            variant: standard\n        }\n        IconButton {\n            x: 138\n            y: 404\n            size: 44\n            icon: "AROMA_ICON_PLAY_ARROW"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            variant: filled\n        }\n        IconButton {\n            x: 182\n            y: 404\n            size: 44\n            icon: "AROMA_ICON_SKIP_NEXT"\n            variant: standard\n        }\n    }\n}\n',
+            'dropdown': 'Window {\n    width: 320\n    height: 480\n    title: "Dropdown"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Book a flight"\n            animation: slide_y\n            animation_start_val: -8\n            animation_end_val: 16\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            style: large\n            x: 20\n            y: 16\n        }\n        Label {\n            text: "Round trip"\n            style: small\n            x: 20\n            y: 48\n        }\n        Image {\n            x: 20\n            y: 76\n            width: 280\n            height: 120\n            src: "https://images.pexels.com/photos/17034834/pexels-photo-17034834.jpeg?auto=compress&cs=tinysrgb&w=600"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            scale: cover\n            corner_radius: 12\n        }\n        Label {\n            text: "Featured: Santorini from $349"\n            style: small\n            x: 20\n            y: 204\n        }\n        Label {\n            text: "From"\n            style: small\n            x: 20\n            y: 232\n        }\n        Label {\n            text: "San Francisco"\n            style: medium\n            x: 20\n            y: 250\n        }\n        IconButton {\n            x: 264\n            y: 236\n            size: 36\n            icon: "AROMA_ICON_SWAP_VERT"\n            variant: outlined\n        }\n        Label {\n            text: "To"\n            style: small\n            x: 20\n            y: 288\n        }\n        Dropdown {\n            x: 20\n            y: 306\n            width: 280\n            height: 44\n            Option { text: "Paris" }\n            Option { text: "Tokyo" }\n            Option { text: "New York" }\n        }\n        Button {\n            text: "Search flights"\n            animation: slide_y\n            animation_start_val: 388\n            animation_end_val: 364\n            animation_duration: 600\n            animation_easing: ease_out_back\n            x: 20\n            y: 364\n            width: 280\n            height: 48\n            icon: "AROMA_ICON_SEARCH"\n        }\n        Loading {\n            x: 20\n            y: 420\n            radius: 10\n            thickness: 4\n        }\n        Label {\n            text: "Searching 200+ sites..."\n            style: small\n            x: 48\n            y: 426\n        }\n    }\n}\n',
+            'list': 'Window {\n    width: 320\n    height: 480\n    title: "List"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        visible: 1\n        Label {\n            text: "Settings"\n            animation: slide_y\n            animation_start_val: -8\n            animation_end_val: 16\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            style: large\n            x: 20\n            y: 16\n        }\n        Textbox {\n            text: ""\n            placeholder: "Search"\n            x: 20\n            y: 52\n            width: 280\n            height: 36\n        }\n        Card {\n            x: 20\n            y: 96\n            width: 280\n            height: 64\n            type: filled\n        }\n        Image {\n            x: 32\n            y: 106\n            width: 44\n            height: 44\n            src: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            scale: cover\n            corner_radius: 22\n        }\n        Label {\n            text: "Daniel Reyes"\n            style: medium\n            x: 88\n            y: 108\n        }\n        Label {\n            text: "Account and cloud storage"\n            style: small\n            x: 88\n            y: 132\n        }\n        ListView {\n        animation: fade\n        animation_start_val: 0\n        animation_end_val: 1\n        animation_duration: 750\n            x: 0\n            y: 168\n            width: 320\n            height: 312\n            Header { text: "General" }\n            ListItem { text: "Airplane Mode" secondary: "Off" icon: "AROMA_ICON_AIRPLANEMODE_INACTIVE" }\n            ListItem { text: "Wi-Fi" secondary: "HomeNet" icon: "AROMA_ICON_NETWORK_WIFI" }\n            ListItem { text: "Bluetooth" secondary: "On" icon: "AROMA_ICON_BLUETOOTH" }\n            Header { text: "Display" }\n            ListItem { text: "Brightness" secondary: "Auto" icon: "AROMA_ICON_BRIGHTNESS_MEDIUM" }\n            ListItem { text: "Night mode" secondary: "Sunset to Sunrise" icon: "AROMA_ICON_WB_SUNNY" }\n        }\n    }\n}\n',
+            'dashboard': 'Window {\n    width: 320\n    height: 480\n    title: "Home"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Good evening"\n            style: small\n            x: 20\n            y: 12\n        }\n        Label {\n            text: "My Home"\n            style: large\n            x: 20\n            y: 30\n        }\n        IconButton {\n            x: 264\n            y: 16\n            size: 36\n            icon: "AROMA_ICON_SETTINGS"\n            variant: outlined\n        }\n        Label {\n            text: "4 on"\n            style: small\n            x: 20\n            y: 62\n        }\n        Card {\n            x: 20\n            y: 88\n            width: 280\n            height: 148\n            type: filled\n        }\n        Image {\n            x: 32\n            y: 98\n            width: 256\n            height: 92\n            src: "https://images.pexels.com/photos/32145723/pexels-photo-32145723.jpeg?auto=compress&cs=tinysrgb&w=600"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            scale: cover\n            corner_radius: 12\n        }\n        Card {\n            x: 40\n            y: 158\n            width: 96\n            height: 28\n            type: glass\n            blur_radius: 14\n        }\n        Label {\n            text: "Live"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            style: small\n            x: 72\n            y: 166\n        }\n        Label {\n            text: "Front Door"\n            style: small\n            x: 32\n            y: 198\n        }\n        Card {\n            x: 20\n            y: 248\n            width: 132\n            height: 84\n            type: outlined\n        }\n        Label {\n            text: "21.5 deg"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n            style: medium\n            x: 34\n            y: 258\n        }\n        Label {\n            text: "Living Room"\n            style: small\n            x: 34\n            y: 286\n        }\n        Card {\n            x: 168\n            y: 248\n            width: 132\n            height: 84\n            type: outlined\n        }\n        Label {\n            text: "48 pct"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n            style: medium\n            x: 182\n            y: 258\n        }\n        Label {\n            text: "Bedroom"\n            style: small\n            x: 182\n            y: 286\n        }\n        Card {\n            x: 20\n            y: 344\n            width: 280\n            height: 88\n            type: filled\n        }\n        Label {\n            text: "Solar today"\n            style: small\n            x: 34\n            y: 354\n        }\n        Label {\n            text: "6.4 kWh"\n            style: medium\n            x: 34\n            y: 372\n        }\n        ProgressBar {\n            x: 34\n            y: 404\n            width: 252\n            height: 8\n            value: 0.68\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 800\n            type: determinate\n        }\n    }\n}\n',
+            'cards': 'Window {\n    width: 320\n    height: 480\n    title: "Cards"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Today"\n            style: small\n            x: 20\n            y: 12\n        }\n        Label {\n            text: "Recipe of the day"\n            animation: slide_y\n            animation_start_val: 6\n            animation_end_val: 30\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            style: large\n            x: 20\n            y: 30\n        }\n        Card {\n            x: 20\n            y: 76\n            width: 280\n            height: 252\n            type: filled\n        }\n        Image {\n            x: 32\n            y: 88\n            width: 256\n            height: 128\n            src: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=600"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            scale: cover\n            corner_radius: 12\n        }\n        Card {\n            x: 44\n            y: 182\n            width: 118\n            height: 28\n            type: glass\n            blur_radius: 14\n        }\n        Label {\n            text: "15 min · Easy"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n            style: small\n            x: 56\n            y: 190\n        }\n        Label {\n            text: "Home cooking"\n            style: small\n            x: 32\n            y: 224\n        }\n        Label {\n            text: "15-minute rainbow bowls"\n            style: medium\n            x: 32\n            y: 242\n        }\n        Label {\n            text: "Fresh and fast."\n            style: small\n            x: 32\n            y: 266\n        }\n        Image {\n            x: 32\n            y: 292\n            width: 32\n            height: 32\n            src: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150"\n            scale: cover\n            corner_radius: 16\n        }\n        Label {\n            text: "Mia · 12k"\n            style: small\n            x: 72\n            y: 300\n        }\n        Chip {\n            x: 32\n            y: 332\n            label: "Healthy"\n            selected: true\n        }\n        Button {\n            text: "Get the app"\n            animation: slide_y\n            animation_start_val: 400\n            animation_end_val: 376\n            animation_duration: 600\n            animation_easing: ease_out_back\n            x: 20\n            y: 376\n            width: 280\n            height: 40\n            icon: "AROMA_ICON_ADD"\n        }\n    }\n}\n',
+            'tabs': 'Window {\n    width: 320\n    height: 480\n    title: "Tabs"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Tabs {\n            x: 0\n            y: 0\n            width: 320\n            height: 96\n            Tab { text: "Today" }\n            Tab { text: "Games" }\n            Tab { text: "Apps" }\n        }\n        Card {\n            x: 20\n            y: 112\n            width: 280\n            height: 196\n            type: filled\n        }\n        Image {\n            x: 32\n            y: 122\n            width: 256\n            height: 110\n            src: "https://images.pexels.com/photos/36132493/pexels-photo-36132493.jpeg?auto=compress&cs=tinysrgb&w=600"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            scale: cover\n            corner_radius: 12\n        }\n        Card {\n            x: 44\n            y: 188\n            width: 200\n            height: 36\n            type: glass\n            blur_radius: 14\n        }\n        Label {\n            text: "Editors Choice"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            style: small\n            x: 56\n            y: 200\n        }\n        Label {\n            text: "City Guides"\n            style: small\n            x: 32\n            y: 240\n        }\n        Label {\n            text: "Weekend in Lisbon"\n            style: medium\n            x: 32\n            y: 258\n        }\n        Label {\n            text: "Miradouros and fado."\n            style: small\n            x: 32\n            y: 282\n        }\n        Label {\n            text: "Top Charts"\n            animation: slide_y\n            animation_start_val: 300\n            animation_end_val: 324\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            style: medium\n            x: 20\n            y: 324\n        }\n        Label {\n            text: "1"\n            style: medium\n            x: 20\n            y: 352\n        }\n        Label {\n            text: "Sunset Runner"\n            style: small\n            x: 44\n            y: 358\n        }\n        Chip {\n            x: 252\n            y: 352\n            label: "GET"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n        }\n        Label {\n            text: "2"\n            style: medium\n            x: 20\n            y: 388\n        }\n        Label {\n            text: "Puzzle Pines"\n            style: small\n            x: 44\n            y: 394\n        }\n        Chip {\n            x: 252\n            y: 388\n            label: "GET"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n        }\n    }\n}\n',
+            'gauge': 'Window {\n    width: 320\n    height: 480\n    title: "Gauge"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Activity"\n            style: large\n            x: 20\n            y: 16\n        }\n        Label {\n            text: "Move · Exercise · Stand"\n            style: small\n            x: 20\n            y: 48\n        }\n        Gauge {\n        animation: fade\n        animation_start_val: 0\n        animation_end_val: 1\n        animation_duration: 700\n            x: 60\n            y: 76\n            width: 200\n            height: 170\n            value: 0.65\n        }\n        Label {\n            text: "320 of 500 kcal"\n            animation: slide_y\n            animation_start_val: 234\n            animation_end_val: 258\n            animation_duration: 600\n            animation_easing: ease_out_cubic\n            style: medium\n            x: 20\n            y: 258\n        }\n        Label {\n            text: "Almost there."\n            style: small\n            x: 20\n            y: 284\n        }\n        Card {\n            x: 20\n            y: 312\n            width: 280\n            height: 76\n            type: filled\n        }\n        Label {\n            text: "This week"\n            style: small\n            x: 34\n            y: 322\n        }\n        ProgressBar {\n            x: 34\n            y: 344\n            width: 252\n            height: 8\n            value: 0.7\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n            type: determinate\n        }\n        Label {\n            text: "5 of 7 days"\n            style: small\n            x: 34\n            y: 358\n        }\n        Label {\n            text: "420"\n            style: medium\n            x: 20\n            y: 404\n        }\n        Label {\n            text: "Move"\n            style: small\n            x: 20\n            y: 430\n        }\n        Label {\n            text: "32"\n            style: medium\n            x: 130\n            y: 404\n        }\n        Label {\n            text: "Exercise"\n            style: small\n            x: 130\n            y: 430\n        }\n        Label {\n            text: "11"\n            style: medium\n            x: 240\n            y: 404\n        }\n        Label {\n            text: "Stand"\n            style: small\n            x: 240\n            y: 430\n        }\n    }\n}\n',
+            'toggles': 'Window {\n    width: 320\n    height: 480\n    title: "Toggles"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Plus Bundle"\n            style: small\n            x: 20\n            y: 12\n        }\n        Label {\n            text: "Pick a plan"\n            style: large\n            x: 20\n            y: 30\n        }\n        Label {\n            text: "Everything in one."\n            style: small\n            x: 20\n            y: 62\n        }\n        Card {\n            x: 20\n            y: 92\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            width: 280\n            height: 64\n            type: outlined\n        }\n        RadioButton {\n            label: "Monthly · $9.99"\n            x: 32\n            y: 104\n            width: 256\n            height: 40\n            group: 1\n            selected: true\n        }\n        Card {\n            x: 20\n            y: 164\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            width: 280\n            height: 64\n            type: filled\n        }\n        RadioButton {\n            label: "Yearly · $99"\n            x: 32\n            y: 176\n            width: 256\n            height: 40\n            group: 1\n        }\n        Switch {\n            x: 20\n            y: 236\n            width: 52\n            height: 30\n            value: false\n        }\n        Label {\n            text: "Renew automatically"\n            style: small\n            x: 84\n            y: 242\n        }\n        Label {\n            text: "Cancel anytime"\n            style: small\n            x: 20\n            y: 280\n        }\n        Button {\n            text: "Continue"\n            animation: slide_y\n            animation_start_val: 340\n            animation_end_val: 316\n            animation_duration: 600\n            animation_easing: ease_out_back\n            x: 20\n            y: 316\n            width: 280\n            height: 48\n            icon: "AROMA_ICON_ARROW_FORWARD"\n        }\n    }\n}\n',
+            'dialog': 'Window {\n    width: 320\n    height: 480\n    title: "Dialog"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Library"\n            style: large\n            x: 20\n            y: 16\n        }\n        Label {\n            text: "2 selected"\n            style: small\n            x: 20\n            y: 48\n        }\n        Card {\n            x: 20\n            y: 76\n            width: 132\n            height: 108\n            type: outlined\n        }\n        Image {\n            x: 28\n            y: 84\n            width: 116\n            height: 72\n            src: "https://images.pexels.com/photos/27843522/pexels-photo-27843522.jpeg?auto=compress&cs=tinysrgb&w=300"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            scale: cover\n            corner_radius: 10\n        }\n        Label {\n            text: "Golden hour"\n            style: small\n            x: 32\n            y: 162\n        }\n        Card {\n            x: 168\n            y: 76\n            width: 132\n            height: 108\n            type: outlined\n        }\n        Image {\n            x: 176\n            y: 84\n            width: 116\n            height: 72\n            src: "https://images.pexels.com/photos/17042032/pexels-photo-17042032.jpeg?auto=compress&cs=tinysrgb&w=300"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n            scale: cover\n            corner_radius: 10\n        }\n        Label {\n            text: "Studio portrait"\n            style: small\n            x: 180\n            y: 162\n        }\n        Dialog {\n            title: "Delete 2 photos?"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 500\n            message: "Also removed from albums."\n            width: 280\n            height: 210\n            DialogAction { text: "Cancel" }\n            DialogAction { text: "Delete" }\n        }\n    }\n}\n',
+            'gallery': 'Window {\n    width: 320\n    height: 480\n    title: "Gallery"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Tabs {\n            x: 0\n            y: 432\n            width: 320\n            height: 48\n            variant: bar\n            animation: slide_y\n            animation_start_val: 480\n            animation_end_val: 432\n            animation_duration: 600\n            animation_easing: ease_out_back\n            Tab {\n                text: "Library"\n                icon: "AROMA_ICON_PHOTO_LIBRARY"\n                Label {\n                    text: "Library"\n                    style: large\n                    x: 20\n                    y: 20\n                }\n                Label {\n                    text: "Select"\n                    style: small\n                    color: #1877F2\n                    x: 262\n                    y: 28\n                }\n                Label {\n                    text: "1,248 items"\n                    style: small\n                    x: 20\n                    y: 52\n                }\n                SegmentedControl {\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 600\n                    x: 20\n                    y: 80\n                    width: 280\n                    height: 30\n                    selected: 3\n                    Segment { text: "Years" }\n                    Segment { text: "Months" }\n                    Segment { text: "Days" }\n                    Segment { text: "All Photos" }\n                }\n                Container {\n                    x: 0\n                    y: 112\n                    width: 320\n                    height: 105\n                    Image {\n                        x: 0\n                        y: 0\n                        width: 105\n                        height: 105\n                        src: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                    Image {\n                        x: 107\n                        y: 0\n                        width: 105\n                        height: 105\n                        src: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                    Image {\n                        x: 214\n                        y: 0\n                        width: 106\n                        height: 105\n                        src: "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                }\n                Container {\n                    x: 0\n                    y: 219\n                    width: 320\n                    height: 105\n                    Image {\n                        x: 0\n                        y: 0\n                        width: 105\n                        height: 105\n                        src: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                    Image {\n                        x: 107\n                        y: 0\n                        width: 105\n                        height: 105\n                        src: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                    Image {\n                        x: 214\n                        y: 0\n                        width: 106\n                        height: 105\n                        src: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                }\n                Container {\n                    x: 0\n                    y: 326\n                    width: 320\n                    height: 105\n                    Image {\n                        x: 0\n                        y: 0\n                        width: 105\n                        height: 105\n                        src: "https://images.pexels.com/photos/27843522/pexels-photo-27843522.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                    Image {\n                        x: 107\n                        y: 0\n                        width: 105\n                        height: 105\n                        src: "https://images.pexels.com/photos/17042032/pexels-photo-17042032.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                    Image {\n                        x: 214\n                        y: 0\n                        width: 106\n                        height: 105\n                        src: "https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 700\n                        scale: cover\n                    }\n                }\n            }\n            Tab {\n                text: "For You"\n                icon: "AROMA_ICON_FAVORITE"\n                Label {\n                    text: "For You"\n                    style: large\n                    x: 20\n                    y: 20\n                }\n                Label {\n                    text: "Memories ready to watch"\n                    style: small\n                    x: 20\n                    y: 52\n                }\n                Card {\n                    x: 20\n                    y: 80\n                    width: 280\n                    height: 252\n                    type: filled\n                }\n                Image {\n                    x: 32\n                    y: 92\n                    width: 256\n                    height: 150\n                    src: "https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=600"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 700\n                    scale: cover\n                    corner_radius: 12\n                }\n                Label {\n                    text: "Golden hour"\n                    style: medium\n                    x: 32\n                    y: 254\n                }\n                Label {\n                    text: "Lisbon · 24 photos"\n                    style: small\n                    x: 32\n                    y: 280\n                }\n                Button {\n                    text: "Watch memory"\n                    animation: slide_y\n                    animation_start_val: 368\n                    animation_end_val: 344\n                    animation_duration: 600\n                    animation_easing: ease_out_back\n                    x: 20\n                    y: 344\n                    width: 280\n                    height: 48\n                    type: filled\n                    icon: "AROMA_ICON_PLAY_ARROW"\n                }\n            }\n            Tab {\n                text: "Albums"\n                icon: "AROMA_ICON_PHOTO_ALBUM"\n                Label {\n                    text: "Albums"\n                    style: large\n                    x: 20\n                    y: 20\n                }\n                Label {\n                    text: "2 albums"\n                    style: small\n                    x: 20\n                    y: 52\n                }\n                Button {\n                    text: "Edit"\n                    x: 216\n                    y: 20\n                    width: 84\n                    height: 32\n                    type: outlined\n                }\n                Container {\n                    x: 20\n                    y: 92\n                    width: 280\n                    height: 76\n                    Card {\n                        x: 0\n                        y: 0\n                        width: 280\n                        height: 76\n                        type: outlined\n                    }\n                    Image {\n                        x: 10\n                        y: 10\n                        width: 56\n                        height: 56\n                        src: "https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 750\n                        scale: cover\n                        corner_radius: 10\n                    }\n                    Label {\n                        text: "Favorites"\n                        style: medium\n                        x: 80\n                        y: 14\n                    }\n                    Label {\n                        text: "128 items"\n                        style: small\n                        x: 80\n                        y: 42\n                    }\n                }\n                Container {\n                    x: 20\n                    y: 180\n                    width: 280\n                    height: 76\n                    Card {\n                        x: 0\n                        y: 0\n                        width: 280\n                        height: 76\n                        type: outlined\n                    }\n                    Image {\n                        x: 10\n                        y: 10\n                        width: 56\n                        height: 56\n                        src: "https://images.pexels.com/photos/29080604/pexels-photo-29080604.jpeg?auto=compress&cs=tinysrgb&w=300"\n                        animation: fade\n                        animation_start_val: 0\n                        animation_end_val: 1\n                        animation_duration: 750\n                        scale: cover\n                        corner_radius: 10\n                    }\n                    Label {\n                        text: "Travel"\n                        style: medium\n                        x: 80\n                        y: 14\n                    }\n                    Label {\n                        text: "342 items"\n                        style: small\n                        x: 80\n                        y: 42\n                    }\n                }\n            }\n            Tab {\n                text: "Search"\n                icon: "AROMA_ICON_SEARCH"\n                Label {\n                    text: "Search"\n                    style: large\n                    x: 20\n                    y: 20\n                }\n                Textbox {\n                    text: ""\n                    placeholder: "Photos, people, places"\n                    x: 20\n                    y: 56\n                    width: 280\n                    height: 40\n                }\n                Chip {\n                    x: 20\n                    y: 112\n                    label: "Favorites"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 700\n                    selected: true\n                }\n                Chip {\n                    x: 128\n                    y: 112\n                    label: "Selfies"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 750\n                }\n                Chip {\n                    x: 20\n                    y: 156\n                    label: "Videos"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 750\n                }\n                Chip {\n                    x: 116\n                    y: 156\n                    label: "Screenshots"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 750\n                }\n            }\n        }\n    }\n}\n',
+            'menu': 'Window {\n    width: 320\n    height: 480\n    title: "Menu"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        IconButton {\n            x: 12\n            y: 12\n            size: 36\n            icon: "AROMA_ICON_ARROW_BACK"\n            variant: standard\n        }\n        Label {\n            text: "Maya Chen"\n            style: medium\n            x: 60\n            y: 14\n        }\n        Label {\n            text: "online"\n            style: small\n            color: #34C759\n            x: 60\n            y: 40\n        }\n        Card {\n            x: 20\n            y: 76\n            animation: slide_x\n            animation_start_val: -180\n            animation_end_val: 20\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            width: 216\n            height: 60\n            type: filled\n        }\n        Label {\n            text: "Are we still on"\n            style: small\n            x: 32\n            y: 86\n        }\n        Label {\n            text: "for Saturday?"\n            style: small\n            x: 32\n            y: 104\n        }\n        Card {\n            x: 104\n            y: 148\n            animation: slide_x\n            animation_start_val: 320\n            animation_end_val: 104\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            width: 196\n            height: 44\n            type: filled\n        }\n        Label {\n            text: "Yes! Leaving at 9."\n            style: small\n            x: 116\n            y: 162\n        }\n        Card {\n            x: 20\n            y: 204\n            animation: slide_x\n            animation_start_val: -160\n            animation_end_val: 20\n            animation_duration: 550\n            animation_easing: ease_out_cubic\n            width: 180\n            height: 44\n            type: filled\n        }\n        Label {\n            text: "Bring the charger"\n            style: small\n            x: 32\n            y: 218\n        }\n        Menu {\n        animation: fade\n        animation_start_val: 0\n        animation_end_val: 1\n        animation_duration: 600\n            x: 20\n            y: 260\n            MenuItem { text: "Reply" }\n            MenuItem { text: "Copy" }\n            MenuItem { text: "Delete" }\n        }\n        Label {\n            text: "Long-press for actions."\n            style: small\n            x: 20\n            y: 412\n        }\n    }\n}\n',
+            'scroll': 'Window {\n    width: 320\n    height: 480\n    title: "Scroll"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        ScrollView {\n            x: 0\n            y: 0\n            width: 320\n            height: 480\n            direction: vertical\n            ScrollView {\n                x: 0\n                y: 64\n                width: 320\n                height: 100\n                direction: horizontal\n                Image {\n                    x: 16\n                    y: 8\n                    width: 56\n                    height: 56\n                    src: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 650\n                    scale: cover\n                    corner_radius: 28\n                }\n                Label {\n                    text: "you"\n                    style: small\n                    x: 32\n                    y: 68\n                }\n                Image {\n                    x: 88\n                    y: 8\n                    width: 56\n                    height: 56\n                    src: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 650\n                    scale: cover\n                    corner_radius: 28\n                }\n                Label {\n                    text: "dan"\n                    style: small\n                    x: 104\n                    y: 68\n                }\n                Image {\n                    x: 160\n                    y: 8\n                    width: 56\n                    height: 56\n                    src: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 650\n                    scale: cover\n                    corner_radius: 28\n                }\n                Label {\n                    text: "mia"\n                    style: small\n                    x: 178\n                    y: 68\n                }\n                Image {\n                    x: 232\n                    y: 8\n                    width: 56\n                    height: 56\n                    src: "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150"\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 650\n                    scale: cover\n                    corner_radius: 28\n                }\n                Label {\n                    text: "leo"\n                    style: small\n                    x: 250\n                    y: 68\n                }\n            }\n            Image {\n                x: 12\n                y: 176\n                width: 32\n                height: 32\n                src: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150"\n                scale: cover\n                corner_radius: 16\n            }\n            Label {\n                text: "maya.chen"\n                style: small\n                x: 52\n                y: 180\n            }\n            Label {\n                text: "Lisbon, Portugal"\n                style: small\n                x: 52\n                y: 198\n            }\n            Icon {\n                x: 288\n                y: 182\n                size: 20\n                text: "AROMA_ICON_MORE_HORIZ"\n            }\n            Image {\n                x: 0\n                y: 220\n                width: 320\n                height: 320\n                src: "https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?auto=compress&cs=tinysrgb&w=600"\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 750\n            scale: cover\n            }\n            Icon {\n                x: 12\n                y: 548\n                size: 24\n                text: "AROMA_ICON_FAVORITE"\n                color: #FF3040\n            }\n            Icon {\n                x: 44\n                y: 548\n                size: 24\n                text: "AROMA_ICON_CHAT_BUBBLE_OUTLINE"\n            }\n            Icon {\n                x: 76\n                y: 548\n                size: 24\n                text: "AROMA_ICON_SHARE"\n            }\n            Icon {\n                x: 284\n                y: 548\n                size: 24\n                text: "AROMA_ICON_BOOKMARK_BORDER"\n            }\n            Label {\n                text: "1,203 likes"\n                style: small\n                x: 12\n                y: 580\n            }\n            Label {\n                text: "maya.chen encore"\n                style: small\n                x: 12\n                y: 600\n            }\n            Label {\n                text: "48 comments"\n                style: small\n                x: 12\n                y: 620\n            }\n        }\n        Card {\n            x: 0\n            y: 0\n            width: 320\n            height: 56\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 500\n            type: glass\n            blur_radius: 18\n        }\n        Label {\n            text: "Moments"\n            style: large\n            x: 16\n            y: 12\n        }\n        Icon {\n            x: 240\n            y: 16\n            size: 24\n            text: "AROMA_ICON_FAVORITE"\n        }\n        Icon {\n            x: 276\n            y: 16\n            size: 24\n            text: "AROMA_ICON_CHAT_BUBBLE_OUTLINE"\n        }\n    }\n}\n',
+      'animation': 'Window {\n    width: 320\n    height: 480\n    title: "Motion"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Now Playing"\n            style: large\n            x: 20\n            y: 20\n            animation: slide_y\n            animation_start_val: -24\n            animation_end_val: 20\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n        }\n        Card {\n            x: 20\n            y: 70\n            width: 280\n            height: 110\n            type: filled\n            animation: scale_x\n            animation_start_val: 0\n            animation_end_val: 280\n            animation_duration: 700\n            animation_easing: ease_out_back\n        }\n        Image {\n            x: 32\n            y: 80\n            width: 90\n            height: 90\n            src: "https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=300"\n            scale: cover\n            corner_radius: 12\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 800\n        }\n        Label {\n            text: "Midnight Drive"\n            style: medium\n            x: 134\n            y: 88\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 800\n        }\n        Label {\n            text: "Neon Coast"\n            style: small\n            x: 134\n            y: 114\n            animation: slide_x\n            animation_start_val: 60\n            animation_end_val: 134\n            animation_duration: 600\n            animation_easing: ease_out_cubic\n        }\n        Label {\n            text: "Lossless"\n            style: small\n            x: 134\n            y: 138\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 900\n        }\n        Card {\n            x: 20\n            y: 196\n            width: 32\n            height: 52\n            type: filled\n            animation: scale_y\n            animation_start_val: 20\n            animation_end_val: 52\n            animation_duration: 500\n            animation_easing: ease_in_out\n            animation_loop: pingpong\n        }\n        Card {\n            x: 60\n            y: 196\n            width: 32\n            height: 64\n            type: filled\n            animation: scale_y\n            animation_start_val: 20\n            animation_end_val: 64\n            animation_duration: 620\n            animation_easing: ease_in_out\n            animation_loop: pingpong\n        }\n        Card {\n            x: 100\n            y: 196\n            width: 32\n            height: 44\n            type: filled\n            animation: scale_y\n            animation_start_val: 20\n            animation_end_val: 44\n            animation_duration: 740\n            animation_easing: ease_in_out\n            animation_loop: pingpong\n        }\n        Card {\n            x: 140\n            y: 196\n            width: 32\n            height: 58\n            type: filled\n            animation: scale_y\n            animation_start_val: 20\n            animation_end_val: 58\n            animation_duration: 860\n            animation_easing: ease_in_out\n            animation_loop: pingpong\n        }\n        Card {\n            x: 180\n            y: 196\n            width: 32\n            height: 48\n            type: filled\n            animation: scale_y\n            animation_start_val: 20\n            animation_end_val: 48\n            animation_duration: 980\n            animation_easing: ease_in_out\n            animation_loop: pingpong\n        }\n        Label {\n            text: "Live equalizer"\n            style: small\n            x: 20\n            y: 262\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 800\n        }\n        ProgressBar {\n            x: 20\n            y: 292\n            width: 280\n            height: 8\n            value: 0.35\n            type: determinate\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 800\n        }\n        Button {\n            text: "Play"\n            x: 20\n            y: 316\n            width: 280\n            height: 44\n            icon: "AROMA_ICON_PLAY_ARROW"\n            animation: slide_y\n            animation_start_val: 380\n            animation_end_val: 316\n            animation_duration: 600\n            animation_easing: ease_out_back\n        }\n    }\n}\n',
+            'theming': 'Window {\n    width: 320\n    height: 480\n    title: "Theming"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Appearance"\n            style: large\n            x: 20\n            y: 16\n        }\n        Label {\n            text: "Instant everywhere"\n            style: small\n            x: 20\n            y: 48\n        }\n        Dropdown {\n            x: 20\n            y: 76\n            width: 280\n            height: 40\n            on_change: "select_theme"\n            Option { text: "Default" }\n            Option { text: "Dark" }\n            Option { text: "High contrast" }\n            Option { text: "Material Blue" }\n            Option { text: "Material Teal" }\n            Option { text: "Material Green" }\n            Option { text: "Material Orange" }\n            Option { text: "Material Pink" }\n            Option { text: "Material Black" }\n            Option { text: "High contrast dark" }\n            Option { text: "Material Blue dark" }\n            Option { text: "Material Teal dark" }\n            Option { text: "Material Green dark" }\n            Option { text: "Material Orange dark" }\n            Option { text: "Material Pink dark" }\n        }\n        Label {\n            text: "Preview"\n            style: medium\n            x: 20\n            y: 128\n        }\n        Button {\n            text: "Primary action"\n            animation: slide_y\n            animation_start_val: 180\n            animation_end_val: 156\n            animation_duration: 600\n            animation_easing: ease_out_back\n            x: 20\n            y: 156\n            width: 200\n            height: 44\n            icon: "AROMA_ICON_STAR"\n        }\n        Card {\n            x: 20\n            y: 212\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            width: 280\n            height: 96\n            type: filled\n        }\n        Label {\n            text: "Cards follow the theme"\n            style: medium\n            x: 34\n            y: 224\n        }\n        Label {\n            text: "Try them all."\n            style: small\n            x: 34\n            y: 250\n        }\n        Label {\n            text: "Follows the picker"\n            style: small\n            x: 34\n            y: 272\n        }\n        Switch {\n            x: 20\n            y: 324\n            width: 52\n            height: 30\n            value: true\n        }\n        Label {\n            text: "Automatic"\n            style: small\n            x: 84\n            y: 330\n        }\n        Checkbox {\n            label: "Follow system"\n            x: 20\n            y: 364\n            width: 280\n            height: 32\n            checked: true\n        }\n    }\n}\n',
+            'layout': 'Window {\n    width: 320\n    height: 480\n    title: "Layout"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Profile"\n            style: large\n            x: 20\n            y: 16\n        }\n        Label {\n            text: "Rows, columns and grids"\n            style: small\n            x: 20\n            y: 48\n        }\n        Image {\n            x: 20\n            y: 76\n            width: 72\n            height: 72\n            src: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n            scale: cover\n            corner_radius: 36\n        }\n        Container {\n            x: 104\n            y: 76\n            width: 196\n            height: 72\n            layout: flex\n            direction: row\n            Container {\n                x: 0\n                y: 0\n                width: 65\n                height: 72\n                Label {\n                    text: "128"\n                    style: medium\n                    x: 0\n                    y: 8\n                }\n                Label {\n                    text: "Posts"\n                    style: small\n                    x: 0\n                    y: 38\n                }\n            }\n            Container {\n                x: 0\n                y: 0\n                width: 65\n                height: 72\n                Label {\n                    text: "12k"\n                    style: medium\n                    x: 0\n                    y: 8\n                }\n                Label {\n                    text: "Fans"\n                    style: small\n                    x: 0\n                    y: 38\n                }\n            }\n            Container {\n                x: 0\n                y: 0\n                width: 65\n                height: 72\n                Label {\n                    text: "340"\n                    style: medium\n                    x: 0\n                    y: 8\n                }\n                Label {\n                    text: "Follows"\n                    style: small\n                    x: 0\n                    y: 38\n                }\n            }\n        }\n        Label {\n            text: "Maya Chen"\n            style: medium\n            x: 20\n            y: 156\n        }\n        Label {\n            text: "Golden hour chaser"\n            style: small\n            x: 20\n            y: 180\n        }\n        Button {\n            text: "Follow"\n            animation: slide_y\n            animation_start_val: 232\n            animation_end_val: 208\n            animation_duration: 600\n            animation_easing: ease_out_cubic\n            x: 20\n            y: 208\n            width: 132\n            height: 40\n            icon: "AROMA_ICON_ADD"\n        }\n        Button {\n            text: "Message"\n            animation: slide_y\n            animation_start_val: 232\n            animation_end_val: 208\n            animation_duration: 600\n            animation_easing: ease_out_cubic\n            x: 168\n            y: 208\n            width: 132\n            height: 40\n            icon: "AROMA_ICON_CHAT_BUBBLE_OUTLINE"\n        }\n        Container {\n            x: 20\n            y: 260\n            width: 280\n            height: 88\n            layout: flex\n            direction: row\n            Image {\n                x: 0\n                y: 0\n                width: 88\n                height: 88\n                src: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=300"\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 750\n                scale: cover\n                corner_radius: 10\n            }\n            Image {\n                x: 0\n                y: 0\n                width: 88\n                height: 88\n                src: "https://images.pexels.com/photos/17034834/pexels-photo-17034834.jpeg?auto=compress&cs=tinysrgb&w=300"\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 750\n                scale: cover\n                corner_radius: 10\n            }\n            Image {\n                x: 0\n                y: 0\n                width: 88\n                height: 88\n                src: "https://images.pexels.com/photos/36132493/pexels-photo-36132493.jpeg?auto=compress&cs=tinysrgb&w=300"\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 750\n                scale: cover\n                corner_radius: 10\n            }\n        }\n        Container {\n            x: 20\n            y: 356\n            width: 280\n            height: 88\n            layout: flex\n            direction: row\n            Image {\n                x: 0\n                y: 0\n                width: 88\n                height: 88\n                src: "https://images.pexels.com/photos/27843522/pexels-photo-27843522.jpeg?auto=compress&cs=tinysrgb&w=300"\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 750\n                scale: cover\n                corner_radius: 10\n            }\n            Image {\n                x: 0\n                y: 0\n                width: 88\n                height: 88\n                src: "https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg?auto=compress&cs=tinysrgb&w=300"\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 750\n                scale: cover\n                corner_radius: 10\n            }\n            Image {\n                x: 0\n                y: 0\n                width: 88\n                height: 88\n                src: "https://images.pexels.com/photos/29080604/pexels-photo-29080604.jpeg?auto=compress&cs=tinysrgb&w=300"\n                animation: fade\n                animation_start_val: 0\n                animation_end_val: 1\n                animation_duration: 750\n                scale: cover\n                corner_radius: 10\n            }\n        }\n    }\n}\n',
+            'map': 'Window {\n    width: 320\n    height: 480\n    title: "Map"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Paris Trip"\n            style: large\n            x: 20\n            y: 16\n        }\n        Label {\n            text: "2 saved places"\n            style: small\n            x: 20\n            y: 48\n        }\n        Textbox {\n            text: ""\n            placeholder: "Search maps"\n            animation: slide_y\n            animation_start_val: 52\n            animation_end_val: 76\n            animation_duration: 500\n            animation_easing: ease_out_cubic\n            x: 20\n            y: 76\n            width: 280\n            height: 40\n        }\n        Map {\n            x: 20\n            y: 124\n            width: 280\n            height: 232\n            lat: 48.8566\n            lon: 2.3522\n            zoom: 12\n            Marker {\n                lat: 48.8584\n                lon: 2.2945\n                color: #FF3B30\n                popup: "Eiffel Tower"\n            }\n            Marker {\n                lat: 48.8049\n                lon: 2.1204\n                color: #007AFF\n                popup: "Versailles"\n            }\n        }\n        Card {\n            x: 20\n            y: 368\n            animation: slide_y\n            animation_start_val: 392\n            animation_end_val: 368\n            animation_duration: 600\n            animation_easing: ease_out_back\n            width: 280\n            height: 88\n            type: glass\n            blur_radius: 16\n        }\n        Label {\n            text: "Eiffel Tower"\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n            style: medium\n            x: 34\n            y: 380\n        }\n        Label {\n            text: "Open until late"\n            style: small\n            x: 34\n            y: 406\n        }\n        Label {\n            text: "12 min walk"\n            style: small\n            x: 34\n            y: 428\n        }\n    }\n}\n',
+                        'smarthome': 'Window {\n    width: 320\n    height: 480\n    title: "Home"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Good evening"\n            style: small\n            x: 20\n            y: 12\n        }\n        Label {\n            text: "My Home"\n            style: large\n            x: 20\n            y: 30\n        }\n        Image {\n            x: 266\n            y: 14\n            width: 40\n            height: 40\n            src: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150"\n            scale: cover\n            corner_radius: 20\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 700\n        }\n        Card {\n            x: 20\n            y: 70\n            width: 280\n            height: 104\n            type: filled\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 600\n        }\n        Label {\n            text: "Living room"\n            style: small\n            x: 34\n            y: 80\n        }\n        Label {\n            text: "21.5°"\n            style: large\n            x: 32\n            y: 96\n        }\n        Label {\n            text: "Heating to 22°"\n            style: small\n            x: 150\n            y: 112\n        }\n        Slider {\n            x: 34\n            y: 140\n            width: 212\n            height: 24\n            min: 15\n            max: 30\n            value: 22\n            animation: fade\n            animation_start_val: 0\n            animation_end_val: 1\n            animation_duration: 750\n        }\n        Tabs {\n            x: 20\n            y: 182\n            width: 280\n            height: 40\n            Tab {\n                text: "Living Room"\n            Container {\n            x: 0\n            y: 226\n            width: 320\n            height: 216\n\n        Card {\n            x: 20\n            y: 4\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Ceiling light"\n            style: medium\n            x: 34\n            y: 16\n        }\n        Label {\n            text: "Dimmable · Warm white"\n            style: small\n            x: 34\n            y: 40\n        }\n        Switch {\n            x: 232\n            y: 22\n            width: 52\n            height: 28\n            value: true\n        }\n        Card {\n            x: 20\n            y: 76\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Floor lamp"\n            style: medium\n            x: 34\n            y: 88\n        }\n        Label {\n            text: "Reading corner"\n            style: small\n            x: 34\n            y: 112\n        }\n        Switch {\n            x: 232\n            y: 94\n            width: 52\n            height: 28\n            value: false\n        }\n        Card {\n            x: 20\n            y: 148\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "TV"\n            style: medium\n            x: 34\n            y: 160\n        }\n        Label {\n            text: "Living room TV"\n            style: small\n            x: 34\n            y: 184\n        }\n        Switch {\n            x: 232\n            y: 166\n            width: 52\n            height: 28\n            value: false\n        }\n            }\n            }\n            Tab {\n                text: "Bedroom"\n            Container {\n            x: 0\n            y: 226\n            width: 320\n            height: 216\n\n        Card {\n            x: 20\n            y: 4\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Bedside lamp"\n            style: medium\n            x: 34\n            y: 16\n        }\n        Label {\n            text: "Left side"\n            style: small\n            x: 34\n            y: 40\n        }\n        Switch {\n            x: 232\n            y: 22\n            width: 52\n            height: 28\n            value: true\n        }\n        Card {\n            x: 20\n            y: 76\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Blinds"\n            style: medium\n            x: 34\n            y: 88\n        }\n        Label {\n            text: "Half open"\n            style: small\n            x: 34\n            y: 112\n        }\n        Switch {\n            x: 232\n            y: 94\n            width: 52\n            height: 28\n            value: false\n        }\n        Card {\n            x: 20\n            y: 148\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Night light"\n            style: medium\n            x: 34\n            y: 160\n        }\n        Label {\n            text: "Hallway"\n            style: small\n            x: 34\n            y: 184\n        }\n        Switch {\n            x: 232\n            y: 166\n            width: 52\n            height: 28\n            value: false\n        }\n            }\n            }\n            Tab {\n                text: "Kitchen"\n            Container {\n            x: 0\n            y: 226\n            width: 320\n            height: 216\n\n        Card {\n            x: 20\n            y: 4\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Pendants"\n            style: medium\n            x: 34\n            y: 16\n        }\n        Label {\n            text: "Island bar"\n            style: small\n            x: 34\n            y: 40\n        }\n        Switch {\n            x: 232\n            y: 22\n            width: 52\n            height: 28\n            value: true\n        }\n        Card {\n            x: 20\n            y: 76\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Coffee maker"\n            style: medium\n            x: 34\n            y: 88\n        }\n        Label {\n            text: "Scheduled 7:00"\n            style: small\n            x: 34\n            y: 112\n        }\n        Switch {\n            x: 232\n            y: 94\n            width: 52\n            height: 28\n            value: false\n        }\n        Card {\n            x: 20\n            y: 148\n            width: 280\n            height: 64\n            type: filled\n        }\n        Label {\n            text: "Oven"\n            style: medium\n            x: 34\n            y: 160\n        }\n        Label {\n            text: "Off"\n            style: small\n            x: 34\n            y: 184\n        }\n        Switch {\n            x: 232\n            y: 166\n            width: 52\n            height: 28\n            value: false\n        }\n            }\n            }\n        }\n        Label {\n            text: "3 devices on · All systems normal"\n            style: small\n            x: 20\n            y: 448\n        }\n    }\n}\n',
+'viewer3d': 'Window {\n    width: 320\n    height: 480\n    title: "Studio"\n    Container {\n        x: 0\n        y: 0\n        width: 320\n        height: 480\n        Label {\n            text: "Fox"\n            style: medium\n            x: 16\n            y: 12\n            id: "scene_name"\n        }\n        Button {\n            text: "Reset"\n            x: 252\n            y: 10\n            width: 52\n            height: 32\n            on_click: "studio_reset"\n        }\n        Tabs {\n            x: 20\n            y: 258\n            width: 280\n            height: 32\n            on_change: "studio_tab"\n            Tab {\n                text: "Fox"\n                                ThreeDViewer {\n                    id: "model_fox"\n                    x: 0\n                    y: 48\n                    width: 320\n                    height: 200\n                    model: fox\n                    light_x: 150\n                    light_y: 200\n                    light_z: 150\n                    auto_rotate: true\n                    interactive: true\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 700\n                }\n                                            }\n            Tab {\n                text: "Cube"\n                                ThreeDViewer {\n                    id: "model_cube"\n                    x: 0\n                    y: 48\n                    width: 320\n                    height: 200\n                    model: cube\n                    theta: 0.6\n                    phi: 1.1\n                    radius: 5.0\n                    light_x: 150\n                    light_y: 200\n                    light_z: 150\n                    auto_rotate: false\n                    interactive: true\n                    animation: fade\n                    animation_start_val: 0\n                    animation_end_val: 1\n                    animation_duration: 700\n                }\n                                            }\n        }\n        Card {\n            x: 8\n            y: 56\n            width: 104\n            height: 26\n            type: glass\n            blur_radius: 14\n        }\n        Label {\n            text: "Object Mode"\n            style: small\n            x: 18\n            y: 63\n        }\n                                Label {\n            text: "Orbit"\n            style: small\n            x: 20\n            y: 312\n            width: 64\n        }\n        Slider {\n            id: "s_orbit"\n            x: 88\n            y: 312\n            width: 150\n            height: 20\n            min: 0\n            max: 628\n            value: 0\n            on_change: "studio_orbit"\n        }\n        Label {\n            text: "0.00"\n            style: small\n            x: 242\n            y: 312\n            width: 58\n            id: "v_orbit"\n        }\n        Label {\n            text: "Tilt"\n            style: small\n            x: 20\n            y: 334\n            width: 64\n        }\n        Slider {\n            id: "s_tilt"\n            x: 88\n            y: 334\n            width: 150\n            height: 20\n            min: 10\n            max: 310\n            value: 100\n            on_change: "studio_tilt"\n        }\n        Label {\n            text: "1.00"\n            style: small\n            x: 242\n            y: 334\n            width: 58\n            id: "v_tilt"\n        }\n        Label {\n            text: "Zoom"\n            style: small\n            x: 20\n            y: 356\n            width: 64\n        }\n        Slider {\n            id: "s_zoom"\n            x: 88\n            y: 356\n            width: 150\n            height: 20\n            min: 5\n            max: 300\n            value: 232\n            on_change: "studio_zoom"\n        }\n        Label {\n            text: "232"\n            style: small\n            x: 242\n            y: 356\n            width: 58\n            id: "v_zoom"\n        }\n        Divider {\n            x: 20\n            y: 382\n            length: 280\n            orientation: horizontal\n        }\n        Label {\n            text: "Light X"\n            style: small\n            x: 20\n            y: 390\n            width: 64\n        }\n        Slider {\n            id: "s_lightx"\n            x: 88\n            y: 390\n            width: 150\n            height: 20\n            min: -300\n            max: 300\n            value: 150\n            on_change: "studio_lightx"\n        }\n        Label {\n            text: "150"\n            style: small\n            x: 242\n            y: 390\n            width: 58\n            id: "v_lightx"\n        }\n        Label {\n            text: "Light Y"\n            style: small\n            x: 20\n            y: 412\n            width: 64\n        }\n        Slider {\n            id: "s_lighty"\n            x: 88\n            y: 412\n            width: 150\n            height: 20\n            min: -300\n            max: 300\n            value: 200\n            on_change: "studio_lighty"\n        }\n        Label {\n            text: "200"\n            style: small\n            x: 242\n            y: 412\n            width: 58\n            id: "v_lighty"\n        }\n        Label {\n            text: "Light Z"\n            style: small\n            x: 20\n            y: 434\n            width: 64\n        }\n        Slider {\n            id: "s_lightz"\n            x: 88\n            y: 434\n            width: 150\n            height: 20\n            min: -300\n            max: 300\n            value: 150\n            on_change: "studio_lightz"\n        }\n        Label {\n            text: "150"\n            style: small\n            x: 242\n            y: 434\n            width: 58\n            id: "v_lightz"\n        }\n    }\n}\n',
+    };
+    window.incenseQuery = {};
+    try {
+      var qs = new URLSearchParams(window.location.search);
+      var exName = qs.get('example') || '';
+      window.incenseQuery = {
+        example: exName,
+        embed: qs.get('embed') === '1',
+        autorun: qs.get('autorun') === '1' || qs.get('embed') === '1' || !!exName
+      };
+    } catch (e) {}
+    window.incenseInitialSource = null;
+    if (window.incenseQuery.example && window.incenseExamples[window.incenseQuery.example]) {
+      window.incenseInitialSource = window.incenseExamples[window.incenseQuery.example];
+    }
+    Module.onRuntimeInitialized = function() {
+      var c = Module.canvas;
+      if (c) {
+        c.tabIndex = -1;
+        c.onkeydown = null;
+        c.onkeypress = null;
+        c.onkeyup = null;
+        Module.keyboardInput = null;
+      }
+      window.__aromaReady = true;
+    };
+
+  </script>
+  <script src="incense_sandbox.js?v=19"></script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.min.js"></script>
+  <script>
+    window.setStatus = function(type, msg) {
+      var statusDot = document.getElementById('statusDot');
+      var statusText = document.getElementById('statusText');
+      var errorMsg = document.getElementById('errorMsg');
+      if (statusText) statusText.textContent = msg || 'Ready';
+      if (statusDot) statusDot.className = 'status-dot ' + type;
+      if (errorMsg) errorMsg.textContent = type === 'error' ? msg : '';
+    };
+
+    function runCode() {
+      var source = window.incenseEditor ? window.incenseEditor.getValue() : '';
+      try {
+        Module.ccall('aroma_sandbox_reload', null, ['string'], [source]);
+        if (Module.ccall('aroma_sandbox_has_error', 'number', [], [])) {
+          setStatus('error', Module.ccall('aroma_sandbox_get_last_error', 'string', [], []));
+        } else {
+          setStatus('ok', 'Ready');
+          document.getElementById('runBtn').classList.remove('pending');
+        }
+        if (typeof window.syncPreviewAppTheme === 'function') window.syncPreviewAppTheme();
+      } catch (e) {
+        console.error('[sandbox] Runtime error:', e);
+        if (typeof e === 'object' && e.stack) console.error('[sandbox] Stack:', e.stack);
+        setStatus('error', 'Runtime error: ' + (e.message || String(e)));
+      }
+    }
+    window.runCode = runCode;
+    document.getElementById('runBtn').onclick = runCode;
+    document.getElementById('themeBtn').onclick = function() {
+      var html = document.documentElement;
+      var current = html.getAttribute('data-theme');
+      var next = current === 'light' ? 'dark' : 'light';
+      localStorage.setItem('sandbox-theme', next);
+      window.applySandboxTheme(next);
+    };
+
+    function autoRunWhenReady() {
+      var tries = 0;
+      var t = setInterval(function() {
+        tries++;
+        if (window.__aromaReady) {
+          clearInterval(t);
+          try { window.runCode(); } catch (e) {}
+        } else if (tries > 150) {
+          clearInterval(t);
+        }
+      }, 200);
+    }
+
+    if (window.incenseQuery && window.incenseQuery.embed) {
+      // Preview-only embed for docs pages: no editor, auto-run the demo.
+      document.body.classList.add('embed');
+      window.incenseEditor = { getValue: function() { return window.incenseInitialSource || ''; } };
+      // Docs pages can embed several live previews at once (e.g. the
+      // Input & Controls page runs inputs, buttons, slider and dropdown
+      // side by side). Freeze the wasm main loop while an embed is
+      // offscreen so the visible preview stays responsive.
+      window.__embedVisible = true;
+      function setEmbedLoopRunning() {
+        try {
+          if (!window.__aromaReady || !window.Module) return;
+          var run = window.__embedVisible && !document.hidden;
+          if (run) {
+            if (typeof window.Module.resumeMainLoop === 'function') window.Module.resumeMainLoop();
+          } else {
+            if (typeof window.Module.pauseMainLoop === 'function') window.Module.pauseMainLoop();
+          }
+        } catch (e) {}
+      }
+      window.__setEmbedLoopRunning = setEmbedLoopRunning;
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function(entries) {
+          for (var i = 0; i < entries.length; i++) {
+            window.__embedVisible = !!entries[i].isIntersecting;
+          }
+          setEmbedLoopRunning();
+        }, { threshold: 0.05 }).observe(document.body);
+      }
+      document.addEventListener('visibilitychange', setEmbedLoopRunning);
+      autoRunWhenReady();
+    } else {
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+      var savedTheme = getPreferredSandboxTheme();
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      monaco.editor.defineTheme('incense-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+          { token: 'keyword', foreground: '02569B', fontStyle: 'bold' },
+          { token: 'type', foreground: '0175C2' },
+          { token: 'string', foreground: 'C41A16' },
+          { token: 'number', foreground: '1C01CE' },
+          { token: 'comment', foreground: '177500' },
+          { token: 'delimiter', foreground: 'A90D91' }
+        ],
+        colors: { 'editor.background': '#FFFFFF', 'editor.foreground': '#202124' }
+      });
+      monaco.editor.defineTheme('incense-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'keyword', foreground: 'C586C0', fontStyle: 'bold' },
+          { token: 'type', foreground: '4EC9B0' },
+          { token: 'string', foreground: 'CE9178' },
+          { token: 'number', foreground: 'B5CEA8' },
+          { token: 'comment', foreground: '6A9955' },
+          { token: 'delimiter', foreground: 'D4D4D4' }
+        ],
+        colors: { 'editor.background': '#1E1E1E', 'editor.foreground': '#D4D4D4' }
+      });
+
+      monaco.languages.register({ id: 'incense' });
+      monaco.languages.setMonarchTokensProvider('incense', {
+        keywords: [
+          'Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar',
+          'Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar',
+          'Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','Marker','ThreeDViewer',
+          'Snackbar','ListView','Dialog','DialogAction','Action','ScrollView','SegmentedControl','Segment','Table','Column','Row','Tab','Item','MenuItem','ListItem','Header',            'Separator',
+          'Option','HeaderCell'
+        ],
+        properties: [
+          'x','y','width','height','text','title','message','placeholder','value','min','max',
+          'style','layout','direction','orientation','type','variant','checked','selected',
+          'src','lat','lon','zoom','radius','corner_radius','thickness','color','action','duration','z_index','animation','animation_start_val','animation_end_val','animation_duration','animation_easing',
+          'autoplay','interactive','auto_rotate','secondary','blur_radius','scale',
+          'model','theta','phi','target_x','target_y','target_z','fov','near','far','near_plane','far_plane','light_x','light_y','light_z',
+          'cam_theta','cam_phi','cam_radius','cam_target_x','cam_target_y','cam_target_z','cam_fov','cam_near','cam_far'
+        ],
+        enums: [
+          'large','medium','small','flex','row','column','horizontal','vertical','elevated','glass',
+          'filled','outlined','standard','assist','filter','suggestion','top','bottom','left','right',
+          'basic','fullscreen','determinate','indeterminate','fill','fit','cover'
+        ],
+        tokenizer: {
+          root: [
+            [/\{/, 'delimiter.curly'],
+            [/\}/, 'delimiter.curly'],
+            [/:/, 'delimiter.colon'],
+            [/,/, 'delimiter.comma'],
+            [/#[0-9a-fA-F]+/, 'color'],
+            [/\d+\.?\d*/, 'number'],
+            [/"([^"\\]|\\.)*$/, 'string.invalid'],
+            [/"/, 'string', '@string'],
+            [/\b(true|false)\b/, 'boolean'],
+            [/\/\/.*$/, 'comment'],
+            [/[a-zA-Z_]\w*/, {
+              cases: {
+                '@keywords': 'keyword',
+                '@properties': 'property',
+                '@enums': 'enum',
+                '@default': 'identifier'
+              }
+            }]
+          ],
+          string: [
+            [/[^\"]+/, 'string'],
+            [/"/, 'string', '@pop']
+          ]
+        }
+      });
+
+      var INCENSE_SUGGESTIONS = [
+        ...['Window','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','Marker','ThreeDViewer','Snackbar','ListView','Dialog','DialogAction','Action','ScrollView','SegmentedControl','Segment','Table','Column','Row','Tab','Item','MenuItem','ListItem','Header','Separator','Option','HeaderCell'].map(function(w){ return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: w + ' {\n    $0\n}', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
+        ...['x','y','width','height','text','title','message','placeholder','value','min','max','style','layout','direction','orientation','type','variant','checked','selected','src','lat','lon','zoom','radius','corner_radius','thickness','color','action','duration','z_index','animation','animation_start_val','animation_end_val','animation_duration','animation_easing','autoplay','interactive','auto_rotate','secondary','blur_radius','scale','model','theta','phi','target_x','target_y','target_z','fov','near','far','light_x','light_y','light_z'].map(function(p){ return { label: p, kind: monaco.languages.CompletionItemKind.Property, insertText: p + ': $0', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }),
+        { label: 'true', kind: monaco.languages.CompletionItemKind.Value, insertText: 'true' },
+        { label: 'false', kind: monaco.languages.CompletionItemKind.Value, insertText: 'false' },
+        ...['large','medium','small','flex','row','column','horizontal','vertical','elevated','glass','filled','outlined','standard','tonal','text','bar','assist','filter','suggestion','top','bottom','left','right','basic','fullscreen','determinate','indeterminate','fill','fit','cover'].map(function(e){ return { label: e, kind: monaco.languages.CompletionItemKind.Enum, insertText: e }; })
+      ];
+
+      var WIDGET_PROPS = {
+        'Button': ['x','y','width','height','text','type','style','color','icon','on_click','z_index'],
+        'Label': ['x','y','text','style','color','z_index'],
+        'Container': ['x','y','width','height','layout','direction','z_index'],
+        'ScrollView': ['x','y','width','height','direction','z_index'],
+        'Checkbox': ['x','y','width','height','label','checked','on_change','z_index'],
+        'Switch': ['x','y','width','height','value','on_change','z_index'],
+        'Slider': ['x','y','width','height','min','max','value','on_change','z_index'],
+        'Textbox': ['x','y','width','height','placeholder','on_change','on_submit','z_index'],
+        'ProgressBar': ['x','y','width','height','value','type','z_index'],
+        'Divider': ['x','y','length','orientation','z_index'],
+        'Card': ['x','y','width','height','type','blur_radius','z_index'],
+        'IconButton': ['x','y','width','height','icon','variant','on_click','z_index'],
+        'Icon': ['x','y','size','text','src','color','z_index'],
+        'Image': ['x','y','width','height','src','corner_radius','scale','z_index'],
+        'Dropdown': ['x','y','width','height','on_change','z_index'],
+        'RadioButton': ['x','y','width','height','label','group','selected','on_click','z_index'],
+        'Tabs': ['x','y','width','height','variant','selected','on_change','z_index'],
+        'SegmentedControl': ['x','y','width','height','selected','on_change','z_index'],
+        'Segment': ['text'],
+        'Sidebar': ['x','y','width','height','z_index'],
+        'Menu': ['x','y','width','z_index'],
+        'Chip': ['x','y','label','icon','type','selected','z_index'],
+        'Tooltip': ['x','y','text','position','z_index'],
+        'GIF': ['x','y','width','height','src','autoplay','corner_radius','scale','z_index'],
+        'Loading': ['x','y','radius','thickness','color','z_index'],
+        'Gauge': ['x','y','width','height','value','min','max','track_color','fill_color','start_angle','end_angle','track_thickness','fill_thickness','needle','needle_color','needle_thickness','ticks','hub','z_index'],
+        'Canvas': ['x','y','width','height','z_index'],
+        'DebugOverlay': ['x','y','width','height','visible','z_index'],
+        'Map': ['x','y','width','height','lat','lon','zoom','attribution','z_index'],
+        'Marker': ['lat','lon','color','popup','icon','z_index'],
+        'ThreeDViewer': ['x','y','width','height','model','src','theta','phi','radius','target_x','target_y','target_z','fov','near','far','near_plane','far_plane','cam_theta','cam_phi','cam_radius','cam_target_x','cam_target_y','cam_target_z','cam_fov','cam_near','cam_far','auto_rotate','interactive','light_x','light_y','light_z','z_index'],
+        'Snackbar': ['message','duration','action','on_click','z_index'],
+        'ListView': ['x','y','width','height','on_select','secondary','icon','z_index'],
+        'Dialog': ['title','message','width','height','type','visible','z_index'],
+        'DialogAction': ['text','label','on_click','z_index'],
+        'Action': ['text','label','on_click','z_index'],
+        'Table': ['x','y','width','height','columns','z_index'],
+        'Column': ['header','width'],
+        'Row': [],
+        'Tab': ['text','icon'],
+        'Item': ['text','icon'],
+        'MenuItem': ['text','icon'],
+        'Option': ['text'],
+        'HeaderCell': ['text']
+      };
+
+      var WIDGET_CHILDREN = {
+        'Window': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','Marker','ThreeDViewer','Snackbar','ListView','Dialog','DialogAction','Action','ScrollView','SegmentedControl','Segment','Table'],
+        'Container': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','Marker','ThreeDViewer','Snackbar','ListView','Dialog','DialogAction','Action','ScrollView','SegmentedControl','Segment','Table'],
+        'ScrollView': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Tabs','Sidebar','Menu','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','Marker','ThreeDViewer','Snackbar','ListView','Dialog','DialogAction','Action','ScrollView','SegmentedControl','Segment','Table'],
+        'Tabs': ['Tab'],
+        'SegmentedControl': ['Segment'],
+        'Tab': ['Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Dropdown','RadioButton','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','Dialog','DialogAction','Action','ScrollView','SegmentedControl','Segment','Table'],
+        'Sidebar': ['Item'],
+        'Menu': ['MenuItem'],
+        'Map': ['Marker'],
+        'Dropdown': ['Option'],
+        'Dialog': ['DialogAction','Action','Container','Button','Label','Checkbox','Switch','Slider','Textbox','ProgressBar','Divider','Card','IconButton','Icon','Image','Chip','Tooltip','GIF','Loading','Gauge','Canvas','DebugOverlay','Map','ThreeDViewer','Snackbar','ListView','ScrollView','Table'],
+        'Table': ['Column','Row','HeaderCell'],
+        'ListView': ['ListItem','Header','Separator']
+      };
+
+      function getWidgetContext(model, line) {
+        var text = model.getValue();
+        var lines = text.split('\n');
+        var stack = [];
+        for (var i = 0; i < line && i < lines.length; i++) {
+          var l = lines[i].trim();
+          if (!l || l.startsWith('//')) continue;
+          var open = (l.match(/\{/g) || []).length;
+          var close = (l.match(/\}/g) || []).length;
+          if (open > close) {
+            var match = l.match(/^([A-Za-z_]\w*)\s*\{/);
+            if (match && WIDGET_PROPS[match[1]]) {
+              stack.push(match[1]);
+            }
+          } else if (close > open) {
+            if (stack.length) stack.pop();
+          }
+        }
+        return stack;
+      }
+
+      var WIDGET_SNIPPETS = {
+        'Button': 'Button {\n    text: "$1"\n    x: ${2:0}\n    y: ${3:0}\n    width: ${4:120}\n    height: ${5:40}\n    icon: "$6"\n}',
+        'Label': 'Label {\n    text: "$1"\n    x: ${2:0}\n    y: ${3:0}\n    style: ${4:medium}\n}',
+        'Container': 'Container {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    layout: $5\n    direction: $6\n}',
+        'ScrollView': 'ScrollView {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    direction: $5\n}',
+        'Checkbox': 'Checkbox {\n    label: "$1"\n    x: $2\n    y: $3\n    width: $4\n    height: $5\n    checked: $6\n}',
+        'Switch': 'Switch {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    value: $5\n}',
+        'Slider': 'Slider {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    min: $5\n    max: $6\n    value: $7\n}',
+        'Textbox': 'Textbox {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    placeholder: "$5"\n}',
+        'ProgressBar': 'ProgressBar {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    value: $5\n}',
+        'Divider': 'Divider {\n    x: $1\n    y: $2\n    length: $3\n    orientation: $4\n}',
+        'Card': 'Card {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    type: $5\n}',
+        'IconButton': 'IconButton {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    icon: "$5"\n    variant: $6\n}',
+        'Icon': 'Icon {\n    x: $1\n    y: $2\n    size: $3\n    text: "$4"\n}',
+        'Image': 'Image {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    src: "$5"\n    corner_radius: $6\n}',
+        'Dropdown': 'Dropdown {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Option { text: "$5" }\n    Option { text: "$6" }\n}',
+        'RadioButton': 'RadioButton {\n    label: "$1"\n    x: $2\n    y: $3\n    width: $4\n    height: $5\n    group: $6\n    checked: $7\n}',
+        'Tabs': 'Tabs {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Tab { text: "$5" }\n    Tab { text: "$6" }\n}',
+        'SegmentedControl': 'SegmentedControl {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Segment { text: "$5" }\n    Segment { text: "$6" }\n}',
+        'Sidebar': 'Sidebar {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Item { text: "$5" }\n    Item { text: "$6" }\n}',
+        'Menu': 'Menu {\n    x: $1\n    y: $2\n    width: $3\n    MenuItem { text: "$4" }\n    MenuItem { text: "$5" }\n}',
+        'Chip': 'Chip {\n    x: $1\n    y: $2\n    label: "$3"\n    type: $4\n    selected: $5\n}',
+        'Tooltip': 'Tooltip {\n    text: "$1"\n    x: $2\n    y: $3\n    position: $4\n}',
+        'GIF': 'GIF {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    src: "$5"\n    autoplay: $6\n}',
+        'Loading': 'Loading {\n    x: $1\n    y: $2\n    radius: $3\n    thickness: $4\n}',
+        'Gauge': 'Gauge {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    value: $5\n}',
+        'Canvas': 'Canvas {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n}',
+        'DebugOverlay': 'DebugOverlay {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    visible: $5\n}',
+        'Map': 'Map {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    lat: $5\n    lon: $6\n    zoom: $7\n}',
+        'Marker': 'Marker {\n    lat: $1\n    lon: $2\n    popup: "$3"\n}',
+        'ThreeDViewer': 'ThreeDViewer {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    model: $5\n    theta: $6\n    phi: $7\n    radius: $8\n    auto_rotate: $9\n    interactive: $10\n}',
+        'Snackbar': 'Snackbar {\n    message: "$1"\n    duration: $2\n    action: "$3"\n}',
+        'ListView': 'ListView {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n}',
+        'Dialog': 'Dialog {\n    title: "$1"\n    message: "$2"\n    width: $3\n    height: $4\n    type: $5\n}',
+        'DialogAction': 'DialogAction {\n    text: "$1"\n}',
+        'Action': 'Action {\n    text: "$1"\n}',
+        'Table': 'Table {\n    x: $1\n    y: $2\n    width: $3\n    height: $4\n    Column { header: "$5" }\n    Column { header: "$6" }\n}',
+        'Column': 'Column {\n    header: "$1"\n    width: $2\n}',
+        'Row': 'Row {\n}',
+        'Tab': 'Tab {\n    text: "$1"\n    icon: "$2"\n}',
+        'Item': 'Item {\n    text: "$1"\n    icon: "$2"\n}',
+        'MenuItem': 'MenuItem {\n    text: "$1"\n    icon: "$2"\n}',
+        'Option': 'Option {\n    text: "$1"\n}',
+        'HeaderCell': 'HeaderCell {\n    text: "$1"\n}'
+      };
+
+      monaco.languages.registerCompletionItemProvider('incense', {
+        provideCompletionItems: function(model, position) {
+          var ctx = getWidgetContext(model, position.lineNumber - 1);
+          var suggestions = [];
+          var word = model.getWordUntilPosition(position);
+          var range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
+
+          if (ctx.length === 0) {
+            var widgetNames = Object.keys(WIDGET_SNIPPETS);
+            suggestions = suggestions.concat(
+              widgetNames.map(function(w) {
+                return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: WIDGET_SNIPPETS[w], insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range: range };
+              })
+            );
+          } else {
+            var currentWidget = ctx[ctx.length - 1];
+            var props = WIDGET_PROPS[currentWidget] || [];
+            suggestions = suggestions.concat(
+              props.map(function(p) {
+                return { label: p, kind: monaco.languages.CompletionItemKind.Property, insertText: p + ': $0', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range: range };
+              })
+            );
+            suggestions.push({ label: 'true', kind: monaco.languages.CompletionItemKind.Value, insertText: 'true', range: range });
+            suggestions.push({ label: 'false', kind: monaco.languages.CompletionItemKind.Value, insertText: 'false', range: range });
+            var children = WIDGET_CHILDREN[currentWidget];
+            if (children && children.length) {
+              suggestions = suggestions.concat(
+                children.map(function(w) {
+                  return { label: w, kind: monaco.languages.CompletionItemKind.Class, insertText: WIDGET_SNIPPETS[w] || (w + ' {\n    $0\n}'), insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, range: range };
+                })
+              );
+            }
+          }
+
+          return { suggestions: suggestions };
+        }
+      });
+
+      monaco.languages.registerHoverProvider('incense', {
+        provideHover: function(model, position) {
+          var word = model.getWordAtPosition(position);
+          if (!word) return null;
+          var docs = {
+            'Window': 'Top-level container for an AromaUI application.',
+            'Container': 'A layout container that can arrange children in flex or none mode.',
+            'Button': 'A clickable button widget.',
+            'Label': 'Displays a single line of text.',
+            'Checkbox': 'A toggleable checkbox.',
+            'Switch': 'A toggle switch.',
+            'Slider': 'A value slider with min/max range.',
+            'Textbox': 'A single-line text input.',
+            'ProgressBar': 'Shows progress, determinate or indeterminate.',
+            'Divider': 'A visual divider line.',
+            'Card': 'A material-style card container.',
+            'IconButton': 'A button that shows an icon.',
+            'Icon': 'Renders a single icon glyph.',
+            'Image': 'Displays an image from a source path.',
+            'Dropdown': 'A dropdown selection widget.',
+            'RadioButton': 'A radio button for single-choice groups.',
+            'Tabs': 'A tabbed interface container.',
+            'Sidebar': 'A side navigation panel.',
+            'Menu': 'A popup menu with items.',
+            'Chip': 'A compact chip/tag element.',
+            'Tooltip': 'A floating tooltip.',
+            'GIF': 'An animated GIF image widget.',
+            'Loading': 'A loading spinner indicator.',
+            'Gauge': 'A circular gauge meter.',
+            'Canvas': 'A blank canvas drawing surface.',
+            'DebugOverlay': 'A debug information overlay.',
+            'Map': 'An interactive map widget.',
+            'Marker': 'A marker pin inside a Map.',
+            'ThreeDViewer': 'A 3D model viewer.',
+            'Snackbar': 'A transient message bar.',
+            'ListView': 'A scrollable list with ListItem, Header, and Separator children.',
+            'Dialog': 'A modal dialog window.',
+            'DialogAction': 'An action button inside a Dialog.',
+            'Action': 'An action button inside a Dialog (alias).',
+            'ScrollView': 'A scrollable container.',
+            'Table': 'A data table widget.'
+          };
+          var text = docs[word.word];
+          if (!text) return null;
+          return { contents: [{ value: '**' + word.word + '**\n\n' + text }] };
+        }
+      });
+
+      var defaultSource = `Window {
+    width: 320
+    height: 480
+    title: "Settings"
+
+    Container {
+        id: "page_main"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 1
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 120
+        
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+                visible: 0
+            }
+
+            Label {
+                text: "Settings"
+                style: large
+                y:20
+                x: 10
+            }
+             Textbox {
+            text: ""
+            placeholder: "Search settings"
+            x: 10
+            y: 56
+            width: 300
+            height: 44
+            on_change: "on_search_change"
+        }
+        }
+
+       
+
+        ListView {
+            id: "settings_list"
+            x: 0
+            y: 120
+            width: 320
+            height: 360
+            on_select: "navigate"
+
+            Header { text: "General" }
+            ListItem { text: "Airplane Mode" secondary: "Off" icon: "AROMA_ICON_AIRPLANEMODE_INACTIVE" }
+            ListItem { text: "Wi-Fi" secondary: "Not Connected" icon: "AROMA_ICON_NETWORK_WIFI" }
+            ListItem { text: "Bluetooth" secondary: "On" icon: "AROMA_ICON_BLUETOOTH" }
+            ListItem { text: "Cellular" secondary: "5G On" icon: "AROMA_ICON_SIGNAL_CELLULAR_4_BAR" }
+            ListItem { text: "VPN" secondary: "Disconnected" icon: "AROMA_ICON_LOCK" }
+
+            Header { text: "Display & Brightness" }
+            ListItem { text: "Brightness" secondary: "50%" icon: "AROMA_ICON_BRIGHTNESS_MEDIUM" }
+            ListItem { text: "Auto-Lock" secondary: "2 minutes" icon: "AROMA_ICON_LOCK" }
+            ListItem { text: "Night mode" secondary: "On until 7 AM" icon: "AROMA_ICON_WB_SUNNY" }
+            ListItem { text: "Adaptive tone" secondary: "On" icon: "AROMA_ICON_BRIGHTNESS_AUTO" }
+
+            Header { text: "Privacy" }
+            ListItem { text: "Location Services" secondary: "While Using the App" icon: "AROMA_ICON_LOCATION_CITY" }
+            ListItem { text: "Photos" secondary: "All Photos" icon: "AROMA_ICON_PHOTO" }
+            ListItem { text: "Camera" secondary: "On" icon: "AROMA_ICON_PHOTO_CAMERA" }
+            ListItem { text: "Microphone" secondary: "On" icon: "AROMA_ICON_MIC" }
+        }
+    }
+
+    Container {
+        id: "page_airplane"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+    
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Airplane Mode"
+                style: large
+                y: 20
+                x: 60
+            }
+        }
+
+        ListView {
+            x: 0
+            y: 56
+            width: 320
+            height: 424
+
+            ListItem { text: "Airplane Mode" secondary: "Off" }
+            ListItem { text: "My Number" secondary: "" }
+            ListItem { text: "Cellular Data Options" secondary: "" }
+            ListItem { text: "Cellular Data" secondary: "On" }
+            ListItem { text: "Data Roaming" secondary: "Off" }
+            ListItem { text: "Voice & Data" secondary: "5G Auto" }
+            ListItem { text: "Data Mode" secondary: "Allow More Data on 5G" }
+        }
+    }
+
+    Container {
+        id: "page_wifi"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+  
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Wi-Fi"
+                style: large
+                y: 20
+                x: 60
+            }
+        }
+
+        ListView {
+            x: 0
+            y: 56
+            width: 320
+            height: 370
+
+            ListItem { text: "Wi-Fi" secondary: "On" }
+            ListItem { text: "Network Name" secondary: "Not Connected" }
+            ListItem { text: "Auto-Join" secondary: "On" }
+            ListItem { text: "Auto-Lock" secondary: "Never" }
+            ListItem { text: "Ask to Join" secondary: "On" }
+        }
+
+        IconButton {
+            x: 246
+            y: 394
+            width: 60
+            height: 60
+            icon: "AROMA_ICON_ADD"
+            variant: standard
+            on_click: "navigate_wifi_connect"
+        }
+    }
+
+    Container {
+        id: "page_wifi_connect"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Wi-Fi"
+                style: large
+                y: 20
+                x: 60
+            }
+        }
+
+        Container {
+            x: 20
+            y: 70
+            width: 280
+            height: 340
+
+            Textbox {
+                text: ""
+                placeholder: "Network Name (SSID)"
+                x: 20
+                y: 30
+                width: 240
+                height: 44
+            }
+
+            Textbox {
+                text: ""
+                placeholder: "Password"
+                x: 20
+                y: 90
+                width: 240
+                height: 44
+            }
+
+            Button {
+                text: "Connect to Network"
+                x: 40
+                y: 170
+                width: 200
+                height: 44
+                on_click: "wifi_connect"
+            }
+        }
+    }
+
+    Container {
+        id: "page_bluetooth"
+        x: 0
+        y: 0
+        width: 320
+        height: 480
+        layout: flex
+        direction: column
+        visible: 0
+
+        Container {
+            x: 0
+            y: 0
+            width: 320
+            height: 56
+
+            IconButton {
+                x: 8
+                y: 8
+                width: 40
+                height: 40
+                icon: "AROMA_ICON_ARROW_BACK"
+                variant: standard
+                on_click: "back"
+            }
+
+            Label {
+                text: "Bluetooth"
+                style: large
+                y: 20
+                x: 60 
+            }
+        }
+
+        ListView {
+            x: 0
+            y: 56
+            width: 320
+            height: 424
+
+            ListItem { text: "Bluetooth" secondary: "On" }
+            ListItem { text: "My Devices" secondary: "" }
+            ListItem { text: "Other Devices" secondary: "" }
+        }
+    }
+}
+`;
+      var editor = monaco.editor.create(document.getElementById('editor'), {
+        value: (window.incenseInitialSource || defaultSource),
+        language: 'incense',
+        theme: savedTheme === 'dark' ? 'incense-dark' : 'incense-light',
+        automaticLayout: true,
+        minimap: { enabled: true },
+        fontSize: 14,
+        fontFamily: 'Roboto Mono, Consolas, monospace',
+        lineNumbers: 'on',
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+        suggest: { showMethods: true, showFunctions: true, showClasses: true }
+      });
+      window.incenseEditor = editor;
+
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, function() {
+        editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
+      });
+
+      if (window.incenseQuery && window.incenseQuery.autorun) autoRunWhenReady();
+    });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+Window {
+    width: 400
+    height: 600
+    title: "Forms"
+
+    Label { text: "Form Elements" x: 20 y: 20 style: "large" }
+    Label { text: "Text inputs, toggles, and sliders" x: 20 y: 60 style: "medium" color: "#888888" }
+
+    Textbox { text: "Enter text..." x: 20 y: 120 width: 360 height: 40 }
+    Textbox { text: "Password" x: 20 y: 180 width: 360 height: 40 }
+
+    Checkbox { text: "Remember me" x: 20 y: 240 }
+    Checkbox { text: "Accept terms" x: 20 y: 280 }
+
+    Switch { x: 20 y: 330 }
+    Label { text: "Dark mode" x: 70 y: 330 }
+
+    Slider { x: 20 y: 380 width: 360 min: 0 max: 100 value: 50 }
+    Label { text: "Volume: 50%" x: 20 y: 420 }
+
+    ProgressBar { value: 0.75 x: 20 y: 480 width: 360 height: 20 }
+}

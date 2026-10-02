@@ -1,0 +1,8 @@
+# Git LFS is used ONLY for offline map tiles (*.mbtiles) and vehicle models
+# (*.glb). All other large
+# generated binaries (*.wasm outside docs/, *.a, build trees,
+# node_modules/, SQLite *-shm/*-wal sidecars) stay git-ignored (see
+# .gitignore) and are rebuilt locally instead of being committed.
+# docs/**/*.wasm stays tracked as plain blobs for GitHub Pages.
+*.mbtiles filter=lfs diff=lfs merge=lfs -text
+*.glb filter=lfs diff=lfs merge=lfs -text

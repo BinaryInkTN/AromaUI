@@ -1,0 +1,24 @@
+Window {
+    width: 400
+    height: 600
+    title: "Incense Sandbox"
+
+    Label { text: "Incense Sandbox" x: 20 y: 20 style: "large" }
+    Label { text: "Edit the code, see real-time results" x: 20 y: 60 style: "medium" color: "#888888" }
+
+    Button { text: "Click Me" x: 20 y: 120 width: 120 height: 40 }
+    Switch { x: 160 y: 120 }
+    Checkbox { text: "Option A" x: 20 y: 180 }
+    Slider { x: 20 y: 220 width: 200 min: 0 max: 100 value: 50 }
+    Textbox { text: "Hello" x: 20 y: 280 width: 200 height: 40 }
+    ProgressBar { value: 0.7 x: 20 y: 340 width: 200 height: 20 }
+
+    Card {
+        x: 20
+        y: 400
+        width: 360
+        height: 120
+        title: "Card Title"
+        subtitle: "Card subtitle text"
+    }
+}

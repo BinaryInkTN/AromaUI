@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  aroma_container:
+    build: .
+    container_name: aroma_android_container
+    network_mode: "host"  
+    volumes:
+      - ./work:/home/dev/AromaUI/local
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"  # Mount source so you can edit code on host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    stdin_open: true
+    tty: true

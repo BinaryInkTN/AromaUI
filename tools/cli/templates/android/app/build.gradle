@@ -1,0 +1,34 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace '{{PACKAGE_NAME}}'
+    compileSdk {{COMPILE_SDK}}
+
+    defaultConfig {
+        applicationId "{{PACKAGE_NAME}}"
+        minSdk {{MIN_SDK}}
+        targetSdk {{TARGET_SDK}}
+        versionCode 1
+        versionName "1.0"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            debuggable true
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+}

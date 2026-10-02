@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendors/freetype" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendors/freetype/subprojects/dlg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendors/glps" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendors/glps/scripts/wayland-protocols" vcs="Git" />
+  </component>
+</project>

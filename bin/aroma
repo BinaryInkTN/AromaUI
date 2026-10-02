@@ -1,0 +1,9 @@
+#!/bin/bash
+# Wrapper for python cli
+REAL_PATH=$(readlink -f "$0")
+DIR=$(dirname "$REAL_PATH")
+# The script is in bin/, proper script is in tools/cli/aroma.py
+# So we go up one, then down to tools/cli
+PYTHON_SCRIPT="$DIR/../tools/cli/aroma.py"
+
+python3 "$PYTHON_SCRIPT" "$@"

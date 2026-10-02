@@ -1,0 +1,47 @@
+Window {
+    width: 400
+    height: 600
+    title: "Layout"
+
+    Label { text: "Layout" x: 20 y: 20 style: "large" }
+    Label { text: "Cards, dividers, and containers" x: 20 y: 60 style: "medium" color: "#888888" }
+
+    Card {
+        x: 20
+        y: 120
+        width: 360
+        height: 100
+        title: "Card Title"
+        subtitle: "This is a card with some content inside it."
+    }
+
+    Divider { x: 20 y: 240 width: 360 }
+
+    Card {
+        x: 20
+        y: 260
+        width: 170
+        height: 120
+        title: "Small Card"
+    }
+
+    Card {
+        x: 210
+        y: 260
+        width: 170
+        height: 120
+        title: "Another Card"
+    }
+
+    Container {
+        x: 20
+        y: 400
+        width: 360
+        height: 160
+        layout: "flex"
+        direction: "row"
+
+        Card { width: 170 height: 140 title: "Flex Card 1" }
+        Card { width: 170 height: 140 title: "Flex Card 2" }
+    }
+}

@@ -1,0 +1,48 @@
+
+A high-performance, interactive map component supporting OpenStreetMap tiles, markers, and routing.
+
+## Quick Start
+
+```c
+AromaNode *map = aroma_ui_map(root, 0, 0, 700, 400);
+aroma_map_set_center(map, 33.8869f, 9.5375f);
+aroma_map_add_icon_marker_with_font(map, 33.8869f, 9.5375f, 0xFF0000, AROMA_ICON_HOME, icon_font);
+aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);
+```
+
+## Features
+
+- **Tile caching**: LRU cache with 128 tiles by default
+- **Online tiles**: OpenStreetMap only (`tile.openstreetmap.org`), no API key
+- **Dark mode**: follows the app theme automatically; dark tiles are derived client-side from the cached OSM tiles
+- **Smooth zoom**: previous-level tiles stay on screen while the new level loads; pending tiles show a loading grid- **Cross-platform**: Uses libcurl on native, `emscripten_fetch` on web
+- **Markers**: Icon and popup markers with click interaction
+- **Routing**: OSRM polyline routing with mutex-safe decoding
+- **Physics**: Inertial panning with velocity-based fling
+
+## API Reference
+
+| Function | Purpose |
+|---|---|
+| `aroma_map_set_center(lat, lon)` | Set map center |
+| `aroma_map_set_zoom(level)` | Set zoom level (1 to 18) |
+| `aroma_map_add_marker(lat, lon, color)` | Add plain dot marker |
+| `aroma_map_add_icon_marker_with_font(lat, lon, color, icon, icon_font)` | Add icon marker |
+| `aroma_map_add_popup_marker(lat, lon, color, text)` | Add clickable popup |
+| `aroma_map_set_route(lat1, lon1, lat2, lon2, color)` | Draw route polyline |
+| `aroma_map_clear_route()` | Clear current route |
+
+## Architecture
+
+The map widget runs tile fetching on background worker threads to avoid blocking the UI. It uses spherical mercator projection to convert lat/lon to pixel coordinates and supports pan/zoom gestures with momentum.
+
+## Live demo
+
+```incense-demo map
+```
+
+## What's Next
+
+- Learn [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
+- Explore [Input & Controls](Input-and-Control-Widgets.md) for interactive elements.
+- Try [Incense](Incense-Sandbox.md) for rapid prototyping.

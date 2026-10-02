@@ -1,0 +1,49 @@
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+build-web/
+build-ems/
+examples/smarthome_example/
+examples/map_example/
+__pycache__/
+*.pyc
+# Local package installs (created at run time; only README.md is committed).
+examples/car_infotainment/packages/*/
+# Emscripten / CMake build trees (generated, never commit).
+build_web/
+build_native/
+# Local build artifacts.
+*.a
+*.o
+*.so
+# Built AromaUI packages: CMake packs these from plugin sources on every
+# native build (build/dist/, build/assets/, source assets dir) and installs
+# them to /usr/share/infotainment/assets on target images. Never commit
+# binaries - Yocto / packaging builds produce their own matching-arch copies.
+*.apak
+# Android / IDE runtime junk.
+.gradle/
+*.hprof
+local.properties
+store_repo/
+tools/store_repo/
+
+# --- Large generated binaries: never commit, never LFS; rebuild locally. ---
+# Node dependencies (restore with npm ci / npm install).
+node_modules/
+# Generated WebAssembly (rebuild with Emscripten). Prebuilt docs/ copies stay
+# tracked for GitHub Pages; everything else is a build artifact.
+*.wasm
+!docs/**/*.wasm
+!docs/*.wasm
+# Emscripten glue copied next to the sandbox IDE for local ide_server.py runs.
+examples/incense_sandbox/incense_sandbox.js
+# Offline map tiles are Git-LFS tracked (see .gitattributes). SQLite sidecars
+# (*-shm/*-wal) are runtime journals - never commit them.
+# Regenerate tiles with tools/mbtiles/map_export_tool.py.
+*.mbtiles-wal
+*-shm
+*-wal
+# Sandbox IDE runtime workspaces (created via ide_server.py / aroma CLI).
+examples/incense_sandbox/workspace/

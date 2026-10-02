@@ -1,0 +1,164 @@
+
+Interactive widgets: buttons, checkboxes, switches, sliders, textboxes, and chips.
+
+## Buttons
+
+```c
+static bool on_button_click(AromaNode *node, void *ud) {
+    (void)node;
+    (void)ud;
+    /* handle click */
+    return true;
+}
+
+AromaNode *btn = aroma_ui_button(root, "Click Me", 20, 20, 160, 48,
+                                 on_button_click, NULL, NULL);
+```
+
+### Button types
+
+Text buttons come in five Material-style types with theme-aware colors:
+
+| Type | Look | Use Case |
+|---|---|---|
+| `BUTTON_TYPE_FILLED` (default) | Solid primary background | Primary call to action |
+| `BUTTON_TYPE_TONAL` | Soft primary container background | Secondary action |
+| `BUTTON_TYPE_OUTLINED` | Transparent with primary border | Alternative action |
+| `BUTTON_TYPE_TEXT` | Borderless text label | Low-emphasis action in dialogs and cards |
+| `BUTTON_TYPE_ELEVATED` | Surface background with shadow | Action floating over content |
+
+```c
+AromaNode *tonal = aroma_ui_button_with_type(root, "Share", 20, 80, 160, 48,
+                                             BUTTON_TYPE_TONAL, on_button_click, NULL, NULL);
+aroma_button_set_type(btn, BUTTON_TYPE_OUTLINED);  /* retune later */
+```
+
+In Incense, use `type: filled | tonal | outlined | text | elevated`:
+
+```aroma
+Button {
+    text: "Watch memory"
+    x: 20
+    y: 340
+    width: 280
+    height: 48
+    type: filled
+    icon: "AROMA_ICON_PLAY_ARROW"
+}
+```
+
+Variants are supported on icon buttons (`ICON_BUTTON_STANDARD`, `ICON_BUTTON_FILLED`, `ICON_BUTTON_TONAL`, `ICON_BUTTON_OUTLINED`).
+
+## Icon Button
+
+```c
+AromaNode *ib = aroma_ui_iconbutton(root, AROMA_ICON_SETTINGS, 300, 20, 48,
+                                    ICON_BUTTON_STANDARD, on_icon_click, NULL, font);
+```
+
+## Checkbox
+
+```c
+static void on_checkbox_toggle(bool checked, void *ud) {
+    (void)checked;
+    (void)ud;
+    /* handle toggle */
+}
+
+AromaNode *cb = aroma_ui_checkbox(root, "Enable notifications", 20, 100, 300, 32,
+                                  on_checkbox_toggle, NULL, NULL);
+```
+
+## Radio Button
+
+```c
+#define SETTINGS_GROUP 1
+
+AromaNode *rb1 = aroma_ui_radiobutton(root, "Option A", 20, 140, 200, 32,
+                                      SETTINGS_GROUP, NULL, NULL, NULL);
+AromaNode *rb2 = aroma_ui_radiobutton(root, "Option B", 20, 180, 200, 32,
+                                      SETTINGS_GROUP, NULL, NULL, NULL);
+```
+
+Radio buttons in the same group are mutually exclusive.
+
+## Switch
+
+```c
+static bool on_switch_toggle(AromaNode *node, void *ud) {
+    (void)node;
+    (void)ud;
+    /* handle toggle */
+    return true;
+}
+
+AromaNode *sw = aroma_ui_switch(root, 20, 220, 56, 28, true,
+                                on_switch_toggle, NULL);
+```
+
+## Slider
+
+```c
+static bool on_slider_change(AromaNode *node, void *ud) {
+    (void)node;
+    (void)ud;
+    /* handle value change */
+    return true;
+}
+
+AromaNode *slider = aroma_ui_slider(root, 20, 280, 260, 32, 0, 100, 50,
+                                    on_slider_change, NULL);
+```
+
+## Textbox
+
+```c
+static bool on_text_change(AromaNode *node, const char *text, void *ud) {
+    (void)node;
+    (void)text;
+    (void)ud;
+    /* handle text change */
+    return true;
+}
+
+AromaNode *tb = aroma_ui_textbox(root, 20, 340, 260, 48, "Enter name...",
+                                 on_text_change, NULL, NULL);
+```
+
+## Chip
+
+```c
+AromaNode *chip = aroma_ui_chip(root, "Filter", 20, 400, CHIP_TYPE_FILTER,
+                                NULL, NULL, font);
+aroma_chip_set_selected(chip, true);
+```
+
+| Type | Use Case |
+|---|---|
+| `CHIP_TYPE_ASSIST` | Single action |
+| `CHIP_TYPE_FILTER` | Toggleable filter |
+| `CHIP_TYPE_INPUT` | Text input chip |
+| `CHIP_TYPE_SUGGESTION` | Selection from options |
+
+## Live demo
+
+```incense-demo inputs
+```
+
+```incense-demo buttons
+```
+
+```incense-demo slider
+```
+
+```incense-demo dropdown
+```
+
+```incense-demo toggles
+```
+
+## What's Next
+
+- Learn [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
+- Explore the [Map Widget](Map-Widget.md) for interactive maps.
+- Try [Incense](Incense-Sandbox.md) for rapid prototyping.

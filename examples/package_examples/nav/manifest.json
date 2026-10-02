@@ -1,0 +1,13 @@
+{
+  "id": "com.aroma.nav",
+  "name": "Navigation",
+  "version": "1.0.0",
+  "version_code": 1,
+  "icon": "AROMA_ICON_MAP",
+  "author": "AromaUI",
+  "description": "Built-in navigation app (offline maps, routing, POIs).",
+  "category": "Apps",
+  "plugin": "plugin.so",
+  "chrome": "self",
+  "min_abi": 1
+}

@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/src/backends/platforms/**",
+                "${workspaceFolder}/src/backends/graphics/**",
+                "${workspaceFolder}/src/backends/**",
+                "${workspaceFolder}/include/**",
+                "${workspaceFolder}/include/widgets/**",
+                "/usr/include/gtk-3.0"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}

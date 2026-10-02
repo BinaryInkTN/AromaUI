@@ -1,0 +1,162 @@
+#ifndef AROMA_GRAPHICS_INTERFACE_H
+#define AROMA_GRAPHICS_INTERFACE_H
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    typedef struct AromaFont AromaFont;
+
+    typedef struct AromaGraphicsInterface
+    {
+
+        int (*setup_shared_window_resources)(void);
+        int (*setup_separate_window_resources)(size_t window_id);
+        void (*shutdown)(void);
+
+        void (*clear)(size_t window_id, uint32_t color);
+
+        void (*draw_rectangle)(
+            size_t window_id,
+            int x, int y,
+            int width, int height);
+
+        void (*fill_rectangle)(
+            size_t window_id,
+            int x, int y,
+            int width, int height,
+            uint32_t color,
+            bool isRounded,
+            float cornerRadius);
+
+        void (*draw_hollow_rectangle)(
+            size_t window_id,
+            int x, int y,
+            int width, int height,
+            uint32_t color,
+            int border_width,
+            bool isRounded,
+            float cornerRadius);
+
+        void (*draw_arc)(
+            size_t window_id,
+            int cx, int cy,
+            int radius,
+            float start_angle,
+            float end_angle,
+            uint32_t color,
+            int thickness);
+
+        void (*render_text)(
+            size_t window_id,
+            AromaFont *font,
+            const char *text,
+            int x, int y,
+            uint32_t color,
+            float scale);
+
+        float (*measure_text)(
+            size_t window_id,
+            AromaFont *font,
+            const char *text,
+            float scale);
+
+        void (*unload_image)(unsigned int texture_id);
+        unsigned int (*load_image)(const char *image_path);
+#ifndef ESP32
+        unsigned int (*load_image_from_rgba)(unsigned char *data, int width, int height);
+        unsigned int (*load_image_from_memory)(
+            unsigned char *data,
+            long unsigned int binary_length);
+#else
+    unsigned int (*load_image_from_rgba)(unsigned char *data, int width, int height);
+        unsigned int (*load_image_from_memory)(
+        const uint16_t *data,
+        long unsigned int binary_length
+
+    );
+#endif
+
+        void (*draw_image)(
+            size_t window_id,
+            int x, int y,
+            int width, int height,
+            unsigned int texture_id,
+            float corner_radius);
+
+        /* Image scaling modes need the source texture dimensions and,
+         * for cover, a cropped UV sub-rect. get_image_size reports the
+         * pixel size of a loaded texture (false when unknown, e.g. TFT
+         * slots). draw_image_uv samples the (u0,v0)-(u1,v1) sub-rect
+         * instead of the full texture; both are optional (NULL) and
+         * callers fall back to plain draw_image. */
+        bool (*get_image_size)(
+            unsigned int texture_id,
+            int *width, int *height);
+
+        void (*draw_image_uv)(
+            size_t window_id,
+            int x, int y,
+            int width, int height,
+            unsigned int texture_id,
+            float corner_radius,
+            float u0, float v0,
+            float u1, float v1);
+
+        void (*draw_line)(
+            size_t window_id,
+            int x0, int y0,
+            int x1, int y1,
+            uint32_t color,
+            float thickness,
+            bool round_cap);
+
+        void (*graphics_set_tft_context)(void *tft);
+
+        void (*graphics_set_sprite_mode)(
+            bool enable,
+            void *sprite);
+
+        void (*graphics_set_clip)(int x, int y, int w, int h);
+
+        void (*graphics_clear_clip)(void);
+
+        void (*graphics_flush)(void);
+
+        void (*notify_dirty_region)(int x, int y, int w, int h);
+
+        bool (*get_pending_dirty_rect)(int *x, int *y, int *w, int *h);
+
+        /* Backdrop (frosted-glass) blur: blur the already-rendered pixels
+         * behind the given rectangle in place, so a translucent surface
+         * drawn on top reads as frosted glass. radius is in pixels;
+         * values <= 0 are ignored. corner_radius applies a rounded-rect
+         * mask (0 = square). Optional: NULL means the backend cannot do
+         * backdrop blur (callers fall back to plain translucency). Must
+         * be safe to call mid-frame; the backend flushes any pending
+         * batches first. */
+        void (*blur_backdrop)(
+            size_t window_id,
+            int x, int y,
+            int width, int height,
+            float radius,
+            float corner_radius);
+
+    } AromaGraphicsInterface;
+
+    extern AromaGraphicsInterface aroma_graphics_gles3;
+
+    extern AromaGraphicsInterface aroma_graphics_vulkan;
+
+    extern AromaGraphicsInterface aroma_graphics_tft;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
