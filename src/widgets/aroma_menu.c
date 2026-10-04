@@ -110,6 +110,10 @@ y = aroma_android_dp_to_px(y);
     menu->visible = false;
     menu->font = NULL;
     menu->item_height = 28;
+#ifdef __ANDROID__
+    menu->rect.width = aroma_android_dp_to_px(200);
+    menu->item_height = aroma_android_dp_to_px(28);
+#endif
     menu->corner_radius = 8.0f;
     AromaTheme theme = aroma_theme_get_global();
     menu->bg_color = theme.colors.surface;

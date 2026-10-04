@@ -449,6 +449,114 @@ typedef struct AromaPlatformInterface {
 
     long (*android_get_preference_long)(const char* key, long default_value);
 
+    void (*android_request_permission_cb)(
+        const char** permissions,
+        int permCount,
+        void (*result_cb)(const char* permission, bool granted)
+    );
+    void (*android_pick_image)(void (*result_cb)(const char* path));
+    void (*android_capture_photo)(void (*result_cb)(const char* path));
+    void (*android_open_document)(const char* mime, void (*result_cb)(const char* path));
+    void (*android_notify_channel)(int id, const char* name, const char* desc, int importance);
+    void (*android_notify_show)(int id, const char* channel, const char* title, const char* text);
+    void (*android_notify_cancel)(int id);
+    void (*android_notify_cancel_all)(void);
+    bool (*android_notify_enabled)(void);
+    void (*android_vibrate_effect)(int ms, int amplitude);
+    void (*android_set_clipboard_text)(const char* text);
+    const char* (*android_get_clipboard_text)(void);
+    void (*android_share_text)(const char* text, const char* title);
+    void (*android_set_immersive)(bool enabled);
+    void (*android_set_keep_screen_on)(bool enabled);
+    const char* (*android_get_locale_tag)(void);
+    const char* (*android_get_timezone_id)(void);
+    const char* (*android_get_manufacturer)(void);
+    const char* (*android_get_model)(void);
+    const char* (*android_get_os_version)(void);
+    int (*android_get_sdk_int)(void);
+    const char* (*android_get_package_name)(void);
+    const char* (*android_get_version_name)(void);
+    long (*android_get_version_code)(void);
+    long (*android_get_install_time)(void);
+    long (*android_get_memory_avail_mb)(void);
+    bool (*android_is_memory_low)(void);
+    bool (*android_is_network_connected)(void);
+    int (*android_get_network_type)(void);
+    bool (*android_is_charging)(void);
+    bool (*android_is_interactive)(void);
+    const char* (*android_get_network_operator)(void);
+    void (*android_wakelock_acquire)(long timeout_ms);
+    void (*android_wakelock_release)(void);
+    bool (*android_set_torch_enabled)(bool enabled);
+    void (*android_tts_speak)(const char* text);
+    void (*android_tts_stop)(void);
+    bool (*android_tts_is_speaking)(void);
+    void (*android_sensor_register_callbacks)(void (*cb)(int type, float x, float y, float z, long long timestamp_ns));
+    void (*android_sensor_start)(int type, int rate_us, void (*cb)(int type, float x, float y, float z, long long timestamp_ns));
+    void (*android_sensor_stop)(int type);
+    bool (*android_sensor_available)(int type);
+    void (*android_btle_scan)(int timeout_ms, const char* service_uuids);
+    void (*android_btle_stop_scan)(void);
+    void (*android_btle_register_callbacks)(
+        void (*device_cb)(const char*, const char*, int),
+        void (*scan_finished_cb)(void),
+        void (*connection_cb)(const char*, int, bool),
+        void (*services_cb)(const char*, const char*),
+        void (*data_cb)(const char*, const char*, const char*, int),
+        void (*write_cb)(const char*, const char*, int)
+    );
+    void (*android_btle_connect)(const char* addr);
+    void (*android_btle_disconnect)(void);
+    bool (*android_btle_is_connected)(void);
+    bool (*android_btle_discover)(void);
+    bool (*android_btle_read)(const char* service_uuid, const char* char_uuid);
+    bool (*android_btle_write)(const char* service_uuid, const char* char_uuid, const char* data, int len, int write_type);
+    bool (*android_btle_notify)(const char* service_uuid, const char* char_uuid, bool enable);
+
+    void (*android_nfc_register)(void (*cb)(const char* payload));
+    void (*android_nfc_start)(void);
+    void (*android_nfc_stop)(void);
+    bool (*android_nfc_available)(void);
+    bool (*android_nfc_enabled)(void);
+    void (*android_biometric_register)(void (*cb)(bool success));
+    int (*android_biometric_available)(void);
+    void (*android_biometric_authenticate)(const char* title, const char* subtitle);
+    void (*android_location_register)(void (*cb)(double lat, double lon, float accuracy, long long time_ms));
+    bool (*android_location_available)(void);
+    bool (*android_location_start)(long min_time_ms, float min_dist_m);
+    void (*android_location_stop)(void);
+    bool (*android_record_start)(const char* path);
+    bool (*android_record_stop)(void);
+    bool (*android_shortcut_add)(const char* id, const char* short_label, const char* long_label);
+    bool (*android_shortcut_remove)(const char* id);
+    int (*android_shortcut_count)(void);
+    bool (*android_pip_enter)(int w, int h);
+    bool (*android_pip_available)(void);
+    bool (*android_wallpaper_set_image)(const char* path);
+    int (*android_volume_music_get)(void);
+    int (*android_volume_music_max)(void);
+    void (*android_volume_music_set)(int level);
+    int (*android_ringer_get)(void);
+    long (*android_storage_free_mb)(void);
+    long (*android_storage_total_mb)(void);
+    int (*android_sysbar_status_px)(void);
+    int (*android_sysbar_nav_px)(void);
+    bool (*android_keyboard_visible)(void);
+    bool (*android_app_installed)(const char* pkg);
+    bool (*android_app_open)(const char* pkg);
+    void (*android_contacts_pick)(void (*cb)(const char* info));
+    void (*android_shot_capture)(void (*cb)(const char* path));
+    bool (*android_http_fetch)(const char* url, const char* dest_path);
+    bool (*android_open_url)(const char* url);
+    bool (*android_ir_available)(void);
+    bool (*android_ir_transmit)(int freq_hz, const int* pattern, int pattern_len);
+
+    bool (*android_asset_exists)(const char* name);
+    long (*android_asset_size)(const char* name);
+    long (*android_asset_read)(const char* name, char* out, long max_len);
+    int (*android_asset_list)(const char* dir, char out_names[][256], int max);
+    const char* (*android_asset_cache_path)(const char* name);
+
     void* (*get_native_window_ptr)(size_t window_id);
     void* (*get_native_display_ptr)(void);
         void (*set_use_surfaceless)(bool use_surfaceless);  // For GLFW backend to enable surfaceless mode if supported

@@ -8,6 +8,9 @@
 #include "aroma_3d.h"
 #include "aroma_event.h"
 #include "aroma_timer.h"
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 #include <string.h>
 #include <math.h>
 
@@ -127,7 +130,11 @@ static void viewer_draw(AromaNode *node, size_t window_id)
     if (platform && platform->get_window_size)
         platform->get_window_size(window_id, &win_w, &win_h);
 
-    aroma_3d_render_to_rect(viewer->model, &viewer->camera, rect->x, rect->y, rect->width, rect->height, win_w, win_h);
+    {
+        int ox = 0, oy = 0;
+        drawlist_proxy_get_offset(&ox, &oy);
+        aroma_3d_render_to_rect(viewer->model, &viewer->camera, rect->x + ox, rect->y + oy, rect->width, rect->height, win_w, win_h);
+    }
 }
 
 static void aroma_3d_viewer_destroy_node(AromaNode *node)
@@ -156,6 +163,12 @@ AromaNode *aroma_3d_viewer_create(AromaNode *parent, int x, int y, int width, in
     if (!viewer)
         return NULL;
     memset(viewer, 0, sizeof(struct Aroma3DViewer));
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+#endif
     viewer->rect.x = x;
     viewer->rect.y = y;
     viewer->rect.width = width;

@@ -343,6 +343,7 @@ void aroma_radio_button_draw(AromaNode* node, size_t window_id)
 {
     if (!node || !node->node_widget_ptr) return;
     AromaRadioButton* data = (AromaRadioButton*)node->node_widget_ptr;
+    __radiobutton_update_layout(data);
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (aroma_node_is_hidden(node)) return;
     if (!gfx) return;
@@ -386,6 +387,12 @@ static bool __radio_handle_event(AromaEvent* event, void* user_data)
    
       int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
+        event->event_type == EVENT_TYPE_TOUCH_UP ||
+        event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        adjusted_x = event->data.touch.x;
+        adjusted_y = event->data.touch.y;
+    }
                           AromaNode *cur = event->target_node->parent_node;
     while (cur) {
         if (aroma_container_is_scrollable(cur)) {
@@ -428,6 +435,27 @@ static bool __radio_handle_event(AromaEvent* event, void* user_data)
                 return true;
             }
             break;
+        case EVENT_TYPE_TOUCH_DOWN:
+            if (in_bounds) {
+                data->is_pressed = true;
+                aroma_node_invalidate(event->target_node);
+                __radio_request_redraw(user_data);
+                return true;
+            }
+            break;
+        case EVENT_TYPE_TOUCH_UP:
+            if (data->is_pressed) {
+                data->is_pressed = false;
+                if (in_bounds && !data->is_selected) {
+                    aroma_radio_button_set_selected(event->target_node, true);
+                }
+                aroma_node_invalidate(event->target_node);
+                __radio_request_redraw(user_data);
+                return in_bounds;
+            }
+            break;
+        case EVENT_TYPE_TOUCH_MOVE:
+            return data->is_pressed;
         case EVENT_TYPE_MOUSE_RELEASE:
             if (data->is_pressed) {
                 data->is_pressed = false;
@@ -457,6 +485,9 @@ bool aroma_radio_button_setup_events(AromaNode* node,
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, __radio_handle_event, (void*)on_redraw_callback, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __radio_handle_event, (void*)on_redraw_callback, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __radio_handle_event, (void*)on_redraw_callback, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, __radio_handle_event, (void*)on_redraw_callback, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, __radio_handle_event, (void*)on_redraw_callback, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_MOVE, __radio_handle_event, (void*)on_redraw_callback, 60);
 
     return true;
 }

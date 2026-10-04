@@ -25,8 +25,16 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES3/gl3.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 #include <android/log.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <jni.h>
 #include <math.h>
 #include "../aroma_abi.h"
@@ -41,6 +49,7 @@
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 #include "widgets/aroma_window.h"
+#include "widgets/aroma_textbox.h"
 #define AROMA_MAX_TOUCHES 10
 
 #ifndef EGL_SWAP_BEHAVIOR_PRESERVED_BIT
@@ -165,6 +174,98 @@ typedef struct
     jmethodID set_preference_float;
     jmethodID get_preference_long;
     jmethodID set_preference_long;
+    jmethodID notify_channel;
+    jmethodID notify_show;
+    jmethodID notify_cancel;
+    jmethodID notify_cancel_all;
+    jmethodID notify_enabled;
+    jmethodID vibrate_effect;
+    jmethodID clip_set;
+    jmethodID clip_get;
+    jmethodID share_text;
+    jmethodID ui_immersive;
+    jmethodID ui_keep_screen_on;
+    jmethodID orient_lock;
+    jmethodID orient_set;
+    jmethodID orient_unlock;
+    jmethodID orient_locked;
+    jmethodID pick_image;
+    jmethodID capture_photo;
+    jmethodID open_document;
+    jmethodID sensor_start;
+    jmethodID sensor_stop;
+    jmethodID sensor_available;
+    jmethodID add_sensor_callback;
+    jmethodID remove_sensor_callback;
+    jmethodID tts_speak;
+    jmethodID tts_stop;
+    jmethodID tts_is_speaking;
+    jmethodID btle_start_scan;
+    jmethodID btle_stop_scan;
+    jmethodID btle_connect;
+    jmethodID btle_disconnect;
+    jmethodID btle_is_connected;
+    jmethodID btle_discover;
+    jmethodID btle_read;
+    jmethodID btle_write;
+    jmethodID btle_notify;
+    jmethodID dev_manufacturer;
+    jmethodID dev_model;
+    jmethodID dev_os_version;
+    jmethodID dev_sdk_int;
+    jmethodID app_package;
+    jmethodID app_version_name;
+    jmethodID app_version_code;
+    jmethodID app_install_time;
+    jmethodID mem_avail_mb;
+    jmethodID mem_low;
+    jmethodID net_connected;
+    jmethodID net_type;
+    jmethodID batt_charging;
+    jmethodID dev_interactive;
+    jmethodID locale_tag;
+    jmethodID timezone_id;
+    jmethodID net_operator;
+    jmethodID wake_acquire;
+    jmethodID wake_release;
+    jmethodID torch_set;
+    jmethodID nfc_start;
+    jmethodID nfc_stop;
+    jmethodID nfc_available;
+    jmethodID nfc_enabled;
+    jmethodID bio_available;
+    jmethodID bio_auth;
+    jmethodID loc_start;
+    jmethodID loc_stop;
+    jmethodID loc_available;
+    jmethodID rec_start;
+    jmethodID rec_stop;
+    jmethodID sc_add;
+    jmethodID sc_remove;
+    jmethodID sc_count;
+    jmethodID pip_enter;
+    jmethodID pip_available;
+    jmethodID wp_set_image;
+    jmethodID vol_music_get;
+    jmethodID vol_music_max;
+    jmethodID vol_music_set;
+    jmethodID ringer_get;
+    jmethodID storage_free_mb;
+    jmethodID storage_total_mb;
+    jmethodID sysbar_status_px;
+    jmethodID sysbar_nav_px;
+    jmethodID kb_visible;
+    jmethodID app_installed;
+    jmethodID app_open;
+    jmethodID contacts_pick;
+    jmethodID shot_capture;
+    jmethodID http_download;
+    jmethodID open_url;
+    jmethodID show_ime;
+    jmethodID hide_ime;
+    jmethodID ir_available;
+    jmethodID ir_transmit;
+    jclass activity_class;
 
 } AromaHelperCache;
 
@@ -347,6 +448,367 @@ static void JNICALL native_on_connection_state_changed(JNIEnv *env, jobject thiz
 {
 }
 
+typedef struct
+{
+    bool active;
+    int request_code;
+    char permissions[16][128];
+    int perm_count;
+    void (*result_cb)(const char *permission, bool granted);
+} AromaPermissionRequest;
+
+typedef struct
+{
+    bool active;
+    int request_code;
+    void (*result_cb)(const char *path);
+} AromaMediaRequest;
+
+typedef struct
+{
+    void (*device_cb)(const char *addr, const char *name, int rssi);
+    void (*scan_finished_cb)(void);
+    void (*connection_cb)(const char *addr, int status, bool connected);
+    void (*services_cb)(const char *addr, const char *services_csv);
+    void (*data_cb)(const char *addr, const char *char_uuid, const char *data, int len);
+    void (*write_cb)(const char *addr, const char *char_uuid, int status);
+} AromaBleCallbacks;
+
+typedef struct
+{
+    void (*sensor_cb)(int type, float x, float y, float z, long long timestamp_ns);
+} AromaSensorCallbacks;
+
+static AromaPermissionRequest g_perm_request = {0};
+static AromaMediaRequest g_media_requests[5] = {{0}};
+static AromaBleCallbacks g_ble_callbacks = {0};
+static AromaSensorCallbacks g_sensor_callbacks = {0};
+static void request_permissions_code(const char **permissions, int permCount, int requestCode);
+static void impl_android_orient_lock_new(void);
+static void impl_android_orient_unlock_new(void);
+static void impl_android_orient_portrait_new(void);
+static void impl_android_orient_landscape_new(void);
+static void impl_android_orient_sensor_new(void);
+static bool impl_android_orient_locked_new(void);
+static void JNICALL native_on_nfc_tag(JNIEnv *env, jobject thiz, jstring payload);
+static void JNICALL native_on_biometric(JNIEnv *env, jobject thiz, jboolean success);
+static void JNICALL native_on_location(JNIEnv *env, jobject thiz, jdouble lat, jdouble lon, jfloat accuracy, jlong timeMs);
+static void JNICALL native_on_screenshot(JNIEnv *env, jobject thiz, jstring path);
+
+static void JNICALL native_on_text_input(JNIEnv *env, jobject thiz, jstring text)
+{
+    (void)thiz;
+    if (!env || !text)
+        return;
+    const char *utf = (*env)->GetStringUTFChars(env, text, NULL);
+    if (!utf)
+        return;
+    AromaNode *focused = aroma_textbox_get_focused();
+    if (!focused)
+        focused = aroma_ui_get_focused_node();
+    if (focused)
+    {
+        const char *p = utf;
+        while (*p)
+        {
+            aroma_textbox_on_char(focused, *p);
+            p++;
+        }
+        aroma_ui_request_redraw(NULL);
+    }
+    (*env)->ReleaseStringUTFChars(env, text, utf);
+}
+
+static void JNICALL native_on_backspace(JNIEnv *env, jobject thiz)
+{
+    (void)env;
+    (void)thiz;
+    AromaNode *focused = aroma_textbox_get_focused();
+    if (!focused)
+        focused = aroma_ui_get_focused_node();
+    if (focused)
+    {
+        aroma_textbox_on_backspace(focused);
+        aroma_ui_request_redraw(NULL);
+    }
+}
+
+static void JNICALL native_on_editor_done(JNIEnv *env, jobject thiz)
+{
+    (void)env;
+    (void)thiz;
+    AromaNode *focused = aroma_ui_get_focused_node();
+    if (focused)
+        aroma_textbox_set_focused(focused, false);
+}
+
+static void JNICALL native_on_permission_result(JNIEnv *env, jobject thiz,
+                                                jint requestCode,
+                                                jobjectArray permissions,
+                                                jintArray grantResults)
+{
+    (void)thiz;
+    if (requestCode != 1001 || !g_perm_request.active || !g_perm_request.result_cb)
+    {
+        return;
+    }
+    g_perm_request.active = false;
+    if (!permissions || !grantResults)
+    {
+        return;
+    }
+    jsize n = (*env)->GetArrayLength(env, permissions);
+    jsize m = (*env)->GetArrayLength(env, grantResults);
+    jint *grants = (*env)->GetIntArrayElements(env, grantResults, NULL);
+    jsize count = n < m ? n : m;
+    if (count > g_perm_request.perm_count)
+    {
+        count = g_perm_request.perm_count;
+    }
+    int i = 0;
+    for (i = 0; i < count; i++)
+    {
+        jstring perm = (jstring)(*env)->GetObjectArrayElement(env, permissions, i);
+        const char *perm_str = perm ? (*env)->GetStringUTFChars(env, perm, NULL) : "";
+        g_perm_request.result_cb(perm_str, grants[i] == 0);
+        if (perm)
+        {
+            (*env)->ReleaseStringUTFChars(env, perm, perm_str);
+            (*env)->DeleteLocalRef(env, perm);
+        }
+    }
+    (*env)->ReleaseIntArrayElements(env, grantResults, grants, JNI_ABORT);
+}
+
+static void JNICALL native_on_activity_result(JNIEnv *env, jobject thiz,
+                                              jint requestCode,
+                                              jint resultCode,
+                                              jstring data,
+                                              jstring extra)
+{
+    (void)thiz;
+    (void)resultCode;
+    (void)extra;
+    int i = 0;
+    for (i = 0; i < 5; i++)
+    {
+        if (g_media_requests[i].active && g_media_requests[i].request_code == requestCode)
+        {
+            g_media_requests[i].active = false;
+            if (g_media_requests[i].result_cb)
+            {
+                if (data)
+                {
+                    const char *path = (*env)->GetStringUTFChars(env, data, NULL);
+                    g_media_requests[i].result_cb(path);
+                    (*env)->ReleaseStringUTFChars(env, data, path);
+                }
+                else
+                {
+                    g_media_requests[i].result_cb(NULL);
+                }
+            }
+            return;
+        }
+    }
+}
+
+static void JNICALL native_on_ble_device(JNIEnv *env, jobject thiz,
+                                         jstring address, jstring name, jint rssi)
+{
+    (void)thiz;
+    const char *addr_str = address ? (*env)->GetStringUTFChars(env, address, NULL) : "";
+    const char *name_str = name ? (*env)->GetStringUTFChars(env, name, NULL) : "";
+    if (g_ble_callbacks.device_cb)
+    {
+        g_ble_callbacks.device_cb(addr_str, name_str, (int)rssi);
+    }
+    if (address)
+        (*env)->ReleaseStringUTFChars(env, address, addr_str);
+    if (name)
+        (*env)->ReleaseStringUTFChars(env, name, name_str);
+}
+
+static void JNICALL native_on_ble_scan_finished(JNIEnv *env, jobject thiz)
+{
+    (void)env;
+    (void)thiz;
+    if (g_ble_callbacks.scan_finished_cb)
+    {
+        g_ble_callbacks.scan_finished_cb();
+    }
+}
+
+static void JNICALL native_on_ble_connection(JNIEnv *env, jobject thiz,
+                                             jstring address, jint status, jboolean connected)
+{
+    (void)thiz;
+    const char *addr_str = address ? (*env)->GetStringUTFChars(env, address, NULL) : "";
+    if (g_ble_callbacks.connection_cb)
+    {
+        g_ble_callbacks.connection_cb(addr_str, (int)status, connected == JNI_TRUE);
+    }
+    if (address)
+        (*env)->ReleaseStringUTFChars(env, address, addr_str);
+}
+
+static void JNICALL native_on_ble_services(JNIEnv *env, jobject thiz,
+                                           jstring address, jstring services)
+{
+    (void)thiz;
+    const char *addr_str = address ? (*env)->GetStringUTFChars(env, address, NULL) : "";
+    const char *svc_str = services ? (*env)->GetStringUTFChars(env, services, NULL) : "";
+    if (g_ble_callbacks.services_cb)
+    {
+        g_ble_callbacks.services_cb(addr_str, svc_str);
+    }
+    if (address)
+        (*env)->ReleaseStringUTFChars(env, address, addr_str);
+    if (services)
+        (*env)->ReleaseStringUTFChars(env, services, svc_str);
+}
+
+static void JNICALL native_on_ble_data(JNIEnv *env, jobject thiz,
+                                       jstring address, jstring charUuid,
+                                       jbyteArray data, jint length)
+{
+    (void)thiz;
+    const char *addr_str = address ? (*env)->GetStringUTFChars(env, address, NULL) : "";
+    const char *uuid_str = charUuid ? (*env)->GetStringUTFChars(env, charUuid, NULL) : "";
+    if (g_ble_callbacks.data_cb && data)
+    {
+        jbyte *bytes = (*env)->GetByteArrayElements(env, data, NULL);
+        g_ble_callbacks.data_cb(addr_str, uuid_str, (const char *)bytes, (int)length);
+        (*env)->ReleaseByteArrayElements(env, data, bytes, JNI_ABORT);
+    }
+    if (address)
+        (*env)->ReleaseStringUTFChars(env, address, addr_str);
+    if (charUuid)
+        (*env)->ReleaseStringUTFChars(env, charUuid, uuid_str);
+}
+
+static void JNICALL native_on_ble_write(JNIEnv *env, jobject thiz,
+                                       jstring address, jstring charUuid, jint status)
+{
+    (void)thiz;
+    const char *addr_str = address ? (*env)->GetStringUTFChars(env, address, NULL) : "";
+    const char *uuid_str = charUuid ? (*env)->GetStringUTFChars(env, charUuid, NULL) : "";
+    if (g_ble_callbacks.write_cb)
+    {
+        g_ble_callbacks.write_cb(addr_str, uuid_str, (int)status);
+    }
+    if (address)
+        (*env)->ReleaseStringUTFChars(env, address, addr_str);
+    if (charUuid)
+        (*env)->ReleaseStringUTFChars(env, charUuid, uuid_str);
+}
+
+static void JNICALL native_on_sensor_changed(JNIEnv *env, jobject thiz,
+                                             jint type, jfloat x, jfloat y, jfloat z, jlong timestamp)
+{
+    (void)env;
+    (void)thiz;
+    if (g_sensor_callbacks.sensor_cb)
+    {
+        g_sensor_callbacks.sensor_cb((int)type, (float)x, (float)y, (float)z, (long long)timestamp);
+    }
+}
+
+static bool get_app_package(JNIEnv *env, jobject activity, char *out, size_t out_len)
+{
+    if (!env || !activity || !out || out_len == 0)
+    {
+        return false;
+    }
+    jclass activityClass = (*env)->GetObjectClass(env, activity);
+    if (!activityClass)
+    {
+        return false;
+    }
+    jmethodID getPackageName = (*env)->GetMethodID(env, activityClass, "getPackageName", "()Ljava/lang/String;");
+    if (!getPackageName)
+    {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, activityClass);
+        return false;
+    }
+    jstring pkg = (jstring)(*env)->CallObjectMethod(env, activity, getPackageName);
+    bool ok = false;
+    if (pkg && !(*env)->ExceptionCheck(env))
+    {
+        const char *utf = (*env)->GetStringUTFChars(env, pkg, NULL);
+        if (utf)
+        {
+            strncpy(out, utf, out_len - 1);
+            out[out_len - 1] = '\0';
+            ok = out[0] != '\0';
+            (*env)->ReleaseStringUTFChars(env, pkg, utf);
+        }
+        (*env)->DeleteLocalRef(env, pkg);
+    }
+    else
+    {
+        (*env)->ExceptionClear(env);
+    }
+    (*env)->DeleteLocalRef(env, activityClass);
+    return ok;
+}
+
+static jclass load_class_dotted(JNIEnv *env, jobject classLoader, jmethodID loadClass, const char *dotted)
+{
+    if (!env || !classLoader || !loadClass || !dotted)
+    {
+        return NULL;
+    }
+    jstring jname = (*env)->NewStringUTF(env, dotted);
+    if (!jname)
+    {
+        return NULL;
+    }
+    jclass cls = (jclass)(*env)->CallObjectMethod(env, classLoader, loadClass, jname);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionDescribe(env);
+        (*env)->ExceptionClear(env);
+        cls = NULL;
+    }
+    (*env)->DeleteLocalRef(env, jname);
+    return cls;
+}
+
+static jclass load_helper_class(JNIEnv *env, jobject classLoader, jmethodID loadClass, const char *pkg, const char *leaf)
+{
+    char dotted[256];
+    jclass cls = NULL;
+    if (pkg && pkg[0])
+    {
+        size_t i = 0;
+        size_t o = 0;
+        while (pkg[i] && o + 1 < sizeof(dotted))
+        {
+            dotted[o++] = pkg[i] == '/' ? '.' : pkg[i];
+            i++;
+        }
+        if (o + 1 < sizeof(dotted))
+        {
+            dotted[o++] = '.';
+        }
+        size_t j = 0;
+        while (leaf[j] && o + 1 < sizeof(dotted))
+        {
+            dotted[o++] = leaf[j];
+            j++;
+        }
+        dotted[o] = '\0';
+        cls = load_class_dotted(env, classLoader, loadClass, dotted);
+    }
+    if (!cls)
+    {
+        cls = load_class_dotted(env, classLoader, loadClass, leaf);
+    }
+    return cls;
+}
+
 static bool ensure_aroma_helper_initialized(JNIEnv *env)
 {
     if (g_helper_cache.initialized && g_helper_cache.helper_class != NULL)
@@ -396,13 +858,13 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         return false;
     }
 
-    jstring jclassName = (*env)->NewStringUTF(env, "AromaHelper");
-    jclass helper = (jclass)(*env)->CallObjectMethod(env, classLoader, loadClass, jclassName);
+    char pkg_name[192] = {0};
+    get_app_package(env, activity, pkg_name, sizeof(pkg_name));
 
-    if ((*env)->ExceptionCheck(env))
+    jclass helper = load_helper_class(env, classLoader, loadClass, pkg_name, "AromaHelper");
+
+    if (!helper)
     {
-        (*env)->ExceptionClear(env);
-        (*env)->DeleteLocalRef(env, jclassName);
         (*env)->DeleteLocalRef(env, classLoaderClass);
         (*env)->DeleteLocalRef(env, classLoader);
         (*env)->DeleteLocalRef(env, activityClass);
@@ -410,13 +872,67 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         return false;
     }
 
-    (*env)->DeleteLocalRef(env, jclassName);
-
     g_helper_cache.helper_class = (jclass)(*env)->NewGlobalRef(env, helper);
 
     g_helper_cache.init = (*env)->GetStaticMethodID(env, helper, "init", "(Landroid/content/Context;)V");
-    g_helper_cache.add_callback = (*env)->GetStaticMethodID(env, helper, "addCallback", "(LAromaHelper$BluetoothCallback;)V");
-    g_helper_cache.remove_callback = (*env)->GetStaticMethodID(env, helper, "removeCallback", "(LAromaHelper$BluetoothCallback;)V");
+    {
+        char pkg_slash[192] = {0};
+        size_t pi = 0;
+        while (pkg_name[pi] && pi + 1 < sizeof(pkg_slash))
+        {
+            pkg_slash[pi] = pkg_name[pi] == '.' ? '/' : pkg_name[pi];
+            pi++;
+        }
+        pkg_slash[pi] = '\0';
+        char sig_cb[256];
+        char sig_rm[256];
+        if (pkg_slash[0])
+        {
+            snprintf(sig_cb, sizeof(sig_cb), "(L%s/AromaHelper$BluetoothCallback;)V", pkg_slash);
+            snprintf(sig_rm, sizeof(sig_rm), "(L%s/AromaHelper$BluetoothCallback;)V", pkg_slash);
+        }
+        else
+        {
+            snprintf(sig_cb, sizeof(sig_cb), "(LAromaHelper$BluetoothCallback;)V");
+            snprintf(sig_rm, sizeof(sig_rm), "(LAromaHelper$BluetoothCallback;)V");
+        }
+        g_helper_cache.add_callback = (*env)->GetStaticMethodID(env, helper, "addCallback", sig_cb);
+        if (!g_helper_cache.add_callback)
+        {
+            (*env)->ExceptionClear(env);
+        }
+        g_helper_cache.remove_callback = (*env)->GetStaticMethodID(env, helper, "removeCallback", sig_rm);
+        if (!g_helper_cache.remove_callback)
+        {
+            (*env)->ExceptionClear(env);
+        }
+        if (pkg_slash[0])
+        {
+            snprintf(sig_cb, sizeof(sig_cb), "(L%s/AromaHelper$SensorCallback;)V", pkg_slash);
+        }
+        else
+        {
+            snprintf(sig_cb, sizeof(sig_cb), "(LAromaHelper$SensorCallback;)V");
+        }
+        g_helper_cache.add_sensor_callback = (*env)->GetStaticMethodID(env, helper, "addSensorCallback", sig_cb);
+        if (!g_helper_cache.add_sensor_callback)
+        {
+            (*env)->ExceptionClear(env);
+        }
+        if (pkg_slash[0])
+        {
+            snprintf(sig_rm, sizeof(sig_rm), "(L%s/AromaHelper$SensorCallback;)V", pkg_slash);
+        }
+        else
+        {
+            snprintf(sig_rm, sizeof(sig_rm), "(LAromaHelper$SensorCallback;)V");
+        }
+        g_helper_cache.remove_sensor_callback = (*env)->GetStaticMethodID(env, helper, "removeSensorCallback", sig_rm);
+        if (!g_helper_cache.remove_sensor_callback)
+        {
+            (*env)->ExceptionClear(env);
+        }
+    }
     g_helper_cache.show_toast = (*env)->GetStaticMethodID(env, helper, "showToast", "(Landroid/app/Activity;Ljava/lang/String;Z)V");
     g_helper_cache.bt_scan = (*env)->GetStaticMethodID(env, helper, "startScan", "(I)V");
     g_helper_cache.bt_stop_scan = (*env)->GetStaticMethodID(env, helper, "stopScan", "()V");
@@ -496,7 +1012,263 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         (*env)->ExceptionClear(env);
     if(!g_helper_cache.set_preference_long)
         (*env)->ExceptionClear(env);
-    
+    g_helper_cache.notify_channel = (*env)->GetStaticMethodID(env, helper, "notifyChannel", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V");
+    g_helper_cache.notify_show = (*env)->GetStaticMethodID(env, helper, "notifyShow", "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    g_helper_cache.notify_cancel = (*env)->GetStaticMethodID(env, helper, "notifyCancel", "(I)V");
+    g_helper_cache.notify_cancel_all = (*env)->GetStaticMethodID(env, helper, "notifyCancelAll", "()V");
+    g_helper_cache.notify_enabled = (*env)->GetStaticMethodID(env, helper, "notifyEnabled", "()Z");
+    g_helper_cache.vibrate_effect = (*env)->GetStaticMethodID(env, helper, "vibrateEffect", "(JI)V");
+    g_helper_cache.clip_set = (*env)->GetStaticMethodID(env, helper, "clipSet", "(Ljava/lang/String;)V");
+    g_helper_cache.clip_get = (*env)->GetStaticMethodID(env, helper, "clipGet", "()Ljava/lang/String;");
+    g_helper_cache.share_text = (*env)->GetStaticMethodID(env, helper, "shareText", "(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)V");
+    g_helper_cache.ui_immersive = (*env)->GetStaticMethodID(env, helper, "uiImmersive", "(Landroid/app/Activity;Z)V");
+    g_helper_cache.ui_keep_screen_on = (*env)->GetStaticMethodID(env, helper, "uiKeepScreenOn", "(Landroid/app/Activity;Z)V");
+    g_helper_cache.orient_lock = (*env)->GetStaticMethodID(env, helper, "orientLock", "(Landroid/app/Activity;)V");
+    g_helper_cache.orient_set = (*env)->GetStaticMethodID(env, helper, "orientSet", "(Landroid/app/Activity;I)V");
+    g_helper_cache.orient_unlock = (*env)->GetStaticMethodID(env, helper, "orientUnlock", "(Landroid/app/Activity;)V");
+    g_helper_cache.orient_locked = (*env)->GetStaticMethodID(env, helper, "orientLocked", "(Landroid/app/Activity;)Z");
+    g_helper_cache.pick_image = (*env)->GetStaticMethodID(env, helper, "pickImage", "(Landroid/app/Activity;I)V");
+    g_helper_cache.capture_photo = (*env)->GetStaticMethodID(env, helper, "capturePhoto", "(Landroid/app/Activity;I)V");
+    g_helper_cache.open_document = (*env)->GetStaticMethodID(env, helper, "openDocument", "(Landroid/app/Activity;Ljava/lang/String;I)V");
+    g_helper_cache.sensor_start = (*env)->GetStaticMethodID(env, helper, "sensorStart", "(II)Z");
+    g_helper_cache.sensor_stop = (*env)->GetStaticMethodID(env, helper, "sensorStop", "(I)V");
+    g_helper_cache.sensor_available = (*env)->GetStaticMethodID(env, helper, "sensorAvailable", "(I)Z");
+    g_helper_cache.tts_speak = (*env)->GetStaticMethodID(env, helper, "ttsSpeak", "(Ljava/lang/String;)V");
+    g_helper_cache.tts_stop = (*env)->GetStaticMethodID(env, helper, "ttsStop", "()V");
+    g_helper_cache.tts_is_speaking = (*env)->GetStaticMethodID(env, helper, "ttsIsSpeaking", "()Z");
+    g_helper_cache.btle_start_scan = (*env)->GetStaticMethodID(env, helper, "btleStartScan", "(Ljava/lang/String;I)V");
+    g_helper_cache.btle_stop_scan = (*env)->GetStaticMethodID(env, helper, "btleStopScan", "()V");
+    g_helper_cache.btle_connect = (*env)->GetStaticMethodID(env, helper, "btleConnect", "(Ljava/lang/String;)V");
+    g_helper_cache.btle_disconnect = (*env)->GetStaticMethodID(env, helper, "btleDisconnect", "()V");
+    g_helper_cache.btle_is_connected = (*env)->GetStaticMethodID(env, helper, "btleIsConnected", "()Z");
+    g_helper_cache.btle_discover = (*env)->GetStaticMethodID(env, helper, "btleDiscover", "()Z");
+    g_helper_cache.btle_read = (*env)->GetStaticMethodID(env, helper, "btleRead", "(Ljava/lang/String;Ljava/lang/String;)Z");
+    g_helper_cache.btle_write = (*env)->GetStaticMethodID(env, helper, "btleWrite", "(Ljava/lang/String;Ljava/lang/String;[BI)Z");
+    g_helper_cache.btle_notify = (*env)->GetStaticMethodID(env, helper, "btleNotify", "(Ljava/lang/String;Ljava/lang/String;Z)Z");
+    g_helper_cache.dev_manufacturer = (*env)->GetStaticMethodID(env, helper, "devManufacturer", "()Ljava/lang/String;");
+    g_helper_cache.dev_model = (*env)->GetStaticMethodID(env, helper, "devModel", "()Ljava/lang/String;");
+    g_helper_cache.dev_os_version = (*env)->GetStaticMethodID(env, helper, "devOsVersion", "()Ljava/lang/String;");
+    g_helper_cache.dev_sdk_int = (*env)->GetStaticMethodID(env, helper, "devSdkInt", "()I");
+    g_helper_cache.app_package = (*env)->GetStaticMethodID(env, helper, "appPackage", "()Ljava/lang/String;");
+    g_helper_cache.app_version_name = (*env)->GetStaticMethodID(env, helper, "appVersionName", "()Ljava/lang/String;");
+    g_helper_cache.app_version_code = (*env)->GetStaticMethodID(env, helper, "appVersionCode", "()J");
+    g_helper_cache.app_install_time = (*env)->GetStaticMethodID(env, helper, "appInstallTime", "()J");
+    g_helper_cache.mem_avail_mb = (*env)->GetStaticMethodID(env, helper, "memAvailMb", "()J");
+    g_helper_cache.mem_low = (*env)->GetStaticMethodID(env, helper, "memLow", "()Z");
+    g_helper_cache.net_connected = (*env)->GetStaticMethodID(env, helper, "netConnected", "()Z");
+    g_helper_cache.net_type = (*env)->GetStaticMethodID(env, helper, "netType", "()I");
+    g_helper_cache.batt_charging = (*env)->GetStaticMethodID(env, helper, "battCharging", "()Z");
+    g_helper_cache.dev_interactive = (*env)->GetStaticMethodID(env, helper, "devInteractive", "()Z");
+    g_helper_cache.locale_tag = (*env)->GetStaticMethodID(env, helper, "localeTag", "()Ljava/lang/String;");
+    g_helper_cache.timezone_id = (*env)->GetStaticMethodID(env, helper, "timezoneId", "()Ljava/lang/String;");
+    g_helper_cache.net_operator = (*env)->GetStaticMethodID(env, helper, "netOperator", "()Ljava/lang/String;");
+    g_helper_cache.wake_acquire = (*env)->GetStaticMethodID(env, helper, "wakeAcquire", "(J)V");
+    g_helper_cache.wake_release = (*env)->GetStaticMethodID(env, helper, "wakeRelease", "()V");
+    g_helper_cache.torch_set = (*env)->GetStaticMethodID(env, helper, "torchSet", "(Z)Z");
+    if (!g_helper_cache.notify_channel)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.notify_show)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.notify_cancel)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.notify_cancel_all)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.notify_enabled)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.vibrate_effect)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.clip_set)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.clip_get)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.share_text)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.ui_immersive)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.ui_keep_screen_on)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.orient_lock)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.orient_set)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.orient_unlock)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.orient_locked)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.pick_image)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.capture_photo)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.open_document)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sensor_start)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sensor_stop)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sensor_available)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.tts_speak)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.tts_stop)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.tts_is_speaking)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_start_scan)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_stop_scan)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_connect)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_disconnect)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_is_connected)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_discover)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_read)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_write)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.btle_notify)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.dev_manufacturer)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.dev_model)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.dev_os_version)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.dev_sdk_int)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.app_package)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.app_version_name)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.app_version_code)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.app_install_time)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.mem_avail_mb)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.mem_low)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.net_connected)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.net_type)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.batt_charging)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.dev_interactive)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.locale_tag)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.timezone_id)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.net_operator)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.wake_acquire)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.wake_release)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.torch_set)    g_helper_cache.nfc_start = (*env)->GetStaticMethodID(env, helper, "nfcStart", "(Landroid/app/Activity;)V");
+    g_helper_cache.nfc_stop = (*env)->GetStaticMethodID(env, helper, "nfcStop", "(Landroid/app/Activity;)V");
+    g_helper_cache.nfc_available = (*env)->GetStaticMethodID(env, helper, "nfcAvailable", "()Z");
+    g_helper_cache.nfc_enabled = (*env)->GetStaticMethodID(env, helper, "nfcEnabled", "()Z");
+    g_helper_cache.bio_available = (*env)->GetStaticMethodID(env, helper, "bioAvailable", "()I");
+    g_helper_cache.bio_auth = (*env)->GetStaticMethodID(env, helper, "bioAuth", "(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)V");
+    g_helper_cache.loc_start = (*env)->GetStaticMethodID(env, helper, "locStart", "(JF)Z");
+    g_helper_cache.loc_stop = (*env)->GetStaticMethodID(env, helper, "locStop", "()V");
+    g_helper_cache.loc_available = (*env)->GetStaticMethodID(env, helper, "locAvailable", "()Z");
+    g_helper_cache.rec_start = (*env)->GetStaticMethodID(env, helper, "recStart", "(Ljava/lang/String;)Z");
+    g_helper_cache.rec_stop = (*env)->GetStaticMethodID(env, helper, "recStop", "()Z");
+    g_helper_cache.sc_add = (*env)->GetStaticMethodID(env, helper, "scAdd", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z");
+    g_helper_cache.sc_remove = (*env)->GetStaticMethodID(env, helper, "scRemove", "(Ljava/lang/String;)Z");
+    g_helper_cache.sc_count = (*env)->GetStaticMethodID(env, helper, "scCount", "()I");
+    g_helper_cache.pip_enter = (*env)->GetStaticMethodID(env, helper, "pipEnter", "(Landroid/app/Activity;II)Z");
+    g_helper_cache.pip_available = (*env)->GetStaticMethodID(env, helper, "pipAvailable", "()Z");
+    g_helper_cache.wp_set_image = (*env)->GetStaticMethodID(env, helper, "wpSetImage", "(Ljava/lang/String;)Z");
+    g_helper_cache.vol_music_get = (*env)->GetStaticMethodID(env, helper, "volMusicGet", "()I");
+    g_helper_cache.vol_music_max = (*env)->GetStaticMethodID(env, helper, "volMusicMax", "()I");
+    g_helper_cache.vol_music_set = (*env)->GetStaticMethodID(env, helper, "volMusicSet", "(I)V");
+    g_helper_cache.ringer_get = (*env)->GetStaticMethodID(env, helper, "ringerGet", "()I");
+    g_helper_cache.storage_free_mb = (*env)->GetStaticMethodID(env, helper, "storageFreeMb", "()J");
+    g_helper_cache.storage_total_mb = (*env)->GetStaticMethodID(env, helper, "storageTotalMb", "()J");
+    g_helper_cache.sysbar_status_px = (*env)->GetStaticMethodID(env, helper, "sysbarStatusPx", "(Landroid/app/Activity;)I");
+    g_helper_cache.sysbar_nav_px = (*env)->GetStaticMethodID(env, helper, "sysbarNavPx", "(Landroid/app/Activity;)I");
+    g_helper_cache.kb_visible = (*env)->GetStaticMethodID(env, helper, "kbVisible", "(Landroid/app/Activity;)Z");
+    g_helper_cache.app_installed = (*env)->GetStaticMethodID(env, helper, "appInstalled", "(Ljava/lang/String;)Z");
+    g_helper_cache.app_open = (*env)->GetStaticMethodID(env, helper, "appOpen", "(Ljava/lang/String;)Z");
+    g_helper_cache.contacts_pick = (*env)->GetStaticMethodID(env, helper, "contactsPick", "(Landroid/app/Activity;I)V");
+    g_helper_cache.shot_capture = (*env)->GetStaticMethodID(env, helper, "shotCapture", "(Landroid/app/Activity;)V");
+    g_helper_cache.http_download = (*env)->GetStaticMethodID(env, helper, "downloadToFile", "(Ljava/lang/String;Ljava/lang/String;)Z");
+    g_helper_cache.open_url = (*env)->GetStaticMethodID(env, helper, "openUrl", "(Ljava/lang/String;)Z");
+    g_helper_cache.show_ime = (*env)->GetStaticMethodID(env, helper, "showIme", "(Landroid/app/Activity;)V");
+    g_helper_cache.hide_ime = (*env)->GetStaticMethodID(env, helper, "hideIme", "(Landroid/app/Activity;)V");
+    g_helper_cache.ir_available = (*env)->GetStaticMethodID(env, helper, "irAvailable", "()Z");
+    g_helper_cache.ir_transmit = (*env)->GetStaticMethodID(env, helper, "irTransmit", "(I[I)Z");
+    if (!g_helper_cache.nfc_start)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.nfc_stop)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.nfc_available)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.nfc_enabled)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bio_available)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.bio_auth)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.loc_start)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.loc_stop)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.loc_available)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.rec_start)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.rec_stop)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sc_add)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sc_remove)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sc_count)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.pip_enter)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.pip_available)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.wp_set_image)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.vol_music_get)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.vol_music_max)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.vol_music_set)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.ringer_get)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.storage_free_mb)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.storage_total_mb)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sysbar_status_px)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.sysbar_nav_px)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.kb_visible)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.app_installed)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.app_open)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.contacts_pick)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.shot_capture)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.ir_available)
+        (*env)->ExceptionClear(env);
+    if (!g_helper_cache.ir_transmit)
+        (*env)->ExceptionClear(env);
 
     if (g_helper_cache.init && activity)
     {
@@ -507,12 +1279,15 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         }
     }
 
-    const char *native_callback_class_name = "AromaHelper$NativeCallback";
-    jclass nativeCallbackClass = find_class_safe(env, native_callback_class_name);
+    jclass nativeCallbackClass = load_helper_class(env, classLoader, loadClass, pkg_name, "AromaHelper$NativeCallback");
+    if (!nativeCallbackClass)
+    {
+        nativeCallbackClass = find_class_safe(env, "AromaHelper$NativeCallback");
+    }
 
     if (!nativeCallbackClass)
     {
-        LOG_ERROR("Failed to find native callback class: %s", native_callback_class_name);
+        LOG_ERROR("Failed to find native callback class");
         (*env)->DeleteLocalRef(env, helper);
         (*env)->DeleteLocalRef(env, classLoaderClass);
         (*env)->DeleteLocalRef(env, classLoader);
@@ -528,9 +1303,20 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         {"onPairingResult", "(ZLjava/lang/String;Ljava/lang/String;)V", (void *)native_on_pairing_result},
         {"onConnectionResult", "(ZLjava/lang/String;II)V", (void *)native_on_connection_result},
         {"onDataReceived", "([BI)V", (void *)native_on_data_received},
-        {"onConnectionStateChanged", "(I)V", (void *)native_on_connection_state_changed}};
+        {"onConnectionStateChanged", "(I)V", (void *)native_on_connection_state_changed},
+        {"onBleDevice", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *)native_on_ble_device},
+        {"onBleScanFinished", "()V", (void *)native_on_ble_scan_finished},
+        {"onBleConnection", "(Ljava/lang/String;IZ)V", (void *)native_on_ble_connection},
+        {"onBleServices", "(Ljava/lang/String;Ljava/lang/String;)V", (void *)native_on_ble_services},
+        {"onBleData", "(Ljava/lang/String;Ljava/lang/String;[BI)V", (void *)native_on_ble_data},
+        {"onBleWrite", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *)native_on_ble_write},
+        {"onSensorChanged", "(IFFFJ)V", (void *)native_on_sensor_changed},
+        {"onNfcTag", "(Ljava/lang/String;)V", (void *)native_on_nfc_tag},
+        {"onBiometric", "(Z)V", (void *)native_on_biometric},
+        {"onLocation", "(DDFJ)V", (void *)native_on_location},
+        {"onScreenshot", "(Ljava/lang/String;)V", (void *)native_on_screenshot}};
 
-    jint register_result = (*env)->RegisterNatives(env, nativeCallbackClass, methods, 6);
+    jint register_result = (*env)->RegisterNatives(env, nativeCallbackClass, methods, 17);
     if (register_result != JNI_OK)
     {
         LOG_ERROR("Failed to register native methods: %d", register_result);
@@ -573,6 +1359,39 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         else
         {
             LOG_INFO("Callback added successfully");
+        }
+    }
+
+    if (g_helper_cache.add_sensor_callback && g_helper_cache.callback_obj)
+    {
+        (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.add_sensor_callback, g_helper_cache.callback_obj);
+        if ((*env)->ExceptionCheck(env))
+        {
+            (*env)->ExceptionClear(env);
+            LOG_ERROR("Exception while adding sensor callback");
+        }
+    }
+
+    {
+        jclass activity_class = load_helper_class(env, classLoader, loadClass, pkg_name, "AromaActivity");
+        if (activity_class)
+        {
+            g_helper_cache.activity_class = (jclass)(*env)->NewGlobalRef(env, activity_class);
+            JNINativeMethod activity_methods[] = {
+                {"nativeOnPermissionResult", "(I[Ljava/lang/String;[I)V", (void *)native_on_permission_result},
+                {"nativeOnActivityResult", "(IILjava/lang/String;Ljava/lang/String;)V", (void *)native_on_activity_result},
+                {"nativeOnTextInput", "(Ljava/lang/String;)V", (void *)native_on_text_input},
+                {"nativeOnBackspace", "()V", (void *)native_on_backspace},
+                {"nativeOnEditorDone", "()V", (void *)native_on_editor_done}};
+            if ((*env)->RegisterNatives(env, activity_class, activity_methods, 5) != JNI_OK)
+            {
+                LOG_ERROR("Failed to register activity native methods");
+            }
+            (*env)->DeleteLocalRef(env, activity_class);
+        }
+        else
+        {
+            LOG_ERROR("AromaActivity class not found, activity results unavailable");
         }
     }
 
@@ -1301,30 +2120,7 @@ static void term_display(void)
     g_window_flags_set = false;
 }
 
-static void android_set_requested_orientation(int orientation)
-{
-    if (!g_app || !g_app->activity)
-        return;
 
-    int attach = 0;
-    JNIEnv *env = get_jni_env(&attach);
-    if (!env)
-        return;
-
-    jobject activity = g_app->activity->clazz;
-    jclass activityClass = (*env)->GetObjectClass(env, activity);
-
-    jmethodID setRequestedOrientation = (*env)->GetMethodID(env, activityClass,
-                                                            "setRequestedOrientation", "(I)V");
-
-    if (setRequestedOrientation)
-    {
-        (*env)->CallVoidMethod(env, activity, setRequestedOrientation, orientation);
-    }
-
-    (*env)->DeleteLocalRef(env, activityClass);
-    detach_jni_env(attach);
-}
 
 static int android_get_current_orientation(void)
 {
@@ -1365,56 +2161,32 @@ static int android_get_current_orientation(void)
 
 static bool android_is_orientation_locked(void)
 {
-    int attach = 0;
-    JNIEnv *env = get_jni_env(&attach);
-    if (!env)
-        return false;
-
-    jobject activity = g_app->activity->clazz;
-    jclass activityClass = (*env)->GetObjectClass(env, activity);
-
-    jmethodID getRequestedOrientation = (*env)->GetMethodID(env, activityClass,
-                                                            "getRequestedOrientation", "()I");
-
-    bool isLocked = false;
-    if (getRequestedOrientation)
-    {
-        jint orientation = (*env)->CallIntMethod(env, activity, getRequestedOrientation);
-        isLocked = (orientation != -1);
-    }
-
-    (*env)->DeleteLocalRef(env, activityClass);
-    detach_jni_env(attach);
-    return isLocked;
+    return impl_android_orient_locked_new();
 }
 
 static void android_lock_orientation(void)
 {
-    int currentOrientation = android_get_current_orientation();
-    if (currentOrientation > 0)
-    {
-        android_set_requested_orientation(currentOrientation);
-    }
+    impl_android_orient_lock_new();
 }
 
 static void android_unlock_orientation(void)
 {
-    android_set_requested_orientation(-1);
+    impl_android_orient_unlock_new();
 }
 
 static void android_set_orientation_portrait(void)
 {
-    android_set_requested_orientation(1);
+    impl_android_orient_portrait_new();
 }
 
 static void android_set_orientation_landscape(void)
 {
-    android_set_requested_orientation(0);
+    impl_android_orient_landscape_new();
 }
 
 static void android_set_orientation_sensor(void)
 {
-    android_set_requested_orientation(4);
+    impl_android_orient_sensor_new();
 }
 
 static void handle_cmd(struct android_app *app, int32_t cmd)
@@ -1676,104 +2448,37 @@ void set_clear_color(uint16_t color) {}
 
 static void android_show_keyboard(void)
 {
-    if (!g_app || !g_app->activity)
-    {
-        LOG_ERROR("Cannot show keyboard: g_app is NULL");
-        return;
-    }
-
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env)
+    if (!env || !g_app || !g_app->activity)
         return;
-
-    jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
-    jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
-    jstring serviceName = (*env)->NewStringUTF(env, "input_method");
-    jobject imm = (*env)->CallObjectMethod(env, g_app->activity->clazz, getSystemService, serviceName);
-    (*env)->DeleteLocalRef(env, serviceName);
-
-    if (imm)
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.show_ime)
     {
-        jmethodID getWindow = (*env)->GetMethodID(env, activityClass, "getWindow", "()Landroid/view/Window;");
-        jobject window = (*env)->CallObjectMethod(env, g_app->activity->clazz, getWindow);
-        jclass windowClass = (*env)->FindClass(env, "android/view/Window");
-        jmethodID getDecorView = (*env)->GetMethodID(env, windowClass, "getDecorView", "()Landroid/view/View;");
-        jobject decorView = (*env)->CallObjectMethod(env, window, getDecorView);
-
-        if (decorView)
-        {
-            jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
-            jmethodID showSoftInput = (*env)->GetMethodID(env, immClass, "showSoftInput", "(Landroid/view/View;I)Z");
-            (*env)->CallBooleanMethod(env, imm, showSoftInput, decorView, 2);
-            (*env)->DeleteLocalRef(env, decorView);
-            (*env)->DeleteLocalRef(env, windowClass);
-            (*env)->DeleteLocalRef(env, immClass);
-        }
-
-        (*env)->DeleteLocalRef(env, window);
-        (*env)->DeleteLocalRef(env, imm);
+        detach_jni_env(attach);
+        return;
     }
-    else
-    {
-        LOG_ERROR("Failed to get InputMethodManager");
-    }
-
-    (*env)->DeleteLocalRef(env, activityClass);
-
+    jobject activity = g_app->activity->clazz;
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.show_ime, activity);
+    if ((*env)->ExceptionCheck(env))
+        (*env)->ExceptionClear(env);
     detach_jni_env(attach);
 }
 
 static void android_hide_keyboard(void)
 {
-    if (!g_app || !g_app->activity)
-        return;
-
     int attach = 0;
     JNIEnv *env = get_jni_env(&attach);
-    if (!env)
+    if (!env || !g_app || !g_app->activity)
         return;
-
-    jclass activityClass = (*env)->GetObjectClass(env, g_app->activity->clazz);
-    jmethodID getSystemService = (*env)->GetMethodID(env, activityClass, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
-    jstring serviceName = (*env)->NewStringUTF(env, "input_method");
-    jobject imm = (*env)->CallObjectMethod(env, g_app->activity->clazz, getSystemService, serviceName);
-    (*env)->DeleteLocalRef(env, serviceName);
-
-    if (imm)
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.hide_ime)
     {
-        jmethodID getWindow = (*env)->GetMethodID(env, activityClass, "getWindow", "()Landroid/view/Window;");
-        jobject window = (*env)->CallObjectMethod(env, g_app->activity->clazz, getWindow);
-        jclass windowClass = (*env)->FindClass(env, "android/view/Window");
-        jmethodID getDecorView = (*env)->GetMethodID(env, windowClass, "getDecorView", "()Landroid/view/View;");
-        jobject decorView = (*env)->CallObjectMethod(env, window, getDecorView);
-
-        if (decorView)
-        {
-            jclass viewClass = (*env)->FindClass(env, "android/view/View");
-            jmethodID getWindowToken = (*env)->GetMethodID(env, viewClass, "getWindowToken", "()Landroid/os/IBinder;");
-            jobject token = (*env)->CallObjectMethod(env, decorView, getWindowToken);
-
-            if (token)
-            {
-                jclass immClass = (*env)->FindClass(env, "android/view/inputmethod/InputMethodManager");
-                jmethodID hideSoftInput = (*env)->GetMethodID(env, immClass, "hideSoftInputFromWindow", "(Landroid/os/IBinder;I)Z");
-                (*env)->CallBooleanMethod(env, imm, hideSoftInput, token, 0);
-                (*env)->DeleteLocalRef(env, token);
-                (*env)->DeleteLocalRef(env, immClass);
-            }
-
-            (*env)->DeleteLocalRef(env, viewClass);
-            (*env)->DeleteLocalRef(env, decorView);
-        }
-
-        (*env)->DeleteLocalRef(env, windowClass);
-        (*env)->DeleteLocalRef(env, window);
-        (*env)->DeleteLocalRef(env, imm);
+        detach_jni_env(attach);
+        return;
     }
-
-    (*env)->DeleteLocalRef(env, activityClass);
-
+    jobject activity = g_app->activity->clazz;
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.hide_ime, activity);
+    if ((*env)->ExceptionCheck(env))
+        (*env)->ExceptionClear(env);
     detach_jni_env(attach);
 }
 
@@ -1867,91 +2572,7 @@ static bool impl_android_check_permission(const char *permission_name)
 
 static void impl_android_request_permission(const char **permissions, int permCount)
 {
-    if (permCount <= 0)
-        return;
-
-    int attach = 0;
-    JNIEnv *env = get_jni_env(&attach);
-    if (!env)
-        return;
-
-    jobject activity = aroma_android_get_activity();
-    if (!activity)
-    {
-        detach_jni_env(attach);
-        return;
-    }
-
-    jclass activityClass = (*env)->GetObjectClass(env, activity);
-    if (!activityClass)
-    {
-        detach_jni_env(attach);
-        return;
-    }
-
-    jmethodID checkSelfPermission = (*env)->GetMethodID(env, activityClass, "checkSelfPermission", "(Ljava/lang/String;)I");
-    jmethodID requestPermissions = (*env)->GetMethodID(env, activityClass, "requestPermissions", "([Ljava/lang/String;I)V");
-    if (!checkSelfPermission || !requestPermissions)
-    {
-        (*env)->ExceptionClear(env);
-        (*env)->DeleteLocalRef(env, activityClass);
-        detach_jni_env(attach);
-        return;
-    }
-
-    int toRequestCount = 0;
-    for (int i = 0; i < permCount; i++)
-    {
-        const char *perm = permissions[i];
-        jstring permStr = (*env)->NewStringUTF(env, perm);
-        jint granted = (*env)->CallIntMethod(env, activity, checkSelfPermission, permStr);
-        (*env)->DeleteLocalRef(env, permStr);
-
-        if (granted != 0)
-        {
-            toRequestCount++;
-        }
-    }
-
-    if (toRequestCount == 0)
-    {
-        (*env)->DeleteLocalRef(env, activityClass);
-        detach_jni_env(attach);
-        return;
-    }
-
-    jclass stringClass = (*env)->FindClass(env, "java/lang/String");
-    jobjectArray permArray = (*env)->NewObjectArray(env, toRequestCount, stringClass, NULL);
-
-    int idx = 0;
-    for (int i = 0; i < permCount; i++)
-    {
-        const char *perm = permissions[i];
-        jstring permStr = (*env)->NewStringUTF(env, perm);
-        jint granted = (*env)->CallIntMethod(env, activity, checkSelfPermission, permStr);
-        (*env)->DeleteLocalRef(env, permStr);
-
-        if (granted != 0)
-        {
-            jstring arrayPermStr = (*env)->NewStringUTF(env, perm);
-            (*env)->SetObjectArrayElement(env, permArray, idx++, arrayPermStr);
-            (*env)->DeleteLocalRef(env, arrayPermStr);
-        }
-    }
-
-    int requestCode = 1000;
-    (*env)->CallVoidMethod(env, activity, requestPermissions, permArray, requestCode);
-
-    if ((*env)->ExceptionCheck(env))
-    {
-        (*env)->ExceptionClear(env);
-    }
-
-    (*env)->DeleteLocalRef(env, permArray);
-    (*env)->DeleteLocalRef(env, stringClass);
-    (*env)->DeleteLocalRef(env, activityClass);
-
-    detach_jni_env(attach);
+    request_permissions_code(permissions, permCount, 1000);
 }
 
 static void *impl_android_get_system_service(const char *service_name)
@@ -2938,10 +3559,18 @@ const char* impl_android_getPref(const char *key, const char* default_value)
         return NULL;
     }
 
+    static char value_buf[1024];
     const char *value = NULL;
     if (jvalue)
     {
-        value = (*env)->GetStringUTFChars(env, jvalue, NULL);
+        const char *utf = (*env)->GetStringUTFChars(env, jvalue, NULL);
+        if (utf)
+        {
+            strncpy(value_buf, utf, sizeof(value_buf) - 1);
+            value_buf[sizeof(value_buf) - 1] = '\0';
+            value = value_buf;
+            (*env)->ReleaseStringUTFChars(env, jvalue, utf);
+        }
     }
 
     (*env)->DeleteLocalRef(env, jkey);
@@ -3167,6 +3796,3933 @@ long impl_android_getPrefLong(const char* key, long default_value)
     return (long)value;
 }
 
+static bool helper_string_to_buf(JNIEnv *env, jmethodID mid, char *out, size_t out_len)
+
+{
+
+    jstring res = (jstring)(*env)->CallStaticObjectMethod(env, g_helper_cache.helper_class, mid);
+
+    if ((*env)->ExceptionCheck(env) || !res)
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        return false;
+
+    }
+
+    const char *utf = (*env)->GetStringUTFChars(env, res, NULL);
+
+    if (utf)
+
+    {
+
+        strncpy(out, utf, out_len - 1);
+
+        out[out_len - 1] = '\0';
+
+        (*env)->ReleaseStringUTFChars(env, res, utf);
+
+    }
+
+    else
+
+    {
+
+        out[0] = '\0';
+
+    }
+
+    (*env)->DeleteLocalRef(env, res);
+
+    return true;
+
+}
+
+
+
+static void request_permissions_code(const char **permissions, int permCount, int requestCode)
+
+{
+
+    if (permCount <= 0 || !permissions)
+
+    {
+
+        return;
+
+    }
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jclass activityClass = (*env)->GetObjectClass(env, activity);
+
+    if (!activityClass)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jmethodID checkSelfPermission = (*env)->GetMethodID(env, activityClass, "checkSelfPermission", "(Ljava/lang/String;)I");
+
+    jmethodID requestPermissions = (*env)->GetMethodID(env, activityClass, "requestPermissions", "([Ljava/lang/String;I)V");
+
+    if (!checkSelfPermission || !requestPermissions)
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        (*env)->DeleteLocalRef(env, activityClass);
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    int toRequestCount = 0;
+
+    int i = 0;
+
+    for (i = 0; i < permCount; i++)
+
+    {
+
+        jstring permStr = (*env)->NewStringUTF(env, permissions[i] ? permissions[i] : "");
+
+        jint granted = (*env)->CallIntMethod(env, activity, checkSelfPermission, permStr);
+
+        (*env)->DeleteLocalRef(env, permStr);
+
+        if (granted != 0)
+
+        {
+
+            toRequestCount++;
+
+        }
+
+    }
+
+    if (toRequestCount == 0)
+    {
+        (*env)->DeleteLocalRef(env, activityClass);
+        detach_jni_env(attach);
+        if (g_perm_request.active && g_perm_request.request_code == requestCode && g_perm_request.result_cb)
+        {
+            int j = 0;
+            for (j = 0; j < g_perm_request.perm_count; j++)
+            {
+                g_perm_request.result_cb(g_perm_request.permissions[j], true);
+            }
+            g_perm_request.active = false;
+        }
+        return;
+    }
+    jclass stringClass = (*env)->FindClass(env, "java/lang/String");
+
+    jobjectArray permArray = (*env)->NewObjectArray(env, toRequestCount, stringClass, NULL);
+
+    int idx = 0;
+
+    for (i = 0; i < permCount; i++)
+
+    {
+
+        jstring permStr = (*env)->NewStringUTF(env, permissions[i] ? permissions[i] : "");
+
+        jint granted = (*env)->CallIntMethod(env, activity, checkSelfPermission, permStr);
+
+        (*env)->DeleteLocalRef(env, permStr);
+
+        if (granted != 0)
+
+        {
+
+            jstring arrayPermStr = (*env)->NewStringUTF(env, permissions[i] ? permissions[i] : "");
+
+            (*env)->SetObjectArrayElement(env, permArray, idx++, arrayPermStr);
+
+            (*env)->DeleteLocalRef(env, arrayPermStr);
+
+        }
+
+    }
+
+    (*env)->CallVoidMethod(env, activity, requestPermissions, permArray, (jint)requestCode);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, permArray);
+
+    (*env)->DeleteLocalRef(env, stringClass);
+
+    (*env)->DeleteLocalRef(env, activityClass);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+void impl_android_request_permission_cb(const char **permissions, int permCount, void (*cb)(const char *permission, bool granted))
+
+{
+
+    if (permCount <= 0 || !permissions)
+
+    {
+
+        return;
+
+    }
+
+    if (permCount > 16)
+
+    {
+
+        permCount = 16;
+
+    }
+
+    int i = 0;
+
+    for (i = 0; i < permCount; i++)
+
+    {
+
+        const char *p = permissions[i] ? permissions[i] : "";
+
+        strncpy(g_perm_request.permissions[i], p, 127);
+
+        g_perm_request.permissions[i][127] = '\0';
+
+    }
+
+    g_perm_request.perm_count = permCount;
+
+    g_perm_request.request_code = 1001;
+
+    g_perm_request.result_cb = cb;
+
+    g_perm_request.active = true;
+
+    request_permissions_code(permissions, permCount, 1001);
+
+}
+
+
+
+static int media_slot_for_code(int code)
+
+{
+
+    if (code == 2001)
+
+    {
+
+        return 0;
+
+    }
+
+    if (code == 2002)
+
+    {
+
+        return 1;
+
+    }
+
+    if (code == 2003)
+
+    {
+
+        return 2;
+
+    }
+
+    return -1;
+
+}
+
+
+
+static void media_start_request(int code, void (*cb)(const char *path))
+
+{
+
+    int slot = media_slot_for_code(code);
+
+    if (slot < 0)
+
+    {
+
+        return;
+
+    }
+
+    g_media_requests[slot].active = true;
+
+    g_media_requests[slot].request_code = code;
+
+    g_media_requests[slot].result_cb = cb;
+
+}
+
+
+
+void impl_android_pick_image(void (*cb)(const char *path))
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.pick_image)
+
+    {
+
+        detach_jni_env(attach);
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    media_start_request(2001, cb);
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.pick_image, activity, (jint)2001);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+void impl_android_capture_photo(void (*cb)(const char *path))
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.capture_photo)
+
+    {
+
+        detach_jni_env(attach);
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    media_start_request(2002, cb);
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.capture_photo, activity, (jint)2002);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+void impl_android_open_document(const char *mime, void (*cb)(const char *path))
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.open_document)
+
+    {
+
+        detach_jni_env(attach);
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        if (cb)
+
+        {
+
+            cb(NULL);
+
+        }
+
+        return;
+
+    }
+
+    media_start_request(2003, cb);
+
+    jstring jmime = (*env)->NewStringUTF(env, mime ? mime : "*/*");
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.open_document, activity, jmime, (jint)2003);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, jmime);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_notify_channel(int id, const char *name, const char *desc, int importance)
+
+{
+
+    (void)id;
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.notify_channel)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    char chan[64];
+
+    snprintf(chan, sizeof(chan), "aroma-channel-%d", id);
+
+    jstring jid = (*env)->NewStringUTF(env, chan);
+
+    jstring jname = (*env)->NewStringUTF(env, name ? name : chan);
+
+    jstring jdesc = (*env)->NewStringUTF(env, desc ? desc : "");
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.notify_channel, jid, jname, jdesc, (jint)importance);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, jid);
+
+    (*env)->DeleteLocalRef(env, jname);
+
+    (*env)->DeleteLocalRef(env, jdesc);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_notify_show(int id, const char *channel, const char *title, const char *text)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.notify_show)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    char chan[64];
+
+    if (channel && channel[0])
+
+    {
+
+        strncpy(chan, channel, sizeof(chan) - 1);
+
+        chan[sizeof(chan) - 1] = '\0';
+
+    }
+
+    else
+
+    {
+
+        snprintf(chan, sizeof(chan), "aroma-channel-%d", id);
+
+        impl_android_notify_channel(id, chan, "", 3);
+
+    }
+
+    jstring jchan = (*env)->NewStringUTF(env, chan);
+
+    jstring jtitle = (*env)->NewStringUTF(env, title ? title : "");
+
+    jstring jtext = (*env)->NewStringUTF(env, text ? text : "");
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.notify_show, (jint)id, jchan, jtitle, jtext);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, jchan);
+
+    (*env)->DeleteLocalRef(env, jtitle);
+
+    (*env)->DeleteLocalRef(env, jtext);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_notify_cancel(int id)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.notify_cancel)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.notify_cancel, (jint)id);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_notify_cancel_all(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.notify_cancel_all)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.notify_cancel_all);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static bool impl_android_notify_enabled(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.notify_enabled)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.notify_enabled);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+static void impl_android_vibrate_effect(int ms, int amplitude)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.vibrate_effect)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.vibrate_effect, (jlong)ms, (jint)amplitude);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_set_clipboard_text(const char *text)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.clip_set)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jstring jtext = (*env)->NewStringUTF(env, text ? text : "");
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.clip_set, jtext);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, jtext);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static const char *impl_android_get_clipboard_text(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return NULL;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.clip_get)
+
+    {
+
+        detach_jni_env(attach);
+
+        return NULL;
+
+    }
+
+    static char buf[4096];
+
+    if (!helper_string_to_buf(env, g_helper_cache.clip_get, buf, sizeof(buf)))
+
+    {
+
+        detach_jni_env(attach);
+
+        return NULL;
+
+    }
+
+    detach_jni_env(attach);
+
+    return buf;
+
+}
+
+
+
+static void impl_android_share_text(const char *text, const char *title)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.share_text)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jstring jtext = (*env)->NewStringUTF(env, text ? text : "");
+
+    jstring jtitle = (*env)->NewStringUTF(env, title ? title : "");
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.share_text, activity, jtext, jtitle);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, jtext);
+
+    (*env)->DeleteLocalRef(env, jtitle);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_set_immersive(bool enabled)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.ui_immersive)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.ui_immersive, activity, (jboolean)(enabled ? JNI_TRUE : JNI_FALSE));
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_set_keep_screen_on(bool enabled)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.ui_keep_screen_on)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.ui_keep_screen_on, activity, (jboolean)(enabled ? JNI_TRUE : JNI_FALSE));
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_orient_call(int which, int mode)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    jmethodID mid = NULL;
+
+    if (which == 0)
+
+    {
+
+        mid = g_helper_cache.orient_lock;
+
+    }
+
+    else if (which == 1)
+
+    {
+
+        mid = g_helper_cache.orient_set;
+
+    }
+
+    else if (which == 2)
+
+    {
+
+        mid = g_helper_cache.orient_unlock;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    if (which == 1)
+
+    {
+
+        (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, mid, activity, (jint)mode);
+
+    }
+
+    else
+
+    {
+
+        (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, mid, activity);
+
+    }
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_orient_lock_new(void)
+
+{
+
+    impl_android_orient_call(0, 0);
+
+}
+
+
+
+static void impl_android_orient_unlock_new(void)
+
+{
+
+    impl_android_orient_call(2, 0);
+
+}
+
+
+
+static void impl_android_orient_portrait_new(void)
+
+{
+
+    impl_android_orient_call(1, 1);
+
+}
+
+
+
+static void impl_android_orient_landscape_new(void)
+
+{
+
+    impl_android_orient_call(1, 0);
+
+}
+
+
+
+static void impl_android_orient_sensor_new(void)
+
+{
+
+    impl_android_orient_call(1, 2);
+
+}
+
+
+
+static bool impl_android_orient_locked_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.orient_locked)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jobject activity = aroma_android_get_activity();
+
+    if (!activity)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.orient_locked, activity);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+void impl_android_sensor_register_callbacks(void (*cb)(int, float, float, float, long long))
+
+{
+
+    g_sensor_callbacks.sensor_cb = cb;
+
+}
+
+
+
+static void impl_android_sensor_start_new(int type, int rate_us, void (*cb)(int, float, float, float, long long))
+
+{
+
+    if (cb)
+
+    {
+
+        g_sensor_callbacks.sensor_cb = cb;
+
+    }
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.sensor_start)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.sensor_start, (jint)type, (jint)rate_us);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_sensor_stop_new(int type)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.sensor_stop)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.sensor_stop, (jint)type);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static bool impl_android_sensor_available_new(int type)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.sensor_available)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.sensor_available, (jint)type);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+static void impl_android_tts_speak_new(const char *text)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.tts_speak)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jstring jtext = (*env)->NewStringUTF(env, text ? text : "");
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.tts_speak, jtext);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, jtext);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_tts_stop_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.tts_stop)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.tts_stop);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static bool impl_android_tts_is_speaking_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.tts_is_speaking)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.tts_is_speaking);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+static const char *impl_android_simple_string_new(int which)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return NULL;
+
+    }
+
+    jmethodID mid = NULL;
+
+    static char bufs[12][256];
+
+    int idx = 0;
+
+    if (which == 0)
+
+    {
+
+        mid = g_helper_cache.dev_manufacturer;
+
+        idx = 0;
+
+    }
+
+    else if (which == 1)
+
+    {
+
+        mid = g_helper_cache.dev_model;
+
+        idx = 1;
+
+    }
+
+    else if (which == 2)
+
+    {
+
+        mid = g_helper_cache.dev_os_version;
+
+        idx = 2;
+
+    }
+
+    else if (which == 3)
+
+    {
+
+        mid = g_helper_cache.app_package;
+
+        idx = 3;
+
+    }
+
+    else if (which == 4)
+
+    {
+
+        mid = g_helper_cache.app_version_name;
+
+        idx = 4;
+
+    }
+
+    else if (which == 5)
+
+    {
+
+        mid = g_helper_cache.locale_tag;
+
+        idx = 5;
+
+    }
+
+    else if (which == 6)
+
+    {
+
+        mid = g_helper_cache.timezone_id;
+
+        idx = 6;
+
+    }
+
+    else if (which == 7)
+
+    {
+
+        mid = g_helper_cache.net_operator;
+
+        idx = 7;
+
+    }
+
+    else if (which == 8)
+
+    {
+
+        mid = g_helper_cache.clip_get;
+
+        idx = 8;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+
+    {
+
+        detach_jni_env(attach);
+
+        return NULL;
+
+    }
+
+    if (!helper_string_to_buf(env, mid, bufs[idx], sizeof(bufs[idx])))
+
+    {
+
+        detach_jni_env(attach);
+
+        return NULL;
+
+    }
+
+    detach_jni_env(attach);
+
+    return bufs[idx];
+
+}
+
+
+
+static long impl_android_simple_long_new(int which)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return 0;
+
+    }
+
+    jmethodID mid = NULL;
+
+    if (which == 0)
+
+    {
+
+        mid = g_helper_cache.app_version_code;
+
+    }
+
+    else if (which == 1)
+
+    {
+
+        mid = g_helper_cache.app_install_time;
+
+    }
+
+    else if (which == 2)
+
+    {
+
+        mid = g_helper_cache.mem_avail_mb;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+
+    {
+
+        detach_jni_env(attach);
+
+        return 0;
+
+    }
+
+    jlong res = (*env)->CallStaticLongMethod(env, g_helper_cache.helper_class, mid);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = 0;
+
+    }
+
+    detach_jni_env(attach);
+
+    return (long)res;
+
+}
+
+
+
+static int impl_android_simple_int_new(int which)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return 0;
+
+    }
+
+    jmethodID mid = NULL;
+
+    if (which == 0)
+
+    {
+
+        mid = g_helper_cache.dev_sdk_int;
+
+    }
+
+    else if (which == 1)
+
+    {
+
+        mid = g_helper_cache.net_type;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+
+    {
+
+        detach_jni_env(attach);
+
+        return 0;
+
+    }
+
+    jint res = (*env)->CallStaticIntMethod(env, g_helper_cache.helper_class, mid);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = 0;
+
+    }
+
+    detach_jni_env(attach);
+
+    return (int)res;
+
+}
+
+
+
+static bool impl_android_simple_bool_new(int which)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    jmethodID mid = NULL;
+
+    if (which == 0)
+
+    {
+
+        mid = g_helper_cache.mem_low;
+
+    }
+
+    else if (which == 1)
+
+    {
+
+        mid = g_helper_cache.net_connected;
+
+    }
+
+    else if (which == 2)
+
+    {
+
+        mid = g_helper_cache.batt_charging;
+
+    }
+
+    else if (which == 3)
+
+    {
+
+        mid = g_helper_cache.dev_interactive;
+
+    }
+
+    else if (which == 4)
+
+    {
+
+        mid = g_helper_cache.notify_enabled;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, mid);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+static void impl_android_wakelock_acquire_new(long timeout_ms)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.wake_acquire)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.wake_acquire, (jlong)timeout_ms);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_wakelock_release_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.wake_release)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.wake_release);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static bool impl_android_torch_set_new(bool enabled)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.torch_set)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.torch_set, (jboolean)(enabled ? JNI_TRUE : JNI_FALSE));
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+void impl_android_btle_register_callbacks(
+
+    void (*device_cb)(const char *, const char *, int),
+
+    void (*scan_finished_cb)(void),
+
+    void (*connection_cb)(const char *, int, bool),
+
+    void (*services_cb)(const char *, const char *),
+
+    void (*data_cb)(const char *, const char *, const char *, int),
+
+    void (*write_cb)(const char *, const char *, int))
+
+{
+
+    g_ble_callbacks.device_cb = device_cb;
+
+    g_ble_callbacks.scan_finished_cb = scan_finished_cb;
+
+    g_ble_callbacks.connection_cb = connection_cb;
+
+    g_ble_callbacks.services_cb = services_cb;
+
+    g_ble_callbacks.data_cb = data_cb;
+
+    g_ble_callbacks.write_cb = write_cb;
+
+}
+
+
+
+static void impl_android_btle_scan_new(int timeout_ms, const char *service_uuids)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.btle_start_scan)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jstring juuids = NULL;
+
+    if (service_uuids && service_uuids[0])
+
+    {
+
+        juuids = (*env)->NewStringUTF(env, service_uuids);
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.btle_start_scan, juuids, (jint)timeout_ms);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    if (juuids)
+
+    {
+
+        (*env)->DeleteLocalRef(env, juuids);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_btle_stop_scan_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.btle_stop_scan)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.btle_stop_scan);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_btle_connect_new(const char *addr)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env || !addr)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.btle_connect)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    jstring jaddr = (*env)->NewStringUTF(env, addr);
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.btle_connect, jaddr);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    (*env)->DeleteLocalRef(env, jaddr);
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static void impl_android_btle_disconnect_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.btle_disconnect)
+
+    {
+
+        detach_jni_env(attach);
+
+        return;
+
+    }
+
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.btle_disconnect);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+    }
+
+    detach_jni_env(attach);
+
+}
+
+
+
+static bool impl_android_btle_is_connected_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.btle_is_connected)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.btle_is_connected);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+static bool impl_android_btle_discover_new(void)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env)
+
+    {
+
+        return false;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.btle_discover)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.btle_discover);
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+static bool impl_android_btle_gatt_op_new(int op, const char *svc, const char *chr_uuid, const char *data, int len, int arg)
+
+{
+
+    int attach = 0;
+
+    JNIEnv *env = get_jni_env(&attach);
+
+    if (!env || !svc || !chr_uuid)
+
+    {
+
+        return false;
+
+    }
+
+    jmethodID mid = NULL;
+
+    if (op == 0)
+
+    {
+
+        mid = g_helper_cache.btle_read;
+
+    }
+
+    else if (op == 1)
+
+    {
+
+        mid = g_helper_cache.btle_write;
+
+    }
+
+    else
+
+    {
+
+        mid = g_helper_cache.btle_notify;
+
+    }
+
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+
+    {
+
+        detach_jni_env(attach);
+
+        return false;
+
+    }
+
+    jstring jsvc = (*env)->NewStringUTF(env, svc);
+
+    jstring jchr = (*env)->NewStringUTF(env, chr_uuid);
+
+    jboolean res = JNI_FALSE;
+
+    if (op == 0)
+
+    {
+
+        res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, mid, jsvc, jchr);
+
+    }
+
+    else if (op == 1)
+
+    {
+
+        jbyteArray arr = (*env)->NewByteArray(env, len > 0 ? len : 0);
+
+        if (len > 0 && data)
+
+        {
+
+            (*env)->SetByteArrayRegion(env, arr, 0, len, (const jbyte *)data);
+
+        }
+
+        res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, mid, jsvc, jchr, arr, (jint)arg);
+
+        (*env)->DeleteLocalRef(env, arr);
+
+    }
+
+    else
+
+    {
+
+        res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, mid, jsvc, jchr, (jboolean)(arg ? JNI_TRUE : JNI_FALSE));
+
+    }
+
+    if ((*env)->ExceptionCheck(env))
+
+    {
+
+        (*env)->ExceptionClear(env);
+
+        res = JNI_FALSE;
+
+    }
+
+    (*env)->DeleteLocalRef(env, jsvc);
+
+    (*env)->DeleteLocalRef(env, jchr);
+
+    detach_jni_env(attach);
+
+    return res == JNI_TRUE;
+
+}
+
+
+
+static bool impl_android_btle_read_new(const char *svc, const char *chr_uuid)
+
+{
+
+    return impl_android_btle_gatt_op_new(0, svc, chr_uuid, NULL, 0, 0);
+
+}
+
+
+
+static bool impl_android_btle_write_new(const char *svc, const char *chr_uuid, const char *data, int len, int write_type)
+
+{
+
+    return impl_android_btle_gatt_op_new(1, svc, chr_uuid, data, len, write_type);
+
+}
+
+
+
+static bool impl_android_btle_notify_new(const char *svc, const char *chr_uuid, bool enable)
+
+{
+
+    return impl_android_btle_gatt_op_new(2, svc, chr_uuid, NULL, 0, enable ? 1 : 0);
+
+}
+
+
+
+static const char * impl_android_get_locale_tag(void)
+{
+    return impl_android_simple_string_new(5);
+}
+
+static const char * impl_android_get_timezone_id(void)
+{
+    return impl_android_simple_string_new(6);
+}
+
+static const char * impl_android_get_manufacturer(void)
+{
+    return impl_android_simple_string_new(0);
+}
+
+static const char * impl_android_get_model(void)
+{
+    return impl_android_simple_string_new(1);
+}
+
+static const char * impl_android_get_os_version(void)
+{
+    return impl_android_simple_string_new(2);
+}
+
+static const char * impl_android_get_package_name(void)
+{
+    return impl_android_simple_string_new(3);
+}
+
+static const char * impl_android_get_version_name(void)
+{
+    return impl_android_simple_string_new(4);
+}
+
+static const char * impl_android_get_network_operator(void)
+{
+    return impl_android_simple_string_new(7);
+}
+
+static int impl_android_get_sdk_int(void)
+{
+    return impl_android_simple_int_new(0);
+}
+
+static int impl_android_get_network_type(void)
+{
+    return impl_android_simple_int_new(1);
+}
+
+static long impl_android_get_version_code(void)
+{
+    return impl_android_simple_long_new(0);
+}
+
+static long impl_android_get_install_time(void)
+{
+    return impl_android_simple_long_new(1);
+}
+
+static long impl_android_get_memory_avail_mb(void)
+{
+    return impl_android_simple_long_new(2);
+}
+
+static bool impl_android_is_memory_low(void)
+{
+    return impl_android_simple_bool_new(0);
+}
+
+static bool impl_android_is_network_connected(void)
+{
+    return impl_android_simple_bool_new(1);
+}
+
+static bool impl_android_is_charging(void)
+{
+    return impl_android_simple_bool_new(2);
+}
+
+static bool impl_android_is_interactive(void)
+{
+    return impl_android_simple_bool_new(3);
+}
+
+typedef struct
+{
+    void (*tag_cb)(const char *payload);
+} AromaNfcCallbacks;
+
+typedef struct
+{
+    void (*auth_cb)(bool success);
+} AromaBiometricCallbacks;
+
+typedef struct
+{
+    void (*update_cb)(double lat, double lon, float accuracy, long long time_ms);
+} AromaLocationCallbacks;
+
+static AromaNfcCallbacks g_nfc_callbacks = {0};
+static AromaBiometricCallbacks g_bio_callbacks = {0};
+static AromaLocationCallbacks g_loc_callbacks = {0};
+
+static void JNICALL native_on_nfc_tag(JNIEnv *env, jobject thiz, jstring payload)
+{
+    (void)thiz;
+    const char *text = payload ? (*env)->GetStringUTFChars(env, payload, NULL) : "";
+    if (g_nfc_callbacks.tag_cb)
+    {
+        g_nfc_callbacks.tag_cb(text);
+    }
+    if (payload)
+    {
+        (*env)->ReleaseStringUTFChars(env, payload, text);
+    }
+}
+
+static void JNICALL native_on_biometric(JNIEnv *env, jobject thiz, jboolean success)
+{
+    (void)env;
+    (void)thiz;
+    if (g_bio_callbacks.auth_cb)
+    {
+        g_bio_callbacks.auth_cb(success == JNI_TRUE);
+    }
+}
+
+static void JNICALL native_on_location(JNIEnv *env, jobject thiz, jdouble lat, jdouble lon, jfloat accuracy, jlong timeMs)
+{
+    (void)env;
+    (void)thiz;
+    if (g_loc_callbacks.update_cb)
+    {
+        g_loc_callbacks.update_cb((double)lat, (double)lon, (float)accuracy, (long long)timeMs);
+    }
+}
+
+static void JNICALL native_on_screenshot(JNIEnv *env, jobject thiz, jstring path)
+{
+    (void)thiz;
+    int i = 0;
+    for (i = 0; i < 5; i++)
+    {
+        if (g_media_requests[i].active && g_media_requests[i].request_code == 2004)
+        {
+            g_media_requests[i].active = false;
+            if (g_media_requests[i].result_cb)
+            {
+                if (path)
+                {
+                    const char *p = (*env)->GetStringUTFChars(env, path, NULL);
+                    g_media_requests[i].result_cb(p);
+                    (*env)->ReleaseStringUTFChars(env, path, p);
+                }
+                else
+                {
+                    g_media_requests[i].result_cb(NULL);
+                }
+            }
+            return;
+        }
+    }
+}
+
+void impl_android_nfc_register(void (*cb)(const char *payload))
+{
+    g_nfc_callbacks.tag_cb = cb;
+}
+
+void impl_android_biometric_register(void (*cb)(bool success))
+{
+    g_bio_callbacks.auth_cb = cb;
+}
+
+void impl_android_location_register(void (*cb)(double lat, double lon, float accuracy, long long time_ms))
+{
+    g_loc_callbacks.update_cb = cb;
+}
+
+static void impl_android_nfc_start_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.nfc_start)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.nfc_start, activity);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+    detach_jni_env(attach);
+}
+
+static void impl_android_nfc_stop_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.nfc_stop)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.nfc_stop, activity);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+    detach_jni_env(attach);
+}
+
+static bool impl_android_nfc_available_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.nfc_available)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.nfc_available);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_nfc_enabled_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.nfc_enabled)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.nfc_enabled);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static int impl_android_bio_available_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return 1;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bio_available)
+    {
+        detach_jni_env(attach);
+        return 1;
+    }
+    jint res = (*env)->CallStaticIntMethod(env, g_helper_cache.helper_class, g_helper_cache.bio_available);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = 1;
+    }
+    detach_jni_env(attach);
+    return (int)res;
+}
+
+static void impl_android_bio_authenticate_new(const char *title, const char *subtitle)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.bio_auth)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    jstring jt = (*env)->NewStringUTF(env, title ? title : "");
+    jstring js = (*env)->NewStringUTF(env, subtitle ? subtitle : "");
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.bio_auth, activity, jt, js);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+    (*env)->DeleteLocalRef(env, jt);
+    (*env)->DeleteLocalRef(env, js);
+    detach_jni_env(attach);
+}
+
+static bool impl_android_loc_available_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.loc_available)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.loc_available);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_loc_start_new(long min_time_ms, float min_dist_m)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.loc_start)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.loc_start, (jlong)min_time_ms, (jfloat)min_dist_m);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static void impl_android_loc_stop_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.loc_stop)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.loc_stop);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+    detach_jni_env(attach);
+}
+
+static bool impl_android_rec_start_new(const char *path)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !path)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.rec_start)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jp = (*env)->NewStringUTF(env, path);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.rec_start, jp);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jp);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_rec_stop_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.rec_stop)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.rec_stop);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_sc_add_new(const char *id, const char *short_label, const char *long_label)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !id)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.sc_add)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jid = (*env)->NewStringUTF(env, id);
+    jstring js = (*env)->NewStringUTF(env, short_label ? short_label : id);
+    jstring jl = (*env)->NewStringUTF(env, long_label ? long_label : (short_label ? short_label : id));
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.sc_add, jid, js, jl);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jid);
+    (*env)->DeleteLocalRef(env, js);
+    (*env)->DeleteLocalRef(env, jl);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_sc_remove_new(const char *id)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !id)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.sc_remove)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jid = (*env)->NewStringUTF(env, id);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.sc_remove, jid);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jid);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static int impl_android_sc_count_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return 0;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.sc_count)
+    {
+        detach_jni_env(attach);
+        return 0;
+    }
+    jint res = (*env)->CallStaticIntMethod(env, g_helper_cache.helper_class, g_helper_cache.sc_count);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = 0;
+    }
+    detach_jni_env(attach);
+    return (int)res;
+}
+
+static bool impl_android_pip_enter_new(int w, int h)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.pip_enter)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.pip_enter, activity, (jint)w, (jint)h);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_pip_available_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.pip_available)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.pip_available);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_wp_set_image_new(const char *path)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !path)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.wp_set_image)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jp = (*env)->NewStringUTF(env, path);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.wp_set_image, jp);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jp);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static int impl_android_vol_get_new(int which)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return 0;
+    }
+    jmethodID mid = NULL;
+    if (which == 0)
+    {
+        mid = g_helper_cache.vol_music_get;
+    }
+    else if (which == 1)
+    {
+        mid = g_helper_cache.vol_music_max;
+    }
+    else
+    {
+        mid = g_helper_cache.ringer_get;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+    {
+        detach_jni_env(attach);
+        return 0;
+    }
+    jint res = (*env)->CallStaticIntMethod(env, g_helper_cache.helper_class, mid);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = 0;
+    }
+    detach_jni_env(attach);
+    return (int)res;
+}
+
+static void impl_android_vol_set_new(int level)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.vol_music_set)
+    {
+        detach_jni_env(attach);
+        return;
+    }
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.vol_music_set, (jint)level);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+    detach_jni_env(attach);
+}
+
+static long impl_android_storage_mb_new(int which)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return 0;
+    }
+    jmethodID mid = which == 0 ? g_helper_cache.storage_free_mb : g_helper_cache.storage_total_mb;
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+    {
+        detach_jni_env(attach);
+        return 0;
+    }
+    jlong res = (*env)->CallStaticLongMethod(env, g_helper_cache.helper_class, mid);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = 0;
+    }
+    detach_jni_env(attach);
+    return (long)res;
+}
+
+static int impl_android_sysbar_px_new(int which)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return 0;
+    }
+    jmethodID mid = which == 0 ? g_helper_cache.sysbar_status_px : g_helper_cache.sysbar_nav_px;
+    if (!ensure_aroma_helper_initialized(env) || !mid)
+    {
+        detach_jni_env(attach);
+        return 0;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        return 0;
+    }
+    jint res = (*env)->CallStaticIntMethod(env, g_helper_cache.helper_class, mid, activity);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = 0;
+    }
+    detach_jni_env(attach);
+    return (int)res;
+}
+
+static bool impl_android_kb_visible_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.kb_visible)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.kb_visible, activity);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_app_installed_new(const char *pkg)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !pkg)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.app_installed)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jp = (*env)->NewStringUTF(env, pkg);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.app_installed, jp);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jp);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_app_open_new(const char *pkg)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !pkg)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.app_open)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jp = (*env)->NewStringUTF(env, pkg);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.app_open, jp);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jp);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+void impl_android_contacts_pick(void (*cb)(const char *info))
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.contacts_pick)
+    {
+        detach_jni_env(attach);
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    int i = 0;
+    for (i = 0; i < 5; i++)
+    {
+        if (!g_media_requests[i].active)
+        {
+            break;
+        }
+    }
+    if (i >= 5)
+    {
+        detach_jni_env(attach);
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    g_media_requests[i].active = true;
+    g_media_requests[i].request_code = 2005;
+    g_media_requests[i].result_cb = cb;
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.contacts_pick, activity, (jint)2005);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+    detach_jni_env(attach);
+}
+
+void impl_android_shot_capture(void (*cb)(const char *path))
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.shot_capture)
+    {
+        detach_jni_env(attach);
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        detach_jni_env(attach);
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    int i = 0;
+    for (i = 0; i < 5; i++)
+    {
+        if (!g_media_requests[i].active)
+        {
+            break;
+        }
+    }
+    if (i >= 5)
+    {
+        detach_jni_env(attach);
+        if (cb)
+        {
+            cb(NULL);
+        }
+        return;
+    }
+    g_media_requests[i].active = true;
+    g_media_requests[i].request_code = 2004;
+    g_media_requests[i].result_cb = cb;
+    (*env)->CallStaticVoidMethod(env, g_helper_cache.helper_class, g_helper_cache.shot_capture, activity);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+    }
+    detach_jni_env(attach);
+}
+
+static bool impl_android_ir_available_new(void)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.ir_available)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.ir_available);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_ir_transmit_new(int freq_hz, const int *pattern, int pattern_len)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !pattern || pattern_len <= 0)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.ir_transmit)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jintArray arr = (*env)->NewIntArray(env, pattern_len);
+    if (!arr)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    (*env)->SetIntArrayRegion(env, arr, 0, pattern_len, (const jint *)pattern);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.ir_transmit, (jint)freq_hz, arr);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, arr);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static int impl_android_vol_music_get_new(void)
+{
+    return impl_android_vol_get_new(0);
+}
+
+static int impl_android_vol_music_max_new(void)
+{
+    return impl_android_vol_get_new(1);
+}
+
+static int impl_android_ringer_get_new(void)
+{
+    return impl_android_vol_get_new(2);
+}
+
+static bool impl_android_http_fetch_new(const char *url, const char *dest_path)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !url || !dest_path)
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.http_download)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jurl = (*env)->NewStringUTF(env, url);
+    jstring jdest = (*env)->NewStringUTF(env, dest_path);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.http_download, jurl, jdest);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jurl);
+    (*env)->DeleteLocalRef(env, jdest);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static bool impl_android_open_url_new(const char *url)
+{
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env || !url || !url[0])
+    {
+        return false;
+    }
+    if (!ensure_aroma_helper_initialized(env) || !g_helper_cache.open_url)
+    {
+        detach_jni_env(attach);
+        return false;
+    }
+    jstring jurl = (*env)->NewStringUTF(env, url);
+    jboolean res = (*env)->CallStaticBooleanMethod(env, g_helper_cache.helper_class, g_helper_cache.open_url, jurl);
+    if ((*env)->ExceptionCheck(env))
+    {
+        (*env)->ExceptionClear(env);
+        res = JNI_FALSE;
+    }
+    (*env)->DeleteLocalRef(env, jurl);
+    detach_jni_env(attach);
+    return res == JNI_TRUE;
+}
+
+static long impl_android_storage_free_mb_new(void)
+{
+    return impl_android_storage_mb_new(0);
+}
+
+static long impl_android_storage_total_mb_new(void)
+{
+    return impl_android_storage_mb_new(1);
+}
+
+static int impl_android_sysbar_status_new(void)
+{
+    return impl_android_sysbar_px_new(0);
+}
+
+static int impl_android_sysbar_nav_new(void)
+{
+    return impl_android_sysbar_px_new(1);
+}
+
+static jobject g_asset_manager_obj = NULL;
+static AAssetManager *g_asset_manager = NULL;
+
+static bool ensure_asset_manager(JNIEnv *env)
+{
+    if (g_asset_manager)
+    {
+        return true;
+    }
+    jobject activity = aroma_android_get_activity();
+    if (!activity)
+    {
+        return false;
+    }
+    jclass activityClass = (*env)->GetObjectClass(env, activity);
+    if (!activityClass)
+    {
+        return false;
+    }
+    jmethodID getAssets = (*env)->GetMethodID(env, activityClass, "getAssets", "()Landroid/content/res/AssetManager;");
+    if (!getAssets)
+    {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, activityClass);
+        return false;
+    }
+    jobject mgr = (*env)->CallObjectMethod(env, activity, getAssets);
+    if ((*env)->ExceptionCheck(env) || !mgr)
+    {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, activityClass);
+        return false;
+    }
+    g_asset_manager_obj = (*env)->NewGlobalRef(env, mgr);
+    (*env)->DeleteLocalRef(env, mgr);
+    (*env)->DeleteLocalRef(env, activityClass);
+    if (!g_asset_manager_obj)
+    {
+        return false;
+    }
+    g_asset_manager = AAssetManager_fromJava(env, g_asset_manager_obj);
+    return g_asset_manager != NULL;
+}
+
+static bool impl_android_asset_exists_new(const char *name)
+{
+    if (!name || !name[0])
+    {
+        return false;
+    }
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return false;
+    }
+    bool found = false;
+    if (ensure_asset_manager(env))
+    {
+        AAsset *asset = AAssetManager_open(g_asset_manager, name, AASSET_MODE_UNKNOWN);
+        if (asset)
+        {
+            found = true;
+            AAsset_close(asset);
+        }
+    }
+    detach_jni_env(attach);
+    return found;
+}
+
+static long impl_android_asset_size_new(const char *name)
+{
+    if (!name || !name[0])
+    {
+        return -1;
+    }
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return -1;
+    }
+    long size = -1;
+    if (ensure_asset_manager(env))
+    {
+        AAsset *asset = AAssetManager_open(g_asset_manager, name, AASSET_MODE_UNKNOWN);
+        if (asset)
+        {
+            size = (long)AAsset_getLength(asset);
+            AAsset_close(asset);
+        }
+    }
+    detach_jni_env(attach);
+    return size;
+}
+
+static long impl_android_asset_read_new(const char *name, char *out, long max_len)
+{
+    if (!name || !name[0] || !out || max_len <= 0)
+    {
+        return -1;
+    }
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return -1;
+    }
+    long total = -1;
+    if (ensure_asset_manager(env))
+    {
+        AAsset *asset = AAssetManager_open(g_asset_manager, name, AASSET_MODE_STREAMING);
+        if (asset)
+        {
+            total = 0;
+            int chunk = 0;
+            while (total < max_len)
+            {
+                chunk = AAsset_read(asset, out + total, (size_t)(max_len - total));
+                if (chunk <= 0)
+                {
+                    break;
+                }
+                total += chunk;
+            }
+            AAsset_close(asset);
+        }
+    }
+    detach_jni_env(attach);
+    return total;
+}
+
+static int asset_list_dir(const char *base, char out_names[][256], int *count, int max, int depth)
+{
+    if (depth > 6 || *count >= max)
+    {
+        return 0;
+    }
+    AAssetDir *dir = AAssetManager_openDir(g_asset_manager, base ? base : "");
+    if (!dir)
+    {
+        return 0;
+    }
+    const char *fn = NULL;
+    while (*count < max && (fn = AAssetDir_getNextFileName(dir)) != NULL)
+    {
+        char full[512];
+        if (base && base[0])
+        {
+            snprintf(full, sizeof(full), "%s/%s", base, fn);
+        }
+        else
+        {
+            snprintf(full, sizeof(full), "%s", fn);
+        }
+        AAsset *probe = AAssetManager_open(g_asset_manager, full, AASSET_MODE_UNKNOWN);
+        if (probe)
+        {
+            AAsset_close(probe);
+            strncpy(out_names[*count], full, 255);
+            out_names[*count][255] = '\0';
+            (*count)++;
+        }
+        else
+        {
+            asset_list_dir(full, out_names, count, max, depth + 1);
+        }
+    }
+    AAssetDir_close(dir);
+    return 0;
+}
+
+static int impl_android_asset_list_new(const char *dir, char out_names[][256], int max)
+{
+    if (!out_names || max <= 0)
+    {
+        return 0;
+    }
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return 0;
+    }
+    int count = 0;
+    if (ensure_asset_manager(env))
+    {
+        asset_list_dir(dir, out_names, &count, max, 0);
+    }
+    detach_jni_env(attach);
+    return count;
+}
+
+static bool asset_mkdir_chain(const char *path)
+{
+    char tmp[1024];
+    strncpy(tmp, path, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = '\0';
+    size_t i = 0;
+    for (i = 1; tmp[i]; i++)
+    {
+        if (tmp[i] == '/')
+        {
+            tmp[i] = '\0';
+            mkdir(tmp, 0755);
+            tmp[i] = '/';
+        }
+    }
+    return mkdir(path, 0755) == 0 || errno == EEXIST;
+}
+
+static const char *impl_android_asset_cache_path_new(const char *name)
+{
+    static char out_path[1024];
+    if (!name || !name[0] || strstr(name, ".."))
+    {
+        return NULL;
+    }
+    int attach = 0;
+    JNIEnv *env = get_jni_env(&attach);
+    if (!env)
+    {
+        return NULL;
+    }
+    const char *result = NULL;
+    if (ensure_asset_manager(env))
+    {
+        AAsset *asset = AAssetManager_open(g_asset_manager, name, AASSET_MODE_STREAMING);
+        if (asset)
+        {
+            jobject activity = aroma_android_get_activity();
+            if (activity)
+            {
+                jclass activityClass = (*env)->GetObjectClass(env, activity);
+                jmethodID getCacheDir = (*env)->GetMethodID(env, activityClass, "getCacheDir", "()Ljava/io/File;");
+                if (getCacheDir)
+                {
+                    jobject cacheDir = (*env)->CallObjectMethod(env, activity, getCacheDir);
+                    if (cacheDir && !(*env)->ExceptionCheck(env))
+                    {
+                        jclass fileClass = (*env)->GetObjectClass(env, cacheDir);
+                        jmethodID getPath = (*env)->GetMethodID(env, fileClass, "getAbsolutePath", "()Ljava/lang/String;");
+                        if (getPath)
+                        {
+                            jstring jpath = (jstring)(*env)->CallObjectMethod(env, cacheDir, getPath);
+                            if (jpath && !(*env)->ExceptionCheck(env))
+                            {
+                                const char *cdir = (*env)->GetStringUTFChars(env, jpath, NULL);
+                                if (cdir)
+                                {
+                                    snprintf(out_path, sizeof(out_path), "%s/aroma_assets/%s", cdir, name);
+                                    out_path[sizeof(out_path) - 1] = '\0';
+                                    char parent[1024];
+                                    strncpy(parent, out_path, sizeof(parent) - 1);
+                                    parent[sizeof(parent) - 1] = '\0';
+                                    char *slash = strrchr(parent, '/');
+                                    if (slash)
+                                    {
+                                        *slash = '\0';
+                                        asset_mkdir_chain(parent);
+                                    }
+                                    FILE *fp = fopen(out_path, "wb");
+                                    if (fp)
+                                    {
+                                        char buf[8192];
+                                        int n = 0;
+                                        bool ok = true;
+                                        while ((n = AAsset_read(asset, buf, sizeof(buf))) > 0)
+                                        {
+                                            if (fwrite(buf, 1, (size_t)n, fp) != (size_t)n)
+                                            {
+                                                ok = false;
+                                                break;
+                                            }
+                                        }
+                                        fclose(fp);
+                                        if (ok)
+                                        {
+                                            result = out_path;
+                                        }
+                                    }
+                                    (*env)->ReleaseStringUTFChars(env, jpath, cdir);
+                                }
+                                (*env)->DeleteLocalRef(env, jpath);
+                            }
+                            else
+                            {
+                                (*env)->ExceptionClear(env);
+                            }
+                        }
+                        else
+                        {
+                            (*env)->ExceptionClear(env);
+                        }
+                        (*env)->DeleteLocalRef(env, cacheDir);
+                    }
+                    else
+                    {
+                        (*env)->ExceptionClear(env);
+                    }
+                }
+                else
+                {
+                    (*env)->ExceptionClear(env);
+                }
+                (*env)->DeleteLocalRef(env, activityClass);
+            }
+            AAsset_close(asset);
+        }
+    }
+    detach_jni_env(attach);
+    return result;
+}
+
 AromaPlatformInterface aroma_platform_android = {
     .initialize = initialize,
     .shutdown = shutdown,
@@ -3254,6 +7810,100 @@ AromaPlatformInterface aroma_platform_android = {
     .android_set_preference_bool = impl_android_setPrefBool,
     .android_get_preference_long = impl_android_getPrefLong,
     .android_set_preference_long = impl_android_setPrefLong,
+    .android_request_permission_cb = impl_android_request_permission_cb,
+    .android_pick_image = impl_android_pick_image,
+    .android_capture_photo = impl_android_capture_photo,
+    .android_open_document = impl_android_open_document,
+    .android_notify_channel = impl_android_notify_channel,
+    .android_notify_show = impl_android_notify_show,
+    .android_notify_cancel = impl_android_notify_cancel,
+    .android_notify_cancel_all = impl_android_notify_cancel_all,
+    .android_notify_enabled = impl_android_notify_enabled,
+    .android_vibrate_effect = impl_android_vibrate_effect,
+    .android_set_clipboard_text = impl_android_set_clipboard_text,
+    .android_get_clipboard_text = impl_android_get_clipboard_text,
+    .android_share_text = impl_android_share_text,
+    .android_set_immersive = impl_android_set_immersive,
+    .android_set_keep_screen_on = impl_android_set_keep_screen_on,
+    .android_get_locale_tag = impl_android_get_locale_tag,
+    .android_get_timezone_id = impl_android_get_timezone_id,
+    .android_get_manufacturer = impl_android_get_manufacturer,
+    .android_get_model = impl_android_get_model,
+    .android_get_os_version = impl_android_get_os_version,
+    .android_get_sdk_int = impl_android_get_sdk_int,
+    .android_get_package_name = impl_android_get_package_name,
+    .android_get_version_name = impl_android_get_version_name,
+    .android_get_version_code = impl_android_get_version_code,
+    .android_get_install_time = impl_android_get_install_time,
+    .android_get_memory_avail_mb = impl_android_get_memory_avail_mb,
+    .android_is_memory_low = impl_android_is_memory_low,
+    .android_is_network_connected = impl_android_is_network_connected,
+    .android_get_network_type = impl_android_get_network_type,
+    .android_is_charging = impl_android_is_charging,
+    .android_is_interactive = impl_android_is_interactive,
+    .android_get_network_operator = impl_android_get_network_operator,
+    .android_wakelock_acquire = impl_android_wakelock_acquire_new,
+    .android_wakelock_release = impl_android_wakelock_release_new,
+    .android_set_torch_enabled = impl_android_torch_set_new,
+    .android_tts_speak = impl_android_tts_speak_new,
+    .android_tts_stop = impl_android_tts_stop_new,
+    .android_tts_is_speaking = impl_android_tts_is_speaking_new,
+    .android_sensor_register_callbacks = impl_android_sensor_register_callbacks,
+    .android_sensor_start = impl_android_sensor_start_new,
+    .android_sensor_stop = impl_android_sensor_stop_new,
+    .android_sensor_available = impl_android_sensor_available_new,
+    .android_btle_scan = impl_android_btle_scan_new,
+    .android_btle_stop_scan = impl_android_btle_stop_scan_new,
+    .android_btle_register_callbacks = impl_android_btle_register_callbacks,
+    .android_btle_connect = impl_android_btle_connect_new,
+    .android_btle_disconnect = impl_android_btle_disconnect_new,
+    .android_btle_is_connected = impl_android_btle_is_connected_new,
+    .android_btle_discover = impl_android_btle_discover_new,
+    .android_btle_read = impl_android_btle_read_new,
+    .android_btle_write = impl_android_btle_write_new,
+    .android_btle_notify = impl_android_btle_notify_new,
+    .android_nfc_register = impl_android_nfc_register,
+    .android_nfc_start = impl_android_nfc_start_new,
+    .android_nfc_stop = impl_android_nfc_stop_new,
+    .android_nfc_available = impl_android_nfc_available_new,
+    .android_nfc_enabled = impl_android_nfc_enabled_new,
+    .android_biometric_register = impl_android_biometric_register,
+    .android_biometric_available = impl_android_bio_available_new,
+    .android_biometric_authenticate = impl_android_bio_authenticate_new,
+    .android_location_register = impl_android_location_register,
+    .android_location_available = impl_android_loc_available_new,
+    .android_location_start = impl_android_loc_start_new,
+    .android_location_stop = impl_android_loc_stop_new,
+    .android_record_start = impl_android_rec_start_new,
+    .android_record_stop = impl_android_rec_stop_new,
+    .android_shortcut_add = impl_android_sc_add_new,
+    .android_shortcut_remove = impl_android_sc_remove_new,
+    .android_shortcut_count = impl_android_sc_count_new,
+    .android_pip_enter = impl_android_pip_enter_new,
+    .android_pip_available = impl_android_pip_available_new,
+    .android_wallpaper_set_image = impl_android_wp_set_image_new,
+    .android_volume_music_get = impl_android_vol_music_get_new,
+    .android_volume_music_max = impl_android_vol_music_max_new,
+    .android_volume_music_set = impl_android_vol_set_new,
+    .android_ringer_get = impl_android_ringer_get_new,
+    .android_storage_free_mb = impl_android_storage_free_mb_new,
+    .android_storage_total_mb = impl_android_storage_total_mb_new,
+    .android_sysbar_status_px = impl_android_sysbar_status_new,
+    .android_sysbar_nav_px = impl_android_sysbar_nav_new,
+    .android_keyboard_visible = impl_android_kb_visible_new,
+    .android_app_installed = impl_android_app_installed_new,
+    .android_app_open = impl_android_app_open_new,
+    .android_contacts_pick = impl_android_contacts_pick,
+    .android_shot_capture = impl_android_shot_capture,
+    .android_http_fetch = impl_android_http_fetch_new,
+    .android_open_url = impl_android_open_url_new,
+    .android_ir_available = impl_android_ir_available_new,
+    .android_ir_transmit = impl_android_ir_transmit_new,
+    .android_asset_exists = impl_android_asset_exists_new,
+    .android_asset_size = impl_android_asset_size_new,
+    .android_asset_read = impl_android_asset_read_new,
+    .android_asset_list = impl_android_asset_list_new,
+    .android_asset_cache_path = impl_android_asset_cache_path_new,
 };
 
 #endif

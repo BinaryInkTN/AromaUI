@@ -16,7 +16,7 @@
 #include "aroma_android.h"
 #endif
 
-#define AROMA_TABS_CONTENT_MAX 8
+#define AROMA_TABS_CONTENT_MAX 32
 #define AROMA_TABS_GAP 8
 
 struct AromaTabs {
@@ -47,8 +47,10 @@ struct AromaTabs {
     int transition_type;
     uint32_t transition_duration;
     int prev_selected_index;
+    int active_pointer_id;
+    int down_x;
+    int down_y;
 };
-
 static void __tabs_request_redraw(void* user_data)
 {
     if (!user_data) return;
@@ -97,8 +99,7 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
 {
     if (!tabs) return;
     
-    tabs->visibility_dirty = false;  
-    
+    tabs->visibility_dirty = false;
     for (int i = 0; i < tabs->count; i++) {
         bool hide = (i != tabs->selected_index);
         for (int j = 0; j < tabs->content_counts[i]; j++) {
@@ -147,6 +148,12 @@ static bool __tabs_handle_event(AromaEvent* event, void* user_data)
 
  int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
+        event->event_type == EVENT_TYPE_TOUCH_UP ||
+        event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        adjusted_x = event->data.touch.x;
+        adjusted_y = event->data.touch.y;
+    }
                           AromaNode *cur = event->target_node->parent_node;
     while (cur) {
         if (aroma_container_is_scrollable(cur)) {
@@ -170,7 +177,50 @@ static bool __tabs_handle_event(AromaEvent* event, void* user_data)
         }
         case EVENT_TYPE_MOUSE_EXIT:
             return false;
+        case EVENT_TYPE_TOUCH_DOWN: {
+            bool in_b = (adjusted_x >= tabs->rect.x &&
+                         adjusted_x <= tabs->rect.x + tabs->rect.width &&
+                         adjusted_y >= tabs->rect.y &&
+                         adjusted_y <= tabs->rect.y + tabs->rect.height);
+            if (in_b && tabs->active_pointer_id == -1) {
+                tabs->active_pointer_id = event->data.touch.id;
+                tabs->down_x = adjusted_x;
+                tabs->down_y = adjusted_y;
+                aroma_node_invalidate(event->target_node);
+                return true;
+            }
+            return false;
+        }
+        case EVENT_TYPE_TOUCH_UP: {
+            if (tabs->active_pointer_id != event->data.touch.id)
+                return false;
+            tabs->active_pointer_id = -1;
+            bool in_b = (adjusted_x >= tabs->rect.x &&
+                         adjusted_x <= tabs->rect.x + tabs->rect.width &&
+                         adjusted_y >= tabs->rect.y &&
+                         adjusted_y <= tabs->rect.y + tabs->rect.height);
+            if (in_b) {
+                int index = __tabs_index_from_x(tabs, adjusted_x);
+                if (index >= 0 && index < tabs->count && index != tabs->selected_index) {
+                    tabs->prev_selected_index = tabs->selected_index;
+                    tabs->selected_index = index;
+                    tabs->visibility_dirty = true;
+                    __tabs_update_content_visibility(tabs);
+                    if (tabs->on_change) {
+                        tabs->on_change(event->target_node, index, tabs->user_data);
+                    }
+                    aroma_node_invalidate(event->target_node);
+                    __tabs_request_redraw(user_data);
+                }
+                return true;
+            }
+            return true;
+        }
+        case EVENT_TYPE_TOUCH_MOVE:
+            return tabs->active_pointer_id != -1;
         case EVENT_TYPE_MOUSE_CLICK:
+            if (tabs->active_pointer_id != -1)
+                return false;
             if (in_bounds) {
                 int index = __tabs_index_from_x(tabs, adjusted_x);
                 if (index >= 0 && index < tabs->count && index != tabs->selected_index) {
@@ -219,6 +269,9 @@ height = aroma_android_dp_to_px(height);
     tabs->selected_index = 0;
     tabs->hovered_index = -1;
     tabs->visibility_dirty = true;
+    tabs->active_pointer_id = -1;
+    tabs->down_x = 0;
+    tabs->down_y = 0;
 
     AromaTheme theme = aroma_theme_get_global();
     tabs->bg_color = theme.colors.surface;
@@ -412,8 +465,14 @@ bool aroma_tabs_setup_events(AromaNode* tabs_node, void (*on_redraw_callback)(vo
                          __tabs_handle_event, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_MOUSE_EXIT, 
                          __tabs_handle_event, (void*)on_redraw_callback, 80);
-    aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_MOUSE_CLICK, 
+    aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_MOUSE_CLICK,
                          __tabs_handle_event, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_TOUCH_DOWN,
+                         __tabs_handle_event, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_TOUCH_UP,
+                         __tabs_handle_event, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_TOUCH_MOVE,
+                         __tabs_handle_event, (void*)on_redraw_callback, 80);
     return true;
 }
 

@@ -6,6 +6,9 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <math.h>
 #include <stdio.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #ifndef AROMA_GAUGE_TICK_DOWN
 #define AROMA_GAUGE_TICK_DOWN 0
@@ -315,6 +318,13 @@ AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height
     if (!parent || width <= 0 || height <= 0)
         return NULL;
 
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+#endif
+
     AromaGauge *gauge = (AromaGauge *)aroma_widget_alloc(sizeof(AromaGauge));
     if (!gauge)
         return NULL;
@@ -338,6 +348,11 @@ AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height
 
     gauge->track_thickness = 10;
     gauge->fill_thickness = 10;
+#ifdef __ANDROID__
+    gauge->track_thickness = aroma_android_dp_to_px(10);
+    gauge->fill_thickness = aroma_android_dp_to_px(10);
+    gauge->needle_thickness = aroma_android_dp_to_px(4);
+#endif
     gauge->has_needle = false;
     gauge->needle_color = 0xFFFFFFFF;
     gauge->needle_thickness = 4;
@@ -421,6 +436,10 @@ void aroma_gauge_set_thickness(AromaNode *node, int track_thickness, int fill_th
     if (!node || !node->node_widget_ptr)
         return;
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
+#ifdef __ANDROID__
+    track_thickness = aroma_android_dp_to_px(track_thickness);
+    fill_thickness = aroma_android_dp_to_px(fill_thickness);
+#endif
     gauge->track_thickness = track_thickness;
     gauge->fill_thickness = fill_thickness;
     aroma_node_invalidate(node);

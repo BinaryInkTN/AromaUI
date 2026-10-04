@@ -54,6 +54,7 @@ AromaNode *aroma_switch_create(AromaNode *parent, int x, int y, int width, int h
     data->use_theme_colors = true;
     data->on_change = NULL;
     data->user_data = NULL;
+    data->active_pointer_id = -1;
 
     AromaNode *node = __add_child_node(NODE_TYPE_WIDGET, parent, data);
     if (!node)
@@ -166,6 +167,12 @@ static bool __switch_default_mouse_handler(AromaEvent *event, void *user_data)
         return false;
  int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
+        event->event_type == EVENT_TYPE_TOUCH_UP ||
+        event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        adjusted_x = event->data.touch.x;
+        adjusted_y = event->data.touch.y;
+    }
                           AromaNode *cur = event->target_node->parent_node;
     while (cur) {
         if (aroma_container_is_scrollable(cur)) {
@@ -210,7 +217,42 @@ static bool __switch_default_mouse_handler(AromaEvent *event, void *user_data)
 
     switch (event->event_type)
     {
+    case EVENT_TYPE_TOUCH_DOWN: {
+        bool in_b = adjusted_x >= sw->rect.x &&
+            adjusted_x <= sw->rect.x + sw->rect.width &&
+            adjusted_y >= sw->rect.y &&
+            adjusted_y <= sw->rect.y + sw->rect.height;
+        if (in_b && sw->active_pointer_id == -1) {
+            sw->active_pointer_id = event->data.touch.id;
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+        return false;
+    }
+    case EVENT_TYPE_TOUCH_UP: {
+        if (sw->active_pointer_id != event->data.touch.id)
+            return false;
+        sw->active_pointer_id = -1;
+        bool in_b = adjusted_x >= sw->rect.x &&
+            adjusted_x <= sw->rect.x + sw->rect.width &&
+            adjusted_y >= sw->rect.y &&
+            adjusted_y <= sw->rect.y + sw->rect.height;
+        if (in_b) {
+            aroma_switch_set_state(event->target_node, !sw->state);
+            if (user_data) {
+                void (*on_redraw)(void *) = (void (*)(void *))user_data;
+                on_redraw(NULL);
+            }
+            return true;
+        }
+        aroma_node_invalidate(event->target_node);
+        return true;
+    }
+    case EVENT_TYPE_TOUCH_MOVE:
+        return sw->active_pointer_id != -1;
     case EVENT_TYPE_MOUSE_CLICK:
+        if (sw->active_pointer_id != -1)
+            return false;
         if (adjusted_x >= sw->rect.x &&
             adjusted_x <= sw->rect.x + sw->rect.width &&
             adjusted_y >= sw->rect.y &&
@@ -239,5 +281,8 @@ bool aroma_switch_setup_events(AromaNode *switch_node, void (*on_redraw_callback
     aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_MOUSE_MOVE, __switch_default_mouse_handler, (void *)on_redraw_callback, 80);
     aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_MOUSE_ENTER, __switch_default_mouse_handler, (void *)on_redraw_callback, 80);
     aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_MOUSE_EXIT, __switch_default_mouse_handler, (void *)on_redraw_callback, 80);
+    aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_TOUCH_DOWN, __switch_default_mouse_handler, (void *)on_redraw_callback, 100);
+    aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_TOUCH_UP, __switch_default_mouse_handler, (void *)on_redraw_callback, 100);
+    aroma_event_subscribe(switch_node->node_id, EVENT_TYPE_TOUCH_MOVE, __switch_default_mouse_handler, (void *)on_redraw_callback, 80);
     return true;
 }

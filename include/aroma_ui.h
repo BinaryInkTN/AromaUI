@@ -161,6 +161,7 @@ extern "C"
     void aroma_ui_set_immediate_mode(bool enabled);
     bool aroma_ui_is_immediate_mode(void);
     void aroma_ui_request_redraw(void *user_data);
+    void aroma_ui_request_frame(void);
     bool aroma_ui_consume_redraw(void);
 
     AromaDrawList *aroma_ui_begin_frame(size_t window_id);

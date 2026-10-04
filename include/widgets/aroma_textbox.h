@@ -56,6 +56,12 @@ extern "C"
         bool (*on_text_changed)(AromaNode *node, const char *text, void *user_data);
         bool (*on_focus_changed)(AromaNode *node, bool focused, void *user_data);
         void *user_data;
+        AromaFont *icon_font;
+        bool paste_available;
+        int paste_x;
+        int paste_y;
+        int paste_w;
+        int paste_h;
     } AromaTextbox;
 
     AromaNode *aroma_textbox_create(AromaNode *parent, int x, int y, int width, int height);
@@ -64,7 +70,9 @@ extern "C"
     const char *aroma_textbox_get_text(AromaNode *node);
     void aroma_textbox_set_focused(AromaNode *node, bool focused);
     bool aroma_textbox_is_focused(AromaNode *node);
+    AromaNode *aroma_textbox_get_focused(void);
     void aroma_textbox_set_font(AromaNode *node, AromaFont *font);
+    void aroma_textbox_set_icon_font(AromaNode *node, AromaFont *font);
     void aroma_textbox_set_on_text_changed(AromaNode *node,
                                            bool (*callback)(AromaNode *, const char *, void *),
                                            void *user_data);

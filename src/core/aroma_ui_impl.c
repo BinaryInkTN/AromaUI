@@ -239,6 +239,16 @@ void aroma_ui_request_redraw(void *user_data)
     }
 }
 
+void aroma_ui_request_frame(void)
+{
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->request_window_update)
+    {
+        size_t wid = (g_window_count > 0) ? g_windows[0].window_id : 0;
+        platform->request_window_update(wid);
+    }
+}
+
 bool aroma_ui_consume_redraw(void)
 {
     if (g_immediate_mode)

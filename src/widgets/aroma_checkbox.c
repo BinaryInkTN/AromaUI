@@ -205,39 +205,19 @@ void aroma_checkbox_set_font(AromaNode* node, AromaFont* font)
 static void __checkbox_draw_checkmark(AromaGraphicsInterface* gfx, size_t window_id,
                                       int x, int y, int size, uint32_t color)
 {
-    int thickness = size / 6;
-    if (thickness < 2) thickness = 2;
-
+    if (!gfx || !gfx->draw_line) {
+        return;
+    }
+    float thickness = (float)size / 7.0f;
+    if (thickness < 2.0f) thickness = 2.0f;
     int start_x = x + size / 4;
     int start_y = y + size / 2;
     int mid_x = x + size / 2;
     int mid_y = y + size - size / 4;
     int end_x = x + size - size / 6;
     int end_y = y + size / 4;
-
-    int length1 = mid_x - start_x;
-    for (int i = 0; i < thickness; ++i) {
-        gfx->fill_rectangle(window_id,
-                            start_x,
-                            start_y + i,
-                            length1,
-                            thickness,
-                            color,
-                            false,
-                            0.0f);
-    }
-
-    int length2 = end_x - mid_x;
-    for (int i = 0; i < thickness; ++i) {
-        gfx->fill_rectangle(window_id,
-                            mid_x,
-                            mid_y - i,
-                            length2,
-                            thickness,
-                            color,
-                            false,
-                            0.0f);
-    }
+    gfx->draw_line(window_id, start_x, start_y, mid_x, mid_y, color, thickness, true);
+    gfx->draw_line(window_id, mid_x, mid_y, end_x, end_y, color, thickness, true);
 }
 
 void aroma_checkbox_draw(AromaNode* node, size_t window_id)
@@ -299,6 +279,12 @@ static bool __checkbox_handle_event(AromaEvent* event, void* user_data)
 
     int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
+        event->event_type == EVENT_TYPE_TOUCH_UP ||
+        event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        adjusted_x = event->data.touch.x;
+        adjusted_y = event->data.touch.y;
+    }
     AromaNode *cur = event->target_node->parent_node;
     while (cur)
     {
@@ -343,6 +329,27 @@ static bool __checkbox_handle_event(AromaEvent* event, void* user_data)
                 return true;
             }
             break;
+        case EVENT_TYPE_TOUCH_DOWN:
+            if (in_bounds) {
+                data->is_pressed = true;
+                aroma_node_invalidate(event->target_node);
+                __checkbox_request_redraw(user_data);
+                return true;
+            }
+            break;
+        case EVENT_TYPE_TOUCH_UP:
+            if (data->is_pressed) {
+                data->is_pressed = false;
+                if (in_bounds) {
+                    aroma_checkbox_set_state(event->target_node, !data->checked);
+                }
+                aroma_node_invalidate(event->target_node);
+                __checkbox_request_redraw(user_data);
+                return in_bounds;
+            }
+            break;
+        case EVENT_TYPE_TOUCH_MOVE:
+            return data->is_pressed;
         case EVENT_TYPE_MOUSE_RELEASE:
             if (data->is_pressed) {
                 data->is_pressed = false;
@@ -371,6 +378,9 @@ bool aroma_checkbox_setup_events(AromaNode* node,
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, __checkbox_handle_event, (void*)on_redraw_callback, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __checkbox_handle_event, (void*)on_redraw_callback, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __checkbox_handle_event, (void*)on_redraw_callback, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, __checkbox_handle_event, (void*)on_redraw_callback, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, __checkbox_handle_event, (void*)on_redraw_callback, 70);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_MOVE, __checkbox_handle_event, (void*)on_redraw_callback, 60);
     return true;
 }
 

@@ -34,9 +34,34 @@ static void drawlist_proxy_clear(size_t window_id, uint32_t color)
     }
 }
 
+static int g_draw_offset_x = 0;
+static int g_draw_offset_y = 0;
+
+void drawlist_proxy_push_offset(int dx, int dy)
+{
+    g_draw_offset_x += dx;
+    g_draw_offset_y += dy;
+}
+
+void drawlist_proxy_pop_offset(int dx, int dy)
+{
+    g_draw_offset_x -= dx;
+    g_draw_offset_y -= dy;
+}
+
+void drawlist_proxy_get_offset(int *ox, int *oy)
+{
+    if (ox)
+        *ox = g_draw_offset_x;
+    if (oy)
+        *oy = g_draw_offset_y;
+}
+
 static void drawlist_proxy_fill_rectangle(size_t window_id, int x, int y, int width, int height,
                                           uint32_t color, bool isRounded, float cornerRadius)
 {
+    x += g_draw_offset_x;
+    y += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_fill_rect(list, x, y, width, height, color, isRounded, cornerRadius);
@@ -51,6 +76,8 @@ static void drawlist_proxy_fill_rectangle(size_t window_id, int x, int y, int wi
 static void drawlist_proxy_draw_hollow_rectangle(size_t window_id, int x, int y, int width, int height,
                                                  uint32_t color, int border_width, bool isRounded, float cornerRadius)
 {
+    x += g_draw_offset_x;
+    y += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_hollow_rect(list, x, y, width, height, color, border_width, isRounded, cornerRadius);
@@ -65,6 +92,8 @@ static void drawlist_proxy_draw_hollow_rectangle(size_t window_id, int x, int y,
 static void drawlist_proxy_draw_arc(size_t window_id, int cx, int cy, int radius,
                                     float start_angle, float end_angle, uint32_t color, int thickness)
 {
+    cx += g_draw_offset_x;
+    cy += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_arc(list, cx, cy, radius, start_angle, end_angle, color, thickness);
@@ -78,6 +107,8 @@ static void drawlist_proxy_draw_arc(size_t window_id, int cx, int cy, int radius
 
 static void drawlist_proxy_render_text(size_t window_id, AromaFont* font, const char* text, int x, int y, uint32_t color, float scale)
 {
+    x += g_draw_offset_x;
+    y += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_text(list, font, text, x, y, color, scale);
@@ -142,6 +173,10 @@ static unsigned int drawlist_proxy_load_image_from_rgba(unsigned char* data, int
 }
 static void drawlist_proxy_draw_line(size_t window_id, int x0, int y0, int x1, int y1, uint32_t color, float thickness, bool round_cap)
 {
+    x0 += g_draw_offset_x;
+    y0 += g_draw_offset_y;
+    x1 += g_draw_offset_x;
+    y1 += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_line(list, x0, y0, x1, y1, color, thickness, round_cap);
@@ -155,6 +190,8 @@ static void drawlist_proxy_draw_line(size_t window_id, int x0, int y0, int x1, i
 
 static void drawlist_proxy_draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id, float corner_radius)
 {
+    x += g_draw_offset_x;
+    y += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_image(list, x, y, width, height, texture_id, corner_radius);
@@ -168,6 +205,8 @@ static void drawlist_proxy_draw_image(size_t window_id, int x, int y, int width,
 static void drawlist_proxy_draw_image_uv(size_t window_id, int x, int y, int width, int height, unsigned int texture_id, float corner_radius,
                                          float u0, float v0, float u1, float v1)
 {
+    x += g_draw_offset_x;
+    y += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_image_uv(list, x, y, width, height, texture_id, corner_radius, u0, v0, u1, v1);
@@ -230,6 +269,8 @@ static void drawlist_proxy_shutdown(void)
 
 
 void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {
+    x += g_draw_offset_x;
+    y += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_scissor_push(list, x, y, w, h);
@@ -278,6 +319,8 @@ static bool drawlist_proxy_get_pending_dirty_rect(int *x, int *y, int *w, int *h
 static void drawlist_proxy_blur_backdrop(size_t window_id, int x, int y,
                                          int width, int height, float radius,
                                          float corner_radius) {
+    x += g_draw_offset_x;
+    y += g_draw_offset_y;
     AromaDrawList* list = aroma_drawlist_get_active();
     if (list) {
         aroma_drawlist_cmd_blur_backdrop(list, x, y, width, height, radius,

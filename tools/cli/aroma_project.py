@@ -185,23 +185,28 @@ class ProjectCreator:
                             pass
     
     def _setup_java_pkg(self, android_dir: str, package: str, replacements: Dict[str, str]):
-        tpl = os.path.join(android_dir, "app", "src", "main", "java", "AromaHelper.java.tpl")
-        if not os.path.exists(tpl):
-            return
-        
-        pkg_path = package.replace('.', os.sep)
         java_dir = os.path.join(android_dir, "app", "src", "main", "java")
+        pkg_path = package.replace('.', os.sep)
         final_dir = os.path.join(java_dir, pkg_path)
         os.makedirs(final_dir, exist_ok=True)
-        
-        with open(tpl, 'r') as f:
-            content = f.read()
-        for k, v in replacements.items():
-            content = content.replace(k, str(v))
-        
-        with open(os.path.join(final_dir, "AromaHelper.java"), 'w') as f:
-            f.write(content)
-        os.remove(tpl)
+
+        for entry in sorted(os.listdir(java_dir)):
+            src = os.path.join(java_dir, entry)
+            if not os.path.isfile(src):
+                continue
+            if entry.endswith('.java.tpl'):
+                dst_name = entry[:-4]
+            elif entry.endswith('.java'):
+                dst_name = entry
+            else:
+                continue
+            with open(src, 'r') as f:
+                content = f.read()
+            for k, v in replacements.items():
+                content = content.replace(k, str(v))
+            with open(os.path.join(final_dir, dst_name), 'w') as f:
+                f.write(content)
+            os.remove(src)
         
         for root, dirs, _ in os.walk(java_dir, topdown=False):
             for d in dirs:
@@ -303,13 +308,14 @@ class ProjectCreator:
                     f.write(f"zipStorePath=wrapper/dists\n")
                 return False
         
-        with open(wrapper_props_path, 'w') as f:
-            f.write(f"distributionBase=GRADLE_USER_HOME\n")
-            f.write(f"distributionPath=wrapper/dists\n")
-            f.write(f"distributionUrl=file\\://{gradle_home}\n")
-            f.write(f"networkTimeout=10000\n")
-            f.write(f"zipStoreBase=GRADLE_USER_HOME\n")
-            f.write(f"zipStorePath=wrapper/dists\n")
+        if os.path.isfile(gradle_home):
+            with open(wrapper_props_path, 'w') as f:
+                f.write(f"distributionBase=GRADLE_USER_HOME\n")
+                f.write(f"distributionPath=wrapper/dists\n")
+                f.write(f"distributionUrl=file\\://{gradle_home}\n")
+                f.write(f"networkTimeout=10000\n")
+                f.write(f"zipStoreBase=GRADLE_USER_HOME\n")
+                f.write(f"zipStorePath=wrapper/dists\n")
         
         if platform.system() != "Windows":
             st = os.stat(gradlew_path)

@@ -45,6 +45,9 @@ void aroma_container_set_scroll_speed(AromaNode* node, float speed);
 
 void aroma_container_show_scrollbar(AromaNode* node, bool show);
 
+void aroma_container_set_on_swipe_left(AromaNode* node, void (*cb)(void* user_data), void* user_data);
+void aroma_container_set_on_swipe_right(AromaNode* node, void (*cb)(void* user_data), void* user_data);
+
 void aroma_container_set_scrollbar_color(AromaNode* node, uint32_t color);
 
 

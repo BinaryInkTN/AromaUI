@@ -19,6 +19,7 @@ add_library(aroma
     core/cJSON.c
     core/aroma_incense.c
     core/aroma_incense_loader.c
+    core/aroma_http.c
 
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c

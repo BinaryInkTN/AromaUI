@@ -2319,6 +2319,14 @@ body.has-announce .announce-bar{{display:flex}}
   border:1px solid var(--ms-border-dark);background:#FFFFFF;font-size:13px;color:var(--ms-text);
 }}
 .doc-feedback-btns button:hover{{background:var(--ms-surface-2);}}
+.doc-feedback-form{{display:flex;flex-direction:column;gap:10px;flex:1;min-width:min(100%,340px);}}
+.doc-feedback-form textarea{{
+  min-height:76px;resize:vertical;
+  border:1px solid var(--ms-border-dark);border-radius:2px;
+  padding:10px 12px;font-size:13px;line-height:1.5;font-family:var(--fb);
+  background:var(--md-surface);color:var(--ms-text);outline:none;
+}}
+.doc-feedback-form textarea:focus{{border-color:var(--ms-blue);}}
 [data-theme="dark"] .doc-feedback-btns button{{background-color:#292828;color:#F3F2F1;border-color:#484644;}}
 [data-theme="dark"] .doc-feedback-btns button:hover{{background-color:#323130;}}
 
@@ -2377,52 +2385,14 @@ body.has-announce .announce-bar{{display:flex}}
 .lang-menu-item.active svg{{opacity:1;}}
 .ms-copy{{margin-left:auto;}}
 
-.ai-fab{{position:fixed;right:20px;bottom:20px;z-index:360;width:52px;height:52px;border-radius:50%;border:none;background:var(--ms-blue);color:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--md-elev-3);transition:transform 150ms, background 150ms;}}
-.ai-fab:hover{{background:var(--ms-blue-hover);transform:scale(1.05);}}
-.ai-fab svg{{width:24px;height:24px;}}
-.ai-panel{{position:fixed;right:20px;bottom:84px;z-index:360;width:400px;max-width:calc(100vw - 40px);height:540px;max-height:calc(100vh - 200px);background:var(--md-surface);border:1px solid var(--ms-border);border-radius:8px;box-shadow:var(--md-elev-3);display:none;flex-direction:column;overflow:hidden;font-family:var(--fb);}}
-.ai-panel.open{{display:flex;}}
-[data-theme="dark"] .ai-panel{{background:#252423;}}
-.ai-head{{display:flex;align-items:center;gap:8px;padding:12px 12px 12px 16px;background:var(--ms-blue);color:#FFFFFF;}}
-.ai-head svg{{width:18px;height:18px;}}
-.ai-title{{font-size:15px;font-weight:600;flex:1;}}
-.ai-x{{width:30px;height:30px;border-radius:2px;border:none;background:transparent;color:#FFFFFF;opacity:.85;cursor:pointer;display:flex;align-items:center;justify-content:center;}}
-.ai-x:hover{{opacity:1;background:rgba(255,255,255,.15);}}
-.ai-x svg{{width:16px;height:16px;}}
-.ai-settings{{display:none;padding:14px 16px;border-bottom:1px solid var(--ms-border);background:var(--ms-surface);flex-direction:column;gap:8px;}}
-.ai-settings.open{{display:flex;}}
-.ai-settings label{{font-size:12px;font-weight:600;color:var(--ms-secondary);display:flex;flex-direction:column;gap:4px;}}
-.ai-settings input{{height:32px;border:1px solid var(--ms-border-dark);border-radius:2px;padding:0 10px;font-size:13px;font-family:var(--fb);background:var(--md-surface);color:var(--ms-text);}}
-.ai-save{{height:32px;border:none;border-radius:2px;background:var(--ms-blue);color:#FFFFFF;font-weight:600;font-size:13px;cursor:pointer;margin-top:4px;}}
-.ai-save:hover{{background:var(--ms-blue-hover);}}
-.ai-note{{font-size:11px;color:var(--ms-secondary);margin:0;line-height:1.5;}}
-.ai-msgs{{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}}
-.ai-msg{{max-width:100%;font-size:14px;line-height:1.55;}}
-.ai-msg.user{{align-self:flex-end;background:var(--ms-blue);color:#FFFFFF;border-radius:12px 12px 2px 12px;padding:9px 13px;max-width:85%;}}
-.ai-msg.user p{{margin:0;color:#FFFFFF;}}
-.ai-msg.ai{{align-self:flex-start;background:var(--ms-surface-2);color:var(--ms-text);border-radius:12px 12px 12px 2px;padding:10px 14px;max-width:92%;}}
-.ai-msg.ai p{{margin:0 0 8px;color:var(--ms-text);}}
-.ai-msg.ai p:last-child{{margin-bottom:0;}}
-.ai-msg.ai pre{{background:var(--ms-code-bg);border:1px solid var(--ms-border);border-radius:4px;padding:8px 10px;overflow-x:auto;font-size:12.5px;margin:8px 0;}}
-.ai-msg.ai code{{font-family:var(--fm);font-size:87%;}}
-.ai-msg.ai ul{{margin:4px 0 8px 18px;padding:0;}}
-.ai-typing span{{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ms-secondary);margin-right:4px;animation:ai-blink 1.2s infinite;}}
-.ai-typing span:nth-child(2){{animation-delay:.2s}}
-.ai-typing span:nth-child(3){{animation-delay:.4s}}
-@keyframes ai-blink{{0%,60%,100%{{opacity:.25}}30%{{opacity:1}}}}
-.ai-suggest{{display:flex;gap:8px;padding:0 16px 10px;flex-wrap:wrap;}}
-.ai-suggest button{{font-size:12px;padding:6px 12px;border-radius:14px;border:1px solid var(--ms-blue);background:transparent;color:var(--ms-link);cursor:pointer;font-family:var(--fb);}}
-.ai-suggest button:hover{{background:var(--ms-note-bg);}}
-.ai-input-row{{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--ms-border);}}
-.ai-input-row input{{flex:1;height:36px;border:1px solid var(--ms-border-dark);border-radius:18px;padding:0 14px;font-size:13px;font-family:var(--fb);background:var(--md-surface);color:var(--ms-text);outline:none;}}
-.ai-input-row input:focus{{border-color:var(--ms-blue);}}
-.ai-input-row button{{width:36px;height:36px;border-radius:50%;border:none;background:var(--ms-blue);color:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}}
-.ai-input-row button:hover{{background:var(--ms-blue-hover);}}
-.ai-input-row button svg{{width:16px;height:16px;}}
-.ai-sources{{margin-top:10px;padding-top:8px;border-top:1px solid var(--ms-border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--ms-secondary);}}
-.ai-sources button{{font-size:12px;padding:3px 10px;border-radius:10px;border:1px solid var(--ms-border-dark);background:transparent;color:var(--ms-link);cursor:pointer;font-family:var(--fb);}}
-.ai-sources button:hover{{border-color:var(--ms-blue);}}
-@media(max-width:600px){{.ai-panel{{right:12px;left:12px;width:auto;bottom:76px;}}.ai-fab{{right:12px;bottom:12px;}}}}
+  flex:1;height:30px;border-radius:15px;border:1px solid var(--ms-border-dark);
+  background:transparent;color:var(--ms-secondary);font-size:12px;font-weight:600;
+  cursor:pointer;font-family:var(--fb);
+}}
+  height:30px;border:1px solid var(--ms-border-dark);border-radius:2px;
+  background:var(--md-surface);color:var(--ms-text);font-size:12px;font-family:var(--fb);
+  padding:0 6px;max-width:190px;
+}}
 
 .pf-wrap{{position:relative}}
 .pf-chip{{
@@ -2656,35 +2626,6 @@ body.has-announce .announce-bar{{display:flex}}
   </div>
 </div>
 
-<button class="ai-fab" id="aiFab" onclick="toggleAi()" title="Ask the docs AI" aria-label="Ask the docs AI">
-  <i data-lucide="sparkles"></i>
-</button>
-<div class="ai-panel" id="aiPanel" role="dialog" aria-label="Documentation AI assistant">
-  <div class="ai-head">
-    <i data-lucide="sparkles"></i>
-    <span class="ai-title">Docs Assistant</span>
-    <button class="ai-x" onclick="toggleAiSettings(event)" title="AI settings" aria-label="AI settings"><i data-lucide="settings"></i></button>
-    <button class="ai-x" onclick="toggleAi(false)" title="Close" aria-label="Close"><i data-lucide="x"></i></button>
-  </div>
-  <div class="ai-settings" id="aiSettings">
-    <label>Endpoint (OpenAI-compatible)<input id="aiEndpoint" placeholder="https://api.openai.com/v1"></label>
-    <label>API key<input id="aiKey" type="password" placeholder="sk-... (optional)"></label>
-    <label>Model<input id="aiModel" placeholder="gpt-4o-mini"></label>
-    <button class="ai-save" onclick="aiSaveSettings()">Save</button>
-    <p class="ai-note">Without a key, answers come from the free shared service.</p>
-  </div>
-  <div class="ai-msgs" id="aiMsgs"></div>
-  <div class="ai-suggest" id="aiSuggest">
-    <button onclick="aiSend('How do I create a new project?')">Create a project</button>
-    <button onclick="aiSend('How does the layout engine work?')">Layout engine</button>
-    <button onclick="aiSend('How do I deploy to Android?')">Deploy to Android</button>
-  </div>
-  <div class="ai-input-row">
-    <input id="aiInput" placeholder="Ask about the docs..." onkeydown="aiKey(event)" autocomplete="off">
-    <button onclick="aiSend()" title="Send" aria-label="Send"><i data-lucide="send"></i></button>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
@@ -2708,163 +2649,107 @@ const PAGE_VERSIONS = {page_versions_json};
 const PAGE_UPDATED = {page_updated_json};
 const PAGE_STATUS = {page_status_json};
 /* Docs AI assistant: retrieval over embedded pages + LLM. */
-let aiOpen=false, aiBusy=false, aiHistory=[];
-function aiGetSettings(){{
-  let ep='', key='', model='';
+/* Docs feedback sinks: votes + comments are POSTed so the owner can see them.
+   - Default (works now, no setup): FormSubmit delivers to DOCS_FEEDBACK_EMAIL.
+   - Hosted dashboard: create a free form at https://formspree.io/forms (2 min),
+     then set DOCS_FORMSPREE_ID to the form ID (the part after /f/). New
+     feedback will then appear in the Formspree dashboard instead of email.
+   - If posting fails, the visitor gets a pre-filled GitHub issue draft. */
+const DOCS_FEEDBACK_EMAIL='overflowtn@gmail.com';
+const DOCS_FORMSPREE_ID='';
+function docFbVotes(){{
+  try{{ return JSON.parse(localStorage.getItem('docs-fb-votes')||'{{}}'); }}
+  catch(e){{ return {{}}; }}
+}}
+function docFbSaveVotes(v){{
+  try{{ localStorage.setItem('docs-fb-votes',JSON.stringify(v)); }}catch(e){{}}
+}}
+function docFeedbackDefault(){{
+  return '<span class="doc-feedback-title">Was this page helpful?</span>'
+    +'<span class="doc-feedback-btns">'
+    +'<button onclick="docFeedback(this,true)">Yes</button>'
+    +'<button onclick="docFeedback(this,false)">No</button>'
+    +'</span>';
+}}
+function docFeedbackThanks(sent){{
+  return sent
+    ? '<span class="doc-feedback-title">Thanks! Your draft issue is open on GitHub &mdash; just hit Submit.</span>'
+    : '<span class="doc-feedback-title">Thanks for your feedback!</span>';
+}}
+function resetDocFeedback(){{
+  const box=document.getElementById('docFeedback');
+  if(!box) return;
+  box.innerHTML=docFeedbackDefault();
   try{{
-    ep=localStorage.getItem('docs-ai-endpoint')||'';
-    key=localStorage.getItem('docs-ai-key')||'';
-    model=localStorage.getItem('docs-ai-model')||'gpt-4o-mini';
+    const v=docFbVotes()[currentId];
+    if(v==='yes') box.innerHTML=docFeedbackThanks(false);
+    else if(v==='no') box.innerHTML=docFeedbackThanks(true);
   }}catch(e){{}}
-  return {{endpoint:ep, key:key, model:model}};
-}}
-function toggleAi(open){{
-  const panel=document.getElementById('aiPanel'), fab=document.getElementById('aiFab');
-  const show=(open==null)?!aiOpen:!!open;
-  aiOpen=show;
-  panel.classList.toggle('open',show);
-  fab.classList.toggle('open',show);
-  if(show){{ ic(); setTimeout(()=>document.getElementById('aiInput').focus(),80); }}
-}}
-function aiAddMsg(role, html){{
-  const box=document.getElementById('aiMsgs');
-  const d=document.createElement('div');
-  d.className='ai-msg '+role;
-  d.innerHTML=html;
-  box.appendChild(d);
-  box.scrollTop=box.scrollHeight;
-  return d;
-}}
-function aiEscape(s){{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }}
-function aiStripTags(html){{
-  const t=document.createElement('div'); t.innerHTML=html;
-  t.querySelectorAll('script,style').forEach(e=>e.remove());
-  return (t.textContent||'').replace(/\s+/g,' ').trim();
-}}
-function aiRetrieve(q, k){{
-  k=k||4;
-  const terms=q.toLowerCase().split(/[^a-z0-9\u00c0-\u024f]+/).filter(w=>w.length>2);
-  const ql=q.toLowerCase().trim();
-  const scored=SEARCH_INDEX.map(item=>{{
-    let sc=0;
-    const ti=(item.title||'').toLowerCase(), ca=(item.category||'').toLowerCase(),
-          su=(item.subcategory||'').toLowerCase(), co=(item.content||'').toLowerCase();
-    terms.forEach(w=>{{
-      if(ti.includes(w)) sc+=5;
-      if(ca.includes(w)) sc+=2;
-      if(su.includes(w)) sc+=2;
-      if(co.includes(w)) sc+=1;
-    }});
-    if(ql.length>4&&co.includes(ql)) sc+=4;
-    if(ql.length>4&&ti.includes(ql)) sc+=8;
-    return {{item:item, score:sc}};
-  }}).filter(r=>r.score>0).sort((a,b)=>b.score-a.score).slice(0,k);
-  return scored.map(r=>{{
-    const raw=PAGES[r.item.id]||'';
-    let txt=aiStripTags(raw);
-    if(txt.length>1800) txt=txt.slice(0,1800)+'…';
-    return {{id:r.item.id, title:r.item.title, category:r.item.category, text:txt}};
-  }});
-}}
-function aiBuildPrompt(q, ctx){{
-  let p='You are the AromaSDK documentation assistant. Answer the user question using ONLY the documentation excerpts below. Be concise and practical; include short code snippets when relevant. If the excerpts do not contain the answer, say so plainly and suggest the closest topic. Do not invent APIs.\n\n';
-  ctx.forEach((c,i)=>{{ p+='--- Excerpt '+(i+1)+': '+c.title+' ---\n'+c.text+'\n\n'; }});
-  p+='User question: '+q;
-  return p;
-}}
-async function aiAskCustom(prompt, history, st){{
-  const url=(st.endpoint||'').replace(/\/+$/,'')+'/chat/completions';
-  const msgs=[{{role:'system',content:'You are the AromaSDK documentation assistant. Answer only from the provided excerpts. Be concise.'}}];
-  history.slice(-6).forEach(m=>msgs.push(m));
-  msgs.push({{role:'user',content:prompt}});
-  const res=await fetch(url,{{method:'POST',headers:{{'Content-Type':'application/json','Authorization':'Bearer '+st.key}},body:JSON.stringify({{model:st.model||'gpt-4o-mini',messages:msgs,temperature:0.2}})}});
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const data=await res.json();
-  const out=data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content;
-  if(!out) throw new Error('empty reply');
-  return out;
-}}
-async function aiAskFree(prompt){{
-  const url='https://text.pollinations.ai/'+encodeURIComponent(prompt)+'?model=openai';
-  const res=await fetch(url);
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const txt=await res.text();
-  if(!txt||!txt.trim()) throw new Error('empty reply');
-  return txt;
-}}
-function aiSourcesHtml(ctx){{
-  if(!ctx.length) return '';
-  return '<div class="ai-sources"><span>Sources:</span> '+ctx.map(c=>'<button onclick="aiGoto(\''+c.id+'\')">'+aiEscape(c.title)+'</button>').join('')+'</div>';
-}}
-function aiGoto(id){{ toggleAi(false); showPage(id); }}
-function aiRenderReply(raw){{
-  let html;
-  try{{ html=(typeof marked!=='undefined')?marked.parse(raw):('<p>'+aiEscape(raw)+'</p>'); }}
-  catch(e){{ html='<p>'+aiEscape(raw)+'</p>'; }}
-  html=String(html).replace(/<script[\s\S]*?<\/script>/gi,'');
-  return html;
-}}
-async function aiSend(q){{
-  const input=document.getElementById('aiInput');
-  const text=(q!=null?q:(input?input.value:'')).trim();
-  if(!text||aiBusy) return;
-  if(input) input.value='';
-  document.getElementById('aiSuggest').style.display='none';
-  aiAddMsg('user','<p>'+aiEscape(text)+'</p>');
-  const typing=aiAddMsg('ai','<p class="ai-typing"><span></span><span></span><span></span></p>');
-  aiBusy=true;
-  try{{
-    const ctx=aiRetrieve(text,4);
-    if(!ctx.length) throw new Error('NOCTX');
-    const prompt=aiBuildPrompt(text,ctx);
-    const st=aiGetSettings();
-    let raw;
-    if(st.key&&st.endpoint){{ raw=await aiAskCustom(prompt,aiHistory,st); }}
-    else {{ raw=await aiAskFree(prompt); }}
-    aiHistory.push({{role:'user',content:text}},{{role:'assistant',content:raw}});
-    if(aiHistory.length>12) aiHistory=aiHistory.slice(-12);
-    typing.innerHTML=aiRenderReply(raw)+aiSourcesHtml(ctx);
-    ic();
-  }}catch(e){{
-    let msg='Something went wrong talking to the AI service. Check your connection or configure an API key via the gear icon.';
-    if(e&&e.message==='NOCTX') msg='I could not find anything relevant in the docs for that. Try different keywords, or browse the documentation index.';
-    typing.innerHTML='<p>'+aiEscape(msg)+'</p>';
-  }}
-  aiBusy=false;
-  const box=document.getElementById('aiMsgs');
-  box.scrollTop=box.scrollHeight;
-}}
-function aiKey(e){{ if(e.key==='Enter'&&!e.shiftKey){{ e.preventDefault(); aiSend(); }} }}
-function toggleAiSettings(e){{
-  if(e) e.stopPropagation();
-  const p=document.getElementById('aiSettings');
-  const open=!p.classList.contains('open');
-  if(open){{
-    const st=aiGetSettings();
-    document.getElementById('aiEndpoint').value=st.endpoint;
-    document.getElementById('aiKey').value=st.key;
-    document.getElementById('aiModel').value=st.model;
-  }}
-  p.classList.toggle('open',open);
-}}
-function aiSaveSettings(){{
-  const ep=document.getElementById('aiEndpoint').value.trim(),
-        key=document.getElementById('aiKey').value.trim(),
-        model=document.getElementById('aiModel').value.trim()||'gpt-4o-mini';
-  try{{
-    localStorage.setItem('docs-ai-endpoint',ep);
-    localStorage.setItem('docs-ai-key',key);
-    localStorage.setItem('docs-ai-model',model);
-  }}catch(e){{}}
-  toggleAiSettings();
-  aiAddMsg('ai','<p>AI settings saved. '+(key?'Using your API key.':'Using the free shared service.')+'</p>');
 }}
 function docFeedback(btn,helpful){{
   const box=document.getElementById('docFeedback');
-  if(!box) return;
-  box.innerHTML=helpful
-    ? '<span class="doc-feedback-title">Thanks for your feedback!</span>'
-    : '<span class="doc-feedback-title">Thanks &mdash; <a href="https://github.com/BinaryInkTN/AromaUI/issues" target="_blank" rel="noopener" style="color:var(--ms-link)">tell us how we can improve</a>.</span>';
+  if(!box||!currentId) return;
+  const votes=docFbVotes();
+  votes[currentId]=helpful?'yes':'no-pending';
+  docFbSaveVotes(votes);
+  if(helpful){{
+    votes[currentId]='yes'; docFbSaveVotes(votes);
+    box.innerHTML=docFeedbackThanks(false);
+    return;
+  }}
+  box.innerHTML='<span class="doc-feedback-title">What went wrong?</span>'
+    +'<span class="doc-feedback-form">'
+    +'<textarea id="docFbText" rows="3" placeholder="Tell us what was confusing or missing..."></textarea>'
+    +'<span class="doc-feedback-btns">'
+    +'<button onclick="docFeedbackSend()">Send feedback</button>'
+    +'<button onclick="docFeedbackReset()">Cancel</button>'
+    +'</span></span>';
+  setTimeout(()=>{{const t=document.getElementById('docFbText'); if(t) t.focus();}},60);
+}}
+function docFeedbackReset(){{
+  const votes=docFbVotes();
+  if(currentId){{ delete votes[currentId]; docFbSaveVotes(votes); }}
+  resetDocFeedback();
+}}
+function docFeedbackSend(){{
+  const box=document.getElementById('docFeedback');
+  const ta=document.getElementById('docFbText');
+  const btns=box?box.querySelectorAll('.doc-feedback-btns button'):[];
+  if(btns[0]){{ btns[0].disabled=true; btns[0].textContent='Sending...'; }}
+  const comment=(ta?ta.value:'').trim();
+  const title=(typeof TITLES!=='undefined'&&TITLES[currentId])||document.getElementById('docTitle').textContent||'docs page';
+  const payload={{
+    _subject:'Docs feedback (No): '+title,
+    page:title, url:location.href, vote:'Not helpful',
+    details:comment||'(no details given)',
+    date:new Date().toISOString()
+  }};
+  const done=(ok)=>{{
+    const votes=docFbVotes();
+    if(currentId){{ votes[currentId]='no'; docFbSaveVotes(votes); }}
+    if(!box) return;
+    box.innerHTML=ok
+      ? '<span class="doc-feedback-title">Thanks! Your feedback was recorded.</span>'
+      : docFeedbackThanks(true);
+  }};
+  fetch(DOCS_FORMSPREE_ID
+    ? 'https://formspree.io/f/'+encodeURIComponent(DOCS_FORMSPREE_ID)
+    : 'https://formsubmit.co/ajax/'+encodeURIComponent(DOCS_FEEDBACK_EMAIL),{{
+    method:'POST',
+    headers:{{'Content-Type':'application/json','Accept':'application/json'}},
+    body:JSON.stringify(payload)
+  }}).then(r=>{{
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    done(true);
+  }}).catch(()=>{{
+    const body='Page: '+title+'\nURL: '+location.href+'\nVote: Not helpful\n\nDetails:\n'+(comment||'(no details given)');
+    const url='https://github.com/BinaryInkTN/AromaUI/issues/new'
+      +'?title='+encodeURIComponent('Docs feedback: '+title)
+      +'&body='+encodeURIComponent(body)
+      +'&labels='+encodeURIComponent('documentation');
+    window.open(url,'_blank','noopener');
+    done(false);
+  }});
 }}
 
 
@@ -3201,6 +3086,7 @@ function showPage(id, category=null, subcategory=null){{
   
   updateBreadcrumbs();
   renderPnNav(id);
+  resetDocFeedback();
   document.getElementById('cScroll').scrollTop=0;
   closeDrawer();
   setTimeout(()=>{{addCopyBtns();initMermaid(localStorage.getItem('docs-theme')||'light');ic();buildToc();if(document.getElementById('iconGrid')) filterIcons('');}},60);

@@ -1,5 +1,3 @@
-#ifndef __ANDROID__
-
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "backends/aroma_abi.h"
@@ -24,10 +22,18 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten/fetch.h>
 #endif
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
 #include <sys/stat.h>
 #include <unistd.h>
 #include <curl/curl.h>
+#endif
+#if defined(__ANDROID__)
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+#include "aroma_http.h"
+#ifdef __ANDROID__
+#include "aroma_android.h"
 #endif
 #include <sqlite3.h>
 
@@ -41,7 +47,25 @@
 
 static bool __map_event_handler_global(AromaEvent *event, void *user_data);
 static inline void safe_str_copy_len(char *dst, size_t dst_size, const char *src, size_t src_len);
-#define TILE_CACHE_DIR "/tmp/aroma_tiles"
+static const char *map_tile_cache_dir(void)
+{
+    static char dir[512];
+    static bool ready = false;
+    if (!ready)
+    {
+#ifdef __ANDROID__
+        const char *base = aroma_android_get_internal_path();
+        if (base && base[0])
+            snprintf(dir, sizeof(dir), "%s/aroma_tiles", base);
+        else
+            snprintf(dir, sizeof(dir), "/data/local/tmp/aroma_tiles");
+#else
+        snprintf(dir, sizeof(dir), "/tmp/aroma_tiles");
+#endif
+        ready = true;
+    }
+    return dir;
+}
 #define MAX_TILES_MEM 256
 #define TILE_SIZE 256
 #define INITIAL_MARKER_CAPACITY 512
@@ -1427,7 +1451,7 @@ static unsigned int __map_dark_texture_from_file(const char *path)
     return tex;
 }
 
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
 static void *route_fetch_worker(void *arg)
 {
     RouteRequest *req = (RouteRequest *)arg;
@@ -1545,6 +1569,9 @@ static void *geocode_fetch_worker(void *arg)
 }
 
 
+#endif
+
+#ifndef __EMSCRIPTEN__
 static void *tile_fetch_worker(void *arg)
 {
     (void)arg;
@@ -1640,6 +1667,28 @@ static void *tile_fetch_worker(void *arg)
             snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
             char tmp_path[512];
             snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", req.filepath);
+#ifdef __ANDROID__
+            if (aroma_http_fetch_to_file(url, tmp_path))
+            {
+                rename(tmp_path, req.filepath);
+                TileRequest *event_req = malloc(sizeof(TileRequest));
+                if (event_req)
+                {
+                    *event_req = req;
+                    AromaEvent *ev = aroma_event_create_custom(req.node_id, 999, event_req, NULL);
+                    if (ev)
+                        aroma_event_queue(ev);
+                    else
+                    {
+                        if (event_req->image_data)
+                            free(event_req->image_data);
+                        free(event_req);
+                    }
+                }
+            }
+            else
+                unlink(tmp_path);
+#else
             CURL *curl = curl_easy_init();
             if (curl)
             {
@@ -1679,6 +1728,7 @@ static void *tile_fetch_worker(void *arg)
                 }
                 curl_easy_cleanup(curl);
             }
+#endif
         }
     }
     return NULL;
@@ -3280,6 +3330,152 @@ static bool __map_event_handler(AromaEvent *event, void *user_data)
     }
     switch (event->event_type)
     {
+    case EVENT_TYPE_TOUCH_DOWN: {
+        int tid = event->data.touch.id;
+        int tx = event->data.touch.x;
+        int ty = event->data.touch.y;
+        AromaNode *cc = event->target_node->parent_node;
+        while (cc)
+        {
+            if (aroma_container_is_scrollable(cc))
+            {
+                int sx = 0, sy = 0;
+                aroma_container_get_scroll(cc, &sx, &sy);
+                tx += sx;
+                ty += sy;
+            }
+            cc = cc->parent_node;
+        }
+        if (tx >= map->rect.x && tx <= map->rect.x + map->rect.width &&
+            ty >= map->rect.y && ty <= map->rect.y + map->rect.height)
+        {
+            if (map->touch_id == -1)
+            {
+                map->touch_id = tid;
+                map->touch_x = tx;
+                map->touch_y = ty;
+                map->last_mouse_x = tx;
+                map->last_mouse_y = ty;
+                map->is_dragging = true;
+            }
+            else if (map->pinch_id == -1 && tid != map->touch_id)
+            {
+                map->pinch_id = tid;
+                map->pinch_x = tx;
+                map->pinch_y = ty;
+                int dx = map->touch_x - tx;
+                int dy = map->touch_y - ty;
+                map->pinch_base_dist = sqrtf((float)(dx * dx + dy * dy));
+                map->is_dragging = false;
+            }
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+        break;
+    }
+    case EVENT_TYPE_TOUCH_MOVE: {
+        int tid = event->data.touch.id;
+        int tx = event->data.touch.x;
+        int ty = event->data.touch.y;
+        AromaNode *cc = event->target_node->parent_node;
+        while (cc)
+        {
+            if (aroma_container_is_scrollable(cc))
+            {
+                int sx = 0, sy = 0;
+                aroma_container_get_scroll(cc, &sx, &sy);
+                tx += sx;
+                ty += sy;
+            }
+            cc = cc->parent_node;
+        }
+        if (map->pinch_id != -1 && (tid == map->touch_id || tid == map->pinch_id))
+        {
+            if (tid == map->touch_id)
+            {
+                map->touch_x = tx;
+                map->touch_y = ty;
+            }
+            else
+            {
+                map->pinch_x = tx;
+                map->pinch_y = ty;
+            }
+            int dx = map->touch_x - map->pinch_x;
+            int dy = map->touch_y - map->pinch_y;
+            float d = sqrtf((float)(dx * dx + dy * dy));
+            if (map->pinch_base_dist > 0.0f && d > 0.0f)
+            {
+                float ratio = d / map->pinch_base_dist;
+                if (ratio >= 1.25f)
+                {
+                    aroma_map_zoom_in(event->target_node);
+                    map->pinch_base_dist = d;
+                }
+                else if (ratio <= 0.8f)
+                {
+                    aroma_map_zoom_out(event->target_node);
+                    map->pinch_base_dist = d;
+                }
+            }
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+        if (tid == map->touch_id && map->is_dragging)
+        {
+            int dx = tx - map->last_mouse_x;
+            int dy = ty - map->last_mouse_y;
+            extra->center_px_x -= dx;
+            extra->center_px_y -= dy;
+            extra->display_px_x -= dx;
+            extra->display_px_y -= dy;
+            map->last_mouse_x = tx;
+            map->last_mouse_y = ty;
+            map->touch_x = tx;
+            map->touch_y = ty;
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+        break;
+    }
+    case EVENT_TYPE_TOUCH_UP: {
+        int tid = event->data.touch.id;
+        if (tid == map->pinch_id)
+        {
+            map->pinch_id = -1;
+            map->pinch_base_dist = 0.0f;
+            if (map->touch_id != -1)
+            {
+                map->last_mouse_x = map->touch_x;
+                map->last_mouse_y = map->touch_y;
+                map->is_dragging = true;
+            }
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+        if (tid == map->touch_id)
+        {
+            if (map->pinch_id != -1)
+            {
+                map->touch_id = map->pinch_id;
+                map->touch_x = map->pinch_x;
+                map->touch_y = map->pinch_y;
+                map->last_mouse_x = map->pinch_x;
+                map->last_mouse_y = map->pinch_y;
+                map->pinch_id = -1;
+                map->pinch_base_dist = 0.0f;
+                map->is_dragging = true;
+            }
+            else
+            {
+                map->touch_id = -1;
+                map->is_dragging = false;
+            }
+            aroma_node_invalidate(event->target_node);
+            return true;
+        }
+        break;
+    }
     case EVENT_TYPE_MOUSE_DOUBLE_CLICK:
         if (adjusted_x >= map->rect.x && adjusted_x <= map->rect.x + map->rect.width &&
             adjusted_y >= map->rect.y && adjusted_y <= map->rect.y + map->rect.height)
@@ -3602,7 +3798,7 @@ static void __map_draw(AromaNode *node, size_t window_id)
                 /* Disk cache is OSM light tiles only; the dark variant is
                    derived in memory (see __map_dark_texture_from_png). */
                 snprintf(filepath, sizeof(filepath), "%s/osm_light_%d_%d_%d.png",
-                         TILE_CACHE_DIR, z, wrapped_x, y);
+                         map_tile_cache_dir(), z, wrapped_x, y);
 #ifdef __EMSCRIPTEN__
                 if (!request_tile_download(z, wrapped_x, y, theme_is_dark, filepath,
                                            node->node_id, extra))
@@ -4214,6 +4410,10 @@ void aroma_map_geocode_search(AromaNode *node, const char *query,
 {
     if (!node || !node->node_widget_ptr || !query || !callback)
         return;
+#ifdef __ANDROID__
+    callback(NULL, 0, user_data);
+    return;
+#endif
     AromaMap *map = (AromaMap *)node->node_widget_ptr;
     struct AromaMapExtra *extra = (struct AromaMapExtra *)map->extra;
     if (!extra)
@@ -4268,6 +4468,7 @@ void aroma_map_geocode_search(AromaNode *node, const char *query,
     req->user_data = user_data;
     req->node_id = node->node_id;
     pthread_t fetch_thread;
+#ifndef __ANDROID__
     if (pthread_create(&fetch_thread, NULL, geocode_fetch_worker, req) != 0)
     {
         free(req);
@@ -4277,6 +4478,7 @@ void aroma_map_geocode_search(AromaNode *node, const char *query,
         return;
     }
     pthread_detach(fetch_thread);
+#endif
     MAP_GEOCODE_MUTEX_LOCK(extra);
     extra->geocode_loading = false;
     MAP_GEOCODE_MUTEX_UNLOCK(extra);
@@ -4587,12 +4789,16 @@ AromaNode *aroma_map_create(AromaNode *parent, int x, int y, int width, int heig
     width = aroma_android_dp_to_px(width);
     height = aroma_android_dp_to_px(height);
 #endif
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
     if (!curl_initialized)
     {
         curl_global_init(CURL_GLOBAL_ALL);
         curl_initialized = true;
-        mkdir(TILE_CACHE_DIR, 0777);
+    }
+#endif
+#if !defined(__EMSCRIPTEN__)
+    {
+        mkdir(map_tile_cache_dir(), 0777);
 #if defined(_SC_NPROCESSORS_ONLN)
         int cores = sysconf(_SC_NPROCESSORS_ONLN);
         if (cores > 0)
@@ -4625,6 +4831,9 @@ AromaNode *aroma_map_create(AromaNode *parent, int x, int y, int width, int heig
     map->rect.width = width;
     map->rect.height = height;
     map->zoom = 6;
+    map->touch_id = -1;
+    map->pinch_id = -1;
+    map->pinch_base_dist = 0.0f;
     map->center_lat = 0.0;
     map->center_lon = 0.0;
     map->show_osm_attribution = false;
@@ -4715,6 +4924,9 @@ AromaNode *aroma_map_create(AromaNode *parent, int x, int y, int width, int heig
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, __map_event_handler, extra, 80);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __map_event_handler, extra, 80);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_SCROLL, __map_event_handler, extra, 90);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, __map_event_handler, extra, 85);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_MOVE, __map_event_handler, extra, 85);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, __map_event_handler, extra, 85);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_CUSTOM, __map_event_handler, extra, 90);
     return node;
 }
@@ -4736,6 +4948,12 @@ void aroma_map_set_route(AromaNode *node, double start_lat, double start_lon, do
     }
     extra->route_loading = true;
     MAP_ROUTE_MUTEX_UNLOCK(extra);
+#ifdef __ANDROID__
+    MAP_ROUTE_MUTEX_LOCK(extra);
+    extra->route_loading = false;
+    MAP_ROUTE_MUTEX_UNLOCK(extra);
+    return;
+#endif
 #ifdef __EMSCRIPTEN__
     EmscriptenRouteRequest *req = malloc(sizeof(EmscriptenRouteRequest));
     if (!req)
@@ -4779,6 +4997,7 @@ void aroma_map_set_route(AromaNode *node, double start_lat, double start_lon, do
     req->node = node;
     req->extra = extra;
     pthread_t fetch_thread;
+#ifndef __ANDROID__
     if (pthread_create(&fetch_thread, NULL, route_fetch_worker, req) != 0)
     {
         free(req);
@@ -4788,6 +5007,7 @@ void aroma_map_set_route(AromaNode *node, double start_lat, double start_lon, do
         return;
     }
     pthread_detach(fetch_thread);
+#endif
 #endif
 }
 
@@ -4823,5 +5043,3 @@ void aroma_map_clear_route(AromaNode *node)
     MAP_ROUTE_MUTEX_UNLOCK(extra);
     aroma_node_invalidate(node);
 }
-
-#endif

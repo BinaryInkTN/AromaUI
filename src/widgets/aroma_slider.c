@@ -63,7 +63,7 @@ height = aroma_android_dp_to_px(height);
 
     data->track_height = 4;
     data->track_corner_radius = 4.0f;
-    data->thumb_size = 8;
+    data->thumb_size = 28;
     data->thumb_corner_radius = 4.0f;
     data->thumb_border_color = 0x333333;
     data->thumb_x = 0;
@@ -203,10 +203,13 @@ void aroma_slider_draw(AromaNode* node, size_t window_id)
     }
 
     uint32_t thumb_color = (data->is_dragging || data->is_hovered) ? data->thumb_hover_color : data->thumb_color;
-    gfx->fill_rectangle(window_id, data->thumb_x - data->thumb_size/2, data->rect.y, data->thumb_size, data->rect.height,
-                       thumb_color, true, data->thumb_corner_radius);
-    gfx->draw_hollow_rectangle(window_id, data->thumb_x - data->thumb_size/2, data->rect.y, data->thumb_size, data->rect.height,
-                              data->thumb_border_color, 1, true, data->thumb_corner_radius);
+    int td = data->thumb_size;
+    int tcy = data->rect.y + data->rect.height / 2;
+    float trad = (float)td / 2.0f;
+    gfx->fill_rectangle(window_id, data->thumb_x - td / 2, tcy - td / 2, td, td,
+                       thumb_color, true, trad);
+    gfx->draw_hollow_rectangle(window_id, data->thumb_x - td / 2, tcy - td / 2, td, td,
+                              data->thumb_border_color, 1, true, trad);
 }
 
 void aroma_slider_destroy(AromaNode* node)
@@ -226,6 +229,12 @@ static bool __slider_default_mouse_handler(AromaEvent* event, void* user_data)
     
      int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
+        event->event_type == EVENT_TYPE_TOUCH_UP ||
+        event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        adjusted_x = event->data.touch.x;
+        adjusted_y = event->data.touch.y;
+    }
                           AromaNode *cur = event->target_node->parent_node;
     while (cur) {
         if (aroma_container_is_scrollable(cur)) {
@@ -240,7 +249,40 @@ static bool __slider_default_mouse_handler(AromaEvent* event, void* user_data)
 
 
     switch (event->event_type) {
+        case EVENT_TYPE_TOUCH_DOWN: {
+            AromaSlider* dsl = (AromaSlider*)event->target_node->node_widget_ptr;
+            if (dsl && dsl->active_pointer_id == -1 &&
+                adjusted_x >= dsl->rect.x && adjusted_x <= dsl->rect.x + dsl->rect.width &&
+                adjusted_y >= dsl->rect.y && adjusted_y <= dsl->rect.y + dsl->rect.height) {
+                dsl->active_pointer_id = event->data.touch.id;
+                aroma_slider_on_click(event->target_node, adjusted_x, adjusted_y);
+                __slider_request_redraw(user_data);
+                return true;
+            }
+            return false;
+        }
+        case EVENT_TYPE_TOUCH_MOVE: {
+            AromaSlider* dsl = (AromaSlider*)event->target_node->node_widget_ptr;
+            if (dsl && dsl->active_pointer_id == event->data.touch.id) {
+                aroma_slider_on_mouse_move(event->target_node, adjusted_x, adjusted_y, true);
+                __slider_request_redraw(user_data);
+                return true;
+            }
+            return false;
+        }
+        case EVENT_TYPE_TOUCH_UP: {
+            AromaSlider* dsl = (AromaSlider*)event->target_node->node_widget_ptr;
+            if (dsl && dsl->active_pointer_id == event->data.touch.id) {
+                dsl->active_pointer_id = -1;
+                aroma_slider_on_mouse_release(event->target_node);
+                __slider_request_redraw(user_data);
+                return true;
+            }
+            return false;
+        }
         case EVENT_TYPE_MOUSE_CLICK:
+            if (slider->active_pointer_id != -1)
+                return false;
             aroma_slider_on_click(event->target_node, adjusted_x, adjusted_y);
             __slider_request_redraw(user_data);
             return true;
@@ -281,5 +323,8 @@ bool aroma_slider_setup_events(AromaNode* slider_node, void (*on_redraw_callback
     aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_MOVE, __slider_default_mouse_handler, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_ENTER, __slider_default_mouse_handler, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_MOUSE_EXIT, __slider_default_mouse_handler, (void*)on_redraw_callback, 80);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_TOUCH_DOWN, __slider_default_mouse_handler, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_TOUCH_MOVE, __slider_default_mouse_handler, (void*)on_redraw_callback, 80);
+    aroma_event_subscribe(slider_node->node_id, EVENT_TYPE_TOUCH_UP, __slider_default_mouse_handler, (void*)on_redraw_callback, 90);
     return true;
 }

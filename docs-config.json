@@ -390,6 +390,42 @@
             "file": "docs/backend-abstraction-layer/android/Bluetooth-Connect.md"
         },
         {
+            "title": "Android Bluetooth LE",
+            "description": "BLE scan, GATT connect, services, and notify.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-02",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Bluetooth-LE.md"
+        },
+        {
+            "title": "Android Notifications",
+            "description": "Channels and tray notifications.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-02",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Notifications.md"
+        },
+        {
+            "title": "Android Sensors",
+            "description": "Accelerometer, gyroscope, and magnetometer.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-02",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Sensors.md"
+        },
+        {
             "title": "Android Device APIs",
             "description": "Battery, WiFi, camera, gallery, and storage.",
             "icon": "smartphone",
@@ -400,6 +436,54 @@
             "updated": "2026-09-29",
             "status": "stable",
             "file": "docs/backend-abstraction-layer/android/Device-APIs.md"
+        },
+        {
+            "title": "Android Device Info",
+            "description": "Device, app, memory, network, power, and locale.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-02",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Device-Info.md"
+        },
+        {
+            "title": "Android Location",
+            "description": "GPS and network fixes, start, and stop.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-03",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Location.md"
+        },
+        {
+            "title": "Android Biometric",
+            "description": "System biometric prompt.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-03",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Biometric.md"
+        },
+        {
+            "title": "Android NFC",
+            "description": "Foreground dispatch and NDEF text.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-03",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/NFC.md"
         },
         {
             "title": "Android Display",

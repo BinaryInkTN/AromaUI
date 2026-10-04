@@ -3,8 +3,11 @@
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_event.h"
+#include "core/aroma_time.h"
+#include "core/aroma_timer.h"
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include "widgets/aroma_container.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
@@ -113,6 +116,11 @@ height = aroma_android_dp_to_px(height);
     dd->touch_last_y = 0;
     dd->touch_accum_dy = 0;
     dd->touch_moved = false;
+    dd->last_touch_toggle_ms = 0;
+    dd->last_list_touch_ms = 0;
+    dd->fling_vel = 0.0f;
+    dd->last_move_ms = 0;
+    dd->fling_timer = NULL;
     dd->on_selection_changed = NULL;
     dd->user_data = NULL;
     dd->bridge.node = NULL;
@@ -203,6 +211,78 @@ static void __dropdown_ensure_visible(AromaDropdown* dd, int index)
 }
 
 /* Scroll by whole rows; returns true when the offset changed. */
+static bool __dropdown_scroll_by(AromaDropdown* dd, int rows);
+
+static int __dropdown_list_top(AromaDropdown* dd, int option_height, int visible)
+{
+    int top = dd->rect.y + dd->rect.height;
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    int win_h = 0, win_w = 0;
+    if (platform && platform->get_window_size)
+        platform->get_window_size(0, &win_w, &win_h);
+    if (win_h > 0 && top + option_height * visible > win_h) {
+        int above = dd->rect.y - option_height * visible;
+        if (above >= 0)
+            return above;
+    }
+    return top;
+}
+
+typedef struct {
+    AromaDropdown *dd;
+    AromaNode *node;
+    float vel;
+    AromaTimer *timer;
+} DropdownFling;
+
+static void __dropdown_fling_done(DropdownFling *fl)
+{
+    if (!fl) {
+        return;
+    }
+    if (fl->timer) {
+        aroma_timer_cancel(fl->timer);
+        fl->timer = NULL;
+    }
+    if (fl->dd) {
+        fl->dd->fling_timer = NULL;
+    }
+    free(fl);
+}
+
+static void __dropdown_fling_tick(void *ud)
+{
+    DropdownFling *fl = (DropdownFling *)ud;
+    if (!fl || !fl->dd || !fl->node || !fl->dd->is_expanded) {
+        __dropdown_fling_done(fl);
+        return;
+    }
+    AromaDropdown *dd = fl->dd;
+    fl->vel *= 0.94f;
+    if (fl->vel > -40.0f && fl->vel < 40.0f) {
+        __dropdown_fling_done(fl);
+        return;
+    }
+    int option_height = dd->rect.height > 0 ? dd->rect.height : 1;
+    int rows = (int)(fl->vel * 0.016f / (float)option_height);
+    if (rows == 0) {
+        rows = fl->vel > 0.0f ? 1 : -1;
+    }
+    if (!__dropdown_scroll_by(dd, -rows)) {
+        __dropdown_fling_done(fl);
+        return;
+    }
+    aroma_node_invalidate(fl->node);
+}
+
+static void __dropdown_fling_stop(AromaDropdown *dd)
+{
+    if (dd->fling_timer) {
+        aroma_timer_cancel(dd->fling_timer);
+        dd->fling_timer = NULL;
+    }
+}
+
 static bool __dropdown_scroll_by(AromaDropdown* dd, int rows)
 {
     if (!dd || rows == 0)
@@ -250,7 +330,7 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
     int clicked_index = -1;
     if (dd->is_expanded && dd->option_count > 0) {
         int visible = __dropdown_visible_rows(dd);
-        int list_top = dd->rect.y + dd->rect.height;
+        int list_top = __dropdown_list_top(dd, option_height, visible);
         int list_bottom = list_top + option_height * visible;
         in_list = (adjusted_x >= dd->rect.x && adjusted_x <= dd->rect.x + dd->rect.width &&
                    adjusted_y >= list_top && adjusted_y <= list_bottom);
@@ -296,6 +376,10 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
 
     if (event->event_type == EVENT_TYPE_MOUSE_CLICK) {
         bool consumed = false;
+        uint64_t now_ms = aroma_time_now_ms();
+        if (dd->last_touch_toggle_ms != 0 && now_ms - dd->last_touch_toggle_ms < 400) {
+            return true;
+        }
         if (in_main) {
             dd->is_expanded = !dd->is_expanded;
             if (dd->is_expanded) {
@@ -306,14 +390,20 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
             }
             consumed = true;
         } else if (in_list && clicked_index >= 0) {
-            dd->selected_index = clicked_index;
-            dd->is_expanded = false;
-            dd->hover_index = -1;
-            consumed = true;
-            if (dd->on_selection_changed) {
-                dd->on_selection_changed(clicked_index, dd->options[clicked_index], dd->user_data);
+            uint64_t lou = aroma_time_now_ms();
+            if (dd->touch_id == -1 &&
+                (dd->last_list_touch_ms == 0 || lou - dd->last_list_touch_ms >= 600)) {
+                dd->selected_index = clicked_index;
+                dd->is_expanded = false;
+                dd->hover_index = -1;
+                consumed = true;
+                if (dd->on_selection_changed) {
+                    dd->on_selection_changed(clicked_index, dd->options[clicked_index], dd->user_data);
+                }
+                __dropdown_unregister_overlay(event->target_node);
+            } else {
+                consumed = true;
             }
-            __dropdown_unregister_overlay(event->target_node);
         }
         if (consumed) {
             aroma_node_invalidate(event->target_node);
@@ -357,7 +447,7 @@ static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
     bool in_main = (tx >= dd->rect.x && tx <= dd->rect.x + dd->rect.width &&
                     ty >= dd->rect.y && ty <= dd->rect.y + dd->rect.height);
     int visible = __dropdown_visible_rows(dd);
-    int list_top = dd->rect.y + dd->rect.height;
+    int list_top = __dropdown_list_top(dd, option_height, visible);
     int list_bottom = list_top + option_height * visible;
     bool in_list = dd->is_expanded && visible > 0 &&
         (tx >= dd->rect.x && tx <= dd->rect.x + dd->rect.width &&
@@ -373,16 +463,21 @@ static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
                 __dropdown_unregister_overlay(event->target_node);
             }
             dd->touch_id = -1;
+            dd->last_touch_toggle_ms = aroma_time_now_ms();
             aroma_node_invalidate(event->target_node);
             if (user_data) __dropdown_request_redraw(user_data);
             return true;
         }
         if (in_list) {
+            __dropdown_fling_stop(dd);
             dd->touch_id = event->data.touch.id;
+            dd->last_list_touch_ms = aroma_time_now_ms();
             dd->touch_start_y = ty;
             dd->touch_last_y = ty;
             dd->touch_accum_dy = 0;
             dd->touch_moved = false;
+            dd->fling_vel = 0.0f;
+            dd->last_move_ms = aroma_time_now_ms();
             return true;
         }
         return false;
@@ -391,6 +486,15 @@ static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
     if (event->event_type == EVENT_TYPE_TOUCH_MOVE) {
         if (!dd->is_expanded || event->data.touch.id != dd->touch_id)
             return false;
+        {
+            uint64_t now = aroma_time_now_ms();
+            uint64_t dt = now - dd->last_move_ms;
+            if (dt > 0 && dt < 200) {
+                float v = (float)(ty - dd->touch_last_y) * 1000.0f / (float)dt;
+                dd->fling_vel = dd->fling_vel * 0.7f + v * 0.3f;
+            }
+            dd->last_move_ms = now;
+        }
         dd->touch_accum_dy += ty - dd->touch_last_y;
         dd->touch_last_y = ty;
         int rows = dd->touch_accum_dy / option_height;
@@ -422,6 +526,23 @@ static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
             return false;
         }
         dd->touch_id = -1;
+        if (dd->touch_moved && (dd->fling_vel > 400.0f || dd->fling_vel < -400.0f)) {
+            DropdownFling *fl = (DropdownFling *)malloc(sizeof(DropdownFling));
+            if (fl) {
+                fl->dd = dd;
+                fl->node = event->target_node;
+                fl->vel = dd->fling_vel;
+                fl->timer = NULL;
+                __dropdown_fling_stop(dd);
+                dd->fling_timer = aroma_timer_create(16, true, __dropdown_fling_tick, fl);
+                if (!dd->fling_timer) {
+                    free(fl);
+                } else {
+                    fl->timer = (AromaTimer *)dd->fling_timer;
+                }
+            }
+        }
+        dd->fling_vel = 0.0f;
         if (!dd->is_expanded || dd->touch_moved)
             return in_main || in_list;
         if (in_list) {
@@ -487,7 +608,7 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
     if (dd->is_expanded && dd->option_count > 0) {
         int option_height = dd->rect.height;
         int list_x = dd->rect.x;
-        int list_y = dd->rect.y + dd->rect.height;
+        int list_y = __dropdown_list_top(dd, option_height, __dropdown_visible_rows(dd));
         int list_height = option_height * __dropdown_visible_rows(dd);
         __dropdown_register_overlay(dropdown_node, window_id, list_x, list_y, dd->rect.width, list_height);
     } else {
@@ -512,6 +633,21 @@ void aroma_dropdown_render_overlays(size_t window_id) {
             continue;
         }
         AromaDropdown* dd = (AromaDropdown*)node->node_widget_ptr;
+        bool hidden = false;
+        AromaNode *anc = node;
+        int depth = 0;
+        while (anc && depth < 64) {
+            if (anc->is_hidden) {
+                hidden = true;
+                break;
+            }
+            anc = anc->parent_node;
+            depth++;
+        }
+        if (hidden) {
+            ++i;
+            continue;
+        }
         if (!dd || !dd->is_expanded || dd->option_count <= 0) {
             g_dropdown_overlays[i] = g_dropdown_overlays[g_dropdown_overlay_count - 1];
             g_dropdown_overlay_count--;
@@ -599,6 +735,7 @@ void aroma_dropdown_destroy(AromaNode* dropdown_node) {
     AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
     if (dd) {
         __dropdown_unregister_overlay(dropdown_node);
+        __dropdown_fling_stop(dd);
         if (dd->options) {
             for (int i = 0; i < dd->option_count; i++) {
                 if (dd->options[i]) free(dd->options[i]);

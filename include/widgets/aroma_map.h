@@ -22,6 +22,13 @@ extern "C"
         bool is_dragging;
         int last_mouse_x;
         int last_mouse_y;
+        int touch_id;
+        int touch_x;
+        int touch_y;
+        int pinch_id;
+        int pinch_x;
+        int pinch_y;
+        float pinch_base_dist;
         double offset_x;
         double offset_y;
         bool show_osm_attribution;

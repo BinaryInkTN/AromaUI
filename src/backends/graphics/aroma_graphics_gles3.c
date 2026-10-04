@@ -1130,13 +1130,50 @@ unsigned int load_image(const char *image_path)
     const char *load_path = aroma_resolve_asset_path(image_path, resolved_image_path,
                                                      sizeof(resolved_image_path));
 
+    unsigned char *asset_data = NULL;
+    long asset_size = 0;
     FILE *file = fopen(load_path, "rb");
-    if (!file)
+    if (file)
     {
-        LOG_ERROR("Image file not found or inaccessible: %s", load_path);
-        return 0;
+        fclose(file);
     }
-    fclose(file);
+    else
+    {
+        AromaPlatformInterface *plat = aroma_backend_abi.get_platform_interface();
+        const char *base = strrchr(load_path, '/');
+        base = base ? base + 1 : load_path;
+        const char *try_names[2] = {load_path, base};
+        int ti = 0;
+        for (ti = 0; ti < 2 && !asset_data; ti++)
+        {
+            const char *nm = try_names[ti];
+            if (!nm || !nm[0])
+                continue;
+            if (!plat || !plat->android_asset_exists || !plat->android_asset_size || !plat->android_asset_read)
+                continue;
+            if (!plat->android_asset_exists(nm))
+                continue;
+            long asz = plat->android_asset_size(nm);
+            if (asz <= 0 || asz > 67108864)
+                continue;
+            asset_data = (unsigned char *)malloc((size_t)asz);
+            if (!asset_data)
+                continue;
+            long got = plat->android_asset_read(nm, (char *)asset_data, asz);
+            if (got <= 0)
+            {
+                free(asset_data);
+                asset_data = NULL;
+                continue;
+            }
+            asset_size = got;
+        }
+        if (!asset_data)
+        {
+            LOG_ERROR("Image file not found or inaccessible: %s", load_path);
+            return 0;
+        }
+    }
 
     unsigned int texture = 0;
     glGenTextures(1, &texture);
@@ -1229,7 +1266,14 @@ unsigned int load_image(const char *image_path)
     }
     else if (is_stb_supported_image_format(load_path))
     {
-        data = stbi_load(load_path, &img_width, &img_height, &nrChannels, 0);
+        if (asset_data)
+        {
+            data = stbi_load_from_memory(asset_data, (int)asset_size, &img_width, &img_height, &nrChannels, 0);
+        }
+        else
+        {
+            data = stbi_load(load_path, &img_width, &img_height, &nrChannels, 0);
+        }
         if (data)
         {
             success = 1;
@@ -1249,6 +1293,11 @@ unsigned int load_image(const char *image_path)
         return 0;
     }
 
+    if (asset_data)
+    {
+        free(asset_data);
+        asset_data = NULL;
+    }
     if (!success || !data)
     {
         LOG_ERROR("Failed to load image data: %s", load_path);

@@ -31,6 +31,11 @@
 #include "core/aroma_common.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#ifndef __EMSCRIPTEN__
+#include <pthread.h>
+#include "aroma_http.h"
+#endif
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
@@ -53,7 +58,84 @@ typedef struct   AromaImage {
     void *user_data;
     int active_pointer_id;
     bool events_registered;
+    bool remote_fetching;
+    bool remote_fetch_done;
+    char remote_cache[1024];
 } AromaImage;
+
+static unsigned int __image_load_texture(const char *image_path);
+static void __image_destroy_texture(AromaImage *image);
+
+#ifndef __EMSCRIPTEN__
+typedef struct {
+    AromaNode *node;
+    char url[1024];
+    char cache_path[1024];
+} ImageFetchJob;
+
+static void *__image_fetch_thread(void *arg)
+{
+    ImageFetchJob *job = (ImageFetchJob *)arg;
+    if (job) {
+        bool ok = aroma_http_fetch_to_file(job->url, job->cache_path);
+        LOG_INFO("AROMA_TEST img_fetch=%d url=%.48s", ok ? 1 : 0, job->url);
+        if (ok && job->node && job->node->node_widget_ptr) {
+            AromaImage *image = (AromaImage *)job->node->node_widget_ptr;
+            strncpy(image->remote_cache, job->cache_path, sizeof(image->remote_cache) - 1);
+            image->remote_fetch_done = true;
+            aroma_node_invalidate(job->node);
+        }
+        if (job->node) {
+            AromaImage *image = (AromaImage *)job->node->node_widget_ptr;
+            if (image) {
+                image->remote_fetching = false;
+            }
+        }
+        free(job);
+    }
+    return NULL;
+}
+
+static void __image_fetch_remote_native(AromaNode *node, const char *url)
+{
+    if (!node || !node->node_widget_ptr || !url || !url[0])
+        return;
+    AromaImage *image = (AromaImage *)node->node_widget_ptr;
+    if (image->remote_fetching || image->texture_id != 0)
+        return;
+    char cache[1024];
+    aroma_http_cache_path_for_url(url, cache, sizeof(cache));
+    if (!cache[0])
+        return;
+    FILE *probe = fopen(cache, "rb");
+    if (probe) {
+        fclose(probe);
+        unsigned int tex = __image_load_texture(cache);
+        if (tex != 0) {
+            __image_destroy_texture(image);
+            image->texture_id = tex;
+            image->owns_texture = true;
+            aroma_node_invalidate(node);
+            return;
+        }
+    }
+    ImageFetchJob *job = (ImageFetchJob *)calloc(1, sizeof(ImageFetchJob));
+    if (!job)
+        return;
+    job->node = node;
+    strncpy(job->url, url, sizeof(job->url) - 1);
+    strncpy(job->cache_path, cache, sizeof(job->cache_path) - 1);
+    image->remote_fetching = true;
+    image->remote_fetch_done = false;
+    pthread_t tid;
+    if (pthread_create(&tid, NULL, __image_fetch_thread, job) == 0) {
+        pthread_detach(tid);
+    } else {
+        image->remote_fetching = false;
+        free(job);
+    }
+}
+#endif
 
 static void __image_destroy_texture(AromaImage* image)
 {
@@ -280,8 +362,19 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
         return;
     }
 
+#ifndef __EMSCRIPTEN__
+    if (image->texture_id == 0 && image->remote_fetch_done && image->remote_cache[0]) {
+        unsigned int tex = __image_load_texture(image->remote_cache);
+        image->remote_fetch_done = false;
+        if (tex != 0) {
+            __image_destroy_texture(image);
+            image->texture_id = tex;
+            image->owns_texture = true;
+            LOG_INFO("AROMA_TEST img_ready node=%llu", (unsigned long long)image_node->node_id);
+        }
+    }
+#endif
     if (image->texture_id == 0) {
-        LOG_INFO("aroma_image_draw: Skipping image draw - no texture loaded (node_id=%llu)", (unsigned long long)image_node->node_id);
         return;
     }
     
@@ -410,6 +503,11 @@ height = aroma_android_dp_to_px(height);
         __image_fetch_remote(node, image->image_path);
     }
 #endif
+#ifndef __EMSCRIPTEN__
+    if (image_path && __image_is_remote_url(image_path) && image->texture_id == 0) {
+        __image_fetch_remote_native(node, image->image_path);
+    }
+#endif
     
     LOG_INFO("Created image widget at (%d, %d) size %dx%d, texture ID: %u", 
               x, y, width, height, image->texture_id);
@@ -532,6 +630,14 @@ void aroma_image_set_source(AromaNode* image_node, const char* image_path)
 #ifdef __EMSCRIPTEN__
         if (__image_is_remote_url(image_path) && image->texture_id == 0) {
             __image_fetch_remote(image_node, image->image_path);
+        }
+#endif
+#ifndef __EMSCRIPTEN__
+        if (__image_is_remote_url(image_path) && image->texture_id == 0) {
+            image->remote_fetching = false;
+            image->remote_fetch_done = false;
+            image->remote_cache[0] = '\0';
+            __image_fetch_remote_native(image_node, image->image_path);
         }
 #endif
     } else {

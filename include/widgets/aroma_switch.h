@@ -29,6 +29,7 @@ typedef struct  AromaSwitch
 
     bool (*on_change)(AromaNode* node, void* user_data);
     void* user_data;
+    int active_pointer_id;
 
 } AromaSwitch;
 

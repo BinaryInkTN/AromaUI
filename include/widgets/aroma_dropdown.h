@@ -31,6 +31,11 @@ typedef struct  AromaDropdown
     int touch_last_y;
     int touch_accum_dy;
     bool touch_moved;
+    uint64_t last_touch_toggle_ms;
+    uint64_t last_list_touch_ms;
+    float fling_vel;
+    uint64_t last_move_ms;
+    void *fling_timer;
     void (*on_selection_changed)(int index, const char* option, void* user_data);
     void* user_data;
     AromaFont* font;

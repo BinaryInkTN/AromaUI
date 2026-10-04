@@ -23,15 +23,25 @@ void android_main(struct android_app *state)
 
 ## Manifest
 
-The generated `AndroidManifest.xml` declares one `NativeActivity` with `android.app.lib_name` set to `aroma_app`. It sets `configChanges` to `orientation|keyboardHidden|screenSize`.
+The generated `AndroidManifest.xml` declares one `AromaActivity` with `android.app.lib_name` set to `aroma_app`. It sets `configChanges` to `orientation|keyboardHidden|screenSize|density|screenLayout|smallestScreenSize`.
 
 ```xml
-<!-- App permissions -->
-<!-- Add each runtime permission here. Example: -->
-<!-- <uses-permission android:name="android.permission.BLUETOOTH_SCAN" /> -->
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.CAMERA" />
 ```
 
-Add each runtime permission next to the `App permissions` marker. Without the manifest entry, permission checks always report denied. See [Permissions](Permissions.md) for the exact strings each feature needs.
+Add each runtime permission next to the other `uses-permission` entries. Without the manifest entry, permission checks always report denied. See [Permissions](Permissions.md) for the exact strings each feature needs.
+
+## AromaActivity
+
+The generated manifest declares `.AromaActivity`, a thin `NativeActivity` subclass in your app package. It forwards `onRequestPermissionsResult` and `onActivityResult` into native code, which powers permission result callbacks, the image picker, photo capture, and the document picker. Plain `NativeActivity` cannot receive those results, so keep this class.
+
+```xml
+<activity android:name=".AromaActivity"
+          android:label="{{PROJECT_NAME}}"
+          android:exported="true"
+          android:configChanges="orientation|keyboardHidden|screenSize|density|screenLayout|smallestScreenSize">
+```
 
 ## JNI handles
 

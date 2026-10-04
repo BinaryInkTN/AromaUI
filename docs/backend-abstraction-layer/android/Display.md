@@ -22,8 +22,8 @@ Use DP for layout sizes. Use SP for text sizes. Use PX only when you need raw pi
 | `aroma_android_px_to_sp` | `int aroma_android_px_to_sp(int px)` | Converts pixels to SP. Returns input unchanged when the backend is missing. |
 
 ```c
-int pad_px = aroma_android_dp_to_px(16); // Layout padding.
-int text_px = aroma_android_sp_to_px(14); // Text size.
+int pad_px = aroma_android_dp_to_px(16);
+int text_px = aroma_android_sp_to_px(14);
 ```
 
 ## Screen size
@@ -38,7 +38,6 @@ int text_px = aroma_android_sp_to_px(14); // Text size.
 ```c
 int w = 0, h = 0;
 aroma_android_get_available_size_dp(&w, &h);
-// w and h now hold the usable size in DP.
 ```
 
 ## Orientation
@@ -52,10 +51,12 @@ aroma_android_get_available_size_dp(&w, &h);
 | `aroma_android_set_orientation_sensor` | `void aroma_android_set_orientation_sensor(void)` | Uses sensor based auto rotate. |
 | `aroma_android_get_current_orientation` | `int aroma_android_get_current_orientation(void)` | Returns 1 for portrait, 2 for landscape, -1 for unknown. |
 | `aroma_android_is_orientation_locked` | `bool aroma_android_is_orientation_locked(void)` | Returns true when locked, false if not. |
+| `aroma_android_set_keep_screen_on` | `void aroma_android_set_keep_screen_on(bool enabled)` | Keeps the screen on while enabled. See [System UI](System-UI.md). |
+
+Orientation requests route through `AromaHelper` with real `ActivityInfo` constants. Locking reads the live configuration first, so landscape locks to landscape and portrait locks to portrait.
 
 ```c
 aroma_android_set_orientation_landscape();
-// Later, allow rotation again.
 aroma_android_set_orientation_sensor();
 ```
 

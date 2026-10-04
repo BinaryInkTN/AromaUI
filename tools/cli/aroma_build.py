@@ -125,6 +125,24 @@ def cmd_build(args):
     _do_build(args.platform, detector.sdk_root, sdk_ver, bt_ver, ndk_ver, cmake_ver, args.release, args.aab)
 
 
+def _sync_project_assets(cwd: str, android_dir: str):
+    import shutil
+    src_dir = os.path.join(cwd, "src")
+    assets_dir = os.path.join(android_dir, "app", "src", "main", "assets")
+    if not os.path.isdir(src_dir):
+        return
+    os.makedirs(assets_dir, exist_ok=True)
+    for entry in sorted(os.listdir(src_dir)):
+        src = os.path.join(src_dir, entry)
+        if entry == "main.c" or entry.startswith("CMakeLists"):
+            continue
+        if os.path.isfile(src) and entry.endswith(".aroma"):
+            shutil.copy2(src, os.path.join(assets_dir, entry))
+        elif os.path.isdir(src) and entry in ("demos", "assets"):
+            dst = assets_dir if entry == "assets" else os.path.join(assets_dir, entry)
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+
+
 def _do_build(build_platform: str, sdk_root: str, sdk_ver: str, bt_ver: str, ndk_ver: str, cmake_ver: str, release: bool, aab: bool):
     cwd = os.getcwd()
     emsdk_dir = find_emscripten_sdk()
@@ -187,6 +205,7 @@ def _do_build(build_platform: str, sdk_root: str, sdk_ver: str, bt_ver: str, ndk
         if not os.path.exists(android_dir):
             print(f"{Colors.FAIL}ERROR: Not an Aroma project (no android/ directory){Colors.ENDC}")
             sys.exit(1)
+        _sync_project_assets(cwd, android_dir)
         
         gradlew = os.path.join(android_dir, "gradlew")
         if not os.path.exists(gradlew):

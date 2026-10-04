@@ -164,6 +164,13 @@ typedef struct  AromaContainer
     int prev_scroll_x;
     int prev_scroll_y;
     bool content_dirty;
+    uint64_t swipe_down_ms;
+    int swipe_start_x;
+    int swipe_start_y;
+    void (*on_swipe_left)(void *user_data);
+    void *swipe_left_ud;
+    void (*on_swipe_right)(void *user_data);
+    void *swipe_right_ud;
 } AromaContainer;
 
 static inline int scroll_x_int(AromaContainer *c) { return (int)roundf(c->scroll_fx); }
@@ -482,6 +489,9 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
 
         c->drag_start_x = tx;
         c->drag_start_y = ty;
+        c->swipe_start_x = tx;
+        c->swipe_start_y = ty;
+        c->swipe_down_ms = aroma_time_now_ms();
         c->drag_scroll_start_x = c->scroll_fx;
         c->drag_scroll_start_y = c->scroll_fy;
         c->active_pointer_id = event->data.touch.id;
@@ -554,6 +564,18 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         {
             int abs_dx = dx < 0 ? -dx : dx;
             int abs_dy = dy < 0 ? -dy : dy;
+            if (abs_dx >= SCROLL_SLOP && abs_dx > abs_dy && !can_scroll_h)
+            {
+                c->active_pointer_id = -1;
+                c->is_dragging = false;
+                return false;
+            }
+            if (abs_dy >= SCROLL_SLOP && abs_dy >= abs_dx && !can_scroll_v)
+            {
+                c->active_pointer_id = -1;
+                c->is_dragging = false;
+                return false;
+            }
             bool slop_h = can_scroll_h && abs_dx >= SCROLL_SLOP;
             bool slop_v = can_scroll_v && abs_dy >= SCROLL_SLOP;
             if (!slop_h && !slop_v)
@@ -694,6 +716,26 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
             }
             c->last_scroll_time = aroma_time_now_ms();
             ensure_animation_timer(c);
+        }
+        if (event->event_type == EVENT_TYPE_TOUCH_UP &&
+            (c->on_swipe_left || c->on_swipe_right)) {
+            uint64_t dt = aroma_time_now_ms() - c->swipe_down_ms;
+            int tdx = c->swipe_start_x - tx;
+            int tdy = c->swipe_start_y - ty;
+            int adx = tdx < 0 ? -tdx : tdx;
+            int ady = tdy < 0 ? -tdy : tdy;
+            if (dt < 600 && adx > 90 && adx > ady * 2) {
+                if (tdx > 0 && c->on_swipe_left) {
+                    c->on_swipe_left(c->swipe_left_ud);
+                    aroma_node_invalidate(node);
+                    return true;
+                }
+                if (tdx < 0 && c->on_swipe_right) {
+                    c->on_swipe_right(c->swipe_right_ud);
+                    aroma_node_invalidate(node);
+                    return true;
+                }
+            }
         }
         return was_dragging;
     }
@@ -1006,6 +1048,24 @@ void aroma_container_set_scroll_speed(AromaNode *node, float speed)
     c->scroll_speed = speed > 0.0f ? speed : SCROLL_SPEED_DEFAULT;
 }
 
+void aroma_container_set_on_swipe_left(AromaNode *node, void (*cb)(void *user_data), void *user_data)
+{
+    AromaContainer *c = aroma_container_get(node);
+    if (!c)
+        return;
+    c->on_swipe_left = cb;
+    c->swipe_left_ud = user_data;
+}
+
+void aroma_container_set_on_swipe_right(AromaNode *node, void (*cb)(void *user_data), void *user_data)
+{
+    AromaContainer *c = aroma_container_get(node);
+    if (!c)
+        return;
+    c->on_swipe_right = cb;
+    c->swipe_right_ud = user_data;
+}
+
 void aroma_container_show_scrollbar(AromaNode *node, bool show)
 {
     AromaContainer *c = aroma_container_get(node);
@@ -1090,23 +1150,6 @@ void aroma_container_update_auto_content_size(AromaNode *node)
     }
 }
 
-static void shift_subtree(AromaNode *node, int dx, int dy)
-{
-    if (!node)
-        return;
-    if (node->node_widget_ptr)
-    {
-        AromaRect *r = (AromaRect *)node->node_widget_ptr;
-        r->x += dx;
-        r->y += dy;
-    }
-    for (uint64_t i = 0; i < node->child_count; i++)
-    {
-        if (node->child_nodes[i])
-            shift_subtree(node->child_nodes[i], dx, dy);
-    }
-}
-
 /**
  * @brief Recursively draw a node and all of its non-scrollable descendants.
  *
@@ -1160,24 +1203,14 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
         int eff_sx = effective_scroll_x(c);
         int eff_sy = effective_scroll_y(c);
 
-        for (uint64_t i = 0; i < container_node->child_count; i++)
-        {
-            if (container_node->child_nodes[i])
-                shift_subtree(container_node->child_nodes[i],
-                              -eff_sx, -eff_sy);
-        }
+        drawlist_proxy_push_offset(-eff_sx, -eff_sy);
 
         for (uint64_t i = 0; i < container_node->child_count; i++)
         {
             draw_subtree_recursive(container_node->child_nodes[i], window_id);
         }
 
-        for (uint64_t i = 0; i < container_node->child_count; i++)
-        {
-            if (container_node->child_nodes[i])
-                shift_subtree(container_node->child_nodes[i],
-                              eff_sx, eff_sy);
-        }
+        drawlist_proxy_pop_offset(-eff_sx, -eff_sy);
         if (gfx && gfx->graphics_clear_clip)
         {
             gfx->graphics_clear_clip();

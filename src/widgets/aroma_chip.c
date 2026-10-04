@@ -424,6 +424,7 @@ void aroma_chip_draw(AromaNode *chip_node, size_t window_id)
         return;
     if (!chip)
         return;
+    __chip_update_layout(chip);
 
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx)

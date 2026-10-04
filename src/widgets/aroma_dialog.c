@@ -124,16 +124,42 @@ static bool __dialog_handle_event(AromaEvent *event, void *user_data)
     AromaDialog *dlg = (AromaDialog *)user_data;
     if (!dlg || !dlg->visible)
         return false;
-    if (event->event_type != EVENT_TYPE_MOUSE_RELEASE)
+    if (event->event_type != EVENT_TYPE_MOUSE_RELEASE &&
+        event->event_type != EVENT_TYPE_MOUSE_CLICK &&
+        event->event_type != EVENT_TYPE_TOUCH_UP &&
+        event->event_type != EVENT_TYPE_TOUCH_DOWN)
         return false;
 
     __dialog_update_rect(dlg);
-    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
-    __dialog_recompute_action_layout(dlg, gfx, 0);
+    int mx = 0;
+    int my = 0;
+    if (event->event_type == EVENT_TYPE_TOUCH_UP ||
+        event->event_type == EVENT_TYPE_TOUCH_DOWN)
+    {
+        mx = event->data.touch.x;
+        my = event->data.touch.y;
+    }
+    else
+    {
+        mx = event->data.mouse.x;
+        my = event->data.mouse.y;
+    }
+    AromaNode *cur = event->target_node->parent_node;
+    while (cur)
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER && aroma_container_is_scrollable(cur))
+        {
+            int scroll_x = 0;
+            int scroll_y = 0;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            mx += scroll_x;
+            my += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
 
-    const int mx = event->data.mouse.x;
-    const int my = event->data.mouse.y;
-
+    bool inside = (mx >= dlg->rect.x && mx <= dlg->rect.x + dlg->rect.width &&
+                   my >= dlg->rect.y && my <= dlg->rect.y + dlg->rect.height);
     for (size_t i = 0; i < dlg->action_count; i++)
     {
         int x = dlg->action_button_x[i];
@@ -152,8 +178,7 @@ static bool __dialog_handle_event(AromaEvent *event, void *user_data)
         }
     }
 
-    return (mx >= dlg->rect.x && mx <= dlg->rect.x + dlg->rect.width &&
-            my >= dlg->rect.y && my <= dlg->rect.y + dlg->rect.height);
+    return inside;
 }
 
 AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char *message, int width, int height, AromaDialogType type)
@@ -188,19 +213,25 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
     if (!platform)
         return NULL;
 
-    int win_h, win_w;
-    platform->get_window_size(0, &win_w, &win_h);
-
-#ifdef __ANDROID__
-
-    width = win_w;
-    height = win_h;
-    dlg->centered_x = 0;
-    dlg->centered_y = 0;
-#else
-    dlg->centered_x = (win_w - width) / 2;
-    dlg->centered_y = (win_h - height) / 2;
-#endif
+    int win_h = 0, win_w = 0;
+    if (platform->get_window_size)
+        platform->get_window_size(0, &win_w, &win_h);
+    if (win_w > 0 && win_h > 0) {
+        dlg->centered_x = (win_w - width) / 2;
+        dlg->centered_y = (win_h - height) / 2;
+    } else if (parent) {
+        AromaRect *pr = aroma_node_get_rect(parent);
+        if (pr && pr->width > 0 && pr->height > 0) {
+            dlg->centered_x = pr->x + (pr->width - width) / 2;
+            dlg->centered_y = pr->y + (pr->height - height) / 2;
+        } else {
+            dlg->centered_x = 0;
+            dlg->centered_y = 0;
+        }
+    } else {
+        dlg->centered_x = 0;
+        dlg->centered_y = 0;
+    }
 
     dlg->rect.width = width;
     dlg->rect.height = height;
@@ -218,6 +249,9 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
     }
     aroma_node_set_draw_cb(node, aroma_dialog_draw);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __dialog_handle_event, dlg, 100);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __dialog_handle_event, dlg, 100);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, __dialog_handle_event, dlg, 100);
+    aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, __dialog_handle_event, dlg, 100);
 
     const int padding = 16;
     dlg->content_y_offset = 72;
@@ -532,18 +566,26 @@ void aroma_dialog_draw(AromaNode *dialog_node, size_t window_id)
     AromaTheme theme = aroma_theme_get_global();
     int x = dlg->rect.x, y = dlg->rect.y;
 
+    {
+        AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+        int win_w = 0, win_h = 0;
+        if (platform && platform->get_window_size)
+            platform->get_window_size(window_id, &win_w, &win_h);
+        if (win_w > 0 && win_h > 0)
+            gfx->fill_rectangle(window_id, 0, 0, win_w, win_h, 0x80000000u, false, 0.0f);
+    }
     gfx->fill_rectangle(window_id, x, y, dlg->rect.width, dlg->rect.height, theme.colors.surface, true, 12.0f);
     gfx->draw_hollow_rectangle(window_id, x, y, dlg->rect.width, dlg->rect.height, theme.colors.border, 1, true, 12.0f);
 
     if (dlg->font && gfx->render_text)
     {
-        gfx->render_text(window_id, dlg->font, dlg->title, x + 16, y + 24, theme.colors.text_primary, 1.0f);
-        /* Description wraps across the rows above the action buttons. */
+        gfx->render_text(window_id, dlg->font, dlg->title, x + 16, y + 22, theme.colors.text_primary, 1.25f);
         int line_h = aroma_font_get_line_height(dlg->font);
         if (line_h <= 0)
             line_h = 20;
-        int msg_top = y + 52;
-        int msg_bottom = dlg->action_button_y - 8;
+        int title_h = (line_h * 5) / 4;
+        int msg_top = y + 22 + title_h + 12;
+        int msg_bottom = dlg->action_button_y - 10;
         int max_lines = (msg_bottom > msg_top)
                             ? (msg_bottom - msg_top) / line_h
                             : 0;

@@ -21,8 +21,37 @@ if (level >= 0 && level < 20) {
 |---|---|---|
 | `aroma_android_launch_camera` | `void aroma_android_launch_camera()` | Launches the camera app with an intent. Needs the camera permission. |
 | `aroma_android_launch_gallery` | `void aroma_android_launch_gallery()` | Launches the gallery app with an intent. |
+| `aroma_android_pick_image` | `void aroma_android_pick_image(void (*result_cb)(const char* path))` | Opens the image picker. The callback receives a cached file path, or NULL on cancel. Needs `AromaActivity`. |
+| `aroma_android_capture_photo` | `void aroma_android_capture_photo(void (*result_cb)(const char* path))` | Captures a thumbnail photo. The callback receives a cached PNG path, or NULL on cancel. Needs `AromaActivity` and the camera permission. |
+| `aroma_android_open_document` | `void aroma_android_open_document(const char* mime, void (*result_cb)(const char* path))` | Opens the system file picker for `mime`, for example `image/*`. The callback receives a cached file path, or NULL on cancel. Needs `AromaActivity`. |
+| `aroma_android_record_start` | `bool aroma_android_record_start(const char* path)` | Records microphone audio to a WAV file at `path`. Returns true when recording started. Needs `android.permission.RECORD_AUDIO`. |
+| `aroma_android_record_stop` | `bool aroma_android_record_stop(void)` | Stops recording and finalizes the WAV header. Returns true when a recording was active. |
+| `aroma_android_contacts_pick` | `void aroma_android_contacts_pick(void (*cb)(const char* info))` | Opens the contact picker. The callback receives `name` and `number` separated by a newline, or NULL on cancel. Needs `AromaActivity` and `android.permission.READ_CONTACTS`. |
+| `aroma_android_shot_capture` | `void aroma_android_shot_capture(void (*cb)(const char* path))` | Captures the app window to a cached PNG. The callback receives the path, or NULL on failure. |
+| `aroma_android_wallpaper_set_image` | `bool aroma_android_wallpaper_set_image(const char* path)` | Sets a PNG file as wallpaper. Needs `android.permission.SET_WALLPAPER`. Returns true on success. |
 | `android_open_url` | `android_open_url(const char* url)` | Backend only. Opens a URL through `android_send_intent`. Wired to the `open_url` slot. |
 | `android_send_intent` | `android_send_intent(...)` | Backend only. Low level intent dispatcher for URL, camera, and gallery paths. |
+
+Request camera and storage permissions first. See [Permissions](Permissions.md). You do not call the two `android_*` backend functions directly. Call the `aroma_android_*` wrappers or the platform interface slots.
+
+```c
+#ifdef __ANDROID__
+#include <aroma_android.h>
+#include <string.h>
+
+static char picked_path[1024];
+
+static void on_picked(const char* path) {
+    if (path) {
+        strncpy(picked_path, path, sizeof(picked_path) - 1);
+    }
+}
+
+void choose_avatar(void) {
+    aroma_android_pick_image(on_picked);
+}
+#endif
+```
 
 Request camera and storage permissions first. See [Permissions](Permissions.md). You do not call the two `android_*` backend functions directly. Call the `aroma_android_*` wrappers or the platform interface slots.
 
@@ -39,7 +68,7 @@ Check the returned path for NULL before you use it.
 ```c
 const char* dir = aroma_android_get_internal_path();
 if (dir) {
-    // Save app files under dir.
+    aroma_android_toast(dir, false);
 }
 ```
 

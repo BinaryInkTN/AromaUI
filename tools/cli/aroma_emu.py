@@ -238,8 +238,12 @@ def start_emulator(detector: Detector) -> Optional[str]:
     if "ANDROID_SDK_ROOT" not in env:
         env["ANDROID_SDK_ROOT"] = detector.sdk_root
     
+    has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+    emu_cmd = [emu_path, "-avd", avd_name, "-no-snapshot-load", "-no-boot-anim"]
+    if not has_display:
+        emu_cmd += ["-no-window", "-no-audio", "-gpu", "swiftshader_indirect"]
     _EMULATOR_PROCESS = subprocess.Popen(
-        [emu_path, "-avd", avd_name, "-no-snapshot-load", "-no-boot-anim"],
+        emu_cmd,
         stdout=log, stderr=log, env=env
     )
     
@@ -288,7 +292,7 @@ def install_and_launch_app(adb_cmd: str, serial: str, apk_path: str, pkg: str) -
     Logger.success("APK installed")
     Logger.step("Launching app...")
     run_command([adb_cmd, "-s", serial, "shell", "am", "start",
-                "-n", f"{pkg}/android.app.NativeActivity"])
+                "-n", f"{pkg}/.AromaActivity"])
     
     run_command([adb_cmd, "-s", serial, "shell", "wm", "dismiss-keyguard"])
     Logger.success("App launched")

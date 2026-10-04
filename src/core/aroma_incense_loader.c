@@ -1,5 +1,6 @@
 #include "aroma_incense_loader.h"
 #include "aroma_incense.h"
+#include "backends/platforms/aroma_platform_interface.h"
 #include "aroma_ui.h"
 #include "aroma_animation.h"
 #include "aroma_material_icons.h"
@@ -2434,7 +2435,7 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
     "attribution", "auto_rotate", "autoplay", "blur_radius", "cam_far", "cam_far_plane", "cam_fov", "cam_near", "cam_near_plane", "cam_phi", "cam_radius", "cam_target_x", "cam_target_y", "cam_target_z", "cam_theta", "checked", "color", "columns", "condition", "corner_radius", "direction", "duration", "far", "far_plane", "fill_color", "fill_thickness", "font", "fov", "group",
     "header", "height", "hidden", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "interactive", "label", "lat", "layout", "length",
     "light_x", "light_y", "light_z", "lon", "major_length", "major_ticks", "max", "message",
-    "min", "minor_length", "minor_ticks", "max_visible", "model", "near", "near_plane", "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "orientation", "parent", "phi", "placeholder", "popup",
+    "min", "minor_length", "minor_ticks", "max_visible", "model", "near", "near_plane", "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "on_swipe_left", "on_swipe_right", "orientation", "parent", "phi", "placeholder", "popup",
     "position", "progress", "radius", "scale", "selected", "secondary", "show", "size", "src", "start_angle", "end_angle", "style", "target_x", "target_y", "target_z", "text", "theta", "thickness", "title", "track_color", "track_thickness", "ticks", "tick_color", "tick_thickness", "type", "value",
     "variant", "visible", "width", "x", "y", "zoom", "z_index", NULL};
     for (int i = 0; i < bag->count; i++)
@@ -2523,8 +2524,24 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
     float duration = props_float(bag, "animation_duration", 300);
     if (duration < 0)
         duration = 0;
+    float start_val = props_float(bag, "animation_start_val", 0);
+    float end_val = props_float(bag, "animation_end_val", 0);
+    if (type == AROMA_ANIM_SLIDE_X || type == AROMA_ANIM_SLIDE_Y ||
+        type == AROMA_ANIM_SCALE_X || type == AROMA_ANIM_SCALE_Y)
+    {
+        AromaPlatformInterface *plat = aroma_get_platform_interface();
+        if (plat && plat->android_get_density)
+        {
+            float dens = plat->android_get_density();
+            if (dens > 0.0f)
+            {
+                start_val *= dens;
+                end_val *= dens;
+            }
+        }
+    }
     AromaAnimation *anim_obj = aroma_animation_start(built, (AromaAnimationType)type,
-                                                     props_float(bag, "animation_start_val", 0), props_float(bag, "animation_end_val", 0), duration);
+                                                     start_val, end_val, duration);
     if (anim_obj)
     {
         const char *ease = props_get(bag, "animation_easing");
@@ -2860,6 +2877,14 @@ static AromaNode *build_container(IncenseNode *node, AromaNode *sp, BuildCtx *ct
     AromaFlexDirection dir = (AromaFlexDirection)match_enum(node, &bag, "direction", AROMA_FLEX_COLUMN, dir_names, dir_values, 2, "direction", "row, column");
     AromaNode *built = aroma_ui_container(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
                                           props_int(&bag, "width", 200), props_int(&bag, "height", 200), layout, dir, AROMA_JUSTIFY_START, AROMA_ALIGN_START);
+    if (built) {
+        CallbackEntry *swl = resolve_callback(node, &bag, "on_swipe_left");
+        if (swl)
+            aroma_container_set_on_swipe_left(built, bridge_void_ptr, swl);
+        CallbackEntry *swr = resolve_callback(node, &bag, "on_swipe_right");
+        if (swr)
+            aroma_container_set_on_swipe_right(built, bridge_void_ptr, swr);
+    }
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
@@ -2883,6 +2908,17 @@ static AromaNode *build_scrollview(IncenseNode *node, AromaNode *sp, BuildCtx *c
         node->id = built->node_id;
     aroma_container_set_scrollable(built, true);
     aroma_container_set_scroll_direction(built, dir);
+    {
+        CallbackEntry *swl = resolve_callback(node, &bag, "on_swipe_left");
+        if (swl)
+            aroma_container_set_on_swipe_left(built, bridge_void_ptr, swl);
+        CallbackEntry *swr = resolve_callback(node, &bag, "on_swipe_right");
+        if (swr)
+            aroma_container_set_on_swipe_right(built, bridge_void_ptr, swr);
+    }
+    int vis = props_int(&bag, "visible", -1);
+    if (vis == 0)
+        aroma_node_set_hidden(built, true);
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
@@ -2961,6 +2997,8 @@ static AromaNode *build_textbox(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     {
         built = aroma_ui_textbox(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
                                  props_int(&bag, "width", 200), props_int(&bag, "height", 36), ph, cb ? bridge_textbox_change : NULL, cb, _widget_font);
+        if (built)
+            aroma_textbox_set_icon_font(built, ctx->icon_font ? ctx->icon_font : _widget_font);
     }
     free(ph);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
@@ -4772,7 +4810,40 @@ static bool read_entire_file(const char *path, char **out_data, size_t *out_size
     *out_size = 0;
     FILE *fp = fopen(path, "rb");
     if (!fp)
+    {
+        AromaPlatformInterface *plat = aroma_get_platform_interface();
+        if (plat && plat->android_asset_exists && plat->android_asset_size && plat->android_asset_read)
+        {
+            const char *base = strrchr(path, '/');
+            base = base ? base + 1 : path;
+            const char *try_names[2] = {path, base};
+            for (int ti = 0; ti < 2; ti++)
+            {
+                const char *nm = try_names[ti];
+                if (!nm || !nm[0])
+                    continue;
+                if (!plat->android_asset_exists(nm))
+                    continue;
+                long asz = plat->android_asset_size(nm);
+                if (asz < 0 || (size_t)asz > MAX_LOAD_FILE_SIZE)
+                    continue;
+                char *raw = malloc((size_t)asz + 1);
+                if (!raw)
+                    return false;
+                long got = plat->android_asset_read(nm, raw, asz);
+                if (got < 0)
+                {
+                    free(raw);
+                    continue;
+                }
+                raw[got] = '\0';
+                *out_data = raw;
+                *out_size = (size_t)got;
+                return true;
+            }
+        }
         return false;
+    }
     if (fseek(fp, 0, SEEK_END) != 0)
     {
         fclose(fp);

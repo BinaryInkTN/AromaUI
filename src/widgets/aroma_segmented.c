@@ -29,8 +29,10 @@ struct AromaSegmented {
     float text_scale;
     void (*on_change)(AromaNode*, int, void*);
     void* user_data;
+    int active_pointer_id;
+    int down_x;
+    int down_y;
 };
-
 static void __segmented_request_redraw(void* user_data)
 {
     if (!user_data) return;
@@ -69,6 +71,12 @@ static bool __segmented_handle_event(AromaEvent* event, void* user_data)
 
     int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
+    if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
+        event->event_type == EVENT_TYPE_TOUCH_UP ||
+        event->event_type == EVENT_TYPE_TOUCH_MOVE) {
+        adjusted_x = event->data.touch.x;
+        adjusted_y = event->data.touch.y;
+    }
     AromaNode *cur = event->target_node->parent_node;
     while (cur) {
         if (aroma_container_is_scrollable(cur)) {
@@ -90,7 +98,47 @@ static bool __segmented_handle_event(AromaEvent* event, void* user_data)
             return in_bounds;
         case EVENT_TYPE_MOUSE_EXIT:
             return false;
+        case EVENT_TYPE_TOUCH_DOWN: {
+            bool in_b = adjusted_x >= seg->rect.x &&
+                adjusted_x <= seg->rect.x + seg->rect.width &&
+                adjusted_y >= seg->rect.y &&
+                adjusted_y <= seg->rect.y + seg->rect.height;
+            if (in_b && seg->active_pointer_id == -1) {
+                seg->active_pointer_id = event->data.touch.id;
+                seg->down_x = adjusted_x;
+                seg->down_y = adjusted_y;
+                aroma_node_invalidate(event->target_node);
+                return true;
+            }
+            return false;
+        }
+        case EVENT_TYPE_TOUCH_UP: {
+            if (seg->active_pointer_id != event->data.touch.id)
+                return false;
+            seg->active_pointer_id = -1;
+            bool in_b = adjusted_x >= seg->rect.x &&
+                adjusted_x <= seg->rect.x + seg->rect.width &&
+                adjusted_y >= seg->rect.y &&
+                adjusted_y <= seg->rect.y + seg->rect.height;
+            if (in_b) {
+                int index = __segmented_index_from_x(seg, adjusted_x);
+                if (index >= 0 && index < seg->count && index != seg->selected_index) {
+                    seg->selected_index = index;
+                    if (seg->on_change) {
+                        seg->on_change(event->target_node, index, seg->user_data);
+                    }
+                    aroma_node_invalidate(event->target_node);
+                    __segmented_request_redraw(user_data);
+                }
+                return true;
+            }
+            return true;
+        }
+        case EVENT_TYPE_TOUCH_MOVE:
+            return seg->active_pointer_id != -1;
         case EVENT_TYPE_MOUSE_CLICK:
+            if (seg->active_pointer_id != -1)
+                return false;
             if (in_bounds) {
                 int index = __segmented_index_from_x(seg, adjusted_x);
                 if (index >= 0 && index < seg->count && index != seg->selected_index) {
@@ -133,6 +181,9 @@ AromaNode* aroma_segmented_create(AromaNode* parent, int x, int y, int width, in
     seg->rect.height = height;
     seg->count = (count > AROMA_SEGMENTED_MAX) ? AROMA_SEGMENTED_MAX : count;
     seg->selected_index = 0;
+    seg->active_pointer_id = -1;
+    seg->down_x = 0;
+    seg->down_y = 0;
 
     AromaTheme theme = aroma_theme_get_global();
     seg->track_color = theme.colors.surface;
@@ -230,6 +281,12 @@ bool aroma_segmented_setup_events(AromaNode* seg_node, void (*on_redraw_callback
     aroma_event_subscribe(seg_node->node_id, EVENT_TYPE_MOUSE_MOVE,
                           __segmented_handle_event, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(seg_node->node_id, EVENT_TYPE_MOUSE_EXIT,
+                          __segmented_handle_event, (void*)on_redraw_callback, 80);
+    aroma_event_subscribe(seg_node->node_id, EVENT_TYPE_TOUCH_DOWN,
+                          __segmented_handle_event, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(seg_node->node_id, EVENT_TYPE_TOUCH_UP,
+                          __segmented_handle_event, (void*)on_redraw_callback, 90);
+    aroma_event_subscribe(seg_node->node_id, EVENT_TYPE_TOUCH_MOVE,
                           __segmented_handle_event, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(seg_node->node_id, EVENT_TYPE_MOUSE_CLICK,
                           __segmented_handle_event, (void*)on_redraw_callback, 90);

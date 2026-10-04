@@ -47,4 +47,8 @@ extern AromaBackendABI aroma_backend_abi;
 void aroma_gles3_load_font_for_window(size_t window_id, AromaFont* font);
 void aroma_vulkan_load_font_for_window(size_t window_id, AromaFont* font);
 
+void drawlist_proxy_push_offset(int dx, int dy);
+void drawlist_proxy_pop_offset(int dx, int dy);
+void drawlist_proxy_get_offset(int *ox, int *oy);
+
 #endif
