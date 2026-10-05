@@ -10,16 +10,30 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_LIST_MAX_ITEMS 64
-#define AROMA_LIST_ITEM_PADDING 12
-#define AROMA_LIST_ICON_PADDING 12
-#define AROMA_LIST_MIN_ITEM_HEIGHT 28
+/* Authored in dp; scaled to px via helpers below. */
+#define AROMA_LIST_ITEM_PADDING_DP 12
+#define AROMA_LIST_ICON_PADDING_DP 12
+#define AROMA_LIST_MIN_ITEM_HEIGHT_DP 28
+#define AROMA_LIST_CORNER_RADIUS_DP 8
+#define AROMA_LIST_SELECTED_CORNER_RADIUS_DP 6
+#define AROMA_LIST_SEPARATOR_HEIGHT_DP 1
+#define AROMA_LIST_TRAILING_REVEAL_DP 160
 #define AROMA_MATERIAL_COLOR_COUNT 16
 #define AROMA_LISTVIEW_LONG_PRESS_TIMEOUT_MS 500
+
+#ifdef __ANDROID__
+static inline int list_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float list_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int list_dp(int dp) { return dp; }
+static inline float list_dp_f(float dp) { return dp; }
+#endif
 
 static long __listview_press_elapsed_ms(const struct timespec *down,
                                         const struct timespec *up)
@@ -51,6 +65,9 @@ typedef struct
     int pressed_index;
     int item_height;
     int active_pointer_id;
+    int bottom_padding;
+    int viewport_height;
+    int content_height;
 
     float corner_radius;
     float selected_corner_radius;
@@ -115,13 +132,13 @@ static bool is_selectable(const AromaListViewInternal *list, int i)
 static int item_height_at(const AromaListViewInternal *list, int i)
 {
     if (!list)
-        return AROMA_LIST_MIN_ITEM_HEIGHT;
+        return list_dp(AROMA_LIST_MIN_ITEM_HEIGHT_DP);
     if (!item_in_range(list, i))
         return list->item_height;
     if (is_header(list, i))
         return list->item_height / 2;
     if (is_separator(list, i))
-        return 1;
+        return list_dp(AROMA_LIST_SEPARATOR_HEIGHT_DP);
     if (list->items[i].secondary_text[0] != '\0')
         return (int)(list->item_height * 1.5f);
     return list->item_height;
@@ -143,8 +160,55 @@ static void update_content_height(AromaListViewInternal *list)
 {
     if (!list)
         return;
-    int h = total_content_height(list);
-    list->rect.height = h > 0 ? h : 1;
+    int h = total_content_height(list) + list->bottom_padding;
+    list->content_height = h > 0 ? h : 1;
+    list->rect.height = list->viewport_height > 0 ? list->viewport_height : 1;
+
+    /* Keep the owning ScrollView extent synchronized as items are added,
+     * removed, or hidden after construction. */
+    if (list->self_node && list->self_node->parent_node &&
+        aroma_container_is_scrollable(list->self_node->parent_node))
+    {
+        AromaNode *scroll_container = list->self_node->parent_node;
+        AromaRect *viewport = aroma_node_get_rect(scroll_container);
+        int content_x = list->rect.x;
+        int content_y = list->rect.y;
+        if (viewport)
+        {
+            content_x -= viewport->x;
+            content_y -= viewport->y;
+            /*
+             * Before the first layout pass the ListView rect can still be
+             * local to its parent. Do not let that transient local origin
+             * subtract the parent's screen position from the scroll extent.
+             */
+            if (content_x < 0)
+                content_x = 0;
+            if (content_y < 0)
+                content_y = 0;
+        }
+
+        /* The scroll extent is the child's bottom edge in the viewport's
+         * content coordinates. This remains correct if layout moves the
+         * ListView away from the container origin. */
+        int content_width = content_x + list->rect.width;
+        /*
+         * Keep a clear trailing reveal after the final row. This is separate
+         * from bottom_padding so every ListView can scroll the last item away
+         * from the viewport edge, including ListViews with no custom padding.
+         */
+        int trailing_reveal = list_dp(AROMA_LIST_TRAILING_REVEAL_DP);
+        int content_height = content_y + list->content_height + trailing_reveal;
+        if (viewport)
+        {
+            if (content_width < viewport->width)
+                content_width = viewport->width;
+            if (content_height < viewport->height)
+                content_height = viewport->height;
+        }
+        aroma_container_set_content_size(scroll_container,
+                                         content_width, content_height);
+    }
 }
 
 static int selectable_index(const AromaListViewInternal *list, int raw_index)
@@ -160,19 +224,61 @@ static int selectable_index(const AromaListViewInternal *list, int raw_index)
     return count - 1;
 }
 
+static void list_screen_origin(const AromaNode *node, const AromaListViewInternal *list,
+                               int *x, int *y)
+{
+    if (!list || !x || !y)
+        return;
+
+    *x = list->rect.x;
+    *y = list->rect.y;
+    const AromaNode *cur = node ? node->parent_node : NULL;
+    while (cur)
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER &&
+            aroma_container_is_scrollable((AromaNode *)cur))
+        {
+            int scroll_x = 0;
+            int scroll_y = 0;
+            aroma_container_get_scroll((AromaNode *)cur, &scroll_x, &scroll_y);
+            *x -= scroll_x;
+            *y -= scroll_y;
+        }
+        cur = cur->parent_node;
+    }
+}
+
+static void node_screen_origin(const AromaNode *node, const AromaRect *rect,
+                               int *x, int *y)
+{
+    if (!node || !rect || !x || !y)
+        return;
+
+    *x = rect->x;
+    *y = rect->y;
+    for (const AromaNode *cur = node->parent_node; cur; cur = cur->parent_node)
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER &&
+            aroma_container_is_scrollable((AromaNode *)cur))
+        {
+            int sx = 0;
+            int sy = 0;
+            aroma_container_get_scroll((AromaNode *)cur, &sx, &sy);
+            *x -= sx;
+            *y -= sy;
+        }
+    }
+}
+
 static int hit_test(AromaNode *node, const AromaListViewInternal *list, int screen_y)
 {
     if (!list)
         return -1;
 
-    int y = list->rect.y;
-    if (node && node->parent_node &&
-        aroma_container_is_scrollable(node->parent_node))
-    {
-        int scroll_x = 0, scroll_y = 0;
-        aroma_container_get_scroll(node->parent_node, &scroll_x, &scroll_y);
-        y -= scroll_y;
-    }
+    int list_x = 0;
+    int y = 0;
+    list_screen_origin(node, list, &list_x, &y);
+    (void)list_x;
 
     for (size_t i = 0; i < list->item_count; i++)
     {
@@ -218,6 +324,31 @@ static bool listview_handle_event(AromaEvent *ev, void *user_data)
 
     AromaNode *node = ev->target_node;
     AromaRect bounds = list->rect;
+    int screen_x = 0;
+    int screen_y = 0;
+    list_screen_origin(node, list, &screen_x, &screen_y);
+    bounds.x = screen_x;
+    bounds.y = screen_y;
+
+    /*
+     * The outer ScrollView is the ListView's viewport and may be resized
+     * after construction (for example by responsive Android layout). Use
+     * that live viewport for input bounds so rows revealed after scrolling
+     * remain interactive.
+     */
+    AromaNode *scroll_container = node->parent_node;
+    if (scroll_container &&
+        aroma_container_is_scrollable(scroll_container))
+    {
+        AromaRect *viewport = aroma_node_get_rect(scroll_container);
+        if (viewport)
+        {
+            bounds.x = viewport->x;
+            bounds.y = viewport->y;
+            bounds.width = viewport->width;
+            bounds.height = viewport->height;
+        }
+    }
 
     switch (ev->event_type)
     {
@@ -350,12 +481,14 @@ height = aroma_android_dp_to_px(height);
     memset(list, 0, sizeof(AromaListViewInternal));
 
     list->rect = (AromaRect){x, y, width, height};
+    list->viewport_height = height;
+    list->content_height = height;
     list->selected_index = -1;
     list->pressed_index = -1;
     list->active_pointer_id = -1;
-    list->item_height = AROMA_LIST_MIN_ITEM_HEIGHT;
-    list->corner_radius = 8.0f;
-    list->selected_corner_radius = 6.0f;
+    list->item_height = list_dp(AROMA_LIST_MIN_ITEM_HEIGHT_DP);
+    list->corner_radius = list_dp_f((float)AROMA_LIST_CORNER_RADIUS_DP);
+    list->selected_corner_radius = list_dp_f((float)AROMA_LIST_SELECTED_CORNER_RADIUS_DP);
     list->text_scale = 1.0f;
     list->secondary_text_scale = 0.8f;
     list->show_headers = true;
@@ -405,7 +538,26 @@ int aroma_listview_get_content_height(AromaNode *list_node)
     if (!list_node) return 0;
     AromaListViewInternal *list = get_internal(list_node);
     if (!list) return 0;
-    return list->rect.height;
+    return list->content_height;
+}
+
+void aroma_listview_refresh_scroll_extent(AromaNode *list_node)
+{
+    AromaListViewInternal *list = get_internal(list_node);
+    if (!list)
+        return;
+
+    AromaNode *scroll_container = list_node->parent_node;
+    if (scroll_container &&
+        aroma_container_is_scrollable(scroll_container))
+    {
+        AromaRect *viewport = aroma_node_get_rect(scroll_container);
+        if (viewport && viewport->height > 0)
+            list->viewport_height = viewport->height;
+    }
+
+    update_content_height(list);
+    aroma_node_invalidate(list_node);
 }
 
 static void safe_copy(char *dst, const char *src, size_t dstsz)
@@ -569,6 +721,7 @@ void aroma_listview_set_item_hidden(AromaNode *node, int index, bool hidden)
     if (!list || !item_in_range(list, index)) return;
     if (list->item_hidden[index] == hidden) return;
     list->item_hidden[index] = hidden;
+    update_content_height(list);
     aroma_node_invalidate(node);
 }
 
@@ -654,9 +807,9 @@ void aroma_listview_set_font(AromaNode *node, AromaFont *font)
     list->font = font;
     list->item_height = font
                             ? (int)(aroma_font_get_line_height(font) * 1.5f)
-                            : AROMA_LIST_MIN_ITEM_HEIGHT;
-    if (list->item_height < AROMA_LIST_MIN_ITEM_HEIGHT)
-        list->item_height = AROMA_LIST_MIN_ITEM_HEIGHT;
+                            : list_dp(AROMA_LIST_MIN_ITEM_HEIGHT_DP);
+    if (list->item_height < list_dp(AROMA_LIST_MIN_ITEM_HEIGHT_DP))
+        list->item_height = list_dp(AROMA_LIST_MIN_ITEM_HEIGHT_DP);
     update_content_height(list);
     aroma_node_invalidate(node);
 }
@@ -753,6 +906,20 @@ void aroma_listview_set_header_colors(AromaNode *n, uint32_t bg, uint32_t text)
         l->use_theme_colors = false;
         aroma_node_invalidate(n);
     }
+    }
+
+    void aroma_listview_set_bottom_padding(AromaNode *node, int padding)
+    {
+        if (!node)
+            return;
+        AromaListViewInternal *list = get_internal(node);
+        if (!list)
+            return;
+        if (padding < 0)
+            padding = 0;
+        list->bottom_padding = padding;
+        update_content_height(list);
+        aroma_node_invalidate(node);
 }
 
 void aroma_listview_draw(AromaNode *node, size_t window_id)
@@ -782,6 +949,23 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
     int width = list->rect.width;
 
     int current_y = list->rect.y;
+    int screen_list_x = 0;
+    int screen_list_y = 0;
+    list_screen_origin(node, list, &screen_list_x, &screen_list_y);
+    int viewport_top = screen_list_y;
+    int viewport_bottom = screen_list_y + list->viewport_height;
+    if (node->parent_node &&
+        aroma_container_is_scrollable(node->parent_node))
+    {
+        AromaRect *viewport = aroma_node_get_rect(node->parent_node);
+        if (viewport)
+        {
+            int viewport_x = 0;
+            node_screen_origin(node->parent_node, viewport,
+                               &viewport_x, &viewport_top);
+            viewport_bottom = viewport_top + viewport->height;
+        }
+    }
     int primary_lh = aroma_font_get_line_height(list->font);
 
     for (size_t i = 0; i < list->item_count; i++)
@@ -790,6 +974,13 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
             continue;
 
         int ih = item_height_at(list, (int)i);
+        int screen_row_y = screen_list_y + (current_y - list->rect.y);
+        if (screen_row_y + ih <= viewport_top ||
+            screen_row_y >= viewport_bottom)
+        {
+            current_y += ih;
+            continue;
+        }
 
         bool hdr = is_header(list, (int)i);
         bool sep = is_separator(list, (int)i);
@@ -799,9 +990,9 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
         if (sep)
         {
             gfx->fill_rectangle(window_id,
-                                list->rect.x + AROMA_LIST_ITEM_PADDING,
+                                list->rect.x + list_dp(AROMA_LIST_ITEM_PADDING_DP),
                                 current_y + ih / 2,
-                                width - AROMA_LIST_ITEM_PADDING * 2, 1,
+                                width - list_dp(AROMA_LIST_ITEM_PADDING_DP) * 2, list_dp(AROMA_LIST_SEPARATOR_HEIGHT_DP),
                                 aroma_color_blend(theme.colors.text_secondary,
                                                   theme.colors.surface, 0.35f),
                                 false, 0);
@@ -820,11 +1011,11 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
                               ? aroma_color_blend(theme.colors.primary, theme.colors.surface, 0.3f)
                               : aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.2f);
             gfx->fill_rectangle(window_id,
-                                list->rect.x + 2, current_y, width - 4, ih,
+                                list->rect.x + list_dp(2), current_y, width - list_dp(4), ih,
                                 hi, true, list->selected_corner_radius);
         }
 
-        int text_x = list->rect.x + AROMA_LIST_ITEM_PADDING;
+        int text_x = list->rect.x + list_dp(AROMA_LIST_ITEM_PADDING_DP);
 
         if (list->items[i].icon[0] != '\0' && list->icon_font)
         {
@@ -833,18 +1024,18 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
             uint32_t col = AROMA_MATERIAL_COLORS[i % AROMA_MATERIAL_COLOR_COUNT];
 
             gfx->fill_rectangle(window_id,
-                                text_x - 4,
-                                current_y + (ih - icon_sz) / 2 - 4,
-                                icon_sz + 8, icon_sz + 8,
+                                text_x - list_dp(4),
+                                current_y + (ih - icon_sz) / 2 - list_dp(4),
+                                icon_sz + list_dp(8), icon_sz + list_dp(8),
                                 aroma_color_blend(col, theme.colors.surface, 0.4f),
-                                true, icon_sz / 2 + 4);
+                                true, icon_sz / 2 + list_dp(4));
 
             gfx->render_text(window_id, list->icon_font,
                              list->items[i].icon, text_x, icon_y,
                              hdr ? list->header_text_color : theme.colors.text_primary,
                              0.6f);
 
-            text_x += icon_sz + AROMA_LIST_ICON_PADDING;
+            text_x += icon_sz + list_dp(AROMA_LIST_ICON_PADDING_DP);
         }
 
         bool has_secondary = !hdr && list->items[i].secondary_text[0] != '\0';
@@ -855,7 +1046,7 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
             if (has_secondary)
             {
                 int sec_lh = (int)(primary_lh * list->secondary_text_scale);
-                int total = primary_lh + sec_lh + 4;
+                int total = primary_lh + sec_lh + list_dp(4);
                 text_y = current_y + (ih - total) / 2;
             }
             else
@@ -872,9 +1063,9 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
         {
             AromaFont *sf = list->secondary_font ? list->secondary_font : list->font;
             int sec_lh = (int)(primary_lh * list->secondary_text_scale);
-            int total = primary_lh + sec_lh + 4;
+            int total = primary_lh + sec_lh + list_dp(4);
             int text_y = current_y + (ih - total) / 2;
-            int sec_y = text_y + primary_lh + 2;
+            int sec_y = text_y + primary_lh + list_dp(2);
             gfx->render_text(window_id, sf,
                              list->items[i].secondary_text, text_x, sec_y,
                              theme.colors.text_secondary,
@@ -883,6 +1074,8 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
 
         current_y += ih;
     }
+
+    /* Reserve the requested trailing space in the scroll extent. */
 
 }
 

@@ -12,12 +12,25 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include "aroma_animation.h"
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_TABS_CONTENT_MAX 32
-#define AROMA_TABS_GAP 8
+#define AROMA_TABS_GAP_DP 8
+#define AROMA_TABS_INDICATOR_HEIGHT_DP 3
+#define AROMA_TABS_INDICATOR_PADDING_DP 8
+#define AROMA_TABS_BAR_GAP_DP 3
+#define AROMA_TABS_SLIDE_OFFSET_DP 200
+
+#ifdef __ANDROID__
+static inline int tabs_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float tabs_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int tabs_dp(int dp) { return dp; }
+static inline float tabs_dp_f(float dp) { return dp; }
+#endif
 
 struct AromaTabs {
     AromaRect rect;
@@ -124,7 +137,7 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
                                            content_rect->height);
                                            
                     if (tabs->transition_type != 0 && tabs->transition_duration > 0 && tabs->prev_selected_index != tabs->selected_index) {
-                        int offset = (tabs->selected_index > tabs->prev_selected_index) ? 200 : -200;
+                        int offset = (tabs->selected_index > tabs->prev_selected_index) ? tabs_dp(AROMA_TABS_SLIDE_OFFSET_DP) : -tabs_dp(AROMA_TABS_SLIDE_OFFSET_DP);
                         if (tabs->transition_type == AROMA_ANIM_SLIDE_X) {
                             aroma_animation_start(content, AROMA_ANIM_SLIDE_X, content_rect->x + offset, content_rect->x, tabs->transition_duration);
                         } else if (tabs->transition_type == AROMA_ANIM_SLIDE_Y) {
@@ -280,8 +293,8 @@ height = aroma_android_dp_to_px(height);
     tabs->text_selected_color = theme.colors.text_primary;
     tabs->hover_overlay_color = aroma_color_blend(tabs->bg_color, tabs->selected_color, 0.12f);
     tabs->use_theme_colors = true;
-    tabs->indicator_height = 3;
-    tabs->indicator_padding = 8;
+    tabs->indicator_height = tabs_dp(AROMA_TABS_INDICATOR_HEIGHT_DP);
+    tabs->indicator_padding = tabs_dp(AROMA_TABS_INDICATOR_PADDING_DP);
     tabs->corner_radius = 0.0f;
     tabs->text_scale = 1.0f;
     tabs->variant = TABS_VARIANT_TOP;
@@ -573,7 +586,7 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
                     b_label_h = (int)(aroma_font_get_line_height(tabs->font) * tabs->text_scale);
                     b_label_w = (int)(aroma_font_get_line_width(tabs->font, tabs->labels[i]) * tabs->text_scale);
                 }
-                int b_gap = (has_icon && has_label) ? 3 : 0;
+                int b_gap = (has_icon && has_label) ? tabs_dp(AROMA_TABS_BAR_GAP_DP) : 0;
                 int b_total = b_icon_h + b_gap + b_label_h;
                 int b_y = tabs->rect.y + (tabs->rect.height - b_total) / 2;
                 if (has_icon) {
@@ -627,7 +640,7 @@ void aroma_tabs_draw(AromaNode* tabs_node, size_t window_id)
             }
 
             
-            int gap = (icon_w > 0 && text_w > 0) ? AROMA_TABS_GAP : 0;
+            int gap = (icon_w > 0 && text_w > 0) ? tabs_dp(AROMA_TABS_GAP_DP) : 0;
             int total_w = icon_w + gap + text_w;
             int start_x = x + (w - total_w) / 2;
             int center_y = tabs->rect.y + (tabs->rect.height / 2);

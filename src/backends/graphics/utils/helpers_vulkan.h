@@ -119,6 +119,13 @@ typedef struct AromaVulkanContext
     VkRect2D deferredScissor;
     bool hasDeferredScissor;
 
+    /* Nested-clip stack (device pixels, top-down origin). Pushes store
+     * the running intersection so inner scrollables cannot widen the
+     * outer clip; pops restore it. */
+#define VK_SCISSOR_STACK_MAX 16
+    VkRect2D scissorStack[VK_SCISSOR_STACK_MAX];
+    int scissorDepth;
+
     float clearColor[4];
 
     bool srgbSwapchain;

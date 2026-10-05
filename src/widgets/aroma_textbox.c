@@ -13,6 +13,7 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
@@ -21,7 +22,25 @@
 #include "emscripten.h"
 #endif
 
-#define AROMA_TEXTBOX_PADDING_X 8
+/* Authored in dp; scaled to px via helpers below. */
+#define AROMA_TEXTBOX_PADDING_X_DP 8
+#define AROMA_TEXTBOX_CORNER_RADIUS_DP 4
+#define AROMA_TEXTBOX_BORDER_WIDTH_DP 1
+#define AROMA_TEXTBOX_FOCUSED_BORDER_WIDTH_DP 2
+#define AROMA_TEXTBOX_CURSOR_WIDTH_DP 2
+#define AROMA_TEXTBOX_PASTE_RADIUS_DP 8
+#define AROMA_TEXTBOX_PASTE_PAD_DP 16
+#define AROMA_TEXTBOX_PASTE_MARGIN_DP 6
+#define AROMA_TEXTBOX_PASTE_GAP_DP 12
+#define AROMA_TEXTBOX_PASTE_INSET_DP 8
+
+#ifdef __ANDROID__
+static inline int tb_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float tb_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int tb_dp(int dp) { return dp; }
+static inline float tb_dp_f(float dp) { return dp; }
+#endif
 
 static void textbox_insert_char(AromaTextbox *tb, char ch);
 
@@ -160,7 +179,7 @@ static void textbox_recompute_text_x(AromaTextbox *data)
 {
     if (!data)
         return;
-    data->text_x = data->rect.x + AROMA_TEXTBOX_PADDING_X;
+    data->text_x = data->rect.x + tb_dp(AROMA_TEXTBOX_PADDING_X_DP);
 }
 
 static bool vk_contains_point(int x, int y)
@@ -1226,11 +1245,11 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
         fill_color = data->hover_bg_color;
 
     uint32_t border_color = data->border_color;
-    int border_width = 1;
+    int border_width = tb_dp(AROMA_TEXTBOX_BORDER_WIDTH_DP);
     if (data->is_focused)
     {
         border_color = data->focused_border_color;
-        border_width = 2;
+        border_width = tb_dp(AROMA_TEXTBOX_FOCUSED_BORDER_WIDTH_DP);
     }
     else if (data->is_hovered)
     {
@@ -1239,11 +1258,11 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
 
     gfx->fill_rectangle(window_id, data->rect.x, data->rect.y,
                         data->rect.width, data->rect.height,
-                        fill_color, true, 4.0f);
+                        fill_color, true, tb_dp_f((float)AROMA_TEXTBOX_CORNER_RADIUS_DP));
 
     gfx->draw_hollow_rectangle(window_id, data->rect.x, data->rect.y,
                                data->rect.width, data->rect.height,
-                               border_color, border_width, true, 4.0f);
+                               border_color, border_width, true, tb_dp_f((float)AROMA_TEXTBOX_CORNER_RADIUS_DP));
 
     if (data->font && gfx->render_text)
     {
@@ -1265,17 +1284,17 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
         if (data->is_focused && data->paste_available && data->icon_font && gfx->measure_text)
         {
             float paste_tw = gfx->measure_text(window_id, data->icon_font, "\ue14f", 1.0f);
-            data->paste_w = (int)paste_tw + 16;
-            data->paste_h = (int)paste_tw + 16;
-            if (data->paste_h > data->rect.height - 8)
-                data->paste_h = data->rect.height - 8;
-            if (data->paste_h < 16)
-                data->paste_h = 16;
-            data->paste_x = data->rect.x + data->rect.width - data->paste_w - 6;
+            data->paste_w = (int)paste_tw + tb_dp(AROMA_TEXTBOX_PASTE_PAD_DP);
+            data->paste_h = (int)paste_tw + tb_dp(AROMA_TEXTBOX_PASTE_PAD_DP);
+            if (data->paste_h > data->rect.height - tb_dp(AROMA_TEXTBOX_PASTE_INSET_DP))
+                data->paste_h = data->rect.height - tb_dp(AROMA_TEXTBOX_PASTE_INSET_DP);
+            if (data->paste_h < tb_dp(AROMA_TEXTBOX_PASTE_PAD_DP))
+                data->paste_h = tb_dp(AROMA_TEXTBOX_PASTE_PAD_DP);
+            data->paste_x = data->rect.x + data->rect.width - data->paste_w - tb_dp(AROMA_TEXTBOX_PASTE_MARGIN_DP);
             data->paste_y = data->rect.y + (data->rect.height - data->paste_h) / 2;
-            paste_reserve = data->paste_w + 12;
+            paste_reserve = data->paste_w + tb_dp(AROMA_TEXTBOX_PASTE_GAP_DP);
         }
-        int available_width = data->rect.width - (AROMA_TEXTBOX_PADDING_X * 2) - paste_reserve;
+        int available_width = data->rect.width - (tb_dp(AROMA_TEXTBOX_PADDING_X_DP) * 2) - paste_reserve;
         if (available_width < 0)
             available_width = 0;
 
@@ -1339,7 +1358,7 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
         {
             gfx->fill_rectangle(window_id, data->paste_x, data->paste_y,
                                 data->paste_w, data->paste_h,
-                                data->focused_border_color, true, 8.0f);
+                                data->focused_border_color, true, tb_dp_f((float)AROMA_TEXTBOX_PASTE_RADIUS_DP));
             float itw = gfx->measure_text ? gfx->measure_text(window_id, data->icon_font, "\ue14f", 1.0f) : 0.0f;
             int ilh = aroma_font_get_line_height(data->icon_font);
             if (ilh <= 0)
@@ -1385,25 +1404,25 @@ void aroma_textbox_draw(AromaNode *node, size_t window_id)
                 cursor_x = data->text_x + (int)(text_width + 0.5f);
             }
 
-            if (cursor_x > data->rect.x + data->rect.width - 2)
-                cursor_x = data->rect.x + data->rect.width - 2;
+            if (cursor_x > data->rect.x + data->rect.width - tb_dp(AROMA_TEXTBOX_CURSOR_WIDTH_DP))
+                cursor_x = data->rect.x + data->rect.width - tb_dp(AROMA_TEXTBOX_CURSOR_WIDTH_DP);
 
             int cursor_height;
             if (data->font)
             {
                 int line_height = aroma_font_get_line_height(data->font);
-                cursor_height = line_height > 0 ? line_height : data->rect.height - 4;
+                cursor_height = line_height > 0 ? line_height : data->rect.height - tb_dp(4);
             }
             else
             {
-                cursor_height = data->rect.height - 4;
+                cursor_height = data->rect.height - tb_dp(4);
             }
-            if (cursor_height < 2)
-                cursor_height = 2;
+            if (cursor_height < tb_dp(AROMA_TEXTBOX_CURSOR_WIDTH_DP))
+                cursor_height = tb_dp(AROMA_TEXTBOX_CURSOR_WIDTH_DP);
 
             int cursor_y = data->rect.y + (data->rect.height - cursor_height) / 2;
 
-            gfx->fill_rectangle(window_id, cursor_x, cursor_y, 2, cursor_height,
+            gfx->fill_rectangle(window_id, cursor_x, cursor_y, tb_dp(AROMA_TEXTBOX_CURSOR_WIDTH_DP), cursor_height,
                                 data->cursor_color, false, 0.0f);
         }
     }
@@ -1492,7 +1511,7 @@ static bool textbox_mouse_handler(AromaEvent *event, void *user_data)
             AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
             size_t window_id = tb->last_window_id;
 
-            int relative_x = adjusted_x - (tb->rect.x + AROMA_TEXTBOX_PADDING_X);
+            int relative_x = adjusted_x - (tb->rect.x + tb_dp(AROMA_TEXTBOX_PADDING_X_DP));
             if (relative_x <= 0)
             {
                 tb->cursor_pos = tb->scroll_offset;

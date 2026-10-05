@@ -27,6 +27,7 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "aroma_dp.h"
 #include <string.h>
 #ifdef __ANDROID__
 #include "aroma_android.h"
@@ -35,6 +36,14 @@
 
 #define AROMA_ICON_TEXT_MAX 16
 #define AROMA_ICON_PATH_MAX 64
+
+#ifdef __ANDROID__
+static inline int icon_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float icon_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int icon_dp(int dp) { return dp; }
+static inline float icon_dp_f(float dp) { return dp; }
+#endif
 
 typedef enum {
     AROMA_ICON_MODE_NONE,

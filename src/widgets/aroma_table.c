@@ -8,12 +8,32 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include <stdlib.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define MAX_ROWS 100
 #define MAX_COLS 10
+#define AROMA_TABLE_ROW_HEIGHT_DP 40
+#define AROMA_TABLE_HEADER_HEIGHT_DP 40
+#define AROMA_TABLE_CELL_PAD_DP 5
+#define AROMA_TABLE_CELL_INSET_DP 10
+#define AROMA_TABLE_TEXT_PAD_X_DP 10
+#define AROMA_TABLE_TEXT_Y_OFFSET_DP 10
+#define AROMA_TABLE_SEPARATOR_WIDTH_DP 1
+#define AROMA_TABLE_HEADER_UNDERLINE_H_DP 2
+#define AROMA_TABLE_ROW_SEPARATOR_H_DP 1
+#define AROMA_TABLE_MIN_ROW_H_DP 8
+#define AROMA_TABLE_MAX_ROW_H_DP 400
+
+#ifdef __ANDROID__
+static inline int table_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float table_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int table_dp(int dp) { return dp; }
+static inline float table_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct
 {
@@ -126,8 +146,8 @@ AromaNode *aroma_table_create(AromaNode *parent, int x, int y, int width, int he
     t->rect.width = width;
     t->rect.height = height;
     t->num_cols = num_cols;
-    t->row_height = 40;
-    t->header_height = 40;
+    t->row_height = table_dp(AROMA_TABLE_ROW_HEIGHT_DP);
+    t->header_height = table_dp(AROMA_TABLE_HEADER_HEIGHT_DP);
     t->header_visible = true;
     t->selected_row = -1;
 
@@ -168,10 +188,12 @@ static void _aroma_table_update_widgets(AromaNode *table_node)
                 AromaRect *w_rect = aroma_node_get_rect(t->cell_widgets[r][c]);
                 if (w_rect)
                 {
-                    w_rect->x = cur_x + 5;
-                    w_rect->y = cur_y + 5;
-                    w_rect->width = t->col_widths[c] - 10;
-                    w_rect->height = t->row_height - 10;
+                    int cell_pad = table_dp(AROMA_TABLE_CELL_PAD_DP);
+                    int cell_inset = table_dp(AROMA_TABLE_CELL_INSET_DP);
+                    w_rect->x = cur_x + cell_pad;
+                    w_rect->y = cur_y + cell_pad;
+                    w_rect->width = t->col_widths[c] - cell_inset;
+                    w_rect->height = t->row_height - cell_inset;
                     t->cell_widgets[r][c]->layout.type = AROMA_LAYOUT_NONE;
                     aroma_node_invalidate(t->cell_widgets[r][c]);
                 }
@@ -187,7 +209,7 @@ void aroma_table_set_col_width(AromaNode *table_node, int col_idx, int width)
     AromaTableInternal *t = get_table(table_node);
     if (t && col_idx >= 0 && col_idx < t->num_cols)
     {
-        t->col_widths[col_idx] = width;
+        t->col_widths[col_idx] = table_dp(width);
         _aroma_table_update_widgets(table_node);
         aroma_node_invalidate(table_node);
     }
@@ -267,17 +289,23 @@ void aroma_table_draw(AromaNode *table_node, size_t window_id)
         gfx->fill_rectangle(window_id, t->rect.x, cur_y, total_w, header_h, theme.colors.surface, false, 0);
 
         int cur_x = t->rect.x;
+        int sep_w = table_dp(AROMA_TABLE_SEPARATOR_WIDTH_DP);
+        if (sep_w < 1) sep_w = 1;
         for (int c = 0; c < t->num_cols; c++)
         {
 
             if (c > 0)
-                gfx->fill_rectangle(window_id, cur_x, cur_y, 1, t->rect.height, theme.colors.border, false, 0);
+                gfx->fill_rectangle(window_id, cur_x, cur_y, sep_w, t->rect.height, theme.colors.border, false, 0);
 
-            gfx->render_text(window_id, t->font, t->headers[c], cur_x + 10, cur_y + (header_h / 2) - 10, theme.colors.text_primary, 1.0f);
+            gfx->render_text(window_id, t->font, t->headers[c], cur_x + table_dp(AROMA_TABLE_TEXT_PAD_X_DP), cur_y + (header_h / 2) - table_dp(AROMA_TABLE_TEXT_Y_OFFSET_DP), theme.colors.text_primary, 1.0f);
             cur_x += t->col_widths[c];
         }
 
-        gfx->fill_rectangle(window_id, t->rect.x, cur_y + header_h - 1, total_w, 2, theme.colors.border, false, 0);
+        int ul_h = table_dp(AROMA_TABLE_HEADER_UNDERLINE_H_DP);
+        if (ul_h < 1) ul_h = 1;
+        int ul_off = table_dp(AROMA_TABLE_SEPARATOR_WIDTH_DP);
+        if (ul_off < 1) ul_off = 1;
+        gfx->fill_rectangle(window_id, t->rect.x, cur_y + header_h - ul_off, total_w, ul_h, theme.colors.border, false, 0);
         cur_y += header_h;
     }
 
@@ -299,12 +327,16 @@ void aroma_table_draw(AromaNode *table_node, size_t window_id)
             if (!t->cell_widgets[r][c] || t->cells[r][c][0] != '\0')
             {
                 uint32_t text_col = (r == t->selected_row) ? theme.colors.surface : theme.colors.text_primary;
-                gfx->render_text(window_id, t->font, t->cells[r][c], cur_x + 10, cur_y + (t->row_height / 2) - 10, text_col, 1.0f);
+                gfx->render_text(window_id, t->font, t->cells[r][c], cur_x + table_dp(AROMA_TABLE_TEXT_PAD_X_DP), cur_y + (t->row_height / 2) - table_dp(AROMA_TABLE_TEXT_Y_OFFSET_DP), text_col, 1.0f);
             }
             cur_x += t->col_widths[c];
         }
 
-        gfx->fill_rectangle(window_id, t->rect.x, cur_y + t->row_height - 1, total_w, 1, theme.colors.border, false, 0);
+        int row_sep_h = table_dp(AROMA_TABLE_ROW_SEPARATOR_H_DP);
+        if (row_sep_h < 1) row_sep_h = 1;
+        int row_sep_off = table_dp(AROMA_TABLE_SEPARATOR_WIDTH_DP);
+        if (row_sep_off < 1) row_sep_off = 1;
+        gfx->fill_rectangle(window_id, t->rect.x, cur_y + t->row_height - row_sep_off, total_w, row_sep_h, theme.colors.border, false, 0);
         cur_y += t->row_height;
     }
 }
@@ -370,11 +402,14 @@ void aroma_table_set_row_height(AromaNode *table_node, int height)
     AromaTableInternal *t = get_table(table_node);
     if (!t)
         return;
-    if (height < 8)
-        height = 8;
-    if (height > 400)
-        height = 400;
-    t->row_height = height;
+    int min_h = table_dp(AROMA_TABLE_MIN_ROW_H_DP);
+    int max_h = table_dp(AROMA_TABLE_MAX_ROW_H_DP);
+    int scaled = table_dp(height);
+    if (scaled < min_h)
+        scaled = min_h;
+    if (scaled > max_h)
+        scaled = max_h;
+    t->row_height = scaled;
     t->rect.height = table_header_h(t) + (t->num_rows * t->row_height);
     _aroma_table_update_widgets(table_node);
     table_sync_scroll_size(table_node, t);

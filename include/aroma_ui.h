@@ -26,6 +26,9 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stddef.h>
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #ifdef ESP32
 #include <Arduino.h>
@@ -1119,7 +1122,20 @@ extern "C"
 
         aroma_node_set_layout_mode(sc, AROMA_LAYOUT_MODE_FLEX);
         aroma_node_set_flex_direction(sc, AROMA_FLEX_COLUMN);
-        AromaNode *lv = aroma_listview_create(sc, 0, 0, width, height);
+        int list_width = width;
+        int list_height = height;
+#ifdef __ANDROID__
+        /* The outer container has already converted these dimensions to
+         * physical pixels; the public ListView constructor expects dp. */
+        AromaRect *container_rect = aroma_node_get_rect(sc);
+        if (container_rect)
+        {
+            list_width = aroma_android_px_to_dp(container_rect->width);
+            list_height = aroma_android_px_to_dp(container_rect->height);
+        }
+#endif
+        AromaNode *lv = aroma_listview_create(sc, 0, 0,
+                                              list_width, list_height);
         if (lv)
         {
             if (callback)

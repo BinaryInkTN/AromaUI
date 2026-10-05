@@ -1223,6 +1223,9 @@ static void end_render_pass(void)
 
     vk_ctx.currentFrame = (vk_ctx.currentFrame + 1) % VK_MAX_FRAMES_IN_FLIGHT;
     vk_ctx.inRenderPass = false;
+    /* Fresh frame: drop any leaked clips. */
+    vk_ctx.scissorDepth = 0;
+    vk_ctx.hasDeferredScissor = false;
 }
 
 static void flush_shape_batch(void)
@@ -2262,43 +2265,91 @@ static void vk_draw_image_uv(size_t window_id, int x, int y, int width, int heig
     frame->shapeVertexOffset += 6;
 }
 
-static void vk_set_clip(int x, int y, int w, int h)
+static void vk_intersect_rect(int *x, int *y, int *w, int *h)
 {
-    flush_shape_batch();
+    if (vk_ctx.scissorDepth <= 0)
+        return;
+    int px = vk_ctx.scissorStack[vk_ctx.scissorDepth - 1].offset.x;
+    int py = vk_ctx.scissorStack[vk_ctx.scissorDepth - 1].offset.y;
+    int pw = (int)vk_ctx.scissorStack[vk_ctx.scissorDepth - 1].extent.width;
+    int ph = (int)vk_ctx.scissorStack[vk_ctx.scissorDepth - 1].extent.height;
+    int ix = *x > px ? *x : px;
+    int iy = *y > py ? *y : py;
+    int ir = (*x + *w) < (px + pw) ? (*x + *w) : (px + pw);
+    int ib = (*y + *h) < (py + ph) ? (*y + *h) : (py + ph);
+    *x = ix;
+    *y = iy;
+    *w = ir - ix;
+    *h = ib - iy;
+    if (*w < 0)
+        *w = 0;
+    if (*h < 0)
+        *h = 0;
+}
 
-    VkRect2D scissor = {
-        .offset = {x, y},
-        .extent = {(uint32_t)w, (uint32_t)h},
-    };
-
+static void vk_apply_stack_top(void)
+{
+    if (vk_ctx.scissorDepth <= 0)
+        return;
+    VkRect2D scissor = vk_ctx.scissorStack[vk_ctx.scissorDepth - 1];
     if (!vk_ctx.inRenderPass)
     {
-
         vk_ctx.deferredScissor = scissor;
         vk_ctx.hasDeferredScissor = true;
         return;
     }
-
     VkCommandBuffer cmd = vk_ctx.frames[vk_ctx.currentFrame].commandBuffer;
     vk_ctx.currentScissor = scissor;
     vk_ctx.scissorEnabled = true;
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 }
 
+static void vk_set_clip(int x, int y, int w, int h)
+{
+    flush_shape_batch();
+
+    /* Device pixels throughout (dp->px at widget creation). Negative
+     * sizes collapse to an empty clip rather than being dropped, which
+     * would unbalance push/pop pairs. */
+    if (w < 0)
+        w = 0;
+    if (h < 0)
+        h = 0;
+    vk_intersect_rect(&x, &y, &w, &h);
+
+    VkRect2D scissor = {
+        .offset = {x, y},
+        .extent = {(uint32_t)w, (uint32_t)h},
+    };
+
+    if (vk_ctx.scissorDepth < VK_SCISSOR_STACK_MAX)
+        vk_ctx.scissorStack[vk_ctx.scissorDepth++] = scissor;
+    vk_apply_stack_top();
+}
+
 static void vk_clear_clip(void)
 {
     flush_shape_batch();
-    if (!vk_ctx.inRenderPass)
+    if (vk_ctx.scissorDepth > 0)
+        vk_ctx.scissorDepth--;
+    if (vk_ctx.scissorDepth <= 0)
+    {
+        if (!vk_ctx.inRenderPass)
+        {
+            vk_ctx.hasDeferredScissor = false;
+            return;
+        }
+        VkCommandBuffer cmd = vk_ctx.frames[vk_ctx.currentFrame].commandBuffer;
+        VkRect2D scissor = {
+            .offset = {0, 0},
+            .extent = vk_ctx.swapchainExtent,
+        };
+        vk_ctx.currentScissor = scissor;
+        vk_ctx.scissorEnabled = false;
+        vkCmdSetScissor(cmd, 0, 1, &scissor);
         return;
-
-    VkCommandBuffer cmd = vk_ctx.frames[vk_ctx.currentFrame].commandBuffer;
-    VkRect2D scissor = {
-        .offset = {0, 0},
-        .extent = vk_ctx.swapchainExtent,
-    };
-    vk_ctx.currentScissor = scissor;
-    vk_ctx.scissorEnabled = false;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
+    }
+    vk_apply_stack_top();
 }
 
 static void vk_flush(void)

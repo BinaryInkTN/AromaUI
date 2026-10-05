@@ -3877,7 +3877,8 @@ static void __map_draw(AromaNode *node, size_t window_id)
                         {
                             gfx->graphics_set_clip(cx, cy, cw, ch);
                             gfx->draw_image(window_id, p_draw_x, p_draw_y, TILE_SIZE * 2, TILE_SIZE * 2, fallback->texture_id, 0.0f);
-                            gfx->graphics_set_clip(map->rect.x, map->rect.y, map->rect.width, map->rect.height);
+                            if (gfx->graphics_clear_clip)
+                                gfx->graphics_clear_clip();
                             drawn_fallback = true;
                         }
                     }

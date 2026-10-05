@@ -29,11 +29,26 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_MENU_MAX_ITEMS 32
+#define AROMA_MENU_WIDTH_DP 200
+#define AROMA_MENU_ITEM_HEIGHT_DP 28
+#define AROMA_MENU_CORNER_RADIUS_DP 8
+#define AROMA_MENU_SEPARATOR_INSET_DP 8
+#define AROMA_MENU_TEXT_X_DP 12
+#define AROMA_MENU_ICON_OFFSET_DP 24
+
+#ifdef __ANDROID__
+static inline int menu_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float menu_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int menu_dp(int dp) { return dp; }
+static inline float menu_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct   AromaMenu {
     AromaRect rect;
@@ -104,17 +119,13 @@ y = aroma_android_dp_to_px(y);
     memset(menu, 0, sizeof(AromaMenu));
     menu->rect.x = x;
     menu->rect.y = y;
-    menu->rect.width = 200;
+    menu->rect.width = menu_dp(AROMA_MENU_WIDTH_DP);
     menu->rect.height = 0;
     menu->item_count = 0;
     menu->visible = false;
     menu->font = NULL;
-    menu->item_height = 28;
-#ifdef __ANDROID__
-    menu->rect.width = aroma_android_dp_to_px(200);
-    menu->item_height = aroma_android_dp_to_px(28);
-#endif
-    menu->corner_radius = 8.0f;
+    menu->item_height = menu_dp(AROMA_MENU_ITEM_HEIGHT_DP);
+    menu->corner_radius = menu_dp_f((float)AROMA_MENU_CORNER_RADIUS_DP);
     AromaTheme theme = aroma_theme_get_global();
     menu->bg_color = theme.colors.surface;
     menu->border_color = theme.colors.border;
@@ -257,18 +268,20 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
     gfx->fill_rectangle(window_id, menu->rect.x, menu->rect.y, menu->rect.width, menu->rect.height,
                         menu->bg_color, true, menu->corner_radius);
     gfx->draw_hollow_rectangle(window_id, menu->rect.x, menu->rect.y, menu->rect.width, menu->rect.height,
-                               menu->border_color, 1, true, menu->corner_radius);
+                               menu->border_color, menu_dp(1) < 1 ? 1 : menu_dp(1), true, menu->corner_radius);
 
     for (size_t i = 0; i < menu->item_count; ++i) {
         int y = menu->rect.y + (int)i * menu->item_height;
         if (menu->items[i].separator) {
-            gfx->fill_rectangle(window_id, menu->rect.x + 8, y + menu->item_height / 2, menu->rect.width - 16, 1,
+            int sep_hairline = menu_dp(1);
+            if (sep_hairline < 1) sep_hairline = 1;
+            gfx->fill_rectangle(window_id, menu->rect.x + menu_dp(AROMA_MENU_SEPARATOR_INSET_DP), y + menu->item_height / 2, menu->rect.width - menu_dp(AROMA_MENU_SEPARATOR_INSET_DP * 2), sep_hairline,
                                 menu->border_color, false, 0.0f);
             continue;
         }
         if (menu->font && gfx->render_text) {
             int line_h = aroma_font_get_line_height(menu->font);
-            int text_x = menu->rect.x + 12;
+            int text_x = menu->rect.x + menu_dp(AROMA_MENU_TEXT_X_DP);
             int text_y = y + (menu->item_height - line_h) / 2;
             
             if (menu->items[i].icon[0] != '\0' && menu->icon_font) {
@@ -276,7 +289,7 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
                  gfx->render_text(window_id, menu->icon_font, menu->items[i].icon, 
                      text_x, y + ((menu->item_height - line_h)/2), 
                      menu->text_color, 1.0f);
-                 text_x += 24;
+                 text_x += menu_dp(AROMA_MENU_ICON_OFFSET_DP);
             }
             
             gfx->render_text(window_id, menu->font, menu->items[i].text, text_x, text_y, menu->text_color, menu->text_scale);

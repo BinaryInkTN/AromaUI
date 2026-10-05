@@ -279,6 +279,12 @@ typedef struct AromaPlatformInterface {
     int (*android_sp_to_px)(int sp);
     int (*android_px_to_sp)(int px);
 
+    /* Float variants: preserve fractional dp/sp so hairlines, radii and
+     * small paddings don't quantize to zero on high-density screens. */
+    float (*android_dp_to_px_f)(float dp);
+    float (*android_sp_to_px_f)(float sp);
+    float (*android_px_to_dp_f)(float px);
+
     void (*android_get_available_size_dp)(
         int *width_dp,
         int *height_dp

@@ -137,6 +137,16 @@ typedef struct
     ShapeBatch batch;
     mat4x4 projection;
 
+    /* Scissor stack: nested scrollables (ListView in ScrollView, map
+     * tiles in map view) push clips that must intersect instead of
+     * replacing. Coordinates are device pixels (DPI already applied by
+     * the dp->px layer), including the Y-flipped GL rect. */
+#define GLES3_SCISSOR_STACK_MAX 16
+    struct {
+        int x, y, w, h;
+    } scissor_stack[GLES3_SCISSOR_STACK_MAX];
+    int scissor_depth;
+
     WindowResources windows[MAX_WINDOWS];
     bool shared_resources_initialized;
     bool gpu_initialized;
@@ -805,6 +815,10 @@ static void clear(size_t window_id, uint32_t color)
     ctx.frame_cache.valid = false;
     /* A new frame gets a fresh backdrop snapshot for frosted glass. */
     ctx.snap_valid = false;
+    /* Fresh frame: drop any leaked clips and the GL scissor with them. */
+    ctx.scissor_depth = 0;
+    glDisable(GL_SCISSOR_TEST);
+    ctx.snap_valid = false;
 
     if (!ensure_frame_state(window_id))
         return;
@@ -1470,11 +1484,30 @@ void draw_image(size_t window_id, int x, int y, int width, int height,
                   0.0f, 0.0f, 1.0f, 1.0f);
 }
 
+static void gles3_apply_scissor_top(void)
+{
+    if (ctx.scissor_depth <= 0)
+    {
+        glDisable(GL_SCISSOR_TEST);
+        return;
+    }
+    int x = ctx.scissor_stack[ctx.scissor_depth - 1].x;
+    int y = ctx.scissor_stack[ctx.scissor_depth - 1].y;
+    int w = ctx.scissor_stack[ctx.scissor_depth - 1].w;
+    int h = ctx.scissor_stack[ctx.scissor_depth - 1].h;
+    if (w <= 0 || h <= 0)
+    {
+        /* Empty intersection: discard everything. */
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(x, y, 0, 0);
+        return;
+    }
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(x, y, w, h);
+}
+
 static void gles3_set_clip(int x, int y, int w, int h)
 {
-    if (w <= 0 || h <= 0)
-        return;
-
     flush_shape_batch();
 
     int window_height = ctx.frame_cache.height;
@@ -1488,18 +1521,59 @@ static void gles3_set_clip(int x, int y, int w, int h)
             platform->get_window_size(fallback_window, &window_width, &window_height);
     }
 
+    /* All geometry reaching here is device pixels (dp->px converted at
+     * widget creation), so no extra density factor applies. GL origin is
+     * bottom-left: flip Y and clamp the rect into the framebuffer instead
+     * of only clamping the origin (which would stretch the clip over
+     * unrelated areas such as the header when a viewer is taller than
+     * the window on high-density screens). */
     int gl_y = window_height - y - h;
+    int gl_h = h;
     if (gl_y < 0)
+    {
+        gl_h += gl_y;
         gl_y = 0;
+    }
+    if (gl_h < 0)
+        gl_h = 0;
 
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(x, gl_y, w, h);
+    int nx = x, ny = gl_y, nw = w, nh = gl_h;
+    if (ctx.scissor_depth > 0)
+    {
+        int px = ctx.scissor_stack[ctx.scissor_depth - 1].x;
+        int py = ctx.scissor_stack[ctx.scissor_depth - 1].y;
+        int pw = ctx.scissor_stack[ctx.scissor_depth - 1].w;
+        int ph = ctx.scissor_stack[ctx.scissor_depth - 1].h;
+        int ix = nx > px ? nx : px;
+        int iy = ny > py ? ny : py;
+        int ir = (nx + nw) < (px + pw) ? (nx + nw) : (px + pw);
+        int it = (ny + nh) < (py + ph) ? (ny + nh) : (py + ph);
+        nx = ix;
+        ny = iy;
+        nw = ir - ix;
+        nh = it - iy;
+        if (nw < 0)
+            nw = 0;
+        if (nh < 0)
+            nh = 0;
+    }
+    if (ctx.scissor_depth < GLES3_SCISSOR_STACK_MAX)
+    {
+        ctx.scissor_stack[ctx.scissor_depth].x = nx;
+        ctx.scissor_stack[ctx.scissor_depth].y = ny;
+        ctx.scissor_stack[ctx.scissor_depth].w = nw;
+        ctx.scissor_stack[ctx.scissor_depth].h = nh;
+        ctx.scissor_depth++;
+    }
+    gles3_apply_scissor_top();
 }
 
 static void gles3_clear_clip(void)
 {
     flush_shape_batch();
-    glDisable(GL_SCISSOR_TEST);
+    if (ctx.scissor_depth > 0)
+        ctx.scissor_depth--;
+    gles3_apply_scissor_top();
 }
 
 /* Frosted-glass backdrop blur. The first blur of a frame snapshots the

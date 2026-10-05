@@ -4,6 +4,7 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "aroma_dp.h"
 #include <math.h>
 #include <stdio.h>
 #ifdef __ANDROID__
@@ -14,6 +15,23 @@
 #define AROMA_GAUGE_TICK_DOWN 0
 #define AROMA_GAUGE_TICK_UP 1
 #define AROMA_GAUGE_TICK_STRAIGHT 2
+#endif
+
+#define AROMA_GAUGE_TRACK_THICKNESS_DP 10
+#define AROMA_GAUGE_FILL_THICKNESS_DP 10
+#define AROMA_GAUGE_NEEDLE_THICKNESS_DP 4
+#define AROMA_GAUGE_SECONDARY_THICKNESS_DP 2
+#define AROMA_GAUGE_EXTRA_THICKNESS_DP 3
+#define AROMA_GAUGE_HUB_GAP_DP 6
+#define AROMA_GAUGE_BASE_RADIUS_INSET_DP 50
+#define AROMA_GAUGE_RED_ZONE_EXTRA_DP 2
+
+#ifdef __ANDROID__
+static inline int gauge_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float gauge_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int gauge_dp(int dp) { return dp; }
+static inline float gauge_dp_f(float dp) { return dp; }
 #endif
 
 typedef struct AromaGauge
@@ -98,7 +116,7 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
     int cy = gauge->rect.y + gauge->rect.height / 2;
     int radius = (gauge->rect.width < gauge->rect.height ? gauge->rect.width : gauge->rect.height) / 2;
 
-    int base_radius = radius - 50;
+    int base_radius = radius - gauge_dp(AROMA_GAUGE_BASE_RADIUS_INSET_DP);
     int track_inner_edge = base_radius - (gauge->track_thickness / 2);
     int inner_ring_radius = gauge->has_inner_ring ? base_radius - gauge->inner_ring_offset : 0;
 
@@ -114,7 +132,7 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
         if (red_start_normalized > 1.0f) red_start_normalized = 1.0f;
         float red_start_angle = gauge->start_angle + red_start_normalized * (gauge->end_angle - gauge->start_angle);
         
-        gfx->draw_arc(window_id, cx, cy, base_radius, red_start_angle, gauge->end_angle, 0xFFFF1111, gauge->track_thickness + 2);
+        gfx->draw_arc(window_id, cx, cy, base_radius, red_start_angle, gauge->end_angle, 0xFFFF1111, gauge->track_thickness + gauge_dp(AROMA_GAUGE_RED_ZONE_EXTRA_DP));
     }
 
     if (gauge->has_inner_ring && gfx->draw_arc)
@@ -346,26 +364,21 @@ AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height
     gauge->start_angle = 2.35619f;
     gauge->end_angle = 7.06858f;
 
-    gauge->track_thickness = 10;
-    gauge->fill_thickness = 10;
-#ifdef __ANDROID__
-    gauge->track_thickness = aroma_android_dp_to_px(10);
-    gauge->fill_thickness = aroma_android_dp_to_px(10);
-    gauge->needle_thickness = aroma_android_dp_to_px(4);
-#endif
+    gauge->track_thickness = gauge_dp(AROMA_GAUGE_TRACK_THICKNESS_DP);
+    gauge->fill_thickness = gauge_dp(AROMA_GAUGE_FILL_THICKNESS_DP);
     gauge->has_needle = false;
     gauge->needle_color = 0xFFFFFFFF;
-    gauge->needle_thickness = 4;
+    gauge->needle_thickness = gauge_dp(AROMA_GAUGE_NEEDLE_THICKNESS_DP);
 
     gauge->has_secondary_hand = false;
     gauge->secondary_color = 0xFFFFFFFF;
-    gauge->secondary_thickness = 2;
+    gauge->secondary_thickness = gauge_dp(AROMA_GAUGE_SECONDARY_THICKNESS_DP);
     gauge->secondary_length_ratio = 0.85f;
     gauge->secondary_value = 0.0f;
 
     gauge->has_extra_hand = false;
     gauge->extra_color = 0xFFFFFFFF;
-    gauge->extra_thickness = 3;
+    gauge->extra_thickness = gauge_dp(AROMA_GAUGE_EXTRA_THICKNESS_DP);
     gauge->extra_length_ratio = 0.65f;
     gauge->extra_value = 0.0f;
 
@@ -376,7 +389,7 @@ AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height
     gauge->has_hub = false;
     gauge->has_inner_ring = false;
 
-    gauge->hub_gap = 6;
+    gauge->hub_gap = gauge_dp(AROMA_GAUGE_HUB_GAP_DP);
     gauge->red_zone_val = 0.0f;
 
     AromaNode *node = __add_child_node(NODE_TYPE_WIDGET, parent, gauge);
@@ -436,12 +449,8 @@ void aroma_gauge_set_thickness(AromaNode *node, int track_thickness, int fill_th
     if (!node || !node->node_widget_ptr)
         return;
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
-#ifdef __ANDROID__
-    track_thickness = aroma_android_dp_to_px(track_thickness);
-    fill_thickness = aroma_android_dp_to_px(fill_thickness);
-#endif
-    gauge->track_thickness = track_thickness;
-    gauge->fill_thickness = fill_thickness;
+    gauge->track_thickness = gauge_dp(track_thickness);
+    gauge->fill_thickness = gauge_dp(fill_thickness);
     aroma_node_invalidate(node);
 }
 
@@ -452,7 +461,7 @@ void aroma_gauge_set_needle(AromaNode *node, bool enable, uint32_t color, int th
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
     gauge->has_needle = enable;
     gauge->needle_color = color;
-    gauge->needle_thickness = thickness;
+    gauge->needle_thickness = gauge_dp(thickness);
     aroma_node_invalidate(node);
 }
 
@@ -463,7 +472,7 @@ void aroma_gauge_set_secondary_hand(AromaNode *node, bool enable, uint32_t color
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
     gauge->has_secondary_hand = enable;
     gauge->secondary_color = color;
-    gauge->secondary_thickness = thickness;
+    gauge->secondary_thickness = gauge_dp(thickness);
     gauge->secondary_length_ratio = length_ratio;
     aroma_node_invalidate(node);
 }
@@ -484,7 +493,7 @@ void aroma_gauge_set_extra_hand(AromaNode *node, bool enable, uint32_t color, in
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
     gauge->has_extra_hand = enable;
     gauge->extra_color = color;
-    gauge->extra_thickness = thickness;
+    gauge->extra_thickness = gauge_dp(thickness);
     gauge->extra_length_ratio = length_ratio;
     aroma_node_invalidate(node);
 }
@@ -507,10 +516,12 @@ void aroma_gauge_set_ticks(AromaNode *node, bool enable, int major_count, int mi
     gauge->has_ticks = enable;
     gauge->major_tick_count = major_count;
     gauge->minor_tick_count = minor_count;
-    gauge->major_tick_length = major_length;
-    gauge->minor_tick_length = minor_length;
+    gauge->major_tick_length = gauge_dp(major_length);
+    gauge->minor_tick_length = gauge_dp(minor_length);
     gauge->tick_color = color;
-    gauge->tick_thickness = thickness;
+    int tthick = gauge_dp(thickness);
+    if (tthick < 1) tthick = 1;
+    gauge->tick_thickness = tthick;
     aroma_node_invalidate(node);
 }
 
@@ -535,7 +546,7 @@ void aroma_gauge_set_labels_numeric(AromaNode *node, bool enable, int start_val,
     gauge->label_count = count;
     gauge->label_font = font;
     gauge->label_color = color;
-    gauge->label_radius_offset = radius_offset;
+    gauge->label_radius_offset = gauge_dp(radius_offset);
     aroma_node_invalidate(node);
 }
 
@@ -545,9 +556,11 @@ void aroma_gauge_set_hub(AromaNode *node, bool enable, int radius, uint32_t colo
         return;
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
     gauge->has_hub = enable;
-    gauge->hub_radius = radius;
+    gauge->hub_radius = gauge_dp(radius);
     gauge->hub_color = color;
-    gauge->hub_thickness = thickness;
+    int hthick = gauge_dp(thickness);
+    if (hthick < 1) hthick = 1;
+    gauge->hub_thickness = hthick;
     aroma_node_invalidate(node);
 }
 
@@ -556,7 +569,7 @@ void aroma_gauge_set_hub_gap(AromaNode *node, int gap)
     if (!node || !node->node_widget_ptr)
         return;
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
-    gauge->hub_gap = gap;
+    gauge->hub_gap = gauge_dp(gap);
     aroma_node_invalidate(node);
 }
 
@@ -566,9 +579,11 @@ void aroma_gauge_set_inner_ring(AromaNode *node, bool enable, int radius_offset,
         return;
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
     gauge->has_inner_ring = enable;
-    gauge->inner_ring_offset = radius_offset;
+    gauge->inner_ring_offset = gauge_dp(radius_offset);
     gauge->inner_ring_color = color;
-    gauge->inner_ring_thickness = thickness;
+    int rthick = gauge_dp(thickness);
+    if (rthick < 1) rthick = 1;
+    gauge->inner_ring_thickness = rthick;
     aroma_node_invalidate(node);
 }
 

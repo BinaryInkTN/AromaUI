@@ -31,8 +31,23 @@
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#define AROMA_DEBUG_OVERLAY_HEIGHT_DP 300
+#define AROMA_DEBUG_OVERLAY_CORNER_RADIUS_DP 10
+#define AROMA_DEBUG_OVERLAY_PADDING_DP 10
+#define AROMA_DEBUG_OVERLAY_LINE_SPACING_DP 6
+#define AROMA_DEBUG_OVERLAY_BORDER_WIDTH_DP 1
+
+#ifdef __ANDROID__
+static inline int debug_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float debug_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int debug_dp(int dp) { return dp; }
+static inline float debug_dp_f(float dp) { return dp; }
 #endif
 
 struct AromaDebugOverlay
@@ -184,7 +199,7 @@ width = aroma_android_dp_to_px(width);
     overlay->rect.x = x;
     overlay->rect.y = y;
     overlay->rect.width = width;
-    overlay->rect.height = 300;
+    overlay->rect.height = debug_dp(AROMA_DEBUG_OVERLAY_HEIGHT_DP);
     overlay->visible = true;
     overlay->frame_count = 0;
     overlay->fps = 0.0f;
@@ -197,9 +212,8 @@ width = aroma_android_dp_to_px(width);
     aroma_color_extract_rgb(theme.colors.surface, &r, &g, &b);
     overlay->bg_color = aroma_color_rgba(r, g, b, 150); // Frosted glass
     overlay->border_color = aroma_color_rgba(255, 255, 255, 80); // Glossy thin edge
-    overlay->corner_radius = 16.0f;
+    overlay->corner_radius = debug_dp_f((float)AROMA_DEBUG_OVERLAY_CORNER_RADIUS_DP);
     overlay->border_color = theme.colors.border;
-    overlay->corner_radius = 10.0f;
 
     AromaNode *node = __add_child_node(NODE_TYPE_WIDGET, parent, overlay);
     if (!node)
@@ -333,9 +347,11 @@ void aroma_debug_overlay_draw(AromaNode *overlay_node, size_t window_id)
     gfx->fill_rectangle(window_id, overlay->rect.x, overlay->rect.y,
                         overlay->rect.width, overlay->rect.height,
                         overlay->bg_color, true, overlay->corner_radius);
+    int dbg_hair = debug_dp(AROMA_DEBUG_OVERLAY_BORDER_WIDTH_DP);
+    if (dbg_hair < 1) dbg_hair = 1;
     gfx->draw_hollow_rectangle(window_id, overlay->rect.x, overlay->rect.y,
                                overlay->rect.width, overlay->rect.height,
-                               overlay->border_color, 1, true, overlay->corner_radius);
+                               overlay->border_color, (float)dbg_hair, true, overlay->corner_radius);
 
     if (overlay->font && gfx->render_text)
     {
@@ -413,27 +429,29 @@ void aroma_debug_overlay_draw(AromaNode *overlay_node, size_t window_id)
 
 
         int line_height = aroma_font_get_line_height(overlay->font);
-        int y1 = overlay->rect.y + 10;
-        int y2 = y1 + line_height + 6;
-        int y3 = y2 + line_height + 6;
-        int y4 = y3 + line_height + 6;
-        int y5 = y4 + line_height + 6;
-        int y6 = y5 + line_height + 6;
-        int y7 = y6 + line_height + 6;
-        int y8 = y7 + line_height + 6;
-        int y9 = y8 + line_height + 6;
-        int y10 = y9 + line_height + 6;
-        overlay->rect.height = (y10 - overlay->rect.y) + line_height + 10;
-        gfx->render_text(window_id, overlay->font, line1, overlay->rect.x + 10, y1, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line2, overlay->rect.x + 10, y2, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line3, overlay->rect.x + 10, y3, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line4, overlay->rect.x + 10, y4, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line5, overlay->rect.x + 10, y5, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line6, overlay->rect.x + 10, y6, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line7, overlay->rect.x + 10, y7, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line8, overlay->rect.x + 10, y8, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line9, overlay->rect.x + 10, y9, overlay->text_color, 1.0f);
-        gfx->render_text(window_id, overlay->font, line10, overlay->rect.x + 10, y10, overlay->text_color, 1.0f);
+        int pad = debug_dp(AROMA_DEBUG_OVERLAY_PADDING_DP);
+        int gap = debug_dp(AROMA_DEBUG_OVERLAY_LINE_SPACING_DP);
+        int y1 = overlay->rect.y + pad;
+        int y2 = y1 + line_height + gap;
+        int y3 = y2 + line_height + gap;
+        int y4 = y3 + line_height + gap;
+        int y5 = y4 + line_height + gap;
+        int y6 = y5 + line_height + gap;
+        int y7 = y6 + line_height + gap;
+        int y8 = y7 + line_height + gap;
+        int y9 = y8 + line_height + gap;
+        int y10 = y9 + line_height + gap;
+        overlay->rect.height = (y10 - overlay->rect.y) + line_height + pad;
+        gfx->render_text(window_id, overlay->font, line1, overlay->rect.x + pad, y1, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line2, overlay->rect.x + pad, y2, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line3, overlay->rect.x + pad, y3, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line4, overlay->rect.x + pad, y4, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line5, overlay->rect.x + pad, y5, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line6, overlay->rect.x + pad, y6, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line7, overlay->rect.x + pad, y7, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line8, overlay->rect.x + pad, y8, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line9, overlay->rect.x + pad, y9, overlay->text_color, 1.0f);
+        gfx->render_text(window_id, overlay->font, line10, overlay->rect.x + pad, y10, overlay->text_color, 1.0f);
     }
 }
 

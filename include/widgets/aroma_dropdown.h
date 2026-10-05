@@ -68,6 +68,7 @@ void aroma_dropdown_setup_events(AromaNode* dropdown_node, void (*on_redraw_call
 void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id);
 void aroma_dropdown_render_overlays(size_t window_id);
 bool aroma_dropdown_overlay_hit_test(int x, int y, AromaNode** out_node);
+void aroma_dropdown_handle_outside_touch(int x, int y);
 void aroma_dropdown_set_font(AromaNode* dropdown_node, AromaFont* font);
 void aroma_dropdown_set_text_color(AromaNode* dropdown_node, uint32_t text_color);
 

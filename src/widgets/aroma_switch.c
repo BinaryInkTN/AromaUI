@@ -9,8 +9,20 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#define AROMA_SWITCH_INSET_DP 2
+#define AROMA_SWITCH_BORDER_WIDTH_DP 2
+
+#ifdef __ANDROID__
+static inline int sw_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float sw_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int sw_dp(int dp) { return dp; }
+static inline float sw_dp_f(float dp) { return dp; }
 #endif
 
 AromaNode *aroma_switch_create(AromaNode *parent, int x, int y, int width, int height, bool initial_state)
@@ -46,10 +58,10 @@ AromaNode *aroma_switch_create(AromaNode *parent, int x, int y, int width, int h
     data->is_hovered = false;
 
     data->track_radius = (float)data->rect.height / 2.0f;
-    data->toggle_size = data->rect.height - 4;
+    data->toggle_size = data->rect.height - sw_dp(AROMA_SWITCH_INSET_DP * 2);
     data->toggle_radius = (float)data->toggle_size / 2.0f;
     data->border_color = 0x333333;
-    data->toggle_x = data->state ? (data->rect.x + data->rect.width - data->toggle_size - 2) : (data->rect.x + 2);
+    data->toggle_x = data->state ? (data->rect.x + data->rect.width - data->toggle_size - sw_dp(AROMA_SWITCH_INSET_DP)) : (data->rect.x + sw_dp(AROMA_SWITCH_INSET_DP));
 
     data->use_theme_colors = true;
     data->on_change = NULL;
@@ -83,7 +95,7 @@ void aroma_switch_set_state(AromaNode *node, bool state)
     if (data->state != state)
     {
         data->state = state;
-        data->toggle_x = data->state ? (data->rect.x + data->rect.width - data->toggle_size - 2) : (data->rect.x + 2);
+        data->toggle_x = data->state ? (data->rect.x + data->rect.width - data->toggle_size - sw_dp(AROMA_SWITCH_INSET_DP)) : (data->rect.x + sw_dp(AROMA_SWITCH_INSET_DP));
         if (data->on_change)
         {
             data->on_change(node, data->user_data);
@@ -128,8 +140,8 @@ void aroma_switch_draw(AromaNode *node, size_t window_id)
     }
 
     data->toggle_x = data->state
-                         ? (data->rect.x + data->rect.width - data->toggle_size - 2)
-                         : (data->rect.x + 2);
+                         ? (data->rect.x + data->rect.width - data->toggle_size - sw_dp(AROMA_SWITCH_INSET_DP))
+                         : (data->rect.x + sw_dp(AROMA_SWITCH_INSET_DP));
 
     uint32_t bg_color = data->state ? data->color_on : data->color_off;
     if (data->is_hovered)
@@ -140,9 +152,9 @@ void aroma_switch_draw(AromaNode *node, size_t window_id)
     gfx->fill_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height, bg_color, true, data->track_radius);
 
     gfx->draw_hollow_rectangle(window_id, data->rect.x, data->rect.y, data->rect.width, data->rect.height,
-                               data->border_color, 2, true, data->track_radius);
+                               data->border_color, sw_dp(AROMA_SWITCH_BORDER_WIDTH_DP), true, data->track_radius);
 
-    int toggle_y = data->rect.y + 2;
+    int toggle_y = data->rect.y + sw_dp(AROMA_SWITCH_INSET_DP);
     uint32_t toggle_color = 0xFFFFFF;
     gfx->fill_rectangle(window_id, data->toggle_x, toggle_y, data->toggle_size, data->toggle_size, toggle_color, true, data->toggle_radius);
 }

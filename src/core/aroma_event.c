@@ -3,6 +3,7 @@
 #include "aroma_ui.h"
 #include "core/aroma_common.h"
 #include "widgets/aroma_container.h"
+#include "widgets/aroma_listview.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_logger.h"
 #include "widgets/aroma_dropdown.h"
@@ -89,6 +90,71 @@ static inline bool event_node_valid(const AromaNode *n)
 {
     if (!n) return false;
     if (((uintptr_t)n % _Alignof(AromaNode)) != 0) return false;
+    return true;
+}
+
+static bool is_descendant_of(const AromaNode *node, const AromaNode *ancestor)
+{
+    const AromaNode *cur = node;
+    while (event_node_valid(cur))
+    {
+        if (cur == ancestor)
+            return true;
+        cur = cur->parent_node;
+    }
+    return false;
+}
+
+/*
+ * Child nodes are positioned in their scroll container's content
+ * coordinates. A hit is only valid while it remains inside every scrollable
+ * ancestor's viewport.
+ */
+static bool point_in_scrollable_ancestors(const AromaNode *node, int x, int y)
+{
+    const AromaNode *cur = node->parent_node;
+
+    while (event_node_valid(cur))
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER &&
+            aroma_container_is_scrollable((AromaNode *)cur))
+        {
+            AromaRect *viewport = aroma_node_get_rect((AromaNode *)cur);
+            if (viewport)
+            {
+                /*
+                 * A scroll container's rect is in its parent's content
+                 * coordinates. Translate it through only its scrollable
+                 * ancestors so the viewport is compared in screen space.
+                 * The container's own scroll does not move its viewport.
+                 */
+                int viewport_x = viewport->x;
+                int viewport_y = viewport->y;
+                const AromaNode *ancestor = cur->parent_node;
+                while (event_node_valid(ancestor))
+                {
+                    if (ancestor->node_type == NODE_TYPE_CONTAINER &&
+                        aroma_container_is_scrollable((AromaNode *)ancestor))
+                    {
+                        int scroll_x = 0;
+                        int scroll_y = 0;
+                        aroma_container_get_scroll((AromaNode *)ancestor,
+                                                   &scroll_x, &scroll_y);
+                        viewport_x -= scroll_x;
+                        viewport_y -= scroll_y;
+                    }
+                    ancestor = ancestor->parent_node;
+                }
+
+                if (x < viewport_x ||
+                    x >= viewport_x + viewport->width ||
+                    y < viewport_y ||
+                    y >= viewport_y + viewport->height)
+                    return false;
+            }
+        }
+        cur = cur->parent_node;
+    }
     return true;
 }
 
@@ -335,14 +401,15 @@ AromaEvent *aroma_event_create(AromaEventType event_type, uint64_t target_node_i
 }
 
 
-bool aroma_event_dispatch(AromaEvent *event)
+static bool aroma_event_dispatch_internal(AromaEvent *event,
+                                          uint64_t *consuming_node_id)
 {
     if (!event || g_event_system.shutting_down) return false;
 
     if (!event_node_valid(event->target_node)) return false;
 
     AromaNode *current = event->target_node;
-    bool found_any = false;
+    if (consuming_node_id) *consuming_node_id = 0;
 
     while (event_node_valid(current) && !event->consumed)
     {
@@ -354,9 +421,12 @@ bool aroma_event_dispatch(AromaEvent *event)
                 AromaEventListener *listener = &ls->listeners[i];
                 if (listener->event_type == event->event_type)
                 {
-                    found_any = true;
                     bool result = listener->handler(event, listener->user_data);
-                    if (result) event->consumed = true;
+                    if (result || event->consumed) {
+                        event->consumed = true;
+                        if (consuming_node_id)
+                            *consuming_node_id = current->node_id;
+                    }
                 }
             }
         }
@@ -364,13 +434,12 @@ bool aroma_event_dispatch(AromaEvent *event)
         current = next;
     }
 
-    if (!found_any && (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
-                       event->event_type == EVENT_TYPE_TOUCH_MOVE))
-    {
-        LOG_INFO("EVT_NO_HANDLER: type=%d node=%llu",
-                 event->event_type, (unsigned long long)event->target_node_id);
-    }
     return event->consumed;
+}
+
+bool aroma_event_dispatch(AromaEvent *event)
+{
+    return aroma_event_dispatch_internal(event, NULL);
 }
 
 bool aroma_event_queue(AromaEvent *event)
@@ -426,15 +495,13 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         return;
     }
 
-    LOG_INFO("EVT_TOUCH: id=%d x=%d y=%d state=%d", id, x, y, state);
-
     if (state == 1)
     {
+        aroma_dropdown_handle_outside_touch(x, y);
         for (int i = 0; i < AROMA_MAX_TOUCHES; i++)
         {
             if (g_scroll_intercepting[i])
             {
-                LOG_INFO("EVT_SUPPRESS: scroll intercepting on ptr %d", i);
                 return;
             }
         }
@@ -448,20 +515,49 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         target    = aroma_event_hit_test(g_event_system.root_node, x, y);
         target_id = target ? target->node_id : 0;
         g_touch_captures[id] = target_id;
-        LOG_INFO("EVT_DOWN: hit=%llu", (unsigned long long)target_id);
-
         AromaNode *scr = target ? find_scrollable_ancestor(target) : NULL;
+        /*
+         * The expanded dropdown list is a temporary overlay. Its gesture is
+         * owned by the dropdown, not by the scroll view containing the
+         * dropdown field.
+         */
+        AromaNode *overlay_target = NULL;
+        if (target && aroma_dropdown_overlay_hit_test(x, y, &overlay_target) &&
+            overlay_target == target)
+            scr = NULL;
+        /* Dropdown fields and their expanded overlays own the complete
+         * gesture. Do not let the containing ScrollView steal a drag after
+         * the dropdown receives TOUCH_DOWN. */
+        if (target && target->draw_cb == aroma_dropdown_draw)
+            scr = NULL;
         if (!scr && target &&
             target->node_type == NODE_TYPE_CONTAINER &&
             aroma_container_is_scrollable(target))
             scr = target;
 
         g_scroll_captures[id] = scr ? scr->node_id : 0;
-        LOG_INFO("EVT_DOWN: scroll_cap=%llu", (unsigned long long)g_scroll_captures[id]);
     }
     else
     {
         target_id = g_touch_captures[id];
+        /*
+         * A ScrollView may be the initial hit when its child has just
+         * entered the viewport during scrolling. For a non-intercepted
+         * release, retarget to the currently visible descendant so list
+         * items and other widgets remain clickable after scrolling.
+         */
+        if (state == 0 && target_id != 0 && !g_scroll_intercepting[id])
+        {
+            AromaNode *release_target =
+                aroma_event_hit_test(g_event_system.root_node, x, y);
+            AromaNode *captured_target = find_node_cached(target_id);
+            if (release_target && captured_target &&
+                release_target != captured_target &&
+                is_descendant_of(release_target, captured_target))
+            {
+                target_id = release_target->node_id;
+            }
+        }
         if (target_id == 0)
         {
             target    = aroma_event_hit_test(g_event_system.root_node, x, y);
@@ -477,11 +573,7 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
     uint64_t scroll_id  = g_scroll_captures[id];
     bool     intercepted = false;
 
-    LOG_INFO("EVT_DISPATCH: type=%d target=%llu scroll=%llu intercepting=%d",
-             type, (unsigned long long)target_id,
-             (unsigned long long)scroll_id, g_scroll_intercepting[id]);
-
-    if (scroll_id != 0 && (scroll_id != target_id || g_scroll_intercepting[id]))
+    if (g_scroll_intercepting[id])
     {
         AromaEvent *sev = aroma_event_create(type, scroll_id);
         if (sev)
@@ -491,13 +583,28 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
             sev->data.touch.y  = y;
             aroma_event_dispatch(sev);
             intercepted = sev->consumed;
-            LOG_INFO("EVT_SCROLL_SENT: type=%d consumed=%d", type, intercepted);
             aroma_event_destroy(sev);
         }
         else
         {
-            LOG_INFO("EVT_SCROLL_CREATE_FAIL: type=%d scroll_id=%llu",
-                     type, (unsigned long long)scroll_id);
+            LOG_WARNING("Failed to create scroll touch event for node %llu",
+                        (unsigned long long)scroll_id);
+        }
+    }
+
+    if (!g_scroll_intercepting[id] && target_id != 0)
+    {
+        AromaEvent *evt = aroma_event_create(type, target_id);
+        if (evt)
+        {
+            evt->data.touch.id = id;
+            evt->data.touch.x  = x;
+            evt->data.touch.y  = y;
+            uint64_t consuming_node_id = 0;
+            aroma_event_dispatch_internal(evt, &consuming_node_id);
+            if (consuming_node_id == scroll_id && scroll_id != 0)
+                intercepted = true;
+            aroma_event_destroy(evt);
         }
     }
 
@@ -510,24 +617,11 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
             if (cancel)
             {
                 cancel->data.touch.id = id;
-                cancel->data.touch.x  = -1;
-                cancel->data.touch.y  = -1;
+                cancel->data.touch.x = -1;
+                cancel->data.touch.y = -1;
                 aroma_event_dispatch(cancel);
                 aroma_event_destroy(cancel);
             }
-        }
-    }
-
-    if (!intercepted && target_id != 0)
-    {
-        AromaEvent *evt = aroma_event_create(type, target_id);
-        if (evt)
-        {
-            evt->data.touch.id = id;
-            evt->data.touch.x  = x;
-            evt->data.touch.y  = y;
-            aroma_event_dispatch(evt);
-            aroma_event_destroy(evt);
         }
     }
 
@@ -643,6 +737,8 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
 {
     if (!event_node_valid(root)) return NULL;
     if (root->is_hidden || g_event_system.shutting_down) return NULL;
+    if (root->parent_node && !point_in_scrollable_ancestors(root, x, y))
+        return NULL;
 
     if (!root->parent_node)
     {
@@ -677,6 +773,52 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
     }if (root->node_type == NODE_TYPE_WIDGET ||
         root->node_type == NODE_TYPE_CONTAINER)
     {
+        /*
+         * A ListView is the content child of an owning ScrollView. Its own
+         * rect is deliberately only the viewport height, while its rows
+         * extend through the parent's scrollable content. Hit testing the
+         * ListView against that rect after adding the parent's scroll offset
+         * rejects rows revealed later in the list. Use the owner's viewport
+         * as the ListView hit area instead.
+         */
+        if (root->draw_cb == aroma_listview_draw &&
+            root->parent_node &&
+            aroma_container_is_scrollable(root->parent_node))
+        {
+            AromaRect *viewport = aroma_node_get_rect(root->parent_node);
+            if (viewport)
+            {
+                int viewport_x = viewport->x;
+                int viewport_y = viewport->y;
+                AromaNode *ancestor = root->parent_node->parent_node;
+                while (event_node_valid(ancestor))
+                {
+                    if (ancestor->node_type == NODE_TYPE_CONTAINER &&
+                        aroma_container_is_scrollable(ancestor))
+                    {
+                        int sx = 0;
+                        int sy = 0;
+                        aroma_container_get_scroll(ancestor, &sx, &sy);
+                        viewport_x -= sx;
+                        viewport_y -= sy;
+                    }
+                    ancestor = ancestor->parent_node;
+                }
+
+                if (x >= viewport_x && x < viewport_x + viewport->width &&
+                    y >= viewport_y && y < viewport_y + viewport->height)
+                {
+                    bool should_win = (root->z_index >= best_z);
+                    if (should_win)
+                    {
+                        best = root;
+                        best_z = root->z_index;
+                    }
+                }
+                return best;
+            }
+        }
+
         int adjusted_x = x;
         int adjusted_y = y;
 

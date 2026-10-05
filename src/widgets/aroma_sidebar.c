@@ -10,12 +10,38 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_dp.h"
 #include <string.h>
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_SIDEBAR_CONTENT_MAX 8
+#define AROMA_SIDEBAR_ITEM_HEIGHT_DP 52
+#define AROMA_SIDEBAR_CORNER_RADIUS_DP 13
+#define AROMA_SIDEBAR_ITEM_SPACING_DP 4
+#define AROMA_SIDEBAR_SIDE_MARGIN_DP 10
+#define AROMA_SIDEBAR_TOP_PADDING_DP 8
+#define AROMA_SIDEBAR_RETRACTED_WIDTH_DP 60
+#define AROMA_SIDEBAR_BREAKPOINT_DP 600
+#define AROMA_SIDEBAR_TRANSITION_OFFSET_DP 200
+#define AROMA_SIDEBAR_BG_RADIUS_FALLBACK_DP 12
+#define AROMA_SIDEBAR_MARGIN_FALLBACK_DP 6
+#define AROMA_SIDEBAR_ROW_MARGIN_DP 6
+#define AROMA_SIDEBAR_ROW_RADIUS_DP 10
+#define AROMA_SIDEBAR_ROW_INSET_Y_DP 4
+#define AROMA_SIDEBAR_ROW_HEIGHT_SHRINK_DP 8
+#define AROMA_SIDEBAR_CONTENT_PAD_DP 16
+#define AROMA_SIDEBAR_ICON_GAP_DP 12
+#define AROMA_SIDEBAR_CONTENT_X_PAD_DP 14
+
+#ifdef __ANDROID__
+static inline int sidebar_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float sidebar_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int sidebar_dp(int dp) { return dp; }
+static inline float sidebar_dp_f(float dp) { return dp; }
+#endif
 
 struct AromaSidebar
 {
@@ -126,7 +152,8 @@ static void __sidebar_update_content_visibility(AromaSidebar *sidebar)
 
                     if (sidebar->transition_type != 0 && sidebar->transition_duration > 0 && sidebar->prev_selected_index != sidebar->selected_index)
                     {
-                        int offset = (sidebar->selected_index > sidebar->prev_selected_index) ? 200 : -200;
+                        int offset = sidebar_dp(AROMA_SIDEBAR_TRANSITION_OFFSET_DP);
+                        if (sidebar->selected_index < sidebar->prev_selected_index) offset = -offset;
                         if (sidebar->transition_type == AROMA_ANIM_SLIDE_X)
                         {
                             aroma_animation_start(content, AROMA_ANIM_SLIDE_X, content_rect->x + offset, content_rect->x, sidebar->transition_duration);
@@ -245,19 +272,19 @@ height = aroma_android_dp_to_px(height);
     sidebar->count = (count > AROMA_SIDEBAR_MAX_ITEMS) ? AROMA_SIDEBAR_MAX_ITEMS : count;
     sidebar->selected_index = 0;
     sidebar->hovered_index = -1;
-    sidebar->item_height = 52;
+    sidebar->item_height = sidebar_dp(AROMA_SIDEBAR_ITEM_HEIGHT_DP);
 
     sidebar->apple_style = true;
-    sidebar->corner_radius = 13;
-    sidebar->item_spacing = 4;
-    sidebar->side_margin = 10;
-    sidebar->top_padding = 8;
+    sidebar->corner_radius = sidebar_dp(AROMA_SIDEBAR_CORNER_RADIUS_DP);
+    sidebar->item_spacing = sidebar_dp(AROMA_SIDEBAR_ITEM_SPACING_DP);
+    sidebar->side_margin = sidebar_dp(AROMA_SIDEBAR_SIDE_MARGIN_DP);
+    sidebar->top_padding = sidebar_dp(AROMA_SIDEBAR_TOP_PADDING_DP);
 
     sidebar->responsive = false;
     sidebar->is_retracted = false;
     sidebar->full_width = width;
-    sidebar->retracted_width = 60;
-    sidebar->breakpoint = 600;
+    sidebar->retracted_width = sidebar_dp(AROMA_SIDEBAR_RETRACTED_WIDTH_DP);
+    sidebar->breakpoint = sidebar_dp(AROMA_SIDEBAR_BREAKPOINT_DP);
 
     AromaTheme theme = aroma_theme_get_global();
     sidebar->bg_color = theme.colors.surface;
@@ -413,11 +440,11 @@ void aroma_sidebar_set_style(AromaNode *sidebar_node, bool enable, int corner_ra
     AromaSidebar *sidebar = (AromaSidebar *)sidebar_node->node_widget_ptr;
     sidebar->apple_style = enable;
     if (corner_radius > 0)
-        sidebar->corner_radius = corner_radius;
+        sidebar->corner_radius = sidebar_dp(corner_radius);
     if (item_spacing >= 0)
-        sidebar->item_spacing = item_spacing;
+        sidebar->item_spacing = sidebar_dp(item_spacing);
     if (side_margin >= 0)
-        sidebar->side_margin = side_margin;
+        sidebar->side_margin = sidebar_dp(side_margin);
     aroma_node_invalidate(sidebar_node);
 }
 
@@ -531,14 +558,14 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
         sidebar->hover_bg_color = aroma_color_blend(theme.colors.surface, 0xFF000000, 0.05f);
     }
 
-    float bg_radius = sidebar->apple_style ? (float)sidebar->corner_radius : 12.0f;
+    float bg_radius = sidebar->apple_style ? (float)sidebar->corner_radius : sidebar_dp_f((float)AROMA_SIDEBAR_BG_RADIUS_FALLBACK_DP);
     gfx->fill_rectangle(window_id, sidebar->rect.x, sidebar->rect.y,
                         sidebar->rect.width, sidebar->rect.height,
                         sidebar->bg_color, true, bg_radius);
 
     int effective_item_height = sidebar->item_height;
     int spacing = sidebar->apple_style ? sidebar->item_spacing : 0;
-    int margin = sidebar->apple_style ? sidebar->side_margin : 6;
+    int margin = sidebar->apple_style ? sidebar->side_margin : sidebar_dp(AROMA_SIDEBAR_MARGIN_FALLBACK_DP);
     int top_pad = sidebar->apple_style ? sidebar->top_padding : 0;
 
     for (int i = 0; i < sidebar->count; i++)
@@ -578,10 +605,10 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
 
                 int item_center_y = item_y + effective_item_height / 2;
 
-                int icon_size = sidebar->icon_font ? aroma_font_get_line_height(sidebar->icon_font) : 24;
-                int text_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : 16;
+                int icon_size = sidebar->icon_font ? aroma_font_get_line_height(sidebar->icon_font) : sidebar_dp(24);
+                int text_height = sidebar->font ? aroma_font_get_line_height(sidebar->font) : sidebar_dp(16);
 
-                int content_x = sidebar->rect.x + margin + 16;
+                int content_x = sidebar->rect.x + margin + sidebar_dp(AROMA_SIDEBAR_CONTENT_PAD_DP);
 
                 uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
                 uint32_t icon_color = selected ? sidebar->selected_color : aroma_color_blend(sidebar->text_color, 0xFF000000, 0.7f);
@@ -593,7 +620,7 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
                                      content_x, icon_y, icon_color, 1.0f);
 
                     int icon_w = aroma_font_get_px_size(sidebar->icon_font);
-                    content_x += icon_w + 12;
+                    content_x += icon_w + sidebar_dp(AROMA_SIDEBAR_ICON_GAP_DP);
                 }
 
                 if (sidebar->font && gfx->render_text)
@@ -608,9 +635,9 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
             else
             {
 
-                int row_margin = 6;
+                int row_margin = sidebar_dp(AROMA_SIDEBAR_ROW_MARGIN_DP);
                 uint32_t row_color = sidebar->bg_color;
-                float row_radius = 10.0f;
+                float row_radius = sidebar_dp_f((float)AROMA_SIDEBAR_ROW_RADIUS_DP);
 
                 if (selected)
                 {
@@ -623,12 +650,12 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
 
                 gfx->fill_rectangle(window_id,
                                     sidebar->rect.x + row_margin,
-                                    item_y + 4,
+                                    item_y + sidebar_dp(AROMA_SIDEBAR_ROW_INSET_Y_DP),
                                     sidebar->rect.width - row_margin * 2,
-                                    effective_item_height - 8,
+                                    effective_item_height - sidebar_dp(AROMA_SIDEBAR_ROW_HEIGHT_SHRINK_DP),
                                     row_color, true, row_radius);
 
-                int content_x = sidebar->rect.x + 14;
+                int content_x = sidebar->rect.x + sidebar_dp(AROMA_SIDEBAR_CONTENT_X_PAD_DP);
                 uint32_t text_color = selected ? sidebar->selected_color : sidebar->text_color;
 
                 if (sidebar->icons[i][0] != '\0' && sidebar->icon_font && gfx->render_text)
@@ -640,7 +667,7 @@ void aroma_sidebar_draw(AromaNode *sidebar_node, size_t window_id)
                                      content_x, icon_y, text_color, 1.0f);
 
                     int icon_w = aroma_font_get_px_size(sidebar->icon_font);
-                    content_x += icon_w + 12;
+                    content_x += icon_w + sidebar_dp(AROMA_SIDEBAR_ICON_GAP_DP);
                 }
 
                 if (sidebar->font && gfx->render_text)

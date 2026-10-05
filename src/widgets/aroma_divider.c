@@ -27,8 +27,19 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#define AROMA_DIVIDER_THICKNESS_DP 1
+
+#ifdef __ANDROID__
+static inline int divider_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float divider_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int divider_dp(int dp) { return dp; }
+static inline float divider_dp_f(float dp) { return dp; }
 #endif
 
 typedef struct   AromaDivider {
@@ -60,7 +71,8 @@ AromaNode* aroma_divider_create(
     AromaTheme theme = aroma_theme_get_global();
 
     divider->orientation = orientation;
-    divider->thickness = 1;
+    int hairline = divider_dp(AROMA_DIVIDER_THICKNESS_DP);
+    divider->thickness = hairline < 1 ? 1 : hairline;
     divider->color = theme.colors.border;
     divider->use_theme_colors = true;
 
@@ -97,12 +109,13 @@ void aroma_divider_set_thickness(AromaNode* divider_node, int thickness)
     if (!divider_node || !divider_node->node_widget_ptr || thickness <= 0) return;
 
     AromaDivider* divider = divider_node->node_widget_ptr;
-    divider->thickness = thickness;
+    int scaled = divider_dp(thickness);
+    divider->thickness = scaled < 1 ? 1 : scaled;
 
     if (divider->orientation == DIVIDER_ORIENTATION_HORIZONTAL) {
-        divider->rect.height = thickness;
+        divider->rect.height = divider->thickness;
     } else {
-        divider->rect.width = thickness;
+        divider->rect.width = divider->thickness;
     }
 
     aroma_node_invalidate(divider_node);

@@ -20,6 +20,7 @@
 #include "widgets/aroma_tooltip.h"
 #include "widgets/aroma_container.h"
 #include "widgets/aroma_listview.h"
+#include "aroma_dp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2738,7 +2739,15 @@ static void build_children(IncenseNode *node, AromaNode *parent, BuildCtx *ctx)
 static bool bridge_bool_ptr(AromaNode *node, void *ud)
 {
     CallbackEntry *e = ud;
-    return (e && e->fn && e->type == INCENSE_CALLBACK_BOOL_PTR) ? ((bool (*)(AromaNode *, void *))e->fn)(node, e->userdata) : false;
+    if (!e || !e->fn)
+        return false;
+    if (e->type == INCENSE_CALLBACK_BOOL_PTR)
+        return ((bool (*)(AromaNode *, void *))e->fn)(node, e->userdata);
+    if (e->type == INCENSE_CALLBACK_VOID_PTR) {
+        ((void (*)(void *))e->fn)(e->userdata);
+        return true;
+    }
+    return false;
 }
 
 static void bridge_void_ptr(void *ud)
@@ -2925,7 +2934,22 @@ static AromaNode *build_scrollview(IncenseNode *node, AromaNode *sp, BuildCtx *c
     apply_widget_animations(built, &bag, node);
     maybe_register(&bag, built, ctx);
     build_children(node, built, ctx);
-    aroma_container_update_auto_content_size(built);
+    int explicit_content_width = props_int(&bag, "content_width", 0);
+    int explicit_content_height = props_int(&bag, "content_height", 0);
+    if (explicit_content_width > 0 || explicit_content_height > 0)
+    {
+        AromaRect *viewport = aroma_node_get_rect(built);
+        if (viewport)
+        {
+            if (explicit_content_width <= 0)
+                explicit_content_width = viewport->width;
+            if (explicit_content_height <= 0)
+                explicit_content_height = viewport->height;
+            aroma_container_set_content_size(built,
+                                              AROMA_DP_I(explicit_content_width),
+                                              AROMA_DP_I(explicit_content_height));
+        }
+    }
     props_free(&bag);
     return built;
 }
@@ -3255,19 +3279,13 @@ static AromaNode *build_listview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
     aroma_listview_set_font(built, _widget_font);
     if (ctx->icon_font)
         aroma_listview_set_icon_font(built, ctx->icon_font);
-    AromaNode *scroll_container = built->parent_node;
-    if (scroll_container && aroma_container_is_scrollable(scroll_container))
-    {
-        int content_h = aroma_listview_get_content_height(built);
-        int content_w = props_int(&bag, "width", 200);
-        aroma_container_set_content_size(scroll_container, content_w, content_h);
-    }
+    aroma_listview_set_bottom_padding(
+        built, AROMA_DP_I(props_int(&bag, "bottom_padding", 0)));
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
     apply_widget_animations(built, &bag, node);
     maybe_register(&bag, built, ctx);
-    build_children(node, built, ctx);
     props_free(&bag);
     return built;
 }

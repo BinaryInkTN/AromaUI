@@ -5,9 +5,20 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "aroma_timer.h"
 #include "aroma_time.h"
+#include "aroma_dp.h"
 #include <math.h>
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#define AROMA_LOADING_MIN_DOT_DP 2
+
+#ifdef __ANDROID__
+static inline int loading_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float loading_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int loading_dp(int dp) { return dp; }
+static inline float loading_dp_f(float dp) { return dp; }
 #endif
 
 typedef struct   {
@@ -46,7 +57,8 @@ static void loading_draw(AromaNode* node, size_t window_id) {
         float angle = loading->start_angle - (i * 20.0f);
         float angle_rad = angle * 3.14159265f / 180.0f;
         int dot_size = (loading->thickness * 2) - i * (loading->thickness / 2);
-        if (dot_size < 2) dot_size = 2;
+        int dot_min = loading_dp(AROMA_LOADING_MIN_DOT_DP);
+        if (dot_size < dot_min) dot_size = dot_min;
         
         int dx = cx + (int)(orbit_r * cosf(angle_rad)) - dot_size / 2;
         int dy = cy + (int)(orbit_r * sinf(angle_rad)) - dot_size / 2;

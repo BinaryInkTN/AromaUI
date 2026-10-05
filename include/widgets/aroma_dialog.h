@@ -16,7 +16,8 @@ typedef enum {
 
 typedef struct  AromaDialog AromaDialog;
 
-// Create dialog
+// Create dialog. Width and height are authored in dp and converted to
+// physical pixels by the active platform.
 AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char* message, int width, int height, AromaDialogType type);
 
 // Add action button

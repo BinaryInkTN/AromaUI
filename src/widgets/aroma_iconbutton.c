@@ -6,6 +6,7 @@
 #include "aroma_ui.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "aroma_dp.h"
 #include <string.h>
 #include <stddef.h>
 #ifdef __ANDROID__
@@ -14,6 +15,15 @@
 
 #define AROMA_ICON_TEXT_MAX 16
 #define AROMA_ICONBUTTON_LONG_PRESS_TIMEOUT_MS 500
+#define AROMA_ICONBUTTON_BORDER_WIDTH_DP 1
+
+#ifdef __ANDROID__
+static inline int iconbutton_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float iconbutton_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int iconbutton_dp(int dp) { return dp; }
+static inline float iconbutton_dp_f(float dp) { return dp; }
+#endif
 
 static long __iconbutton_press_elapsed_ms(const struct timespec *down,
                                           const struct timespec *up)
@@ -343,8 +353,10 @@ void aroma_iconbutton_draw(AromaNode *button_node, size_t window_id)
 
     if (btn->variant == ICON_BUTTON_OUTLINED)
     {
+        int ib_hair = iconbutton_dp(AROMA_ICONBUTTON_BORDER_WIDTH_DP);
+        if (ib_hair < 1) ib_hair = 1;
         gfx->draw_hollow_rectangle(window_id, btn->rect.x, btn->rect.y, btn->rect.width, btn->rect.height,
-                                   btn->border_color, 1, true, btn->corner_radius);
+                                   btn->border_color, ib_hair, true, btn->corner_radius);
     }
 
     if (btn->font && btn->icon_text[0] && gfx->render_text)

@@ -26,12 +26,26 @@
 #include "aroma_ui.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "aroma_dp.h"
 #include <string.h>
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_TOOLTIP_TEXT_MAX 128
+#define AROMA_TOOLTIP_WIDTH_DP 140
+#define AROMA_TOOLTIP_HEIGHT_DP 32
+#define AROMA_TOOLTIP_CORNER_RADIUS_DP 6
+#define AROMA_TOOLTIP_PADDING_X_DP 8
+#define AROMA_TOOLTIP_TEXT_Y_OFFSET_DP 20
+
+#ifdef __ANDROID__
+static inline int tooltip_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float tooltip_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int tooltip_dp(int dp) { return dp; }
+static inline float tooltip_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct   AromaTooltip {
     AromaRect rect;
@@ -62,14 +76,14 @@ y = aroma_android_dp_to_px(y);
     memset(tip, 0, sizeof(AromaTooltip));
     tip->rect.x = x;
     tip->rect.y = y;
-    tip->rect.width = 140;
-    tip->rect.height = 32;
+    tip->rect.width = tooltip_dp(AROMA_TOOLTIP_WIDTH_DP);
+    tip->rect.height = tooltip_dp(AROMA_TOOLTIP_HEIGHT_DP);
     tip->position = position;
     tip->visible = false;
     strncpy(tip->text, text, AROMA_TOOLTIP_TEXT_MAX - 1);
     tip->text[AROMA_TOOLTIP_TEXT_MAX - 1] = '\0';
     AromaTheme theme = aroma_theme_get_global();
-    tip->corner_radius = 6.0f;
+    tip->corner_radius = tooltip_dp_f((float)AROMA_TOOLTIP_CORNER_RADIUS_DP);
     tip->text_scale = 1.0f;
     tip->bg_color = aroma_color_adjust(theme.colors.text_primary, -0.6f);
     tip->use_theme_colors = true;
@@ -142,7 +156,7 @@ void aroma_tooltip_draw(AromaNode* tooltip_node, size_t window_id)
                         tip->bg_color, true, tip->corner_radius);
 
     if (tip->font && gfx->render_text) {
-        gfx->render_text(window_id, tip->font, tip->text, tip->rect.x + 8, tip->rect.y + 20, theme.colors.surface, tip->text_scale);
+        gfx->render_text(window_id, tip->font, tip->text, tip->rect.x + tooltip_dp(AROMA_TOOLTIP_PADDING_X_DP), tip->rect.y + tooltip_dp(AROMA_TOOLTIP_TEXT_Y_OFFSET_DP), theme.colors.surface, tip->text_scale);
     }
 }
 

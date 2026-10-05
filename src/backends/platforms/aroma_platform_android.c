@@ -46,6 +46,8 @@
 #endif
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
+#include "core/aroma_timer.h"
+#include "core/aroma_time.h"
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 #include "widgets/aroma_window.h"
@@ -91,16 +93,26 @@ static void update_surface_size(void);
 static AChoreographer *g_choreographer = NULL;
 static bool g_frame_requested = false;
 static bool g_frame_needed = false;
+static int g_avail_width = 0;
+static int g_avail_height = 0;
+
+static void get_layout_viewport(int *width, int *height)
+{
+    *width = g_width;
+    *height = g_height;
+}
 
 static void choreographer_callback(long frameTimeNanos, void *data)
 {
     (void)data;
+    (void)frameTimeNanos;
     g_frame_requested = false;
 
     if (!g_has_window || !g_update_callback)
         return;
 
     update_surface_size();
+    aroma_timer_tick(aroma_time_now_ms());
 
     extern AromaWindowHandle g_windows[];
     extern int g_window_count;
@@ -131,8 +143,6 @@ static void request_frame(void)
         g_frame_requested = true;
     }
 }
-static int g_avail_width = 0;
-static int g_avail_height = 0;
 static float g_density = 1.0f;
 static int g_density_dpi = 160;
 static float g_scaled_density = 1.0f;
@@ -1497,6 +1507,21 @@ static int px_to_sp(int px)
     return (int)(px / g_scaled_density + 0.5f);
 }
 
+static float dp_to_px_f(float dp)
+{
+    return dp * g_density;
+}
+
+static float sp_to_px_f(float sp)
+{
+    return sp * g_scaled_density;
+}
+
+static float px_to_dp_f(float px)
+{
+    return px / g_density;
+}
+
 static void get_available_size_dp(int *width_dp, int *height_dp)
 {
     *width_dp = px_to_dp(g_avail_width);
@@ -1592,6 +1617,33 @@ static int android_px_to_sp(int px)
         cache_physical_screen_info(g_app);
     }
     return px_to_sp(px);
+}
+
+static float android_dp_to_px_f(float dp)
+{
+    if (!g_phys_cached && g_app)
+    {
+        cache_physical_screen_info(g_app);
+    }
+    return dp_to_px_f(dp);
+}
+
+static float android_sp_to_px_f(float sp)
+{
+    if (!g_phys_cached && g_app)
+    {
+        cache_physical_screen_info(g_app);
+    }
+    return sp_to_px_f(sp);
+}
+
+static float android_px_to_dp_f(float px)
+{
+    if (!g_phys_cached && g_app)
+    {
+        cache_physical_screen_info(g_app);
+    }
+    return px_to_dp_f(px);
 }
 
 static void android_get_available_size_dp(int *width_dp, int *height_dp)
@@ -1837,16 +1889,30 @@ static void update_surface_size(void)
     g_width = w;
     g_height = h;
 
+    /* Display size / font scale can change without a process restart
+     * (configChanges covers density|screenLayout). Metrics are cached
+     * once at startup, so refresh them here: otherwise dp/sp conversions
+     * and available-dp geometry stay stale and rendering is no longer
+     * DPI aware after the change. */
+    g_phys_cached = false;
+    cache_physical_screen_info(g_app);
+
     if (!g_using_vulkan)
         glViewport(0, 0, g_width, g_height);
+
+    int viewport_width = 0;
+    int viewport_height = 0;
+    get_layout_viewport(&viewport_width, &viewport_height);
 
     extern AromaWindowHandle g_windows[AROMA_MAX_WINDOWS];
     for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
     {
         if (g_windows[i].root_node)
         {
-            AromaEvent *resize_event = aroma_event_create_resize(g_windows[i].root_node->node_id, g_width, g_height);
-            LOG_INFO("Updating layout for window %d size: %dx%d", i, g_width, g_height);
+            AromaEvent *resize_event = aroma_event_create_resize(
+                g_windows[i].root_node->node_id, viewport_width, viewport_height);
+            LOG_INFO("Updating layout for window %d size: %dx%d",
+                     i, viewport_width, viewport_height);
             aroma_event_dispatch(resize_event);
         }
     }
@@ -2355,14 +2421,26 @@ void set_window_update_callback(void (*callback)(size_t, void *), void *data)
 
 void get_window_size(size_t window_id, int *window_width, int *window_height)
 {
+    (void)window_id;
     if (!g_has_window)
     {
         *window_width = 0;
         *window_height = 0;
         return;
     }
-    *window_width = g_width;
-    *window_height = g_height;
+
+    /*
+     * The native surface can include the system navigation area when the
+     * activity uses an edge-to-edge window. Layouts must use the available
+     * application area instead, while rendering still clears the complete
+     * surface so the excluded area stays blank.
+     */
+    int viewport_width = 0;
+    int viewport_height = 0;
+    get_layout_viewport(&viewport_width, &viewport_height);
+
+    *window_width = viewport_width;
+    *window_height = viewport_height;
 }
 
 void set_fullscreen(size_t window_id, bool enabled)
@@ -7780,6 +7858,9 @@ AromaPlatformInterface aroma_platform_android = {
     .android_px_to_dp = android_px_to_dp,
     .android_sp_to_px = android_sp_to_px,
     .android_px_to_sp = android_px_to_sp,
+    .android_dp_to_px_f = android_dp_to_px_f,
+    .android_sp_to_px_f = android_sp_to_px_f,
+    .android_px_to_dp_f = android_px_to_dp_f,
     .android_get_available_size_dp = android_get_available_size_dp,
     .android_get_screen_size_inches = android_get_screen_size_inches,
     .android_get_screen_diagonal_inches = android_get_screen_diagonal_inches,

@@ -7,10 +7,24 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "widgets/aroma_container.h"
+#include "aroma_dp.h"
 #include <stdlib.h>
 #include <string.h>
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#define AROMA_SLIDER_TRACK_HEIGHT_DP 4
+#define AROMA_SLIDER_TRACK_RADIUS_DP 4
+#define AROMA_SLIDER_THUMB_SIZE_DP 28
+#define AROMA_SLIDER_THUMB_RADIUS_DP 4
+
+#ifdef __ANDROID__
+static inline int slider_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float slider_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int slider_dp(int dp) { return dp; }
+static inline float slider_dp_f(float dp) { return dp; }
 #endif
 
 static void __slider_request_redraw(void* user_data)
@@ -61,10 +75,10 @@ height = aroma_android_dp_to_px(height);
     data->on_change = NULL;
     data->user_data = NULL;
 
-    data->track_height = 4;
-    data->track_corner_radius = 4.0f;
-    data->thumb_size = 28;
-    data->thumb_corner_radius = 4.0f;
+    data->track_height = slider_dp(AROMA_SLIDER_TRACK_HEIGHT_DP);
+    data->track_corner_radius = slider_dp_f((float)AROMA_SLIDER_TRACK_RADIUS_DP);
+    data->thumb_size = slider_dp(AROMA_SLIDER_THUMB_SIZE_DP);
+    data->thumb_corner_radius = slider_dp_f((float)AROMA_SLIDER_THUMB_RADIUS_DP);
     data->thumb_border_color = 0x333333;
     data->thumb_x = 0;
 
@@ -209,7 +223,7 @@ void aroma_slider_draw(AromaNode* node, size_t window_id)
     gfx->fill_rectangle(window_id, data->thumb_x - td / 2, tcy - td / 2, td, td,
                        thumb_color, true, trad);
     gfx->draw_hollow_rectangle(window_id, data->thumb_x - td / 2, tcy - td / 2, td, td,
-                              data->thumb_border_color, 1, true, trad);
+                              data->thumb_border_color, slider_dp(1) < 1 ? 1 : slider_dp(1), true, trad);
 }
 
 void aroma_slider_destroy(AromaNode* node)

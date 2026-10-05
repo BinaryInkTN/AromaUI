@@ -9,12 +9,26 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_RADIO_LABEL_MAX 64
 #define AROMA_RADIO_GROUP_MAX_ITEMS 32
+#define AROMA_RADIO_PADDING_DP 8
+#define AROMA_RADIO_MIN_DIAMETER_DP 16
+#define AROMA_RADIO_INNER_INSET_DP 8
+#define AROMA_RADIO_TEXT_GAP_DP 10
+#define AROMA_RADIO_BORDER_WIDTH_DP 1
+
+#ifdef __ANDROID__
+static inline int radio_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float radio_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int radio_dp(int dp) { return dp; }
+static inline float radio_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct   AromaRadioButton AromaRadioButton;
 
@@ -143,17 +157,17 @@ static void __radio_group_deselect_others(AromaRadioGroup* group, AromaRadioButt
 
 static void __radiobutton_update_layout(AromaRadioButton* data)
 {
-    int diameter = data->rect.height - 8;
-    if (diameter < 16) diameter = 16;
+    int diameter = data->rect.height - radio_dp(AROMA_RADIO_PADDING_DP);
+    if (diameter < radio_dp(AROMA_RADIO_MIN_DIAMETER_DP)) diameter = radio_dp(AROMA_RADIO_MIN_DIAMETER_DP);
     data->circle_diameter = diameter;
     data->circle_x = data->rect.x;
     data->circle_y = data->rect.y + (data->rect.height - diameter) / 2;
     data->circle_radius = (float)diameter / 2.0f;
-    data->inner_diameter = diameter - 8;
+    data->inner_diameter = diameter - radio_dp(AROMA_RADIO_INNER_INSET_DP);
     data->inner_x = data->circle_x + (diameter - data->inner_diameter) / 2;
     data->inner_y = data->circle_y + (diameter - data->inner_diameter) / 2;
     data->inner_radius = (float)data->inner_diameter / 2.0f;
-    data->text_x = data->circle_x + diameter + 10;
+    data->text_x = data->circle_x + diameter + radio_dp(AROMA_RADIO_TEXT_GAP_DP);
     int font_h = aroma_font_get_line_height(data->font);
 
     data->text_y =
@@ -364,8 +378,10 @@ if (data->use_theme_colors) {
 
     gfx->fill_rectangle(window_id, data->circle_x, data->circle_y, data->circle_diameter, data->circle_diameter,
                         data->background_color, true, data->circle_radius);
+    int radio_hair = radio_dp(AROMA_RADIO_BORDER_WIDTH_DP);
+    if (radio_hair < 1) radio_hair = 1;
     gfx->draw_hollow_rectangle(window_id, data->circle_x, data->circle_y, data->circle_diameter, data->circle_diameter,
-                               ring_color, 1.0f, true, data->circle_radius);
+                               ring_color, (float)radio_hair, true, data->circle_radius);
 
     if (data->is_selected) {
         gfx->fill_rectangle(window_id, data->inner_x, data->inner_y, data->inner_diameter, data->inner_diameter,

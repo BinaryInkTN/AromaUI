@@ -7,9 +7,18 @@
 #include "aroma_timer.h"
 #include "aroma_time.h"
 #include "backends/graphics/utils/stb_image.h"
+#include "aroma_dp.h"
 #include <string.h>
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#ifdef __ANDROID__
+static inline int gif_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float gif_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int gif_dp(int dp) { return dp; }
+static inline float gif_dp_f(float dp) { return dp; }
 #endif
 
 typedef struct   AromaGif {
@@ -119,6 +128,13 @@ void aroma_gif_draw(AromaNode* gif_node, size_t window_id) {
 AromaNode* aroma_gif_create_from_memory(AromaNode* parent, unsigned char* data, size_t data_size, int x, int y, int width, int height) {
     if (!parent || !data || data_size == 0) return NULL;
 
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    if (width > 0) width = aroma_android_dp_to_px(width);
+    if (height > 0) height = aroma_android_dp_to_px(height);
+#endif
+
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->load_image_from_rgba) {
         LOG_ERROR("Graphics interface does not support RGB frame uploading");
@@ -182,12 +198,7 @@ AromaNode* aroma_gif_create_from_memory(AromaNode* parent, unsigned char* data, 
 AromaNode* aroma_gif_create(AromaNode* parent, const char* gif_path, int x, int y, int width, int height) {
     if (!parent || !gif_path) return NULL;
 
-#ifdef __ANDROID__
-x = aroma_android_dp_to_px(x);
-y = aroma_android_dp_to_px(y);
-width = aroma_android_dp_to_px(width);
-height = aroma_android_dp_to_px(height);
-#endif
+    /* Geometry is scaled once in aroma_gif_create_from_memory below. */
 
 
     FILE* f = fopen(gif_path, "rb");

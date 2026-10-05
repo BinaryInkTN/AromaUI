@@ -29,6 +29,7 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include "core/aroma_common.h"
+#include "aroma_dp.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -44,6 +45,14 @@
 #endif
 
 #define AROMA_IMAGE_PATH_MAX 1024
+
+#ifdef __ANDROID__
+static inline int image_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float image_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int image_dp(int dp) { return dp; }
+static inline float image_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct   AromaImage {
     AromaRect rect;
@@ -527,6 +536,13 @@ AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data
         return NULL;
     }
 
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+#endif
+
     AromaImage* image = (AromaImage*)aroma_widget_alloc(sizeof(AromaImage));
     if (!image) {
         LOG_ERROR("Failed to allocate memory for image widget");
@@ -577,6 +593,13 @@ AromaNode* aroma_image_create_from_texture(AromaNode* parent, unsigned int textu
         LOG_ERROR("Invalid parameters for texture image widget");
         return NULL;
     }
+
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    width = aroma_android_dp_to_px(width);
+    height = aroma_android_dp_to_px(height);
+#endif
 
     AromaImage* image = (AromaImage*)aroma_widget_alloc(sizeof(AromaImage));
     if (!image) {

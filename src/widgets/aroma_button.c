@@ -11,6 +11,7 @@
 #include "widgets/aroma_container.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_logger.h"
+#include "aroma_dp.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -127,7 +128,7 @@ AromaNode *aroma_button_create(AromaNode *parent, const char *label, int x, int 
     button->type = BUTTON_TYPE_FILLED;
     button->font = NULL;
 
-    button->corner_radius = 12.0f;
+    button->corner_radius = AROMA_DP(12.0f);
     button->shadow_color = 0x22222222;
     button->text_scale = 1.0f;
 
@@ -141,7 +142,7 @@ AromaNode *aroma_button_create(AromaNode *parent, const char *label, int x, int 
 
     button->icon[0] = '\0';
     button->icon_font = NULL;
-    button->icon_padding = 5;
+    button->icon_padding = AROMA_DP_I(5);
     button->active_pointer_id = -1;
     aroma_button_update_text_position(button);
 
@@ -255,7 +256,7 @@ static void __aroma_button_autosize(AromaButton *button)
 
     if (content_width > 0)
     {
-        button->rect.width = content_width + 24;
+        button->rect.width = content_width + AROMA_DP_I(24);
     }
 }
 
@@ -434,14 +435,14 @@ static void aroma_button_apply_type_theme(AromaButton *button)
         button->idle_color = theme.colors.primary_light;
         button->hover_color = theme.colors.primary_light;
         button->pressed_color = aroma_color_adjust(theme.colors.primary_light, -0.12f);
-        button->text_color = theme.colors.primary_dark;
+        button->text_color = theme.colors.primary;
         button->shadow_color = 0;
         break;
     case BUTTON_TYPE_OUTLINED:
     case BUTTON_TYPE_TEXT:
-        button->idle_color = theme.colors.primary;
-        button->hover_color = theme.colors.primary;
-        button->pressed_color = aroma_color_blend(theme.colors.primary, theme.colors.surface, 0.82f);
+        button->idle_color = theme.colors.surface;
+        button->hover_color = aroma_color_blend(theme.colors.surface, theme.colors.primary, 0.12f);
+        button->pressed_color = aroma_color_blend(theme.colors.surface, theme.colors.primary, 0.20f);
         button->text_color = theme.colors.primary;
         button->shadow_color = 0;
         break;
@@ -516,8 +517,8 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
     {
         gfx->fill_rectangle(
             window_id,
-            button->rect.x + 1,
-            button->rect.y + 2,
+            button->rect.x + (int)AROMA_DP(1),
+            button->rect.y + (int)AROMA_DP(2),
             button->rect.width,
             button->rect.height,
             button->shadow_color,
@@ -547,7 +548,7 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
             button->rect.width,
             button->rect.height,
             button->idle_color,
-            1,
+            (int)AROMA_DP(1) < 1 ? 1 : (int)AROMA_DP(1),
             true,
             button->corner_radius);
     }
@@ -556,7 +557,7 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
         if (gfx->render_text)
         {
 
-            const int padding = 6;
+            const int padding = AROMA_DP_I(6);
 
             float icon_scale = button->text_scale;
             float icon_w = 0;

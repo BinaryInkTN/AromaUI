@@ -7,6 +7,7 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_dp.h"
 #include <limits.h>
 
 #ifdef __ANDROID__
@@ -14,12 +15,22 @@
 #endif
 
 #define AROMA_SNACKBAR_TEXT_MAX 128
-#define SNACKBAR_HEIGHT 48
-#define SNACKBAR_MARGIN 16
-#define SNACKBAR_PADDING_H 16
-#define SNACKBAR_CORNER_RADIUS 4
-#define SNACKBAR_MIN_WIDTH 320
-#define SNACKBAR_MAX_WIDTH 544
+/* Authored in dp; scaled to px via helpers below. */
+#define SNACKBAR_HEIGHT_DP 48
+#define SNACKBAR_MARGIN_DP 16
+#define SNACKBAR_PADDING_H_DP 16
+#define SNACKBAR_CORNER_RADIUS_DP 4
+#define SNACKBAR_MIN_WIDTH_DP 320
+#define SNACKBAR_MAX_WIDTH_DP 544
+#define SNACKBAR_ACTION_GAP_DP 24
+
+#ifdef __ANDROID__
+static inline int sb_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float sb_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int sb_dp(int dp) { return dp; }
+static inline float sb_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct AromaSnackbar
 {
@@ -81,26 +92,26 @@ static void __calculate_snackbar_size(AromaSnackbar *bar, size_t window_id)
     {
         int msg_width = aroma_font_get_line_width(bar->font, bar->message);
         int action_width = bar->action_label[0]
-                               ? aroma_font_get_line_width(bar->font, bar->action_label) + 24
+                               ? aroma_font_get_line_width(bar->font, bar->action_label) + sb_dp(SNACKBAR_ACTION_GAP_DP)
                                : 0;
-        bar->rect.width = SNACKBAR_PADDING_H * 2 + msg_width + action_width;
+        bar->rect.width = sb_dp(SNACKBAR_PADDING_H_DP) * 2 + msg_width + action_width;
     }
     else
     {
-        bar->rect.width = SNACKBAR_MIN_WIDTH;
+        bar->rect.width = sb_dp(SNACKBAR_MIN_WIDTH_DP);
     }
 
-    if (bar->rect.width < SNACKBAR_MIN_WIDTH)
-        bar->rect.width = SNACKBAR_MIN_WIDTH;
-    if (bar->rect.width > SNACKBAR_MAX_WIDTH)
-        bar->rect.width = SNACKBAR_MAX_WIDTH;
+    if (bar->rect.width < sb_dp(SNACKBAR_MIN_WIDTH_DP))
+        bar->rect.width = sb_dp(SNACKBAR_MIN_WIDTH_DP);
+    if (bar->rect.width > sb_dp(SNACKBAR_MAX_WIDTH_DP))
+        bar->rect.width = sb_dp(SNACKBAR_MAX_WIDTH_DP);
 
-    bar->rect.height = SNACKBAR_HEIGHT;
+    bar->rect.height = sb_dp(SNACKBAR_HEIGHT_DP);
     
     if (!bar->has_base_position)
     {
         bar->base_x = (win_w - bar->rect.width) / 2;
-        bar->base_y = win_h - bar->rect.height - SNACKBAR_MARGIN;
+        bar->base_y = win_h - bar->rect.height - sb_dp(SNACKBAR_MARGIN_DP);
         bar->has_base_position = true;
     }
     
@@ -155,14 +166,14 @@ void aroma_snackbar_draw(AromaNode *snackbar_node, size_t window_id)
         int text_y = bar->rect.y + (bar->rect.height - line_h) / 2;
 
         gfx->render_text(window_id, bar->font, bar->message,
-                         bar->rect.x + SNACKBAR_PADDING_H, text_y,
+                         bar->rect.x + sb_dp(SNACKBAR_PADDING_H_DP), text_y,
                          bar->text_color, bar->text_scale);
 
         if (bar->action_label[0])
         {
             int action_text_width = aroma_font_get_line_width(bar->font, bar->action_label);
             gfx->render_text(window_id, bar->font, bar->action_label,
-                             bar->rect.x + bar->rect.width - action_text_width - SNACKBAR_PADDING_H,
+                             bar->rect.x + bar->rect.width - action_text_width - sb_dp(SNACKBAR_PADDING_H_DP),
                              text_y,
                              bar->action_color, bar->text_scale);
         }
@@ -179,7 +190,7 @@ AromaNode *aroma_snackbar_create(AromaNode *parent, const char *message, int dur
         return NULL;
     memset(bar, 0, sizeof(AromaSnackbar));
 
-    bar->corner_radius = (float)SNACKBAR_CORNER_RADIUS;
+    bar->corner_radius = sb_dp_f((float)SNACKBAR_CORNER_RADIUS_DP);
     bar->text_scale = 1.0f;
     bar->visible = false;
     bar->active_pointer_id = -1;
@@ -341,7 +352,7 @@ static bool __snackbar_default_mouse_handler(AromaEvent* event, void* user_data)
 
     if (bar->action_label[0] && bar->action_callback)
     {
-        int action_width = aroma_font_get_line_width(bar->font, bar->action_label) + 24;
+        int action_width = aroma_font_get_line_width(bar->font, bar->action_label) + sb_dp(SNACKBAR_ACTION_GAP_DP);
         if (x >= bar->rect.x + bar->rect.width - action_width)
         {
             bar->action_callback(bar->user_data);

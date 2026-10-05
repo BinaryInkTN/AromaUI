@@ -8,11 +8,20 @@
 #include "aroma_3d.h"
 #include "aroma_event.h"
 #include "aroma_timer.h"
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 #include <string.h>
 #include <math.h>
+
+#ifdef __ANDROID__
+static inline int viewer3d_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float viewer3d_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int viewer3d_dp(int dp) { return dp; }
+static inline float viewer3d_dp_f(float dp) { return dp; }
+#endif
 
 struct Aroma3DViewer
 {

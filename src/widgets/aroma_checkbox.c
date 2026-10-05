@@ -7,6 +7,7 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "widgets/aroma_container.h"
+#include "aroma_dp.h"
 #include <stdlib.h>
 #include <string.h>
 #ifdef __ANDROID__
@@ -14,6 +15,24 @@
 #endif
 
 #define AROMA_CHECKBOX_LABEL_MAX 64
+#define AROMA_CHECKBOX_PADDING_DP 8
+#define AROMA_CHECKBOX_MIN_BOX_DP 16
+#define AROMA_CHECKBOX_CORNER_RADIUS_DP 4
+#define AROMA_CHECKBOX_INNER_INSET_DP 3
+#define AROMA_CHECKBOX_INNER_SHRINK_DP 6
+#define AROMA_CHECKBOX_CHECK_INSET_DP 4
+#define AROMA_CHECKBOX_CHECK_SHRINK_DP 8
+#define AROMA_CHECKBOX_INNER_RADIUS_DP 3
+#define AROMA_CHECKBOX_CHECK_THICKNESS_MIN_DP 2
+#define AROMA_CHECKBOX_BORDER_WIDTH_DP 1
+
+#ifdef __ANDROID__
+static inline int checkbox_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float checkbox_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int checkbox_dp(int dp) { return dp; }
+static inline float checkbox_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct  AromaCheckbox {
     AromaRect rect;
@@ -60,9 +79,9 @@ bool aroma_checkbox_get_state(AromaNode* node);
 
 static void __checkbox_update_layout(AromaCheckbox* checkbox)
 {
-    const int padding = 8;
+    const int padding = checkbox_dp(AROMA_CHECKBOX_PADDING_DP);
     checkbox->box_size = checkbox->rect.height - padding;
-    if (checkbox->box_size < 16) checkbox->box_size = 16;
+    if (checkbox->box_size < checkbox_dp(AROMA_CHECKBOX_MIN_BOX_DP)) checkbox->box_size = checkbox_dp(AROMA_CHECKBOX_MIN_BOX_DP);
     if (checkbox->box_size > checkbox->rect.height) checkbox->box_size = checkbox->rect.height;
     checkbox->box_offset_x = 0;
     checkbox->box_offset_y = (checkbox->rect.height - checkbox->box_size) / 2;
@@ -106,7 +125,7 @@ AromaNode* aroma_checkbox_create(AromaNode* parent, const char* label,
     data->check_color = theme.colors.primary;
     data->hover_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.12f);
     data->text_color = theme.colors.text_primary;
-    data->border_radius = 4.0f;
+    data->border_radius = checkbox_dp_f((float)AROMA_CHECKBOX_CORNER_RADIUS_DP);
     data->use_theme_colors = true;
     data->font = NULL;
     data->on_change = NULL;
@@ -209,7 +228,8 @@ static void __checkbox_draw_checkmark(AromaGraphicsInterface* gfx, size_t window
         return;
     }
     float thickness = (float)size / 7.0f;
-    if (thickness < 2.0f) thickness = 2.0f;
+    float min_thick = checkbox_dp_f((float)AROMA_CHECKBOX_CHECK_THICKNESS_MIN_DP);
+    if (thickness < min_thick) thickness = min_thick;
     int start_x = x + size / 4;
     int start_y = y + size / 2;
     int mid_x = x + size / 2;
@@ -250,14 +270,20 @@ if (data->use_theme_colors) {
 
     gfx->fill_rectangle(window_id, box_x, box_y, data->box_size, data->box_size,
                         base_color, true, data->border_radius);
+    int cb_hair = checkbox_dp(AROMA_CHECKBOX_BORDER_WIDTH_DP);
+    if (cb_hair < 1) cb_hair = 1;
     gfx->draw_hollow_rectangle(window_id, box_x, box_y, data->box_size, data->box_size,
-                               border_color, 1.0f, true, data->border_radius);
+                               border_color, (float)cb_hair, true, data->border_radius);
 
     if (data->checked) {
         uint32_t fill = data->check_color;
-        gfx->fill_rectangle(window_id, box_x + 3, box_y + 3, data->box_size - 6, data->box_size - 6,
-                            __checkbox_lighten(fill, 0.12f), true, 3.0f);
-        __checkbox_draw_checkmark(gfx, window_id, box_x + 4, box_y + 4, data->box_size - 8, fill);
+        int cb_in = checkbox_dp(AROMA_CHECKBOX_INNER_INSET_DP);
+        int cb_shrink = checkbox_dp(AROMA_CHECKBOX_INNER_SHRINK_DP);
+        int cb_check_in = checkbox_dp(AROMA_CHECKBOX_CHECK_INSET_DP);
+        int cb_check_shrink = checkbox_dp(AROMA_CHECKBOX_CHECK_SHRINK_DP);
+        gfx->fill_rectangle(window_id, box_x + cb_in, box_y + cb_in, data->box_size - cb_shrink, data->box_size - cb_shrink,
+                            __checkbox_lighten(fill, 0.12f), true, checkbox_dp_f((float)AROMA_CHECKBOX_INNER_RADIUS_DP));
+        __checkbox_draw_checkmark(gfx, window_id, box_x + cb_check_in, box_y + cb_check_in, data->box_size - cb_check_shrink, fill);
     }
 
     if (data->font && data->label[0] != '\0' && gfx->render_text) {

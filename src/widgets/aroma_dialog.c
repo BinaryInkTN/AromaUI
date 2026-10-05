@@ -9,11 +9,35 @@
 #include "backends/platforms/aroma_platform_interface.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_DIALOG_ACTION_MAX 3
+#define AROMA_DIALOG_PADDING_DP 16
+#define AROMA_DIALOG_BUTTON_HEIGHT_DP 36
+#define AROMA_DIALOG_BUTTON_EXTRA_DP 24
+#define AROMA_DIALOG_SPACING_DP 8
+#define AROMA_DIALOG_TEXT_W_DP 48
+#define AROMA_DIALOG_BUTTON_MIN_W_DP 64
+#define AROMA_DIALOG_CONTENT_Y_DP 72
+#define AROMA_DIALOG_CORNER_RADIUS_DP 12
+#define AROMA_DIALOG_BUTTON_RADIUS_DP 8
+#define AROMA_DIALOG_TITLE_X_DP 16
+#define AROMA_DIALOG_TITLE_Y_DP 22
+#define AROMA_DIALOG_GAP_SMALL_DP 10
+#define AROMA_DIALOG_GAP_MED_DP 12
+#define AROMA_DIALOG_MESSAGE_W_DP 32
+#define AROMA_DIALOG_FONT_H_DP 20
+
+#ifdef __ANDROID__
+static inline int dialog_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float dialog_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int dialog_dp(int dp) { return dp; }
+static inline float dialog_dp_f(float dp) { return dp; }
+#endif
 
 typedef struct
 {
@@ -25,6 +49,9 @@ typedef struct
 typedef struct AromaDialog
 {
     AromaRect rect;
+    AromaNode *parent_node;
+    int width_dp;
+    int height_dp;
     int centered_x;
     int centered_y;
 
@@ -57,8 +84,51 @@ static void __dialog_request_redraw(void *user_data)
 
 static void __dialog_update_rect(AromaDialog *dlg)
 {
+    if (!dlg)
+        return;
+
+    int width = dialog_dp(dlg->width_dp);
+    int height = dialog_dp(dlg->height_dp);
+    if (width < 1)
+        width = 1;
+    if (height < 1)
+        height = 1;
+
+    int win_w = 0;
+    int win_h = 0;
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->get_window_size)
+        platform->get_window_size(0, &win_w, &win_h);
+
+    if (win_w > 0 && win_h > 0)
+    {
+        dlg->centered_x = (win_w - width) / 2;
+        dlg->centered_y = (win_h - height) / 2;
+    }
+    else if (dlg->parent_node)
+    {
+        AromaRect *pr = aroma_node_get_rect(dlg->parent_node);
+        if (pr && pr->width > 0 && pr->height > 0)
+        {
+            dlg->centered_x = pr->x + (pr->width - width) / 2;
+            dlg->centered_y = pr->y + (pr->height - height) / 2;
+        }
+        else
+        {
+            dlg->centered_x = 0;
+            dlg->centered_y = 0;
+        }
+    }
+    else
+    {
+        dlg->centered_x = 0;
+        dlg->centered_y = 0;
+    }
+
     dlg->rect.x = dlg->centered_x;
     dlg->rect.y = dlg->centered_y;
+    dlg->rect.width = width;
+    dlg->rect.height = height;
 }
 
 static void __dialog_recompute_action_layout(AromaDialog *dlg, AromaGraphicsInterface *gfx, size_t window_id)
@@ -66,19 +136,19 @@ static void __dialog_recompute_action_layout(AromaDialog *dlg, AromaGraphicsInte
     if (!dlg)
         return;
 
-    const int padding = 16;
-    int button_height = 36;
+    const int padding = dialog_dp(AROMA_DIALOG_PADDING_DP);
+    int button_height = dialog_dp(AROMA_DIALOG_BUTTON_HEIGHT_DP);
 
     if (dlg->font)
     {
         int font_h = aroma_font_get_line_height(dlg->font);
-        if (font_h > 20)
+        if (font_h > dialog_dp(AROMA_DIALOG_FONT_H_DP))
         {
-            button_height = font_h + 24;
+            button_height = font_h + dialog_dp(AROMA_DIALOG_BUTTON_EXTRA_DP);
         }
     }
 
-    const int spacing = 8;
+    const int spacing = dialog_dp(AROMA_DIALOG_SPACING_DP);
 
     dlg->action_button_height = button_height;
     dlg->action_button_spacing = spacing;
@@ -87,15 +157,16 @@ static void __dialog_recompute_action_layout(AromaDialog *dlg, AromaGraphicsInte
 
     for (size_t i = 0; i < dlg->action_count; i++)
     {
-        int text_w = 48;
+        int text_w = dialog_dp(AROMA_DIALOG_TEXT_W_DP);
         if (gfx && gfx->measure_text && dlg->font)
         {
             text_w = (int)gfx->measure_text(window_id, dlg->font, dlg->actions[i].label, 1.0f);
         }
 
-        int button_w = text_w + 24;
-        if (button_w < 64)
-            button_w = 64;
+        int button_w = text_w + dialog_dp(AROMA_DIALOG_BUTTON_EXTRA_DP);
+        int min_w = dialog_dp(AROMA_DIALOG_BUTTON_MIN_W_DP);
+        if (button_w < min_w)
+            button_w = min_w;
 
         dlg->action_button_text_widths[i] = text_w;
         dlg->action_button_widths[i] = button_w;
@@ -185,18 +256,15 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
 {
     if (!parent || width <= 0 || height <= 0)
         return NULL;
-#ifdef __ANDROID__
-    width = aroma_android_dp_to_px(width);
-    height = aroma_android_dp_to_px(height);
-#endif
     AromaDialog *dlg = (AromaDialog *)aroma_widget_alloc(sizeof(AromaDialog));
     if (!dlg)
         return NULL;
 
     memset(dlg, 0, sizeof(AromaDialog));
 
-    dlg->rect.width = width;
-    dlg->rect.height = height;
+    dlg->parent_node = parent;
+    dlg->width_dp = width;
+    dlg->height_dp = height;
     dlg->type = type;
     dlg->visible = false;
 
@@ -208,33 +276,6 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
         strncpy(dlg->message, message, sizeof(dlg->message) - 1);
     if (message)
         dlg->message[sizeof(dlg->message) - 1] = '\0';
-
-    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
-    if (!platform)
-        return NULL;
-
-    int win_h = 0, win_w = 0;
-    if (platform->get_window_size)
-        platform->get_window_size(0, &win_w, &win_h);
-    if (win_w > 0 && win_h > 0) {
-        dlg->centered_x = (win_w - width) / 2;
-        dlg->centered_y = (win_h - height) / 2;
-    } else if (parent) {
-        AromaRect *pr = aroma_node_get_rect(parent);
-        if (pr && pr->width > 0 && pr->height > 0) {
-            dlg->centered_x = pr->x + (pr->width - width) / 2;
-            dlg->centered_y = pr->y + (pr->height - height) / 2;
-        } else {
-            dlg->centered_x = 0;
-            dlg->centered_y = 0;
-        }
-    } else {
-        dlg->centered_x = 0;
-        dlg->centered_y = 0;
-    }
-
-    dlg->rect.width = width;
-    dlg->rect.height = height;
 
     __dialog_update_rect(dlg);
 
@@ -253,16 +294,17 @@ AromaNode *aroma_dialog_create(AromaNode *parent, const char *title, const char 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, __dialog_handle_event, dlg, 100);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, __dialog_handle_event, dlg, 100);
 
-    const int padding = 16;
-    dlg->content_y_offset = 72;
-    int content_h = height - dlg->content_y_offset - padding - 36 - padding;
+    const int padding = dialog_dp(AROMA_DIALOG_PADDING_DP);
+    dlg->content_y_offset = dialog_dp(AROMA_DIALOG_CONTENT_Y_DP);
+    int content_h = dlg->rect.height - dlg->content_y_offset -
+                    padding - dialog_dp(AROMA_DIALOG_BUTTON_HEIGHT_DP) - padding;
     if (content_h < 0)
         content_h = 0;
     AromaNode *content = aroma_container_create(
         node,
         padding,
         dlg->content_y_offset,
-        width - padding * 2,
+        dlg->rect.width - padding * 2,
         content_h);
     dlg->content_node = content;
 
@@ -555,12 +597,12 @@ void aroma_dialog_draw(AromaNode *dialog_node, size_t window_id)
 
     if (dlg->content_node)
     {
-        const int padding = 16;
+        const int padding = dialog_dp(AROMA_DIALOG_PADDING_DP);
         aroma_container_set_rect(dlg->content_node,
                                  dlg->rect.x + padding,
                                  dlg->rect.y + dlg->content_y_offset,
                                  dlg->rect.width - padding * 2,
-                                 dlg->action_button_y - (dlg->rect.y + dlg->content_y_offset) - 8);
+                                 dlg->action_button_y - (dlg->rect.y + dlg->content_y_offset) - dialog_dp(AROMA_DIALOG_SPACING_DP));
     }
 
     AromaTheme theme = aroma_theme_get_global();
@@ -574,32 +616,35 @@ void aroma_dialog_draw(AromaNode *dialog_node, size_t window_id)
         if (win_w > 0 && win_h > 0)
             gfx->fill_rectangle(window_id, 0, 0, win_w, win_h, 0x80000000u, false, 0.0f);
     }
-    gfx->fill_rectangle(window_id, x, y, dlg->rect.width, dlg->rect.height, theme.colors.surface, true, 12.0f);
-    gfx->draw_hollow_rectangle(window_id, x, y, dlg->rect.width, dlg->rect.height, theme.colors.border, 1, true, 12.0f);
+    gfx->fill_rectangle(window_id, x, y, dlg->rect.width, dlg->rect.height, theme.colors.surface, true, dialog_dp_f((float)AROMA_DIALOG_CORNER_RADIUS_DP));
+    int hairline = dialog_dp(1);
+    if (hairline < 1) hairline = 1;
+    gfx->draw_hollow_rectangle(window_id, x, y, dlg->rect.width, dlg->rect.height, theme.colors.border, hairline, true, dialog_dp_f((float)AROMA_DIALOG_CORNER_RADIUS_DP));
 
     if (dlg->font && gfx->render_text)
     {
-        gfx->render_text(window_id, dlg->font, dlg->title, x + 16, y + 22, theme.colors.text_primary, 1.25f);
+        gfx->render_text(window_id, dlg->font, dlg->title, x + dialog_dp(AROMA_DIALOG_TITLE_X_DP), y + dialog_dp(AROMA_DIALOG_TITLE_Y_DP), theme.colors.text_primary, 1.25f);
         int line_h = aroma_font_get_line_height(dlg->font);
         if (line_h <= 0)
-            line_h = 20;
+            line_h = dialog_dp(AROMA_DIALOG_FONT_H_DP);
         int title_h = (line_h * 5) / 4;
-        int msg_top = y + 22 + title_h + 12;
-        int msg_bottom = dlg->action_button_y - 10;
+        int msg_top = y + dialog_dp(AROMA_DIALOG_TITLE_Y_DP) + title_h + dialog_dp(AROMA_DIALOG_GAP_MED_DP);
+        int msg_bottom = dlg->action_button_y - dialog_dp(AROMA_DIALOG_GAP_SMALL_DP);
         int max_lines = (msg_bottom > msg_top)
                             ? (msg_bottom - msg_top) / line_h
                             : 0;
         if (max_lines < 1)
             max_lines = 1;
-        int max_w = dlg->rect.width - 32;
-        if (max_w < 40)
-            max_w = 40;
+        int max_w = dlg->rect.width - dialog_dp(AROMA_DIALOG_MESSAGE_W_DP);
+        int min_w = dialog_dp(AROMA_DIALOG_MESSAGE_W_DP) + dialog_dp(AROMA_DIALOG_SPACING_DP);
+        if (max_w < min_w)
+            max_w = min_w;
         if (gfx->measure_text)
             dialog_draw_wrapped(gfx, window_id, dlg->font, dlg->message,
-                                x + 16, msg_top, max_w, line_h, max_lines,
+                                x + dialog_dp(AROMA_DIALOG_TITLE_X_DP), msg_top, max_w, line_h, max_lines,
                                 theme.colors.text_secondary);
         else
-            gfx->render_text(window_id, dlg->font, dlg->message, x + 16, msg_top,
+            gfx->render_text(window_id, dlg->font, dlg->message, x + dialog_dp(AROMA_DIALOG_TITLE_X_DP), msg_top,
                              theme.colors.text_secondary, 1.0f);
     }
 
@@ -610,14 +655,14 @@ void aroma_dialog_draw(AromaNode *dialog_node, size_t window_id)
         int bw = dlg->action_button_widths[i];
         int bh = dlg->action_button_height;
 
-        gfx->fill_rectangle(window_id, bx, by, bw, bh, theme.colors.primary_light, true, 8.0f);
-        gfx->draw_hollow_rectangle(window_id, bx, by, bw, bh, theme.colors.primary, 1, true, 8.0f);
+        gfx->fill_rectangle(window_id, bx, by, bw, bh, theme.colors.primary_light, true, dialog_dp_f((float)AROMA_DIALOG_BUTTON_RADIUS_DP));
+        gfx->draw_hollow_rectangle(window_id, bx, by, bw, bh, theme.colors.primary, hairline, true, dialog_dp_f((float)AROMA_DIALOG_BUTTON_RADIUS_DP));
 
         if (dlg->font && gfx->render_text)
         {
             int text_w = dlg->action_button_text_widths[i];
             if (text_w <= 0)
-                text_w = 48;
+                text_w = dialog_dp(AROMA_DIALOG_TEXT_W_DP);
             int text_x = bx + (bw - text_w) / 2;
             int line_h = aroma_font_get_line_height(dlg->font);
             int text_y = by + (bh - line_h) / 2;

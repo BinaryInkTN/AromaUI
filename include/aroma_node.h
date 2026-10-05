@@ -85,7 +85,13 @@ typedef struct   {
     int grid_row_gap;
     int grid_col_gap;
 
-    
+    /* Shrink-to-fit: original authored geometry (px) for absolute
+     * children, so narrow screens scale content down idempotently
+     * across layout passes, rotations and density changes. */
+    int _fit_ox;
+    int _fit_ow;
+    bool _fit_has;
+
     int _cache_x;
     int _cache_y;
 } AromaLayout;

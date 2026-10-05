@@ -12,11 +12,28 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
 #define AROMA_MAX_DROPDOWN_OVERLAYS 32
+#define AROMA_DROPDOWN_CORNER_RADIUS_DP 6
+#define AROMA_DROPDOWN_BG_RADIUS_DP 3
+#define AROMA_DROPDOWN_TEXT_PADDING_DP 10
+#define AROMA_DROPDOWN_BORDER_WIDTH_DP 1
+#define AROMA_DROPDOWN_SCROLLBAR_WIDTH_DP 6
+#define AROMA_DROPDOWN_THUMB_MIN_HEIGHT_DP 16
+#define AROMA_DROPDOWN_SCROLL_RADIUS_DP 3
+#define AROMA_DROPDOWN_TOUCH_SLOP_DP 8
+
+#ifdef __ANDROID__
+static inline int dropdown_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float dropdown_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int dropdown_dp(int dp) { return dp; }
+static inline float dropdown_dp_f(float dp) { return dp; }
+#endif
 
 static void __dropdown_request_redraw(void* user_data)
 {
@@ -71,7 +88,39 @@ static void __dropdown_unregister_overlay(AromaNode* node) {
             g_dropdown_overlay_count--;
             return;
         }
+
     }
+}
+
+static bool __dropdown_screen_rect(AromaNode *node, AromaDropdown *dd,
+                                   AromaRect *out)
+{
+    if (!node || !dd || !out)
+        return false;
+
+    *out = dd->rect;
+    AromaNode *cur = node->parent_node;
+    while (cur)
+    {
+        if (aroma_container_is_scrollable(cur))
+        {
+            int sx = 0;
+            int sy = 0;
+            aroma_container_get_scroll(cur, &sx, &sy);
+            out->x -= sx;
+            out->y -= sy;
+
+            AromaRect *viewport = aroma_node_get_rect(cur);
+            if (viewport &&
+                (out->x + out->width <= viewport->x ||
+                 out->x >= viewport->x + viewport->width ||
+                 out->y + out->height <= viewport->y ||
+                 out->y >= viewport->y + viewport->height))
+                return false;
+        }
+        cur = cur->parent_node;
+    }
+    return true;
 }
 
 AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int height) {
@@ -134,7 +183,7 @@ height = aroma_android_dp_to_px(height);
     dd->selected_bg_color = aroma_color_blend(theme.colors.surface, theme.colors.primary_light, 0.35f);
     dd->border_color = 0x222222;
     dd->use_theme_colors = true;
-    dd->corner_radius = 6.0f;
+    dd->corner_radius = dropdown_dp_f((float)AROMA_DROPDOWN_CORNER_RADIUS_DP);
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, dd);
     if (!node) {
@@ -441,8 +490,21 @@ static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
     AromaDropdown* dd = (AromaDropdown*)event->target_node->node_widget_ptr;
     if (!dd) return false;
 
+    /* Adjust touch coordinates for parent scroll containers (same as mouse handler). */
     int tx = event->data.touch.x;
     int ty = event->data.touch.y;
+    AromaNode *cur = event->target_node->parent_node;
+    while (cur)
+    {
+        if (cur->node_type == NODE_TYPE_CONTAINER && aroma_container_is_scrollable(cur))
+        {
+            int scroll_x = 0, scroll_y = 0;
+            aroma_container_get_scroll(cur, &scroll_x, &scroll_y);
+            tx += scroll_x;
+            ty += scroll_y;
+        }
+        cur = cur->parent_node;
+    }
     int option_height = (dd->rect.height > 0) ? dd->rect.height : 1;
     bool in_main = (tx >= dd->rect.x && tx <= dd->rect.x + dd->rect.width &&
                     ty >= dd->rect.y && ty <= dd->rect.y + dd->rect.height);
@@ -506,7 +568,7 @@ static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
                 if (user_data) __dropdown_request_redraw(user_data);
             }
             dd->touch_accum_dy -= rows * option_height;
-        } else if (dd->touch_accum_dy < -8 || dd->touch_accum_dy > 8) {
+        } else if (dd->touch_accum_dy < -dropdown_dp(AROMA_DROPDOWN_TOUCH_SLOP_DP) || dd->touch_accum_dy > dropdown_dp(AROMA_DROPDOWN_TOUCH_SLOP_DP)) {
             dd->touch_moved = true;
         }
         return true;
@@ -595,11 +657,13 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
     }
 
     uint32_t base_bg_color = dd->is_hovered ? dd->hover_bg_color : dd->list_bg_color;
-    gfx->fill_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, base_bg_color, true, 3.0f);
-    gfx->draw_hollow_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, dd->border_color, 1, true, dd->corner_radius);
+    gfx->fill_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, base_bg_color, true, dropdown_dp_f((float)AROMA_DROPDOWN_BG_RADIUS_DP));
+    int dd_hair = dropdown_dp(AROMA_DROPDOWN_BORDER_WIDTH_DP);
+    if (dd_hair < 1) dd_hair = 1;
+    gfx->draw_hollow_rectangle(window_id, dd->rect.x, dd->rect.y, dd->rect.width, dd->rect.height, dd->border_color, dd_hair, true, dd->corner_radius);
 
     if (dd->font && dd->selected_index >= 0 && dd->selected_index < dd->option_count && dd->options[dd->selected_index]) {
-        int text_x = dd->rect.x + 10;
+        int text_x = dd->rect.x + dropdown_dp(AROMA_DROPDOWN_TEXT_PADDING_DP);
         int line_height = aroma_font_get_line_height(dd->font);
         int baseline = dd->rect.y + (dd->rect.height - line_height) / 2;
         gfx->render_text(window_id, dd->font, dd->options[dd->selected_index], text_x, baseline, dd->text_color, 1.0f);
@@ -607,9 +671,27 @@ void aroma_dropdown_draw(AromaNode* dropdown_node, size_t window_id) {
 
     if (dd->is_expanded && dd->option_count > 0) {
         int option_height = dd->rect.height;
-        int list_x = dd->rect.x;
-        int list_y = __dropdown_list_top(dd, option_height, __dropdown_visible_rows(dd));
-        int list_height = option_height * __dropdown_visible_rows(dd);
+        AromaRect screen_rect;
+        if (!__dropdown_screen_rect(dropdown_node, dd, &screen_rect))
+        {
+            __dropdown_unregister_overlay(dropdown_node);
+            return;
+        }
+        int list_x = screen_rect.x;
+        int list_y = screen_rect.y + screen_rect.height;
+        int visible_rows = __dropdown_visible_rows(dd);
+        AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+        int win_h = 0;
+        int win_w = 0;
+        if (platform && platform->get_window_size)
+            platform->get_window_size(window_id, &win_w, &win_h);
+        if (win_h > 0 && list_y + option_height * visible_rows > win_h)
+        {
+            int above = screen_rect.y - option_height * visible_rows;
+            if (above >= 0)
+                list_y = above;
+        }
+        int list_height = option_height * visible_rows;
         __dropdown_register_overlay(dropdown_node, window_id, list_x, list_y, dd->rect.width, list_height);
     } else {
         __dropdown_unregister_overlay(dropdown_node);
@@ -653,19 +735,42 @@ void aroma_dropdown_render_overlays(size_t window_id) {
             g_dropdown_overlay_count--;
             continue;
         }
+        AromaRect screen_rect;
+        if (!__dropdown_screen_rect(node, dd, &screen_rect))
+        {
+            dd->is_expanded = false;
+            __dropdown_unregister_overlay(node);
+            aroma_node_invalidate(node);
+            continue;
+        }
         int option_height = dd->rect.height;
-        int list_x = entry.x;
-        int list_y = entry.y;
+        int visible = __dropdown_visible_rows(dd);
+        int list_x = screen_rect.x;
+        int list_y = screen_rect.y + screen_rect.height;
+        int win_w = 0;
+        int win_h = 0;
+        AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+        if (platform && platform->get_window_size)
+            platform->get_window_size(window_id, &win_w, &win_h);
+        if (win_h > 0 && list_y + option_height * visible > win_h)
+        {
+            int above = screen_rect.y - option_height * visible;
+            if (above >= 0)
+                list_y = above;
+        }
         int list_width = entry.width;
         int list_height = entry.height;
-        int visible = __dropdown_visible_rows(dd);
+        __dropdown_register_overlay(node, window_id, list_x, list_y,
+                                    list_width, list_height);
         int first = dd->scroll_offset;
         if (first < 0) first = 0;
         if (first + visible > dd->option_count)
             first = dd->option_count - visible;
         if (first < 0) first = 0;
         gfx->fill_rectangle(window_id, list_x, list_y, list_width, list_height, dd->list_bg_color, true, 0.0f);
-        gfx->draw_hollow_rectangle(window_id, list_x, list_y, list_width, list_height, 0x222222, 1.0f, true, 0.0f);
+        int dd_list_hair = dropdown_dp(AROMA_DROPDOWN_BORDER_WIDTH_DP);
+        if (dd_list_hair < 1) dd_list_hair = 1;
+        gfx->draw_hollow_rectangle(window_id, list_x, list_y, list_width, list_height, 0x222222, (float)dd_list_hair, true, 0.0f);
         for (int row = 0; row < visible; ++row) {
             int opt = first + row;
             if (opt < 0 || opt >= dd->option_count) continue;
@@ -676,26 +781,28 @@ void aroma_dropdown_render_overlays(size_t window_id) {
             if (row_color != dd->list_bg_color) {
                 gfx->fill_rectangle(window_id, list_x, y, list_width, option_height, row_color, true, 0.0f);
             }
-            gfx->draw_hollow_rectangle(window_id, list_x, y, list_width, option_height, 0xDDDDDD, 1.0f, true, 0.0f);
+            gfx->draw_hollow_rectangle(window_id, list_x, y, list_width, option_height, 0xDDDDDD, (float)dd_list_hair, true, 0.0f);
             if (dd->font && dd->options[opt]) {
-                int text_x = list_x + 10;
+                int text_x = list_x + dropdown_dp(AROMA_DROPDOWN_TEXT_PADDING_DP);
                 int line_height = aroma_font_get_line_height(dd->font);
                 int baseline = y + (option_height - line_height) / 2;
                 gfx->render_text(window_id, dd->font, dd->options[opt], text_x, baseline, dd->text_color, 1.0f);
             }
         }
         if (dd->option_count > visible && visible > 0) {
-            int sb_w = 6;
+            int sb_w = dropdown_dp(AROMA_DROPDOWN_SCROLLBAR_WIDTH_DP);
+            if (sb_w < 1) sb_w = 1;
             int track_x = list_x + list_width - sb_w;
-            gfx->fill_rectangle(window_id, track_x, list_y, sb_w, list_height, 0xEEEEEE, true, 3.0f);
+            gfx->fill_rectangle(window_id, track_x, list_y, sb_w, list_height, 0xEEEEEE, true, dropdown_dp_f((float)AROMA_DROPDOWN_SCROLL_RADIUS_DP));
             int thumb_h = (list_height * visible) / dd->option_count;
-            if (thumb_h < 16) thumb_h = 16;
+            int thumb_min = dropdown_dp(AROMA_DROPDOWN_THUMB_MIN_HEIGHT_DP);
+            if (thumb_h < thumb_min) thumb_h = thumb_min;
             if (thumb_h > list_height) thumb_h = list_height;
             int range = dd->option_count - visible;
             int thumb_y = list_y;
             if (range > 0)
                 thumb_y += ((list_height - thumb_h) * first) / range;
-            gfx->fill_rectangle(window_id, track_x, thumb_y, sb_w, thumb_h, 0xBBBBBB, true, 3.0f);
+            gfx->fill_rectangle(window_id, track_x, thumb_y, sb_w, thumb_h, 0xBBBBBB, true, dropdown_dp_f((float)AROMA_DROPDOWN_SCROLL_RADIUS_DP));
         }
         ++i;
     }
@@ -704,14 +811,88 @@ void aroma_dropdown_render_overlays(size_t window_id) {
 bool aroma_dropdown_overlay_hit_test(int x, int y, AromaNode** out_node) {
     for (size_t i = 0; i < g_dropdown_overlay_count; ++i) {
         DropdownOverlayEntry* entry = &g_dropdown_overlays[i];
-        if (!entry->node) continue;
-        if (x >= entry->x && x < (entry->x + entry->width) &&
-            y >= entry->y && y < (entry->y + entry->height)) {
-            if (out_node) *out_node = entry->node;
+        AromaDropdown *dd = entry->node
+                                ? (AromaDropdown *)entry->node->node_widget_ptr
+                                : NULL;
+        AromaRect screen_rect;
+        if (!dd || !dd->is_expanded ||
+            !__dropdown_screen_rect(entry->node, dd, &screen_rect))
+            continue;
+        int rows = __dropdown_visible_rows(dd);
+        int list_y = screen_rect.y + screen_rect.height;
+        AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+        int win_w = 0;
+        int win_h = 0;
+        if (platform && platform->get_window_size)
+            platform->get_window_size(entry->window_id, &win_w, &win_h);
+        if (win_h > 0 && list_y + dd->rect.height * rows > win_h)
+        {
+            int above = screen_rect.y - dd->rect.height * rows;
+            if (above >= 0)
+                list_y = above;
+        }
+        entry->x = screen_rect.x;
+        entry->y = list_y;
+        entry->width = dd->rect.width;
+        entry->height = dd->rect.height * rows;
+        if (x >= entry->x && x < entry->x + entry->width &&
+            y >= entry->y && y < entry->y + entry->height) {
+            if (out_node)
+                *out_node = entry->node;
             return true;
         }
+
     }
     return false;
+}
+
+void aroma_dropdown_handle_outside_touch(int x, int y)
+{
+    for (size_t i = 0; i < g_dropdown_overlay_count;)
+    {
+        AromaNode *node = g_dropdown_overlays[i].node;
+        AromaDropdown *dd = node ? (AromaDropdown *)node->node_widget_ptr : NULL;
+        AromaRect screen_rect;
+        bool in_main = node && dd && dd->is_expanded &&
+                       __dropdown_screen_rect(node, dd, &screen_rect) &&
+                       x >= screen_rect.x && x < screen_rect.x + screen_rect.width &&
+                       y >= screen_rect.y && y < screen_rect.y + screen_rect.height;
+        bool inside = in_main;
+        if (node && dd && dd->is_expanded && !in_main &&
+            __dropdown_screen_rect(node, dd, &screen_rect))
+        {
+            int rows = __dropdown_visible_rows(dd);
+            int list_y = screen_rect.y + screen_rect.height;
+            AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+            int win_w = 0;
+            int win_h = 0;
+            if (platform && platform->get_window_size)
+                platform->get_window_size(g_dropdown_overlays[i].window_id,
+                                          &win_w, &win_h);
+            if (win_h > 0 && list_y + dd->rect.height * rows > win_h)
+            {
+                int above = screen_rect.y - dd->rect.height * rows;
+                if (above >= 0)
+                    list_y = above;
+            }
+            inside = x >= screen_rect.x && x < screen_rect.x + screen_rect.width &&
+                     y >= list_y && y < list_y + dd->rect.height * rows;
+        }
+        if (!inside)
+        {
+            if (dd)
+            {
+                dd->is_expanded = false;
+                dd->hover_index = -1;
+                dd->touch_id = -1;
+                __dropdown_fling_stop(dd);
+                aroma_node_invalidate(node);
+            }
+            __dropdown_unregister_overlay(node);
+            continue;
+        }
+        ++i;
+    }
 }
 
 void aroma_dropdown_set_font(AromaNode* dropdown_node, AromaFont* font) {

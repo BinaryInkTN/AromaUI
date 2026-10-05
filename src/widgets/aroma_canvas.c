@@ -2,8 +2,17 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "core/aroma_slab_alloc.h"
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#ifdef __ANDROID__
+static inline int canvas_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float canvas_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int canvas_dp(int dp) { return dp; }
+static inline float canvas_dp_f(float dp) { return dp; }
 #endif
 
 /**
@@ -194,11 +203,11 @@ void aroma_canvas_draw_rect(AromaNode *node, int x, int y, int width, int height
     if (!op)
         return;
 
-    op->x = x;
-    op->y = y;
-    op->width = width;
-    op->height = height;
-    op->border_radius = border_radius;
+    op->x = canvas_dp(x);
+    op->y = canvas_dp(y);
+    op->width = canvas_dp(width);
+    op->height = canvas_dp(height);
+    op->border_radius = canvas_dp(border_radius);
     op->is_rect_filled = is_rect_filled;
     op->color = color;
     op->draw_mode = AROMA_CANVAS_DRAW_MODE_RECT;
@@ -217,9 +226,9 @@ void aroma_canvas_draw_circle(AromaNode *node, int center_x, int center_y, int r
     if (!op)
         return;
 
-    op->x = center_x;
-    op->y = center_y;
-    op->radius = radius;
+    op->x = canvas_dp(center_x);
+    op->y = canvas_dp(center_y);
+    op->radius = canvas_dp(radius);
     op->color = color;
     op->draw_mode = AROMA_CANVAS_DRAW_MODE_CIRCLE;
     aroma_node_invalidate(node);
@@ -237,13 +246,15 @@ void aroma_canvas_draw_arc(AromaNode *node, int center_x, int center_y, int radi
     if (!op)
         return;
 
-    op->x = center_x;
-    op->y = center_y;
-    op->radius = radius;
+    op->x = canvas_dp(center_x);
+    op->y = canvas_dp(center_y);
+    op->radius = canvas_dp(radius);
     op->arc_start_angle = start_angle;
     op->arc_end_angle = end_angle;
     op->color = color;
-    op->thickness = (float)thickness;
+    int arc_thick = canvas_dp(thickness);
+    if (arc_thick < 1) arc_thick = 1;
+    op->thickness = (float)arc_thick;
     op->draw_mode = AROMA_CANVAS_DRAW_MODE_ARC;
     aroma_node_invalidate(node);
 }
@@ -260,12 +271,14 @@ void aroma_canvas_draw_line(AromaNode *node, int x1, int y1, int x2, int y2, uin
     if (!op)
         return;
 
-    op->x = x1;
-    op->y = y1;
-    op->line_x2 = x2;
-    op->line_y2 = y2;
+    op->x = canvas_dp(x1);
+    op->y = canvas_dp(y1);
+    op->line_x2 = canvas_dp(x2);
+    op->line_y2 = canvas_dp(y2);
     op->color = color;
-    op->thickness = (float)thickness;
+    int line_thick = canvas_dp(thickness);
+    if (line_thick < 1) line_thick = 1;
+    op->thickness = (float)line_thick;
     op->draw_mode = AROMA_CANVAS_DRAW_MODE_LINE;
     aroma_node_invalidate(node);
 }
@@ -284,8 +297,8 @@ void aroma_canvas_draw_text(AromaNode *node, const char *text, int x, int y, uin
 
     strncpy(op->text, text, sizeof(op->text) - 1);
     op->text[sizeof(op->text) - 1] = '\0';
-    op->x = x;
-    op->y = y;
+    op->x = canvas_dp(x);
+    op->y = canvas_dp(y);
     op->color = color;
     op->text_font = font;
     op->draw_mode = AROMA_CANVAS_DRAW_MODE_TEXT;

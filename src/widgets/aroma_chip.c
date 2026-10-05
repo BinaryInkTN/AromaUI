@@ -8,16 +8,26 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include <stdlib.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
 
-#define MD3_CHIP_HEIGHT 32
-#define MD3_CHIP_MIN_WIDTH 48
-#define MD3_CHIP_PADDING_H 12
-#define MD3_CHIP_PADDING_V 4
-#define MD3_CHIP_LABEL_SPACING 8
-#define MD3_CHIP_CORNER_RADIUS 8
+/* Authored in dp; scaled to px via helpers below. */
+#define MD3_CHIP_HEIGHT_DP 32
+#define MD3_CHIP_MIN_WIDTH_DP 48
+#define MD3_CHIP_PADDING_H_DP 12
+#define MD3_CHIP_PADDING_V_DP 4
+#define MD3_CHIP_LABEL_SPACING_DP 8
+#define MD3_CHIP_CORNER_RADIUS_DP 8
+
+#ifdef __ANDROID__
+static inline int chip_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float chip_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int chip_dp(int dp) { return dp; }
+static inline float chip_dp_f(float dp) { return dp; }
+#endif
 
 #define MD3_STATE_HOVER_OPACITY 0.08f
 #define MD3_STATE_FOCUS_OPACITY 0.12f
@@ -166,8 +176,8 @@ static void __chip_update_layout(AromaChip *chip)
     if (!chip)
         return;
 
-    chip->rect.height = MD3_CHIP_HEIGHT;
-    chip->border_radius = (float)MD3_CHIP_CORNER_RADIUS;
+    chip->rect.height = chip_dp(MD3_CHIP_HEIGHT_DP);
+    chip->border_radius = chip_dp_f((float)MD3_CHIP_CORNER_RADIUS_DP);
 
     int icon_width = 0;
     float icon_scale = 1.0f;
@@ -178,7 +188,7 @@ static void __chip_update_layout(AromaChip *chip)
         if (default_icon_h > 0)
         {
             int target_h = chip->rect.height * 0.6f;
-            int max_width = chip->rect.width - (MD3_CHIP_PADDING_H * 2);
+            int max_width = chip->rect.width - (chip_dp(MD3_CHIP_PADDING_H_DP) * 2);
             if (target_h > max_width * 0.8f)
                 target_h = max_width * 0.8f;
 
@@ -203,7 +213,7 @@ static void __chip_update_layout(AromaChip *chip)
     int content_width = 0;
     if (icon_width > 0 && label_width > 0)
     {
-        content_width = icon_width + MD3_CHIP_LABEL_SPACING + label_width;
+        content_width = icon_width + chip_dp(MD3_CHIP_LABEL_SPACING_DP) + label_width;
     }
     else if (icon_width > 0)
     {
@@ -214,11 +224,11 @@ static void __chip_update_layout(AromaChip *chip)
         content_width = label_width;
     }
 
-    chip->rect.width = MD3_CHIP_PADDING_H * 2 + content_width;
+    chip->rect.width = chip_dp(MD3_CHIP_PADDING_H_DP) * 2 + content_width;
 
-    if (chip->rect.width < MD3_CHIP_MIN_WIDTH)
+    if (chip->rect.width < chip_dp(MD3_CHIP_MIN_WIDTH_DP))
     {
-        chip->rect.width = MD3_CHIP_MIN_WIDTH;
+        chip->rect.width = chip_dp(MD3_CHIP_MIN_WIDTH_DP);
     }
 
     int content_start_x = chip->rect.x + (chip->rect.width - content_width) / 2;
@@ -232,7 +242,7 @@ static void __chip_update_layout(AromaChip *chip)
 
     if (label_width > 0)
     {
-        chip->text_x = icon_width > 0 ? content_start_x + icon_width + MD3_CHIP_LABEL_SPACING : content_start_x;
+        chip->text_x = icon_width > 0 ? content_start_x + icon_width + chip_dp(MD3_CHIP_LABEL_SPACING_DP) : content_start_x;
 
         if (chip->font)
         {
@@ -477,7 +487,7 @@ void aroma_chip_draw(AromaNode *chip_node, size_t window_id)
 
         gfx->draw_hollow_rectangle(window_id, chip->rect.x, chip->rect.y,
                                    chip->rect.width, chip->rect.height,
-                                   outline_color, 1, true, chip->border_radius);
+                                   outline_color, chip_dp(1), true, chip->border_radius);
     }
 
     uint32_t draw_text_color = chip->text_color;
@@ -494,7 +504,7 @@ void aroma_chip_draw(AromaNode *chip_node, size_t window_id)
         if (default_icon_h > 0)
         {
             int target_h = chip->rect.height * 0.6f;
-            int max_width = chip->rect.width - (MD3_CHIP_PADDING_H * 2);
+            int max_width = chip->rect.width - (chip_dp(MD3_CHIP_PADDING_H_DP) * 2);
             if (target_h > max_width * 0.8f)
                 target_h = max_width * 0.8f;
 

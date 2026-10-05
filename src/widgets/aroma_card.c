@@ -9,6 +9,7 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include <string.h>
 #include <stdlib.h>
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
@@ -71,7 +72,18 @@ static void card_registry_remove(uint64_t node_id)
     }
 }
 
-#define AROMA_CARD_DEFAULT_FROST_RADIUS 14.0f
+#define AROMA_CARD_DEFAULT_FROST_RADIUS_DP 14.0f
+#define AROMA_CARD_CORNER_RADIUS_DP 12.0f
+#define AROMA_CARD_SHADOW_OFFSET_X_DP 1
+#define AROMA_CARD_SHADOW_OFFSET_Y_DP 2
+
+#ifdef __ANDROID__
+static inline int card_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float card_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int card_dp(int dp) { return dp; }
+static inline float card_dp_f(float dp) { return dp; }
+#endif
 
 void aroma_card_draw(AromaNode *card_node, size_t window_id)
 {
@@ -118,7 +130,7 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
     if (card->type == CARD_TYPE_ELEVATED && card->shadow_color != 0)
     {
         gfx->fill_rectangle(window_id,
-                            card->rect.x + 1, card->rect.y + 2,
+                            card->rect.x + card_dp(AROMA_CARD_SHADOW_OFFSET_X_DP), card->rect.y + card_dp(AROMA_CARD_SHADOW_OFFSET_Y_DP),
                             card->rect.width, card->rect.height,
                             card->shadow_color, true, card->border_radius);
     }
@@ -145,7 +157,7 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
         gfx->draw_hollow_rectangle(window_id,
                                    card->rect.x, card->rect.y,
                                    card->rect.width, card->rect.height,
-                                   card->border_color, 1, true, card->border_radius);
+                                   card->border_color, card_dp(1) < 1 ? 1 : card_dp(1), true, card->border_radius);
     }
 }
 
@@ -163,21 +175,13 @@ AromaNode *aroma_card_create(AromaNode *parent, int x, int y, int width, int hei
     aroma_node_set_justify_content(node, 0);
     aroma_node_set_align_items(node, 0);
 
-#ifdef __ANDROID__
-x = aroma_android_dp_to_px(x);
-y = aroma_android_dp_to_px(y);
-width = aroma_android_dp_to_px(width);
-height = aroma_android_dp_to_px(height);
-#endif
-    
-AromaCard *card = (AromaCard *)calloc(1, sizeof(AromaCard));
+    AromaCard *card = (AromaCard *)calloc(1, sizeof(AromaCard));
     if (!card)
         return node;
 
-    card->rect.x = x;
-    card->rect.y = y;
-    card->rect.width = width;
-    card->rect.height = height;
+    AromaRect *node_rect = aroma_node_get_rect(node);
+    if (node_rect)
+        card->rect = *node_rect;
     card->type = type;
 
     AromaTheme theme = aroma_theme_get_global();
@@ -195,10 +199,10 @@ AromaCard *card = (AromaCard *)calloc(1, sizeof(AromaCard));
     if (type == CARD_TYPE_GLASS) {
         card->border_color = aroma_color_rgba(255, 255, 255, 60); // Glossy thin edge
     }
-    card->border_radius = 12.0f;
+    card->border_radius = card_dp_f(AROMA_CARD_CORNER_RADIUS_DP);
     card->shadow_color = 0x40000000;
     /* Glass cards blur their backdrop by default; other types do not. */
-    card->blur_radius = (type == CARD_TYPE_GLASS) ? AROMA_CARD_DEFAULT_FROST_RADIUS : 0.0f;
+    card->blur_radius = (type == CARD_TYPE_GLASS) ? card_dp_f(AROMA_CARD_DEFAULT_FROST_RADIUS_DP) : 0.0f;
     card->use_theme_colors = true;
     card->click_callback = NULL;
     card->user_data = NULL;

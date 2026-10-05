@@ -1,6 +1,7 @@
 
 
 #include "widgets/aroma_container.h"
+#include "widgets/aroma_listview.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_node.h"
@@ -11,6 +12,8 @@
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "backends/platforms/aroma_platform_interface.h"
+#include "aroma_ui.h"
+#include "aroma_dp.h"
 #include <string.h>
 #include <math.h>
 #ifdef __ANDROID__
@@ -18,12 +21,28 @@
 #endif
 
 
-#define SCROLLBAR_WIDTH 4
-#define SCROLLBAR_MIN_THUMB 24
-#define SCROLLBAR_PADDING 2
+/* Base values are authored in dp; on Android they are scaled by density so
+ * touch slop, overscroll and scrollbars feel identical across mdpi..xxxhdpi.
+ * Desktop keeps the raw values (density 1). */
+#define SCROLLBAR_WIDTH_DP 4
+#define SCROLLBAR_MIN_THUMB_DP 24
+#define SCROLLBAR_PADDING_DP 2
 #define SCROLL_SPEED_DEFAULT 1.0f
-#define SCROLL_SLOP 8
+#define SCROLL_SLOP_DP 8
+#define SCROLL_BOTTOM_PADDING_DP 24
 
+static inline int scroll_bottom_padding_px(void)
+{
+#ifdef __ANDROID__
+    return aroma_android_dp_to_px(SCROLL_BOTTOM_PADDING_DP);
+#else
+    return SCROLL_BOTTOM_PADDING_DP;
+#endif
+}
+
+/* Android advances scroll animation from the Choreographer callback. This
+ * timer only provides a fallback for non-vsync platforms; a 1 ms timer
+ * needlessly wakes the event loop dozens of times per frame on Android. */
 #define FLING_TICK_MS 16
 #define FLING_FRICTION_COEFF 0.015f
 #define FLING_INFLEXION 0.35f
@@ -32,7 +51,7 @@
 #define GRAVITY_EARTH 9.80665f
 #define INCH_PER_METER 39.37f
 #define OVERSCROLL_RESIST 0.35f
-#define OVERSCROLL_MAX_PX 120
+#define OVERSCROLL_MAX_DP 120
 #define BOUNCE_DURATION_MS 250
 
 #define VT_MAX_SAMPLES 8
@@ -41,6 +60,61 @@
 #define SCROLLBAR_FADE_DELAY_MS 1200
 #define SCROLLBAR_FADE_MS 400
 #define SCROLLBAR_ACTIVE_ALPHA 0xCC
+
+#ifdef __ANDROID__
+static inline int scaled_dp(int dp)
+{
+    return aroma_android_dp_to_px(dp);
+}
+static inline float scaled_dp_f(float dp)
+{
+    return aroma_android_dp_to_px_f(dp);
+}
+static inline int overscroll_max_px(void)
+{
+    return scaled_dp(OVERSCROLL_MAX_DP);
+}
+static inline int scroll_slop_px(void)
+{
+    return scaled_dp(SCROLL_SLOP_DP);
+}
+static inline int scrollbar_width_px(void)
+{
+    return scaled_dp(SCROLLBAR_WIDTH_DP);
+}
+static inline int scrollbar_min_thumb_px(void)
+{
+    return scaled_dp(SCROLLBAR_MIN_THUMB_DP);
+}
+static inline int scrollbar_padding_px(void)
+{
+    return scaled_dp(SCROLLBAR_PADDING_DP);
+}
+/* Fling must exceed ~0.5in/s to feel the same on ldpi and xxxhdpi. Physical
+ * coefficient already includes ppi, but the trigger threshold was raw px/s. */
+static inline float fling_min_velocity_pps(void)
+{
+#ifdef __ANDROID__
+    return 150.0f * aroma_android_get_density();
+#else
+    return 150.0f;
+#endif
+}
+static inline int swipe_min_distance_px(void)
+{
+    return scaled_dp(90);
+}
+#else
+static inline int scaled_dp(int dp) { return dp; }
+static inline float scaled_dp_f(float dp) { return dp; }
+static inline int overscroll_max_px(void) { return OVERSCROLL_MAX_DP; }
+static inline int scroll_slop_px(void) { return SCROLL_SLOP_DP; }
+static inline int scrollbar_width_px(void) { return SCROLLBAR_WIDTH_DP; }
+static inline int scrollbar_min_thumb_px(void) { return SCROLLBAR_MIN_THUMB_DP; }
+static inline int scrollbar_padding_px(void) { return SCROLLBAR_PADDING_DP; }
+static inline float fling_min_velocity_pps(void) { return 150.0f; }
+static inline int swipe_min_distance_px(void) { return 90; }
+#endif
 
 typedef struct
 {
@@ -287,6 +361,9 @@ static void fling_tick_cb(void *user_data)
 
     bool still_moving = false;
     uint64_t now = aroma_time_now_ms();
+    int old_render_x = effective_scroll_x(c);
+    int old_render_y = effective_scroll_y(c);
+    float old_scrollbar_opacity = c->scrollbar_opacity;
 
     if (c->bouncing)
     {
@@ -311,7 +388,6 @@ static void fling_tick_cb(void *user_data)
             still_moving = true;
         }
         c->content_dirty = true;
-        aroma_node_invalidate(node);
     }
 
     if (c->fling_active && !c->bouncing && !c->is_dragging)
@@ -354,32 +430,32 @@ static void fling_tick_cb(void *user_data)
         if (new_sx < 0.0f)
         {
             c->overscroll_x = new_sx;
-            if (c->overscroll_x < -OVERSCROLL_MAX_PX)
-                c->overscroll_x = -OVERSCROLL_MAX_PX;
+            if (c->overscroll_x < -overscroll_max_px())
+                c->overscroll_x = -overscroll_max_px();
             new_sx = 0.0f;
             c->fling_active = false;
         }
         else if (new_sx > mx)
         {
             c->overscroll_x = new_sx - mx;
-            if (c->overscroll_x > OVERSCROLL_MAX_PX)
-                c->overscroll_x = OVERSCROLL_MAX_PX;
+            if (c->overscroll_x > overscroll_max_px())
+                c->overscroll_x = overscroll_max_px();
             new_sx = mx;
             c->fling_active = false;
         }
         if (new_sy < 0.0f)
         {
             c->overscroll_y = new_sy;
-            if (c->overscroll_y < -OVERSCROLL_MAX_PX)
-                c->overscroll_y = -OVERSCROLL_MAX_PX;
+            if (c->overscroll_y < -overscroll_max_px())
+                c->overscroll_y = -overscroll_max_px();
             new_sy = 0.0f;
             c->fling_active = false;
         }
         else if (new_sy > my)
         {
             c->overscroll_y = new_sy - my;
-            if (c->overscroll_y > OVERSCROLL_MAX_PX)
-                c->overscroll_y = OVERSCROLL_MAX_PX;
+            if (c->overscroll_y > overscroll_max_px())
+                c->overscroll_y = overscroll_max_px();
             new_sy = my;
             c->fling_active = false;
         }
@@ -397,7 +473,6 @@ static void fling_tick_cb(void *user_data)
         c->scroll_fy = new_sy;
         c->content_dirty = true;
         c->last_scroll_time = now;
-        aroma_node_invalidate(node);
 
         if (x_done && y_done)
         {
@@ -429,13 +504,23 @@ static void fling_tick_cb(void *user_data)
         {
             still_moving = true;
             c->content_dirty = true;
-            aroma_node_invalidate(node);
         }
     }
+
+    bool visual_changed =
+        old_render_x != effective_scroll_x(c) ||
+        old_render_y != effective_scroll_y(c) ||
+        old_scrollbar_opacity != c->scrollbar_opacity;
+    if (visual_changed)
+        aroma_node_invalidate(node);
 
     if (!still_moving)
     {
         stop_fling(c);
+    }
+    else
+    {
+        aroma_ui_request_frame();
     }
 }
 
@@ -445,20 +530,18 @@ static void ensure_animation_timer(AromaContainer *c)
     {
         c->fling_timer = aroma_timer_create(
             FLING_TICK_MS, true, fling_tick_cb, c->self_node);
+        if (c->fling_timer)
+            aroma_ui_request_frame();
     }
 }
 
 static bool scroll_event_handler(AromaEvent *event, void *user_data)
 {
-    LOG_INFO("SCR_HANDLER: entered type=%d udata=%p", event ? event->event_type : -1, user_data);
-
     AromaNode *node = (AromaNode *)user_data;
     if (!node)
         return false;
 
     AromaContainer *c = aroma_container_get(node);
-    LOG_INFO("SCR_HANDLER: c=%p scrollable=%d node_type=%d",
-             (void *)c, c ? c->scrollable : -1, node->node_type);
     if (!c || !c->scrollable)
         return false;
 
@@ -479,9 +562,6 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         }
         if (!point_in_rect(tx, ty, &c->rect))
             return false;
-
-        LOG_INFO("SCROLL_DOWN: ptr=%d content_h=%d rect_h=%d can_v=%d",
-                 id, c->content_height, c->rect.height, can_scroll_v);
 
         stop_fling(c);
         c->overscroll_x = 0.0f;
@@ -517,6 +597,8 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         
         float old_sx = c->scroll_fx;
         float old_sy = c->scroll_fy;
+        int old_render_x = effective_scroll_x(c);
+        int old_render_y = effective_scroll_y(c);
         
         if (can_scroll_v) c->scroll_fy -= sy * 50.0f * c->scroll_speed;
         if (can_scroll_h) c->scroll_fx -= sx * 50.0f * c->scroll_speed;
@@ -528,7 +610,9 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
             c->last_scroll_time = aroma_time_now_ms();
             c->scrollbar_opacity = 1.0f;
             ensure_animation_timer(c);
-            aroma_node_invalidate(node);
+            if (old_render_x != effective_scroll_x(c) ||
+                old_render_y != effective_scroll_y(c))
+                aroma_node_invalidate(node);
         }
         return true;
     }
@@ -549,8 +633,6 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
 
         if (!can_scroll_h && !can_scroll_v)
         {
-            LOG_INFO("SCROLL_MOVE: bail can_v=%d content_h=%d rect_h=%d",
-                     can_scroll_v, c->content_height, c->rect.height);
             return false;
         }
 
@@ -564,20 +646,21 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         {
             int abs_dx = dx < 0 ? -dx : dx;
             int abs_dy = dy < 0 ? -dy : dy;
-            if (abs_dx >= SCROLL_SLOP && abs_dx > abs_dy && !can_scroll_h)
+            int slop = scroll_slop_px();
+            if (abs_dx >= slop && abs_dx > abs_dy && !can_scroll_h)
             {
                 c->active_pointer_id = -1;
                 c->is_dragging = false;
                 return false;
             }
-            if (abs_dy >= SCROLL_SLOP && abs_dy >= abs_dx && !can_scroll_v)
+            if (abs_dy >= slop && abs_dy >= abs_dx && !can_scroll_v)
             {
                 c->active_pointer_id = -1;
                 c->is_dragging = false;
                 return false;
             }
-            bool slop_h = can_scroll_h && abs_dx >= SCROLL_SLOP;
-            bool slop_v = can_scroll_v && abs_dy >= SCROLL_SLOP;
+            bool slop_h = can_scroll_h && abs_dx >= slop;
+            bool slop_v = can_scroll_v && abs_dy >= slop;
             if (!slop_h && !slop_v)
                 return false;
             c->is_dragging = true;
@@ -607,39 +690,41 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         if (new_sx < 0.0f)
         {
             c->overscroll_x = new_sx * OVERSCROLL_RESIST;
-            if (c->overscroll_x < -OVERSCROLL_MAX_PX)
-                c->overscroll_x = -OVERSCROLL_MAX_PX;
+            if (c->overscroll_x < -overscroll_max_px())
+                c->overscroll_x = -overscroll_max_px();
             new_sx = 0.0f;
         }
         else if (new_sx > mx)
         {
             c->overscroll_x = (new_sx - mx) * OVERSCROLL_RESIST;
-            if (c->overscroll_x > OVERSCROLL_MAX_PX)
-                c->overscroll_x = OVERSCROLL_MAX_PX;
+            if (c->overscroll_x > overscroll_max_px())
+                c->overscroll_x = overscroll_max_px();
             new_sx = mx;
         }
         if (new_sy < 0.0f)
         {
             c->overscroll_y = new_sy * OVERSCROLL_RESIST;
-            if (c->overscroll_y < -OVERSCROLL_MAX_PX)
-                c->overscroll_y = -OVERSCROLL_MAX_PX;
+            if (c->overscroll_y < -overscroll_max_px())
+                c->overscroll_y = -overscroll_max_px();
             new_sy = 0.0f;
         }
         else if (new_sy > my)
         {
             c->overscroll_y = (new_sy - my) * OVERSCROLL_RESIST;
-            if (c->overscroll_y > OVERSCROLL_MAX_PX)
-                c->overscroll_y = OVERSCROLL_MAX_PX;
+            if (c->overscroll_y > overscroll_max_px())
+                c->overscroll_y = overscroll_max_px();
             new_sy = my;
         }
 
+        int old_render_x = effective_scroll_x(c);
+        int old_render_y = effective_scroll_y(c);
         c->scroll_fx = new_sx;
         c->scroll_fy = new_sy;
         c->content_dirty = true;
         c->last_scroll_time = aroma_time_now_ms();
-        LOG_INFO("SCROLL_DRAG: fy=%.1f max=%.0f over=%.1f dy=%d",
-                 c->scroll_fy, my, c->overscroll_y, dy);
-        aroma_node_invalidate(node);
+        if (old_render_x != effective_scroll_x(c) ||
+            old_render_y != effective_scroll_y(c))
+            aroma_node_invalidate(node);
         return true;
     }
 
@@ -684,7 +769,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
             vx = -vx;
             vy = -vy;
 
-            float min_vel = 150.0f;
+            float min_vel = fling_min_velocity_pps();
             bool do_fling = false;
 
             float dur_x = 0.0f, dur_y = 0.0f;
@@ -724,7 +809,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
             int tdy = c->swipe_start_y - ty;
             int adx = tdx < 0 ? -tdx : tdx;
             int ady = tdy < 0 ? -tdy : tdy;
-            if (dt < 600 && adx > 90 && adx > ady * 2) {
+            if (dt < 600 && adx > swipe_min_distance_px() && adx > ady * 2) {
                 if (tdx > 0 && c->on_swipe_left) {
                     c->on_swipe_left(c->swipe_left_ud);
                     aroma_node_invalidate(node);
@@ -750,6 +835,8 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
 
 static void draw_scrollbar_indicators(AromaContainer *c, size_t window_id)
 {
+    if (!c || !c->self_node || aroma_node_is_hidden(c->self_node))
+        return;
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->fill_rectangle)
         return;
@@ -767,8 +854,9 @@ static void draw_scrollbar_indicators(AromaContainer *c, size_t window_id)
     {
         float visible_ratio = (float)c->rect.height / (float)c->content_height;
         int thumb_height = (int)(c->rect.height * visible_ratio);
-        if (thumb_height < SCROLLBAR_MIN_THUMB)
-            thumb_height = SCROLLBAR_MIN_THUMB;
+        int min_thumb = scrollbar_min_thumb_px();
+        if (thumb_height < min_thumb)
+            thumb_height = min_thumb;
 
         int max_scroll = c->content_height - c->rect.height;
         float scroll_ratio = max_scroll > 0
@@ -781,19 +869,22 @@ static void draw_scrollbar_indicators(AromaContainer *c, size_t window_id)
 
         int track_height = c->rect.height - thumb_height;
         int thumb_y = c->rect.y + (int)(track_height * scroll_ratio);
-        int bar_x = c->rect.x + c->rect.width - SCROLLBAR_WIDTH - SCROLLBAR_PADDING;
+        int sb_w = scrollbar_width_px();
+        int sb_pad = scrollbar_padding_px();
+        int bar_x = c->rect.x + c->rect.width - sb_w - sb_pad;
 
         gfx->fill_rectangle(window_id, bar_x, thumb_y,
-                            SCROLLBAR_WIDTH, thumb_height,
-                            color, true, (float)(SCROLLBAR_WIDTH / 2));
+                            sb_w, thumb_height,
+                            color, true, (float)sb_w / 2.0f);
     }
 
     if ((c->direction & AROMA_SCROLL_HORIZONTAL) && c->content_width > c->rect.width)
     {
         float visible_ratio = (float)c->rect.width / (float)c->content_width;
         int thumb_width = (int)(c->rect.width * visible_ratio);
-        if (thumb_width < SCROLLBAR_MIN_THUMB)
-            thumb_width = SCROLLBAR_MIN_THUMB;
+        int min_thumb = scrollbar_min_thumb_px();
+        if (thumb_width < min_thumb)
+            thumb_width = min_thumb;
 
         int max_scroll = c->content_width - c->rect.width;
         float scroll_ratio = max_scroll > 0
@@ -806,11 +897,13 @@ static void draw_scrollbar_indicators(AromaContainer *c, size_t window_id)
 
         int track_width = c->rect.width - thumb_width;
         int thumb_x = c->rect.x + (int)(track_width * scroll_ratio);
-        int bar_y = c->rect.y + c->rect.height - SCROLLBAR_WIDTH - SCROLLBAR_PADDING;
+        int sb_w = scrollbar_width_px();
+        int sb_pad = scrollbar_padding_px();
+        int bar_y = c->rect.y + c->rect.height - sb_w - sb_pad;
 
         gfx->fill_rectangle(window_id, thumb_x, bar_y,
-                            thumb_width, SCROLLBAR_WIDTH,
-                            color, true, (float)(SCROLLBAR_WIDTH / 2));
+                            thumb_width, sb_w,
+                            color, true, (float)sb_w / 2.0f);
     }
 }
 
@@ -959,7 +1052,6 @@ void aroma_container_set_scrollable(AromaNode *node, bool scrollable)
         aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_SCROLL, scroll_event_handler, node, 0);
-        aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_SCROLL, scroll_event_handler, node, 0);
     }
 
     aroma_node_invalidate(node);
@@ -1072,6 +1164,8 @@ void aroma_container_show_scrollbar(AromaNode *node, bool show)
     if (!c)
         return;
     c->show_scrollbar = show;
+    if (!show)
+        c->scrollbar_opacity = 0.0f;
     aroma_node_invalidate(node);
 }
 
@@ -1140,6 +1234,10 @@ void aroma_container_update_auto_content_size(AromaNode *node)
         max_w = c->rect.width;
     if (max_h < c->rect.height)
         max_h = c->rect.height;
+    if ((c->direction & AROMA_SCROLL_HORIZONTAL) && max_w > c->rect.width)
+        max_w += scroll_bottom_padding_px();
+    if ((c->direction & AROMA_SCROLL_VERTICAL) && max_h > c->rect.height)
+        max_h += scroll_bottom_padding_px();
 
     if (c->content_width != max_w || c->content_height != max_h)
     {
@@ -1156,10 +1254,29 @@ void aroma_container_update_auto_content_size(AromaNode *node)
  * Scrollable children are skipped because their own draw callbacks
  * already handle their subtree (with clip + scroll offsets).
  */
-static void draw_subtree_recursive(AromaNode *node, size_t window_id)
+static void draw_subtree_recursive(AromaNode *node, size_t window_id,
+                                   const AromaRect *viewport_screen,
+                                   int offset_x, int offset_y)
 {
     if (!node || node->is_hidden)
         return;
+
+    AromaRect *rect = aroma_node_get_rect(node);
+    bool is_virtual_list =
+        node->draw_cb == aroma_listview_draw &&
+        node->parent_node &&
+        aroma_container_is_scrollable(node->parent_node);
+    if (viewport_screen && rect && !is_virtual_list)
+    {
+        int left = rect->x + offset_x;
+        int top = rect->y + offset_y;
+        bool outside = left >= viewport_screen->x + viewport_screen->width ||
+                       top >= viewport_screen->y + viewport_screen->height ||
+                       left + rect->width <= viewport_screen->x ||
+                       top + rect->height <= viewport_screen->y;
+        if (outside)
+            return;
+    }
 
     AromaNodeDrawFn draw_cb = aroma_node_get_draw_cb(node);
     if (draw_cb)
@@ -1171,7 +1288,8 @@ static void draw_subtree_recursive(AromaNode *node, size_t window_id)
 
     for (uint64_t i = 0; i < node->child_count; i++)
     {
-        draw_subtree_recursive(node->child_nodes[i], window_id);
+        draw_subtree_recursive(node->child_nodes[i], window_id,
+                               viewport_screen, offset_x, offset_y);
     }
 }
 
@@ -1193,7 +1311,9 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
 
     if (c->scrollable)
     {
-       
+        int parent_offset_x = 0;
+        int parent_offset_y = 0;
+        drawlist_proxy_get_offset(&parent_offset_x, &parent_offset_y);
         if (gfx && gfx->graphics_set_clip)
         {
             gfx->graphics_set_clip(c->rect.x, c->rect.y,
@@ -1202,12 +1322,27 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
 
         int eff_sx = effective_scroll_x(c);
         int eff_sy = effective_scroll_y(c);
+        AromaRect viewport_screen = {
+            .x = c->rect.x + parent_offset_x,
+            .y = c->rect.y + parent_offset_y,
+            .width = c->rect.width,
+            .height = c->rect.height,
+        };
 
         drawlist_proxy_push_offset(-eff_sx, -eff_sy);
 
+        /*
+         * The draw offset is constant for this subtree. Cache it once rather
+         * than querying the proxy for every node during viewport culling.
+         */
+        int content_offset_x = 0;
+        int content_offset_y = 0;
+        drawlist_proxy_get_offset(&content_offset_x, &content_offset_y);
         for (uint64_t i = 0; i < container_node->child_count; i++)
         {
-            draw_subtree_recursive(container_node->child_nodes[i], window_id);
+            draw_subtree_recursive(container_node->child_nodes[i], window_id,
+                                   &viewport_screen,
+                                   content_offset_x, content_offset_y);
         }
 
         drawlist_proxy_pop_offset(-eff_sx, -eff_sy);

@@ -580,6 +580,57 @@ static inline int aroma_android_px_to_sp(int px) {
 
 
 /**
+ * @brief Convert Density-Independent Pixels (DP) to pixels without integer
+ * truncation. Use for radii, hairlines, padding and other float metrics.
+ * @param dp Value in DP units (may be fractional)
+ * @return Value in pixels (fractional)
+ */
+static inline float aroma_android_dp_to_px_f(float dp) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_dp_to_px_f) {
+        return platform->android_dp_to_px_f(dp);
+    }
+    if (platform && platform->android_get_density) {
+        return dp * platform->android_get_density();
+    }
+    return dp;
+}
+
+
+/**
+ * @brief Convert Scale-Independent Pixels (SP) to pixels without truncation.
+ * @param sp Value in SP units (may be fractional)
+ * @return Value in pixels (fractional)
+ */
+static inline float aroma_android_sp_to_px_f(float sp) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_sp_to_px_f) {
+        return platform->android_sp_to_px_f(sp);
+    }
+    if (platform && platform->android_get_scaled_density) {
+        return sp * platform->android_get_scaled_density();
+    }
+    return sp;
+}
+
+
+/**
+ * @brief Convert pixels to DP without integer truncation.
+ */
+static inline float aroma_android_px_to_dp_f(float px) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_px_to_dp_f) {
+        return platform->android_px_to_dp_f(px);
+    }
+    if (platform && platform->android_get_density) {
+        float d = platform->android_get_density();
+        if (d > 0.0f) return px / d;
+    }
+    return px;
+}
+
+
+/**
  * @brief Get the available window size in DP units (excluding system bars).
  * @param width_dp Pointer to store width in DP
  * @param height_dp Pointer to store height in DP

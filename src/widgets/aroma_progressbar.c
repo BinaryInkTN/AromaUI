@@ -4,8 +4,19 @@
 #include "core/aroma_style.h"
 #include "backends/aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
+#include "aroma_dp.h"
 #ifdef __ANDROID__
 #include "aroma_android.h"
+#endif
+
+#define AROMA_PROGRESSBAR_MIN_SPAN_DP 12
+
+#ifdef __ANDROID__
+static inline int pb_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float pb_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+#else
+static inline int pb_dp(int dp) { return dp; }
+static inline float pb_dp_f(float dp) { return dp; }
 #endif
 
 typedef struct   AromaProgressBar {
@@ -118,7 +129,8 @@ if (bar->use_theme_colors) {
         }
     } else {
         int span = bar->rect.width / 3;
-        if (span < 12) span = 12;
+        int min_span = pb_dp(AROMA_PROGRESSBAR_MIN_SPAN_DP);
+        if (span < min_span) span = min_span;
         gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, span, bar->rect.height,
                             bar->indicator_color, true, bar->corner_radius);
     }
