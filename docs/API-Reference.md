@@ -144,6 +144,7 @@ This page provides a high-level index of the public AromaUI API. For detailed do
 | `aroma_event_subscribe` | Registers a listener for a node and event type. | [src/core/aroma_event.c231-260](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L231-L260) |
 | `aroma_event_unsubscribe` | Removes a listener. | [src/core/aroma_event.c261-280](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L261-L280) |
 | `aroma_event_create_mouse` | Creates a synthetic mouse event. | [src/core/aroma_event.c290-320](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L290-L320) |
+| `aroma_event_create_back` | Creates a system back-button event (`EVENT_TYPE_BACK_PRESS`). | [include/aroma_event.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_event.h) |
 | `aroma_event_queue` | Queues an event for processing. | [src/core/aroma_event.c510-530](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L510-L530) |
 | `aroma_event_process_queue` | Drains the event queue. | [src/core/aroma_event.c510-530](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L510-L530) |
 
@@ -162,6 +163,18 @@ This page provides a high-level index of the public AromaUI API. For detailed do
 | `EVENT_TYPE_TOUCH_DOWN` | Touch contact began. |
 | `EVENT_TYPE_TOUCH_MOVE` | Touch contact moved. |
 | `EVENT_TYPE_TOUCH_UP` | Touch contact ended. |
+| `EVENT_TYPE_BACK_PRESS` | System back button (Android back / desktop ESC). |
+
+### System Navigation (Back Button)
+
+| Function | Description | Source |
+| --- | --- | --- |
+| `aroma_ui_set_back_callback` | Registers the back-button callback (`AromaBackCallback`). | [include/aroma_ui.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_ui.h) |
+| `aroma_ui_clear_back_callback` | Clears the back-button callback. | [include/aroma_ui.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_ui.h) |
+| `aroma_ui_has_back_callback` | Returns true when a back callback is registered. | [include/aroma_ui.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_ui.h) |
+| `aroma_ui_handle_back_press` | Dispatches `EVENT_TYPE_BACK_PRESS` then runs the callback; true = consumed. | [src/core/aroma_ui_impl.c](https://github.com/BinaryInkTN/AromaUI/blob/main/src/core/aroma_ui_impl.c) |
+
+Return `true` from the callback (or event listener) to stay in the app; return `false` at the navigation root to let Android exit. See [Android Back Button](backend-abstraction-layer/android/Back-Button.md).
 
 **Sources:**[include/aroma_event.h40-80](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_event.h#L40-L80)[src/core/aroma_event.c146-160](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L146-L160)
 

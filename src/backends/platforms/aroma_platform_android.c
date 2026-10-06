@@ -553,6 +553,14 @@ static void JNICALL native_on_editor_done(JNIEnv *env, jobject thiz)
         aroma_textbox_set_focused(focused, false);
 }
 
+static jboolean JNICALL native_on_back_pressed(JNIEnv *env, jobject thiz)
+{
+    (void)env;
+    (void)thiz;
+    bool consumed = aroma_ui_handle_back_press();
+    return consumed ? JNI_TRUE : JNI_FALSE;
+}
+
 static void JNICALL native_on_permission_result(JNIEnv *env, jobject thiz,
                                                 jint requestCode,
                                                 jobjectArray permissions,
@@ -1394,8 +1402,9 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
                 {"nativeOnActivityResult", "(IILjava/lang/String;Ljava/lang/String;)V", (void *)native_on_activity_result},
                 {"nativeOnTextInput", "(Ljava/lang/String;)V", (void *)native_on_text_input},
                 {"nativeOnBackspace", "()V", (void *)native_on_backspace},
-                {"nativeOnEditorDone", "()V", (void *)native_on_editor_done}};
-            if ((*env)->RegisterNatives(env, activity_class, activity_methods, 5) != JNI_OK)
+                {"nativeOnEditorDone", "()V", (void *)native_on_editor_done},
+                {"nativeOnBackPressed", "()Z", (void *)native_on_back_pressed}};
+            if ((*env)->RegisterNatives(env, activity_class, activity_methods, 6) != JNI_OK)
             {
                 LOG_ERROR("Failed to register activity native methods");
             }
@@ -1924,9 +1933,30 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event)
 {
     if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_KEY)
     {
-        if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN)
+        int32_t action = AKeyEvent_getAction(event);
+        int32_t key_code = AKeyEvent_getKeyCode(event);
+        if (key_code == AKEYCODE_BACK)
         {
-            int32_t key_code = AKeyEvent_getKeyCode(event);
+            if (action == AKEY_EVENT_ACTION_DOWN)
+            {
+                /* NativeActivity does not finish automatically when the
+                 * native queue reports "unhandled": the app must finish
+                 * itself. Consumed presses stay in the app; unconsumed
+                 * presses finish the activity (Android default). */
+                bool consumed = aroma_ui_handle_back_press();
+                request_frame();
+                if (!consumed && app && app->activity)
+                {
+                    ANativeActivity_finish(app->activity);
+                    return 1;
+                }
+                return consumed ? 1 : 0;
+            }
+            /* Swallow the release; the press was already handled above. */
+            return 1;
+        }
+        if (action == AKEY_EVENT_ACTION_DOWN)
+        {
             char ch = 0;
             if (key_code >= AKEYCODE_0 && key_code <= AKEYCODE_9)
                 ch = '0' + (key_code - AKEYCODE_0);

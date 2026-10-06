@@ -366,6 +366,18 @@
             "file": "docs/backend-abstraction-layer/android/System-UI.md"
         },
         {
+            "title": "Android Back Button",
+            "description": "System back key and gesture callback.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-06",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/Back-Button.md"
+        },
+        {
             "title": "Android Bluetooth Scan",
             "description": "Scan modes, device types, and discovery.",
             "icon": "smartphone",

@@ -165,6 +165,14 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
 
     if (value && value[0] != '\0')
     {
+        if (strcmp(value, "Escape") == 0)
+        {
+            /* ESC mirrors the Android back button on desktop. */
+            if (aroma_ui_handle_back_press())
+                return;
+            queue_key_event(EVENT_TYPE_KEY_PRESS, 27, modifiers);
+            return;
+        }
         if (strcmp(value, "Left") == 0)
         {
             queue_key_event(EVENT_TYPE_KEY_PRESS, 0xFF51, modifiers);

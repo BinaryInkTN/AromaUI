@@ -61,6 +61,8 @@ static bool g_running = true;
 static AromaDrawList *g_window_drawlists[AROMA_MAX_WINDOWS] = {0};
 static AromaTheme g_default_theme;
 static bool g_frame_active = false;
+static AromaBackCallback g_back_callback = NULL;
+static void *g_back_callback_data = NULL;
 
 static void window_update_callback(size_t window_id, void *data);
 static void render_dirty_window_internal(size_t window_id, uint32_t clear_color);
@@ -918,4 +920,46 @@ void aroma_ui_read_pixels(AromaWindow *window, void *buffer, int width, int heig
         size_t win_id = (g_window_count > 0) ? g_windows[0].window_id : 0;
         platform->read_pixels(win_id, buffer, width, height);
     }
+}
+
+void aroma_ui_set_back_callback(AromaBackCallback callback, void *user_data)
+{
+    g_back_callback = callback;
+    g_back_callback_data = user_data;
+}
+
+void aroma_ui_clear_back_callback(void)
+{
+    g_back_callback = NULL;
+    g_back_callback_data = NULL;
+}
+
+bool aroma_ui_has_back_callback(void)
+{
+    return g_back_callback != NULL;
+}
+
+bool aroma_ui_handle_back_press(void)
+{
+    bool consumed = false;
+
+    AromaNode *root = aroma_event_get_root();
+    if (root)
+    {
+        AromaEvent *ev = aroma_event_create_back(root->node_id);
+        if (ev)
+        {
+            consumed = aroma_event_dispatch(ev);
+            aroma_event_destroy(ev);
+        }
+    }
+
+    if (!consumed && g_back_callback)
+    {
+        bool cb_consumed = g_back_callback(g_back_callback_data);
+        if (cb_consumed)
+            consumed = true;
+    }
+
+    return consumed;
 }

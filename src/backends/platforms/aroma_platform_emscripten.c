@@ -374,6 +374,12 @@ static EM_BOOL _cb_key_down(int et, const EmscriptenKeyboardEvent *e, void *ud)
     (void)et; (void)ud;
     uint32_t kv = _map_key(e);
     if (kv == 0) return EM_TRUE;
+    /* Browser Escape mirrors the system back button. */
+    if (kv == 27)
+    {
+        if (aroma_ui_handle_back_press())
+            return EM_TRUE;
+    }
     _queue_key_event(EVENT_TYPE_KEY_PRESS, kv, _key_modifiers(e));
     return EM_TRUE;
 }

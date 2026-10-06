@@ -46,6 +46,7 @@ typedef enum AromaEventType {
     EVENT_TYPE_TOUCH_UP,          /**< Touch point up. */
     EVENT_TYPE_TOUCH_MOVE,        /**< Touch point moved. */
     EVENT_TYPE_CUSTOM,            /**< User-defined custom event. */
+    EVENT_TYPE_BACK_PRESS,        /**< System back button pressed (Android back / ESC). */
     EVENT_TYPE_COUNT              /**< Total number of event types. */
 } AromaEventType;
 
@@ -228,6 +229,19 @@ AromaEvent* aroma_event_create_key(AromaEventType event_type, uint64_t target_no
 
 AromaEvent* aroma_event_create_custom(uint64_t target_node_id, uint32_t custom_type,
                                       void* data, void (*free_func)(void*));
+
+/**
+ * @brief Create a system back-button event.
+ *
+ * The event targets the given node (usually the event root). Dispatch it
+ * with aroma_event_dispatch() or queue it with aroma_event_queue().
+ * Backends synthesize this event from the platform back affordance
+ * (Android back key / gesture, desktop ESC).
+ *
+ * @param target_node_id Target node ID (can be 0 for root resolution by caller).
+ * @return Pointer to the new event, or NULL.
+ */
+AromaEvent* aroma_event_create_back(uint64_t target_node_id);
 
 void aroma_event_destroy(AromaEvent* event);
 

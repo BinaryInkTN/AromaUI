@@ -301,6 +301,15 @@ static void glfw_mouse_button_callback(GLFWwindow *window, int button, int actio
 
 static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
+    /* ESC mirrors the Android system back button so desktop apps can share
+     * the same navigation handling. Only PRESS fires the callback; RELEASE
+     * still flows through as a normal key event when unconsumed. */
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        if (aroma_ui_handle_back_press())
+            return;
+    }
+
     AromaEventType type = (action == GLFW_RELEASE) ? EVENT_TYPE_KEY_RELEASE : EVENT_TYPE_KEY_PRESS;
 
     uint32_t key_value = 0;

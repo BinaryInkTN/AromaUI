@@ -40,6 +40,21 @@ aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, handler, user_data,
 
 Return `true` from the handler to consume the event and stop bubbling.
 
+## System Back Button
+
+The system back button (Android back key / gesture, `ESC` on desktop/web) arrives as `EVENT_TYPE_BACK_PRESS`. Prefer the one-shot callback API over a raw subscription:
+
+```c
+static bool on_back(void *ud) {
+    (void)ud;
+    if (detail_is_open()) { show_list(); return true; }
+    return false; // root: let the platform exit
+}
+aroma_ui_set_back_callback(on_back, NULL);
+```
+
+`aroma_ui_handle_back_press()` (called by every backend) dispatches `EVENT_TYPE_BACK_PRESS` to the event root first, then runs the callback registered with `aroma_ui_set_back_callback()` if nothing consumed. Return `true` to stay in the app, `false` for the platform default. See [Android Back Button](../backend-abstraction-layer/android/Back-Button.md).
+
 ## Scroll Interception
 
 Scrollable containers (like `AromaContainer`) intercept touch events to implement kinetic scrolling:
@@ -61,6 +76,7 @@ The event system exposes these lower-level functions for framework internals and
 | `aroma_event_subscribe()` | Registers a listener on a node for a specific event type |
 | `aroma_event_unsubscribe()` | Removes a previously registered listener |
 | `aroma_event_create()` | Allocates an event from the static pool |
+| `aroma_event_create_back()` | Allocates an `EVENT_TYPE_BACK_PRESS` event (pass `0` for the root) |
 | `aroma_event_queue()` | Adds an event to the thread-safe processing queue |
 | `aroma_event_process_queue()` | Drains the queue and dispatches events |
 | `aroma_event_dispatch()` | Hit-tests and delivers events to target nodes |

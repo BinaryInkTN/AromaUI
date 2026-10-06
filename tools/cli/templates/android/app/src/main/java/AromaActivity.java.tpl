@@ -29,6 +29,7 @@ public class AromaActivity extends NativeActivity {
     private static native void nativeOnTextInput(String text);
     private static native void nativeOnBackspace();
     private static native void nativeOnEditorDone();
+    private static native boolean nativeOnBackPressed();
     public static void imeText(String text) {
         try {
             nativeOnTextInput(text);
@@ -48,6 +49,17 @@ public class AromaActivity extends NativeActivity {
         }
     }
     private static native void nativeOnActivityResult(int requestCode, int resultCode, String data, String extra);
+    @Override
+    public void onBackPressed() {
+        boolean handled = false;
+        try {
+            handled = nativeOnBackPressed();
+        } catch (UnsatisfiedLinkError e) {
+        }
+        if (!handled) {
+            super.onBackPressed();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

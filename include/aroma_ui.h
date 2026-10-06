@@ -1529,6 +1529,60 @@ extern "C"
         return overlay;
     }
 
+    /**
+     * @brief Callback invoked when the system back button is pressed.
+     *
+     * The back button is the Android system back key / back gesture, and
+     * ESC on desktop/web backends (GLFW, GLPS, Emscripten). Register with
+     * aroma_ui_set_back_callback(). Return true to consume the press and
+     * prevent the default behavior (activity finish on Android); return
+     * false to let the platform perform its default action.
+     *
+     * @param user_data Context pointer passed to aroma_ui_set_back_callback().
+     * @return true if the press was handled, false to fall through.
+     */
+    typedef bool (*AromaBackCallback)(void *user_data);
+
+    /**
+     * @brief Register a callback for the system back button.
+     *
+     * Only one callback is stored at a time; calling this replaces any
+     * previous registration. The callback runs on the thread that delivers
+     * the back event (main/UI thread). It is invoked after any
+     * EVENT_TYPE_BACK_PRESS event listeners have run.
+     *
+     * @param callback Function to call on back press (NULL clears).
+     * @param user_data Opaque pointer forwarded to the callback.
+     */
+    void aroma_ui_set_back_callback(AromaBackCallback callback, void *user_data);
+
+    /**
+     * @brief Clear the registered back-button callback, if any.
+     */
+    void aroma_ui_clear_back_callback(void);
+
+    /**
+     * @brief Check whether a back-button callback is registered.
+     * @return true when a callback is set, false otherwise.
+     */
+    bool aroma_ui_has_back_callback(void);
+
+    /**
+     * @brief Dispatch a back-press through the event system and callback.
+     *
+     * Backends call this when the platform back affordance fires. It first
+     * dispatches an EVENT_TYPE_BACK_PRESS event to the current event root
+     * (so aroma_event_subscribe() listeners run), then invokes the
+     * registered AromaBackCallback if the event was not already consumed.
+     * If either stage consumes the press, this returns true.
+     *
+     * Apps may also call it directly (e.g. from a custom on-screen back
+     * button) to share the same handling path.
+     *
+     * @return true if the press was consumed, false to use platform default.
+     */
+    bool aroma_ui_handle_back_press(void);
+
 
 
 #ifdef __ANDROID__

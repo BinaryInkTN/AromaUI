@@ -1020,6 +1020,34 @@ AromaEvent *aroma_event_create_scroll(uint64_t node_id, int x, int y,
     return ev;
 }
 
+AromaEvent *aroma_event_create_back(uint64_t target_node_id)
+{
+    if (!g_event_system.initialized || g_event_system.shutting_down)
+        return NULL;
+    uint64_t node_id = target_node_id;
+    AromaNode *target = NULL;
+    if (node_id != 0)
+    {
+        target = find_node_cached(node_id);
+        if (!target)
+            return NULL;
+    }
+    else
+    {
+        target = g_event_system.root_node;
+        if (!target)
+            return NULL;
+        node_id = target->node_id;
+    }
+    AromaEvent *ev = aroma_event_alloc();
+    if (!ev) return NULL;
+    ev->event_type     = EVENT_TYPE_BACK_PRESS;
+    ev->target_node_id = node_id;
+    ev->target_node    = target;
+    clock_gettime(CLOCK_MONOTONIC, &ev->timestamp);
+    return ev;
+}
+
 
 void aroma_event_destroy(AromaEvent *event)
 {
@@ -1042,10 +1070,13 @@ const char *aroma_event_type_name(AromaEventType event_type)
 {
     static const char *names[] = {
         "MOUSE_MOVE", "MOUSE_CLICK", "MOUSE_RELEASE", "MOUSE_ENTER",
-        "MOUSE_EXIT", "MOUSE_HOVER", "MOUSE_DOUBLE_CLICK", "KEY_PRESS",
-        "KEY_RELEASE", "FOCUS_GAINED", "FOCUS_LOST", "WINDOW_RESIZE",
-        "CUSTOM", "UNKNOWN"
+        "MOUSE_EXIT", "MOUSE_HOVER", "MOUSE_DOUBLE_CLICK", "MOUSE_SCROLL",
+        "KEY_PRESS", "KEY_RELEASE", "FOCUS_GAINED", "FOCUS_LOST",
+        "WINDOW_RESIZE", "TOUCH_DOWN", "TOUCH_UP", "TOUCH_MOVE",
+        "CUSTOM", "BACK_PRESS", "UNKNOWN"
     };
+    if ((int)event_type < 0)
+        return "UNKNOWN";
     if (event_type < EVENT_TYPE_COUNT) return names[event_type];
     return names[EVENT_TYPE_COUNT];
 }
