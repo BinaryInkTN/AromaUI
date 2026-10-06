@@ -142,6 +142,20 @@ extern "C"
      */
     void aroma_canvas_draw_arc(AromaNode *node, int center_x, int center_y, int radius, float start_angle, float end_angle, uint32_t color, int thickness);
 
+    /**
+     * @brief Drop all queued draw ops without painting anything.
+     *
+     * Unlike aroma_canvas_clear() (which replaces the queue with a
+     * full-window CLEAR op), this simply empties the queue so the next
+     * draw_* calls start from a blank canvas clipped to the node.
+     * Use it before repainting a canvas whose geometry or colors
+     * changed (resize, theme switch) to avoid unbounded op growth
+     * toward AROMA_CANVAS_MAX_OPS.
+     *
+     * @param node Canvas node to reset.
+     */
+    void aroma_canvas_reset(AromaNode *node);
+
 #ifdef __cplusplus
 }
 #endif

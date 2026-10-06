@@ -175,6 +175,14 @@ float aroma_label_get_scale(AromaNode* label_node)
     return label->text_scale;
 }
 
+void aroma_label_set_scale(AromaNode* label_node, float scale)
+{
+    if (!label_node || !label_node->node_widget_ptr) return;
+    AromaLabel* label = (AromaLabel*)label_node->node_widget_ptr;
+    label->text_scale = scale;
+    __update_label_geometry(label_node);
+}
+
 void aroma_label_set_style(AromaNode* label_node, AromaLabelStyle style)
 {
     if (!label_node || !label_node->node_widget_ptr) return;

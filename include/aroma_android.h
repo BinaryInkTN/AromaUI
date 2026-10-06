@@ -1315,6 +1315,27 @@ static inline void aroma_android_nfc_stop(void) {
     }
 }
 
+static inline void aroma_android_rfid_register(void (*cb)(const char* uid_hex)) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_rfid_register) {
+        platform->android_rfid_register(cb);
+    }
+}
+
+static inline void aroma_android_rfid_start(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_rfid_start) {
+        platform->android_rfid_start();
+    }
+}
+
+static inline void aroma_android_rfid_stop(void) {
+    AromaPlatformInterface* platform = aroma_get_platform_interface();
+    if (platform && platform->android_rfid_stop) {
+        platform->android_rfid_stop();
+    }
+}
+
 static inline bool aroma_android_nfc_available(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_nfc_available) {

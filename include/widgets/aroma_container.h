@@ -35,6 +35,8 @@ void aroma_container_set_content_size(AromaNode* node, int content_width, int co
 
 void aroma_container_set_scroll_direction(AromaNode* node, AromaScrollDirection direction);
 
+AromaScrollDirection aroma_container_get_scroll_direction(AromaNode* node);
+
 void aroma_container_get_scroll(AromaNode* node, int* scroll_x, int* scroll_y);
 
 void aroma_container_set_scroll(AromaNode* node, int scroll_x, int scroll_y);

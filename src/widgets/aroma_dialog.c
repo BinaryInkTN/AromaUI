@@ -30,6 +30,7 @@
 #define AROMA_DIALOG_GAP_MED_DP 12
 #define AROMA_DIALOG_MESSAGE_W_DP 32
 #define AROMA_DIALOG_FONT_H_DP 20
+#define AROMA_DIALOG_SCREEN_MARGIN_DP 24
 
 #ifdef __ANDROID__
 static inline int dialog_dp(int dp) { return aroma_android_dp_to_px(dp); }
@@ -102,6 +103,19 @@ static void __dialog_update_rect(AromaDialog *dlg)
 
     if (win_w > 0 && win_h > 0)
     {
+        /* Clamp to the window (dp-aware margins) so dialogs authored wider
+         * than small screens shrink instead of spilling past the edges;
+         * position follows from the clamped size. */
+        int max_w = win_w - 2 * dialog_dp(AROMA_DIALOG_SCREEN_MARGIN_DP);
+        int max_h = win_h - 2 * dialog_dp(AROMA_DIALOG_SCREEN_MARGIN_DP);
+        if (max_w < 1)
+            max_w = 1;
+        if (max_h < 1)
+            max_h = 1;
+        if (width > max_w)
+            width = max_w;
+        if (height > max_h)
+            height = max_h;
         dlg->centered_x = (win_w - width) / 2;
         dlg->centered_y = (win_h - height) / 2;
     }

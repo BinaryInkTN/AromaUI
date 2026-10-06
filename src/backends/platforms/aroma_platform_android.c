@@ -501,6 +501,7 @@ static void impl_android_orient_landscape_new(void);
 static void impl_android_orient_sensor_new(void);
 static bool impl_android_orient_locked_new(void);
 static void JNICALL native_on_nfc_tag(JNIEnv *env, jobject thiz, jstring payload);
+static void JNICALL native_on_rfid_tag(JNIEnv *env, jobject thiz, jstring uid);
 static void JNICALL native_on_biometric(JNIEnv *env, jobject thiz, jboolean success);
 static void JNICALL native_on_location(JNIEnv *env, jobject thiz, jdouble lat, jdouble lon, jfloat accuracy, jlong timeMs);
 static void JNICALL native_on_screenshot(JNIEnv *env, jobject thiz, jstring path);
@@ -1322,11 +1323,12 @@ static bool ensure_aroma_helper_initialized(JNIEnv *env)
         {"onBleWrite", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *)native_on_ble_write},
         {"onSensorChanged", "(IFFFJ)V", (void *)native_on_sensor_changed},
         {"onNfcTag", "(Ljava/lang/String;)V", (void *)native_on_nfc_tag},
+        {"onRfidTag", "(Ljava/lang/String;)V", (void *)native_on_rfid_tag},
         {"onBiometric", "(Z)V", (void *)native_on_biometric},
         {"onLocation", "(DDFJ)V", (void *)native_on_location},
         {"onScreenshot", "(Ljava/lang/String;)V", (void *)native_on_screenshot}};
 
-    jint register_result = (*env)->RegisterNatives(env, nativeCallbackClass, methods, 17);
+    jint register_result = (*env)->RegisterNatives(env, nativeCallbackClass, methods, 18);
     if (register_result != JNI_OK)
     {
         LOG_ERROR("Failed to register native methods: %d", register_result);
@@ -6527,6 +6529,11 @@ typedef struct
 
 typedef struct
 {
+    void (*uid_cb)(const char *uid_hex);
+} AromaRfidCallbacks;
+
+typedef struct
+{
     void (*auth_cb)(bool success);
 } AromaBiometricCallbacks;
 
@@ -6536,6 +6543,7 @@ typedef struct
 } AromaLocationCallbacks;
 
 static AromaNfcCallbacks g_nfc_callbacks = {0};
+static AromaRfidCallbacks g_rfid_callbacks = {0};
 static AromaBiometricCallbacks g_bio_callbacks = {0};
 static AromaLocationCallbacks g_loc_callbacks = {0};
 
@@ -6550,6 +6558,20 @@ static void JNICALL native_on_nfc_tag(JNIEnv *env, jobject thiz, jstring payload
     if (payload)
     {
         (*env)->ReleaseStringUTFChars(env, payload, text);
+    }
+}
+
+static void JNICALL native_on_rfid_tag(JNIEnv *env, jobject thiz, jstring uid)
+{
+    (void)thiz;
+    const char *text = uid ? (*env)->GetStringUTFChars(env, uid, NULL) : "";
+    if (g_rfid_callbacks.uid_cb)
+    {
+        g_rfid_callbacks.uid_cb(text);
+    }
+    if (uid)
+    {
+        (*env)->ReleaseStringUTFChars(env, uid, text);
     }
 }
 
@@ -6603,6 +6625,11 @@ static void JNICALL native_on_screenshot(JNIEnv *env, jobject thiz, jstring path
 void impl_android_nfc_register(void (*cb)(const char *payload))
 {
     g_nfc_callbacks.tag_cb = cb;
+}
+
+void impl_android_rfid_register(void (*cb)(const char *uid_hex))
+{
+    g_rfid_callbacks.uid_cb = cb;
 }
 
 void impl_android_biometric_register(void (*cb)(bool success))
@@ -7948,6 +7975,9 @@ AromaPlatformInterface aroma_platform_android = {
     .android_nfc_stop = impl_android_nfc_stop_new,
     .android_nfc_available = impl_android_nfc_available_new,
     .android_nfc_enabled = impl_android_nfc_enabled_new,
+    .android_rfid_register = impl_android_rfid_register,
+    .android_rfid_start = impl_android_nfc_start_new,
+    .android_rfid_stop = impl_android_nfc_stop_new,
     .android_biometric_register = impl_android_biometric_register,
     .android_biometric_available = impl_android_bio_available_new,
     .android_biometric_authenticate = impl_android_bio_authenticate_new,

@@ -2847,6 +2847,25 @@ static AromaNode *build_button(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
                 aroma_button_set_icon(built, resolved ? resolved : ir,
                                       ctx->icon_font ? ctx->icon_font : _widget_font);
             }
+            /* Honor explicit markup geometry: set_font/set_icon autosize
+             * the button to content width, discarding the authored size.
+             * Restore it when specified so buttons render at design size
+             * (labels auto-fit inside via dynamic text scaling). */
+            if (props_get(&bag, "width") || props_get(&bag, "height"))
+            {
+                AromaRect *br = aroma_node_get_rect(built);
+                if (br)
+                {
+                    if (props_get(&bag, "width"))
+                        br->width = AROMA_DP_I(props_int(&bag, "width", 120));
+                    if (props_get(&bag, "height"))
+                        br->height = AROMA_DP_I(props_int(&bag, "height", 40));
+                    if (br->width < 1)
+                        br->width = 1;
+                    if (br->height < 1)
+                        br->height = 1;
+                }
+            }
         }
     }
     free(text);
@@ -3284,6 +3303,16 @@ static AromaNode *build_listview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
+    int vis = props_int(&bag, "visible", -1);
+    if (vis == 0) {
+        aroma_node_set_hidden(built, true);
+        if (built->parent_node)
+            aroma_node_set_hidden(built->parent_node, true);
+    } else if (vis == 1) {
+        aroma_node_set_hidden(built, false);
+        if (built->parent_node)
+            aroma_node_set_hidden(built->parent_node, false);
+    }
     apply_widget_animations(built, &bag, node);
     maybe_register(&bag, built, ctx);
     props_free(&bag);

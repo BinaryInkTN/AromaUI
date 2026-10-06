@@ -47,6 +47,9 @@ AromaFont* aroma_label_get_font(AromaNode* label_node);
 // Get scale
 float aroma_label_get_scale(AromaNode* label_node);
 
+// Set scale
+void aroma_label_set_scale(AromaNode* label_node, float scale);
+
 // Set style
 void aroma_label_set_style(AromaNode* label_node, AromaLabelStyle style);
 

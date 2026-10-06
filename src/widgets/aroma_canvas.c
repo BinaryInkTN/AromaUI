@@ -160,6 +160,17 @@ void aroma_canvas_clear(AromaNode *node, uint32_t color)
     aroma_node_invalidate(node);
 }
 
+void aroma_canvas_reset(AromaNode *node)
+{
+    if (!node)
+        return;
+    AromaCanvas *canvas = (AromaCanvas *)node->node_widget_ptr;
+    if (!canvas)
+        return;
+    canvas->op_count = 0;
+    aroma_node_invalidate(node);
+}
+
 AromaNode *aroma_canvas_create(AromaNode *parent, int x, int y, int width, int height)
 {
     AromaCanvas *canvas = (AromaCanvas *)aroma_widget_alloc(sizeof(AromaCanvas));

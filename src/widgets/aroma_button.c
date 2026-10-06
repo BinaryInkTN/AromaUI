@@ -576,11 +576,58 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
             }
 
             float gap = (button->label[0] != '\0' && button->icon[0] != '\0') ? (float)button->icon_padding : 0;
-            float total_w = icon_w + gap + button->text_width;
+
+            /* Dynamic text size: shrink the label to fit the button width
+             * (e.g. after responsive downscaling or a longer runtime label)
+             * instead of spilling past the button edge. Never grows beyond
+             * the caller's text_scale. Below the readability floor the text
+             * stays at the floor size and the scissor clip takes over. */
+            float raw_text_w = 0.0f;
+            if (button->label[0] != '\0' && button->font)
+            {
+                if (button->text_scale > 0.0001f && button->text_width > 0.0f)
+                    raw_text_w = button->text_width / button->text_scale;
+                else
+                    raw_text_w = (float)aroma_font_get_line_width(button->font,
+                                                                  button->label);
+            }
+            float eff_scale = button->text_scale;
+            if (raw_text_w > 0.0f)
+            {
+                float avail_w = (float)button->rect.width - 2.0f * (float)padding;
+                if (avail_w < 1.0f)
+                    avail_w = 1.0f;
+                float room = avail_w - icon_w - gap;
+                if (room < 1.0f)
+                    room = 1.0f;
+                float fit = room / raw_text_w;
+                if (fit < eff_scale)
+                    eff_scale = fit;
+                if (eff_scale < 0.5f)
+                    eff_scale = 0.5f;
+            }
+            float eff_text_w = raw_text_w * eff_scale;
+            int eff_line_h = button->font
+                                 ? (int)(aroma_font_get_line_height(button->font) * eff_scale + 0.5f)
+                                 : (int)(button->line_height + 0.5f);
+            if (eff_line_h < 1)
+                eff_line_h = 1;
+
+            float total_w = icon_w + gap + eff_text_w;
 
             float content_start_x = button->rect.x + (button->rect.width - total_w) / 2.0f;
             if (content_start_x < button->rect.x + padding)
                 content_start_x = button->rect.x + padding;
+
+            /* Hard guarantee: label/icon never paint outside the button,
+             * even if the floor size still exceeds a tiny button. */
+            bool clipped = false;
+            if (gfx->graphics_set_clip && gfx->graphics_clear_clip)
+            {
+                gfx->graphics_set_clip(button->rect.x, button->rect.y,
+                                       button->rect.width, button->rect.height);
+                clipped = true;
+            }
 
             float current_x = content_start_x;
 
@@ -597,12 +644,15 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
 
             if (button->label[0] != '\0')
             {
-                float text_y = button->rect.y + (button->rect.height - button->line_height) / 2.0f;
+                float text_y = button->rect.y + (button->rect.height - (float)eff_line_h) / 2.0f;
 
                 gfx->render_text(window_id, button->font, button->label,
                                  current_x, text_y,
-                                 button->text_color, button->text_scale);
+                                 button->text_color, eff_scale);
             }
+
+            if (clipped)
+                gfx->graphics_clear_clip();
         }
     }
 }

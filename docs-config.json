@@ -486,6 +486,18 @@
             "file": "docs/backend-abstraction-layer/android/NFC.md"
         },
         {
+            "title": "Android RFID",
+            "description": "HF tag UID scans over the NFC reader.",
+            "icon": "smartphone",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "subcategory": "Android",
+            "version": "0.0.2",
+            "updated": "2026-10-06",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/android/RFID.md"
+        },
+        {
             "title": "Android Display",
             "description": "Density, screen size, and orientation.",
             "icon": "smartphone",

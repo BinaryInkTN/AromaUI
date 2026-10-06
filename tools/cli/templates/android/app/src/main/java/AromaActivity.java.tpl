@@ -10,12 +10,14 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.os.Bundle;
+import android.provider.MediaStore;
 
 public class AromaActivity extends NativeActivity {
     public static final int REQ_PERMISSION_CB = 1001;
@@ -83,6 +85,7 @@ public class AromaActivity extends NativeActivity {
                 Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
                 String payload = AromaHelper.nfcReadText(tag);
                 AromaHelper.dispatchNfc(payload);
+                AromaHelper.dispatchRfid(AromaHelper.rfidUidHex(tag));
             }
         } catch (Exception e) {
         }
@@ -115,11 +118,27 @@ public class AromaActivity extends NativeActivity {
                     out = AromaHelper.copyUriToCache(this, uri, requestCode == REQ_PICK_IMAGE ? "aroma_pick_" : "aroma_doc_");
                 }
             } else if (requestCode == REQ_CAPTURE_PHOTO) {
-                Bundle ex = data.getExtras();
-                if (ex != null) {
-                    Object bmp = ex.get("data");
-                    if (bmp instanceof Bitmap) {
-                        out = AromaHelper.saveBitmapToCache(this, (Bitmap) bmp, "aroma_capture_");
+                // Prefer the MediaStore file offered via EXTRA_OUTPUT (full
+                // resolution); fall back to the thumbnail bitmap.
+                Uri pending = AromaHelper.takeCaptureOutputUri();
+                if (pending != null) {
+                    try {
+                        if (Build.VERSION.SDK_INT >= 29) {
+                            ContentValues cv = new ContentValues();
+                            cv.put(MediaStore.Images.Media.IS_PENDING, 0);
+                            getContentResolver().update(pending, cv, null, null);
+                        }
+                        out = AromaHelper.copyUriToCache(this, pending, "aroma_capture_");
+                    } catch (Exception e) {
+                    }
+                }
+                if (out == null) {
+                    Bundle ex = data.getExtras();
+                    if (ex != null) {
+                        Object bmp = ex.get("data");
+                        if (bmp instanceof Bitmap) {
+                            out = AromaHelper.saveBitmapToCache(this, (Bitmap) bmp, "aroma_capture_");
+                        }
                     }
                 }
             } else if (requestCode == REQ_PICK_CONTACT) {

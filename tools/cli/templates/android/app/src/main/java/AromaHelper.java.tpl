@@ -52,6 +52,7 @@ import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -78,6 +79,7 @@ import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -234,6 +236,7 @@ public class AromaHelper {
         public native void onBleWrite(String address, String charUuid, int status);
         public native void onSensorChanged(int type, float x, float y, float z, long timestamp);
         public native void onNfcTag(String payload);
+        public native void onRfidTag(String uid);
         public native void onBiometric(boolean success);
         public native void onLocation(double lat, double lon, float accuracy, long timeMs);
         public native void onScreenshot(String path);
@@ -2063,12 +2066,43 @@ public class AromaHelper {
         }
     }
 
+    private static Uri captureOutputUri = null;
+
+    /** Take and clear the pending capture output URI (one-shot). */
+    public static Uri takeCaptureOutputUri() {
+        Uri u = captureOutputUri;
+        captureOutputUri = null;
+        return u;
+    }
+
     public static void capturePhoto(Activity activity, int requestCode) {
         if (activity == null) return;
         try {
+            // Offer a MediaStore output file: many camera apps return
+            // RESULT_OK with null data when no EXTRA_OUTPUT is supplied,
+            // which previously surfaced as "Cancelled" with no preview.
+            Uri outUri = null;
+            try {
+                ContentValues cv = new ContentValues();
+                cv.put(MediaStore.Images.Media.DISPLAY_NAME, "aroma_capture_" + System.currentTimeMillis() + ".jpg");
+                cv.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                if (Build.VERSION.SDK_INT >= 29) {
+                    cv.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AromaDemo");
+                    cv.put(MediaStore.Images.Media.IS_PENDING, 1);
+                }
+                outUri = activity.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+            } catch (Exception e) {
+                outUri = null;
+            }
+            captureOutputUri = outUri;
             Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+            if (outUri != null) {
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, outUri);
+                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            }
             activity.startActivityForResult(intent, requestCode);
         } catch (Exception e) {
+            captureOutputUri = null;
         }
     }
 
@@ -2446,7 +2480,12 @@ public class AromaHelper {
             PendingIntent pi = PendingIntent.getActivity(activity, 0, intent, flags);
             IntentFilter ndef = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
             try { ndef.addDataType("*/*"); } catch (IntentFilter.MalformedMimeTypeException e) { }
-            a.enableForegroundDispatch(activity, pi, new IntentFilter[]{ndef}, null);
+            // Catch-all: text-record, blank and non-NDEF tags arrive as
+            // TECH_DISCOVERED/TAG_DISCOVERED and would otherwise bypass
+            // foreground dispatch entirely.
+            IntentFilter tech = new IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED);
+            IntentFilter tag = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
+            a.enableForegroundDispatch(activity, pi, new IntentFilter[]{ndef, tech, tag}, null);
             nfcAdapter = a;
             nfcArmed = true;
         } catch (Exception e) {
@@ -2465,9 +2504,52 @@ public class AromaHelper {
         nfcAdapter = null;
     }
 
-    public static void dispatchNfc(String payload) {
+    /** Tag UID bytes as uppercase hex ("" when unavailable). */
+    public static String rfidUidHex(Tag tag) {
+        if (tag == null) return "";
+        try {
+            byte[] id = tag.getId();
+            if (id == null || id.length == 0) return "";
+            StringBuilder sb = new StringBuilder(id.length * 2);
+            for (byte b : id) sb.append(String.format("%02X", b));
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    public static void dispatchRfid(String uid) {
+        boolean delivered = false;
         for (BluetoothCallback cb : callbacks) {
-            if (cb instanceof NativeCallback) ((NativeCallback) cb).onNfcTag(payload != null ? payload : "");
+            if (cb instanceof NativeCallback) {
+                ((NativeCallback) cb).onRfidTag(uid != null ? uid : "");
+                delivered = true;
+            }
+        }
+        if (!delivered) {
+            // Deliver directly when nothing registered yet, same as NFC.
+            try {
+                new NativeCallback().onRfidTag(uid != null ? uid : "");
+            } catch (Throwable t) {
+            }
+        }
+    }
+
+    public static void dispatchNfc(String payload) {
+        boolean delivered = false;
+        for (BluetoothCallback cb : callbacks) {
+            if (cb instanceof NativeCallback) {
+                ((NativeCallback) cb).onNfcTag(payload != null ? payload : "");
+                delivered = true;
+            }
+        }
+        if (!delivered) {
+            // No callback registered yet (e.g. NFC demo opened before any
+            // Bluetooth flow): deliver directly so taps are never dropped.
+            try {
+                new NativeCallback().onNfcTag(payload != null ? payload : "");
+            } catch (Throwable t) {
+            }
         }
     }
 

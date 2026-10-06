@@ -524,6 +524,9 @@ typedef struct AromaPlatformInterface {
     void (*android_nfc_stop)(void);
     bool (*android_nfc_available)(void);
     bool (*android_nfc_enabled)(void);
+    void (*android_rfid_register)(void (*cb)(const char* uid_hex));
+    void (*android_rfid_start)(void);
+    void (*android_rfid_stop)(void);
     void (*android_biometric_register)(void (*cb)(bool success));
     int (*android_biometric_available)(void);
     void (*android_biometric_authenticate)(const char* title, const char* subtitle);

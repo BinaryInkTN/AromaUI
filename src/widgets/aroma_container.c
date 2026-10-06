@@ -1085,6 +1085,14 @@ void aroma_container_set_scroll_direction(AromaNode *node, AromaScrollDirection 
     c->direction = direction;
 }
 
+AromaScrollDirection aroma_container_get_scroll_direction(AromaNode *node)
+{
+    AromaContainer *c = aroma_container_get(node);
+    if (!c)
+        return AROMA_SCROLL_VERTICAL;
+    return c->direction;
+}
+
 void aroma_container_get_scroll(AromaNode *node, int *scroll_x, int *scroll_y)
 {
     AromaContainer *c = aroma_container_get(node);
