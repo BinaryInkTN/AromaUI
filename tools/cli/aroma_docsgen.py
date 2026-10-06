@@ -2307,29 +2307,6 @@ body.has-announce .announce-bar{{display:flex}}
   .doc-pn-link.next{{grid-column:1}}
 }}
 
-.doc-feedback{{
-  margin-top:32px;padding:20px;
-  border:1px solid var(--ms-border);border-radius:4px;background:var(--ms-surface);
-  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
-}}
-.doc-feedback-title{{font-size:14px;font-weight:600;color:var(--ms-heading);}}
-.doc-feedback-btns{{display:flex;gap:8px;}}
-.doc-feedback-btns button{{
-  height:32px;padding:0 16px;border-radius:2px;cursor:pointer;
-  border:1px solid var(--ms-border-dark);background:#FFFFFF;font-size:13px;color:var(--ms-text);
-}}
-.doc-feedback-btns button:hover{{background:var(--ms-surface-2);}}
-.doc-feedback-form{{display:flex;flex-direction:column;gap:10px;flex:1;min-width:min(100%,340px);}}
-.doc-feedback-form textarea{{
-  min-height:76px;resize:vertical;
-  border:1px solid var(--ms-border-dark);border-radius:2px;
-  padding:10px 12px;font-size:13px;line-height:1.5;font-family:var(--fb);
-  background:var(--md-surface);color:var(--ms-text);outline:none;
-}}
-.doc-feedback-form textarea:focus{{border-color:var(--ms-blue);}}
-[data-theme="dark"] .doc-feedback-btns button{{background-color:#292828;color:#F3F2F1;border-color:#484644;}}
-[data-theme="dark"] .doc-feedback-btns button:hover{{background-color:#323130;}}
-
 /* Footer + language picker (flagship) */
 .ms-footer{{
   background:var(--ms-surface);
@@ -2534,9 +2511,6 @@ body.has-announce .announce-bar{{display:flex}}
         </button>
         <div class="pf-menu" id="pfMenu"></div>
       </div>
-      <button class="m3-icon-btn" onclick="downloadPDF()" title="Download PDF">
-        <i data-lucide="file-down"></i>
-      </button>
       <div class="theme-toggle" role="group" aria-label="Theme">
         <button id="lightBtn" onclick="setTheme('light')" title="Light theme">
           <i data-lucide="sun"></i>
@@ -2598,13 +2572,6 @@ body.has-announce .announce-bar{{display:flex}}
             </div>
             <div class="md" id="docContent"></div>
             <div class="doc-pn-nav" id="docPnNav"></div>
-            <div class="doc-feedback" id="docFeedback">
-              <span class="doc-feedback-title" data-i18n="fbQ">Was this page helpful?</span>
-              <span class="doc-feedback-btns">
-                <button onclick="docFeedback(this,true)" data-i18n="yes">Yes</button>
-                <button onclick="docFeedback(this,false)" data-i18n="no">No</button>
-              </span>
-            </div>
           </div>
         </div>
         <footer class="ms-footer" aria-label="Footer">
@@ -2637,7 +2604,6 @@ const SUBCATS = {subcategories_json};
 const PAGE_PLATFORMS = {platforms_json};
 const CATEGORY_PAGES = {category_pages_json};
 const SUBCATEGORY_PAGES = {subcategory_pages_json};
-const PDF_URL = '{pdf_url}';
 const SEARCH_INDEX = {search_index_json};
 const PAGE_ICONS = {page_icons_js};
 const SLUG_TO_ID = {slug_to_id_json};
@@ -2649,110 +2615,6 @@ const PAGE_VERSIONS = {page_versions_json};
 const PAGE_UPDATED = {page_updated_json};
 const PAGE_STATUS = {page_status_json};
 /* Docs AI assistant: retrieval over embedded pages + LLM. */
-/* Docs feedback sinks: votes + comments are POSTed so the owner can see them.
-   - Default (works now, no setup): FormSubmit delivers to DOCS_FEEDBACK_EMAIL.
-   - Hosted dashboard: create a free form at https://formspree.io/forms (2 min),
-     then set DOCS_FORMSPREE_ID to the form ID (the part after /f/). New
-     feedback will then appear in the Formspree dashboard instead of email.
-   - If posting fails, the visitor gets a pre-filled GitHub issue draft. */
-const DOCS_FEEDBACK_EMAIL='overflowtn@gmail.com';
-const DOCS_FORMSPREE_ID='';
-function docFbVotes(){{
-  try{{ return JSON.parse(localStorage.getItem('docs-fb-votes')||'{{}}'); }}
-  catch(e){{ return {{}}; }}
-}}
-function docFbSaveVotes(v){{
-  try{{ localStorage.setItem('docs-fb-votes',JSON.stringify(v)); }}catch(e){{}}
-}}
-function docFeedbackDefault(){{
-  return '<span class="doc-feedback-title">Was this page helpful?</span>'
-    +'<span class="doc-feedback-btns">'
-    +'<button onclick="docFeedback(this,true)">Yes</button>'
-    +'<button onclick="docFeedback(this,false)">No</button>'
-    +'</span>';
-}}
-function docFeedbackThanks(sent){{
-  return sent
-    ? '<span class="doc-feedback-title">Thanks! Your draft issue is open on GitHub &mdash; just hit Submit.</span>'
-    : '<span class="doc-feedback-title">Thanks for your feedback!</span>';
-}}
-function resetDocFeedback(){{
-  const box=document.getElementById('docFeedback');
-  if(!box) return;
-  box.innerHTML=docFeedbackDefault();
-  try{{
-    const v=docFbVotes()[currentId];
-    if(v==='yes') box.innerHTML=docFeedbackThanks(false);
-    else if(v==='no') box.innerHTML=docFeedbackThanks(true);
-  }}catch(e){{}}
-}}
-function docFeedback(btn,helpful){{
-  const box=document.getElementById('docFeedback');
-  if(!box||!currentId) return;
-  const votes=docFbVotes();
-  votes[currentId]=helpful?'yes':'no-pending';
-  docFbSaveVotes(votes);
-  if(helpful){{
-    votes[currentId]='yes'; docFbSaveVotes(votes);
-    box.innerHTML=docFeedbackThanks(false);
-    return;
-  }}
-  box.innerHTML='<span class="doc-feedback-title">What went wrong?</span>'
-    +'<span class="doc-feedback-form">'
-    +'<textarea id="docFbText" rows="3" placeholder="Tell us what was confusing or missing..."></textarea>'
-    +'<span class="doc-feedback-btns">'
-    +'<button onclick="docFeedbackSend()">Send feedback</button>'
-    +'<button onclick="docFeedbackReset()">Cancel</button>'
-    +'</span></span>';
-  setTimeout(()=>{{const t=document.getElementById('docFbText'); if(t) t.focus();}},60);
-}}
-function docFeedbackReset(){{
-  const votes=docFbVotes();
-  if(currentId){{ delete votes[currentId]; docFbSaveVotes(votes); }}
-  resetDocFeedback();
-}}
-function docFeedbackSend(){{
-  const box=document.getElementById('docFeedback');
-  const ta=document.getElementById('docFbText');
-  const btns=box?box.querySelectorAll('.doc-feedback-btns button'):[];
-  if(btns[0]){{ btns[0].disabled=true; btns[0].textContent='Sending...'; }}
-  const comment=(ta?ta.value:'').trim();
-  const title=(typeof TITLES!=='undefined'&&TITLES[currentId])||document.getElementById('docTitle').textContent||'docs page';
-  const payload={{
-    _subject:'Docs feedback (No): '+title,
-    page:title, url:location.href, vote:'Not helpful',
-    details:comment||'(no details given)',
-    date:new Date().toISOString()
-  }};
-  const done=(ok)=>{{
-    const votes=docFbVotes();
-    if(currentId){{ votes[currentId]='no'; docFbSaveVotes(votes); }}
-    if(!box) return;
-    box.innerHTML=ok
-      ? '<span class="doc-feedback-title">Thanks! Your feedback was recorded.</span>'
-      : docFeedbackThanks(true);
-  }};
-  fetch(DOCS_FORMSPREE_ID
-    ? 'https://formspree.io/f/'+encodeURIComponent(DOCS_FORMSPREE_ID)
-    : 'https://formsubmit.co/ajax/'+encodeURIComponent(DOCS_FEEDBACK_EMAIL),{{
-    method:'POST',
-    headers:{{'Content-Type':'application/json','Accept':'application/json'}},
-    body:JSON.stringify(payload)
-  }}).then(r=>{{
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    done(true);
-  }}).catch(()=>{{
-    const body='Page: '+title+'\nURL: '+location.href+'\nVote: Not helpful\n\nDetails:\n'+(comment||'(no details given)');
-    const url='https://github.com/BinaryInkTN/AromaUI/issues/new'
-      +'?title='+encodeURIComponent('Docs feedback: '+title)
-      +'&body='+encodeURIComponent(body)
-      +'&labels='+encodeURIComponent('documentation');
-    window.open(url,'_blank','noopener');
-    done(false);
-  }});
-}}
-
-
 let currentId=null, currentCategory=null, currentSubcategory=null;
 let tocSections=[], activePF='all';
 let previousView={{type:'first',category:null,subcategory:null,id:null}};
@@ -3086,7 +2948,6 @@ function showPage(id, category=null, subcategory=null){{
   
   updateBreadcrumbs();
   renderPnNav(id);
-  resetDocFeedback();
   document.getElementById('cScroll').scrollTop=0;
   closeDrawer();
   setTimeout(()=>{{addCopyBtns();initMermaid(localStorage.getItem('docs-theme')||'light');ic();buildToc();if(document.getElementById('iconGrid')) filterIcons('');}},60);
@@ -3436,8 +3297,6 @@ function copyIconName(name,el){{
     document.body.removeChild(ta);done();
   }}
 }}
-
-function downloadPDF(){{if(PDF_URL) window.open(PDF_URL,'_blank');}}
 
 function initPF(){{
   const all={{}};

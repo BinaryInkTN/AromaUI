@@ -48,7 +48,7 @@ AromaUI is a modern, lightweight C UI framework designed for embedded and deskto
  
 ## Documentation
  
-Get started with AromaUI: Visit <a href="https://binaryinktn.github.io/AromaUI/">Docs</a> or <a href="https://binaryinktn.github.io/AromaUI/docs.pdf"> Download PDF</a>.
+Get started with AromaUI: Visit <a href="https://binaryinktn.github.io/AromaUI/">Docs</a>.
  
 - [Getting Started](docs/overview/Getting-Started.md) - Setup, project creation, and Hello World
 - [Architecture Overview](docs/overview/Architecture-Overview.md) - Four-layer system design
