@@ -779,6 +779,10 @@ class DocGenerator:
                             <span id="heroDlTxt">Download</span>
                         </a>
                         <span class="hero-dl-meta" id="heroDlMeta">Latest release</span>
+                        <a class="hero-dl-btn" href="aroma-demo.apk" download>
+                            <span>Download Demo APK</span>
+                        </a>
+                        <span class="hero-dl-meta">Android · 20.2 MB</span>
                     </div>
                   </div>
                   <div class="hero-graphic" aria-hidden="true">
