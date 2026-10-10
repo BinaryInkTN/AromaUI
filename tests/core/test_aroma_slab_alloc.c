@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_slab_alloc.h"
 #include "aroma_slab_alloc.h"
@@ -47,11 +47,11 @@ static void test_memory_system_init(void) {
 static void test_widget_allocation(void) {
     aroma_memory_system_init();
 
-    void* widget1 = aroma_widget_alloc(10);   
+    void* widget1 = aroma_widget_alloc(10);
 
-    void* widget2 = aroma_widget_alloc(100);  
+    void* widget2 = aroma_widget_alloc(100);
 
-    void* widget3 = aroma_widget_alloc(300);  
+    void* widget3 = aroma_widget_alloc(300);
 
     assert(widget1 != NULL);
     assert(widget2 != NULL);
@@ -80,7 +80,7 @@ static void test_widget_allocation_stress(void) {
     void* widgets[NUM_WIDGETS];
 
     for (int i = 0; i < NUM_WIDGETS; i++) {
-        size_t size = (i % 5) * 64 + 32;  
+        size_t size = (i % 5) * 64 + 32;
 
         widgets[i] = aroma_widget_alloc(size);
         assert(widgets[i] != NULL);

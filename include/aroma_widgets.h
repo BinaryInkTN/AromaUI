@@ -1,9 +1,9 @@
-/**
- * @file aroma_widgets.h
- * @brief Umbrella header for all AromaUI widgets.
- *
- * This file includes all available widget headers.
- */
+
+
+
+
+
+
 #ifndef AROMA_WIDGETS_H
 #define AROMA_WIDGETS_H
 #include "aroma_common.h"

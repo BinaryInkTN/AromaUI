@@ -119,11 +119,11 @@ typedef struct
     GLuint quad_texcoord_vbo;
     GLuint text_fragment_shader;
     GLuint text_vertex_shader;
-    /* Scratch textures for frosted-glass backdrop blur. The snapshot holds
-     * one full-window copy of the framebuffer, captured lazily by the
-     * first blur of each frame; every glass surface in the frame then
-     * samples that same snapshot, so stacked glass shares one consistent
-     * backdrop instead of re-blurring (and darkening) the glass below. */
+
+
+
+
+
     GLuint snap_tex;
     int snap_w;
     int snap_h;
@@ -137,10 +137,10 @@ typedef struct
     ShapeBatch batch;
     mat4x4 projection;
 
-    /* Scissor stack: nested scrollables (ListView in ScrollView, map
-     * tiles in map view) push clips that must intersect instead of
-     * replacing. Coordinates are device pixels (DPI already applied by
-     * the dp->px layer), including the Y-flipped GL rect. */
+
+
+
+
 #define GLES3_SCISSOR_STACK_MAX 16
     struct {
         int x, y, w, h;
@@ -374,7 +374,7 @@ int setup_shared_window_resources(void)
     if (platform->make_context_current)
     {
        platform->make_context_current(0);
-    
+
     }
 
     init_shared_resources();
@@ -530,9 +530,9 @@ static void flush_shape_batch(void)
     glUseProgram(ctx.shape_program);
     glUniformMatrix4fv(ctx.shape_uniforms.projection, 1, GL_FALSE,
                        (const GLfloat *)ctx.frame_cache.projection);
-    /* Batched geometry never samples the backdrop: make sure a previous
-     * immediate frosted-glass draw cannot leak its blur state into the
-     * shared shape program. */
+
+
+
     glUniform1f(ctx.shape_uniforms.blurRadius, 0.0f);
     glUniform2f(ctx.shape_uniforms.blurTexel, 0.0f, 0.0f);
     glUniform1f(ctx.shape_uniforms.blurLod, 0.0f);
@@ -785,7 +785,7 @@ static void shutdown(void)
             glDeleteProgram(win->text_program);
         if (win->shape_vao)
             glDeleteVertexArrays(1, &win->shape_vao);
-        
+
         memset(win, 0, sizeof(WindowResources));
     }
 
@@ -813,9 +813,9 @@ static void clear(size_t window_id, uint32_t color)
     ctx.batch.count = 0;
     ctx.batch.mode = BATCH_MODE_NONE;
     ctx.frame_cache.valid = false;
-    /* A new frame gets a fresh backdrop snapshot for frosted glass. */
+
     ctx.snap_valid = false;
-    /* Fresh frame: drop any leaked clips and the GL scissor with them. */
+
     ctx.scissor_depth = 0;
     glDisable(GL_SCISSOR_TEST);
     ctx.snap_valid = false;
@@ -923,12 +923,12 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
     uint8_t alpha_byte = (uint8_t)((color >> 24) & 0xFFu);
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
-    /* Bounding quad must be padded by thickness on the length axis too, so the
-     * capsule/round-cap SDF has room to render past the segment endpoints
-     * without being clipped by the quad edge. A butt-cap line technically
-     * only needs +0 padding on that axis, but padding unconditionally keeps
-     * the two cap styles visually consistent in thickness and avoids a
-     * branch here; the shader's AA falloff still resolves the exact edge. */
+
+
+
+
+
+
     float half_len = length * 0.5f + thickness * 0.5f;
     float half_thick = thickness * 0.5f;
 
@@ -942,12 +942,12 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
                      length + thickness, thickness, 0.0f, 0.0f,
                      round_cap ? 1 : 0, 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
 
-    /* The quad is built axis-aligned in local space, sized (length+thickness)
-     * x thickness, then rotated by the segment's angle and translated to its
-     * midpoint. The shader receives this same length/thickness pair as
-     * `size` and re-derives the local-space endpoints itself, so the
-     * rotation here and the SDF evaluation in the shader must stay in
-     * agreement: both treat local +X as "along the line". */
+
+
+
+
+
+
     float local_corners[4][2] = {
         {-half_len, -half_thick},
         { half_len, -half_thick},
@@ -966,11 +966,11 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
 
     Vertex *v = &ctx.batch.vertices[ctx.batch.count];
 
-    /* fill_quad_vertices assumes an axis-aligned box (x0,y0)-(x1,y1) and
-     * can't express a rotated quad, so lay out the six triangle-list
-     * vertices directly here using the same winding order:
-     * TL, TR, BL, TR, BR, BL. Texture coords still come from the shared
-     * kUnitQuadTexCoords array, which spans [0,1] on both axes. */
+
+
+
+
+
     static const int corner_index[6] = {0, 1, 2, 1, 3, 2};
     for (int i = 0; i < 6; i++)
     {
@@ -1001,9 +1001,9 @@ static void draw_arc(size_t window_id, int cx, int cy, int radius,
     uint8_t alpha_byte = (uint8_t)((color >> 24) & 0xFFu);
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
-    /* Bounding box must cover the outer edge of the stroke (radius +
-     * half-thickness) on every side, or the AA falloff and the round caps
-     * at the arc's two ends get clipped by the quad boundary. */
+
+
+
     float outer_extent = (float)radius + (float)thickness * 0.5f;
     float box_size = outer_extent * 2.0f;
 
@@ -1011,11 +1011,11 @@ static void draw_arc(size_t window_id, int cx, int cy, int radius,
                      box_size, box_size, (float)radius, (float)thickness,
                      0, 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
 
-    /* batch_try_append forces same_group=false for BATCH_MODE_ARC, which
-     * always flushes any pending batch first, so ctx.batch.count must be 0
-     * here. If that invariant ever changes, writing the angles after
-     * vertices are already queued would silently apply the new arc's
-     * angles to a previous arc's geometry. */
+
+
+
+
+
     assert(ctx.batch.count == 0 &&
            "arc batching must not group with prior geometry; see batch_try_append");
     ctx.batch.u_arc_start_angle = start_angle;
@@ -1068,8 +1068,8 @@ void unload_image(unsigned int texture_id)
     __image_size_forget(texture_id);
 }
 
-/* Source dimensions per live texture, so image widgets can implement
- * fit/cover scaling modes without stretching. */
+
+
 #define AROMA_GLES3_TRACKED_IMAGES 256
 static struct
 {
@@ -1470,9 +1470,9 @@ void draw_image_uv(size_t window_id, int x, int y, int width, int height,
     float x1 = x0 + (float)width, y1 = y0 + (float)height;
 
     Vertex *v = &ctx.batch.vertices[ctx.batch.count];
-    /* Full-quad UVs: the rounded-rect SDF mask is evaluated in quad
-     * space, while the u0..v1 crop is applied at sample time through
-     * the uvRect uniform (see flush_shape_batch). */
+
+
+
     fill_quad_vertices(v, x0, y0, x1, y1, 1.0f, 1.0f, 1.0f, 1.0f);
     ctx.batch.count += VERTS_PER_QUAD;
 }
@@ -1497,7 +1497,7 @@ static void gles3_apply_scissor_top(void)
     int h = ctx.scissor_stack[ctx.scissor_depth - 1].h;
     if (w <= 0 || h <= 0)
     {
-        /* Empty intersection: discard everything. */
+
         glEnable(GL_SCISSOR_TEST);
         glScissor(x, y, 0, 0);
         return;
@@ -1521,12 +1521,12 @@ static void gles3_set_clip(int x, int y, int w, int h)
             platform->get_window_size(fallback_window, &window_width, &window_height);
     }
 
-    /* All geometry reaching here is device pixels (dp->px converted at
-     * widget creation), so no extra density factor applies. GL origin is
-     * bottom-left: flip Y and clamp the rect into the framebuffer instead
-     * of only clamping the origin (which would stretch the clip over
-     * unrelated areas such as the header when a viewer is taller than
-     * the window on high-density screens). */
+
+
+
+
+
+
     int gl_y = window_height - y - h;
     int gl_h = h;
     if (gl_y < 0)
@@ -1576,13 +1576,13 @@ static void gles3_clear_clip(void)
     gles3_apply_scissor_top();
 }
 
-/* Frosted-glass backdrop blur. The first blur of a frame snapshots the
- * whole window framebuffer; every glass surface in that frame then
- * samples the same snapshot, so stacked glass shares one consistent
- * backdrop (no compounding blur/tint on widgets below). The snapshot is
- * mipmapped once per capture and sampled at LOD 1 with a 9-tap tent
- * filter, which reads as a wide, smooth gaussian. Drawn immediately (not
- * batched) so it composites exactly at this point in the frame. */
+
+
+
+
+
+
+
 static void gles3_blur_backdrop(size_t window_id, int x, int y,
                                 int width, int height,
                                 float radius, float corner_radius)
@@ -1613,7 +1613,7 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     if (cw <= 0 || ch <= 0 || cx >= fb_w || cy >= fb_h)
         return;
 
-    /* Capture the shared per-frame backdrop snapshot on first use. */
+
     if (!ctx.snap_valid)
     {
         if (ctx.snap_tex == 0)
@@ -1638,7 +1638,7 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
             ctx.snap_w = fb_w;
             ctx.snap_h = fb_h;
         }
-        /* The backdrop lives in the default framebuffer. */
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, fb_w, fb_h);
         if (glGetError() != GL_NO_ERROR)
@@ -1650,7 +1650,7 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
         ctx.snap_valid = true;
     }
 
-    /* Save GL state we are about to disturb. */
+
     GLint prev_program = 0;
     GLint prev_vao = 0;
     GLint prev_array_buffer = 0;
@@ -1667,8 +1667,8 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src);
     glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst);
 
-    /* Map the region into snapshot UVs. Texture row 0 is the framebuffer
-     * (UI) bottom row, so V is flipped relative to UI coordinates. */
+
+
     float fx0 = (float)cx, fy0 = (float)cy;
     float u0 = fx0 / (float)fb_w;
     float u1 = (fx0 + (float)cw) / (float)fb_w;
@@ -1719,7 +1719,7 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
-    /* Restore. */
+
     glBindTexture(GL_TEXTURE_2D, (GLuint)prev_tex2d);
     glActiveTexture((GLenum)prev_active_tex);
     glBindBuffer(GL_ARRAY_BUFFER, (GLuint)prev_array_buffer);
@@ -1733,7 +1733,7 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
 static void gles3_flush(void)
 {
     flush_shape_batch();
-    /* End of frame: the next frame's glass re-snapshots its backdrop. */
+
     ctx.snap_valid = false;
     ctx.current_frame++;
 }

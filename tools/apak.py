@@ -25,11 +25,11 @@ import tempfile
 import zipfile
 
 MANIFEST_NAME = "manifest.json"
-# Pruned from every .apak (build outputs, VCS, caches - never ship these).
-# C sources + CMake inputs are dev-only too: an .apak is an install
-# artifact (manifest + plugin.so + assets/ui), never source. First-party
-# packages are unaffected (they pack a staged manifest/plugin.so/assets
-# dir), but `pack .` on a native scaffold must not bundle plugin.c.
+
+
+
+
+
 PACK_SKIP_DIRS = frozenset({
     "build", "dist", ".git", ".gradle", "__pycache__", "node_modules",
     ".idea", ".vscode",
@@ -39,7 +39,7 @@ PACK_SKIP_FILES = frozenset({
 })
 PACK_SKIP_SUFFIXES = (".apak", ".pyc", ".o", ".a", ".c", ".h", ".cmake")
 ID_RE = re.compile(r"^[a-z0-9_]+(\.[a-z0-9_]+)+$")
-# Keep in sync with AROMA_PACKAGE_ABI_VERSION in include/aroma_package.h.
+
 AROMA_ABI_VERSION = 1
 
 TEMPLATE_MANIFEST = {
@@ -59,9 +59,9 @@ TEMPLATE_MANIFEST = {
     "featured": False,
 }
 
-# Scaffold for a separately-developed native app (own repo, own build):
-# manifest + plugin.c + CMakeLists.txt. The plugin owns its UI and logic
-# and ships bundled as plugin.so inside the .apak, Android-APK style.
+
+
+
 TEMPLATE_NATIVE_MANIFEST = {
     "id": "{id}",
     "name": "{name}",
@@ -330,7 +330,7 @@ def validate_manifest(m):
     if not ID_RE.match(m["id"]):
         return 'invalid id: use reverse-dns lowercase, e.g. "com.example.calc"'
     vc = m.get("version_code", 0)
-    # bool is a subclass of int - reject it explicitly.
+
     if not isinstance(vc, int) or isinstance(vc, bool) or vc < 0:
         return "version_code must be a non-negative integer"
     min_abi = m.get("min_abi", 1)
@@ -433,7 +433,7 @@ def cmd_pack(args):
         with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as z:
             z.write(os.path.join(src, MANIFEST_NAME), MANIFEST_NAME)
             for root, _dirs, files in os.walk(src):
-                # Prune build/VCS/cache dirs in place (os.walk honors it).
+
                 _dirs[:] = sorted(
                     d for d in _dirs
                     if d not in PACK_SKIP_DIRS and not d.startswith("build-")

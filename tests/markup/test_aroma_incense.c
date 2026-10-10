@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_incense.h"
 #include "aroma_incense_loader.h"
@@ -76,7 +76,7 @@ static void test_rejections(void)
           "loader rejects missing file");
     CHECK(!IncenseLoadFileIntoParent(NULL, parent, NULL, NULL, &reg),
           "loader rejects NULL path");
-    /* NULL registry out-param is accepted. */
+
     CHECK(!IncenseLoadStringIntoParent("{{{", parent, NULL, NULL, NULL),
           "loader rejects garbage without registry");
 
@@ -98,8 +98,8 @@ static void test_minimal_document(void)
     }
     uint64_t before = parent->child_count;
 
-    /* No fonts available headless: only font-free widgets are mounted.
-     * Container creation is font-independent. */
+
+
     const char *src =
         "Window {\n"
         "    width: 1024\n"
@@ -119,12 +119,12 @@ static void test_minimal_document(void)
     __node_system_destroy();
 }
 
-/* Theming regression: a slide_y button must settle on its authored end
- * position (in parent space), not on top of the widget above it. The
- * parent container is first moved (viewer/responsive pass) so layout
- * converts the authored relative geometry to absolute; the finished
- * animation must agree with layout exactly. Duration-0 would skip the
- * easing path, so use a short real duration and wall-clock ticks. */
+
+
+
+
+
+
 static void test_animation_settles_on_layout(void)
 {
     __node_system_init();
@@ -138,16 +138,16 @@ static void test_animation_settles_on_layout(void)
         __node_system_destroy();
         return;
     }
-    /* The scratch root carries a zero rect; give it real window geometry
-     * so layout's shrink-to-fit sees a fitting viewport instead of a
-     * 10px fallback that would scale the whole subtree down. */
+
+
+
     AromaRect *root_rect = aroma_node_get_rect(parent->parent_node);
     root_rect->x = 0;
     root_rect->y = 0;
     root_rect->width = 1024;
     root_rect->height = 600;
-    /* Simulate a viewer-positioned parent: absolute (0,76) like the
-     * DemoApp shell scrollers after the responsive pass. */
+
+
     AromaRect *pr = aroma_node_get_rect(parent);
     pr->x = 0;
     pr->y = 76;
@@ -174,7 +174,7 @@ static void test_animation_settles_on_layout(void)
         "    }\n"
         "}\n";
     IncenseRegistry *reg = NULL;
-    /* The container child hosts the demo widgets; find it first. */
+
     bool ok = IncenseLoadStringIntoParent(src, parent, NULL, NULL, &reg);
     CHECK(ok, "theming snippet mounts");
     if (!ok)
@@ -185,8 +185,8 @@ static void test_animation_settles_on_layout(void)
         __node_system_destroy();
         return;
     }
-    /* Layout once so relative geometry becomes absolute, then drive the
-     * animation engine to completion on the wall clock. */
+
+
     aroma_node_update_layout(parent->parent_node, 0, 0, 1024, 600);
     for (int i = 0; i < 60; i++)
     {
@@ -197,7 +197,7 @@ static void test_animation_settles_on_layout(void)
         usleep(25000);
 #endif
     }
-    /* Locate dropdown + button rects anywhere in the mounted subtree. */
+
     AromaRect *dd = NULL;
     AromaRect *btn = NULL;
     AromaNode *stack[256];
@@ -222,7 +222,7 @@ static void test_animation_settles_on_layout(void)
     CHECK(btn != NULL, "animated button rect found");
     if (dd && btn)
     {
-        /* Dropdown static at 196+76=272; button must settle at 276+76. */
+
         CHECK(dd->y == 272, "dropdown keeps layout position");
         CHECK(btn->y == 352, "slide lands on parent+end, not on dropdown");
         CHECK(btn->y >= dd->y + dd->height, "button clears the dropdown");

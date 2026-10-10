@@ -9,41 +9,41 @@
 extern "C" {
 #endif
 typedef enum {
-    CARD_TYPE_ELEVATED,  // Elevated card with shadow
-    CARD_TYPE_FILLED,    // Filled card with tint
-    CARD_TYPE_OUTLINED,  // Outlined card with border
-    CARD_TYPE_GLASS      // Glass blur background card
+    CARD_TYPE_ELEVATED,
+    CARD_TYPE_FILLED,
+    CARD_TYPE_OUTLINED,
+    CARD_TYPE_GLASS
 } AromaCardType;
 
 typedef struct  AromaCard AromaCard;
 bool aroma_card_is_card(AromaNode *node);
-// Create a new card
+
 AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int height, AromaCardType type);
 
-// Set card colors
+
 void aroma_card_set_colors(AromaNode* card_node, uint32_t bg_color, uint32_t border_color);
 
-// Set the frosted-glass backdrop blur radius in pixels (0 disables).
-// Glass cards default to a frosted blur; other types default to 0.
+
+
 void aroma_card_set_backdrop_blur(AromaNode* card_node, float radius_px);
 
-// Get the current backdrop blur radius in pixels (0 when disabled or
-// when the node is not a card).
+
+
 float aroma_card_get_backdrop_blur(AromaNode* card_node);
 
-// True when the active graphics backend implements backdrop blur.
-// Glass falls back to plain translucency otherwise.
+
+
 bool aroma_graphics_supports_backdrop_blur(void);
 
-// Set card click callback
+
 void aroma_card_set_click_callback(AromaNode* card_node, void (*callback)(void* user_data), void* user_data);
 
-// Draw card
+
 void aroma_card_draw(AromaNode* card_node, size_t window_id);
 
-// Destroy card
+
 void aroma_card_destroy(AromaNode* card_node);
 #ifdef __cplusplus
 }
 #endif
-#endif // AROMA_CARD_H
+#endif

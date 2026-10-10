@@ -1,10 +1,10 @@
-/*
- * Embedded Fox glTF model (game character) for the live 3D preview.
- * Source: KhronosGroup glTF-Sample-Models, 2.0/Fox/glTF-Binary/Fox.glb
- * Mesh (low poly fox) CC0 by PixelMannen (opengameart.org);
- * rigging/animation CC-BY 4.0 by tomkranis (see docs/widget-library/3D-Viewer-Widget.md).
- * Loaded via aroma_3d_create_fox() (see aroma_3d.c).
- */
+
+
+
+
+
+
+
 #ifndef AROMA_EMBEDDED_MODEL_H
 #define AROMA_EMBEDDED_MODEL_H
 

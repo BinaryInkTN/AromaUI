@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_label.h"
 #include "widgets/aroma_label.h"
@@ -63,7 +63,7 @@ static void test_create_guards(void)
     {
         const char *text = aroma_label_get_text(label);
         CHECK(text && strcmp(text, "Hello") == 0, "label text roundtrips");
-        /* No font yet: geometry stays zeroed, never garbage. */
+
         AromaRect *r = aroma_node_get_rect(label);
         CHECK(r && r->x == 10 && r->y == 20, "label position stored");
     }
@@ -94,7 +94,7 @@ static void test_set_text(void)
     const char *text = aroma_label_get_text(label);
     CHECK(text && strcmp(text, "Second") == 0, "set_text updates");
 
-    /* Over-long input truncates instead of overflowing. */
+
     char big[200];
     memset(big, 'a', sizeof(big) - 1);
     big[sizeof(big) - 1] = '\0';
@@ -103,11 +103,11 @@ static void test_set_text(void)
     CHECK(text && strlen(text) == 95, "long text truncates to buffer");
     CHECK(text[95] == '\0', "truncated text stays terminated");
 
-    /* NULL text is ignored, previous content survives. */
+
     aroma_label_set_text(label, NULL);
     text = aroma_label_get_text(label);
     CHECK(text && strlen(text) == 95, "NULL set_text keeps content");
-    aroma_label_set_text(NULL, "x"); /* no crash */
+    aroma_label_set_text(NULL, "x");
 
     CHECK(aroma_label_get_scale(label) > 0.0f, "label has positive scale");
     aroma_label_destroy(label);

@@ -61,8 +61,8 @@ bool aroma_container_is_scrollable(AromaNode* node);
 
 void aroma_container_get_content_size(AromaNode* node, int* out_w, int* out_h);
 
-/* Legacy child-bound sizing. Prefer aroma_container_set_content_size() for
- * ScrollViews whose content extent should be explicit and stable. */
+
+
 void aroma_container_update_auto_content_size(AromaNode* node);
 static inline void aroma_container_screen_to_content(AromaNode *container, int *x, int *y)
 {
@@ -81,7 +81,7 @@ static inline AromaContainer* aroma_container_get(AromaNode* node) {
     }
     return AROMA_NODE_AS(node, AromaContainer);
 }
- 
+
 #ifdef __cplusplus
 }
 #endif

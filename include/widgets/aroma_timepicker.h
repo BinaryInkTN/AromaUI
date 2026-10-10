@@ -23,8 +23,8 @@ void aroma_timepicker_confirm(AromaNode *tp_node);
 void aroma_timepicker_cancel(AromaNode *tp_node);
 void aroma_timepicker_set_title(AromaNode *tp_node, const char *title);
 void aroma_timepicker_set_24h(AromaNode *tp_node, bool use_24h);
-/* Popup-only widget: the in-tree widget is a compact time field; tapping
- * it opens a modal floating panel (scrim + dial + Cancel/OK). */
+
+
 void aroma_timepicker_open_popup(AromaNode *tp_node);
 void aroma_timepicker_close_popup(AromaNode *tp_node);
 bool aroma_timepicker_is_popup_open(AromaNode *tp_node);

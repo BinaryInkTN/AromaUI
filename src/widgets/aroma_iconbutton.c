@@ -105,7 +105,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
 
     bool in_bounds = (adjusted_x >= r.x && adjusted_x <= r.x + r.width &&
                       adjusted_y >= r.y && adjusted_y <= r.y + r.height);
-                      
+
     switch (event->event_type)
     {
     case EVENT_TYPE_MOUSE_ENTER:
@@ -113,7 +113,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
         aroma_node_invalidate(event->target_node);
         aroma_ui_request_redraw(NULL);
         return true;
-        
+
     case EVENT_TYPE_MOUSE_EXIT:
         btn->is_hovered = false;
         btn->is_pressed = false;
@@ -121,7 +121,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
         aroma_node_invalidate(event->target_node);
         aroma_ui_request_redraw(NULL);
         return false;
-        
+
     case EVENT_TYPE_MOUSE_CLICK:
     case EVENT_TYPE_TOUCH_DOWN:
         if (in_bounds)
@@ -134,7 +134,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
             return true;
         }
         break;
-        
+
     case EVENT_TYPE_MOUSE_RELEASE:
     case EVENT_TYPE_TOUCH_UP:
         if (btn->is_pressed)
@@ -157,7 +157,7 @@ static bool __iconbutton_handle_event(AromaEvent *event, void *user_data)
             return in_bounds;
         }
         break;
-        
+
     default:
         break;
     }
@@ -240,13 +240,13 @@ AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int
     }
     aroma_node_set_draw_cb(node, aroma_iconbutton_draw);
 
-    // Subscribe to mouse events
+
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_ENTER, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_EXIT, __iconbutton_handle_event, NULL, 60);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __iconbutton_handle_event, NULL, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, __iconbutton_handle_event, NULL, 70);
-    
-    // Subscribe to touch events for Android
+
+
     aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, __iconbutton_handle_event, NULL, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, __iconbutton_handle_event, NULL, 70);
     aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_MOVE, __iconbutton_handle_event, NULL, 60);

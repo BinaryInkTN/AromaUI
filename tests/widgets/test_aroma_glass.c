@@ -21,8 +21,8 @@ static int s_failed = 0;
 
 static void test_backend_reports_blur_support(void)
 {
-    /* The default graphics backend is GLES3, which implements the
-     * backdrop-blur hook. This needs no GL context (address check). */
+
+
     CHECK(aroma_graphics_supports_backdrop_blur(),
           "default backend supports backdrop blur");
 }
@@ -48,8 +48,8 @@ static void test_frosted_card_lifecycle(void)
     CHECK(aroma_card_get_backdrop_blur(plain) == 0.0f,
           "elevated defaults to no blur");
 
-    /* Setter is null-safe, clamps negatives, and accepts non-cards
-     * without crashing (no-op). */
+
+
     aroma_card_set_backdrop_blur(NULL, 20.0f);
     aroma_card_set_backdrop_blur(root, 20.0f);
     aroma_card_set_backdrop_blur(plain, -5.0f);
@@ -57,7 +57,7 @@ static void test_frosted_card_lifecycle(void)
     aroma_card_set_backdrop_blur(glass, 24.0f);
     CHECK(1, "blur setter null-safe");
 
-    /* Defaults and roundtrips through the new getter. */
+
     CHECK(aroma_card_get_backdrop_blur(glass) == 24.0f,
           "blur getter roundtrips setter");
     CHECK(aroma_card_get_backdrop_blur(NULL) == 0.0f,

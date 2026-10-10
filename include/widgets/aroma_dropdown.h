@@ -21,11 +21,11 @@ typedef struct  AromaDropdown
     int hover_index;
     bool is_expanded;
     bool is_hovered;
-    /* Scrollable list: at most max_visible_rows are shown at once
-       (<= 0 means show all). scroll_offset is the first visible row. */
+
+
     int scroll_offset;
     int max_visible_rows;
-    /* Touch drag-scroll state. */
+
     int touch_id;
     int touch_start_y;
     int touch_last_y;
@@ -72,9 +72,9 @@ void aroma_dropdown_handle_outside_touch(int x, int y);
 void aroma_dropdown_set_font(AromaNode* dropdown_node, AromaFont* font);
 void aroma_dropdown_set_text_color(AromaNode* dropdown_node, uint32_t text_color);
 
-/* Cap the expanded list height in rows (default
- * AROMA_DROPDOWN_DEFAULT_MAX_ROWS). Excess rows scroll with the mouse
- * wheel or touch drag. Pass <= 0 to show all options at once. */
+
+
+
 void aroma_dropdown_set_max_visible_rows(AromaNode* dropdown_node, int rows);
 
 void aroma_dropdown_destroy(AromaNode* dropdown_node);

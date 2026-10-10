@@ -223,7 +223,7 @@ void aroma_dropdown_set_on_change(AromaNode* dropdown_node,
     }
 }
 
-/* Rows actually shown when expanded (capped by max_visible_rows). */
+
 static int __dropdown_visible_rows(AromaDropdown* dd)
 {
     if (!dd || dd->option_count <= 0)
@@ -246,7 +246,7 @@ static void __dropdown_clamp_scroll(AromaDropdown* dd)
         dd->scroll_offset = 0;
 }
 
-/* Scroll just enough to bring an option into view. */
+
 static void __dropdown_ensure_visible(AromaDropdown* dd, int index)
 {
     if (!dd || index < 0)
@@ -259,7 +259,7 @@ static void __dropdown_ensure_visible(AromaDropdown* dd, int index)
     __dropdown_clamp_scroll(dd);
 }
 
-/* Scroll by whole rows; returns true when the offset changed. */
+
 static bool __dropdown_scroll_by(AromaDropdown* dd, int rows);
 
 static int __dropdown_list_top(AromaDropdown* dd, int option_height, int visible)
@@ -355,7 +355,7 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
     if (!event || !event->target_node) return false;
     AromaDropdown* dd = (AromaDropdown*)event->target_node->node_widget_ptr;
     if (!dd) return false;
-    
+
     int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
     AromaNode *cur = event->target_node->parent_node;
@@ -412,7 +412,7 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
     if (event->event_type == EVENT_TYPE_MOUSE_SCROLL) {
         if (dd->is_expanded && dd->option_count > __dropdown_visible_rows(dd) &&
             (in_main || in_list)) {
-            /* Wheel down reveals later options, wheel up earlier ones. */
+
             int dir = (event->data.mouse.scroll_y > 0.0f) ? 1 : -1;
             if (__dropdown_scroll_by(dd, dir)) {
                 aroma_node_invalidate(event->target_node);
@@ -484,13 +484,13 @@ static bool __dropdown_default_mouse_handler(AromaEvent* event, void* user_data)
     return false;
 }
 
-/* Touch support: tap opens/selects, vertical drag scrolls a capped list. */
+
 static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
     if (!event || !event->target_node) return false;
     AromaDropdown* dd = (AromaDropdown*)event->target_node->node_widget_ptr;
     if (!dd) return false;
 
-    /* Adjust touch coordinates for parent scroll containers (same as mouse handler). */
+
     int tx = event->data.touch.x;
     int ty = event->data.touch.y;
     AromaNode *cur = event->target_node->parent_node;
@@ -561,7 +561,7 @@ static bool __dropdown_touch_handler(AromaEvent* event, void* user_data) {
         dd->touch_last_y = ty;
         int rows = dd->touch_accum_dy / option_height;
         if (rows != 0) {
-            /* Finger follows content: drag down reveals earlier options. */
+
             if (__dropdown_scroll_by(dd, -rows)) {
                 dd->touch_moved = true;
                 aroma_node_invalidate(event->target_node);
@@ -924,7 +924,7 @@ void aroma_dropdown_destroy(AromaNode* dropdown_node) {
             free(dd->options);
         }
         aroma_widget_free(dd);
-        /* Detach so __destroy_node below does not free it a second time. */
+
         dropdown_node->node_widget_ptr = NULL;
     }
     __destroy_node(dropdown_node);

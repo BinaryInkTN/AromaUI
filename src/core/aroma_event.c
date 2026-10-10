@@ -86,11 +86,11 @@ static int      g_down_y[AROMA_MAX_TOUCHES]             = {0};
 static AromaNode *find_scrollable_ancestor(AromaNode *start);
 static AromaNode *find_node_cached(uint64_t node_id);
 
-/* Swipe takeover: a touch that starts on content (button, slider, label)
- * can still become a scroll. Once the finger moves past the touch slop
- * along an axis the captured ScrollView can actually scroll, the gesture
- * is handed to the container and the child receives a cancel, mirroring
- * platform touch-interception behavior. */
+
+
+
+
+
 static bool swipe_should_take_over(int id, int x, int y, uint64_t scroll_id)
 {
     if (aroma_datepicker_any_popup_open() ||
@@ -149,11 +149,11 @@ static bool is_descendant_of(const AromaNode *node, const AromaNode *ancestor)
     return false;
 }
 
-/*
- * Child nodes are positioned in their scroll container's content
- * coordinates. A hit is only valid while it remains inside every scrollable
- * ancestor's viewport.
- */
+
+
+
+
+
 static bool point_in_scrollable_ancestors(const AromaNode *node, int x, int y)
 {
     const AromaNode *cur = node->parent_node;
@@ -166,12 +166,12 @@ static bool point_in_scrollable_ancestors(const AromaNode *node, int x, int y)
             AromaRect *viewport = aroma_node_get_rect((AromaNode *)cur);
             if (viewport)
             {
-                /*
-                 * A scroll container's rect is in its parent's content
-                 * coordinates. Translate it through only its scrollable
-                 * ancestors so the viewport is compared in screen space.
-                 * The container's own scroll does not move its viewport.
-                 */
+
+
+
+
+
+
                 int viewport_x = viewport->x;
                 int viewport_y = viewport->y;
                 const AromaNode *ancestor = cur->parent_node;
@@ -239,8 +239,8 @@ static AromaNode *find_node_cached(uint64_t node_id)
 {
     if (!node_id || !g_event_system.root_node) return NULL;
 
-    /* The tree mutates on the UI thread (add/remove) while workers
-     * resolve targets here: hold the lock for the whole walk. */
+
+
     EVENT_LOCK();
     for (int i = 0; i < AROMA_NODE_CACHE_SIZE; i++)
     {
@@ -400,10 +400,10 @@ void aroma_event_system_shutdown(void)
     g_event_system.shutting_down = true;
     aroma_event_process_queue();
 
-    /* Drain without holding the lock across destroy: destroying an event
-     * releases its pool slot which takes the same (non-recursive) mutex,
-     * so holding it here would self-deadlock whenever the queue is
-     * non-empty at shutdown. Collect under lock, destroy after unlock. */
+
+
+
+
     AromaEvent *pending[AROMA_MAX_EVENT_QUEUE];
     size_t n_pending = 0;
     EVENT_LOCK();
@@ -583,18 +583,18 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         g_down_x[id] = x;
         g_down_y[id] = y;
         AromaNode *scr = target ? find_scrollable_ancestor(target) : NULL;
-        /*
-         * The expanded dropdown list is a temporary overlay. Its gesture is
-         * owned by the dropdown, not by the scroll view containing the
-         * dropdown field.
-         */
+
+
+
+
+
         AromaNode *overlay_target = NULL;
         if (target && aroma_dropdown_overlay_hit_test(x, y, &overlay_target) &&
             overlay_target == target)
             scr = NULL;
-        /* Picker popups are modal overlays with the same ownership: while
-         * open, the picker owns the gesture, never the ScrollView behind
-         * its field. */
+
+
+
         if (target &&
             aroma_calendar_overlay_hit_test(x, y, &overlay_target) &&
             overlay_target == target)
@@ -607,16 +607,16 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
             aroma_timepicker_overlay_hit_test(x, y, &overlay_target) &&
             overlay_target == target)
             scr = NULL;
-        /* Dropdown fields and their expanded overlays own the complete
-         * gesture. Do not let the containing ScrollView steal a drag after
-         * the dropdown receives TOUCH_DOWN. */
+
+
+
         if (target && target->draw_cb == aroma_dropdown_draw)
             scr = NULL;
-        /* The numeric stepper is a vertical drag widget like the dropdown
-         * list: it owns the complete gesture. Do not let the containing
-         * ScrollView steal a vertical drag after the stepper receives
-         * TOUCH_DOWN, otherwise the picker value and the page scroll
-         * together. Steps mode is tap-only and stays scrollable. */
+
+
+
+
+
         if (target && target->draw_cb == aroma_stepper_draw &&
             aroma_stepper_owns_touch(target))
             scr = NULL;
@@ -638,12 +638,12 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
     else
     {
         target_id = g_touch_captures[id];
-        /*
-         * A ScrollView may be the initial hit when its child has just
-         * entered the viewport during scrolling. For a non-intercepted
-         * release, retarget to the currently visible descendant so list
-         * items and other widgets remain clickable after scrolling.
-         */
+
+
+
+
+
+
         if (state == 0 && target_id != 0 && !g_scroll_intercepting[id])
         {
             AromaNode *release_target =
@@ -925,14 +925,14 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
     }if (root->node_type == NODE_TYPE_WIDGET ||
         root->node_type == NODE_TYPE_CONTAINER)
     {
-        /*
-         * A ListView is the content child of an owning ScrollView. Its own
-         * rect is deliberately only the viewport height, while its rows
-         * extend through the parent's scrollable content. Hit testing the
-         * ListView against that rect after adding the parent's scroll offset
-         * rejects rows revealed later in the list. Use the owner's viewport
-         * as the ListView hit area instead.
-         */
+
+
+
+
+
+
+
+
         if (root->draw_cb == aroma_listview_draw &&
             root->parent_node &&
             aroma_container_is_scrollable(root->parent_node))
@@ -974,7 +974,7 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
         int adjusted_x = x;
         int adjusted_y = y;
 
-        // Traverse ALL ancestors to accumulate every scroll offset
+
         AromaNode *cur = root->parent_node;
         while (event_node_valid(cur))
         {
@@ -989,7 +989,7 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
         }
 
         AromaRect *bounds = aroma_node_get_rect(root);
-        
+
         if (bounds &&
             adjusted_x >= bounds->x && adjusted_x < (bounds->x + bounds->width) &&
             adjusted_y >= bounds->y && adjusted_y < (bounds->y + bounds->height))
@@ -1111,11 +1111,11 @@ void aroma_event_unlock(void)
 void aroma_event_forget_node(uint64_t node_id)
 {    if (!node_id || !g_event_system.initialized)
         return;
-    /* Collect first (destroying events releases pool slots, which takes
-     * the same lock, so payload cleanup happens after unlock). Queue
-     * slots are nulled in place rather than compacted: process_queue may
-     * be mid-iteration above us on this thread (destroy inside dispatch),
-     * and it already skips NULL slots safely. */
+
+
+
+
+
     AromaEvent *dropped[AROMA_MAX_EVENT_QUEUE];
     size_t n_dropped = 0;
     EVENT_LOCK();
@@ -1141,17 +1141,17 @@ void aroma_event_forget_node(uint64_t node_id)
         }
     }
     {
-        /* Null matching slots in place without touching queue_count:
-         * the count tracks buffer occupancy (head..tail distance) and is
-         * decremented exactly once by process_queue when it dequeues each
-         * slot (even NULL holes). Decrementing here as well would
-         * double-decrement and wrap queue_count to UINT32_MAX, making the
-         * queue look permanently full so all future inputs are dropped
-         * (this froze car_infotainment on Linux after any node teardown
-         * with a queued event). Snapshot the bound: queue_count must not
-         * be used as a mutating loop limit. Compaction is avoided on
-         * purpose: process_queue may be mid-iteration above us on this
-         * thread (destroy inside dispatch) and already skips NULL safely. */
+
+
+
+
+
+
+
+
+
+
+
         uint32_t n = g_event_system.queue_count;
         uint32_t cur = g_event_system.queue_head;
         for (uint32_t k = 0; k < n; k++) {
@@ -1181,6 +1181,7 @@ AromaEvent *aroma_event_create_mouse(AromaEventType type, uint64_t node_id,
     ev->data.mouse.x      = x;
     ev->data.mouse.y      = y;
     ev->data.mouse.button = button;
+    ev->data.mouse.clicks = (type == EVENT_TYPE_MOUSE_CLICK) ? 1 : 0;
     clock_gettime(CLOCK_MONOTONIC, &ev->timestamp);
     return ev;
 }

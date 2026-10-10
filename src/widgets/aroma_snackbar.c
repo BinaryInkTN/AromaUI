@@ -15,7 +15,7 @@
 #endif
 
 #define AROMA_SNACKBAR_TEXT_MAX 128
-/* Authored in dp; scaled to px via helpers below. */
+
 #define SNACKBAR_HEIGHT_DP 48
 #define SNACKBAR_MARGIN_DP 16
 #define SNACKBAR_PADDING_H_DP 16
@@ -84,7 +84,7 @@ static void __calculate_snackbar_size(AromaSnackbar *bar, size_t window_id)
 
     int win_w, win_h;
     __snackbar_get_window_size(window_id, &win_w, &win_h);
-    
+
     bar->window_width = win_w;
     bar->window_height = win_h;
 
@@ -107,14 +107,14 @@ static void __calculate_snackbar_size(AromaSnackbar *bar, size_t window_id)
         bar->rect.width = sb_dp(SNACKBAR_MAX_WIDTH_DP);
 
     bar->rect.height = sb_dp(SNACKBAR_HEIGHT_DP);
-    
+
     if (!bar->has_base_position)
     {
         bar->base_x = (win_w - bar->rect.width) / 2;
         bar->base_y = win_h - bar->rect.height - sb_dp(SNACKBAR_MARGIN_DP);
         bar->has_base_position = true;
     }
-    
+
     bar->rect.x = bar->base_x;
     bar->rect.y = bar->base_y;
 }
@@ -123,7 +123,7 @@ void aroma_snackbar_draw(AromaNode *snackbar_node, size_t window_id)
 {
     if (!snackbar_node)
         return;
-    
+
     if (aroma_node_is_hidden(snackbar_node))
         return;
 
@@ -142,8 +142,8 @@ void aroma_snackbar_draw(AromaNode *snackbar_node, size_t window_id)
         bar->action_color = theme.colors.primary;
         if (aroma_theme_is_dark(&theme))
         {
-            /* Dark mode: inverse bar (light surface, dark text) so the
-               snackbar stays readable against a near-black background. */
+
+
             bar->bg_color = aroma_color_blend(theme.colors.text_primary,
                                               theme.colors.surface, 0.12f);
             bar->text_color = theme.colors.surface;
@@ -242,7 +242,7 @@ void aroma_snackbar_set_action(AromaNode *snackbar_node, const char *action_text
     bar->action_label[sizeof(bar->action_label) - 1] = '\0';
     bar->action_callback = callback;
     bar->user_data = user_data;
-    bar->has_base_position = false;  
+    bar->has_base_position = false;
 }
 void aroma_snackbar_show(AromaNode *snackbar_node)
 {
@@ -254,7 +254,7 @@ void aroma_snackbar_show(AromaNode *snackbar_node)
         return;
 
     bar->visible = true;
-    bar->has_base_position = false;  
+    bar->has_base_position = false;
     if (bar->self_node)
     {
         aroma_node_set_hidden(bar->self_node, false);
@@ -272,7 +272,7 @@ void aroma_snackbar_dismiss(AromaNode *snackbar_node)
     AromaSnackbar *bar = (AromaSnackbar *)snackbar_node->node_widget_ptr;
     if (!bar)
         return;
-        
+
     bar->visible = false;
 
     if (bar->self_node)
@@ -287,12 +287,12 @@ void aroma_snackbar_dismiss(AromaNode *snackbar_node)
 void aroma_snackbar_destroy(AromaNode *snackbar_node)
 {
     if (!snackbar_node) return;
-    
+
     AromaSnackbar *bar = (AromaSnackbar *)snackbar_node->node_widget_ptr;
     if (bar)
     {
         aroma_widget_free(bar);
-        /* Detach so __destroy_node below does not free it a second time. */
+
         snackbar_node->node_widget_ptr = NULL;
     }
     __destroy_node(snackbar_node);
@@ -301,7 +301,7 @@ void aroma_snackbar_destroy(AromaNode *snackbar_node)
 static bool __snackbar_default_mouse_handler(AromaEvent* event, void* user_data)
 {
     if (!event || !event->target_node) return false;
-    
+
     AromaSnackbar* bar = (AromaSnackbar *)event->target_node->node_widget_ptr;
     if (!bar || !bar->visible) return false;
 
@@ -372,11 +372,11 @@ static bool __snackbar_default_mouse_handler(AromaEvent* event, void* user_data)
 bool aroma_snackbar_setup_events(AromaNode* snackbar_node, void (*on_redraw_callback)(void*), void* user_data)
 {
     if (!snackbar_node) return false;
-    
+
     aroma_event_subscribe(snackbar_node->node_id, EVENT_TYPE_MOUSE_CLICK, __snackbar_default_mouse_handler, (void*)on_redraw_callback, 90);
     aroma_event_subscribe(snackbar_node->node_id, EVENT_TYPE_MOUSE_RELEASE, __snackbar_default_mouse_handler, (void*)on_redraw_callback, 90);
     aroma_event_subscribe(snackbar_node->node_id, EVENT_TYPE_TOUCH_DOWN, __snackbar_default_mouse_handler, (void*)on_redraw_callback, 90);
     aroma_event_subscribe(snackbar_node->node_id, EVENT_TYPE_TOUCH_UP, __snackbar_default_mouse_handler, (void*)on_redraw_callback, 90);
-    
+
     return true;
 }

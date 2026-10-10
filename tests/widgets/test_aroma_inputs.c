@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_inputs.h"
 #include "widgets/aroma_checkbox.h"
@@ -70,7 +70,7 @@ static void test_checkbox(void)
     CHECK(aroma_checkbox_is_checked(cb), "checkbox checks");
     aroma_checkbox_set_checked(cb, false);
     CHECK(!aroma_checkbox_is_checked(cb), "checkbox unchecks");
-    aroma_checkbox_set_checked(NULL, true); /* no crash */
+    aroma_checkbox_set_checked(NULL, true);
     aroma_checkbox_set_callback(cb, NULL, NULL);
     aroma_checkbox_set_callback(NULL, NULL, NULL);
 
@@ -101,11 +101,11 @@ static void test_switch(void)
 
     aroma_switch_set_state(sw, true);
     CHECK(aroma_switch_get_state(sw), "switch turns on");
-    aroma_switch_set_state(sw, true); /* idempotent */
+    aroma_switch_set_state(sw, true);
     CHECK(aroma_switch_get_state(sw), "switch stays on");
     aroma_switch_set_state(sw, false);
     CHECK(!aroma_switch_get_state(sw), "switch turns off");
-    aroma_switch_set_state(NULL, true); /* no crash */
+    aroma_switch_set_state(NULL, true);
     aroma_switch_set_on_change(sw, NULL, NULL);
     aroma_switch_set_on_change(NULL, NULL, NULL);
 
@@ -127,7 +127,7 @@ static void test_radiobutton(void)
     CHECK(aroma_radiobutton_create(NULL, "x", 0, 0, 20, 20, 17) == NULL,
           "radio rejects NULL parent");
 
-    /* Unique group id per run so global group state cannot leak. */
+
     AromaNode *a = aroma_radiobutton_create(root, "A", 10, 10, 200, 32, 17);
     AromaNode *b = aroma_radiobutton_create(root, "B", 10, 50, 200, 32, 17);
     CHECK(a && b, "radio pair created");
@@ -147,7 +147,7 @@ static void test_radiobutton(void)
     CHECK(!aroma_radiobutton_is_selected(a), "group deselects first");
     aroma_radiobutton_set_selected(b, false);
     CHECK(!aroma_radiobutton_is_selected(b), "radio deselects");
-    aroma_radiobutton_set_selected(NULL, true); /* no crash */
+    aroma_radiobutton_set_selected(NULL, true);
     aroma_radiobutton_set_callback(a, NULL, NULL);
     aroma_radiobutton_set_callback(NULL, NULL, NULL);
 

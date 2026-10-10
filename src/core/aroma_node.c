@@ -203,9 +203,9 @@ AromaNode *__add_child_node(AromaNodeType node_type,
         return NULL;
     }
 
-    /* Ensure capacity and link under the event lock: worker threads
-     * resolve targets by walking this array (see find_node_cached).
-     * Creation itself stays outside (fresh nodes are unpublished). */
+
+
+
     aroma_event_lock();
     bool room = ensure_child_capacity(parent_node, parent_node->child_count + 1);
     aroma_event_unlock();
@@ -235,7 +235,7 @@ AromaNode *__remove_child_node(AromaNode *parent_node, uint64_t node_id)
         return NULL;
     }
 
-    /* Unlink under the event lock (see __add_child_node). */
+
     aroma_event_lock();
     AromaNode *removed = NULL;
     for (uint64_t i = 0; i < parent_node->child_count; i++)
@@ -302,14 +302,14 @@ void __destroy_node(AromaNode *node)
 
     dirty_list_remove(node);
 
-    /* Drop queued events / cached targets / listeners for this node so
-     * background threads that queued work just before teardown can
-     * never dispatch into freed memory. */
+
+
+
     aroma_event_forget_node(node->node_id);
 
-    /* Detach running animations targeting this node. The next engine tick
-     * frees them without ever dereferencing the dead target; without this
-     * the 16ms timer would write rects/opacity through freed memory. */
+
+
+
     aroma_animation_cleanup_node(node);
 
     uint64_t id = node->node_id;

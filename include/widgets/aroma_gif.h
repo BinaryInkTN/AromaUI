@@ -26,4 +26,4 @@ AromaImageScaleMode aroma_gif_get_scale_mode(AromaNode* gif_node);
 }
 #endif
 
-#endif // AROMA_GIF_H
+#endif

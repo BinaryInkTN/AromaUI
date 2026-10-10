@@ -439,8 +439,8 @@ class SandboxPreprocessor(Preprocessor):
                 if sandbox_code:
                     code_str = "\n".join(sandbox_code)
                     code_hash = hashlib.md5(code_str.encode('utf-8')).hexdigest()[:8]
-                    
-                    # Generate the HTML for the sandbox
+
+
                     html = (
                         '<div class="sandbox-wrapper" style="display:flex; flex-direction:row; gap:16px; margin:24px 0;">\n'
                         '  <div class="sandbox-code" style="flex:1; overflow:auto;">\n'
@@ -452,8 +452,8 @@ class SandboxPreprocessor(Preprocessor):
                         '</div>'
                     )
                     new_lines.append(html)
-                    
-                    # Compile the sandbox code
+
+
                     self._compile_sandbox(code_str, code_hash)
                 continue
             new_lines.append(line)
@@ -461,20 +461,20 @@ class SandboxPreprocessor(Preprocessor):
         return new_lines
 
     def _compile_sandbox(self, code_str: str, code_hash: str):
-        # Determine the project root
+
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         site_dir = os.path.join(project_root, "_site")
         sandbox_dir = os.path.join(site_dir, "sandboxes")
         os.makedirs(sandbox_dir, exist_ok=True)
-        
+
         out_html = os.path.join(sandbox_dir, f"sandbox_{code_hash}.html")
         if os.path.exists(out_html):
-            return # Already compiled
-            
+            return
+
         with tempfile.TemporaryDirectory() as tmpdir:
             src_file = os.path.join(tmpdir, "main.c")
-            
-            # Wrap code if it doesn't contain main()
+
+
             if "int main(" not in code_str and "int main (" not in code_str:
                 wrapped = (
                     '#include <aroma.h>\n'
@@ -499,17 +499,17 @@ class SandboxPreprocessor(Preprocessor):
                 )
             else:
                 wrapped = code_str
-                
+
             with open(src_file, "w") as f:
                 f.write(wrapped)
-                
+
             include_dir = os.path.join(project_root, "include")
             lib_path = os.path.join(project_root, "examples", "smartwatch_example", "build_web", "aroma_root", "src", "libaroma.a")
-            
+
             emcc_path = os.path.join(project_root, "vendors", "emscripten", "upstream", "emscripten", "emcc")
             if not os.path.exists(emcc_path):
                 emcc_path = "emcc"
-                
+
             cmd = [
                 emcc_path, src_file, "-o", out_html,
                 "-I" + include_dir,
@@ -520,16 +520,16 @@ class SandboxPreprocessor(Preprocessor):
                 "-s", "ALLOW_MEMORY_GROWTH=1",
                 "-s", "ASYNCIFY=1"
             ]
-            
+
             env = os.environ.copy()
             env["EM_CACHE"] = os.path.join(sandbox_dir, ".emcache")
             env["EM_CONFIG"] = os.path.join(project_root, "vendors", "emscripten", ".emscripten")
-            
+
             try:
                 subprocess.run(cmd, env=env, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except subprocess.CalledProcessError as e:
                 print(f"Failed to compile sandbox {code_hash}: {e.stderr.decode('utf-8')}")
-                # Create a fallback HTML
+
                 with open(out_html, "w") as f:
                     f.write(f"<html><body><h3>Compilation Failed</h3><pre>{e.stderr.decode('utf-8')}</pre></body></html>")
 
@@ -2739,12 +2739,12 @@ function updateURL() {{
   const path = window.location.pathname;
   const dir = path.substring(0, path.lastIndexOf('/') + 1);
   let hash = '';
-  
+
   if (currentId) {{
     const slug = ID_TO_SLUG[currentId] || currentId;
     if (currentCategory && currentSubcategory) {{
-      hash = '#/category/' + encodeURIComponent(currentCategory) + 
-             '/subcategory/' + encodeURIComponent(currentSubcategory) + 
+      hash = '#/category/' + encodeURIComponent(currentCategory) +
+             '/subcategory/' + encodeURIComponent(currentSubcategory) +
              '/page/' + slug;
     }} else if (currentCategory) {{
       hash = '#/category/' + encodeURIComponent(currentCategory) + '/page/' + slug;
@@ -2752,14 +2752,14 @@ function updateURL() {{
       hash = '#/page/' + slug;
     }}
   }} else if (currentSubcategory) {{
-    hash = '#/category/' + encodeURIComponent(currentCategory) + 
+    hash = '#/category/' + encodeURIComponent(currentCategory) +
            '/subcategory/' + encodeURIComponent(currentSubcategory);
   }} else if (currentCategory) {{
     hash = '#/category/' + encodeURIComponent(currentCategory);
   }} else {{
     hash = '#/';
   }}
-  
+
   const newUrl = dir + 'index.html' + hash;
   history.replaceState(null, '', newUrl);
 }}
@@ -2767,12 +2767,12 @@ function updateURL() {{
 function parseHash() {{
   const hash = window.location.hash.substring(1);
   const parts = hash.split('/').filter(Boolean);
-  
+
   if (parts.length === 0 || parts[0] === '') {{
     showFirstPage();
     return;
   }}
-  
+
   if (parts[0] === 'category') {{
     if (parts.length >= 2) {{
       const category = decodeURIComponent(parts[1]);
@@ -2818,29 +2818,29 @@ function parseHash() {{
       return;
     }}
   }}
-  
+
   showFirstPage();
 }}
 
 function loadFromURL() {{
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const hash = window.location.hash.substring(1);
-  
+
   if (hash) {{
     parseHash();
     return;
   }}
-  
+
   const lastPart = pathParts[pathParts.length - 1] || '';
   const secondLastPart = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : '';
   const thirdLastPart = pathParts.length >= 3 ? pathParts[pathParts.length - 3] : '';
-  
+
   if (lastPart && SLUG_TO_ID[lastPart]) {{
     const pageId = SLUG_TO_ID[lastPart];
     if (PAGES[pageId]) {{
       let category = null;
       let subcategory = null;
-      
+
       if (secondLastPart && CATS[pageId] === secondLastPart) {{
         category = secondLastPart;
         if (thirdLastPart && SUBCATS[pageId] === thirdLastPart) {{
@@ -2850,22 +2850,22 @@ function loadFromURL() {{
         category = CATS[pageId] || null;
         subcategory = SUBCATS[pageId] || null;
       }}
-      
+
       showPage(pageId, category, subcategory);
       return;
     }}
   }}
-  
+
   if (lastPart && CATEGORY_PAGES[lastPart]) {{
     showCategory(lastPart);
     return;
   }}
-  
+
   if (secondLastPart && SUBCATEGORY_PAGES[secondLastPart + '||' + lastPart]) {{
     showSubcategory(secondLastPart, lastPart);
     return;
   }}
-  
+
   showFirstPage();
 }}
 
@@ -2949,7 +2949,7 @@ function showPage(id, category=null, subcategory=null){{
 
   setActiveNav(id);
   updateURL();
-  
+
   updateBreadcrumbs();
   renderPnNav(id);
   document.getElementById('cScroll').scrollTop=0;
@@ -3679,10 +3679,10 @@ window.addEventListener('hashchange', () => {{
                 "status": s.get("status", ""),
             }
 
-        # Map markdown basenames to (slug, category) so intra-doc links can
-        # be rewritten to in-site hash routes instead of dead .md URLs.
-        # Keyed by lowercase basename; docs slugs come from titles so the
-        # source .md files can keep GitHub-friendly relative paths.
+
+
+
+
         file_to_route: Dict[str, str] = {}
         for s in sections:
             f = s.get("file", "")
@@ -3703,10 +3703,10 @@ window.addEventListener('hashchange', () => {{
                 url = m.group(1)
                 if url.startswith(("http://", "https://", "mailto:", "#", "data:")):
                     return m.group(0)
-                # Split off ?query and #fragment so they survive the rewrite.
-                # parseHash() looks up the slug exactly, so a trailing
-                # #anchor would break the lookup; keep the route clean and
-                # drop in-page anchors (the SPA has no heading deep-links).
+
+
+
+
                 query = ""
                 base_url = url
                 if "?" in base_url:
@@ -3846,9 +3846,9 @@ window.addEventListener('hashchange', () => {{
                 f"<div class='sec-items' id='si-{cid}'>"
             )
 
-            #sb.append(
-            #    f"<div class='nav-all' onclick=\"showCategory('{cname}')\">Overview</div>"
-            #)
+
+
+
 
             for page in csects.get("", []):
                 sb.append(
@@ -3868,9 +3868,9 @@ window.addEventListener('hashchange', () => {{
                     f"</div>"
                     f"<div class='sub-items' id='ssi-{sub_id}'>"
                 )
-                # sb.append(
-                #     f"<div class='nav-all sub' onclick=\"showSubcategory('{cname}', '{sub_name}')\">Overview</div>"
-                # )
+
+
+
                 for page in sub_items:
                     sb.append(
                         f"<div class='nav-dest sub' data-page='{page['id']}' onclick=\"showPage('{page['id']}', '{cname}', '{sub_name}')\">"
@@ -3881,9 +3881,9 @@ window.addEventListener('hashchange', () => {{
 
             sb.append("</div>")
 
-        # Categories with no subcategory structure at all never entered the
-        # loop above (sidebar_sections only holds categories with pages), but
-        # guard anyway so no page silently falls out of prev/next ordering.
+
+
+
         for sid in page_objects:
             if sid not in page_order:
                 page_order.append(sid)
@@ -3907,8 +3907,8 @@ window.addEventListener('hashchange', () => {{
 
         pdf_url = os.path.basename(pdf_output) if pdf_output else ""
         page_icons_js = json.dumps(page_icon_map)
-        # Per-document versioning: optional `version` / `updated` / `status`
-        # per section, falling back to the global docs version / today.
+
+
         default_updated = datetime.now().strftime("%Y-%m-%d")
         page_versions = {
             sid: (page_objects[sid].get("version") or project_version or "")

@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_display.h"
 #include "widgets/aroma_gauge.h"
@@ -87,7 +87,7 @@ static void test_gauge(void)
         aroma_gauge_set_extra_value(g, 0.0f);
         CHECK(1, "gauge setters safe");
     }
-    aroma_gauge_set_value(NULL, 1.0f); /* no crash */
+    aroma_gauge_set_value(NULL, 1.0f);
     aroma_gauge_set_range(NULL, 0.0f, 1.0f);
 
     __destroy_node(root);
@@ -111,7 +111,7 @@ static void test_icon(void)
         aroma_icon_set_texture(icon, 0);
         aroma_icon_set_image(icon, "/nonexistent/icon.png");
         CHECK(1, "icon setters safe");
-        /* Destroy exercises the fixed double-free path. */
+
         aroma_icon_destroy(icon);
     }
     aroma_icon_set_text(NULL, "x", NULL);
@@ -197,7 +197,7 @@ static void test_table(void)
     CHECK(r0 == 0 && r1 == 1, "table rows index sequentially");
     aroma_table_set_cell_text(t, 0, 0, "Ada");
     aroma_table_set_cell_text(t, 1, 2, "42");
-    aroma_table_set_cell_text(t, 99, 99, "oob"); /* guarded */
+    aroma_table_set_cell_text(t, 99, 99, "oob");
     aroma_table_set_cell_text(NULL, 0, 0, "x");
     CHECK(aroma_table_get_selected_row(t) < 0 ||
               aroma_table_get_selected_row(t) >= 0,
@@ -239,11 +239,11 @@ static void test_image_no_load(void)
     CHECK(aroma_image_create(NULL, NULL, 0, 0, 64, 64) == NULL,
           "image rejects NULL parent");
 
-    /* NULL path: node created, no texture load attempted (headless-safe). */
+
     AromaNode *img = aroma_image_create(root, NULL, 10, 10, 64, 64);
     CHECK(img != NULL, "image created without path");
     if (img) {
-        /* Rounded corners: default 0, set/clamp, null-safe. */
+
         CHECK(aroma_image_get_corner_radius(img) == 0.0f,
               "image corner radius defaults to 0");
         aroma_image_set_corner_radius(img, 12.0f);
@@ -258,7 +258,7 @@ static void test_image_no_load(void)
         aroma_image_set_corner_radius(NULL, 8.0f);
         CHECK(aroma_image_get_corner_radius(NULL) == 0.0f,
               "image corner radius null-safe");
-        /* Scale modes: default FILL, set cover/fit, reject invalid, null-safe. */
+
         CHECK(aroma_image_get_scale_mode(img) == AROMA_IMAGE_SCALE_FILL,
               "image scale defaults to FILL");
         aroma_image_set_scale_mode(img, AROMA_IMAGE_SCALE_COVER);
@@ -288,7 +288,7 @@ static bool dummy_image_click(AromaNode *node, void *ud)
     return true;
 }
 
-/* Forged worker payload: must match ImageFetchResult ({bool; char[1024]}). */
+
 typedef struct {
     bool ok;
     char cache[1024];
@@ -312,12 +312,12 @@ static void test_image_fetch_marshal(void)
     aroma_image_set_on_click(img, dummy_image_click, NULL);
     aroma_node_mark_clean(img);
 
-    /* No fetch in flight: completions are stale and must be ignored. */
+
     aroma_image_apply_fetch_result(img, true, "/tmp/x.png");
     CHECK(!aroma_node_is_dirty(img), "stale fetch result ignored");
 
-    /* Worker completion routed worker->queue->handler must not crash and
-     * must be consumed without dirtying (still stale here). */
+
+
     FakeFetchResult *res = (FakeFetchResult *)calloc(1, sizeof(*res));
     CHECK(res != NULL, "forged payload allocated");
     res->ok = false;
@@ -332,7 +332,7 @@ static void test_image_fetch_marshal(void)
     uint64_t dead_id = img->node_id;
     aroma_image_apply_fetch_result(NULL, true, "/tmp/x.png");
     aroma_image_destroy(img);
-    /* Event for the destroyed node must resolve to NULL, never crash. */
+
     AromaEvent *ev2 = aroma_event_create_custom(dead_id,
                                                 AROMA_IMAGE_FETCH_COMPLETE,
                                                 NULL, NULL);

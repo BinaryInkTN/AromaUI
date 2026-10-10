@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "widgets/aroma_debug_overlay.h"
 #include "core/aroma_common.h"
@@ -110,7 +110,7 @@ static bool debug_overlay_event_handler(AromaEvent *event, void *user_data)
             overlay->drag_start_y = y;
             overlay->_initial_x = overlay->rect.x;
             overlay->_initial_y = overlay->rect.y;
-            
+
             clock_gettime(CLOCK_MONOTONIC, &overlay->last_drag_time);
             overlay->last_drag_x = x;
             overlay->last_drag_y = y;
@@ -131,7 +131,7 @@ static bool debug_overlay_event_handler(AromaEvent *event, void *user_data)
         if (overlay->dragging) {
             int dx = event->data.mouse.x - overlay->drag_start_x;
             int dy = event->data.mouse.y - overlay->drag_start_y;
-            
+
             int tx = overlay->_initial_x + dx;
             int ty = overlay->_initial_y + dy;
 
@@ -142,7 +142,7 @@ static bool debug_overlay_event_handler(AromaEvent *event, void *user_data)
             } else if (platform && platform->get_window_size) {
                 platform->get_window_size(0, &win_w, &win_h);
             }
-            
+
             if (tx < 0) tx = 0;
             if (ty < 0) ty = 0;
             if (tx + overlay->rect.width > win_w) tx = win_w - overlay->rect.width;
@@ -150,15 +150,15 @@ static bool debug_overlay_event_handler(AromaEvent *event, void *user_data)
 
             overlay->rect.x = tx;
             overlay->rect.y = ty;
-            
+
             struct timespec now;
             clock_gettime(CLOCK_MONOTONIC, &now);
             float dt = __time_diff_sec(now, overlay->last_drag_time);
-            
+
             if (dt > 0.005f) {
                 float vx = (event->data.mouse.x - overlay->last_drag_x) / dt;
                 float vy = (event->data.mouse.y - overlay->last_drag_y) / dt;
-                
+
                 if (overlay->velocity_x == 0 && overlay->velocity_y == 0) {
                     overlay->velocity_x = vx;
                     overlay->velocity_y = vy;
@@ -171,7 +171,7 @@ static bool debug_overlay_event_handler(AromaEvent *event, void *user_data)
                 overlay->last_drag_x = event->data.mouse.x;
                 overlay->last_drag_y = event->data.mouse.y;
             }
-            
+
             aroma_node_invalidate(node);
             return true;
         }
@@ -207,11 +207,11 @@ width = aroma_android_dp_to_px(width);
 
     AromaTheme theme = aroma_theme_get_global();
     overlay->text_color = theme.colors.text_primary;
-    
+
     uint8_t r, g, b;
     aroma_color_extract_rgb(theme.colors.surface, &r, &g, &b);
-    overlay->bg_color = aroma_color_rgba(r, g, b, 150); // Frosted glass
-    overlay->border_color = aroma_color_rgba(255, 255, 255, 80); // Glossy thin edge
+    overlay->bg_color = aroma_color_rgba(r, g, b, 150);
+    overlay->border_color = aroma_color_rgba(255, 255, 255, 80);
     overlay->corner_radius = debug_dp_f((float)AROMA_DEBUG_OVERLAY_CORNER_RADIUS_DP);
     overlay->border_color = theme.colors.border;
 
@@ -286,8 +286,8 @@ void aroma_debug_overlay_draw(AromaNode *overlay_node, size_t window_id)
 
         overlay->actual_x += overlay->velocity_x * dt;
         overlay->actual_y += overlay->velocity_y * dt;
-        
-        float friction = 4.0f; 
+
+        float friction = 4.0f;
         overlay->velocity_x -= overlay->velocity_x * friction * dt;
         overlay->velocity_y -= overlay->velocity_y * friction * dt;
 
@@ -301,34 +301,34 @@ void aroma_debug_overlay_draw(AromaNode *overlay_node, size_t window_id)
         }
 
         bool bounced = false;
-        if (overlay->actual_x < 0) { 
-            overlay->actual_x = 0; 
-            overlay->velocity_x *= -0.4f; 
+        if (overlay->actual_x < 0) {
+            overlay->actual_x = 0;
+            overlay->velocity_x *= -0.4f;
             bounced = true;
-        } else if (overlay->actual_x + overlay->rect.width > win_w) { 
-            overlay->actual_x = win_w - overlay->rect.width; 
-            overlay->velocity_x *= -0.4f; 
+        } else if (overlay->actual_x + overlay->rect.width > win_w) {
+            overlay->actual_x = win_w - overlay->rect.width;
+            overlay->velocity_x *= -0.4f;
             bounced = true;
         }
 
-        if (overlay->actual_y < 0) { 
-            overlay->actual_y = 0; 
-            overlay->velocity_y *= -0.4f; 
+        if (overlay->actual_y < 0) {
+            overlay->actual_y = 0;
+            overlay->velocity_y *= -0.4f;
             bounced = true;
-        } else if (overlay->actual_y + overlay->rect.height > win_h) { 
-            overlay->actual_y = win_h - overlay->rect.height; 
-            overlay->velocity_y *= -0.4f; 
+        } else if (overlay->actual_y + overlay->rect.height > win_h) {
+            overlay->actual_y = win_h - overlay->rect.height;
+            overlay->velocity_y *= -0.4f;
             bounced = true;
         }
 
         overlay->rect.x = (int)overlay->actual_x;
         overlay->rect.y = (int)overlay->actual_y;
 
-        if ((overlay->velocity_x > -15.0f && overlay->velocity_x < 15.0f) && 
+        if ((overlay->velocity_x > -15.0f && overlay->velocity_x < 15.0f) &&
             (overlay->velocity_y > -15.0f && overlay->velocity_y < 15.0f) && !bounced) {
             overlay->animating = false;
         } else {
-            aroma_node_invalidate(overlay_node); 
+            aroma_node_invalidate(overlay_node);
         }
     }
 

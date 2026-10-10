@@ -14,12 +14,12 @@
 #include "aroma_android.h"
 #endif
 
-/* AOSP NumberPicker (vertical) for NUMERIC mode: previous/selected/next
- * rows with divider lines, tap top/bottom to step, drag with snap, fling
- * across values, long-press to auto-repeat, optional wrap. STEPS mode is
- * the Material stepper: numbered circles on a connector, completed steps
- * filled primary with a drawn check, current filled primary, upcoming
- * outlined. All targets >= 48dp, taps slop-guarded. */
+
+
+
+
+
+
 
 static inline int tdp(int v)
 {
@@ -121,8 +121,8 @@ static int st_span(AromaStepper *s)
     return s->max_val - s->min_val + 1;
 }
 
-/* Value at a row offset k from the settled value, honoring wrap/clamp.
- * Returns -1 when the slot is empty (clamped out of range). */
+
+
 static int st_slot(AromaStepper *s, int k)
 {
     int v = s->value + k * s->step;
@@ -161,8 +161,8 @@ static void st_kill_timers(AromaStepper *s)
     }
 }
 
-/* Landing value for a row delta, honoring wrap/clamp. Shared by the
- * settle tick and the press-interrupt commit so both agree. */
+
+
 static int st_landed_value(AromaStepper *s, int rows)
 {
     int landed = s->value + rows * s->step;
@@ -183,9 +183,9 @@ static int st_landed_value(AromaStepper *s, int rows)
     return landed;
 }
 
-/* Commit an in-flight settle animation immediately. A new press that
- * interrupts a fling/snap must keep the pending rows instead of
- * dropping them (otherwise the flung steps are silently lost). */
+
+
+
 static void st_commit_pending(AromaNode *node, AromaStepper *s)
 {
     if (!s || !s->anim_timer)
@@ -200,7 +200,7 @@ static void st_commit_pending(AromaNode *node, AromaStepper *s)
     aroma_node_invalidate(node);
 }
 
-/* Settle animation tick: interpolate offset, then commit the landing row. */
+
 static void st_anim_tick(void *ud)
 {
     AromaNode *node = (AromaNode *)ud;
@@ -241,14 +241,14 @@ static void st_start_anim(AromaStepper *s, float from, float to, int rows)
         aroma_ui_request_frame();
 }
 
-/* Snap the current drag offset to the nearest row with animation. */
+
 static void st_snap(AromaNode *node, AromaStepper *s)
 {
     (void)node;
     int rh = st_row_h(s);
     int rows = (int)((s->offset_px > 0 ? s->offset_px + rh / 2
                                        : s->offset_px - rh / 2) / rh);
-    /* Dragging down reveals the previous (lower) value. */
+
     int target_rows = -rows;
     if (!s->wrap) {
         int lo = (s->min_val - s->value) / (s->step > 0 ? s->step : 1);
@@ -262,9 +262,9 @@ static void st_snap(AromaNode *node, AromaStepper *s)
                   target_rows);
 }
 
-/* Shared release path for touch and mouse drags: fling across rows when
- * the release velocity clears the threshold, otherwise snap to the
- * nearest row. Dragging down (v > 0) moves toward lower values. */
+
+
+
 static void st_finish_drag(AromaNode *node, AromaStepper *s, float v)
 {
     float density = 1.0f;
@@ -300,9 +300,9 @@ static void st_finish_drag(AromaNode *node, AromaStepper *s, float v)
     }
 }
 
-/* Tap on the top/bottom third steps once. Returns true when the value
- * changed (event fired + redraw requested by the caller). Out-of-range
- * taps with wrap disabled change nothing. */
+
+
+
 static bool st_tap_step(AromaNode *node, AromaStepper *s, int dir)
 {
     if (dir == 0)
@@ -351,7 +351,7 @@ static void st_repeat_tick(void *ud)
     aroma_ui_request_frame();
 }
 
-/* Numeric zones: -1 top third (decrement), +1 bottom third (increment). */
+
 static int st_numeric_zone(AromaStepper *s, int y)
 {
     int third = s->rect.height / 3;
@@ -387,11 +387,11 @@ static bool st_handle(AromaEvent *e, void *ud)
 {
     if (!e || !e->target_node)
         return false;
-    /* Scroll-takeover cancel: the event system aborts our gesture with a
-     * synthetic TOUCH_UP at (-1,-1) when a scroll container steals the
-     * touch. Abort silently — no tap step, no snap/fling, value untouched
-     * — so the picker and the page never move together. Raw coords are
-     * checked before scroll-offset adjustment (which could shift -1). */
+
+
+
+
+
     if (e->event_type == EVENT_TYPE_TOUCH_UP &&
         e->data.touch.x == -1 && e->data.touch.y == -1) {
         AromaStepper *cs = (AromaStepper *)e->target_node->node_widget_ptr;
@@ -479,17 +479,17 @@ static bool st_handle(AromaEvent *e, void *ud)
         }
         return false;
     }
-    /* NUMERIC (NumberPicker) path. */
+
     switch (e->event_type) {
     case EVENT_TYPE_MOUSE_MOVE:
         if (!s->mouse_down)
             return in;
         {
-            /* Desktop dispatch has no pointer capture: moves outside the
-             * widget go elsewhere, so re-entering would otherwise inject
-             * the whole excursion as one jump (spurious multi-row fling).
-             * Clamp each tick to two rows; real drags are many small
-             * steps and never hit the cap. */
+
+
+
+
+
             int rh = st_row_h(s);
             int raw_dy = y - s->prev_y;
             int dy = raw_dy;
@@ -535,8 +535,8 @@ static bool st_handle(AromaEvent *e, void *ud)
     case EVENT_TYPE_TOUCH_DOWN: {
         if (!in || s->active_pointer_id != -1 || s->mouse_down)
             return false;
-        /* A press that interrupts a settle fling/snap keeps the pending
-         * rows instead of dropping them. */
+
+
         st_commit_pending(node, s);
         s->offset_px = 0.0f;
         s->active_pointer_id = e->data.touch.id;
@@ -607,8 +607,8 @@ static bool st_handle(AromaEvent *e, void *ud)
             if (uy >= s->rect.y && uy < s->rect.y + s->rect.height)
                 dir = st_numeric_zone(s, uy);
             s->repeat_dir = 0;
-            /* A hold that already auto-repeated must not add one more
-             * tap step on release. */
+
+
             if (s->repeat_ticks >= ST_REPEAT_DELAY_TICKS)
                 return true;
             if (dir != 0 && in) {
@@ -644,16 +644,16 @@ static bool st_handle(AromaEvent *e, void *ud)
         return true;
     }
     case EVENT_TYPE_MOUSE_CLICK: {
-        /* Mouse press starts drag tracking (no immediate step): release
-         * without a drag steps once, release after a drag flings/snaps.
-         * This mirrors the touch path so desktop gets the same kinetic
-         * behavior as touch. A stale mouse_down (press released outside
-         * the widget, which desktop dispatch never routes back to us)
-         * is discarded here so the widget can never get stuck. */
+
+
+
+
+
+
         if (s->active_pointer_id != -1 || !in)
             break;
-        /* A press that interrupts a settle fling/snap keeps the pending
-         * rows instead of dropping them. */
+
+
         st_commit_pending(node, s);
         s->offset_px = 0.0f;
         s->mouse_down = true;
@@ -686,8 +686,8 @@ static bool st_handle(AromaEvent *e, void *ud)
             if (uy >= s->rect.y && uy < s->rect.y + s->rect.height)
                 dir = st_numeric_zone(s, uy);
             s->repeat_dir = 0;
-            /* A hold that already auto-repeated must not add one more
-             * tap step on release. */
+
+
             if (s->repeat_ticks >= ST_REPEAT_DELAY_TICKS)
                 return true;
             if (dir != 0 && in) {
@@ -710,10 +710,10 @@ static bool st_handle(AromaEvent *e, void *ud)
         return true;
     }
     case EVENT_TYPE_MOUSE_SCROLL: {
-        /* Wheel over the widget steps once per tick: wheel up (positive
-         * scroll_y, same convention as scroll containers) increments,
-         * wheel down decrements. At a clamped end nothing changes, so
-         * let the event bubble so the page behind can still scroll. */
+
+
+
+
         if (!in)
             return false;
         float sy = e->data.mouse.scroll_y;
@@ -824,8 +824,8 @@ void aroma_stepper_set_value(AromaNode *n, int value)
         value = s->min_val;
     if (value > s->max_val)
         value = s->max_val;
-    /* A programmatic set overrides any in-flight settle: cancel it so
-     * the animation tick cannot overwrite the new value on landing. */
+
+
     st_kill_timers(s);
     if (s->value != value) {
         s->value = value;
@@ -1002,16 +1002,16 @@ void aroma_stepper_draw(AromaNode *node, size_t window_id)
                            s->rect.x + s->rect.width - div_pad, div_bot,
                            s->accent_color, div_w, false);
         }
-        /* Scissor the rolling values so dragged/flung rows never paint
-         * outside the widget frame. */
+
+
         if (gfx->graphics_set_clip)
             gfx->graphics_set_clip(s->rect.x, s->rect.y, s->rect.width,
                                    s->rect.height);
         float frac = s->offset_px / (float)rh;
         int sel_j = -(int)(frac > 0.0f ? frac + 0.5f : frac - 0.5f);
-        /* Draw around the row nearest the center, not a fixed -2..2
-         * window: multi-row flings move the center several rows away,
-         * and a fixed window leaves the viewport blank mid-flight. */
+
+
+
         for (int j = sel_j - 2; j <= sel_j + 2; j++) {
             int slot = st_slot(s, j);
             if (slot < 0)

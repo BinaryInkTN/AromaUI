@@ -23,9 +23,9 @@ typedef struct   AromaCard
     uint32_t border_color;
     float border_radius;
     uint32_t shadow_color;
-    /* Frosted-glass backdrop blur radius in pixels. > 0 blurs the
-     * already-rendered pixels behind the card (when the backend
-     * supports it) before the translucent tint is drawn. 0 disables. */
+
+
+
     float blur_radius;
     bool use_theme_colors;
     void (*click_callback)(void *user_data);
@@ -114,16 +114,16 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
         } else if (card->type == CARD_TYPE_GLASS) {
             uint8_t r, g, b;
             aroma_color_extract_rgb(theme.colors.surface, &r, &g, &b);
-            card->bg_color = aroma_color_rgba(r, g, b, 180); // ~70% opacity, implies glass blur layer behind
+            card->bg_color = aroma_color_rgba(r, g, b, 180);
         } else {
             card->bg_color = theme.colors.surface;
         }
         card->border_color = theme.colors.border;
-        
+
         if (card->type == CARD_TYPE_GLASS) {
             uint8_t r, g, b;
             aroma_color_extract_rgb(theme.colors.border, &r, &g, &b);
-            card->border_color = aroma_color_rgba(255, 255, 255, 60); // Glossy thin edge for glass effect
+            card->border_color = aroma_color_rgba(255, 255, 255, 60);
         }
     }
 
@@ -135,9 +135,9 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
                             card->shadow_color, true, card->border_radius);
     }
 
-    /* Frosted glass: blur the backdrop first so the translucent tint
-     * below reads as frosted rather than flat. Backends without blur
-     * support leave the pixels untouched and the tint still applies. */
+
+
+
     if (card->type == CARD_TYPE_GLASS && card->blur_radius > 0.0f &&
         gfx->blur_backdrop)
     {
@@ -169,7 +169,7 @@ AromaNode *aroma_card_create(AromaNode *parent, int x, int y, int width, int hei
     AromaNode *node = aroma_container_create(parent, x, y, width, height);
     if (!node)
         return NULL;
-        
+
     aroma_node_set_layout_mode(node, AROMA_LAYOUT_MODE_NONE);
     aroma_node_set_flex_direction(node, 0);
     aroma_node_set_justify_content(node, 0);
@@ -194,14 +194,14 @@ AromaNode *aroma_card_create(AromaNode *parent, int x, int y, int width, int hei
     } else {
         card->bg_color = theme.colors.surface;
     }
-    
+
     card->border_color = theme.colors.border;
     if (type == CARD_TYPE_GLASS) {
-        card->border_color = aroma_color_rgba(255, 255, 255, 60); // Glossy thin edge
+        card->border_color = aroma_color_rgba(255, 255, 255, 60);
     }
     card->border_radius = card_dp_f(AROMA_CARD_CORNER_RADIUS_DP);
     card->shadow_color = 0x40000000;
-    /* Glass cards blur their backdrop by default; other types do not. */
+
     card->blur_radius = (type == CARD_TYPE_GLASS) ? card_dp_f(AROMA_CARD_DEFAULT_FROST_RADIUS_DP) : 0.0f;
     card->use_theme_colors = true;
     card->click_callback = NULL;

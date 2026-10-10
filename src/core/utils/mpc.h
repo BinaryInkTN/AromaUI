@@ -1,11 +1,11 @@
-/*
-** mpc - Micro Parser Combinator library for C
-**
-** https://github.com/orangeduck/mpc
-**
-** Daniel Holden - contact@daniel-holden.com
-** Licensed under BSD3
-*/
+
+
+
+
+
+
+
+
 
 #ifndef mpc_h
 #define mpc_h
@@ -22,9 +22,9 @@ extern "C" {
 #include <errno.h>
 #include <ctype.h>
 
-/*
-** State Type
-*/
+
+
+
 
 typedef struct {
   long pos;
@@ -33,9 +33,9 @@ typedef struct {
   int term;
 } mpc_state_t;
 
-/*
-** Error Type
-*/
+
+
+
 
 typedef struct {
   mpc_state_t state;
@@ -51,9 +51,9 @@ char *mpc_err_string(mpc_err_t *e);
 void mpc_err_print(mpc_err_t *e);
 void mpc_err_print_to(mpc_err_t *e, FILE *f);
 
-/*
-** Parsing
-*/
+
+
+
 
 typedef void mpc_val_t;
 
@@ -71,9 +71,9 @@ int mpc_parse_file(const char *filename, FILE *file, mpc_parser_t *p, mpc_result
 int mpc_parse_pipe(const char *filename, FILE *pipe, mpc_parser_t *p, mpc_result_t *r);
 int mpc_parse_contents(const char *filename, mpc_parser_t *p, mpc_result_t *r);
 
-/*
-** Function Types
-*/
+
+
+
 
 typedef void(*mpc_dtor_t)(mpc_val_t*);
 typedef mpc_val_t*(*mpc_ctor_t)(void);
@@ -85,9 +85,9 @@ typedef mpc_val_t*(*mpc_fold_t)(int,mpc_val_t**);
 typedef int(*mpc_check_t)(mpc_val_t**);
 typedef int(*mpc_check_with_t)(mpc_val_t**,void*);
 
-/*
-** Building a Parser
-*/
+
+
+
 
 mpc_parser_t *mpc_new(const char *name);
 mpc_parser_t *mpc_copy(mpc_parser_t *a);
@@ -97,9 +97,9 @@ mpc_parser_t *mpc_undefine(mpc_parser_t *p);
 void mpc_delete(mpc_parser_t *p);
 void mpc_cleanup(int n, ...);
 
-/*
-** Basic Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_any(void);
 mpc_parser_t *mpc_char(char c);
@@ -109,9 +109,9 @@ mpc_parser_t *mpc_noneof(const char *s);
 mpc_parser_t *mpc_satisfy(int(*f)(char));
 mpc_parser_t *mpc_string(const char *s);
 
-/*
-** Other Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_pass(void);
 mpc_parser_t *mpc_fail(const char *m);
@@ -121,9 +121,9 @@ mpc_parser_t *mpc_lift_val(mpc_val_t *x);
 mpc_parser_t *mpc_anchor(int(*f)(char,char));
 mpc_parser_t *mpc_state(void);
 
-/*
-** Combinator Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_expect(mpc_parser_t *a, const char *e);
 mpc_parser_t *mpc_expectf(mpc_parser_t *a, const char *fmt, ...);
@@ -148,9 +148,9 @@ mpc_parser_t *mpc_and(int n, mpc_fold_t f, ...);
 
 mpc_parser_t *mpc_predictive(mpc_parser_t *a);
 
-/*
-** Common Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_eoi(void);
 mpc_parser_t *mpc_soi(void);
@@ -193,9 +193,9 @@ mpc_parser_t *mpc_regex_lit(void);
 
 mpc_parser_t *mpc_ident(void);
 
-/*
-** Useful Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_startwith(mpc_parser_t *a);
 mpc_parser_t *mpc_endwith(mpc_parser_t *a, mpc_dtor_t da);
@@ -222,9 +222,9 @@ mpc_parser_t *mpc_tok_squares(mpc_parser_t *a, mpc_dtor_t ad);
 
 mpc_parser_t *mpc_sepby1(mpc_fold_t f, mpc_parser_t *sep, mpc_parser_t *a);
 
-/*
-** Common Function Parameters
-*/
+
+
+
 
 void mpcf_dtor_null(mpc_val_t *x);
 
@@ -263,9 +263,9 @@ mpc_val_t *mpcf_all_free(int n, mpc_val_t** xs);
 mpc_val_t *mpcf_freefold(int n, mpc_val_t** xs);
 mpc_val_t *mpcf_strfold(int n, mpc_val_t** xs);
 
-/*
-** Regular Expression Parsers
-*/
+
+
+
 
 enum {
   MPC_RE_DEFAULT   = 0,
@@ -278,9 +278,9 @@ enum {
 mpc_parser_t *mpc_re(const char *re);
 mpc_parser_t *mpc_re_mode(const char *re, int mode);
 
-/*
-** AST
-*/
+
+
+
 
 typedef struct mpc_ast_t {
   char *tag;
@@ -327,9 +327,9 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav);
 
 void mpc_ast_traverse_free(mpc_ast_trav_t **trav);
 
-/*
-** Warning: This function currently doesn't test for equality of the `state` member!
-*/
+
+
+
 int mpc_ast_eq(mpc_ast_t *a, mpc_ast_t *b);
 
 mpc_val_t *mpcf_fold_ast(int n, mpc_val_t **as);
@@ -365,9 +365,9 @@ mpc_err_t *mpca_lang_file(int flags, FILE *f, ...);
 mpc_err_t *mpca_lang_pipe(int flags, FILE *f, ...);
 mpc_err_t *mpca_lang_contents(int flags, const char *filename, ...);
 
-/*
-** Misc
-*/
+
+
+
 
 
 void mpc_print(mpc_parser_t *p);

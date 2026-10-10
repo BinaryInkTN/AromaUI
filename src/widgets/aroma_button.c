@@ -577,11 +577,11 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
 
             float gap = (button->label[0] != '\0' && button->icon[0] != '\0') ? (float)button->icon_padding : 0;
 
-            /* Dynamic text size: shrink the label to fit the button width
-             * (e.g. after responsive downscaling or a longer runtime label)
-             * instead of spilling past the button edge. Never grows beyond
-             * the caller's text_scale. Below the readability floor the text
-             * stays at the floor size and the scissor clip takes over. */
+
+
+
+
+
             float raw_text_w = 0.0f;
             if (button->label[0] != '\0' && button->font)
             {
@@ -619,8 +619,8 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
             if (content_start_x < button->rect.x + padding)
                 content_start_x = button->rect.x + padding;
 
-            /* Hard guarantee: label/icon never paint outside the button,
-             * even if the floor size still exceeds a tiny button. */
+
+
             bool clipped = false;
             if (gfx->graphics_set_clip && gfx->graphics_clear_clip)
             {
@@ -665,7 +665,7 @@ void aroma_button_destroy(AromaNode *button_node)
     if (button)
     {
         aroma_widget_free(button);
-        /* Detach so __destroy_node below does not free it a second time. */
+
         button_node->node_widget_ptr = NULL;
     }
     __destroy_node(button_node);

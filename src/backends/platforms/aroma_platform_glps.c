@@ -30,11 +30,11 @@ typedef struct
     bool glps_initialized;
     void (*frame_update_callback)(size_t window_id, void *data);
     void *frame_update_data;
-    /* Set once the window manager reports our window closed (WM_DELETE /
-     * DestroyNotify). X11 destroys the EGL state with the window, so every
-     * EGL touch below must stop once this is set; otherwise the next
-     * render dereferences the destroyed context (SIGSEGV). Cleared again
-     * if a window is (re)created. */
+
+
+
+
+
     bool window_closed;
 } AromaGLPSContext;
 
@@ -57,11 +57,11 @@ static void glps_window_close_callback(size_t window_id, void *data)
 {
     (void)window_id;
     (void)data;
-    /* The window (and its EGL state) is gone or going away. Stop all
-     * rendering paths: detach the frame callback so no Expose-driven
-     * synchronous render can fire inside the event drain, and mark the
-     * context so make_context_current/swap_buffers become safe no-ops.
-     * run_event_loop() below turns this into a clean shutdown. */
+
+
+
+
+
     platform_ctx.window_closed = true;
     if (platform_ctx.wm)
         glps_wm_window_set_frame_update_callback(platform_ctx.wm, NULL, NULL);
@@ -188,7 +188,7 @@ static void glps_keyboard_callback(size_t window_id, bool state, const char *val
     {
         if (strcmp(value, "Escape") == 0)
         {
-            /* ESC mirrors the Android back button on desktop. */
+
             if (aroma_ui_handle_back_press())
                 return;
             queue_key_event(EVENT_TYPE_KEY_PRESS, 27, modifiers);
@@ -363,8 +363,8 @@ static bool ensure_glps_initialized(void)
 
     if (platform_ctx.frame_update_callback)
     {
-        glps_wm_window_set_frame_update_callback(platform_ctx.wm, 
-            platform_ctx.frame_update_callback, 
+        glps_wm_window_set_frame_update_callback(platform_ctx.wm,
+            platform_ctx.frame_update_callback,
             platform_ctx.frame_update_data);
     }
 
@@ -457,18 +457,18 @@ bool run_event_loop()
         return false;
     if (glps_wm_should_close(platform_ctx.wm))
         return false;
-    /* X11 destroys the window (and its EGL state) while draining close /
-     * destroy events above, but should_close only evaluated the pre-drain
-     * state and unconditionally reports "keep running" afterwards. If the
-     * last window is gone, stop here: the next render would dereference
-     * the destroyed EGL context (SIGSEGV in eglMakeCurrent) instead of
-     * shutting down cleanly. */
+
+
+
+
+
+
     return glps_wm_get_window_count(platform_ctx.wm) > 0;
 }
 
 void swap_buffers(size_t window_id)
 {
-    /* Skip swaps after close: the surface is destroyed. */
+
     if (platform_ctx.window_closed)
         return;
 #ifdef AROMA_HAS_VULKAN

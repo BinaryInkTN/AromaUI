@@ -42,7 +42,7 @@ static void viewer_orbit_timer_cb(void *user_data)
     struct Aroma3DViewer *viewer = (struct Aroma3DViewer *)user_data;
     if (!viewer || !viewer->auto_rotate || viewer->is_dragging || !viewer->node)
         return;
-    /* Hidden viewers (e.g. unselected tabs) must not burn frames. */
+
     AromaNode *curr = viewer->node;
     while (curr)
     {
@@ -124,7 +124,7 @@ static void viewer_draw(AromaNode *node, size_t window_id)
     if (!gfx || !gfx->fill_rectangle)
         return;
 
-    // Ensure 3D resources are initialized (GL context is current during draw)
+
     aroma_3d_init();
 
     if (!viewer->model)
@@ -275,9 +275,9 @@ void aroma_3d_viewer_set_auto_rotate(AromaNode *node, bool auto_rotate)
         return;
     struct Aroma3DViewer *viewer = (struct Aroma3DViewer *)node->node_widget_ptr;
     viewer->auto_rotate = auto_rotate;
-    /* Rotation is driven by a repeat timer (not by draw-time invalidate,
-       which the frame-end dirty clear would swallow once every other
-       dirty source goes quiet). The timer skips hidden/dragging viewers. */
+
+
+
     if (auto_rotate)
     {
         if (!viewer->orbit_timer)

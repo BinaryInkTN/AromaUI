@@ -16,7 +16,7 @@ layout(location = 1) in vec2 TexCoord;
 
 layout(location = 0) out vec4 fragment;
 
-// Material Design 3 antialiasing edge width
+
 const float AA_WIDTH = 1.0;
 
 float roundedBoxSDF(vec2 centerPos, vec2 size, float radius) {
@@ -46,7 +46,7 @@ float roundedBorderSDF(vec2 centerPos, vec2 size, float radius, float borderWidt
 }
 
 void main() {
-    // Fast path: non-rounded, non-hollow → flat color, skip SDF
+
     if (pc.isRounded == 0 && pc.isHollow == 0) {
         fragment = color;
         return;
@@ -93,7 +93,7 @@ layout(location = 1) in vec2 TexCoord;
 
 layout(location = 0) out vec4 fragment;
 
-// Material Design 3 antialiasing edge width
+
 const float AA_WIDTH = 1.0;
 
 float roundedBoxSDF(vec2 centerPos, vec2 size, float radius) {
@@ -123,7 +123,7 @@ float roundedBorderSDF(vec2 centerPos, vec2 size, float radius, float borderWidt
 }
 
 void main() {
-    // Fast path: non-rounded, non-hollow → flat color, skip SDF
+
     if (pc.isRounded == 0 && pc.isHollow == 0) {
         fragment = color;
         return;

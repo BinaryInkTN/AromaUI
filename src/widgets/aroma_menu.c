@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "widgets/aroma_menu.h"
 #include "widgets/aroma_container.h"
@@ -141,16 +141,16 @@ y = aroma_android_dp_to_px(y);
     aroma_node_set_draw_cb(node, aroma_menu_draw);
 
     aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, __menu_handle_event, NULL, 80);
-    
+
     #ifdef ESP32
     aroma_node_invalidate(node);
     #endif
-    
+
     return node;
 }
 
-/* Keep the scene-graph hit-test rect in sync with the widget rect:
-   the node starts at height 0 and grows as items are added. */
+
+
 static void __menu_sync_rect(AromaNode* menu_node)
 {
     if (!menu_node || !menu_node->node_widget_ptr) return;
@@ -283,15 +283,15 @@ void aroma_menu_draw(AromaNode* menu_node, size_t window_id)
             int line_h = aroma_font_get_line_height(menu->font);
             int text_x = menu->rect.x + menu_dp(AROMA_MENU_TEXT_X_DP);
             int text_y = y + (menu->item_height - line_h) / 2;
-            
+
             if (menu->items[i].icon[0] != '\0' && menu->icon_font) {
                  int line_h = aroma_font_get_line_height(menu->icon_font);
-                 gfx->render_text(window_id, menu->icon_font, menu->items[i].icon, 
-                     text_x, y + ((menu->item_height - line_h)/2), 
+                 gfx->render_text(window_id, menu->icon_font, menu->items[i].icon,
+                     text_x, y + ((menu->item_height - line_h)/2),
                      menu->text_color, 1.0f);
                  text_x += menu_dp(AROMA_MENU_ICON_OFFSET_DP);
             }
-            
+
             gfx->render_text(window_id, menu->font, menu->items[i].text, text_x, text_y, menu->text_color, menu->text_scale);
         }
     }

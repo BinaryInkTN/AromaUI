@@ -1,18 +1,18 @@
-/*
- * Headless functional tests for the procedural cube (GLES3).
- *
- * Renders `aroma_3d_create_cube()` on an EGL pbuffer (Mesa software GL
- * is fine) and reads pixels back to verify:
- *   1. the cube builds with 1 indexed mesh,
- *   2. the frame renders lit, non-white pixels (guards the zeroed
- *      model-matrix regression where every vertex collapsed and the
- *      cube rasterized nothing, plus the missing indexed-flag
- *      regression where the EBO was ignored),
- *   3. no GL error is raised while rendering.
- *
- * Prints SKIP and exits 0 when no EGL display is available, so constrained
- * CI machines still pass.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
@@ -110,7 +110,7 @@ int main(void)
     }
     CHECK(aroma_3d_get_mesh_count(cube) == 1, "cube has one mesh");
 
-    /* Same viewpoint as the live-preview Cube tab. */
+
     Aroma3DCamera cam;
     aroma_3d_camera_init(&cam);
     cam.theta = 0.6f;
@@ -152,9 +152,9 @@ int main(void)
         CHECK(frac > 0.05, "cube covers a visible portion of frame");
         CHECK(blue > 100, "cube blue faces visible");
 
-        /* Top-down and bottom-up views: guards the top/bottom face
-           quads (each must be coplanar on y=+/-0.5 with matching
-           normals, or its view renders empty). */
+
+
+
         struct
         {
             float phi;

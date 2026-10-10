@@ -64,14 +64,14 @@ EMSCRIPTEN_KEEPALIVE unsigned long long aroma_test_get_last_mouse_event_target(v
 
 static inline void _css_to_canvas_scale(double *out_sx, double *out_sy)
 {
-    /* Map displayed CSS px to UI layout units. The layout lives in CSS
-       px (windows are created with CSS dimensions and hit-testing
-       compares against those rects), while the drawing buffer is
-       CSS*dpr. Scaling by buffer/css would overshoot by dpr on hidpi
-       and every click would land dpr x too far down-right, so the dpr
-       factor is divided back out. When the canvas is CSS-shrunk
-       (responsive layouts) the remaining buffer/css ratio still tracks
-       the displayed size correctly. */
+
+
+
+
+
+
+
+
     double css_w = 0.0, css_h = 0.0;
     emscripten_get_element_css_size("#canvas", &css_w, &css_h);
 
@@ -90,8 +90,8 @@ static inline void _css_to_canvas_scale(double *out_sx, double *out_sy)
 static inline void _client_to_canvas(double cx, double cy,
                                      double *out_x, double *out_y)
 {
-    /* e->targetX/targetY arrive in displayed CSS px; convert to the
-       layout units the scene graph and hit-testing use. */
+
+
     double sx = 1.0, sy = 1.0;
     _css_to_canvas_scale(&sx, &sy);
 
@@ -374,7 +374,7 @@ static EM_BOOL _cb_key_down(int et, const EmscriptenKeyboardEvent *e, void *ud)
     (void)et; (void)ud;
     uint32_t kv = _map_key(e);
     if (kv == 0) return EM_TRUE;
-    /* Browser Escape mirrors the system back button. */
+
     if (kv == 27)
     {
         if (aroma_ui_handle_back_press())
@@ -397,7 +397,7 @@ static void _frame_trampoline(void *arg)
 {
     (void)arg;
     if (platform_ctx.frame_callback) {
-        // Emscripten backend currently supports a single implicit window (id 1)
+
         platform_ctx.frame_callback(1, platform_ctx.frame_callback_data);
     }
 }

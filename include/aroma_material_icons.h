@@ -1,13 +1,13 @@
 #ifndef AROMA_MATERIAL_ICONS_H
 #define AROMA_MATERIAL_ICONS_H
 
-/**
- * @file aroma_material_icons.h
- * @brief Common Material Design icon codepoints.
- * 
- * These definitions use the standard Material Icons codepoints.
- * To use these, ensure a valid Material Icons font is loaded.
- */
+
+
+
+
+
+
+
 
 #define AROMA_ICON_3D_ROTATION "\ue84d"
 #define AROMA_ICON_AC_UNIT "\ueb3b"
@@ -946,4 +946,4 @@
 #define AROMA_ICON_ZOOM_OUT "\ue900"
 #define AROMA_ICON_ZOOM_OUT_MAP "\ue56b"
 
-#endif // AROMA_MATERIAL_ICONS_H
+#endif

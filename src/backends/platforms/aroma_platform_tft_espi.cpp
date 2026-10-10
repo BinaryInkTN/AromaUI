@@ -14,12 +14,12 @@ extern "C" {
 
 static TFT_eSPI*     g_tft        = nullptr;
 static TFT_eSprite*  g_sprite     = nullptr;
-static bool          g_use_sprite = false; 
+static bool          g_use_sprite = false;
 static int           g_width      = 0;
 static int           g_height     = 0;
 static uint16_t      g_clear_color = 0x0000;
 #define TILE_H 100
-#define MAX_TILES 10 
+#define MAX_TILES 10
 static bool g_tile_dirty[MAX_TILES] = {false};
 
 static bool g_tile_ready = false;
@@ -43,7 +43,7 @@ static void (*g_update_callback)(size_t, void*) = nullptr;
 static void* g_callback_data = nullptr;
 
 static TFT_eSprite* get_target_sprite() {
-    return g_sprite;  
+    return g_sprite;
 
 }
 
@@ -75,7 +75,7 @@ void tft_enable_tiling(bool enable) {
         }
 
         LOG_INFO("Tiling enabled with sprite");
-    } 
+    }
     else if (!enable && g_use_sprite) {
         if (gfx->graphics_set_sprite_mode) {
             gfx->graphics_set_sprite_mode(false, nullptr);
@@ -110,7 +110,7 @@ int initialize(void) {
 #endif
 
     tft_enable_tiling(true);
-    
+
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx) return 0;
@@ -138,7 +138,7 @@ size_t create_window(const char* title, int x, int y, int w, int h) {
         gfx->setup_separate_window_resources(0);
     }
 
-    return 0; 
+    return 0;
 
 }
 
@@ -164,7 +164,7 @@ void request_window_update(size_t window_id) {
     if (g_update_callback) {
         g_update_callback(0, g_callback_data);
     }
-} 
+}
 
 void call_flush_function_ptr(
     void (*flush_fn)(struct AromaDrawList* list, size_t window_id, int x, int y, int width, int height),
@@ -182,31 +182,31 @@ void call_flush_function_ptr(
 
     int num_tiles = (full_height + TILE_H - 1) / TILE_H;
     for (int ty = 0; ty < num_tiles; ty++) {
-        if (!g_tile_dirty[ty]) continue;  
+        if (!g_tile_dirty[ty]) continue;
 
         int tile_y = ty * TILE_H;
         int tile_h = min(TILE_H, full_height - tile_y);
 
         gfx->graphics_set_clip(0, tile_y, full_width, tile_h);
-        g_sprite->fillRect(0, 0, full_width, tile_h, g_clear_color); 
+        g_sprite->fillRect(0, 0, full_width, tile_h, g_clear_color);
         flush_fn((AromaDrawList*) list, 0, 0, tile_y, full_width, tile_h);
         gfx->graphics_clear_clip();
         g_sprite->pushSprite(0, tile_y);
 
-        g_tile_dirty[ty] = false; 
+        g_tile_dirty[ty] = false;
     }
 
     gfx->graphics_set_sprite_mode(false, nullptr);
 }
 
 bool run_event_loop(void) {
-    return false; 
+    return false;
 
 }
 
 void swap_buffers(size_t window_id) {
     if (window_id != 0) return;
-    //request_window_update(0);
+
 }
 
 static void shutdown(void) {

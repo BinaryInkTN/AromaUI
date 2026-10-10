@@ -1,33 +1,33 @@
-/*
 
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
-// Test runner. Suites live in category directories that mirror the
-// framework layout (see tests/CMakeLists.txt):
-//   core/    - foundations: memory, scene graph, events, draw list,
-//              timing, style (headless, no GPU).
-//   widgets/ - every widget, headless (no GPU, no display).
-//   markup/  - Incense UI markup loading, headless.
-// GPU-backed blur tests live in test_aroma_blur_gl.c (separate binary,
-// Linux + EGL only).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_slab_alloc.h"
 #include "test_aroma_node.h"
@@ -88,7 +88,7 @@ int main(void)
 {
     int passed, failed;
 
-    /* ---- core/ ---- */
+
     begin_category("core");
     run_slab_allocator_tests(&passed, &failed);
     tally(passed, failed);
@@ -112,7 +112,7 @@ int main(void)
     tally(passed, failed);
     end_category();
 
-    /* ---- widgets/ ---- */
+
     begin_category("widgets");
     run_button_tests(&passed, &failed);
     tally(passed, failed);
@@ -150,7 +150,7 @@ int main(void)
     tally(passed, failed);
     end_category();
 
-    /* ---- markup/ ---- */
+
     begin_category("markup");
     run_incense_tests(&passed, &failed);
     tally(passed, failed);

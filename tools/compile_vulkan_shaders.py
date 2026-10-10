@@ -41,7 +41,7 @@ def compile_shader(compiler_name, compiler_path, glsl_path, spv_path):
 def spv_to_c_array(spv_path, var_name):
     with open(spv_path, "rb") as f:
         data = f.read()
-    # SPIR-V is 4-byte aligned uint32
+
     words = struct.unpack(f"<{len(data)//4}I", data)
     lines = []
     lines.append(f"static const uint32_t {var_name}[] = {{")

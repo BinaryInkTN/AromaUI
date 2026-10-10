@@ -535,8 +535,8 @@ static IncenseNode *build_object(mpc_ast_t *ast, const char *source)
     if (!obj)
         return NULL;
 
-    /* Tail-tracked append: the child list would otherwise make object
-     * construction quadratic in sibling count. */
+
+
     IncenseNode *tail = NULL;
     for (int i = 0; i < ast->children_num; i++)
     {

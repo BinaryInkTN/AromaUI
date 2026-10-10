@@ -86,8 +86,8 @@ static bool __table_handle_event(AromaEvent *event, void *user_data)
     AromaTableInternal *t = get_table(node);
     if (!t || !event)
         return false;
-    /* Walk up past scroll containers so the position is in the table's
-     * content space even when scrolled. */
+
+
     int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
     if (event->target_node)
@@ -378,8 +378,8 @@ void aroma_table_clear_rows(AromaNode *table_node, bool destroy_widgets)
             {
                 if (t->cell_widgets[r][c])
                 {
-                    /* Unlinks from the parent first, so no double free
-                     * when the table node itself is destroyed later. */
+
+
                     __destroy_node_tree(t->cell_widgets[r][c]);
                     t->cell_widgets[r][c] = NULL;
                 }
@@ -462,6 +462,6 @@ void aroma_table_destroy(AromaNode *table_node)
         }
     }
     t->num_rows = 0;
-    /* __destroy_node frees the internal struct (node_widget_ptr) itself. */
+
     __destroy_node(table_node);
 }

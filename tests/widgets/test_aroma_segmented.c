@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_segmented.h"
 #include "widgets/aroma_segmented.h"
@@ -75,13 +75,13 @@ static void test_segmented(void)
 
     aroma_segmented_set_selected(seg, 3);
     CHECK(aroma_segmented_get_selected(seg) == 3, "segmented selects last");
-    aroma_segmented_set_selected(seg, 3); /* idempotent */
+    aroma_segmented_set_selected(seg, 3);
     CHECK(aroma_segmented_get_selected(seg) == 3, "segmented reselect stable");
     aroma_segmented_set_selected(seg, 99);
     CHECK(aroma_segmented_get_selected(seg) == 3, "segmented ignores overflow");
     aroma_segmented_set_selected(seg, -1);
     CHECK(aroma_segmented_get_selected(seg) == 3, "segmented ignores negative");
-    aroma_segmented_set_selected(NULL, 1); /* no crash */
+    aroma_segmented_set_selected(NULL, 1);
     aroma_segmented_set_on_change(seg, NULL, NULL);
     aroma_segmented_set_font(seg, NULL);
     aroma_segmented_setup_events(seg, NULL, NULL);
@@ -115,7 +115,7 @@ static void test_tabs_variant(void)
     CHECK(aroma_tabs_get_variant(tabs) == TABS_VARIANT_TOP, "tabs switch back to top");
     aroma_tabs_set_variant(tabs, (AromaTabsVariant)99);
     CHECK(aroma_tabs_get_variant(tabs) == TABS_VARIANT_TOP, "tabs ignore invalid variant");
-    aroma_tabs_set_variant(NULL, TABS_VARIANT_BAR); /* no crash */
+    aroma_tabs_set_variant(NULL, TABS_VARIANT_BAR);
 
     aroma_tabs_destroy(tabs);
     __destroy_node(root);
@@ -148,7 +148,7 @@ static void test_button_types(void)
     CHECK(aroma_button_get_type(btn) == BUTTON_TYPE_ELEVATED, "button switches to elevated");
     aroma_button_set_type(btn, (AromaButtonType)99);
     CHECK(aroma_button_get_type(btn) == BUTTON_TYPE_ELEVATED, "button ignores invalid type");
-    aroma_button_set_type(NULL, BUTTON_TYPE_TONAL); /* no crash */
+    aroma_button_set_type(NULL, BUTTON_TYPE_TONAL);
 
     aroma_button_destroy(btn);
     __destroy_node(root);
@@ -167,7 +167,7 @@ static void test_incense_bindings(void)
               "Button { x: 20 y: 300 width: 280 height: 44 text: \"See all\" type: tonal } }",
               parent, NULL, NULL, &reg),
           "incense loads typed button");
-    /* IntoParent unwraps the Window: the button lands directly on parent. */
+
     CHECK(parent->child_count == 1, "typed button builds one widget");
     if (parent->child_count == 1)
         CHECK(aroma_button_get_type(parent->child_nodes[0]) == BUTTON_TYPE_TONAL,

@@ -1,15 +1,15 @@
-/*
- * Line-width measurement must decode UTF-8 per codepoint, not per byte.
- *
- * Regression test: the old implementation summed FT_Load_Char advances
- * byte-by-byte, so a 3-byte material icon glyph measured ~3x too wide
- * (192 instead of 64 at 64px) and every centered icon landed off-center.
- * Pure-ASCII widths are unaffected (single-byte codepoints).
- *
- * Pinned pixel values below are for the in-tree font blobs
- * (aroma_material_font.h / aroma_ubuntu_font.c); update them if those
- * blobs change.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_font_measure.h"
 #include "aroma_font.h"
@@ -65,7 +65,7 @@ static void test_utf8_codepoints(void)
     CHECK(icons != NULL, "material font loads");
     if (icons)
     {
-        /* One 3-byte glyph: a single 64px advance, not 3x .notdef. */
+
         CHECK(aroma_font_get_line_width(icons, AROMA_ICON_APPS) == 64,
               "icon glyph measures one advance");
         CHECK(aroma_font_get_line_width(icons, AROMA_ICON_APPS) * 2 ==
@@ -80,7 +80,7 @@ static void test_utf8_codepoints(void)
     CHECK(f != NULL, "ubuntu font loads (utf8)");
     if (!f)
         return;
-    /* U+00E9 is one codepoint: must not count as two .notdef advances. */
+
     CHECK(aroma_font_get_line_width(f, "Caf\xc3\xa9") == 48,
           "two-byte glyph measures one advance");
     aroma_font_destroy(f);

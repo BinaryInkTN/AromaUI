@@ -37,11 +37,11 @@ int aroma_stepper_get_step_index(AromaNode *st_node);
 void aroma_stepper_set_on_change(AromaNode *st_node, AromaStepperChangeCb cb,
                                  void *user_data);
 void aroma_stepper_set_font(AromaNode *st_node, AromaFont *font);
-/* True when touches starting on this node must never be stolen by a
- * scrollable ancestor: the numeric NumberPicker is a vertical drag
- * widget and owns its complete gesture (tap, drag, fling,
- * long-press). Steps mode is tap-only and returns false so a swipe
- * over it can still scroll the page. NULL-safe. */
+
+
+
+
+
 bool aroma_stepper_owns_touch(AromaNode *st_node);
 bool aroma_stepper_setup_events(AromaNode *st_node, void (*on_redraw)(void *),
                                 void *user_data);

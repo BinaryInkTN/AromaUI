@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_table.h"
 #include "widgets/aroma_table.h"
@@ -86,14 +86,14 @@ static void test_rows_and_cells(void)
 
     aroma_table_set_cell_text(t, 0, 0, "hello");
     aroma_table_set_cell_text(t, 1, 1, "world");
-    /* Out-of-range writes are ignored, never crash. */
+
     aroma_table_set_cell_text(t, 9, 0, "nope");
     aroma_table_set_cell_text(t, 0, 9, "nope");
     aroma_table_set_cell_text(t, 0, 0, NULL);
     aroma_table_set_cell_text(NULL, 0, 0, "nope");
     CHECK(aroma_table_get_row_count(t) == 2, "bad writes do not add rows");
 
-    /* Long text truncates instead of overflowing the cell buffer. */
+
     char big[200];
     memset(big, 'x', sizeof(big) - 1);
     big[sizeof(big) - 1] = '\0';
@@ -128,19 +128,19 @@ static void test_clear_and_rebuild(void)
     aroma_table_set_selected_row(t, 1);
     CHECK(aroma_table_get_selected_row(t) == 1, "selection sticks");
 
-    /* Keep widgets: rows go away, button node survives. */
+
     aroma_table_clear_rows(t, false);
     CHECK(aroma_table_get_row_count(t) == 0, "clear empties rows");
     CHECK(aroma_table_get_selected_row(t) == -1, "clear resets selection");
     CHECK(btn->node_id != 0, "kept widget node survives clear");
     __destroy_node(btn);
 
-    /* Rebuild after clear works. */
+
     CHECK(aroma_table_add_row(t) == 0, "row index restarts after clear");
     AromaNode *btn2 = aroma_button_create(t, "Get", 0, 0, 80, 30);
     aroma_table_set_cell_widget(t, 0, 1, btn2);
 
-    /* Destroy widgets: embedded button is freed with the rows. */
+
     aroma_table_clear_rows(t, true);
     CHECK(aroma_table_get_row_count(t) == 0, "destroying clear empties rows");
 
@@ -160,8 +160,8 @@ static void test_geometry_and_selection(void)
     CHECK(t != NULL, "table creates for geometry tests");
 
     aroma_table_set_row_height(t, 56);
-    aroma_table_set_row_height(t, -5);  /* clamps, no crash */
-    aroma_table_set_row_height(t, 5000); /* clamps, no crash */
+    aroma_table_set_row_height(t, -5);
+    aroma_table_set_row_height(t, 5000);
     aroma_table_set_row_height(NULL, 56);
     CHECK(aroma_table_add_row(t) == 0, "rows work after height change");
 

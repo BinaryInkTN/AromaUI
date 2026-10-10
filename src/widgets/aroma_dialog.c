@@ -103,9 +103,9 @@ static void __dialog_update_rect(AromaDialog *dlg)
 
     if (win_w > 0 && win_h > 0)
     {
-        /* Clamp to the window (dp-aware margins) so dialogs authored wider
-         * than small screens shrink instead of spilling past the edges;
-         * position follows from the clamped size. */
+
+
+
         int max_w = win_w - 2 * dialog_dp(AROMA_DIALOG_SCREEN_MARGIN_DP);
         int max_h = win_h - 2 * dialog_dp(AROMA_DIALOG_SCREEN_MARGIN_DP);
         if (max_w < 1)
@@ -447,10 +447,10 @@ AromaNode *aroma_dialog_get_content_area(AromaNode *dialog_node)
     return dlg->content_node;
 }
 
-/* Word-wrap + render: greedy wrap on spaces (honoring embedded
- * newlines), hard UTF-8-codepoint-safe breaks for overlong words, and
- * an ellipsis when the text outgrows max_lines. Everything is measured
- * with the real font so lines never overflow max_w. */
+
+
+
+
 static size_t dialog_utf8_step(const char *s)
 {
     unsigned char c = (unsigned char)*s;
@@ -488,13 +488,13 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
     char line[1024];
     size_t line_len = 0;
 
-    /* Flush the pending line; when the last row is reached but text
-     * remains, squeeze in an ellipsis instead of silently clipping. */
+
+
     bool truncated = false;
     while (*p && line_no < max_lines)
     {
-        /* Forced break: flush the pending row, then consume one row
-         * for the break itself (blank line). */
+
+
         if (*p == '\n')
         {
             p++;
@@ -523,7 +523,7 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
             }
             continue;
         }
-        /* Next word (runs of non-space, non-newline). */
+
         while (*p == ' ' || *p == '\t')
             p++;
         if (!*p || *p == '\n')
@@ -534,7 +534,7 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
                p[wlen] != '\n')
             wlen++;
 
-        /* Fits on the pending line? */
+
         size_t need = line_len + (line_len ? 1 : 0) + wlen;
         bool fits = false;
         if (need < sizeof(line))
@@ -561,7 +561,7 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
             p += wlen;
             continue;
         }
-        /* Flush pending line first. */
+
         if (line_len > 0)
         {
             line[line_len] = '\0';
@@ -574,9 +574,9 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
                              y_top + line_no * line_h, color, 1.0f);
             line_no++;
             line_len = 0;
-            continue; /* retry the word on the fresh line */
+            continue;
         }
-        /* Single word wider than the row: hard-break it. */
+
         size_t used = 0;
         while (used < wlen && line_no < max_lines)
         {
@@ -596,7 +596,7 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
                 take = dialog_utf8_step(w + used);
             if (used + take < wlen)
             {
-                /* More word left after this chunk: chunk fills a row. */
+
                 memcpy(line, w + used, take);
                 line[take] = '\0';
                 if (line_no + 1 >= max_lines)
@@ -625,7 +625,7 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
         line[line_len] = '\0';
         if (truncated || *p)
         {
-            /* Make room for "..." on the final row. */
+
             while (line_len > 0 &&
                    dialog_measure(gfx, window_id, font, line, line_len) +
                            dialog_measure(gfx, window_id, font, "...", 3) >

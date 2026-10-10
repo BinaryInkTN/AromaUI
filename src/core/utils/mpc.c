@@ -1,8 +1,8 @@
 #include "mpc.h"
 
-/*
-** State Type
-*/
+
+
+
 
 static mpc_state_t mpc_state_invalid(void) {
   mpc_state_t s;
@@ -22,40 +22,40 @@ static mpc_state_t mpc_state_new(void) {
   return s;
 }
 
-/*
-** Input Type
-*/
 
-/*
-** In mpc the input type has three modes of
-** operation: String, File and Pipe.
-**
-** String is easy. The whole contents are
-** loaded into a buffer and scanned through.
-** The cursor can jump around at will making
-** backtracking easy.
-**
-** The second is a File which is also somewhat
-** easy. The contents are never loaded into
-** memory but backtracking can still be achieved
-** by seeking in the file at different positions.
-**
-** The final mode is Pipe. This is the difficult
-** one. As we assume pipes cannot be seeked - and
-** only support a single character lookahead at
-** any point, when the input is marked for a
-** potential backtracking we start buffering any
-** input.
-**
-** This means that if we are requested to seek
-** back we can simply start reading from the
-** buffer instead of the input.
-**
-** Of course using `mpc_predictive` will disable
-** backtracking and make LL(1) grammars easy
-** to parse for all input methods.
-**
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 enum {
   MPC_INPUT_STRING = 0,
@@ -568,9 +568,9 @@ static mpc_state_t *mpc_input_state_copy(mpc_input_t *i) {
   return r;
 }
 
-/*
-** Error Type
-*/
+
+
+
 
 void mpc_err_delete(mpc_err_t *x) {
   int i;
@@ -592,7 +592,7 @@ void mpc_err_print_to(mpc_err_t *x, FILE *f) {
 }
 
 static void mpc_err_string_cat(char *buffer, int *pos, int *max, char const *fmt, ...) {
-  /* TODO: Error Checking on Length */
+
   int left = ((*max) - (*pos));
   va_list va;
   va_start(va, fmt);
@@ -878,9 +878,9 @@ static mpc_err_t *mpc_err_merge(mpc_input_t *i, mpc_err_t *x, mpc_err_t *y) {
   return mpc_err_or(i, errs, 2);
 }
 
-/*
-** Parser Type
-*/
+
+
+
 
 enum {
   MPC_TYPE_UNDEFINED  = 0,
@@ -983,8 +983,16 @@ static mpc_val_t *mpcf_input_strfold(mpc_input_t *i, int n, mpc_val_t **xs) {
   size_t l = 0;
   if (n == 0) { return mpc_calloc(i, 1, 1); }
   for (j = 0; j < n; j++) { l += strlen(xs[j]); }
+  size_t current_len = strlen(xs[0]);
   xs[0] = mpc_realloc(i, xs[0], l + 1);
-  for (j = 1; j < n; j++) { strcat(xs[0], xs[j]); mpc_free(i, xs[j]); }
+  char *ptr = (char *)xs[0] + current_len;
+  for (j = 1; j < n; j++) {
+    size_t child_len = strlen(xs[j]);
+    memcpy(ptr, xs[j], child_len);
+    ptr += child_len;
+    mpc_free(i, xs[j]);
+  }
+  *ptr = '\0';
   return xs[0];
 }
 
@@ -1078,7 +1086,7 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
 
   switch (p->type) {
 
-    /* Basic Parsers */
+
 
     case MPC_TYPE_ANY:     MPC_PRIMITIVE(mpc_input_any(i, (char**)&r->output));
     case MPC_TYPE_SINGLE:  MPC_PRIMITIVE(mpc_input_char(i, p->data.single.x, (char**)&r->output));
@@ -1091,7 +1099,7 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
     case MPC_TYPE_SOI:     MPC_PRIMITIVE(mpc_input_soi(i, (char**)&r->output));
     case MPC_TYPE_EOI:     MPC_PRIMITIVE(mpc_input_eoi(i, (char**)&r->output));
 
-    /* Other parsers */
+
 
     case MPC_TYPE_UNDEFINED: MPC_FAILURE(mpc_err_fail(i, "Parser Undefined!"));
     case MPC_TYPE_PASS:      MPC_SUCCESS(NULL);
@@ -1100,7 +1108,7 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
     case MPC_TYPE_LIFT_VAL:  MPC_SUCCESS(p->data.lift.x);
     case MPC_TYPE_STATE:     MPC_SUCCESS(mpc_input_state_copy(i));
 
-    /* Application Parsers */
+
 
     case MPC_TYPE_APPLY:
       if (mpc_parse_run(i, p->data.apply.x, r, e, depth+1)) {
@@ -1160,9 +1168,9 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
         MPC_FAILURE(r->error);
       }
 
-    /* Optional Parsers */
 
-    /* TODO: Update Not Error Message */
+
+
 
     case MPC_TYPE_NOT:
       mpc_input_mark(i);
@@ -1186,7 +1194,7 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
         MPC_SUCCESS(p->data.not.lf());
       }
 
-    /* Repeat Parsers */
+
 
     case MPC_TYPE_MANY:
 
@@ -1278,7 +1286,7 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
           if (p->data.repeat.n > MPC_PARSE_STACK_MIN) { mpc_free(i, results); });
       }
 
-    /* Combinatory Parsers */
+
 
     case MPC_TYPE_OR:
 
@@ -1323,7 +1331,7 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
         mpc_parse_fold(i, p->data.and.f, j, (mpc_val_t**)results);
         if (p->data.or.n > MPC_PARSE_STACK_MIN) { mpc_free(i, results); });
 
-    /* End */
+
 
     default:
 
@@ -1400,9 +1408,9 @@ int mpc_parse_contents(const char *filename, mpc_parser_t *p, mpc_result_t *r) {
   return res;
 }
 
-/*
-** Building a Parser
-*/
+
+
+
 
 static void mpc_undefine_unretained(mpc_parser_t *p, int force);
 
@@ -1667,25 +1675,25 @@ mpc_parser_t *mpc_fail(const char *m) {
   return p;
 }
 
-/*
-** As `snprintf` is not ANSI standard this
-** function `mpc_failf` should be considered
-** unsafe.
-**
-** You have a few options if this is going to be
-** trouble.
-**
-** - Ensure the format string does not exceed
-**   the buffer length using precision specifiers
-**   such as `%.512s`.
-**
-** - Patch this function in your code base to
-**   use `snprintf` or whatever variant your
-**   system supports.
-**
-** - Avoid it altogether.
-**
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 mpc_parser_t *mpc_failf(const char *fmt, ...) {
 
@@ -1745,25 +1753,25 @@ mpc_parser_t *mpc_expect(mpc_parser_t *a, const char *expected) {
   return p;
 }
 
-/*
-** As `snprintf` is not ANSI standard this
-** function `mpc_expectf` should be considered
-** unsafe.
-**
-** You have a few options if this is going to be
-** trouble.
-**
-** - Ensure the format string does not exceed
-**   the buffer length using precision specifiers
-**   such as `%.512s`.
-**
-** - Patch this function in your code base to
-**   use `snprintf` or whatever variant your
-**   system supports.
-**
-** - Avoid it altogether.
-**
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 mpc_parser_t *mpc_expectf(mpc_parser_t *a, const char *fmt, ...) {
   va_list va;
@@ -1786,9 +1794,9 @@ mpc_parser_t *mpc_expectf(mpc_parser_t *a, const char *fmt, ...) {
   return p;
 }
 
-/*
-** Basic Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_any(void) {
   mpc_parser_t *p = mpc_undefined();
@@ -1843,9 +1851,9 @@ mpc_parser_t *mpc_string(const char *s) {
   return mpc_expectf(p, "\"%s\"", s);
 }
 
-/*
-** Core Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_apply(mpc_parser_t *a, mpc_apply_t f) {
   mpc_parser_t *p = mpc_undefined();
@@ -2031,9 +2039,9 @@ mpc_parser_t *mpc_and(int n, mpc_fold_t f, ...) {
   return p;
 }
 
-/*
-** Common Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_soi(void) {
   mpc_parser_t *p = mpc_undefined();
@@ -2094,7 +2102,7 @@ mpc_parser_t *mpc_number(void) { return mpc_expect(mpc_or(3, mpc_int(), mpc_hex(
 
 mpc_parser_t *mpc_real(void) {
 
-  /* [+-]?\d+(\.\d+)?([eE][+-]?[0-9]+)? */
+
 
   mpc_parser_t *p0, *p1, *p2, *p30, *p31, *p32, *p3;
 
@@ -2135,9 +2143,9 @@ mpc_parser_t *mpc_ident(void) {
   return mpc_and(2, mpcf_strfold, p0, p1, free);
 }
 
-/*
-** Useful Parsers
-*/
+
+
+
 
 mpc_parser_t *mpc_startwith(mpc_parser_t *a) { return mpc_and(2, mpcf_snd, mpc_soi(), a, mpcf_dtor_null); }
 mpc_parser_t *mpc_endwith(mpc_parser_t *a, mpc_dtor_t da) { return mpc_and(2, mpcf_fst, a, mpc_eoi(), da); }
@@ -2173,55 +2181,55 @@ mpc_parser_t *mpc_tok_braces(mpc_parser_t *a, mpc_dtor_t ad)   { return mpc_tok_
 mpc_parser_t *mpc_tok_brackets(mpc_parser_t *a, mpc_dtor_t ad) { return mpc_tok_between(a, ad, "{", "}"); }
 mpc_parser_t *mpc_tok_squares(mpc_parser_t *a, mpc_dtor_t ad)  { return mpc_tok_between(a, ad, "[", "]"); }
 
-/*
-** Regular Expression Parsers
-*/
 
-/*
-** So here is a cute bootstrapping.
-**
-** I'm using the previously defined
-** mpc constructs and functions to
-** parse the user regex string and
-** construct a parser from it.
-**
-** As it turns out lots of the standard
-** mpc functions look a lot like `fold`
-** functions and so can be used indirectly
-** by many of the parsing functions to build
-** a parser directly - as we are parsing.
-**
-** This is certainly something that
-** would be less elegant/interesting
-** in a two-phase parser which first
-** builds an AST and then traverses it
-** to generate the object.
-**
-** This whole thing acts as a great
-** case study for how trivial it can be
-** to write a great parser in a few
-** lines of code using mpc.
-*/
 
-/*
-**
-**  ### Regular Expression Grammar
-**
-**      <regex> : <term> | (<term> "|" <regex>)
-**
-**      <term> : <factor>*
-**
-**      <factor> : <base>
-**               | <base> "*"
-**               | <base> "+"
-**               | <base> "?"
-**               | <base> "{" <digits> "}"
-**
-**      <base> : <char>
-**             | "\" <char>
-**             | "(" <regex> ")"
-**             | "[" <range> "]"
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static mpc_val_t *mpcf_re_or(int n, mpc_val_t **xs) {
   (void) n;
@@ -2283,7 +2291,7 @@ static mpc_val_t *mpcf_re_escape(mpc_val_t *x, void* data) {
   char *s = x;
   mpc_parser_t *p;
 
-  /* Any Character */
+
   if (s[0] == '.') {
     free(s);
     if (mode & MPC_RE_DOTALL) {
@@ -2293,7 +2301,7 @@ static mpc_val_t *mpcf_re_escape(mpc_val_t *x, void* data) {
     }
   }
 
-  /* Start of Input */
+
   if (s[0] == '^') {
     free(s);
     if (mode & MPC_RE_MULTILINE) {
@@ -2303,7 +2311,7 @@ static mpc_val_t *mpcf_re_escape(mpc_val_t *x, void* data) {
     }
   }
 
-  /* End of Input */
+
   if (s[0] == '$') {
     free(s);
     if (mode & MPC_RE_MULTILINE) {
@@ -2317,7 +2325,7 @@ static mpc_val_t *mpcf_re_escape(mpc_val_t *x, void* data) {
     }
   }
 
-  /* Regex Escape */
+
   if (s[0] == '\\') {
     p = mpc_re_escape_char(s[1]);
     p = (p == NULL) ? mpc_char(s[1]) : p;
@@ -2325,7 +2333,7 @@ static mpc_val_t *mpcf_re_escape(mpc_val_t *x, void* data) {
     return p;
   }
 
-  /* Regex Standard */
+
   p = mpc_char(s[0]);
   free(s);
   return p;
@@ -2364,7 +2372,7 @@ static mpc_val_t *mpcf_re_range(mpc_val_t *x) {
 
   for (i = comp; i < strlen(s); i++){
 
-    /* Regex Range Escape */
+
     if (s[i] == '\\') {
       tmp = mpc_re_range_escape_char(s[i+1]);
       if (tmp != NULL) {
@@ -2378,7 +2386,7 @@ static mpc_val_t *mpcf_re_range(mpc_val_t *x) {
       i++;
     }
 
-    /* Regex Range...Range */
+
     else if (s[i] == '-') {
       if (s[i+1] == '\0' || i == 0) {
           range = realloc(range, strlen(range) + strlen("-") + 1);
@@ -2394,7 +2402,7 @@ static mpc_val_t *mpcf_re_range(mpc_val_t *x) {
       }
     }
 
-    /* Regex Range Normal */
+
     else {
       range = realloc(range, strlen(range) + 1 + 1);
       range[strlen(range) + 1] = '\0';
@@ -2482,9 +2490,9 @@ mpc_parser_t *mpc_re_mode(const char *re, int mode) {
 
 }
 
-/*
-** Common Fold Functions
-*/
+
+
+
 
 void mpcf_dtor_null(mpc_val_t *x) { (void) x; return; }
 
@@ -2562,9 +2570,10 @@ static mpc_val_t *mpcf_escape_new(mpc_val_t *x, const char *input, const char **
 
   int i;
   int found;
-  char buff[2];
   char *s = x;
   char *y = calloc(1, 1);
+  size_t y_len = 0;
+  size_t y_cap = 1;
 
   while (*s) {
 
@@ -2573,8 +2582,13 @@ static mpc_val_t *mpcf_escape_new(mpc_val_t *x, const char *input, const char **
 
     while (output[i]) {
       if (*s == input[i]) {
-        y = realloc(y, strlen(y) + strlen(output[i]) + 1);
-        strcat(y, output[i]);
+        size_t out_len = strlen(output[i]);
+        if (y_len + out_len + 1 > y_cap) {
+          y_cap = (y_len + out_len + 1) * 2;
+          y = realloc(y, y_cap);
+        }
+        memcpy(y + y_len, output[i], out_len);
+        y_len += out_len;
         found = 1;
         break;
       }
@@ -2582,15 +2596,17 @@ static mpc_val_t *mpcf_escape_new(mpc_val_t *x, const char *input, const char **
     }
 
     if (!found) {
-      y = realloc(y, strlen(y) + 2);
-      buff[0] = *s; buff[1] = '\0';
-      strcat(y, buff);
+      if (y_len + 2 > y_cap) {
+        y_cap = (y_len + 2) * 2;
+        y = realloc(y, y_cap);
+      }
+      y[y_len++] = *s;
     }
 
     s++;
   }
 
-
+  y[y_len] = '\0';
   return y;
 }
 
@@ -2598,9 +2614,10 @@ static mpc_val_t *mpcf_unescape_new(mpc_val_t *x, const char *input, const char 
 
   int i;
   int found = 0;
-  char buff[2];
   char *s = x;
   char *y = calloc(1, 1);
+  size_t y_len = 0;
+  size_t y_cap = 1;
 
   while (*s) {
 
@@ -2610,9 +2627,11 @@ static mpc_val_t *mpcf_unescape_new(mpc_val_t *x, const char *input, const char 
     while (output[i]) {
       if ((*(s+0)) == output[i][0] &&
           (*(s+1)) == output[i][1]) {
-        y = realloc(y, strlen(y) + 1 + 1);
-        buff[0] = input[i]; buff[1] = '\0';
-        strcat(y, buff);
+        if (y_len + 2 > y_cap) {
+          y_cap = (y_len + 2) * 2;
+          y = realloc(y, y_cap);
+        }
+        y[y_len++] = input[i];
         found = 1;
         s++;
         break;
@@ -2621,15 +2640,18 @@ static mpc_val_t *mpcf_unescape_new(mpc_val_t *x, const char *input, const char 
     }
 
     if (!found) {
-      y = realloc(y, strlen(y) + 1 + 1);
-      buff[0] = *s; buff[1] = '\0';
-      strcat(y, buff);
+      if (y_len + 2 > y_cap) {
+        y_cap = (y_len + 2) * 2;
+        y = realloc(y, y_cap);
+      }
+      y[y_len++] = *s;
     }
 
     if (*s == '\0') { break; }
     else { s++; }
   }
-
+  
+  y[y_len] = '\0';
   return y;
 
 }
@@ -2714,22 +2736,28 @@ mpc_val_t *mpcf_strfold(int n, mpc_val_t **xs) {
 
   for (i = 0; i < n; i++) { l += strlen(xs[i]); }
 
+  size_t current_len = strlen(xs[0]);
   xs[0] = realloc(xs[0], l + 1);
+  char *ptr = (char*)xs[0] + current_len;
 
   for (i = 1; i < n; i++) {
-    strcat(xs[0], xs[i]); free(xs[i]);
+    size_t child_len = strlen(xs[i]);
+    memcpy(ptr, xs[i], child_len);
+    ptr += child_len;
+    free(xs[i]);
   }
+  *ptr = '\0';
 
   return xs[0];
 }
 
-/*
-** Printing
-*/
+
+
+
 
 static void mpc_print_unretained(mpc_parser_t *p, int force) {
 
-  /* TODO: Print Everything Escaped */
+
 
   int i;
   char *s, *e;
@@ -2749,7 +2777,7 @@ static void mpc_print_unretained(mpc_parser_t *p, int force) {
   if (p->type == MPC_TYPE_ANCHOR) { printf("<@>"); }
   if (p->type == MPC_TYPE_EXPECT) {
     printf("%s", p->data.expect.m);
-    /*mpc_print_unretained(p->data.expect.x, 0);*/
+
   }
 
   if (p->type == MPC_TYPE_ANY) { printf("<.>"); }
@@ -2864,20 +2892,20 @@ void mpc_print(mpc_parser_t *p) {
   printf("\n");
 }
 
-/*
-** Testing
-*/
 
-/*
-** These functions are slightly unwieldy and
-** also the whole of the testing suite for mpc
-** mpc is pretty shaky.
-**
-** It could do with a lot more tests and more
-** precision. Currently I am only really testing
-** changes off of the examples.
-**
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int mpc_test_fail(mpc_parser_t *p, const char *s, const void *d,
   int(*tester)(const void*, const void*),
@@ -2930,9 +2958,9 @@ int mpc_test_pass(mpc_parser_t *p, const char *s, const void *d,
 }
 
 
-/*
-** AST
-*/
+
+
+
 
 void mpc_ast_delete(mpc_ast_t *a) {
 
@@ -3130,17 +3158,17 @@ mpc_ast_trav_t *mpc_ast_traverse_start(mpc_ast_t *ast,
   mpc_ast_trav_t *trav, *n_trav;
   mpc_ast_t *cnode = ast;
 
-  /* Create the traversal structure */
+
   trav = malloc(sizeof(mpc_ast_trav_t));
   trav->curr_node = cnode;
   trav->parent = NULL;
   trav->curr_child = 0;
   trav->order = order;
 
-  /* Get start node */
+
   switch(order) {
     case mpc_ast_trav_order_pre:
-      /* Nothing else is needed for pre order start */
+
       break;
 
     case mpc_ast_trav_order_post:
@@ -3159,7 +3187,7 @@ mpc_ast_trav_t *mpc_ast_traverse_start(mpc_ast_t *ast,
       break;
 
     default:
-      /* Unreachable, but compiler complaints */
+
       break;
   }
 
@@ -3171,14 +3199,14 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
   mpc_ast_t *ret = NULL;
   int cchild;
 
-  /* The end of traversal was reached */
+
   if(*trav == NULL) return NULL;
 
   switch((*trav)->order) {
     case mpc_ast_trav_order_pre:
       ret = (*trav)->curr_node;
 
-      /* If there aren't any more children, go up */
+
       while(*trav != NULL &&
         (*trav)->curr_child >= (*trav)->curr_node->children_num)
       {
@@ -3187,12 +3215,12 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
         free(to_free);
       }
 
-      /* If trav is NULL, the end was reached */
+
       if(*trav == NULL) {
         break;
       }
 
-      /* Go to next child */
+
       n_trav = malloc(sizeof(mpc_ast_trav_t));
 
       cchild = (*trav)->curr_child;
@@ -3209,9 +3237,9 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
     case mpc_ast_trav_order_post:
       ret = (*trav)->curr_node;
 
-      /* Move up tree to the parent If the parent doesn't have any more nodes,
-       * then this is the current node. If it does, move down to its left most
-       * child. Also, free the previous traversal node */
+
+
+
       to_free = *trav;
       *trav = (*trav)->parent;
       free(to_free);
@@ -3219,16 +3247,16 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
       if(*trav == NULL)
         break;
 
-      /* Next child */
+
       (*trav)->curr_child++;
 
-      /* If there aren't any more children, this is the next node */
+
       if((*trav)->curr_child >= (*trav)->curr_node->children_num) {
         break;
       }
 
-      /* If there are still more children, find the leftmost child from this
-       * node */
+
+
       while((*trav)->curr_node->children_num > 0) {
         n_trav = malloc(sizeof(mpc_ast_trav_t));
 
@@ -3242,7 +3270,7 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
       }
 
     default:
-      /* Unreachable, but compiler complaints */
+
       break;
   }
 
@@ -3252,7 +3280,7 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
 void mpc_ast_traverse_free(mpc_ast_trav_t **trav) {
   mpc_ast_trav_t *n_trav;
 
-  /* Go through parents until all are free */
+
   while(*trav != NULL) {
       n_trav = (*trav)->parent;
       free(*trav);
@@ -3383,49 +3411,49 @@ mpc_parser_t *mpca_and(int n, ...) {
 
 mpc_parser_t *mpca_total(mpc_parser_t *a) { return mpc_total(a, (mpc_dtor_t)mpc_ast_delete); }
 
-/*
-** Grammar Parser
-*/
 
-/*
-** This is another interesting bootstrapping.
-**
-** Having a general purpose AST type allows
-** users to specify the grammar alone and
-** let all fold rules be automatically taken
-** care of by existing functions.
-**
-** You don't get to control the type spat
-** out but this means you can make a nice
-** parser to take in some grammar in nice
-** syntax and spit out a parser that works.
-**
-** The grammar for this looks surprisingly
-** like regex but the main difference is that
-** it is now whitespace insensitive and the
-** base type takes literals of some form.
-*/
 
-/*
-**
-**  ### Grammar Grammar
-**
-**      <grammar> : (<term> "|" <grammar>) | <term>
-**
-**      <term> : <factor>*
-**
-**      <factor> : <base>
-**               | <base> "*"
-**               | <base> "+"
-**               | <base> "?"
-**               | <base> "{" <digits> "}"
-**
-**      <base> : "<" (<digits> | <ident>) ">"
-**             | <string_lit>
-**             | <char_lit>
-**             | <regex_lit> <regex_mode>
-**             | "(" <grammar> ")"
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 typedef struct {
   va_list *va;
@@ -3500,7 +3528,7 @@ static mpc_val_t *mpcaf_fold_regex(int n, mpc_val_t **xs) {
   return mpca_state(mpca_tag(mpc_apply(p, mpcf_str_ast), "regex"));
 }
 
-/* Should this just use `isdigit` instead? */
+
 static int is_number(const char* s) {
   size_t i;
   for (i = 0; i < strlen(s); i++) { if (!strchr("0123456789", s[i])) { return 0; } }
@@ -3512,7 +3540,7 @@ static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
   int i;
   mpc_parser_t *p;
 
-  /* Case of Number */
+
   if (is_number(x)) {
 
     i = strtol(x, NULL, 10);
@@ -3528,17 +3556,17 @@ static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
 
     return st->parsers[st->parsers_num-1];
 
-  /* Case of Identifier */
+
   } else {
 
-    /* Search Existing Parsers */
+
     for (i = 0; i < st->parsers_num; i++) {
       mpc_parser_t *q = st->parsers[i];
       if (q == NULL) { return mpc_failf("Unknown Parser '%s'!", x); }
       if (q->name && strcmp(q->name, x) == 0) { return q; }
     }
 
-    /* Search New Parsers */
+
     while (1) {
 
       p = va_arg(*st->va, mpc_parser_t*);
@@ -3957,7 +3985,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
 
   if (p->retained && !force) { return; }
 
-  /* Optimise Subexpressions */
+
 
   if (p->type == MPC_TYPE_EXPECT)     { mpc_optimise_unretained(p->data.expect.x, 0); }
   if (p->type == MPC_TYPE_APPLY)      { mpc_optimise_unretained(p->data.apply.x, 0); }
@@ -3987,11 +4015,11 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
     }
   }
 
-  /* Perform optimisations */
+
 
   while (1) {
 
-    /* Merge rhs `or` */
+
     if (p->type == MPC_TYPE_OR
     &&  p->data.or.xs[p->data.or.n-1]->type == MPC_TYPE_OR
     && !p->data.or.xs[p->data.or.n-1]->retained) {
@@ -4004,7 +4032,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       continue;
     }
 
-    /* Merge lhs `or` */
+
     if (p->type == MPC_TYPE_OR
     &&  p->data.or.xs[0]->type == MPC_TYPE_OR
     && !p->data.or.xs[0]->retained) {
@@ -4018,7 +4046,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       continue;
     }
 
-    /* Remove ast `pass` */
+
     if (p->type == MPC_TYPE_AND
     &&  p->data.and.n == 2
     &&  p->data.and.xs[0]->type == MPC_TYPE_PASS
@@ -4032,7 +4060,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       continue;
     }
 
-    /* Merge ast lhs `and` */
+
     if (p->type == MPC_TYPE_AND
     &&  p->data.and.f == mpcf_fold_ast
     &&  p->data.and.xs[0]->type == MPC_TYPE_AND
@@ -4050,7 +4078,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       continue;
     }
 
-    /* Merge ast rhs `and` */
+
     if (p->type == MPC_TYPE_AND
     &&  p->data.and.f == mpcf_fold_ast
     &&  p->data.and.xs[p->data.and.n-1]->type == MPC_TYPE_AND
@@ -4067,7 +4095,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       continue;
     }
 
-    /* Remove re `lift` */
+
     if (p->type == MPC_TYPE_AND
     &&  p->data.and.n == 2
     &&  p->data.and.xs[0]->type == MPC_TYPE_LIFT
@@ -4082,7 +4110,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       continue;
     }
 
-    /* Merge re lhs `and` */
+
     if (p->type == MPC_TYPE_AND
     &&  p->data.and.f == mpcf_strfold
     &&  p->data.and.xs[0]->type == MPC_TYPE_AND
@@ -4100,7 +4128,7 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       continue;
     }
 
-    /* Merge re rhs `and` */
+
     if (p->type == MPC_TYPE_AND
     &&  p->data.and.f == mpcf_strfold
     &&  p->data.and.xs[p->data.and.n-1]->type == MPC_TYPE_AND

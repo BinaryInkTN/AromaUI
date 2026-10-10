@@ -1303,11 +1303,11 @@ static bool upload_mesh_attr(GLuint *vbo, const GLTFDocument *doc, const GLTFBuf
     return true;
 }
 
-/* Compute normals for primitives that ship without any (e.g. the Fox,
-   which has POSITION + TEXCOORD_0 only). Without normals the lighting
-   term collapses and the mesh renders black. Indexed meshes get
-   area-weighted smooth normals; non-indexed triangle soup gets flat face
-   normals. Returns malloc'd vertex_count*3 floats, or NULL. */
+
+
+
+
+
 static float *generate_missing_normals(const unsigned char *pos_base, size_t pos_stride,
                                        int vertex_count,
                                        const unsigned char *idx_base, int index_count,
@@ -1577,8 +1577,8 @@ static bool build_mesh_from_primitive(Aroma3DMesh *mesh, const GLTFDocument *doc
     }
     if (!have_normals && doc->accessors[pos_acc].component_type == 5126)
     {
-        /* No NORMAL array shipped (e.g. the Fox): derive normals so the
-           lighting term does not collapse and the mesh renders black. */
+
+
         const unsigned char *pos_base = gltf_buffer_data(doc, (int)pos_view.buffer, pos_view.byte_offset);
         const unsigned char *idx_base = NULL;
         if (mesh->indexed)
@@ -3106,7 +3106,7 @@ Aroma3DModel *aroma_3d_create_cube(void)
         return NULL;
 
     float positions[] = {
-        /* back  (z=-0.5) */
+
         -0.5f,
         -0.5f,
         -0.5f,
@@ -3119,7 +3119,7 @@ Aroma3DModel *aroma_3d_create_cube(void)
         -0.5f,
         0.5f,
         -0.5f,
-        /* front (z=+0.5) */
+
         -0.5f,
         -0.5f,
         0.5f,
@@ -3132,7 +3132,7 @@ Aroma3DModel *aroma_3d_create_cube(void)
         -0.5f,
         0.5f,
         0.5f,
-        /* left  (x=-0.5) */
+
         -0.5f,
         0.5f,
         0.5f,
@@ -3145,7 +3145,7 @@ Aroma3DModel *aroma_3d_create_cube(void)
         -0.5f,
         -0.5f,
         0.5f,
-        /* right (x=+0.5) */
+
         0.5f,
         0.5f,
         0.5f,
@@ -3158,7 +3158,7 @@ Aroma3DModel *aroma_3d_create_cube(void)
         0.5f,
         -0.5f,
         0.5f,
-        /* bottom(y=-0.5) */
+
         -0.5f,
         -0.5f,
         -0.5f,
@@ -3171,7 +3171,7 @@ Aroma3DModel *aroma_3d_create_cube(void)
         0.5f,
         -0.5f,
         -0.5f,
-        /* top   (y=+0.5) */
+
         -0.5f,
         0.5f,
         -0.5f,
@@ -3304,9 +3304,9 @@ Aroma3DModel *aroma_3d_create_cube(void)
     mesh->index_count = 36;
     mesh->index_type = GL_UNSIGNED_INT;
     mesh->index_offset = 0;
-    /* Identity model matrix: calloc zeroes the struct, and a zero
-       matrix collapses every vertex (w=0 clips everything), so the
-       cube would rasterize zero pixels. */
+
+
+
     memset(mesh->world_transform, 0, sizeof(mesh->world_transform));
     mesh->world_transform[0] = 1.0f;
     mesh->world_transform[5] = 1.0f;
@@ -3347,16 +3347,16 @@ Aroma3DModel *aroma_3d_create_cube(void)
     return model;
 }
 
-/* MSAA resolve path: render the viewport into a multisampled
- * renderbuffer FBO, resolve into a single-sampled texture, then
- * alpha-blend that texture over the default framebuffer. Clearing to
- * transparent + blending (instead of copy-blitting) keeps whatever is
- * behind the 3D viewport (background image, earlier UI) intact, and a
- * full clear every frame means nothing can smear across frames.
- * Per-pixel cost is near zero on tiled mobile GPUs. */
+
+
+
+
+
+
+
 #if defined(__arm__) || defined(__aarch64__)
-/* VideoCore-class GPUs: a fullscreen 4xMSAA resolve every frame is too
- * costly, so AA defaults off here (still toggleable in Display settings). */
+
+
 static bool s_3d_aa_enabled = false;
 #else
 static bool s_3d_aa_enabled = true;
@@ -3600,9 +3600,9 @@ bool aroma_3d_render_to_rect(const Aroma3DModel *model, const Aroma3DCamera *cam
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
-    /* The UI backend leaves color/clear state dirty: force full writes
-     * and clear the resolve slate explicitly (transparent) so the
-     * blend composite below keeps the background intact. */
+
+
+
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     if (use_msaa)
     {
@@ -3619,13 +3619,13 @@ bool aroma_3d_render_to_rect(const Aroma3DModel *model, const Aroma3DCamera *cam
 
     if (use_msaa)
     {
-        /* Canonical multisample resolve into the texture. */
+
         glBindFramebuffer(GL_READ_FRAMEBUFFER, s_msaa_fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, s_msaa_resolve_fbo);
         glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        /* Blend the resolved image over whatever is behind the viewport
-         * (background image, earlier UI). */
+
+
         glBindFramebuffer(GL_READ_FRAMEBUFFER, (GLuint)prev_read_fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, (GLuint)prev_draw_fbo);
         glViewport(x, gl_y, w, h);

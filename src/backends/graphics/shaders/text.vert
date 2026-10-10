@@ -2,7 +2,7 @@
 
 layout(push_constant) uniform PushConstants {
     mat4 projection;
-    vec4 textColor;  /* rgb + unused alpha */
+    vec4 textColor;
 } pc;
 
 layout(location = 0) in vec2 pos;
@@ -19,7 +19,7 @@ void main() {
 
 layout(push_constant) uniform PushConstants {
     mat4 projection;
-    vec4 textColor;  /* rgb + unused alpha */
+    vec4 textColor;
 } pc;
 
 layout(location = 0) in vec2 pos;

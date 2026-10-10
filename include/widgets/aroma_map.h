@@ -46,16 +46,16 @@ extern "C"
         char type[64];
     } GeocodeResult;
 
-    // OPTIMIZED: Removed node_id (never read after loading)
-    // Was 24 bytes, now 16 bytes (saves 8 bytes per node)
+
+
     typedef struct
     {
         double lat;
         double lon;
     } OSRMNode;
 
-    // OPTIMIZED: Removed edge_id, speed, priority (never read after loading)
-    // Was 40 bytes, now 32 bytes (saves 8 bytes per edge)
+
+
     typedef struct
     {
         uint32_t from_node;
@@ -232,7 +232,7 @@ extern "C"
     void aroma_map_set_poi_hit_test_callback(AromaNode *node, POIHitTestCallback callback, void *user_data);
     double aroma_map_get_zoom(AromaNode *node);
     bool aroma_map_is_poi_loading(AromaNode *node);
-    
+
 #ifdef __cplusplus
 }
 #endif

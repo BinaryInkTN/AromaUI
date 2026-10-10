@@ -16,7 +16,7 @@
 #endif
 
 #define AROMA_LIST_MAX_ITEMS 64
-/* Authored in dp; scaled to px via helpers below. */
+
 #define AROMA_LIST_ITEM_PADDING_DP 12
 #define AROMA_LIST_ICON_PADDING_DP 12
 #define AROMA_LIST_MIN_ITEM_HEIGHT_DP 28
@@ -164,8 +164,8 @@ static void update_content_height(AromaListViewInternal *list)
     list->content_height = h > 0 ? h : 1;
     list->rect.height = list->viewport_height > 0 ? list->viewport_height : 1;
 
-    /* Keep the owning ScrollView extent synchronized as items are added,
-     * removed, or hidden after construction. */
+
+
     if (list->self_node && list->self_node->parent_node &&
         aroma_container_is_scrollable(list->self_node->parent_node))
     {
@@ -177,26 +177,26 @@ static void update_content_height(AromaListViewInternal *list)
         {
             content_x -= viewport->x;
             content_y -= viewport->y;
-            /*
-             * Before the first layout pass the ListView rect can still be
-             * local to its parent. Do not let that transient local origin
-             * subtract the parent's screen position from the scroll extent.
-             */
+
+
+
+
+
             if (content_x < 0)
                 content_x = 0;
             if (content_y < 0)
                 content_y = 0;
         }
 
-        /* The scroll extent is the child's bottom edge in the viewport's
-         * content coordinates. This remains correct if layout moves the
-         * ListView away from the container origin. */
+
+
+
         int content_width = content_x + list->rect.width;
-        /*
-         * Keep a clear trailing reveal after the final row. This is separate
-         * from bottom_padding so every ListView can scroll the last item away
-         * from the viewport edge, including ListViews with no custom padding.
-         */
+
+
+
+
+
         int trailing_reveal = list_dp(AROMA_LIST_TRAILING_REVEAL_DP);
         int content_height = content_y + list->content_height + trailing_reveal;
         if (viewport)
@@ -330,12 +330,12 @@ static bool listview_handle_event(AromaEvent *ev, void *user_data)
     bounds.x = screen_x;
     bounds.y = screen_y;
 
-    /*
-     * The outer ScrollView is the ListView's viewport and may be resized
-     * after construction (for example by responsive Android layout). Use
-     * that live viewport for input bounds so rows revealed after scrolling
-     * remain interactive.
-     */
+
+
+
+
+
+
     AromaNode *scroll_container = node->parent_node;
     if (scroll_container &&
         aroma_container_is_scrollable(scroll_container))
@@ -1075,7 +1075,7 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
         current_y += ih;
     }
 
-    /* Reserve the requested trailing space in the scroll extent. */
+
 
 }
 

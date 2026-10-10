@@ -384,10 +384,10 @@ static void embed_props_parse_from_source(const char *source)
     {
         while (*p == ' ' || *p == '\t' || *p == '\n')
             p++;
-        /* Skipping trailing blanks can land exactly on the terminator
-         * (every file ending in whitespace/newline). Stop here: falling
-         * through would run strncmp + p++ past the NUL and re-read one
-         * byte out of bounds (AddressSanitizer heap-buffer-overflow). */
+
+
+
+
         if (!*p)
             break;
         if (strncmp(p, "const embed_", 12) == 0)
@@ -2470,8 +2470,8 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
     "scale", "secondary", "selected", "show", "size", "src", "start_angle", "step", "style", "target_x", "target_y",
     "target_z", "text", "theta", "thickness", "tick_color", "tick_thickness", "ticks", "title", "track_color",
     "track_thickness", "type", "value", "variant", "visible", "width", "wrap", "x", "y", "year", "z_index", "zoom", NULL};
-    /* valid[] ends with a NULL sentinel for legacy iteration; keep it
-     * out of the bsearch range. */
+
+
     size_t valid_count = sizeof(valid) / sizeof(valid[0]);
     if (valid_count > 0)
         valid_count--;
@@ -2572,11 +2572,11 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
             float dens = plat->android_get_density();
             if (dens > 0.0f)
             {
-                /* Snap dp endpoints to the same rounded px grid the
-                 * widgets use (dp_to_px adds 0.5 before truncating).
-                 * Without this, a fractional px end (common on low
-                 * dpi) leaves the widget up to 1px off its layout
-                 * position after the animation finishes. */
+
+
+
+
+
                 start_val = roundf(start_val * dens);
                 end_val = roundf(end_val * dens);
             }
@@ -2586,13 +2586,13 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
                                                      start_val, end_val, duration);
     if (anim_obj)
     {
-        /* Slide values are authored parent-relative (x/y in dp, same
-         * space as the widget's layout position). Mark them so the
-         * engine adds the parent offset each tick; otherwise the first
-         * layout pass (viewer y=76, responsive moves) leaves the final
-         * rect parent_abs too high and e.g. the theming primary button
-         * (end 276) lands on the dropdown (196). Scale/fade are
-         * parent-independent. */
+
+
+
+
+
+
+
         if (type == AROMA_ANIM_SLIDE_X || type == AROMA_ANIM_SLIDE_Y)
             anim_obj->parent_relative = true;
         const char *ease = props_get(bag, "animation_easing");
@@ -2940,10 +2940,10 @@ static AromaNode *build_button(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
                 aroma_button_set_icon(built, resolved ? resolved : ir,
                                       ctx->icon_font ? ctx->icon_font : _widget_font);
             }
-            /* Honor explicit markup geometry: set_font/set_icon autosize
-             * the button to content width, discarding the authored size.
-             * Restore it when specified so buttons render at design size
-             * (labels auto-fit inside via dynamic text scaling). */
+
+
+
+
             if (props_get(&bag, "width") || props_get(&bag, "height"))
             {
                 AromaRect *br = aroma_node_get_rect(built);
@@ -3297,7 +3297,7 @@ static AromaNode *build_icon(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
                                           on_action);
             }
 
-    
+
         int zi = props_int(&bag, "z_index", 0);
         if (zi)
             aroma_node_set_z_index(built, zi);
@@ -3428,8 +3428,8 @@ static AromaNode *build_dialog(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         built = aroma_ui_dialog(parent, title, msg, props_int(&bag, "width", 320), props_int(&bag, "height", 200), type, _widget_font);
         if (built)
         {
-            /* Action buttons: DialogAction { text: "Cancel" on_click: "..." }
-             * (bare `Action` accepted as an alias). Up to 3 actions. */
+
+
             if (node)
             {
                 for (IncenseNode *cur = node->first_child; cur; cur = cur->next_sibling)
@@ -3470,11 +3470,11 @@ static AromaNode *build_dialog(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
             aroma_dialog_hide(built);
         apply_widget_animations(built, &bag, node);
         maybe_register(&bag, built, ctx);
-        /* Route remaining children into the dialog content area so custom
-         * widgets render above the message and below the action buttons.
-         * DialogAction/Action children are skipped (already consumed above;
-         * also registered as NULL widgets so a generic build would ignore
-         * them, but we skip explicitly for clarity). */
+
+
+
+
+
         AromaNode *content = aroma_dialog_get_content_area(built);
         build_children(node, content ? content : built, ctx);
         props_free(&bag);
@@ -3717,7 +3717,7 @@ static AromaNode *build_calendar(IncenseNode *node, AromaNode *sp,
                                 props_int(&bag, "day", 6));
     if (on_change)
         aroma_calendar_set_on_select(built, bridge_date_change, on_change);
-    /* Popup-only widget: no inline mode exists, nothing to enable. */
+
     aroma_calendar_set_font(built, _widget_font);
     aroma_calendar_setup_events(built, NULL, NULL);
     int zi = props_int(&bag, "z_index", 0);
@@ -3749,7 +3749,7 @@ static AromaNode *build_datepicker(IncenseNode *node, AromaNode *sp,
         node->id = built->node_id;
     if (on_change)
         aroma_datepicker_set_on_change(built, bridge_date_change, on_change);
-    /* Popup-only widget: no inline mode exists, nothing to enable. */
+
     if (props_get(&bag, "title")) {
         char *title = props_str_dup(&bag, "title", NULL);
         if (title && title[0])
@@ -3938,17 +3938,17 @@ static AromaNode *build_3d_viewer(IncenseNode *node, AromaNode *sp, BuildCtx *ct
             props_float(&bag, "light_x", 1.0f),
             props_float(&bag, "light_y", 1.0f),
             props_float(&bag, "light_z", 1.0f));
-        /* `model` and `src` are aliases. `cube` / `fox` select the
-           built-in samples, anything else is treated as a local
-           filesystem path (e.g. `model: ./car.glb`) and loaded with
-           `aroma_3d_load_model()`. On WebAssembly the path must exist
-           in the MEMFS (see the sandbox file picker). */
+
+
+
+
+
         const char *model_path = props_get(&bag, "model");
         if (!model_path || !model_path[0])
             model_path = props_get(&bag, "src");
         if (model_path && model_path[0])
         {
-            /* Allow `model: state.key` bindings (resolved as strings). */
+
             char state_buf[256];
             const char *resolved_path = model_path;
             if (strncmp(model_path, "state.", 6) == 0 &&
@@ -3967,11 +3967,11 @@ static AromaNode *build_3d_viewer(IncenseNode *node, AromaNode *sp, BuildCtx *ct
             else
                 ERR_WARN_N(node, "Failed to load 3D model: %s", resolved_path);
         }
-        /* Optional camera override. `aroma_3d_viewer_set_model()` above
-           auto-fits the camera to the model bounds, so apply explicit
-           camera props afterwards. Both `theta` and `cam_theta` (etc.)
-           spellings are accepted. Angles are radians, matching
-           Aroma3DCamera. */
+
+
+
+
+
         {
             const char *theta_key = props_get(&bag, "theta") ? "theta"
                 : (props_get(&bag, "cam_theta") ? "cam_theta" : NULL);
@@ -4508,11 +4508,11 @@ static AromaNode *build_chip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     if (!ctx)
         return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
-    
+
     char *label = props_str_dup(&bag, "label", "");
     const char *icon_raw = props_get(&bag, "icon");
     char *icon = NULL;
-    
+
     if (icon_raw && icon_raw[0])
     {
         const char *resolved = resolve_icon(icon_raw);
@@ -4525,37 +4525,37 @@ static AromaNode *build_chip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
             return NULL;
         }
     }
-    
+
     static const char *const type_names[] = {"assist", "filter", "input", "suggestion"};
     static const int type_values[] = {CHIP_TYPE_ASSIST, CHIP_TYPE_FILTER, CHIP_TYPE_INPUT, CHIP_TYPE_SUGGESTION};
-    AromaChipType type = (AromaChipType)match_enum(node, &bag, "type", CHIP_TYPE_ASSIST, 
-                                                     type_names, type_values, 4, 
-                                                     "chip type", 
+    AromaChipType type = (AromaChipType)match_enum(node, &bag, "type", CHIP_TYPE_ASSIST,
+                                                     type_names, type_values, 4,
+                                                     "chip type",
                                                      "assist, filter, input, suggestion");
-    
+
     AromaNode *built = NULL;
     if (label && label[0])
     {
-        built = aroma_chip_create(parent, 
-                                  props_int(&bag, "x", 0), 
-                                  props_int(&bag, "y", 0), 
-                                  label, 
+        built = aroma_chip_create(parent,
+                                  props_int(&bag, "x", 0),
+                                  props_int(&bag, "y", 0),
+                                  label,
                                   type);
-        
+
         if (built)
         {
             aroma_chip_set_font(built, _widget_font);
-            
+
             if (type == CHIP_TYPE_FILTER && props_bool(&bag, "selected", false))
             {
                 aroma_chip_set_selected(built, true);
             }
-            
+
             if (icon && icon[0])
             {
                 aroma_chip_set_icon(built, icon, ctx->icon_font ? ctx->icon_font : _widget_font);
             }
-            
+
             int zi = props_int(&bag, "z_index", 0);
             if (zi)
                 aroma_node_set_z_index(built, zi);
@@ -4570,10 +4570,10 @@ static AromaNode *build_chip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         ERR_WARN_N(node, "Chip requires a 'label' property");
         ERR_SUGGEST("Add 'label' property with chip text");
     }
-    
+
     free(label);
     free(icon);
-    
+
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 static const WidgetEntry WIDGET_TABLE[] = {
@@ -4731,7 +4731,7 @@ static char *incense_resolve_embed_refs(char *content, EmbedPropStore *props)
     if (!content || !props || props->count == 0)
         return content;
 
-    // Calculate maximum possible expansion
+
     size_t content_len = strlen(content);
     size_t max_expanded = content_len * 2 + 4096;
     char *result = malloc(max_expanded);
@@ -4746,17 +4746,17 @@ static char *incense_resolve_embed_refs(char *content, EmbedPropStore *props)
 
     while (*p)
     {
-        // Check for embed_ pattern anywhere
+
         const char *embed_start = strstr(p, "embed_");
         if (embed_start)
         {
-            // Copy everything before this match
+
             size_t before_len = embed_start - p;
             memcpy(result + out_pos, p, before_len);
             out_pos += before_len;
 
-            // Extract the variable name
-            const char *var_start = embed_start + 6; // Skip "embed_"
+
+            const char *var_start = embed_start + 6;
             const char *var_end = var_start;
             while (*var_end && (isalnum((unsigned char)*var_end) || *var_end == '_'))
             {
@@ -4770,7 +4770,7 @@ static char *incense_resolve_embed_refs(char *content, EmbedPropStore *props)
                 memcpy(var_name, var_start, var_len);
                 var_name[var_len] = '\0';
 
-                // Look up the prop
+
                 const char *replacement = NULL;
                 for (int i = 0; i < props->count; i++)
                 {
@@ -4783,14 +4783,14 @@ static char *incense_resolve_embed_refs(char *content, EmbedPropStore *props)
 
                 if (replacement)
                 {
-                    // Copy replacement value
+
                     size_t repl_len = strlen(replacement);
                     memcpy(result + out_pos, replacement, repl_len);
                     out_pos += repl_len;
                 }
                 else
                 {
-                    // Keep original text
+
                     memcpy(result + out_pos, embed_start, var_end - embed_start);
                     out_pos += var_end - embed_start;
                 }
@@ -4799,14 +4799,14 @@ static char *incense_resolve_embed_refs(char *content, EmbedPropStore *props)
             }
             else
             {
-                // Invalid variable name, copy embed_ literally
+
                 result[out_pos++] = *p;
                 p++;
             }
         }
         else
         {
-            // No more embed_ patterns, copy rest
+
             size_t remaining = strlen(p);
             memcpy(result + out_pos, p, remaining);
             out_pos += remaining;
@@ -4894,7 +4894,7 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                 inc_path[plen] = '\0';
                 p++;
 
-                // Parse inline props
+
                 EmbedPropStore inline_props;
                 memset(&inline_props, 0, sizeof(inline_props));
 
@@ -4956,7 +4956,7 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                                 memcpy(value, val_start, val_len);
                                 value[val_len] = '\0';
 
-                                // Add to inline props
+
                                 if (inline_props.count < MAX_EMBED_PROPS)
                                 {
                                     strncpy(inline_props.props[inline_props.count].key, key, sizeof(inline_props.props[0].key) - 1);
@@ -4964,7 +4964,7 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                                     inline_props.count++;
                                 }
 
-                                // Also add to global embed props
+
                                 embed_props_add(key, value);
                             }
                         }
@@ -5084,10 +5084,10 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                     continue;
                 }
 
-                // MERGE PROPS: Global props + inline props (inline override global)
-                EmbedPropStore merged_props = s_embed_props; // Copy global props
 
-                // Add/override with inline props
+                EmbedPropStore merged_props = s_embed_props;
+
+
                 for (int i = 0; i < inline_props.count; i++)
                 {
                     bool found = false;
@@ -5111,7 +5111,7 @@ static char *incense_resolve_includes_r(const char *source, const char *base_pat
                     }
                 }
 
-                // RESOLVE EMBED REFERENCES IN FILE CONTENT
+
                 file_content = incense_resolve_embed_refs(file_content, &merged_props);
 
                 strncpy(stack->paths[stack->depth], full_path, MAX_EMBED_PATH_LEN - 1);
@@ -5730,11 +5730,11 @@ void IncenseHotReloadStopAll(void)
         s_hot_watchers[i].active = false;
     LOG_INFO("All hot reload watchers stopped");
 }
-/* --- Package support: mount an Incense document into an existing parent ---
- * Package ui.aroma files use the same syntax as standalone files (a Window{}
- * root block); the Window's width/height/title are ignored and its children
- * are built directly under `parent`. This lets hosts like the car
- * infotainment embed third-party UIs inside an app card at runtime. */
+
+
+
+
+
 
 static bool build_doc_into_parent(const IncenseDocument *doc, AromaNode *parent,
                                   AromaFont *font, AromaFont *icon_font,
@@ -5792,9 +5792,9 @@ static bool build_doc_into_parent(const IncenseDocument *doc, AromaNode *parent,
     BuildCtx ctx = {.registry = ireg ? &ireg->reg : NULL, .font_registry = freg, .default_font = font, .icon_font = icon_font};
     build_children(root, parent, &ctx);
 
-    /* The parent already lives in a rendered tree (unlike a fresh Window),
-     * so force a full layout/invalidate pass like the hot-reload path does -
-     * otherwise the new children may never draw. */
+
+
+
     aroma_node_invalidate_tree(parent);
 
     free(freg);

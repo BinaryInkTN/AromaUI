@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "core/aroma_style.h"
 #include <string.h>
@@ -407,7 +407,7 @@ AromaStyle aroma_style_create_from_theme(const AromaTheme* theme) {
     }
 
     style.idle_color = theme->colors.surface;
-    /* hover disabled */
+
     style.active_color = aroma_color_adjust(theme->colors.surface, -0.1f);
     style.disabled_color = aroma_color_blend(theme->colors.surface, theme->colors.text_secondary, 0.38f);
     style.border_color = theme->colors.border;
@@ -440,11 +440,11 @@ void aroma_style_apply_theme_colors(AromaStyle* style, const AromaTheme* theme, 
 
     if (is_primary) {
         style->idle_color = theme->colors.primary;
-        /* hover disabled */
+
         style->active_color = theme->colors.primary_dark;
     } else {
         style->idle_color = theme->colors.secondary;
-        /* hover disabled */
+
         style->active_color = aroma_color_adjust(theme->colors.secondary, -0.1f);
     }
 
@@ -470,13 +470,13 @@ AromaStyle aroma_style_create_secondary(void) {
 AromaStyle aroma_style_create_error(void) {
     AromaTheme theme = aroma_theme_get_global();
     AromaStyle style = aroma_style_create_from_theme(&theme);
-    
+
     style.idle_color = theme.colors.error;
-    /* hover disabled */
+
     style.active_color = aroma_color_adjust(theme.colors.error, -0.2f);
     style.text_color = theme.colors.text_primary;
     style.has_custom_colors = true;
-    
+
     return style;
 }
 
@@ -520,7 +520,7 @@ AromaShadow aroma_shadow_create_dark_mode(void) {
     return shadow;
 }
 
-AromaShadow aroma_shadow_create_custom(int blur_radius, int offset_x, int offset_y, 
+AromaShadow aroma_shadow_create_custom(int blur_radius, int offset_x, int offset_y,
                                         uint32_t color, float opacity) {
     AromaShadow shadow;
     shadow.blur_radius = blur_radius;

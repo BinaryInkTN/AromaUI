@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_container.h"
 #include "widgets/aroma_container.h"
@@ -100,16 +100,16 @@ static void test_scroll_state(void)
 
     aroma_container_set_scrollable(c, true);
     CHECK(aroma_container_is_scrollable(c), "scrollable after enable");
-    aroma_container_set_scrollable(c, true); /* idempotent */
+    aroma_container_set_scrollable(c, true);
     CHECK(aroma_container_is_scrollable(c), "scrollable still on");
     aroma_container_set_scrollable(c, false);
     CHECK(!aroma_container_is_scrollable(c), "not scrollable after disable");
-    aroma_container_set_scrollable(NULL, true); /* no crash */
+    aroma_container_set_scrollable(NULL, true);
 
     aroma_container_set_rect(c, 5, 5, 300, 150);
     AromaRect *r = aroma_node_get_rect(c);
     CHECK(r && r->x == 5 && r->width == 300, "set_rect updates geometry");
-    aroma_container_set_rect(NULL, 0, 0, 1, 1); /* no crash */
+    aroma_container_set_rect(NULL, 0, 0, 1, 1);
 
     aroma_container_destroy(c);
     __destroy_node(root);

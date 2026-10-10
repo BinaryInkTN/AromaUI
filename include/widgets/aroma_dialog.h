@@ -8,43 +8,43 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-// Material Design 3 Dialog
+
 typedef enum {
-    DIALOG_TYPE_BASIC,      // Basic dialog
-    DIALOG_TYPE_FULL_SCREEN // Full-screen dialog
+    DIALOG_TYPE_BASIC,
+    DIALOG_TYPE_FULL_SCREEN
 } AromaDialogType;
 
 typedef struct  AromaDialog AromaDialog;
 
-// Create dialog. Width and height are authored in dp and converted to
-// physical pixels by the active platform.
+
+
 AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char* message, int width, int height, AromaDialogType type);
 
-// Add action button
+
 void aroma_dialog_add_action(AromaNode* dialog_node, const char* label, void (*callback)(void* user_data), void* user_data);
 
-// Show/hide dialog
+
 void aroma_dialog_show(AromaNode* dialog_node);
 void aroma_dialog_hide(AromaNode* dialog_node);
 
-// Set font
+
 void aroma_dialog_set_font(AromaNode* dialog_node, AromaFont* font);
 
-// Retarget a markup-built (or empty) dialog with runtime text.
-// Truncates into the dialog's fixed buffers and refreshes layout.
-// NULL-safe; NULL/empty clears the field.
+
+
+
 void aroma_dialog_set_title(AromaNode* dialog_node, const char* title);
 void aroma_dialog_set_message(AromaNode* dialog_node, const char* message);
 
-// Get the content area container where user widgets can be added
+
 AromaNode* aroma_dialog_get_content_area(AromaNode* dialog_node);
 
-// Draw
+
 void aroma_dialog_draw(AromaNode* dialog_node, size_t window_id);
 
-// Destroy
+
 void aroma_dialog_destroy(AromaNode* dialog_node);
 #ifdef __cplusplus
 }
 #endif
-#endif // AROMA_DIALOG_H
+#endif

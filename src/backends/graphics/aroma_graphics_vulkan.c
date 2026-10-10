@@ -1223,7 +1223,7 @@ static void end_render_pass(void)
 
     vk_ctx.currentFrame = (vk_ctx.currentFrame + 1) % VK_MAX_FRAMES_IN_FLIGHT;
     vk_ctx.inRenderPass = false;
-    /* Fresh frame: drop any leaked clips. */
+
     vk_ctx.scissorDepth = 0;
     vk_ctx.hasDeferredScissor = false;
 }
@@ -1326,11 +1326,11 @@ static void batch_add_rect(size_t window_id, int x, int y, int w, int h, uint32_
     vk_batch.count += VK_VERTS_PER_QUAD;
 }
 
-/* CPU-tessellated primitives. The shape pipeline only implements the plain
-   and rounded-rect SDF (shapeType 0), so arcs and thick lines are
-   triangulated on the CPU into the same flat-color batch. Sweep semantics
-   match the GLES3 arcSDF: angles in radians, atan2(y, x) convention, round
-   caps at both ends of open sweeps. */
+
+
+
+
+
 
 #ifndef VK_TWO_PI
 #define VK_TWO_PI 6.28318530717958647692f
@@ -1823,7 +1823,7 @@ static void vk_draw_arc(size_t window_id, int cx, int cy, int radius,
     if (sweep < 0.0f) sweep += VK_TWO_PI;
     if (sweep < 1e-6f)
     {
-        /* Degenerate sweep: a round dot like the SDF caps would draw. */
+
         batch_add_disc(window_id, (float)cx, (float)cy,
                        (float)thickness * 0.5f, rgba);
         return;
@@ -1860,7 +1860,7 @@ static void vk_draw_arc(size_t window_id, int cx, int cy, int radius,
 
     if (!full)
     {
-        /* Round caps: full discs at both ends, same union as the SDF. */
+
         batch_add_disc(window_id,
                        fx + (float)radius * cosf(a0),
                        fy + (float)radius * sinf(a0), half, rgba);
@@ -1892,7 +1892,7 @@ static void vk_draw_line(size_t window_id, int x0, int y0,
     float fx0 = (float)x0, fy0 = (float)y0;
     float fx1 = (float)x1, fy1 = (float)y1;
 
-    /* Body quad, same corners as the GLES3 rotated quad. */
+
     batch_add_tri(window_id,
                   fx0 + nx * half, fy0 + ny * half,
                   fx1 + nx * half, fy1 + ny * half,
@@ -2216,8 +2216,8 @@ static void vk_draw_image_uv(size_t window_id, int x, int y, int width, int heig
     float x0 = (float)x, y0 = (float)y;
     float x1 = x0 + (float)width, y1 = y0 + (float)height;
 
-    /* Vulkan texture V is flipped relative to GLES (V=1 at the top),
-     * so map the sub-rect with V running 1-v0 (top) to 1-v1 (bottom). */
+
+
     float uu[6] = {u0, u1, u0, u1, u1, u0};
     float vv[6] = {1.0f - v0, 1.0f - v0, 1.0f - v1, 1.0f - v0, 1.0f - v1, 1.0f - v1};
     for (int i = 0; i < 6; i++)
@@ -2308,9 +2308,9 @@ static void vk_set_clip(int x, int y, int w, int h)
 {
     flush_shape_batch();
 
-    /* Device pixels throughout (dp->px at widget creation). Negative
-     * sizes collapse to an empty clip rather than being dropped, which
-     * would unbalance push/pop pairs. */
+
+
+
     if (w < 0)
         w = 0;
     if (h < 0)

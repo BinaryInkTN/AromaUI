@@ -26,9 +26,9 @@ void aroma_datepicker_cancel(AromaNode *dp_node);
 void aroma_datepicker_set_title(AromaNode *dp_node, const char *title);
 void aroma_datepicker_set_year_view(AromaNode *dp_node, bool show_years);
 bool aroma_datepicker_get_year_view(AromaNode *dp_node);
-/* Popup-only widget: the in-tree widget is a compact date field;
- * tapping it opens a modal floating panel (scrim + calendar + Cancel/OK).
- * set_popup is a no-op kept for source compatibility. */
+
+
+
 void aroma_datepicker_set_popup(AromaNode *dp_node, bool popup);
 void aroma_datepicker_open_popup(AromaNode *dp_node);
 void aroma_datepicker_close_popup(AromaNode *dp_node);

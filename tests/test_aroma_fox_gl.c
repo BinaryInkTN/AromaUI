@@ -1,16 +1,16 @@
-/* Headless functional tests for embedded 3D models (GLES3).
- *
- * Renders the embedded Fox on an EGL pbuffer (Mesa software GL is fine)
- * and reads pixels back to verify:
- *   1. the model loads from the embedded header with 1 mesh,
- *   2. the frame renders lit, non-black pixels (guards the missing-normals
- *      regression where unlit meshes render black),
- *   3. no GL error is raised while rendering (guards the non-indexed
- *      glDrawElements(GL_FLOAT) 0x0500 regression).
- *
- * Prints SKIP and exits 0 when no EGL display is available, so constrained
- * CI machines still pass.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>

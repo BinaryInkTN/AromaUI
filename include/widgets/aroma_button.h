@@ -54,16 +54,16 @@ typedef struct  AromaButton {
     bool (*on_hover)(AromaNode*, void*);
     void* user_data;
 
-    
-    // Icon support
+
+
     char icon[8];
     AromaFont* icon_font;
     int icon_padding;
-    
+
     AromaRect text_bounds;
     bool layout_dirty;
-    
-    // Multitouch support
+
+
     int active_pointer_id;
 } AromaButton;
 

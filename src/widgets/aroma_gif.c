@@ -41,7 +41,7 @@ static void aroma_gif_timer_cb(void* user_data) {
 
     uint64_t now = aroma_time_now_ms();
     int current_delay = gif->delays[gif->current_frame];
-    // STB delays are often in centiseconds (1/100 sec) if not otherwise converted
+
     int delay_ms = current_delay;
 
     if (now - gif->last_frame_time >= delay_ms) {
@@ -58,7 +58,7 @@ static void __gif_destroy(AromaGif* gif) {
         aroma_timer_cancel(gif->timer);
         gif->timer = NULL;
     }
-    
+
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx && gfx->unload_image && gif->textures) {
         for (int i = 0; i < gif->num_frames; i++) {
@@ -67,7 +67,7 @@ static void __gif_destroy(AromaGif* gif) {
             }
         }
     }
-    
+
     if (gif->textures) free(gif->textures);
     if (gif->delays) stbi_image_free(gif->delays);
 }
@@ -144,7 +144,7 @@ AromaNode* aroma_gif_create_from_memory(AromaNode* parent, unsigned char* data, 
     int *delays = NULL;
     int w, h, frames, comp;
     unsigned char* raw_data = stbi_load_gif_from_memory(data, (int)data_size, &delays, &w, &h, &frames, &comp, 4);
-    
+
     if (!raw_data || frames <= 0) {
         LOG_ERROR("Failed to load GIF from memory");
         if (raw_data) stbi_image_free(raw_data);
@@ -170,7 +170,7 @@ AromaNode* aroma_gif_create_from_memory(AromaNode* parent, unsigned char* data, 
     gif->delays = delays;
 
     for (int i = 0; i < frames; i++) {
-        // raw_data is arranged sequentially as frame0, frame1, etc.
+
         unsigned char* frame_data = raw_data + (i * w * h * 4);
         gif->textures[i] = gfx->load_image_from_rgba(frame_data, w, h);
     }
@@ -198,7 +198,7 @@ AromaNode* aroma_gif_create_from_memory(AromaNode* parent, unsigned char* data, 
 AromaNode* aroma_gif_create(AromaNode* parent, const char* gif_path, int x, int y, int width, int height) {
     if (!parent || !gif_path) return NULL;
 
-    /* Geometry is scaled once in aroma_gif_create_from_memory below. */
+
 
 
     FILE* f = fopen(gif_path, "rb");

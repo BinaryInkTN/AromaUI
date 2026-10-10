@@ -6,6 +6,7 @@
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_node.h"
 #include "core/aroma_event.h"
+#include "aroma_animation.h"
 #include "core/aroma_timer.h"
 #include "core/aroma_time.h"
 #include "core/aroma_style.h"
@@ -21,9 +22,9 @@
 #endif
 
 
-/* Base values are authored in dp; on Android they are scaled by density so
- * touch slop, overscroll and scrollbars feel identical across mdpi..xxxhdpi.
- * Desktop keeps the raw values (density 1). */
+
+
+
 #define SCROLLBAR_WIDTH_DP 4
 #define SCROLLBAR_MIN_THUMB_DP 24
 #define SCROLLBAR_PADDING_DP 2
@@ -40,9 +41,9 @@ static inline int scroll_bottom_padding_px(void)
 #endif
 }
 
-/* Android advances scroll animation from the Choreographer callback. This
- * timer only provides a fallback for non-vsync platforms; a 1 ms timer
- * needlessly wakes the event loop dozens of times per frame on Android. */
+
+
+
 #define FLING_TICK_MS 16
 #define FLING_FRICTION_COEFF 0.015f
 #define FLING_INFLEXION 0.35f
@@ -90,8 +91,8 @@ static inline int scrollbar_padding_px(void)
 {
     return scaled_dp(SCROLLBAR_PADDING_DP);
 }
-/* Fling must exceed ~0.5in/s to feel the same on ldpi and xxxhdpi. Physical
- * coefficient already includes ppi, but the trigger threshold was raw px/s. */
+
+
 static inline float fling_min_velocity_pps(void)
 {
 #ifdef __ANDROID__
@@ -555,7 +556,6 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
     {
         int tx, ty, id;
         if (event->event_type == EVENT_TYPE_MOUSE_CLICK) {
-            if (event->data.mouse.clicks == 0) return false;
             tx = event->data.mouse.x; ty = event->data.mouse.y; id = 0;
         } else {
             tx = event->data.touch.x; ty = event->data.touch.y; id = event->data.touch.id;
@@ -574,7 +574,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         c->swipe_down_ms = aroma_time_now_ms();
         c->drag_scroll_start_x = c->scroll_fx;
         c->drag_scroll_start_y = c->scroll_fy;
-        c->active_pointer_id = event->data.touch.id;
+        c->active_pointer_id = id;
         c->is_dragging = false;
         c->scrollbar_opacity = 1.0f;
         c->last_scroll_time = aroma_time_now_ms();
@@ -589,22 +589,22 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         int tx = event->data.mouse.x;
         int ty = event->data.mouse.y;
         if (!point_in_rect(tx, ty, &c->rect)) return false;
-        
+
         float sx = event->data.mouse.scroll_x;
         float sy = event->data.mouse.scroll_y;
-        
+
         if (sx == 0.0f && sy == 0.0f) return false;
-        
+
         float old_sx = c->scroll_fx;
         float old_sy = c->scroll_fy;
         int old_render_x = effective_scroll_x(c);
         int old_render_y = effective_scroll_y(c);
-        
+
         if (can_scroll_v) c->scroll_fy -= sy * 50.0f * c->scroll_speed;
         if (can_scroll_h) c->scroll_fx -= sx * 50.0f * c->scroll_speed;
-        
+
         clamp_scroll(c);
-        
+
         if (c->scroll_fx != old_sx || c->scroll_fy != old_sy) {
             c->content_dirty = true;
             c->last_scroll_time = aroma_time_now_ms();
@@ -626,7 +626,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         } else {
             tx = event->data.touch.x; ty = event->data.touch.y; id = event->data.touch.id;
         }
-        
+
 
         if (id != c->active_pointer_id)
             return false;
@@ -737,7 +737,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         } else {
             tx = event->data.touch.x; ty = event->data.touch.y; id = event->data.touch.id;
         }
-        if (event->target_node_id != node->node_id)
+        if (event->target_node_id != node->node_id && event->event_type == EVENT_TYPE_TOUCH_UP)
             return false;
         if (id != c->active_pointer_id)
             return false;
@@ -745,7 +745,7 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
         c->is_dragging = false;
         c->active_pointer_id = -1;
 
-        vt_add(&c->vt, event->data.touch.x, event->data.touch.y,
+        vt_add(&c->vt, tx, ty,
                aroma_time_now_ms());
 
         if (was_dragging)
@@ -846,7 +846,7 @@ static void draw_scrollbar_indicators(AromaContainer *c, size_t window_id)
     uint32_t base = c->scrollbar_color;
     uint8_t base_alpha = base & 0xFF;
     uint8_t alpha = (uint8_t)(base_alpha * c->scrollbar_opacity);
-    uint32_t color = (base & 0x00FFFFFFu) | (alpha << 24);  
+    uint32_t color = (base & 0x00FFFFFFu) | (alpha << 24);
     int eff_sx = effective_scroll_x(c);
     int eff_sy = effective_scroll_y(c);
 
@@ -1050,7 +1050,9 @@ void aroma_container_set_scrollable(AromaNode *node, bool scrollable)
         aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_DOWN, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_MOVE, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_TOUCH_UP, scroll_event_handler, node, 0);
+        aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_CLICK, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_MOVE, scroll_event_handler, node, 0);
+        aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_RELEASE, scroll_event_handler, node, 0);
         aroma_event_subscribe(node->node_id, EVENT_TYPE_MOUSE_SCROLL, scroll_event_handler, node, 0);
     }
 
@@ -1228,6 +1230,8 @@ void aroma_container_update_auto_content_size(AromaNode *node)
         AromaNode *child = node->child_nodes[i];
         if (!child || child->is_hidden || !child->node_widget_ptr)
             continue;
+        if (aroma_animation_is_running_on(child))
+            continue;
 
         AromaRect *cr = (AromaRect *)child->node_widget_ptr;
         int right = (cr->x - c->rect.x) + cr->width;
@@ -1261,12 +1265,12 @@ void aroma_container_update_auto_content_size(AromaNode *node)
     }
 }
 
-/**
- * @brief Recursively draw a node and all of its non-scrollable descendants.
- *
- * Scrollable children are skipped because their own draw callbacks
- * already handle their subtree (with clip + scroll offsets).
- */
+
+
+
+
+
+
 static void draw_subtree_recursive(AromaNode *node, size_t window_id,
                                    const AromaRect *viewport_screen,
                                    int offset_x, int offset_y)
@@ -1344,10 +1348,10 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
 
         drawlist_proxy_push_offset(-eff_sx, -eff_sy);
 
-        /*
-         * The draw offset is constant for this subtree. Cache it once rather
-         * than querying the proxy for every node during viewport culling.
-         */
+
+
+
+
         int content_offset_x = 0;
         int content_offset_y = 0;
         drawlist_proxy_get_offset(&content_offset_x, &content_offset_y);

@@ -89,12 +89,12 @@ extern "C"
             unsigned int texture_id,
             float corner_radius);
 
-        /* Image scaling modes need the source texture dimensions and,
-         * for cover, a cropped UV sub-rect. get_image_size reports the
-         * pixel size of a loaded texture (false when unknown, e.g. TFT
-         * slots). draw_image_uv samples the (u0,v0)-(u1,v1) sub-rect
-         * instead of the full texture; both are optional (NULL) and
-         * callers fall back to plain draw_image. */
+
+
+
+
+
+
         bool (*get_image_size)(
             unsigned int texture_id,
             int *width, int *height);
@@ -132,14 +132,14 @@ extern "C"
 
         bool (*get_pending_dirty_rect)(int *x, int *y, int *w, int *h);
 
-        /* Backdrop (frosted-glass) blur: blur the already-rendered pixels
-         * behind the given rectangle in place, so a translucent surface
-         * drawn on top reads as frosted glass. radius is in pixels;
-         * values <= 0 are ignored. corner_radius applies a rounded-rect
-         * mask (0 = square). Optional: NULL means the backend cannot do
-         * backdrop blur (callers fall back to plain translucency). Must
-         * be safe to call mid-frame; the backend flushes any pending
-         * batches first. */
+
+
+
+
+
+
+
+
         void (*blur_backdrop)(
             size_t window_id,
             int x, int y,

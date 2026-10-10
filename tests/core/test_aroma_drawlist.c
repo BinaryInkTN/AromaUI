@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_drawlist.h"
 #include "aroma_drawlist.h"
@@ -62,9 +62,9 @@ static void test_lifecycle_null_safe(void)
 
 static void test_command_guards(void)
 {
-    /* Every command must tolerate a NULL list and degenerate geometry
-     * without crashing. Record into a real list too, then reset/destroy
-     * (exercises the text-command string copy path). */
+
+
+
     aroma_drawlist_cmd_clear(NULL, 0xFF000000);
     aroma_drawlist_cmd_fill_rect(NULL, 0, 0, 10, 10, 0xFFFFFFFF, false, 0);
     aroma_drawlist_cmd_hollow_rect(NULL, 0, 0, 10, 10, 0xFFFFFFFF, 1, false, 0);
@@ -91,13 +91,13 @@ static void test_command_guards(void)
         char stack_text[] = "stack-copy-me";
         aroma_drawlist_cmd_text(list, NULL, stack_text, 5, 5, 0xFFFFFFFF, 1.0f);
     }
-    aroma_drawlist_cmd_text(list, NULL, NULL, 0, 0, 0, 0); /* ignored */
+    aroma_drawlist_cmd_text(list, NULL, NULL, 0, 0, 0, 0);
     aroma_drawlist_cmd_image(list, 0, 0, 64, 64, 7, 0.0f);
     aroma_drawlist_cmd_image(list, 4, 4, 64, 64, 8, 12.0f);
     aroma_drawlist_cmd_scissor_push(list, 0, 0, 800, 600);
     aroma_drawlist_cmd_scissor_pop(list);
     aroma_drawlist_cmd_blur_backdrop(list, 0, 0, 100, 100, 12.0f, 6.0f);
-    /* Degenerate blur records nothing but must not crash. */
+
     aroma_drawlist_cmd_blur_backdrop(list, 0, 0, 0, 100, 12.0f, 0.0f);
     aroma_drawlist_cmd_blur_backdrop(list, 0, 0, 100, 100, 0.0f, 0.0f);
     aroma_drawlist_reset(list);
@@ -107,8 +107,8 @@ static void test_command_guards(void)
 
 static void test_blur_command(void)
 {
-    /* Frosted-glass backdrop command: invalid geometry records nothing,
-     * valid geometry records without crashing; reset destroys cleanly. */
+
+
     aroma_drawlist_cmd_blur_backdrop(NULL, 0, 0, 100, 100, 12.0f, 6.0f);
 
     AromaDrawList *list = aroma_drawlist_create();

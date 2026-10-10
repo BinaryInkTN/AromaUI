@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "widgets/aroma_image.h"
 #include "core/aroma_logger.h"
@@ -76,7 +76,7 @@ static unsigned int __image_load_texture(const char *image_path);
 static void __image_destroy_texture(AromaImage *image);
 
 #ifndef __EMSCRIPTEN__
-/* Custom event type for worker fetch completion (map uses 998/999). */
+
 #define AROMA_IMAGE_FETCH_COMPLETE 1001
 
 typedef struct {
@@ -101,8 +101,8 @@ static void *__image_fetch_thread(void *arg)
     if (job) {
         bool ok = aroma_http_fetch_to_file(job->url, job->cache_path);
         LOG_INFO("AROMA_TEST img_fetch=%d url=%.48s", ok ? 1 : 0, job->url);
-        /* Never touch UI structs here: the node may be destroyed while
-         * this thread runs. Marshal the result to the UI thread. */
+
+
         ImageFetchResult *res =
             (ImageFetchResult *)calloc(1, sizeof(ImageFetchResult));
         if (res) {
@@ -113,7 +113,7 @@ static void *__image_fetch_thread(void *arg)
                 job->node_id, AROMA_IMAGE_FETCH_COMPLETE, res,
                 __image_fetch_result_free);
             if (ev) {
-                /* Queue failure destroys the event (and payload) itself. */
+
                 aroma_event_queue(ev);
             } else {
                 free(res);
@@ -182,13 +182,13 @@ static unsigned int __image_load_texture(const char* image_path)
         LOG_WARNING("Empty image path provided");
         return 0;
     }
-    
+
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->load_image) {
         LOG_ERROR("Graphics interface not available or missing load_image function");
         return 0;
     }
-    
+
     return gfx->load_image(image_path);
 }
 
@@ -264,9 +264,9 @@ static bool aroma_image_point_in_bounds(AromaImage* image, int x, int y)
             y >= image->rect.y && y <= (image->rect.y + image->rect.height));
 }
 
-/* UI-thread application of a worker fetch result. Safe to call with any
- * node (NULL, live, or already destroyed-and-forgotten: the event layer
- * drops dead targets before this runs). Exposed non-static for tests. */
+
+
+
 void aroma_image_apply_fetch_result(AromaNode *image_node, bool ok,
                                     const char *cache_path)
 {
@@ -313,7 +313,7 @@ static bool __image_default_event_handler(AromaEvent* event, void* user_data)
     bool is_release = false;
     bool handle_click = false;
     bool handle_hover = false;
-   
+
     int adjusted_x = event->event_type == EVENT_TYPE_TOUCH_DOWN || event->event_type == EVENT_TYPE_TOUCH_UP || event->event_type == EVENT_TYPE_TOUCH_MOVE
                      ? event->data.touch.x : event->data.mouse.x;
     int adjusted_y = event->event_type == EVENT_TYPE_TOUCH_DOWN || event->event_type == EVENT_TYPE_TOUCH_UP || event->event_type == EVENT_TYPE_TOUCH_MOVE
@@ -417,11 +417,11 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
         LOG_ERROR("aroma_image_draw: Invalid image node for drawing (node=%p)", (void*)image_node);
         return;
     }
-    
+
     if (aroma_node_is_hidden(image_node)) {
         return;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
     if (!image) {
         LOG_ERROR("aroma_image_draw: node->node_widget_ptr is NULL");
@@ -443,19 +443,19 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
     if (image->texture_id == 0) {
         return;
     }
-    
+
     if (image->rect.width <= 0 || image->rect.height <= 0) {
-        LOG_INFO("Skipping image draw - invalid size: %dx%d", 
+        LOG_INFO("Skipping image draw - invalid size: %dx%d",
                   image->rect.width, image->rect.height);
         return;
     }
-    
+
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx || !gfx->draw_image) {
         LOG_ERROR("aroma_image_draw: Graphics interface not available or missing draw_image function");
         return;
     }
-    
+
     if (image->rect.width <= 0 || image->rect.height <= 0) {
         LOG_WARNING("aroma_image_draw: invalid rect size (%d x %d) for node_id=%llu", image->rect.width, image->rect.height, (unsigned long long)image_node->node_id);
         return;
@@ -470,7 +470,7 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
         if (gfx->get_image_size(image->texture_id, &tw, &th) &&
             tw > 0 && th > 0) {
             if (image->scale_mode == AROMA_IMAGE_SCALE_FIT) {
-                /* Whole image, aspect kept, centered in the rect. */
+
                 float s = (float)dw / (float)tw;
                 float s2 = (float)dh / (float)th;
                 if (s2 < s) s = s2;
@@ -482,7 +482,7 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
                 dw = fw;
                 dh = fh;
             } else {
-                /* Cover: fill the rect, center-crop the source. */
+
                 float s = (float)dw / (float)tw;
                 float s2 = (float)dh / (float)th;
                 if (s2 > s) s = s2;
@@ -507,11 +507,11 @@ void aroma_image_draw(AromaNode* image_node, size_t window_id)
                         dx, dy, dw, dh,
                         image->texture_id, image->corner_radius);
     }
-    
-    LOG_INFO("aroma_image_draw: Drew image node_id=%llu at (%d, %d) size %dx%d, texture ID: %u", 
+
+    LOG_INFO("aroma_image_draw: Drew image node_id=%llu at (%d, %d) size %dx%d, texture ID: %u",
               (unsigned long long)image_node->node_id,
-              image->rect.x, image->rect.y, 
-              image->rect.width, image->rect.height, 
+              image->rect.x, image->rect.y,
+              image->rect.width, image->rect.height,
               image->texture_id);
 }
 AromaNode* aroma_image_create(AromaNode* parent, const char* image_path, int x, int y, int width, int height)
@@ -544,7 +544,7 @@ height = aroma_android_dp_to_px(height);
     image->texture_id = 0;
     image->owns_texture = true;
     image->active_pointer_id = -1;
-    
+
     if (image_path) {
         strncpy(image->image_path, image_path, AROMA_IMAGE_PATH_MAX - 1);
         image->image_path[AROMA_IMAGE_PATH_MAX - 1] = '\0';
@@ -563,8 +563,8 @@ height = aroma_android_dp_to_px(height);
     }
     aroma_node_set_draw_cb(node, aroma_image_draw);
 #ifdef __EMSCRIPTEN__
-    /* Remote URLs cannot be opened with fopen in the browser. Fetch them
-       asynchronously and swap in the texture when the bytes arrive. */
+
+
     if (image_path && __image_is_remote_url(image_path) && image->texture_id == 0) {
         __image_fetch_remote(node, image->image_path);
     }
@@ -574,10 +574,10 @@ height = aroma_android_dp_to_px(height);
         __image_fetch_remote_native(node, image->image_path);
     }
 #endif
-    
-    LOG_INFO("Created image widget at (%d, %d) size %dx%d, texture ID: %u", 
+
+    LOG_INFO("Created image widget at (%d, %d) size %dx%d, texture ID: %u",
               x, y, width, height, image->texture_id);
-    
+
     #ifdef ESP32
     aroma_node_invalidate(node);
     #endif
@@ -585,7 +585,7 @@ height = aroma_android_dp_to_px(height);
     return node;
 }
 
-AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data, size_t data_size, 
+AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data, size_t data_size,
                                           int x, int y, int width, int height)
 {
     if (!parent || !data || data_size == 0) {
@@ -612,14 +612,14 @@ AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data
     image->rect.width = width;
     image->rect.height = height;
     image->owns_texture = true;
-    image->image_path[0] = '\0'; 
+    image->image_path[0] = '\0';
     image->active_pointer_id = -1;
 
     AromaGraphicsInterface* gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx && gfx->load_image_from_memory) {
         image->texture_id = gfx->load_image_from_memory(data, data_size);
     }
-    
+
     if (image->texture_id == 0) {
         LOG_ERROR("Failed to load image from memory");
         aroma_widget_free(image);
@@ -636,14 +636,14 @@ AromaNode* aroma_image_create_from_memory(AromaNode* parent, unsigned char* data
        #ifdef ESP32
     aroma_node_invalidate(node);
     #endif
-    
-    LOG_INFO("Created memory image widget at (%d, %d) size %dx%d, texture ID: %u", 
+
+    LOG_INFO("Created memory image widget at (%d, %d) size %dx%d, texture ID: %u",
               x, y, width, height, image->texture_id);
-    
+
     return node;
 }
 
-AromaNode* aroma_image_create_from_texture(AromaNode* parent, unsigned int texture_id, 
+AromaNode* aroma_image_create_from_texture(AromaNode* parent, unsigned int texture_id,
                                            int x, int y, int width, int height, bool take_ownership)
 {
     if (!parent || texture_id == 0) {
@@ -671,7 +671,7 @@ AromaNode* aroma_image_create_from_texture(AromaNode* parent, unsigned int textu
     image->rect.height = height;
     image->texture_id = texture_id;
     image->owns_texture = take_ownership;
-    image->image_path[0] = '\0'; 
+    image->image_path[0] = '\0';
     image->active_pointer_id = -1;
 
     AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, image);
@@ -684,10 +684,10 @@ AromaNode* aroma_image_create_from_texture(AromaNode* parent, unsigned int textu
     }
 
     aroma_node_set_draw_cb(node, aroma_image_draw);
-    
-    LOG_INFO("Created texture image widget at (%d, %d) size %dx%d, texture ID: %u", 
+
+    LOG_INFO("Created texture image widget at (%d, %d) size %dx%d, texture ID: %u",
               x, y, width, height, texture_id);
-    
+
     return node;
 }
 
@@ -697,12 +697,12 @@ void aroma_image_set_source(AromaNode* image_node, const char* image_path)
         LOG_ERROR("Invalid image node");
         return;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
-    
+
     __image_destroy_texture(image);
-    
-    // Load new texture
+
+
     if (image_path) {
         strncpy(image->image_path, image_path, AROMA_IMAGE_PATH_MAX - 1);
         image->texture_id = __image_load_texture(image_path);
@@ -725,9 +725,9 @@ void aroma_image_set_source(AromaNode* image_node, const char* image_path)
         image->texture_id = 0;
         image->owns_texture = false;
     }
-    
+
     aroma_node_invalidate(image_node);
-    
+
     LOG_INFO("Set image source to: %s, texture ID: %u", image_path ? image_path : "(null)", image->texture_id);
 }
 
@@ -737,22 +737,22 @@ void aroma_image_set_size(AromaNode* image_node, int width, int height)
         LOG_ERROR("Invalid image node");
         return;
     }
-    
+
     if (width <= 0 || height <= 0) {
         LOG_WARNING("Invalid image size: %dx%d", width, height);
         return;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
     image->rect.width = width;
     image->rect.height = height;
-    /* Keep an existing radius inside the new bounds. */
+
     float max_r = (float)((width < height ? width : height) / 2);
     if (image->corner_radius > max_r)
         image->corner_radius = max_r;
-    
+
     aroma_node_invalidate(image_node);
-    
+
     LOG_INFO("Set image size to %dx%d", width, height);
 }
 
@@ -824,13 +824,13 @@ void aroma_image_set_position(AromaNode* image_node, int x, int y)
         LOG_ERROR("Invalid image node");
         return;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
     image->rect.x = x;
     image->rect.y = y;
-    
+
     aroma_node_invalidate(image_node);
-    
+
     LOG_INFO("Set image position to (%d, %d)", x, y);
 }
 
@@ -840,7 +840,7 @@ void aroma_image_get_size(AromaNode* image_node, int* width, int* height)
         LOG_ERROR("Invalid parameters for get_size");
         return;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
     *width = image->rect.width;
     *height = image->rect.height;
@@ -852,7 +852,7 @@ void aroma_image_get_position(AromaNode* image_node, int* x, int* y)
         LOG_ERROR("Invalid parameters for get_position");
         return;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
     *x = image->rect.x;
     *y = image->rect.y;
@@ -864,7 +864,7 @@ unsigned int aroma_image_get_texture_id(AromaNode* image_node)
         LOG_ERROR("Invalid image node");
         return 0;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
     return image->texture_id;
 }
@@ -875,7 +875,7 @@ const char* aroma_image_get_source(AromaNode* image_node)
         LOG_ERROR("Invalid image node");
         return NULL;
     }
-    
+
     AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
     return image->image_path;
 }
@@ -916,17 +916,17 @@ void aroma_image_destroy(AromaNode* image_node)
         LOG_ERROR("Invalid image node for destruction");
         return;
     }
-    
+
     if (image_node->node_widget_ptr) {
         AromaImage* image = (AromaImage*)image_node->node_widget_ptr;
-        
+
         __image_destroy_texture(image);
-        
+
         aroma_widget_free(image);
         image_node->node_widget_ptr = NULL;
-        
+
         LOG_INFO("Destroyed image widget");
     }
-    
+
     __destroy_node(image_node);
 }

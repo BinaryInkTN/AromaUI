@@ -25,7 +25,7 @@ typedef struct   {
     AromaRect rect;
     int thickness;
     uint32_t color;
-    /* Follow the live global theme until an explicit color is set. */
+
     bool use_theme_colors;
     float start_angle;
     AromaTimer* timer;
@@ -59,16 +59,16 @@ static void loading_draw(AromaNode* node, size_t window_id) {
         int dot_size = (loading->thickness * 2) - i * (loading->thickness / 2);
         int dot_min = loading_dp(AROMA_LOADING_MIN_DOT_DP);
         if (dot_size < dot_min) dot_size = dot_min;
-        
+
         int dx = cx + (int)(orbit_r * cosf(angle_rad)) - dot_size / 2;
         int dy = cy + (int)(orbit_r * sinf(angle_rad)) - dot_size / 2;
-        
+
         uint32_t c0 = loading_resolve_color(loading);
         uint32_t a = (c0 >> 24) & 0xFF;
-        if (a == 0) a = 0xFF; // Fallback if color doesn't have alpha set properly
+        if (a == 0) a = 0xFF;
         a = a / (i + 1);
         uint32_t c = (a << 24) | (c0 & 0x00FFFFFF);
-        
+
         gfx->fill_rectangle(window_id, dx, dy, dot_size, dot_size, c, true, dot_size / 2.0f);
     }
 }
@@ -94,7 +94,7 @@ static void loading_timer_cb(void* user_data) {
     if (loading->start_angle >= 360.0f) {
         loading->start_angle -= 360.0f;
     }
-    
+
     if (loading->node) {
         aroma_node_invalidate(loading->node);
     }

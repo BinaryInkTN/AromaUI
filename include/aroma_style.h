@@ -77,12 +77,12 @@ typedef struct  AromaStyle {
     bool has_custom_colors;
 } AromaStyle;
 
-/* Light theme functions */
+
 AromaTheme aroma_theme_create_default(void);
 AromaTheme aroma_theme_create_high_contrast(void);
 AromaTheme aroma_theme_create_custom(void);
 
-/* Material theme presets (light) */
+
 AromaTheme aroma_theme_create_material_preset(AromaMaterialThemePreset preset);
 AromaTheme aroma_theme_create_material_blue(void);
 AromaTheme aroma_theme_create_material_teal(void);
@@ -90,45 +90,45 @@ AromaTheme aroma_theme_create_material_green(void);
 AromaTheme aroma_theme_create_material_orange(void);
 AromaTheme aroma_theme_create_material_pink(void);
 
-/* Dark theme functions */
+
 AromaTheme aroma_theme_create_dark(void);
 AromaTheme aroma_theme_create_material_black(void);
 AromaTheme aroma_theme_create_high_contrast_dark(void);
 AromaTheme aroma_theme_create_material_preset_dark(AromaMaterialThemePreset preset);
 
-/* Dark material theme presets */
+
 AromaTheme aroma_theme_create_material_blue_dark(void);
 AromaTheme aroma_theme_create_material_teal_dark(void);
 AromaTheme aroma_theme_create_material_green_dark(void);
 AromaTheme aroma_theme_create_material_orange_dark(void);
 AromaTheme aroma_theme_create_material_pink_dark(void);
 
-/* Style functions */
+
 AromaStyle aroma_style_create_from_theme(const AromaTheme* theme);
 AromaStyle aroma_style_create_default(void);
 AromaStyle aroma_style_create_primary(void);
 AromaStyle aroma_style_create_secondary(void);
 AromaStyle aroma_style_create_error(void);
 
-/* Theme management */
+
 void aroma_theme_set_global(const AromaTheme* theme);
 AromaTheme aroma_theme_get_global(void);
-/* Monotonic generation counter, bumped by every set_global. Widgets that
-   cache theme-derived colors compare against this to refresh themselves. */
+
+
 uint64_t aroma_theme_get_version(void);
-/* True when the theme background is dark (relative luminance < 0.5).
-   NULL selects the global theme. */
+
+
 bool aroma_theme_is_dark(const AromaTheme* theme);
 void aroma_style_apply_theme_colors(AromaStyle* style, const AromaTheme* theme, bool is_primary);
 
-/* Color functions */
+
 uint32_t aroma_color_adjust(uint32_t color, float factor);
 uint32_t aroma_color_blend(uint32_t color1, uint32_t color2, float blend);
 uint32_t aroma_color_rgb(uint8_t r, uint8_t g, uint8_t b);
 uint32_t aroma_color_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 void aroma_color_extract_rgb(uint32_t color, uint8_t* r, uint8_t* g, uint8_t* b);
 
-/* Shadow functions */
+
 typedef struct  AromaShadow {
     int blur_radius;
     int offset_x;

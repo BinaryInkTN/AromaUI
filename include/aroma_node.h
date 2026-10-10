@@ -58,7 +58,7 @@ typedef enum {
 } AromaAlignItems;
 
 typedef struct   {
-    
+
     AromaLayoutType type;
     int left;
     int top;
@@ -66,28 +66,28 @@ typedef struct   {
     int bottom;
     float width_percent;
     float height_percent;
-    
-    
+
+
     float flex_grow;
     float flex_shrink;
     int flex_basis;
 
-    
+
     AromaLayoutMode mode;
     AromaFlexDirection flex_direction;
     AromaJustifyContent justify_content;
     AromaAlignItems align_items;
     int gap;
-    
-    
+
+
     int grid_cols;
     int grid_rows;
     int grid_row_gap;
     int grid_col_gap;
 
-    /* Shrink-to-fit: original authored geometry (px) for absolute
-     * children, so narrow screens scale content down idempotently
-     * across layout passes, rotations and density changes. */
+
+
+
     int _fit_ox;
     int _fit_ow;
     bool _fit_has;
@@ -95,15 +95,15 @@ typedef struct   {
     int _cache_x;
     int _cache_y;
 
-    /* First-placement: nested coordinates are authored parent-relative.
-     * The first layout pass after attach adds the parent position once;
-     * later parent moves are followed via the delta shift below. */
+
+
+
     bool _placed;
 
-    /* Engine-managed: positioned directly by widget or animation code
-     * (carousel pages, slide/scale animation targets). Layout passes
-     * never move these: no first-placement, no delta follow, and the
-     * shrink fitter neither measures nor restores them. */
+
+
+
+
     bool _managed;
 } AromaLayout;
 
@@ -115,23 +115,23 @@ struct  AromaNode
     float opacity;
 
     AromaNode* parent_node;
-    AromaNode** child_nodes;       
+    AromaNode** child_nodes;
     void *node_widget_ptr;
     AromaNodeDrawFn draw_cb;
     void (*destroy_cb)(struct AromaNode* node);
 
     uint64_t child_count;
-    uint64_t child_capacity;       
+    uint64_t child_capacity;
     uint64_t dirty_frame;
 
     bool is_dirty;
     bool subtree_dirty;
     bool is_hidden;
     bool propagate_dirty;
-    
-    
+
+
     uint8_t _padding[4];
-    
+
     AromaLayout layout;
 };
 
@@ -192,10 +192,10 @@ void aroma_node_set_grid_rows(AromaNode* node, int rows);
 
 void aroma_node_update_layout(AromaNode* root, int parent_x, int parent_y, int parent_width, int parent_height);
 
-/* Mark a node as engine-positioned: skips first-placement and records the
- * current rect as the shrink-to-fit baseline so later layout passes
- * neither move it nor snap it back. Used by widgets that manage child
- * geometry directly (carousel pages) and by the animation engine. */
+
+
+
+
 void aroma_layout_note_placed(AromaNode *node);
 
 uint64_t __get_current_node_id_counter(void);

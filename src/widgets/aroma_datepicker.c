@@ -15,10 +15,10 @@
 #include "aroma_android.h"
 #endif
 
-/* Material DatePicker dialog, inline: header (title + selected-date
- * headline), month grid with 48dp targets, Cancel/OK footer. Taps edit a
- * pending date (header previews it); OK confirms and fires on_change,
- * Cancel reverts to the confirmed date. Slop-guarded taps throughout. */
+
+
+
+
 
 static inline int tdp(int v)
 {
@@ -38,7 +38,7 @@ static inline float tdp_f(float v)
 #endif
 }
 
-/* Cross-widget popup exclusivity (calendar/timepicker .c). */
+
 void aroma_calendar_close_popups(void);
 void aroma_timepicker_close_popups(void);
 
@@ -98,7 +98,7 @@ static void dp_adjust(AromaEvent *e, int *x, int *y)
     AromaNode *t = e->target_node;
     AromaDatePicker *self =
         t ? (AromaDatePicker *)t->node_widget_ptr : NULL;
-    /* Popup panels live in screen space; never compensate scrolling. */
+
     if (self && self->in_popup_event)
         return;
     AromaNode *cur = t ? t->parent_node : NULL;
@@ -163,8 +163,8 @@ static int dp_pick_year(AromaDatePicker *d, int x, int y)
     int header_h = tdp(DP_HEADER_H_DP);
     int nav_h = tdp(DP_NAV_H_DP);
     int footer_h = tdp(DP_FOOTER_H_DP);
-    /* Year grid starts below the nav row (same as the day grid minus the
-     * weekday row, which years do not need). */
+
+
     int top = d->rect.y + header_h + nav_h;
     int bottom = d->rect.y + d->rect.height - footer_h;
     int cell_w = d->rect.width / 3;
@@ -200,7 +200,7 @@ static void dp_apply_year(AromaDatePicker *d, int year)
     d->show_years = false;
 }
 
-/* Zones: -3 cancel, -2 ok, -1 nav/title row miss, >=1 picked day. */
+
 static int dp_pick(AromaDatePicker *d, int x, int y, int *month_off,
                    bool *nav_prev, bool *nav_next, bool *is_title)
 {
@@ -330,8 +330,8 @@ static void dp_overlay_unregister(AromaNode *node)
     }
 }
 
-/* Field rect in screen coordinates (scroll-compensated). False when the
- * field is scrolled out of every viewport. */
+
+
 static bool dp_field_screen(AromaNode *node, AromaDatePicker *d,
                             AromaRect *out)
 {
@@ -370,9 +370,9 @@ static int dp_panel_h(void)
     return h > 0 ? h : 1;
 }
 
-/* Center the panel on the window with dp-aware margins, shrinking it
- * to fit small screens instead of spilling past the edges. Falls back
- * to field-anchored placement when the window size is unknown. */
+
+
+
 static bool dp_compute_popup(AromaNode *node, AromaDatePicker *d)
 {
     AromaRect field;
@@ -780,9 +780,9 @@ static bool dp_handle_inner(AromaEvent *e, void *ud)
     return false;
 }
 
-/* Outer dispatcher: routes field taps (open), popup taps (interact via
- * rect-swapped inner handler in screen space) and outside taps
- * (dismiss). */
+
+
+
 static bool dp_handle(AromaEvent *e, void *ud)
 {
     if (!e || !e->target_node)
@@ -809,7 +809,7 @@ static bool dp_handle(AromaEvent *e, void *ud)
             return false;
         }
     }
-    /* Popup open: everything is modal in raw screen coordinates. */
+
     int x = e->data.mouse.x;
     int y = e->data.mouse.y;
     if (e->event_type == EVENT_TYPE_TOUCH_DOWN ||
@@ -1021,7 +1021,7 @@ bool aroma_datepicker_setup_events(AromaNode *n, void (*on_redraw)(void *),
     return true;
 }
 
-/* "Tue, Oct 6" headline for the pending date. */
+
 static void dp_headline(AromaDatePicker *d, char *out, size_t n)
 {
     static const char *wdn[7] = {"Sun", "Mon", "Tue", "Wed",
@@ -1043,7 +1043,7 @@ static void dp_headline(AromaDatePicker *d, char *out, size_t n)
     snprintf(out, n, "%s, %s %d", wdn[w], mon[mi], d->p_day);
 }
 
-/* "Tue, Oct 6" style text for the confirmed date (field + headline). */
+
 static void dp_field_text(AromaDatePicker *d, char *out, size_t n)
 {
     static const char *wdn[7] = {"Sun", "Mon", "Tue", "Wed",
@@ -1065,7 +1065,7 @@ static void dp_field_text(AromaDatePicker *d, char *out, size_t n)
     snprintf(out, n, "%s, %s %d", wdn[w], mon[mi], d->day);
 }
 
-/* Compact in-tree field for popup mode: formatted date + calendar glyph. */
+
 static void dp_draw_field(AromaNode *node, AromaDatePicker *d,
                           size_t window_id, AromaGraphicsInterface *gfx)
 {
@@ -1078,7 +1078,7 @@ static void dp_draw_field(AromaNode *node, AromaDatePicker *d,
                                   aroma_font_get_line_height(d->font)) /
                                      2,
                      d->text_color, 1.0f);
-    /* Calendar glyph: outline + header bar + two day dots. */
+
     int gx = d->rect.x + d->rect.width - pad - glyph;
     int gy = d->rect.y + (d->rect.height - glyph) / 2;
     if (gfx->draw_hollow_rectangle)
@@ -1383,8 +1383,8 @@ void aroma_datepicker_destroy(AromaNode *node)
     }
 }
 
-/* Popup-only widget: every date picker is a compact field that opens a
- * modal panel. Kept for source compatibility; always a no-op. */
+
+
 void aroma_datepicker_set_popup(AromaNode *n, bool popup)
 {
     (void)n;
@@ -1480,8 +1480,8 @@ bool aroma_datepicker_overlay_hit_test(int x, int y, AromaNode **out_node)
         AromaDatePicker *d = (AromaDatePicker *)node->node_widget_ptr;
         if (!d->popup_open)
             continue;
-        /* Modal popup: every tap routes to the picker (inside interacts,
-         * outside dismisses). */
+
+
         (void)x;
         (void)y;
         if (out_node)

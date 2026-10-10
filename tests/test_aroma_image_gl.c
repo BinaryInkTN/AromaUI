@@ -1,19 +1,19 @@
-/* Headless functional tests for image scaling modes + rounded corners (GLES3).
- *
- * Renders real frames on an EGL pbuffer (Mesa software GL is fine) and
- * reads pixels back to verify:
- *   1. COVER center-crops the source (asymmetric 25/75 red/blue texture
- *      into a 60x40 rect puts the color boundary at the cropped,
- *      not the stretched, position),
- *   2. FILL stretches (same setup, boundary at the stretched position),
- *   3. rounded corners mask in quad space even when a cover crop is
- *      active (a circular avatar keeps its corners transparent instead
- *      of smearing image data into them),
- *   4. get_image_size reports the uploaded dimensions.
- *
- * Prints SKIP and exits 0 when no EGL display is available, so constrained
- * CI machines still pass.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
@@ -141,7 +141,7 @@ static void read_pixels(unsigned char *out)
     glReadPixels(0, 0, WIN_W, WIN_H, GL_RGBA, GL_UNSIGNED_BYTE, out);
 }
 
-/* UI (top-left origin) channel readers (GL buffer is bottom-up). */
+
 static void px_rgba(const unsigned char *buf, int ux, int uy,
                     int *r, int *g, int *b, int *a)
 {
@@ -163,8 +163,8 @@ static AromaNode *make_root(void)
     return __create_node(NODE_TYPE_ROOT, NULL, w);
 }
 
-/* 100x50 test card: x<25 red, x>=25 blue. Cover into 60x40 must put the
- * boundary at dest x=20 (center-crop), fill must put it at dest x=30. */
+
+
 static unsigned int make_split_texture(AromaGraphicsInterface *gfx)
 {
     static unsigned char data[100 * 50 * 4];
@@ -202,9 +202,9 @@ static void test_cover_crops_center(void)
               tw == 100 && th == 50,
           "cover: get_image_size reports 100x50");
 
-    /* Dest rect (10,10) 60x40. Cover scale = max(0.6, 0.8) = 0.8, so the
-     * sampled 75px window starts at src x=12.5 and the red/blue boundary
-     * (src x=25) lands at dest x=20. Probe x=22: must be blue. */
+
+
+
     AromaNode *img = aroma_image_create_from_texture(root, tex, 10, 10, 60, 40, true);
     CHECK(img != NULL, "cover: image node created");
     aroma_image_set_scale_mode(img, AROMA_IMAGE_SCALE_COVER);
@@ -231,8 +231,8 @@ static void test_fill_stretches(void)
     AromaNode *root = make_root();
     unsigned int tex = make_split_texture(gfx);
 
-    /* Same geometry, FILL stretches: boundary (src x=25) lands at
-     * dest x=10+60*0.25=25, so probe x=22 must be red. */
+
+
     AromaNode *img = aroma_image_create_from_texture(root, tex, 10, 10, 60, 40, true);
     aroma_image_set_scale_mode(img, AROMA_IMAGE_SCALE_FILL);
     gfx->clear(0, 0xFF202020);
@@ -255,10 +255,10 @@ static void test_rounded_circle_over_cover(void)
     __node_system_init();
     AromaNode *root = make_root();
 
-    /* Solid blue 50x100 portrait -> 40x40 circle. Cover crops v to the
-     * middle 50 rows; the rounded mask must stay circular in quad space:
-     * dest-space (4,4) is outside the r=20 circle and must show the
-     * dark background, while the center stays blue. */
+
+
+
+
     static unsigned char data[50 * 100 * 4];
     for (int i = 0; i < 50 * 100; i++)
     {
@@ -291,9 +291,9 @@ static void test_rounded_circle_over_cover(void)
     __node_system_destroy();
 }
 
-/* Regression: lazy-packing a first-use non-ASCII glyph mid-render must
- * not unbind the atlas texture (which blanked the whole in-flight
- * string). Renders "X · Y" on a fresh renderer and requires ink. */
+
+
+
 static void test_lazy_nonscii_glyph_keeps_text(void)
 {
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();

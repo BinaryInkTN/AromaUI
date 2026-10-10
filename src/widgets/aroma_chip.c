@@ -13,7 +13,7 @@
 #include "aroma_android.h"
 #endif
 
-/* Authored in dp; scaled to px via helpers below. */
+
 #define MD3_CHIP_HEIGHT_DP 32
 #define MD3_CHIP_MIN_WIDTH_DP 48
 #define MD3_CHIP_PADDING_H_DP 12
@@ -533,7 +533,7 @@ void aroma_chip_destroy(AromaNode *chip_node)
     if (chip)
     {
         aroma_widget_free(chip);
-        /* Detach so __destroy_node below does not free it a second time. */
+
         chip_node->node_widget_ptr = NULL;
     }
     __destroy_node(chip_node);

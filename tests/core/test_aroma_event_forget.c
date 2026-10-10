@@ -45,14 +45,14 @@ static void test_queued_event_dropped_on_destroy(void)
     CHECK(ev != NULL, "custom event created");
     CHECK(aroma_event_queue(ev), "custom event queued");
 
-    /* Destroy while the event is still queued: the queue entry, the
-     * target cache, and the listeners must all go away. */
+
+
     __destroy_node(child);
     s_custom_calls = 0;
     aroma_event_process_queue();
     CHECK(s_custom_calls == 0, "queued event dropped after destroy");
 
-    /* New events for the dead id resolve to NULL and never dispatch. */
+
     AromaEvent *ev2 = aroma_event_create_custom(id, 77, NULL, NULL);
     CHECK(ev2 != NULL, "event object still creatable");
     CHECK(ev2->target_node == NULL, "dead id resolves to NULL");
@@ -71,7 +71,7 @@ static void test_queued_event_dropped_on_destroy(void)
 
 static void test_forget_without_system(void)
 {
-    /* Must be safe before init / after shutdown. */
+
     aroma_event_forget_node(12345);
     CHECK(1, "forget with no system is safe");
 }

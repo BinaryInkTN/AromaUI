@@ -15,4 +15,4 @@ void aroma_loading_set_color(AromaNode* loading_node, uint32_t color);
 }
 #endif
 
-#endif // AROMA_LOADING_H
+#endif

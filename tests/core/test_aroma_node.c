@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_node.h"
 #include "test_aroma_slab_alloc.h"
@@ -33,20 +33,20 @@ static int tests_failed = 0;
 typedef struct  __attribute__((packed, aligned(1))) {
     int id;
     char name[32];
-} MockWidgetSmall;  
+} MockWidgetSmall;
 
 typedef struct  __attribute__((packed, aligned(1))) {
     float position[4];
     char text[64];
     int flags;
     double scale;
-} MockWidgetMedium;  
+} MockWidgetMedium;
 
 typedef struct  __attribute__((packed, aligned(1))) {
     int data[32];
     float matrix[16];
     char description[128];
-} MockWidgetLarge;  
+} MockWidgetLarge;
 
 static void init_test_environment(void) {
     __node_system_init();
@@ -337,15 +337,15 @@ static void test_destroy_node_tree(void) {
 static void test_widget_allocation_buckets(void) {
     init_test_environment();
 
-    void* tiny_widget = aroma_widget_alloc(10);      
+    void* tiny_widget = aroma_widget_alloc(10);
 
-    void* small_widget = aroma_widget_alloc(40);     
+    void* small_widget = aroma_widget_alloc(40);
 
-    void* medium_widget = aroma_widget_alloc(100);   
+    void* medium_widget = aroma_widget_alloc(100);
 
-    void* large_widget = aroma_widget_alloc(200);    
+    void* large_widget = aroma_widget_alloc(200);
 
-    void* huge_widget = aroma_widget_alloc(400);     
+    void* huge_widget = aroma_widget_alloc(400);
 
     assert(tiny_widget != NULL);
     assert(small_widget != NULL);

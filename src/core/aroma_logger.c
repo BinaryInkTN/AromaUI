@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #ifdef ESP32
 #include <Arduino.h>
-#endif 
+#endif
 #if !defined(_WIN32) && !defined(ESP32) && !defined(__EMSCRIPTEN__)
 #include <execinfo.h>
 #endif
@@ -123,9 +123,9 @@ void log_message(DebugLevel level, const char *file, int line, const char *func,
     #endif
 
 
-    /* char full_log[1024];
-    snprintf(full_log, sizeof(full_log), "[%s] %s [%s:%d] %s: %s", time_buffer, level_str, file, line, func, log_line);
-    add_log_entry(full_log);*/
+
+
+
 
 }
 
@@ -158,18 +158,18 @@ void save_log_file(const char *path)
 
 void print_stack_trace(void)
 {
-    /*
-    void *buffer[10];
-    int size = backtrace(buffer, 10);
-    char **symbols = backtrace_symbols(buffer, size);
 
-    printf("\nStack trace:\n");
-    for (int i = 0; i < size; i++)
-    {
-        printf("%s\n", symbols[i]);
-    }
-    free(symbols);
-    */
+
+
+
+
+
+
+
+
+
+
+
 }
 
 void dump_memory(const char *label, const void *buffer, size_t size)

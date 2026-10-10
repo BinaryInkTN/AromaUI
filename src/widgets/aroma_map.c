@@ -396,8 +396,8 @@ static void latlon_to_pixel(double lat, double lon, int zoom, double *px_x, doub
     *px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * z_factor;
 }
 
-// OPTIMIZED: MinHeap uses float for priority (was double)
-// Saves 4 bytes per heap entry
+
+
 typedef struct
 {
     uint32_t node;
@@ -666,9 +666,9 @@ static void osrm_dijkstra(OSRMGraph *graph, uint32_t start, uint32_t end, uint32
         return;
     }
 
-    // OPTIMIZED: Removed arrival_edge array (saves 4 bytes per node)
-    // OPTIMIZED: Using float instead of double for dist (saves 4 bytes per node)
-    // Total peak memory savings: ~62MB at 7.8M nodes
+
+
+
     float *dist = malloc(graph->node_count * sizeof(float));
     uint32_t *prev = malloc(graph->node_count * sizeof(uint32_t));
     bool *visited = calloc(graph->node_count, sizeof(bool));
@@ -720,7 +720,7 @@ static void osrm_dijkstra(OSRMGraph *graph, uint32_t start, uint32_t end, uint32
             if (to >= graph->node_count)
                 continue;
 
-            // OPTIMIZED: Use prev[] instead of arrival_edge[] for backtrack detection
+
             if (prev[current] != UINT32_MAX && prev[current] == to)
             {
                 weight *= 10.0;
@@ -988,7 +988,7 @@ static bool load_osrm_binary(OSRMGraph *graph, const char *filename)
     }
     header[15] = '\0';
 
-    // Accept both old V2 and new V3 formats
+
     if (strcmp(header, "OSRM_PROD_V2") != 0 && strcmp(header, "OSRM_PROD_V3") != 0)
     {
         fclose(fp);
@@ -1012,7 +1012,7 @@ static bool load_osrm_binary(OSRMGraph *graph, const char *filename)
 
     for (uint32_t i = 0; i < graph->node_count; i++)
     {
-        uint32_t node_id;  // Temporary - read from file but not stored
+        uint32_t node_id;
         uint8_t has_traffic_light;
         if (fread(&node_id, sizeof(uint32_t), 1, fp) != 1)
             goto error;
@@ -1022,7 +1022,7 @@ static bool load_osrm_binary(OSRMGraph *graph, const char *filename)
             goto error;
         if (fread(&has_traffic_light, sizeof(uint8_t), 1, fp) != 1)
             goto error;
-        // node_id and has_traffic_light are read but not stored (dead fields)
+
     }
 
     if (fread(&graph->edge_count, sizeof(uint32_t), 1, fp) != 1)
@@ -1034,9 +1034,9 @@ static bool load_osrm_binary(OSRMGraph *graph, const char *filename)
 
     for (uint32_t i = 0; i < graph->edge_count; i++)
     {
-        uint32_t edge_id;  
-        uint8_t speed;     
-        uint8_t priority;  
+        uint32_t edge_id;
+        uint8_t speed;
+        uint8_t priority;
         uint32_t is_roundabout;
         if (fread(&edge_id, sizeof(uint32_t), 1, fp) != 1)
             goto error;
@@ -1382,11 +1382,11 @@ extern unsigned char *stbi_load_from_memory(const unsigned char *buffer, int len
 extern unsigned char *stbi_load(const char *filename, int *x, int *y, int *channels_in_file, int desired_channels);
 extern void stbi_image_free(void *retval_from_stbi_load);
 
-/* Dark-mode tiles are derived client-side from OpenStreetMap light tiles
-   (no second tile provider, no API key). This is the per-pixel equivalent
-   of CSS `invert(100%) hue-rotate(180deg)`: out = c + (255 - max - min),
-   which preserves hue while darkening, so water stays blue-ish and parks
-   stay green-ish. */
+
+
+
+
+
 static void __map_apply_dark_filter(unsigned char *rgba, int width, int height)
 {
     if (!rgba || width <= 0 || height <= 0)
@@ -1661,9 +1661,9 @@ static void *tile_fetch_worker(void *arg)
                 continue;
             }
             char url[512];
-            /* Online tiles are OpenStreetMap only. Dark mode is derived
-               client-side from the light tile (see __map_dark_texture_from_png);
-               no second provider, no API key. */
+
+
+
             snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
             char tmp_path[512];
             snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", req.filepath);
@@ -1977,10 +1977,10 @@ static void update_chunks(struct AromaMapExtra *extra, int center_tile_x, int ce
         }
         else if (extra->chunks[i].z == z - 1)
         {
-            /* Retain in-view parent tiles: they render scaled during the
-               zoom animation and serve as fallback while the new level
-               downloads. Anything older still goes (bounds memory; chunk
-               slots LRU-evict via get_empty_chunk_slot). */
+
+
+
+
             int p_center_cx = (wrapped_center_tile_x / 2) / CHUNK_SIZE;
             int p_center_cy = (center_tile_y / 2) / CHUNK_SIZE;
             if (!is_chunk_in_view(extra, extra->chunks[i].chunk_x, extra->chunks[i].chunk_y,
@@ -2304,8 +2304,8 @@ static bool request_tile_download(int z, int x, int y, bool is_dark, const char 
     req->is_dark = is_dark;
     req->extra = extra;
     char url[512];
-    /* Online tiles are OpenStreetMap only (see __map_dark_texture_from_png
-       for dark mode: derived client-side, no second provider, no API key). */
+
+
     snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", z, x, y);
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
@@ -3715,9 +3715,9 @@ static void __map_draw(AromaNode *node, size_t window_id)
     uint8_t g = (bg_color >> 8) & 0xFF;
     uint8_t b = bg_color & 0xFF;
     bool theme_is_dark = ((r * 299 + g * 587 + b * 114) / 1000) < 128;
-    /* Theme switches don't invalidate widgets by themselves, so force one
-       redraw here; the is_dark-aware tile lookup below then swaps the
-       tile variant on the very next frame. */
+
+
+
     uint64_t theme_version = aroma_theme_get_version();
     if (extra->theme_version != theme_version)
     {
@@ -3795,8 +3795,8 @@ static void __map_draw(AromaNode *node, size_t window_id)
             {
                 found_tile->is_loading = true;
                 char filepath[256];
-                /* Disk cache is OSM light tiles only; the dark variant is
-                   derived in memory (see __map_dark_texture_from_png). */
+
+
                 snprintf(filepath, sizeof(filepath), "%s/osm_light_%d_%d_%d.png",
                          map_tile_cache_dir(), z, wrapped_x, y);
 #ifdef __EMSCRIPTEN__
@@ -3885,8 +3885,8 @@ static void __map_draw(AromaNode *node, size_t window_id)
                 }
                 if (!drawn_fallback && gfx && gfx->fill_rectangle)
                 {
-                    /* Loading placeholder: tile grid cell so pending areas
-                       read as "map incoming" instead of blank background. */
+
+
                     uint32_t grid_fill = theme_is_dark ? 0xFF23262B : 0xFFE8ECF1;
                     uint32_t grid_line = theme_is_dark ? 0xFF343A41 : 0xFFC9D1D9;
                     gfx->fill_rectangle(window_id, draw_x, draw_y, draw_size, draw_size,
@@ -4120,9 +4120,9 @@ void aroma_map_zoom_in(AromaNode *node)
         extra->display_px_x *= 2.0;
         extra->center_px_y *= 2.0;
         extra->display_px_y *= 2.0;
-        /* Keep old-zoom tiles: the display_zoom lerp scales them during the
-           animation and the parent-level fallback keeps the view covered
-           while the new level downloads. */
+
+
+
     }
     aroma_node_invalidate(node);
 }
@@ -4143,7 +4143,7 @@ void aroma_map_zoom_out(AromaNode *node)
         extra->display_px_x /= 2.0;
         extra->center_px_y /= 2.0;
         extra->display_px_y /= 2.0;
-        /* Old-zoom tiles are intentionally kept (see zoom_in). */
+
 
         if (extra->zoom < 15)
         {
@@ -4220,8 +4220,8 @@ void aroma_map_set_zoom(AromaNode *node, int zoom)
     double px_y = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0 * (1 << zoom) * TILE_SIZE;
     extra->center_px_x = px_x;
     extra->center_px_y = px_y;
-    /* No cache purge here: retained tiles animate the zoom transition and
-       serve as scaled fallback (and instant zoom-back). */
+
+
     aroma_node_invalidate(node);
 }
 

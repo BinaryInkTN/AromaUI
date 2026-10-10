@@ -84,10 +84,10 @@ static inline bool is_valid_node_ptr(const AromaNode *node)
     return true;
 }
 
-/* A hidden container hides its whole subtree (matches hit-testing,
-   which stops at hidden nodes). Checking only the node's own flag lets
-   children of hidden parents paint, so co-located tab pages flicker
-   through each other depending on draw order. */
+
+
+
+
 static inline bool node_hidden_including_ancestors(const AromaNode *node)
 {
     const AromaNode *cur = node;
@@ -778,12 +778,12 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
 
     append_draw_task(node, tasks, task_count, max_tasks);
 
-    /* A scrollable container is a draw boundary: its own draw callback
-     * paints the subtree itself (clipped + scroll-shifted). Recursing
-     * here would also emit one task per descendant, rendering the
-     * content a second time, unclipped, at its base position. This holds
-     * no matter what the container is parented to - a scrollview inside
-     * a card is still a scrollview. */
+
+
+
+
+
+
     if (aroma_container_is_scrollable(node))
     {
         return;

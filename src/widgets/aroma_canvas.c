@@ -15,17 +15,17 @@ static inline int canvas_dp(int dp) { return dp; }
 static inline float canvas_dp_f(float dp) { return dp; }
 #endif
 
-/**
- * @brief Reserve the next op slot in canvas->ops, or NULL if the fixed
- * AROMA_CANVAS_MAX_OPS capacity is already used up.
- *
- * This is a fixed array (see AROMA_CANVAS_MAX_OPS in aroma_canvas.h),
- * not a growable one -- AromaCanvas comes from aroma_widget_alloc(), a
- * slab allocator, and slab-backed memory is not something you can safely
- * hand to realloc(). So capacity is fixed at compile time; once a node's
- * op_count reaches the limit, further draw_* calls are dropped (logged
- * here, not crashed) until the node is cleared via aroma_canvas_clear().
- */
+
+
+
+
+
+
+
+
+
+
+
 static AromaCanvasOp *aroma_canvas_push_op(AromaCanvas *canvas)
 {
     if (canvas->op_count >= AROMA_CANVAS_MAX_OPS)
@@ -124,11 +124,11 @@ void aroma_canvas_draw(AromaNode *node, size_t window_id)
         return;
     }
 
-    /* Render every queued op in call order, instead of the old
-       switch-on-single-draw_mode which could only ever render whichever
-       draw_* call happened most recently. A CLEAR op appended via
-       aroma_canvas_clear() still renders in its place in the sequence,
-       same as any other op. */
+
+
+
+
+
     for (size_t i = 0; i < canvas->op_count; i++)
     {
         aroma_canvas_draw_op(&canvas->ops[i], gfx, window_id);
@@ -143,12 +143,12 @@ void aroma_canvas_clear(AromaNode *node, uint32_t color)
     if (!canvas)
         return;
 
-    /* Drop all previously queued ops -- a canvas that's been cleared
-       should not still render shapes queued before the clear. This is
-       also how a node reclaims its AROMA_CANVAS_MAX_OPS slots. The clear
-       color itself is kept as a single CLEAR op so aroma_canvas_draw()
-       still paints the background before anything drawn after this
-       call. */
+
+
+
+
+
+
     canvas->op_count = 0;
 
     AromaCanvasOp *op = aroma_canvas_push_op(canvas);
@@ -179,9 +179,9 @@ AromaNode *aroma_canvas_create(AromaNode *parent, int x, int y, int width, int h
         LOG_ERROR("Failed to allocate memory for canvas");
         return NULL;
     }
-    /* ops[] is a fixed in-struct array (see AROMA_CANVAS_MAX_OPS), so
-       there's no separate buffer to allocate -- just zero the count.
-       Not relying on aroma_widget_alloc() having zeroed this for us. */
+
+
+
     canvas->op_count = 0;
 
 #ifdef __ANDROID__

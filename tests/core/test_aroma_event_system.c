@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_event_system.h"
 #include "aroma_event.h"
@@ -262,9 +262,9 @@ static void test_unsubscribe_listener(void) {
     tests_passed++;
 }
 
-/* Regression test for the package-store click bug: a full-screen container
- * sibling created AFTER a button steals its hits (equal z-index, later
- * sibling wins), so panels must be sized to their content band. */
+
+
+
 static void test_hit_test_panel_overlap_steals_button(void) {
     init_test_environment();
 
@@ -284,16 +284,16 @@ static void test_hit_test_panel_overlap_steals_button(void) {
     assert(pr != NULL);
     pr->x = 0; pr->y = 0; pr->width = 1024; pr->height = 600;
 
-    /* Full-screen later sibling covers the button: panel wins. */
+
     AromaNode *hit = aroma_event_hit_test(root, 100, 120);
     assert(hit == panel);
 
-    /* Shrink the panel to its content band (the store fix): button wins. */
+
     pr->y = 145; pr->height = 105;
     hit = aroma_event_hit_test(root, 100, 120);
     assert(hit == btn);
 
-    /* Clicks inside the band still reach the panel. */
+
     hit = aroma_event_hit_test(root, 100, 180);
     assert(hit == panel);
 
@@ -316,7 +316,7 @@ static void test_hit_test_hidden_subtree_pruned(void) {
     fr->x = 0; fr->y = 0; fr->width = 1024; fr->height = 600;
     full->is_hidden = true;
 
-    /* A hidden node never wins, even with no competition. */
+
     assert(aroma_event_hit_test(root, 500, 300) == NULL);
 
     full->is_hidden = false;
@@ -340,7 +340,7 @@ static void test_hit_test_container_yields_to_child(void) {
     assert(pr != NULL);
     pr->x = 0; pr->y = 0; pr->width = 1024; pr->height = 600;
 
-    /* A later overlapping widget still beats the earlier container. */
+
     void* btn_widget = aroma_widget_alloc(32);
     AromaNode* btn = __add_child_node(NODE_TYPE_WIDGET, root, btn_widget);
     AromaRect *br = aroma_node_get_rect(btn);
@@ -376,7 +376,7 @@ static void test_hit_test_higher_z_wins(void) {
     hr->x = 0; hr->y = 0; hr->width = 200; hr->height = 200;
     high->z_index = 1;
 
-    /* Higher z wins regardless of sibling order. */
+
     assert(aroma_event_hit_test(root, 100, 100) == low);
 
     __destroy_node(root);

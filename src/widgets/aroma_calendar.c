@@ -16,12 +16,12 @@
 #include "aroma_android.h"
 #endif
 
-/* Material DatePicker calendar content:
- * month/year header with 48dp chevron targets, weekday row, 48dp day
- * cells. Selected day = filled primary circle, today = outline ring,
- * pressed day = shaded circle. Adjacent-month overflow days render dimmed
- * and are tappable (shifts month, like AOSP CalendarView). Taps are
- * slop-guarded: DOWN in a cell + UP in the same cell selects. */
+
+
+
+
+
+
 
 static inline int tdp(int v)
 {
@@ -104,7 +104,7 @@ int aroma_calendar_first_weekday(int year, int month)
     return t.tm_wday;
 }
 
-/* Popup API is defined below; cal_select needs it. */
+
 void aroma_calendar_close_popup(AromaNode *n);
 void aroma_datepicker_close_popups(void);
 void aroma_timepicker_close_popups(void);
@@ -137,7 +137,7 @@ static void cal_adjust(AromaEvent *event, int *x, int *y)
     AromaNode *t = event->target_node;
     AromaCalendar *self =
         t ? (AromaCalendar *)t->node_widget_ptr : NULL;
-    /* Popup panels live in screen space; never compensate scrolling. */
+
     if (self && self->in_popup_event)
         return;
     AromaNode *cur = t ? t->parent_node : NULL;
@@ -157,7 +157,7 @@ static bool cal_in(int x, int y, int rx, int ry, int rw, int rh)
     return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
 }
 
-/* Grid geometry: header + weekday rows, then 6 rows of day cells. */
+
 static void cal_geom(AromaCalendar *c, int *gx, int *gy, int *cw, int *ch,
                      int *header_h)
 {
@@ -188,8 +188,8 @@ static void cal_month_year(const AromaCalendar *c, int off, int *y, int *m)
     }
 }
 
-/* Returns day number, or -1 when outside the grid. month_off is -1/0/+1
- * for prev-month overflow / current / next-month overflow. */
+
+
 static int cal_pick(AromaCalendar *c, int x, int y, int *month_off,
                     bool *is_nav_prev, bool *is_nav_next, bool *is_title)
 {
@@ -247,7 +247,7 @@ static int cal_pick(AromaCalendar *c, int x, int y, int *month_off,
     return cell - first + 1;
 }
 
-/* Year-grid pick: year number, or -1 when outside the cells. */
+
 static int cal_pick_year(AromaCalendar *c, int x, int y)
 {
     int gx, gy, cw, ch, header_h;
@@ -741,7 +741,7 @@ static bool cal_handle_inner(AromaEvent *event, void *ud)
     return false;
 }
 
-/* Outer dispatcher for popup mode (mirrors the date picker). */
+
 static bool cal_handle(AromaEvent *e, void *ud)
 {
     if (!e || !e->target_node)
@@ -1206,8 +1206,8 @@ void aroma_calendar_destroy(AromaNode *node)
     }
 }
 
-/* Popup-only widget: every calendar is a compact field that opens a modal
- * panel. Kept for source compatibility; always a no-op. */
+
+
 void aroma_calendar_set_popup(AromaNode *n, bool popup)
 {
     (void)n;
@@ -1302,7 +1302,7 @@ bool aroma_calendar_overlay_hit_test(int x, int y, AromaNode **out_node)
         AromaCalendar *c = (AromaCalendar *)node->node_widget_ptr;
         if (!c->popup_open)
             continue;
-        /* Modal popup: every tap routes to the picker. */
+
         (void)x;
         (void)y;
         if (out_node)

@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_logger.h"
@@ -35,7 +35,7 @@ void __slab_pool_init(AromaSlabAllocator* pool, size_t object_size) {
 
 void __slab_pool_destroy(AromaSlabAllocator* pool) {
     if (!pool) return;
-    
+
     AromaSlabAllocatorPage* page = pool->pages;
     while (page) {
         AromaSlabAllocatorPage* next = page->next_page;
@@ -44,7 +44,7 @@ void __slab_pool_destroy(AromaSlabAllocator* pool) {
         }
         page = next;
     }
-    
+
     pool->free_list = NULL;
     pool->pages = NULL;
     memset(pool, 0, sizeof(AromaSlabAllocator));
@@ -55,7 +55,7 @@ void* __slab_pool_alloc(AromaSlabAllocator* pool) {
 
     if (!pool->free_list) {
         AromaSlabAllocatorPage* new_page = NULL;
-        
+
         for (int i = 0; i < AROMA_MAX_PAGES; i++) {
             if (!global_memory_system.page_used[i]) {
                 new_page = &global_memory_system.preallocated_pages[i];
@@ -65,7 +65,7 @@ void* __slab_pool_alloc(AromaSlabAllocator* pool) {
                 break;
             }
         }
-        
+
         if (!new_page) {
             new_page = malloc(sizeof(AromaSlabAllocatorPage));
             if (!new_page) return NULL;

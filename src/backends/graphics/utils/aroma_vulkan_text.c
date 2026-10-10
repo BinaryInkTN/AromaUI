@@ -229,7 +229,7 @@ static VulkanGlyph *vk_get_glyph(VulkanTextRenderer *renderer, uint32_t codepoin
     if (renderer->glyphCount >= VK_TEXT_MAX_GLYPHS || !renderer->face)
         return NULL;
 
-    /* Shared face: lock across load + slot consumption. */
+
     aroma_font_lock();
     FT_Error error = FT_Load_Char(renderer->face, codepoint, FT_LOAD_RENDER);
     if (error)

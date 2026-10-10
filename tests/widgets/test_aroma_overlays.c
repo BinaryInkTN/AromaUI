@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_overlays.h"
 #include "widgets/aroma_dialog.h"
@@ -79,13 +79,13 @@ static void test_dialog(void)
     s_dialog_actions = 0;
     aroma_dialog_add_action(dlg, "Cancel", on_dialog_action, NULL);
     aroma_dialog_add_action(dlg, "Delete", on_dialog_action, NULL);
-    aroma_dialog_add_action(dlg, NULL, on_dialog_action, NULL); /* guarded */
+    aroma_dialog_add_action(dlg, NULL, on_dialog_action, NULL);
     aroma_dialog_add_action(NULL, "x", on_dialog_action, NULL);
     CHECK(1, "dialog actions added safely");
 
     aroma_dialog_show(dlg);
     aroma_dialog_hide(dlg);
-    aroma_dialog_show(NULL); /* no crash */
+    aroma_dialog_show(NULL);
     aroma_dialog_hide(NULL);
     aroma_dialog_set_font(dlg, NULL);
 
@@ -108,7 +108,7 @@ static void test_tooltip(void)
     if (tip)
     {
         aroma_tooltip_set_text(tip, "Updated");
-        aroma_tooltip_set_text(tip, NULL); /* guarded? must not crash */
+        aroma_tooltip_set_text(tip, NULL);
         aroma_tooltip_show(tip, 0);
         aroma_tooltip_hide(tip);
         aroma_tooltip_set_font(tip, NULL);
@@ -138,7 +138,7 @@ static void test_snackbar(void)
         aroma_snackbar_set_action(bar, "UNDO", on_dialog_action, NULL);
         aroma_snackbar_show(bar);
         aroma_snackbar_set_font(bar, NULL);
-        /* Destroy exercises the fixed double-free path. */
+
         aroma_snackbar_destroy(bar);
     }
     aroma_snackbar_set_action(NULL, "x", NULL, NULL);
@@ -168,7 +168,7 @@ static void test_menu(void)
     aroma_menu_add_item(menu, "Open", on_dialog_action, NULL);
     aroma_menu_add_item_with_icon(menu, "Save", "save", on_dialog_action, NULL);
     aroma_menu_add_separator(menu);
-    aroma_menu_add_item(menu, NULL, NULL, NULL); /* guarded */
+    aroma_menu_add_item(menu, NULL, NULL, NULL);
     aroma_menu_add_item(NULL, "x", NULL, NULL);
     CHECK(1, "menu items added safely");
 

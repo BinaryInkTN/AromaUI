@@ -36,24 +36,24 @@ static int __create_atlas(GLES3TextRenderer* renderer)
 
     int max_size = __get_max_texture_size();
     int atlas_size = renderer->atlas_width;
-    
+
     if (atlas_size > max_size)
         atlas_size = max_size;
 
     GlyphAtlas* atlas = &renderer->atlases[renderer->atlas_count];
-    
+
     glGenTextures(1, &atlas->texture_id);
     if (atlas->texture_id == 0)
     {
         LOG_ERROR("__create_atlas: Failed to create atlas texture");
         return -1;
     }
-    
+
     glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, atlas_size, atlas_size, 
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, atlas_size, atlas_size,
                  0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
-    
+
     GLenum error = glGetError();
     if (error != GL_NO_ERROR)
     {
@@ -63,22 +63,22 @@ static int __create_atlas(GLES3TextRenderer* renderer)
         glBindTexture(GL_TEXTURE_2D, 0);
         return -1;
     }
-    
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
     glBindTexture(GL_TEXTURE_2D, 0);
-    
+
     atlas->current_x = ATLAS_PADDING;
     atlas->current_y = ATLAS_PADDING;
     atlas->row_height = 0;
     atlas->memory_used = 0;
-    
+
     int idx = renderer->atlas_count;
     renderer->atlas_count++;
-    
+
     return idx;
 }
 
@@ -88,26 +88,26 @@ int gles3_text_renderer_init(GLES3TextRenderer* renderer) {
     }
 
     memset(renderer, 0, sizeof(GLES3TextRenderer));
-    
+
     int max_size = __get_max_texture_size();
     renderer->atlas_width = ATLAS_SIZE;
     renderer->atlas_height = ATLAS_SIZE;
-    
+
     if (renderer->atlas_width > max_size)
         renderer->atlas_width = max_size;
     if (renderer->atlas_height > max_size)
         renderer->atlas_height = max_size;
-    
+
     if (__create_atlas(renderer) < 0)
     {
         LOG_ERROR("gles3_text_renderer_init: Failed to create initial atlas");
         return 0;
     }
-    
+
     if (__text_ref_count == 0) {
         glGenVertexArrays(1, &__text_vao);
         glGenBuffers(1, &__text_vbo);
-        
+
         if (__text_vao == 0 || __text_vbo == 0) {
             LOG_ERROR("gles3_text_renderer_init: Failed to create shared text VAO/VBO");
             if (__text_vao) glDeleteVertexArrays(1, &__text_vao);
@@ -117,7 +117,7 @@ int gles3_text_renderer_init(GLES3TextRenderer* renderer) {
             gles3_text_renderer_cleanup(renderer);
             return 0;
         }
-        
+
         glBindVertexArray(__text_vao);
         glBindBuffer(GL_ARRAY_BUFFER, __text_vbo);
         glBufferData(GL_ARRAY_BUFFER, MAX_BATCH_VERTICES * 4 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
@@ -127,14 +127,14 @@ int gles3_text_renderer_init(GLES3TextRenderer* renderer) {
         glBindVertexArray(0);
     }
     __text_ref_count++;
-    
+
     renderer->vao = __text_vao;
     renderer->vbo = __text_vbo;
 
     return 1;
 }
 
-static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer, 
+static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer,
                                   const unsigned char* bitmap_data,
                                   int width, int height,
                                   float* u0, float* v0, float* u1, float* v1,
@@ -150,31 +150,31 @@ static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer,
 
     int padded_width = width + ATLAS_PADDING * 2;
     int padded_height = height + ATLAS_PADDING * 2;
-    
+
     size_t padded_size = (size_t)padded_width * (size_t)padded_height;
 
     int atlas_idx = 0;
     GlyphAtlas* atlas = NULL;
-    
+
     for (atlas_idx = 0; atlas_idx < renderer->atlas_count; atlas_idx++)
     {
         atlas = &renderer->atlases[atlas_idx];
-        
+
         if (atlas->memory_used + padded_size > ATLAS_MAX_SIZE_BYTES)
             continue;
-        
+
         if (atlas->current_x + padded_width > renderer->atlas_width) {
             atlas->current_x = ATLAS_PADDING;
             atlas->current_y += atlas->row_height + ATLAS_PADDING * 2;
             atlas->row_height = 0;
         }
-        
+
         if (atlas->current_y + padded_height <= renderer->atlas_height)
             break;
-        
+
         atlas = NULL;
     }
-    
+
     if (!atlas)
     {
         atlas_idx = __create_atlas(renderer);
@@ -195,7 +195,7 @@ static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer,
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_tex_binding);
     glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    
+
     unsigned char* padded_bitmap = (unsigned char*)calloc(padded_width * padded_height, 1);
     if (!padded_bitmap) {
         LOG_ERROR("__pack_glyph_to_atlas: Failed to allocate padded buffer");
@@ -203,18 +203,18 @@ static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer,
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         return 0;
     }
-    
+
     for (int y = 0; y < height; y++) {
         memcpy(padded_bitmap + (y + ATLAS_PADDING) * padded_width + ATLAS_PADDING,
                bitmap_data + y * width, width);
     }
-    
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 
-                    atlas->current_x - ATLAS_PADDING, 
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0,
+                    atlas->current_x - ATLAS_PADDING,
                     atlas->current_y - ATLAS_PADDING,
                     padded_width, padded_height,
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, padded_bitmap);
-    
+
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
         LOG_ERROR("__pack_glyph_to_atlas: glTexSubImage2D failed (0x%X)", error);
@@ -223,9 +223,9 @@ static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer,
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         return 0;
     }
-    
+
     free(padded_bitmap);
-    
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     glBindTexture(GL_TEXTURE_2D, (GLuint)prev_tex_binding);
 
@@ -233,7 +233,7 @@ static int __pack_glyph_to_atlas(GLES3TextRenderer* renderer,
     if (height > atlas->row_height) {
         atlas->row_height = height;
     }
-    
+
     atlas->memory_used += padded_size;
     *out_atlas_index = atlas_idx;
 
@@ -251,9 +251,9 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
         return;
     }
 
-    /* The face is shared with worker threads measuring labels: hold the
-     * process-wide face lock across load + slot reads (and the atlas
-     * packing that consumes the face-owned bitmap buffer). */
+
+
+
     aroma_font_lock();
     FT_Error error = FT_Load_Char(face, 'M', FT_LOAD_RENDER);
     if (error) {
@@ -269,20 +269,20 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
     renderer->font_height = renderer->ascender;
     renderer->glyph_count = 0;
     renderer->has_kerning = FT_HAS_KERNING(face);
-    
+
     for (int i = 0; i < renderer->atlas_count; i++)
     {
         GlyphAtlas* atlas = &renderer->atlases[i];
         glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
-        /* Resetting an atlas means "give this texture fresh, undefined/zeroed
-         * storage again" — that's glTexImage2D's job, and it's the only one
-         * of the two calls that accepts NULL for the pixels argument.
-         * glTexSubImage2D always requires a real source buffer; passing NULL
-         * here previously triggered "INVALID_VALUE: texSubImage2D: no pixels"
-         * on every font load and left every atlas's prior contents in place
-         * (the call was rejected before touching the texture), so glyphs
-         * packed into a "reset" atlas were silently drawn over stale data
-         * from the last time this atlas slot was used. */
+
+
+
+
+
+
+
+
+
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, renderer->atlas_width, renderer->atlas_height,
                      0, GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
         atlas->current_x = ATLAS_PADDING;
@@ -325,7 +325,7 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
             .atlas_index = 0
         };
 
-        if (!__pack_glyph_to_atlas(renderer, 
+        if (!__pack_glyph_to_atlas(renderer,
                                    g->bitmap.buffer,
                                    glyph.width, glyph.height,
                                    &glyph.tex_u0, &glyph.tex_v0,
@@ -382,7 +382,7 @@ static GLES3Glyph* __get_glyph(GLES3TextRenderer* renderer, uint32_t codepoint) 
     };
 
     if (g->bitmap.width > 0 && g->bitmap.rows > 0) {
-        if (!__pack_glyph_to_atlas(renderer, 
+        if (!__pack_glyph_to_atlas(renderer,
                                    g->bitmap.buffer,
                                    glyph.width, glyph.height,
                                    &glyph.tex_u0, &glyph.tex_v0,
@@ -407,7 +407,7 @@ static int __get_kerning(GLES3TextRenderer* renderer, uint32_t left, uint32_t ri
 {
     if (!renderer || !renderer->face || !renderer->has_kerning)
         return 0;
-    
+
     FT_Vector kerning;
     aroma_font_lock();
     FT_UInt left_index = FT_Get_Char_Index(renderer->face, left);
@@ -430,7 +430,7 @@ static int __get_kerning(GLES3TextRenderer* renderer, uint32_t left, uint32_t ri
 
 static uint32_t __utf8_next(const char** p) {
     if (!p || !*p) return 0;
-    
+
     const unsigned char* s = (const unsigned char*)*p;
     uint32_t c = *s;
     if (c == 0) return 0;
@@ -494,7 +494,7 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
         return;
     }
     platform->get_window_size(window_id, &window_width, &window_height);
-    
+
     if (window_width <= 0 || window_height <= 0) {
         LOG_ERROR("gles3_text_render_text: Invalid window dimensions");
         return;
@@ -540,7 +540,7 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
         glBindVertexArray(0);
         return;
     }
-    
+
     int batch_count = 0;
     float current_x = x;
     int current_atlas = -1;
@@ -575,7 +575,7 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
                 glDrawArrays(GL_TRIANGLES, 0, batch_count * 6);
                 batch_count = 0;
             }
-            
+
             if (g->atlas_index != current_atlas)
             {
                 current_atlas = g->atlas_index;
@@ -592,37 +592,37 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
         float h = (float)g->height * scale;
 
         int base = batch_count * 6 * 4;
-        
+
         batch_vertices[base + 0] = x_pos;
         batch_vertices[base + 1] = y_pos;
         batch_vertices[base + 2] = g->tex_u0;
         batch_vertices[base + 3] = g->tex_v0;
-        
+
         batch_vertices[base + 4] = x_pos;
         batch_vertices[base + 5] = y_pos + h;
         batch_vertices[base + 6] = g->tex_u0;
         batch_vertices[base + 7] = g->tex_v1;
-        
+
         batch_vertices[base + 8] = x_pos + w;
         batch_vertices[base + 9] = y_pos + h;
         batch_vertices[base + 10] = g->tex_u1;
         batch_vertices[base + 11] = g->tex_v1;
-        
+
         batch_vertices[base + 12] = x_pos;
         batch_vertices[base + 13] = y_pos;
         batch_vertices[base + 14] = g->tex_u0;
         batch_vertices[base + 15] = g->tex_v0;
-        
+
         batch_vertices[base + 16] = x_pos + w;
         batch_vertices[base + 17] = y_pos + h;
         batch_vertices[base + 18] = g->tex_u1;
         batch_vertices[base + 19] = g->tex_v1;
-        
+
         batch_vertices[base + 20] = x_pos + w;
         batch_vertices[base + 21] = y_pos;
         batch_vertices[base + 22] = g->tex_u1;
         batch_vertices[base + 23] = g->tex_v0;
-        
+
         batch_count++;
         current_x += (float)g->advance * scale;
     }
@@ -707,7 +707,7 @@ void gles3_text_renderer_cleanup(GLES3TextRenderer* renderer) {
     renderer->vao = 0;
     renderer->vbo = 0;
     renderer->atlas_count = 0;
-    
+
     __text_ref_count--;
     if (__text_ref_count == 0) {
         if (__text_vao) {

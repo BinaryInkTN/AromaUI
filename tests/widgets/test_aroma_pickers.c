@@ -118,12 +118,12 @@ static void test_popup_mode(void)
     CHECK(!aroma_timepicker_is_popup_open(tp), "tp popup closed by default");
     CHECK(!aroma_timepicker_is_popup_open(NULL), "tp popup NULL-safe");
 
-    /* Popup-only widgets open straight away, no mode flag needed. */
+
     aroma_calendar_set_popup(c, true);
     aroma_datepicker_set_popup(dp, true);
     aroma_calendar_open_popup(c);
     CHECK(aroma_calendar_is_popup_open(c), "cal popup opens");
-    /* Opening another picker closes the first: popups are exclusive. */
+
     aroma_datepicker_open_popup(dp);
     CHECK(!aroma_calendar_is_popup_open(c), "cal popup exclusive");
     CHECK(aroma_datepicker_is_popup_open(dp), "dp popup opens");
@@ -151,7 +151,7 @@ static void test_popup_mode(void)
     CHECK(!aroma_datepicker_is_popup_open(dp), "dp close-all works");
     CHECK(!aroma_timepicker_is_popup_open(tp), "tp close-all works");
 
-    /* Popup draw paths run headless. */
+
     aroma_calendar_draw(c, 9999);
     aroma_datepicker_draw(dp, 9999);
     aroma_timepicker_draw(tp, 9999);
@@ -200,7 +200,7 @@ static void test_datepicker_confirm(void)
     AromaNode *dp = aroma_datepicker_create(root, 0, 0, 340, 360, 2026, 6,
                                             15);
     CHECK(dp != NULL, "datepicker creates for confirm tests");
-    /* set_date writes confirmed + pending together. */
+
     aroma_datepicker_set_date(dp, 2025, 12, 25);
     int y = 0, m = 0, d = 0;
     aroma_datepicker_get_date(dp, &y, &m, &d);

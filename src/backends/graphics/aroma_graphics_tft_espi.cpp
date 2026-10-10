@@ -28,8 +28,8 @@ typedef struct {
 #define MAX_IMAGES 8
 
 typedef struct {
-    uint16_t* data;     
-    unsigned long len;  
+    uint16_t* data;
+    unsigned long len;
 } ImageSlot;
 
 static ImageSlot g_images[MAX_IMAGES] = {0};
@@ -41,7 +41,7 @@ static int find_free_slot() {
     for (int i = 0; i < MAX_IMAGES; i++) {
         if (g_images[i].data == NULL) return i;
     }
-    return -1; 
+    return -1;
 }
 
 void graphics_set_clip(int x, int y, int w, int h) {
@@ -84,7 +84,7 @@ void clear(size_t window_id, uint32_t color) {
     if(platform && platform->set_clear_color) {
         platform->set_clear_color(c);
     }
-   
+
 }
 
 void fill_rectangle(size_t window_id, int x, int y, int w, int h,
@@ -92,12 +92,12 @@ void fill_rectangle(size_t window_id, int x, int y, int w, int h,
     if (window_id != 0 || !g_tft) return;
     uint16_t c = RGB888_TO_565(color);
     int r = (int)radius;
-                        
+
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if(platform && platform->tft_mark_tiles_dirty) {
         platform->tft_mark_tiles_dirty(y, h);
     }
-       
+
 
 
     if (USING_SPRITE()) {
@@ -121,13 +121,13 @@ void draw_hollow_rectangle(size_t window_id,
                            bool rounded,
                            float cornerRadius) {
     if (window_id != 0 || !g_tft) return;
-    
+
     uint16_t c = RGB888_TO_565(color);
     int r = (int)cornerRadius;
 
     for (int i = 0; i < border_width; i++) {
         if (USING_SPRITE()) {
-                
+
 
             int sx = x - g_clip.x;
             int sy = y - g_clip.y;
@@ -156,11 +156,11 @@ void draw_arc(size_t window_id, int cx, int cy, int r,
 
     AromaPlatformInterface* platform = aroma_backend_abi.get_platform_interface();
     if(platform && platform->tft_mark_tiles_dirty)
-        platform->tft_mark_tiles_dirty(cy, r*2); //TODO: better estimate
+        platform->tft_mark_tiles_dirty(cy, r*2);
 
 
     if (USING_SPRITE()) {
-     
+
 
                         int sx = cx - g_clip.x;
                         int sy = cy - g_clip.y;
@@ -234,16 +234,16 @@ float measure_text(size_t window_id, AromaFont* font,
 
 unsigned int load_image(const char* image_path) { (void)image_path; return 0; }
 unsigned int load_image_from_rgba(unsigned char* data, int width, int height) {
-    return 0; // Not supported directly in TFT without format conversion
+    return 0;
 }
 
 unsigned int load_image_from_memory(const uint16_t* data, unsigned long len) {
     int slot = find_free_slot();
-    if (slot < 0) return 0; 
+    if (slot < 0) return 0;
 
     g_images[slot].data = (uint16_t*)data;
-    g_images[slot].len = len;  
-    return slot + 1; 
+    g_images[slot].len = len;
+    return slot + 1;
 }
 void unload_image(unsigned int texture_id) {
     if (texture_id == 0 || texture_id > MAX_IMAGES) return;
@@ -258,7 +258,7 @@ void draw_image(size_t window_id, int x, int y,
 }
 bool get_image_size(unsigned int texture_id, int *width, int *height) {
     (void)texture_id; (void)width; (void)height;
-    /* TFT slots hold raw RGB565 blobs without dimensions. */
+
     return false;
 }
 void draw_image_uv(size_t window_id, int x, int y,
@@ -272,7 +272,7 @@ void draw_image_uv(size_t window_id, int x, int y,
     int slot = texture_id - 1;
     if (!g_images[slot].data) return;
 
-    int img_pixels = g_images[slot].len / 2; 
+    int img_pixels = g_images[slot].len / 2;
     int src_width = width;
     int src_height = height;
 

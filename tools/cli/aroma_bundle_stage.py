@@ -116,8 +116,8 @@ def ldd_shared_libs(binary: str) -> List[str]:
     return libs
 
 
-# Host-provided libs that must NOT be bundled (AppImage/linuxdeploy practice).
-# Bundling libc/ld-linux breaks portability; deb/rpm cover them via Depends.
+
+
 _SYSTEM_LIB_RES = [
     re.compile(p) for p in (
         r'^ld-linux.*\.so.*',

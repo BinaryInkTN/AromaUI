@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_3dviewer.h"
 #include "widgets/aroma_3d_viewer.h"
@@ -76,8 +76,8 @@ static void test_viewer_basics(void)
     CHECK(aroma_3d_viewer_get_interactive(viewer) == false, "viewer toggles interactive off");
     aroma_3d_viewer_set_interactive(viewer, true);
     CHECK(aroma_3d_viewer_get_interactive(viewer) == true, "viewer toggles interactive on");
-    aroma_3d_viewer_set_interactive(NULL, true); /* no crash */
-    aroma_3d_viewer_set_model(NULL, NULL);       /* no crash */
+    aroma_3d_viewer_set_interactive(NULL, true);
+    aroma_3d_viewer_set_model(NULL, NULL);
 
     __destroy_node(root);
     __node_system_destroy();
@@ -172,9 +172,9 @@ static void test_auto_rotate_timer(void)
         return;
     }
 
-    /* Rotation is timer-driven: it must keep spinning with no animation
-       or other dirty source active (regression: it used to stop ~700ms
-       after load when the entrance fade ended). */
+
+
+
     aroma_3d_viewer_set_auto_rotate(viewer, true);
     float t0 = viewer_theta(viewer);
     float t1 = t0, t2 = t0, t3 = t0;

@@ -14,12 +14,12 @@
 #include "aroma_android.h"
 #endif
 
-/* Material TimePicker clock dial, inline: header (title + HH:MM headline
- * with tappable hour/minute + AM/PM column), circular dial with numbers,
- * drag-to-select hand, Cancel/OK footer. Taps and drags edit a pending
- * time (header previews it); OK confirms and fires on_change, Cancel
- * reverts. 24h mode shows the AOSP outer (00,13-23) + inner (1-12) rings
- * and hides AM/PM. All touch targets >= 48dp, taps slop-guarded. */
+
+
+
+
+
+
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -79,9 +79,9 @@ struct AromaTimePicker {
     int down_y;
     bool dial_armed;
     int pressed_foot;
-    /* Popup-only widget: the in-tree rect is a compact time field;
-     * tapping it opens a modal floating panel (popup_rect, screen
-     * space) with the full dial UI. */
+
+
+
     bool popup_open;
     bool drawing_popup;
     bool in_popup_event;
@@ -101,7 +101,7 @@ static void tp_adjust(AromaEvent *e, int *x, int *y)
     AromaNode *t = e->target_node;
     AromaTimePicker *self =
         t ? (AromaTimePicker *)t->node_widget_ptr : NULL;
-    /* Popup panels live in screen space; never compensate scrolling. */
+
     if (self && self->in_popup_event)
         return;
     AromaNode *cur = e->target_node->parent_node;
@@ -116,7 +116,7 @@ static void tp_adjust(AromaEvent *e, int *x, int *y)
     }
 }
 
-/* Dial circle geometry. */
+
 static void tp_dial_geom(AromaTimePicker *t, int *cx, int *cy, int *r)
 {
     int top = t->rect.y + tdp(TP_HEADER_H_DP);
@@ -183,7 +183,7 @@ static TpZone tp_zone(AromaTimePicker *t, int x, int y)
     return TP_NONE;
 }
 
-/* Map a dial touch point to a pending hour/minute. */
+
 static void tp_from_point(AromaTimePicker *t, int x, int y)
 {
     int cx, cy, r;
@@ -217,7 +217,7 @@ static void tp_from_point(AromaTimePicker *t, int x, int y)
     }
 }
 
-/* Selected value position on the dial. */
+
 static void tp_sel_pos(AromaTimePicker *t, int cx, int cy, int r, int *sx,
                        int *sy)
 {
@@ -249,7 +249,7 @@ static void tp_fire(AromaNode *n, AromaTimePicker *t)
         t->on_change(n, t->hour, t->minute, t->user_data);
 }
 
-/* Defined with the popup machinery below; OK/Cancel dismiss the panel. */
+
 void aroma_timepicker_close_popup(AromaNode *n);
 
 static void tp_apply_zone(AromaNode *node, AromaTimePicker *t, TpZone z)
@@ -285,7 +285,7 @@ static void tp_apply_zone(AromaNode *node, AromaTimePicker *t, TpZone z)
     }
 }
 
-/* Defined below; the popup dispatcher delegates panel interaction. */
+
 static bool tp_handle_inner(AromaEvent *e, void *ud);
 
 #define TP_POPUP_MAX 8
@@ -300,7 +300,7 @@ typedef struct {
 static TimePickerOverlayEntry g_tp_overlays[TP_POPUP_MAX];
 static size_t g_tp_overlay_count = 0;
 
-/* Cross-widget popup exclusivity (defined in aroma_calendar.c). */
+
 void aroma_calendar_close_popups(void);
 void aroma_datepicker_close_popups(void);
 
@@ -334,8 +334,8 @@ static void tp_overlay_unregister(AromaNode *node)
     }
 }
 
-/* Field rect in screen coordinates (scroll-compensated). False when the
- * field is scrolled out of every viewport. */
+
+
 static bool tp_field_screen(AromaNode *node, AromaTimePicker *t,
                             AromaRect *out)
 {
@@ -362,8 +362,8 @@ static bool tp_field_screen(AromaNode *node, AromaTimePicker *t,
     return true;
 }
 
-/* Anchor the panel below the field, flipping above when there is no
- * room, and clamping horizontally into the window. */
+
+
 static bool tp_compute_popup(AromaNode *node, AromaTimePicker *t)
 {
     AromaRect field;
@@ -462,9 +462,9 @@ void aroma_timepicker_close_popups(void)
     }
 }
 
-/* Outer dispatcher: routes field taps (open), popup taps (interact via
- * rect-swapped inner handler in screen space) and outside taps
- * (dismiss). */
+
+
+
 static bool tp_handle(AromaEvent *e, void *ud)
 {
     if (!e || !e->target_node)
@@ -491,7 +491,7 @@ static bool tp_handle(AromaEvent *e, void *ud)
             return false;
         }
     }
-    /* Popup open: everything is modal in raw screen coordinates. */
+
     int x = e->data.mouse.x;
     int y = e->data.mouse.y;
     if (e->event_type == EVENT_TYPE_TOUCH_DOWN ||
@@ -802,7 +802,7 @@ bool aroma_timepicker_setup_events(AromaNode *n, void (*on_redraw)(void *),
     return true;
 }
 
-/* "02:30 PM" headline for the confirmed time (field + panel). */
+
 static void tp_field_text(AromaTimePicker *t, char *out, size_t n)
 {
     if (t->use_24h) {
@@ -814,7 +814,7 @@ static void tp_field_text(AromaTimePicker *t, char *out, size_t n)
     }
 }
 
-/* Compact in-tree field for popup mode: formatted time + clock glyph. */
+
 static void tp_draw_field(AromaNode *node, AromaTimePicker *t,
                           size_t window_id, AromaGraphicsInterface *gfx)
 {
@@ -827,7 +827,7 @@ static void tp_draw_field(AromaNode *node, AromaTimePicker *t,
                                   aroma_font_get_line_height(t->font)) /
                                      2,
                      t->text_color, 1.0f);
-    /* Clock glyph: outline ring + two hands. */
+
     int gx = t->rect.x + t->rect.width - pad - glyph;
     int gy = t->rect.y + (t->rect.height - glyph) / 2;
     if (gfx->draw_hollow_rectangle)
@@ -956,9 +956,9 @@ void aroma_timepicker_draw(AromaNode *node, size_t window_id)
     uint32_t dial_bg = aroma_color_blend(t->bg_color, t->text_color, 0.05f);
     gfx->fill_rectangle(window_id, cx - r, cy - r, 2 * r, 2 * r, dial_bg,
                         true, (float)r);
-    /* Full-circle outline via a hollow rounded rect (a radius == half
-     * the side renders as a ring); draw_arc's angle convention only
-     * covers partial sweeps reliably. */
+
+
+
     int ring_w = tdp(2);
     if (ring_w < 1)
         ring_w = 1;
@@ -1170,8 +1170,8 @@ bool aroma_timepicker_overlay_hit_test(int x, int y, AromaNode **out_node)
         AromaTimePicker *t = (AromaTimePicker *)node->node_widget_ptr;
         if (!t->popup_open)
             continue;
-        /* Modal popup: every tap routes to the picker (inside interacts,
-         * outside dismisses). */
+
+
         (void)x;
         (void)y;
         if (out_node)

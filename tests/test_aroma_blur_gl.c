@@ -1,15 +1,15 @@
-/* Headless functional tests for frosted-glass backdrop blur (GLES3).
- *
- * Renders real frames on an EGL pbuffer (Mesa software GL is fine) and
- * reads pixels back to verify:
- *   1. blur works on the very first frame (snapshot capture path),
- *   2. the blur is smooth (no harsh banding),
- *   3. stacked glass shares one backdrop snapshot (upper glass does not
- *      re-blur the glass below it).
- *
- * Prints SKIP and exits 0 when no EGL display is available, so constrained
- * CI machines still pass.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
@@ -43,7 +43,7 @@ static int s_failed = 0;
         }                                                              \
     } while (0)
 
-/* --- minimal platform stub: the GLES3 backend only needs context + size. */
+
 static void stub_make_current(size_t window_id)
 {
     (void)window_id;
@@ -71,7 +71,7 @@ static int egl_setup(void)
     typedef EGLDisplay (*GetPlatformDisplayFn)(EGLenum, void *, const EGLint *);
     GetPlatformDisplayFn get_platform =
         (GetPlatformDisplayFn)eglGetProcAddress("eglGetPlatformDisplay");
-    /* EGL_PLATFORM_SURFACELESS_MESA = 0x31DD */
+
     if (get_platform)
         s_display = get_platform(0x31DD, EGL_DEFAULT_DISPLAY, NULL);
     if (s_display == EGL_NO_DISPLAY)
@@ -130,7 +130,7 @@ static void egl_teardown(void)
     }
 }
 
-/* Sharp black/white backdrop with a vertical edge at x=128. */
+
 static void draw_edge_backdrop(AromaGraphicsInterface *gfx)
 {
     gfx->clear(0, 0xFF202020);
@@ -143,7 +143,7 @@ static void read_pixels(unsigned char *out)
     glReadPixels(0, 0, WIN_W, WIN_H, GL_RGBA, GL_UNSIGNED_BYTE, out);
 }
 
-/* UI (top-left origin) -> teardown buffer index (GL bottom-up). */
+
 static unsigned char px_at(const unsigned char *buf, int ux, int uy)
 {
     int row = WIN_H - 1 - uy;
@@ -154,7 +154,7 @@ static void test_first_frame_blur(void)
 {
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     draw_edge_backdrop(gfx);
-    /* Blur straddling the edge, issued on the very first rendered frame. */
+
     gfx->blur_backdrop(0, 96, 64, 64, 128, 16.0f, 0.0f);
     gfx->graphics_flush();
 
@@ -168,7 +168,7 @@ static void test_first_frame_blur(void)
     CHECK(far_right < 15, "first-frame: far from edge stays black");
     CHECK(edge > 40 && edge < 215, "first-frame: edge pixel blended");
 
-    /* Smoothness: no harsh steps across the transition. */
+
     int max_step = 0;
     int prev = px_at(buf, 108, 128);
     for (int x = 109; x <= 148; x++)
@@ -198,16 +198,16 @@ static void test_stacked_glass_shares_backdrop(void)
     unsigned char stacked[64 * 128];
     unsigned char *buf = malloc(WIN_W * WIN_H * 4);
 
-    /* Reference: single blur over a pristine backdrop. */
+
     draw_edge_backdrop(gfx);
     gfx->blur_backdrop(0, 96, 64, 64, 128, 16.0f, 0.0f);
     gfx->graphics_flush();
     read_pixels(buf);
     read_region(buf, 96, 64, 64, 128, ref);
 
-    /* Stacked: a lower glass pass first, then the same region again. With a
-     * shared per-frame snapshot both sample the identical backdrop, so the
-     * second pass must match the reference (no double-blur darkening). */
+
+
+
     draw_edge_backdrop(gfx);
     gfx->blur_backdrop(0, 64, 64, 64, 128, 16.0f, 0.0f);
     gfx->blur_backdrop(0, 96, 64, 64, 128, 16.0f, 0.0f);

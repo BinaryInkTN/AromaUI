@@ -5,9 +5,9 @@
 #include <math.h>
 #include <string.h>
 
-/* 2021-03-21 Camilla Löwy <elmindreda@elmindreda.org>
- * - Replaced double constants with float equivalents
- */
+
+
+
 
 #ifdef LINMATH_NO_INLINE
 #define LINMATH_H_FUNC static
@@ -134,8 +134,8 @@ LINMATH_H_FUNC void mat4x4_col(vec4 r, mat4x4 const M, int i)
 }
 LINMATH_H_FUNC void mat4x4_transpose(mat4x4 M, mat4x4 const N)
 {
-    // Note: if M and N are the same, the user has to
-    // explicitly make a copy of M and set it to N.
+
+
 	int i, j;
 	for(j=0; j<4; ++j)
 		for(i=0; i<4; ++i)
@@ -297,7 +297,7 @@ LINMATH_H_FUNC void mat4x4_invert(mat4x4 T, mat4x4 const M)
 	c[4] = M[2][1]*M[3][3] - M[3][1]*M[2][3];
 	c[5] = M[2][2]*M[3][3] - M[3][2]*M[2][3];
 
-	/* Assumes it is invertible */
+
 	float idet = 1.0f/( s[0]*c[5]-s[1]*c[4]+s[2]*c[3]+s[3]*c[2]-s[4]*c[1]+s[5]*c[0] );
 
 	T[0][0] = ( M[1][1] * c[5] - M[1][2] * c[4] + M[1][3] * c[3]) * idet;
@@ -377,8 +377,8 @@ LINMATH_H_FUNC void mat4x4_ortho(mat4x4 M, float l, float r, float b, float t, f
 }
 LINMATH_H_FUNC void mat4x4_perspective(mat4x4 m, float y_fov, float aspect, float n, float f)
 {
-	/* NOTE: Degrees are an unhandy unit to work with.
-	 * linmath.h uses radians for everything! */
+
+
 	float const a = 1.f / tanf(y_fov / 2.f);
 
 	m[0][0] = a / aspect;
@@ -403,12 +403,12 @@ LINMATH_H_FUNC void mat4x4_perspective(mat4x4 m, float y_fov, float aspect, floa
 }
 LINMATH_H_FUNC void mat4x4_look_at(mat4x4 m, vec3 const eye, vec3 const center, vec3 const up)
 {
-	/* Adapted from Android's OpenGL Matrix.java.                        */
-	/* See the OpenGL GLUT documentation for gluLookAt for a description */
-	/* of the algorithm. We implement it in a straightforward way:       */
 
-	/* TODO: The negation of of can be spared by swapping the order of
-	 *       operands in the following cross products in the right way. */
+
+
+
+
+
 	vec3 f;
 	vec3_sub(f, center, eye);
 	vec3_norm(f, f);
@@ -482,11 +482,11 @@ LINMATH_H_FUNC void quat_rotate(quat r, float angle, vec3 const axis) {
 }
 LINMATH_H_FUNC void quat_mul_vec3(vec3 r, quat const q, vec3 const v)
 {
-/*
- * Method by Fabian 'ryg' Giessen (of Farbrausch)
-t = 2 * cross(q.xyz, v)
-v' = v + q.w * t + cross(q.xyz, t)
- */
+
+
+
+
+
 	vec3 t;
 	vec3 q_xyz = {q[0], q[1], q[2]};
 	vec3 u = {q[0], q[1], q[2]};
@@ -532,8 +532,8 @@ LINMATH_H_FUNC void mat4x4_from_quat(mat4x4 M, quat const q)
 
 LINMATH_H_FUNC void mat4x4o_mul_quat(mat4x4 R, mat4x4 const M, quat const q)
 {
-/*  XXX: The way this is written only works for orthogonal matrices. */
-/* TODO: Take care of non-orthogonal case. */
+
+
 	quat_mul_vec3(R[0], q, M[0]);
 	quat_mul_vec3(R[1], q, M[1]);
 	quat_mul_vec3(R[2], q, M[2]);
@@ -542,7 +542,7 @@ LINMATH_H_FUNC void mat4x4o_mul_quat(mat4x4 R, mat4x4 const M, quat const q)
 	R[0][3] = M[0][3];
 	R[1][3] = M[1][3];
 	R[2][3] = M[2][3];
-	R[3][3] = M[3][3];  // typically 1.0, but here we make it general
+	R[3][3] = M[3][3];
 }
 LINMATH_H_FUNC void quat_from_mat4x4(quat q, mat4x4 const M)
 {

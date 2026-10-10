@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_selection.h"
 #include "widgets/aroma_tabs.h"
@@ -69,13 +69,13 @@ static void test_tabs(void)
 
     aroma_tabs_set_selected(tabs, 2);
     CHECK(aroma_tabs_get_selected(tabs) == 2, "tabs select third");
-    aroma_tabs_set_selected(tabs, 2); /* idempotent */
+    aroma_tabs_set_selected(tabs, 2);
     CHECK(aroma_tabs_get_selected(tabs) == 2, "tabs reselect stable");
     aroma_tabs_set_selected(tabs, 99);
     CHECK(aroma_tabs_get_selected(tabs) == 2, "tabs ignore overflow index");
     aroma_tabs_set_selected(tabs, -1);
     CHECK(aroma_tabs_get_selected(tabs) == 2, "tabs ignore negative index");
-    aroma_tabs_set_selected(NULL, 1); /* no crash */
+    aroma_tabs_set_selected(NULL, 1);
     aroma_tabs_set_on_change(tabs, NULL, NULL);
     aroma_tabs_set_transition(tabs, 0, 300);
     aroma_tabs_set_font(tabs, NULL);
@@ -105,7 +105,7 @@ static void test_sidebar(void)
     CHECK(aroma_sidebar_get_selected(bar) == 1, "sidebar selects second");
     aroma_sidebar_set_selected(bar, 7);
     CHECK(aroma_sidebar_get_selected(bar) == 1, "sidebar ignores overflow");
-    aroma_sidebar_set_selected(NULL, 0); /* no crash */
+    aroma_sidebar_set_selected(NULL, 0);
     CHECK(aroma_sidebar_get_selected(NULL) == -1, "sidebar get NULL returns -1");
     aroma_sidebar_set_on_select(bar, NULL, NULL);
     aroma_sidebar_set_retracted(bar, true);
@@ -149,14 +149,14 @@ static void test_listview(void)
     CHECK(aroma_listview_get_item_data(list, 99) == NULL,
           "listview out-of-range data NULL");
 
-    aroma_listview_add_item(NULL, "x", NULL, NULL); /* no crash */
-    aroma_listview_add_item(list, NULL, NULL, NULL); /* guarded */
+    aroma_listview_add_item(NULL, "x", NULL, NULL);
+    aroma_listview_add_item(list, NULL, NULL, NULL);
     CHECK(aroma_listview_get_count(list) == 5, "NULL item not added");
 
     aroma_listview_clear(list);
     CHECK(aroma_listview_get_count(list) == 0, "listview clear empties");
     CHECK(aroma_listview_get_count(NULL) == 0, "count NULL-safe");
-    aroma_listview_clear(NULL); /* no crash */
+    aroma_listview_clear(NULL);
     aroma_listview_set_callback(list, NULL, NULL);
 
     aroma_listview_destroy(NULL);

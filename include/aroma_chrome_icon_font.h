@@ -1,20 +1,20 @@
 #ifndef AROMA_CHROME_ICON_FONT_H
 #define AROMA_CHROME_ICON_FONT_H
 
-/**
- * @file aroma_chrome_icon_font.h
- * @brief Subset Material Icons font for app-drawer chrome.
- *
- * Contains only the glyphs used by the app-drawer header controls:
- *   U+E5CD (CLOSE / AROMA_ICON_CLOSE),
- *   U+E8EF (VIEW_LIST / AROMA_ICON_VIEW_LIST),
- *   U+E8F0 (VIEW_MODULE / AROMA_ICON_VIEW_MODULE).
- *
- * Subsetted from the full Material Icons font (icon_ttf, ~349KB)
- * down to ~1.2KB. Grid tiles keep using the full drawer_icon_font
- * (56px); header buttons (40px) use this subset at 28px so the
- * glyph fits inside the button instead of overflowing.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,4 +130,4 @@ static const unsigned int chrome_icon_ttf_len = 1240;
 }
 #endif
 
-#endif // AROMA_CHROME_ICON_FONT_H
+#endif

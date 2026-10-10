@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_forms.h"
 #include "widgets/aroma_textbox.h"
@@ -71,10 +71,10 @@ static void test_textbox(void)
     aroma_textbox_set_text(tb, "Hello");
     CHECK(strcmp(aroma_textbox_get_text(tb), "Hello") == 0,
           "textbox text roundtrips");
-    aroma_textbox_set_text(tb, NULL); /* ignored */
+    aroma_textbox_set_text(tb, NULL);
     CHECK(strcmp(aroma_textbox_get_text(tb), "Hello") == 0,
           "textbox NULL set keeps text");
-    aroma_textbox_set_text(NULL, "x"); /* no crash */
+    aroma_textbox_set_text(NULL, "x");
 
     aroma_textbox_set_placeholder(tb, "Type here");
     aroma_textbox_set_placeholder(tb, NULL);
@@ -110,7 +110,7 @@ static void test_dropdown(void)
     aroma_dropdown_add_option(dd, "Red");
     aroma_dropdown_add_option(dd, "Green");
     aroma_dropdown_add_option(dd, "Blue");
-    aroma_dropdown_add_option(dd, NULL); /* guarded */
+    aroma_dropdown_add_option(dd, NULL);
     aroma_dropdown_add_option(NULL, "x");
     CHECK(1, "dropdown options added safely");
 
@@ -127,9 +127,9 @@ static void test_dropdown(void)
     CHECK(priv->max_visible_rows == 2, "row cap configurable");
     aroma_dropdown_set_max_visible_rows(dd, 0);
     CHECK(priv->max_visible_rows == 0, "row cap removable");
-    aroma_dropdown_set_max_visible_rows(NULL, 3); /* guarded */
+    aroma_dropdown_set_max_visible_rows(NULL, 3);
 
-    /* Destroy unregisters the overlay: later hit tests must not touch it. */
+
     aroma_dropdown_destroy(dd);
     aroma_dropdown_destroy(NULL);
 

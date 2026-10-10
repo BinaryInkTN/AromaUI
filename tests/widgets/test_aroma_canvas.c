@@ -1,23 +1,23 @@
-/*
- Copyright (c) 2026 BinaryInkTN
 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- the Software, and to permit persons to whom the Software is furnished to do so,
- subject to the following conditions:
 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "test_aroma_canvas.h"
 #include "widgets/aroma_canvas.h"
@@ -62,7 +62,7 @@ static void test_canvas_record(void)
         return;
     }
 
-    /* Ops only record; nothing renders until draw (which needs GL). */
+
     aroma_canvas_draw_rect(cv, 10, 10, 100, 60, 8, true, 0xFFFF0000);
     aroma_canvas_draw_circle(cv, 50, 50, 20, 0xFF00FF00);
     aroma_canvas_draw_line(cv, 0, 0, 199, 199, 0xFF0000FF, 2);
@@ -71,7 +71,7 @@ static void test_canvas_record(void)
     aroma_canvas_clear(cv, 0xFF202020);
     CHECK(1, "canvas ops record safely");
 
-    aroma_canvas_draw_rect(NULL, 0, 0, 1, 1, 0, false, 0); /* no crash */
+    aroma_canvas_draw_rect(NULL, 0, 0, 1, 1, 0, false, 0);
     aroma_canvas_clear(NULL, 0);
 
     __destroy_node(root);

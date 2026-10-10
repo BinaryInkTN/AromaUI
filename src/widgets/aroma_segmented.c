@@ -353,8 +353,8 @@ void aroma_segmented_draw(AromaNode* seg_node, size_t window_id)
         if (seg->font && gfx->render_text && seg->labels[i][0] != '\0') {
             uint32_t text_color = selected ? seg->text_selected_color : seg->text_color;
             int raw_w = aroma_font_get_line_width(seg->font, seg->labels[i]);
-            /* Shrink-to-fit so long labels (e.g. "All Photos") stay
-               inside their segment instead of overflowing. */
+
+
             float fit_scale = seg->text_scale;
             int avail = w - 12;
             if (raw_w > 0 && avail > 0) {

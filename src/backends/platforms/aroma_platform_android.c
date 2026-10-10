@@ -1901,11 +1901,11 @@ static void update_surface_size(void)
     g_width = w;
     g_height = h;
 
-    /* Display size / font scale can change without a process restart
-     * (configChanges covers density|screenLayout). Metrics are cached
-     * once at startup, so refresh them here: otherwise dp/sp conversions
-     * and available-dp geometry stay stale and rendering is no longer
-     * DPI aware after the change. */
+
+
+
+
+
     g_phys_cached = false;
     cache_physical_screen_info(g_app);
 
@@ -1940,10 +1940,10 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event)
         {
             if (action == AKEY_EVENT_ACTION_DOWN)
             {
-                /* NativeActivity does not finish automatically when the
-                 * native queue reports "unhandled": the app must finish
-                 * itself. Consumed presses stay in the app; unconsumed
-                 * presses finish the activity (Android default). */
+
+
+
+
                 bool consumed = aroma_ui_handle_back_press();
                 request_frame();
                 if (!consumed && app && app->activity)
@@ -1953,7 +1953,7 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event)
                 }
                 return consumed ? 1 : 0;
             }
-            /* Swallow the release; the press was already handled above. */
+
             return 1;
         }
         if (action == AKEY_EVENT_ACTION_DOWN)
@@ -2297,8 +2297,8 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
         {
             term_display_surface_only();
             init_display(app);
-            /* Surface is back: thaw animations from where they visually
-             * stopped and restart the vsync chain. */
+
+
             aroma_animation_resume_all();
             request_frame();
         }
@@ -2346,13 +2346,13 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
         request_frame();
         break;
     case APP_CMD_LOST_FOCUS:
-        /* No vsync while unfocused: freeze animation time instead of
-         * burning through durations off-screen. */
+
+
         aroma_animation_pause_all();
         break;
     case APP_CMD_TERM_WINDOW:
-        /* Surface is going away: freeze animation time so resume continues
-         * mid-flight instead of teleporting to the end state. */
+
+
         aroma_animation_pause_all();
         term_display_surface_only();
         break;
@@ -2474,12 +2474,12 @@ void get_window_size(size_t window_id, int *window_width, int *window_height)
         return;
     }
 
-    /*
-     * The native surface can include the system navigation area when the
-     * activity uses an edge-to-edge window. Layouts must use the available
-     * application area instead, while rendering still clears the complete
-     * surface so the excluded area stays blank.
-     */
+
+
+
+
+
+
     int viewport_width = 0;
     int viewport_height = 0;
     get_layout_viewport(&viewport_width, &viewport_height);

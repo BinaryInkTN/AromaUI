@@ -44,7 +44,7 @@ static void test_constant_velocity(void)
 {
     AromaVelocityTracker vt;
     aroma_velocity_reset(&vt);
-    /* 1000 px/s right, 500 px/s down. */
+
     for (int i = 0; i <= 5; i++)
         aroma_velocity_add(&vt, i * 100, i * 50, 1000 + i * 100);
     float vx = 0.0f, vy = 0.0f;
@@ -60,10 +60,10 @@ static void test_horizon_expiry(void)
     aroma_velocity_add(&vt, 0, 0, 1000);
     aroma_velocity_add(&vt, 100, 0, 1100);
     float vx = 0.0f, vy = 0.0f;
-    /* Both samples older than the 150ms horizon: no velocity. */
+
     CHECK(!aroma_velocity_get(&vt, 2000, &vx, &vy),
           "stale samples expire");
-    /* Only the newest sample in horizon: single point, no velocity. */
+
     CHECK(!aroma_velocity_get(&vt, 1200, &vx, &vy),
           "one in-horizon sample is not enough");
 }
@@ -72,14 +72,14 @@ static void test_direction_and_stop(void)
 {
     AromaVelocityTracker vt;
     aroma_velocity_reset(&vt);
-    /* Fast left flick: -2000 px/s. */
+
     for (int i = 0; i <= 4; i++)
         aroma_velocity_add(&vt, 400 - i * 100, 0, 1000 + i * 50);
     float vx = 0.0f, vy = 0.0f;
     CHECK(aroma_velocity_get(&vt, 1200, &vx, &vy), "flick velocity");
     CHECK(vx < -1500.0f, "flick direction and magnitude");
     CHECK(feq(vy, 0.0f, 0.01f), "no vertical component");
-    /* Finger holds still: new samples at same spot collapse velocity. */
+
     for (int i = 1; i <= 8; i++)
         aroma_velocity_add(&vt, 0, 0, 1200 + i * 20);
     CHECK(aroma_velocity_get(&vt, 1400, &vx, &vy), "held velocity");

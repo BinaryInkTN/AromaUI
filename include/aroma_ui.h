@@ -1,14 +1,14 @@
 #ifndef AROMA_UI_H
 #define AROMA_UI_H
 
-/**
- * @file aroma_ui.h
- * @brief Core UI definitions and functions for AromaUI.
- *
- * This file contains the main API for initializing the library,
- * creating windows, managing the event loop, and helper functions
- * to create widgets.
- */
+
+
+
+
+
+
+
+
 
 #include "aroma_common.h"
 #include "aroma_node.h"
@@ -65,21 +65,21 @@ extern "C"
     typedef struct  AromaDebugOverlay AromaDebugOverlay;
     typedef struct  AromaIcon AromaIcon;
 
-    /**
-     * @struct AromaWindowHandle
-     * @brief Internal handle for managing window state.
-     */
+
+
+
+
     typedef struct
     {
-        /** @brief Pointer to the window structure. */
+
         AromaWindow *window;
-        /** @brief Pointer to the root node of the window. */
+
         AromaNode *root_node;
-        /** @brief Unique window identifier. */
+
         size_t window_id;
-        /** @brief Whether the window is currently active. */
+
         bool is_active;
-        /** @brief Default font associated with the window. */
+
         AromaFont *default_font;
         bool needs_redraw;
     } AromaWindowHandle;
@@ -95,28 +95,28 @@ extern "C"
     extern AromaNode *g_focused_node;
     extern void aroma_graphics_load_font_for_window(size_t window_id, AromaFont *font);
 
-    /**
-     * @brief Get the currently focused node.
-     * @return Pointer to the focused node, or NULL if none.
-     */
+
+
+
+
     static inline AromaNode *aroma_ui_get_focused_node(void)
     {
         return g_focused_node;
     }
 
-    /**
-     * @brief Set the focused node.
-     * @param node Pointer to the node to focus.
-     */
+
+
+
+
     static inline void aroma_ui_set_focused_node(AromaNode *node)
     {
         g_focused_node = node;
     }
 
-    /**
-     * @brief Clear focus if the given node is focused.
-     * @param node The node to clear focus from.
-     */
+
+
+
+
     static inline void aroma_ui_clear_focused_node(AromaNode *node)
     {
         if (g_focused_node == node)
@@ -125,17 +125,17 @@ extern "C"
         }
     }
 
-    /**
-     * @brief Create an animated loading spinner.
-     * 
-     * @param parent Parent node.
-     * @param x X-coordinate relative to parent.
-     * @param y Y-coordinate relative to parent.
-     * @param radius Spinner radius in pixels.
-     * @param thickness Line thickness in pixels.
-     * @param color Spinner color in 0xAARRGGBB format.
-     * @return Pointer to the new loading spinner node.
-     */
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_loading(
         AromaNode *parent,
         int x, int y, int radius, int thickness,
@@ -144,16 +144,16 @@ extern "C"
         return aroma_loading_create(parent, x, y, radius, thickness, color);
     }
 
-    /**
-     * @brief Create an interactive map widget.
-     * 
-     * @param parent Parent node.
-     * @param x X-coordinate relative to parent.
-     * @param y Y-coordinate relative to parent.
-     * @param width Width of the map view.
-     * @param height Height of the map view.
-     * @return Pointer to the new map node.
-     */
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_map(
         AromaNode *parent,
         int x, int y, int width, int height)
@@ -173,10 +173,10 @@ extern "C"
 
     extern bool aroma_ui_init_impl(void);
 
-    /**
-     * @brief Initialize the AromaUI library.
-     * @return true if initialization was successful, false otherwise.
-     */
+
+
+
+
     static inline bool aroma_ui_init(void)
     {
         if (g_ui_initialized)
@@ -187,17 +187,17 @@ extern "C"
         return aroma_ui_init_impl();
     }
 
-    /**
-     * @brief Set the global theme for UI.
-     *
-     * Applies the theme globally, then invalidates every window and
-     * requests a redraw so the switch paints on the next frame. Widgets
-     * that cache theme-derived colors refresh themselves from the live
-     * theme on draw (see use_theme_colors), so callers never need to
-     * walk the tree manually after switching themes.
-     *
-     * @param theme Pointer to the theme structure.
-     */
+
+
+
+
+
+
+
+
+
+
+
     static inline void aroma_ui_set_theme(const AromaTheme *theme)
     {
         if (theme)
@@ -213,10 +213,10 @@ extern "C"
         }
     }
 
-    /**
-     * @brief Get the current global theme.
-     * @return The current AromaTheme structure.
-     */
+
+
+
+
     static inline AromaTheme aroma_ui_get_theme(void)
     {
         return aroma_theme_get_global();
@@ -224,9 +224,9 @@ extern "C"
 
     extern void aroma_ui_shutdown_impl(void);
 
-    /**
-     * @brief Shutdown the AromaUI library and release resources.
-     */
+
+
+
     static inline void aroma_ui_shutdown(void)
     {
         if (!g_ui_initialized)
@@ -236,10 +236,10 @@ extern "C"
 
     extern bool aroma_ui_is_running_impl(void);
 
-    /**
-     * @brief Check if the UI event loop is running.
-     * @return true if running, false if shutdown requested.
-     */
+
+
+
+
     static inline bool aroma_ui_is_running(void)
     {
         if (!g_ui_initialized)
@@ -249,12 +249,12 @@ extern "C"
 
     extern void aroma_ui_process_events_impl(void);
 
-    /**
-     * @brief Process pending events.
-     *
-     * This function handles input events, timers, and other system events.
-     * It should be called repeatedly in the main loop.
-     */
+
+
+
+
+
+
     static inline void aroma_ui_process_events(void)
     {
         if (!g_ui_initialized)
@@ -265,10 +265,10 @@ extern "C"
     extern void aroma_ui_render_impl(struct AromaWindow *window_data);
     extern void aroma_ui_render_all_windows_impl(void);
 
-    /**
-     * @brief Render a specific window.
-     * @param window Pointer to the window to render.
-     */
+
+
+
+
     static inline void aroma_ui_render(AromaWindow *window)
     {
         if (!g_ui_initialized || !window)
@@ -289,9 +289,9 @@ extern "C"
         aroma_ui_render_impl(window_data);
     }
 
-    /**
-     * @brief Render all active windows.
-     */
+
+
+
     static inline void aroma_ui_render_all(void)
     {
         if (!g_ui_initialized)
@@ -299,12 +299,12 @@ extern "C"
         aroma_ui_render_all_windows_impl();
     }
 
-    /**
-     * @brief Load a font from a file path.
-     * @param path Path to the font file (e.g. .ttf, .otf).
-     * @param size_px Font size in pixels.
-     * @return Pointer to the loaded font, or NULL on failure.
-     */
+
+
+
+
+
+
     static inline AromaFont *aroma_ui_load_font(const char *path, int size_px)
     {
         if (!path || size_px <= 0)
@@ -325,10 +325,10 @@ extern "C"
         return font;
     }
 
-    /**
-     * @brief Unload and destroy a font.
-     * @param font Pointer to the font to unload.
-     */
+
+
+
+
     static inline void aroma_ui_unload_font(AromaFont *font)
     {
         if (font)
@@ -348,14 +348,14 @@ extern "C"
     extern AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int height);
     extern void aroma_ui_open_url_impl(const char *url);
 
-    /**
-     * @brief Create a new window.
-     *
-     * @param title The window title (used by OS window manager).
-     * @param width The width of the window content area.
-     * @param height The height of the window content area.
-     * @return Pointer to the created AromaWindow, or NULL on failure.
-     */
+
+
+
+
+
+
+
+
     static inline AromaWindow *aroma_ui_create_window(const char *title, int width, int height)
     {
         if (!g_ui_initialized)
@@ -375,26 +375,26 @@ extern "C"
 
     extern void aroma_ui_destroy_window_impl(AromaWindow *window);
 
-    /**
-     * @brief Set offscreen rendering mode before creating window.
-     * @param offscreen True to enable offscreen rendering.
-     */
+
+
+
+
     extern void aroma_ui_set_offscreen_mode(bool offscreen);
     extern void aroma_ui_set_use_surfaceless(bool use_surfaceless);
 
-    /**
-     * @brief Read pixels from an offscreen window.
-     * @param window Pointer to the window.
-     * @param buffer Pre-allocated buffer to store RGBA pixels.
-     * @param width Width of the window.
-     * @param height Height of the window.
-     */
+
+
+
+
+
+
+
     extern void aroma_ui_read_pixels(AromaWindow *window, void* buffer, int width, int height);
 
-    /**
-     * @brief Destroy a window and free resources.
-     * @param window Pointer to the window to destroy.
-     */
+
+
+
+
     static inline void aroma_ui_destroy_window(AromaWindow *window)
     {
         if (!window)
@@ -402,11 +402,11 @@ extern "C"
         aroma_ui_destroy_window_impl(window);
     }
 
-    /**
-     * @brief Set the background color of a window.
-     * @param window Pointer to the window.
-     * @param color Color in 0xRRGGBB format.
-     */
+
+
+
+
+
     static inline void aroma_ui_window_set_background(AromaWindow *window, uint32_t color)
     {
         if (!window)
@@ -414,11 +414,11 @@ extern "C"
         LOG_INFO("Window background color set to 0x%06X", color);
     }
 
-    /**
-     * @brief Set window visibility.
-     * @param window Pointer to the window.
-     * @param visible true to show, false to hide.
-     */
+
+
+
+
+
     static inline void aroma_ui_window_set_visible(AromaWindow *window, bool visible)
     {
         if (!window)
@@ -426,20 +426,20 @@ extern "C"
         LOG_INFO("Window visibility set to %s", visible ? "visible" : "hidden");
     }
 
-    /**
-     * @brief Get the total number of managed windows.
-     * @return Number of windows.
-     */
+
+
+
+
     static inline int aroma_ui_window_count(void)
     {
         return g_window_count;
     }
 
-    /**
-     * @brief Get a window by index.
-     * @param index Index of the window (0 to count-1).
-     * @return Pointer to AromaWindow, or NULL if index invalid.
-     */
+
+
+
+
+
     static inline AromaWindow *aroma_ui_get_window_at(int index)
     {
         if (index < 0 || index >= g_window_count)
@@ -447,10 +447,10 @@ extern "C"
         return g_windows[index].window;
     }
 
-    /**
-     * @brief Open a URL in the default browser.
-     * @param url The URL to open.
-     */
+
+
+
+
     static inline void aroma_ui_open_url(const char *url)
     {
         if (!g_ui_initialized || !url)
@@ -465,46 +465,46 @@ extern "C"
 
     void aroma_graphics_swap_buffers(size_t window_id);
 
-    /**
-     * @enum AromaIntentAction
-     * @brief Android Intent Actions.
-     */
+
+
+
+
     typedef enum
     {
-        /** @brief android.intent.action.VIEW */
+
         AROMA_INTENT_VIEW,
-        /** @brief android.intent.action.SEND */
+
         AROMA_INTENT_SEND,
-        /** @brief android.intent.action.EDIT */
+
         AROMA_INTENT_EDIT,
-        /** @brief android.intent.action.DIAL */
+
         AROMA_INTENT_DIAL,
-        /** @brief android.intent.action.CALL */
+
         AROMA_INTENT_CALL
     } AromaIntentAction;
 
-    /**
-     * @struct AromaIntentExtra
-     * @brief Key-value pair for Intent extras.
-     */
+
+
+
+
     typedef struct
     {
-        /** @brief Extra key string. */
+
         const char *key;
-        /** @brief Extra value string. */
+
         const char *string_value;
     } AromaIntentExtra;
 
-    // Android specific: Generic Intent
-    /**
-     * @brief Send an Android Intent.
-     *
-     * @param action The intent action to perform.
-     * @param uri The data URI (e.g. "https://...", "tel:...").
-     * @param type The MIME type (optional, can be NULL).
-     * @param extras Array of extra key-value pairs (optional, can be NULL).
-     * @param extra_count Number of extras.
-     */
+
+
+
+
+
+
+
+
+
+
     static inline void aroma_ui_android_intent(AromaIntentAction action, const char *uri, const char *type, const AromaIntentExtra *extras, int extra_count)
     {
         if (!g_ui_initialized)
@@ -515,20 +515,20 @@ extern "C"
 
     void aroma_platform_set_window_update_callback(void (*callback)(size_t, void *), void *user_data);
 
-    /**
-     * @brief Helper to create a button widget.
-     *
-     * @param parent Parent node.
-     * @param text Button label text.
-     * @param x X position relative to parent.
-     * @param y Y position relative to parent.
-     * @param width Button width.
-     * @param height Button height.
-     * @param on_click Callback function for click event.
-     * @param user_data User data passed to callback.
-     * @param font Font to use for label (optional).
-     * @return Pointer to the created button node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_button(
         AromaNode *parent,
         const char *text,
@@ -555,11 +555,11 @@ extern "C"
         return btn;
     }
 
-    /**
-     * @brief Helper to create a typed button (filled, tonal, outlined, text, elevated).
-     *
-     * Same as aroma_ui_button but renders in the given Material-style type.
-     */
+
+
+
+
+
     static inline AromaNode *aroma_ui_button_with_type(
         AromaNode *parent,
         const char *text,
@@ -575,22 +575,22 @@ extern "C"
         return btn;
     }
 
-    /**
-     * @brief Helper to create a button widget with an icon.
-     *
-     * @param parent Parent node.
-     * @param text Button label text.
-     * @param x X position relative to parent.
-     * @param y Y position relative to parent.
-     * @param width Button width.
-     * @param height Button height.
-     * @param on_click Callback function for click event.
-     * @param user_data User data passed to callback.
-     * @param font Font to use for label (optional).
-     * @param icon_code Icon codepoint (e.g. AROMA_ICON_HOME).
-     * @param icon_font Font containing the icons.
-     * @return Pointer to the created button node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_button_with_icon(
         AromaNode *parent,
         const char *text,
@@ -609,17 +609,17 @@ extern "C"
         return btn;
     }
 
-    /**
-     * @brief Helper to create a label widget.
-     *
-     * @param parent Parent node.
-     * @param text Label text.
-     * @param x X position.
-     * @param y Y position.
-     * @param style Label style (e.g. LABEL_STYLE_BODY).
-     * @param font Font to use.
-     * @return Pointer to the created label node.
-     */
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_label(
         AromaNode *parent,
         const char *text,
@@ -641,9 +641,9 @@ extern "C"
         AromaNode *parent,
         int x, int y, int width, int height,
         AromaLayoutMode layout_mode,
-        AromaFlexDirection flex_dir, // Optional: AROMA_FLEX_ROW/COLUMN
-        AromaJustifyContent justify, // Optional: AROMA_JUSTIFY_...
-        AromaAlignItems align        // Optional: AROMA_ALIGN_...
+        AromaFlexDirection flex_dir,
+        AromaJustifyContent justify,
+        AromaAlignItems align
     )
     {
         AromaNode *cont = aroma_container_create(parent, x, y, width, height);
@@ -657,20 +657,20 @@ extern "C"
         return cont;
     }
 
-    /**
-     * @brief Create a scrollable container (convenience wrapper).
-     *
-     * Content size is auto-measured from children after layout.
-     * The container scrolls only when content exceeds the viewport.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Viewport width.
-     * @param height Viewport height.
-     * @param direction Scroll direction flags.
-     * @return Pointer to the new container node, or NULL on failure.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_scrollable_container(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -681,8 +681,8 @@ extern "C"
         {
             aroma_container_set_scrollable(c, true);
 
-            /* Default to column flex layout so children are positioned
-               properly instead of all landing at (0,0). */
+
+
             aroma_node_set_layout_mode(c, AROMA_LAYOUT_MODE_FLEX);
             aroma_node_set_flex_direction(c, AROMA_FLEX_COLUMN);
             aroma_node_set_justify_content(c, AROMA_JUSTIFY_START);
@@ -710,18 +710,18 @@ extern "C"
         return aroma_image_create_from_memory(parent, data, len, x, y, width, height);
     }
 
-    /**
-     * @brief Helper to create an icon widget.
-     *
-     * @param parent Parent node.
-     * @param icon_code Icon codepoint string (e.g. AROMA_ICON_HOME).
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param size Icon size (width/height).
-     * @param color Icon color.
-     * @param font Font containing the icons (e.g. Material Icons font).
-     * @return Pointer to the new icon node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_icon(
         AromaNode *parent,
         const char *icon_code,
@@ -741,20 +741,20 @@ extern "C"
         return node;
     }
 
-    /**
-     * @brief Create a checkbox helper.
-     *
-     * @param parent Parent node (usually a container or window).
-     * @param label Checkbox text label.
-     * @param x X-coordinate relative to parent.
-     * @param y Y-coordinate relative to parent.
-     * @param width Width of the checkbox area.
-     * @param height Height of the checkbox area.
-     * @param callback Function called when checked state changes.
-     * @param user_data User pointer passed to the callback.
-     * @param font Font to use for the label.
-     * @return Pointer to the new checkbox node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_checkbox(
         AromaNode *parent,
         const char *label,
@@ -775,21 +775,21 @@ extern "C"
         return cb;
     }
 
-    /**
-     * @brief Create a radio button helper.
-     *
-     * @param parent Parent node.
-     * @param label Radio button text label.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param group_id ID of the radio group this button belongs to.
-     * @param callback Callback on selection.
-     * @param user_data User data.
-     * @param font Font for the label.
-     * @return Pointer to the new radio button node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_radiobutton(
         AromaNode *parent,
         const char *label,
@@ -811,19 +811,19 @@ extern "C"
         return rb;
     }
 
-    /**
-     * @brief Create a switch helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param initial_state Initial On/Off state.
-     * @param on_change Callback when state changes.
-     * @param user_data User data.
-     * @return Pointer to the new switch node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_switch(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -841,21 +841,21 @@ extern "C"
         return sw;
     }
 
-    /**
-     * @brief Create a slider helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param min Minimum string value.
-     * @param max Maximum string value.
-     * @param value Initial value.
-     * @param on_change Callback when value changes.
-     * @param user_data User data.
-     * @return Pointer to the new slider node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_slider(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -873,20 +873,20 @@ extern "C"
         return sl;
     }
 
-    /**
-     * @brief Create a textbox helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param placeholder Placeholder text when empty.
-     * @param on_text_changed Callback when text changes.
-     * @param user_data User data.
-     * @param font Font to use.
-     * @return Pointer to the new textbox node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_textbox(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -909,20 +909,20 @@ extern "C"
         return tb;
     }
 
-    /**
-     * @brief Create an icon button helper.
-     *
-     * @param parent Parent node.
-     * @param icon Icon text/character.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param size Button size (width/height).
-     * @param variant Visual variant (e.g. STANDARD, FILLED).
-     * @param callback Click callback.
-     * @param user_data User data.
-     * @param font Font to use (usually an icon font).
-     * @return Pointer to the new icon button node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_iconbutton(
         AromaNode *parent,
         const char *icon,
@@ -944,19 +944,19 @@ extern "C"
         return btn;
     }
 
-    /**
-     * @brief Create a chip helper.
-     *
-     * @param parent Parent node.
-     * @param label Chip label text.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param type Chip type/style.
-     * @param callback Click callback.
-     * @param user_data User data.
-     * @param font Font to use.
-     * @return Pointer to the new chip node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_chip(
         AromaNode *parent,
         const char *label,
@@ -996,17 +996,17 @@ extern "C"
         return chip;
     }
 
-    /**
-     * @brief Create a card helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param type Card type (e.g. ELEVATED, OUTLINED).
-     * @return Pointer to the new card node.
-     */
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_card(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1015,21 +1015,21 @@ extern "C"
         return aroma_card_create(parent, x, y, width, height, type);
     }
 
-    /**
-     * @brief Create a frosted-glass card helper.
-     *
-     * A glass card whose backdrop is blurred in place (where the graphics
-     * backend supports it) before its translucent tint is drawn. Falls
-     * back to plain translucency otherwise.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param blur_radius Backdrop blur radius in pixels (0 = tint only).
-     * @return Pointer to the new card node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_frosted_card(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1044,18 +1044,18 @@ extern "C"
         return card;
     }
 
-    /**
-     * @brief Create a progress bar helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param type Progress bar type (e.g. DETERMINATE, INDETERMINATE).
-     * @param progress Initial progress (0.0 to 1.0).
-     * @return Pointer to the new progress bar node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_progressbar(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1070,16 +1070,16 @@ extern "C"
         return pb;
     }
 
-    /**
-     * @brief Create a divider helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param length Length of the divider (width for horizontal, height for vertical).
-     * @param orientation HORIZONTAL or VERTICAL.
-     * @return Pointer to the new divider node.
-     */
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_divider(
         AromaNode *parent,
         int x, int y, int length,
@@ -1088,25 +1088,25 @@ extern "C"
         return aroma_divider_create(parent, x, y, length, orientation);
     }
 
-    /**
-     * @brief Create a list view wrapped in a vertical scroll container.
-     *
-     * The list view itself has no scroll logic; the container takes care
-     * of scrolling, clipping, fling and scrollbar rendering.  The returned
-     * pointer is the list view node — use it with all aroma_listview_*()
-     * functions.  To resize the outer viewport, get the scroll container
-     * with aroma_listview_get_scroll_container().
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height (viewport).
-     * @param callback Callback when an item is clicked.
-     * @param user_data User data.
-     * @param font Font to use for items.
-     * @return Pointer to the list view node (child of the scroll container).
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_listview(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1125,8 +1125,8 @@ extern "C"
         int list_width = width;
         int list_height = height;
 #ifdef __ANDROID__
-        /* The outer container has already converted these dimensions to
-         * physical pixels; the public ListView constructor expects dp. */
+
+
         AromaRect *container_rect = aroma_node_get_rect(sc);
         if (container_rect)
         {
@@ -1146,18 +1146,18 @@ extern "C"
         return lv;
     }
 
-    /**
-     * @brief Creates a complex data table widget.
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param num_cols Number of columns in the table.
-     * @param callback Callback when a row is clicked.
-     * @param user_data User data.
-     * @return Pointer to the data table node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_table(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1173,25 +1173,25 @@ extern "C"
 
         aroma_node_set_layout_mode(sc, AROMA_LAYOUT_MODE_FLEX);
         aroma_node_set_flex_direction(sc, AROMA_FLEX_COLUMN);
-        
+
         AromaNode *tbl = aroma_table_create(sc, 0, 0, width, height, num_cols);
         if (tbl)
         {
             if (callback)
                 aroma_table_set_callback(tbl, callback, user_data);
         }
-        return tbl; // Return the table node
+        return tbl;
     }
 
-    /**
-     * @brief Create a menu helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param font Font to use for menu items.
-     * @return Pointer to the new menu node.
-     */
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_menu(
         AromaNode *parent,
         int x, int y,
@@ -1205,18 +1205,18 @@ extern "C"
         return menu;
     }
 
-    /**
-     * @brief Create a dialog helper.
-     *
-     * @param parent Parent node.
-     * @param title Dialog title.
-     * @param message Dialog message content.
-     * @param width Dialog width.
-     * @param height Dialog height.
-     * @param type Dialog type (e.g. ALERT, CONFIRM).
-     * @param font Font to use.
-     * @return Pointer to the new dialog node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_dialog(
         AromaNode *parent,
         const char *title,
@@ -1233,21 +1233,21 @@ extern "C"
         return dlg;
     }
 
-    /**
-     * @brief Create a tabs helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param labels Array of tab labels.
-     * @param count Number of tabs.
-     * @param on_change Callback when active tab changes.
-     * @param user_data User data.
-     * @param font Font to use.
-     * @return Pointer to the new tabs node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_tabs(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1293,13 +1293,13 @@ extern "C"
         return tabs;
     }
 
-    /**
-     * @brief Create a bottom tab bar (stacked icon-over-label tabs).
-     *
-     * Same as aroma_ui_tabs but rendered in the Apple bottom-bar style:
-     * each tab shows its icon above its label and the selected tab is
-     * tinted. Clicks switch selection and fire on_change.
-     */
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_tabbar(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1318,21 +1318,21 @@ extern "C"
         return tabs;
     }
 
-    /**
-     * @brief Create a segmented control (single-select pill switcher).
-     *
-     * @param parent Parent node (usually the root window).
-     * @param x X position.
-     * @param y Y position.
-     * @param width Width in pixels.
-     * @param height Height in pixels.
-     * @param labels Segment labels.
-     * @param count Number of segments.
-     * @param on_change Fired with the new index when the user taps a segment.
-     * @param user_data Passed to on_change.
-     * @param font Font to use.
-     * @return Pointer to the new segmented control node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_segmented(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1353,15 +1353,15 @@ extern "C"
         return seg;
     }
 
-    /**
-     * @brief Create a snackbar helper.
-     *
-     * @param parent Parent node (usually the root window).
-     * @param message Message to display.
-     * @param duration_ms Duration in milliseconds.
-     * @param font Font to use.
-     * @return Pointer to the new snackbar node.
-     */
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_snackbar(
         AromaNode *parent,
         const char *message,
@@ -1376,17 +1376,17 @@ extern "C"
         return snk;
     }
 
-    /**
-     * @brief Create a tooltip helper.
-     *
-     * @param parent Parent node (the node the tooltip is attached to).
-     * @param text Tooltip text.
-     * @param x X-coordinate relative to screen/window.
-     * @param y Y-coordinate relative to screen/window.
-     * @param pos Preferred position (e.g. TOP, BOTTOM).
-     * @param font Font to use.
-     * @return Pointer to the new tooltip node.
-     */
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_tooltip(
         AromaNode *parent,
         const char *text,
@@ -1402,21 +1402,21 @@ extern "C"
         return tt;
     }
 
-    /**
-     * @brief Create a sidebar helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Sidebar width.
-     * @param height Sidebar height.
-     * @param labels Array of item labels.
-     * @param count Number of items.
-     * @param on_select Callback when an item is selected.
-     * @param user_data User data.
-     * @param font Font to use.
-     * @return Pointer to the new sidebar node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_sidebar(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1463,21 +1463,21 @@ extern "C"
     }
 
 
-    /**
-     * @brief Create a dropdown helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width.
-     * @param height Height.
-     * @param options Array of option strings.
-     * @param option_count Number of options.
-     * @param on_selection_changed Callback when selection changes.
-     * @param user_data User data.
-     * @param font Font to use.
-     * @return Pointer to the new dropdown node.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_dropdown(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1506,16 +1506,16 @@ extern "C"
         return dd;
     }
 
-    /**
-     * @brief Create a debug overlay helper.
-     *
-     * @param parent Parent node.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @param width Width of the overlay.
-     * @param font Font to use for debug text.
-     * @return Pointer to the new debug overlay node.
-     */
+
+
+
+
+
+
+
+
+
+
     static inline AromaNode *aroma_ui_debug_overlay(
         AromaNode *parent,
         int x, int y, int width,
@@ -1640,70 +1640,70 @@ extern "C"
         return c;
     }
 
-    /**
-     * @brief Callback invoked when the system back button is pressed.
-     *
-     * The back button is the Android system back key / back gesture, and
-     * ESC on desktop/web backends (GLFW, GLPS, Emscripten). Register with
-     * aroma_ui_set_back_callback(). Return true to consume the press and
-     * prevent the default behavior (activity finish on Android); return
-     * false to let the platform perform its default action.
-     *
-     * @param user_data Context pointer passed to aroma_ui_set_back_callback().
-     * @return true if the press was handled, false to fall through.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
     typedef bool (*AromaBackCallback)(void *user_data);
 
-    /**
-     * @brief Register a callback for the system back button.
-     *
-     * Only one callback is stored at a time; calling this replaces any
-     * previous registration. The callback runs on the thread that delivers
-     * the back event (main/UI thread). It is invoked after any
-     * EVENT_TYPE_BACK_PRESS event listeners have run.
-     *
-     * @param callback Function to call on back press (NULL clears).
-     * @param user_data Opaque pointer forwarded to the callback.
-     */
+
+
+
+
+
+
+
+
+
+
+
     void aroma_ui_set_back_callback(AromaBackCallback callback, void *user_data);
 
-    /**
-     * @brief Clear the registered back-button callback, if any.
-     */
+
+
+
     void aroma_ui_clear_back_callback(void);
 
-    /**
-     * @brief Check whether a back-button callback is registered.
-     * @return true when a callback is set, false otherwise.
-     */
+
+
+
+
     bool aroma_ui_has_back_callback(void);
 
-    /**
-     * @brief Dispatch a back-press through the event system and callback.
-     *
-     * Backends call this when the platform back affordance fires. It first
-     * dispatches an EVENT_TYPE_BACK_PRESS event to the current event root
-     * (so aroma_event_subscribe() listeners run), then invokes the
-     * registered AromaBackCallback if the event was not already consumed.
-     * If either stage consumes the press, this returns true.
-     *
-     * Apps may also call it directly (e.g. from a custom on-screen back
-     * button) to share the same handling path.
-     *
-     * @return true if the press was consumed, false to use platform default.
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool aroma_ui_handle_back_press(void);
 
 
 
 #ifdef __ANDROID__
-    // Forward struct for Android App state
+
     struct android_app;
 
-    /**
-     * @brief Set the Android app state for JNI interfacing.
-     * @param state Pointer to the android_app struct.
-     */
+
+
+
+
     void aroma_android_set_app(struct android_app *state);
 #endif
 

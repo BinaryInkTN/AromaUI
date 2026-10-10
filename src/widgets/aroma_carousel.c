@@ -15,13 +15,13 @@
 #include "aroma_android.h"
 #endif
 
-/* ViewPager2-style pager: pages sit stacked and only the current page is
- * visible at rest. A horizontal drag pulls the current page with the
- * finger while the neighbor slides in from the edge; release snaps with
- * velocity fling support and edge resistance at the ends. Dots indicate
- * position and are tappable. Taps are slop-guarded. Handlers resolve the
- * carousel through subscription user_data (never target_node) because
- * touches usually hit child content first and bubble up. */
+
+
+
+
+
+
+
 
 static inline int tdp(int v)
 {
@@ -118,7 +118,7 @@ static void car_rest_positions(AromaNode *node, AromaCarousel *c)
     }
 }
 
-/* Lay pages side-by-side around the current one plus the live offset. */
+
 static void car_drag_positions(AromaNode *node, AromaCarousel *c)
 {
     int n = car_count(node);
@@ -491,8 +491,8 @@ bool aroma_carousel_setup_events(AromaNode *n, void (*on_redraw)(void *),
     (void)on_redraw;
     if (!n)
         return false;
-    /* user_data carries the carousel node: touches usually hit child
-     * content and bubble up, so target_node is unreliable here. */
+
+
     aroma_event_subscribe(n->node_id, EVENT_TYPE_MOUSE_MOVE, car_handle, n,
                           80);
     aroma_event_subscribe(n->node_id, EVENT_TYPE_MOUSE_EXIT, car_handle, n,

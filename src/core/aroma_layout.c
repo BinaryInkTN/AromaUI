@@ -43,7 +43,7 @@ void aroma_node_set_layout_anchor(AromaNode* node, int left, int top, int right,
     if (!node) return;
     node->layout.type   = AROMA_LAYOUT_ANCHOR;
 #ifdef __ANDROID__
-    /* Callers author anchors in dp; layout runs in physical pixels. */
+
     node->layout.left   = left >= 0 ? aroma_android_dp_to_px(left) : left;
     node->layout.top    = top >= 0 ? aroma_android_dp_to_px(top) : top;
     node->layout.right  = right >= 0 ? aroma_android_dp_to_px(right) : right;
@@ -105,9 +105,9 @@ void aroma_node_set_grid_rows(AromaNode* node, int rows) {
 
 static void measure_child_size(AromaNode* child, AromaRect* child_wb) {
     if (!child || !child_wb) return;
-    
+
     if (child_wb->width > 0 && child_wb->height > 0) return;
-    
+
     if (child->draw_cb == aroma_label_draw) {
         const char* text  = aroma_label_get_text(child);
         AromaFont*  font  = aroma_label_get_font(child);
@@ -121,7 +121,7 @@ static void measure_child_size(AromaNode* child, AromaRect* child_wb) {
             }
         }
     }
-    
+
     if (child_wb->width <= 0)  child_wb->width  = 10;
     if (child_wb->height <= 0) child_wb->height = 10;
 }
@@ -230,6 +230,15 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
 
         AromaRect* child_w     = (AromaRect*)child->node_widget_ptr;
         int child_main_size     = child_measurements[idx];
+        bool animating = aroma_animation_is_running_on(child);
+        if (animating)
+        {
+            current_main_pos += child_main_size;
+            if (idx < child_count - 1) {
+                current_main_pos += adjusted_gap;
+            }
+            continue;
+        }
 
         if (is_row) {
             if (child_main_size > 0) child_w->width = child_main_size;
@@ -291,7 +300,7 @@ static void apply_flex_layout(AromaNode* node, int x, int y, int width, int heig
 
 static void apply_grid_layout(AromaNode* node, int x, int y, int width, int height) {
     if (width <= 0 || height <= 0) return;
-    
+
     int cols = node->layout.grid_cols;
     int rows = node->layout.grid_rows;
     if (cols <= 0) cols = 1;
@@ -328,13 +337,16 @@ static void apply_grid_layout(AromaNode* node, int x, int y, int width, int heig
 
         AromaRect* widget = (AromaRect*)child->node_widget_ptr;
 
-        widget->width  = cell_w;
-        widget->height = cell_h;
-        widget->x      = x + (current_col * (cell_w + gap));
-        widget->y      = y + (current_row * (cell_h + gap));
+        if (!aroma_animation_is_running_on(child))
+        {
+            widget->width  = cell_w;
+            widget->height = cell_h;
+            widget->x      = x + (current_col * (cell_w + gap));
+            widget->y      = y + (current_row * (cell_h + gap));
 
-        if (widget->width <= 0)  widget->width  = 10;
-        if (widget->height <= 0) widget->height = 10;
+            if (widget->width <= 0)  widget->width  = 10;
+            if (widget->height <= 0) widget->height = 10;
+        }
 
         cells_used++;
         current_col++;
@@ -357,15 +369,15 @@ static void apply_grid_layout(AromaNode* node, int x, int y, int width, int heig
     }
 }
 
-/* Shrink-to-fit for absolute-positioned children: when authored content
- * is wider than the parent (narrow screen / large display size), scale
- * child x/widths down proportionally so nothing clips horizontally.
- * Originals are stored per node, making repeated passes (rotations,
- * density changes) idempotent. Autosized/measured widgets (buttons,
- * labels) and listviews manage their own geometry and are skipped here
- * (buttons are stacked by the app layer; labels keep measured widths).
- * Icons shift (x only) to preserve tap size. All values are device px,
- * so the scale is density-independent by construction. */
+
+
+
+
+
+
+
+
+
 extern void aroma_icon_draw(AromaNode* icon_node, size_t window_id);
 void aroma_iconbutton_draw(AromaNode* button_node, size_t window_id);
 
@@ -400,7 +412,7 @@ static void apply_shrink_to_fit(AromaNode* parent, int parent_abs_x, int parent_
     if (!parent->child_nodes && parent->child_count > 0)
         return;
 
-    /* Originals are parent-relative so parent moves never skew the fit. */
+
     long max_right = 0;
     for (uint64_t i = 0; i < parent->child_count; i++)
     {
@@ -431,7 +443,7 @@ static void apply_shrink_to_fit(AromaNode* parent, int parent_abs_x, int parent_
 
     if (max_right <= parent_width || max_right <= 0)
     {
-        /* Fits: restore originals (e.g. after rotation to a wider screen). */
+
         for (uint64_t i = 0; i < parent->child_count; i++)
         {
             AromaNode* child = parent->child_nodes[i];
@@ -483,7 +495,7 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
                               int parent_width, int parent_height) {
     if (!is_valid_node(start_node)) return;
     if (!is_valid_widget_ptr(start_node->node_widget_ptr)) {
-    
+
         if (start_node->child_count > AROMA_MAX_CHILD_NODES) return;
         for (uint64_t i = 0; i < start_node->child_count; i++) {
             AromaNode* child = start_node->child_nodes[i];
@@ -618,10 +630,10 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
     } else if (start_node->layout.mode == AROMA_LAYOUT_MODE_GRID) {
         apply_grid_layout(start_node, new_x, new_y, layout_w, layout_h);
     } else {
-        /* Shrink-to-fit: scale absolute children down when authored
-         * content is wider than this parent (narrow screen / large
-         * display size). Uses visible width so scrolled content still
-         * fits the viewport. Flex/grid place their own children. */
+
+
+
+
         if (start_node->layout.mode == AROMA_LAYOUT_MODE_NONE)
             apply_shrink_to_fit(start_node, new_x, new_w);
         int delta_x = new_x - prev_cache_x;

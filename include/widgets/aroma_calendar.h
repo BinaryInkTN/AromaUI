@@ -22,13 +22,13 @@ void aroma_calendar_get_date(AromaNode *cal_node, int *year, int *month,
                              int *day);
 void aroma_calendar_set_selected(AromaNode *cal_node, int year, int month,
                                  int day);
-/* Year-grid view (Material year selection): shows 12 years per page with
- * chevron paging. Tapping the header title toggles it at runtime. */
+
+
 void aroma_calendar_set_year_view(AromaNode *cal_node, bool show_years);
 bool aroma_calendar_get_year_view(AromaNode *cal_node);
-/* Popup-only widget: the in-tree widget is a compact date field;
- * tapping it opens a modal floating panel (scrim + calendar, day tap confirms).
- * set_popup is a no-op kept for source compatibility. */
+
+
+
 void aroma_calendar_set_popup(AromaNode *cal_node, bool popup);
 void aroma_calendar_open_popup(AromaNode *cal_node);
 void aroma_calendar_close_popup(AromaNode *cal_node);

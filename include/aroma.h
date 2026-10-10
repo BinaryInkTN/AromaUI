@@ -1,14 +1,14 @@
 #ifndef AROMA_H
 #define AROMA_H
 
-/**
- * @file aroma.h
- * @brief Public API umbrella header.
- *
- * This header includes all necessary components of the AromaUI framework.
- * Users should typically include this file to access the library's functionality.
- * See docs/core/modules.md for module-level documentation.
- */
+
+
+
+
+
+
+
+
 
 #include "aroma_common.h"
 #include "aroma_event.h"
@@ -29,5 +29,5 @@
 #include "aroma_incense.h"
 #include "aroma_incense_loader.h"
 
-#endif 
+#endif
 

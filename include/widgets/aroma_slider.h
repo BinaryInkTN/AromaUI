@@ -31,8 +31,8 @@ typedef struct  AromaSlider
     float thumb_corner_radius;
     uint32_t thumb_border_color;
     int thumb_x;
-    
-    // Multitouch support
+
+
     int active_pointer_id;
 } AromaSlider;
 

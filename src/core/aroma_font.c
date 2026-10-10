@@ -85,7 +85,7 @@ void aroma_font_destroy(AromaFont* font)
     if (font) free(font);
 }
 
-/* Single-threaded target: no locking needed. */
+
 void aroma_font_lock(void) {}
 void aroma_font_unlock(void) {}
 
@@ -143,10 +143,10 @@ struct AromaFont {
 
 static FT_Library ft_library = NULL;
 
-/* Process-wide FreeType face lock. FT_Face is stateful (glyph slot,
- * charmaps) and not thread-safe: the UI thread draws/measures while
- * worker threads update labels. Every FT_Face touch in this file and in
- * the graphics text renderers goes through aroma_font_lock(). */
+
+
+
+
 static pthread_mutex_t s_ft_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void aroma_font_lock(void)
@@ -260,9 +260,9 @@ void aroma_font_destroy(AromaFont* font) {
     free(font);
 }
 
-/* Decode one UTF-8 codepoint, advancing *pp past it. Returns 0 on
- * malformed/empty input (caller skips it, matching render-side behavior
- * which drops undecodable bytes via __utf8_next). */
+
+
+
 static uint32_t aroma_font_utf8_next(const char **pp)
 {
     const unsigned char *p = (const unsigned char *)*pp;
@@ -293,7 +293,7 @@ static uint32_t aroma_font_utf8_next(const char **pp)
     }
     else
     {
-        /* Malformed lead byte: skip it so we always make progress. */
+
         p++;
         *pp = (const char *)p;
         return 0;
@@ -309,12 +309,12 @@ int aroma_font_get_line_width(AromaFont* font, const char* text) {
     int width = 0;
     FT_GlyphSlot slot = font->face->glyph;
 
-    /* Measure per Unicode codepoint, not per byte: a 3-byte icon glyph
-     * (e.g. U+E5C3) previously summed three .notdef advances (~3x too
-     * wide), which pushed every centered icon off-center and forced
-     * callers to carry compensating shifts. Pure-ASCII text decodes to
-     * the same single-byte codepoints as before, so its width is
-     * unchanged. */
+
+
+
+
+
+
     const char *p = text;
     while (*p != '\0') {
         uint32_t cp = aroma_font_utf8_next(&p);
@@ -353,4 +353,4 @@ void* aroma_font_get_face(AromaFont* font) {
     return font->face;
 }
 
-#endif /* ESP32 */
+#endif
