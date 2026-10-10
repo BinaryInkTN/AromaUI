@@ -1,0 +1,48 @@
+Window {
+    width: 360
+    height: 580
+    title: "Feedback"
+
+    Label { text: "Downloads" x: 16 y: 16 style: "large" }
+    Label { text: "Dialogs, menus, progress" x: 16 y: 48 style: "small" }
+
+    Button { text: "Delete file" x: 16 y: 96 width: 328 height: 48 on_click: "show_dialog" }
+    Button { text: "Download done" x: 16 y: 152 width: 328 height: 48 on_click: "show_snackbar" }
+    Button { text: "Sort by" x: 16 y: 208 width: 328 height: 48 on_click: "show_menu" }
+
+    Tooltip { text: "Delete asks first" x: 16 y: 266 position: bottom }
+
+    Dialog {
+        id: "dlg"
+        title: "Delete report.pdf?"
+        message: "Archived copies stay."
+        width: 320
+        height: 250
+        type: basic
+        visible: 0
+
+        DialogAction { text: "Cancel" on_click: "dlg_cancel" }
+        DialogAction { text: "Archive" on_click: "dlg_archive" }
+        DialogAction { text: "Delete" on_click: "dlg_ok" }
+    }
+
+    Snackbar { id: "snack" message: "report.pdf saved" duration: 4000 action: "Open" on_click: "snack_open" show: false }
+
+    Menu { id: "menu" x: 16 y: 266
+        MenuItem { text: "Name" icon: "AROMA_ICON_SORT_BY_ALPHA" on_click: "menu_name" }
+        MenuItem { text: "Date" icon: "AROMA_ICON_SCHEDULE" on_click: "menu_date" }
+        MenuItem { text: "Size" icon: "AROMA_ICON_STORAGE" on_click: "menu_size" }
+        Separator { }
+        MenuItem { text: "Refresh" icon: "AROMA_ICON_REFRESH" on_click: "menu_refresh" }
+    }
+
+    Label { text: "Upload progress" x: 16 y: 300 style: "medium" }
+    ProgressBar { id: "bar" x: 16 y: 326 width: 268 height: 14 value: 0.5 type: determinate }
+    Loading { x: 300 y: 318 radius: 16 thickness: 4 color: "#4285F4" }
+    Slider { x: 16 y: 352 width: 328 min: 0 max: 100 value: 50 on_change: "fill_bar" }
+    Label { text: "Syncing in background" x: 16 y: 408 style: "medium" }
+    ProgressBar { x: 16 y: 434 width: 328 height: 14 type: indeterminate }
+
+    Tooltip { text: "Bars animate live" x: 16 y: 470 position: top }
+    Label { id: "status" text: "Status: idle" x: 16 y: 500 style: "medium" }
+}

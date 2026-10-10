@@ -1,0 +1,42 @@
+Window {
+    width: 360
+    height: 620
+    title: "Theming"
+
+    Label { text: "Appearance" x: 16 y: 16 style: "large" }
+    Label { text: "Pick a preset" x: 16 y: 48 style: "small" }
+
+    Label { text: "Preset" x: 16 y: 90 style: "medium" }
+    Dropdown { x: 16 y: 115 width: 190 height: 48 on_change: "picked" max_visible: 6
+        Option { text: "Blue light" }
+        Option { text: "Teal light" }
+        Option { text: "Green light" }
+        Option { text: "Orange light" }
+        Option { text: "Pink light" }
+        Option { text: "Blue dark" }
+        Option { text: "Teal dark" }
+        Option { text: "Green dark" }
+        Option { text: "Orange dark" }
+        Option { text: "Pink dark" }
+        Option { text: "High contrast" }
+    }
+    Button { text: "Random" x: 218 y: 115 width: 126 height: 48 type: tonal on_click: "random" }
+
+    Card {
+        x: 16
+        y: 185
+        width: 328
+        height: 380
+        type: elevated
+
+        Label { text: "Preview" x: 16 y: 16 style: "medium" }
+        Button { text: "Themed button" x: 16 y: 50 width: 180 height: 44 }
+        Checkbox { label: "Themed checkbox" x: 16 y: 105 width: 220 height: 36 checked: true }
+        Chip { label: "Themed chip" x: 16 y: 150 type: assist }
+        Switch { x: 200 y: 150 width: 64 height: 36 value: true }
+        Slider { x: 16 y: 205 width: 160 height: 36 min: 0 max: 100 value: 60 }
+        ProgressBar { x: 184 y: 212 width: 128 height: 14 value: 0.6 }
+        Loading { x: 272 y: 250 radius: 20 thickness: 4 color: "#4285F4" }
+        Label { id: "status" text: "Theme: dark blue" x: 16 y: 320 style: "medium" }
+    }
+}

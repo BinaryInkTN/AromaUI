@@ -247,6 +247,29 @@ void aroma_event_destroy(AromaEvent* event);
 
 void aroma_event_consume(AromaEvent* event);
 void aroma_event_set_disabled(AromaEvent* event, bool disabled);
+
+/**
+ * @brief Forget a destroyed node across the event system.
+ *
+ * Evicts the node from the target cache, drops queued events addressed
+ * to it, and purges its listeners, so background threads that queued
+ * work just before teardown can never dispatch into freed memory.
+ * Called automatically by __destroy_node(); safe to call redundantly.
+ *
+ * @param node_id ID of the destroyed node (0 is ignored).
+ */
+void aroma_event_forget_node(uint64_t node_id);
+
+/**
+ * @brief Lock/unlock the event system mutex (internal use).
+ *
+ * Serializes scene-graph structural mutation (__add_child_node link,
+ * __remove_child_node unlink) against target resolution from worker
+ * threads (aroma_event_create*). Rect-only updates need no lock.
+ * Never hold across dispatches or user callbacks.
+ */
+void aroma_event_lock(void);
+void aroma_event_unlock(void);
 AromaNode* aroma_event_hit_test(AromaNode* root, int x, int y);
 
 const char* aroma_event_type_name(AromaEventType event_type);

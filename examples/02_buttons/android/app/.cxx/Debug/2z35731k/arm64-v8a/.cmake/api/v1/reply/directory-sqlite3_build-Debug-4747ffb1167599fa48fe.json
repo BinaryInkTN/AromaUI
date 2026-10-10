@@ -1,0 +1,95 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"/home/yassine/Projects/AromaUI/vendors/sqlite3/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 95,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 100,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 104,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"sqlite3_build/libsqlite3d.a"
+			],
+			"targetId" : "SQLite3::@04cd79d7ceb76f65af7f",
+			"targetIndex" : 0,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"/home/yassine/Projects/AromaUI/vendors/sqlite3/sqlite3.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "cmake",
+			"exportName" : "SQLite3Config",
+			"exportTargets" : 
+			[
+				{
+					"id" : "SQLite3::@04cd79d7ceb76f65af7f",
+					"index" : 0
+				}
+			],
+			"paths" : 
+			[
+				"sqlite3_build/CMakeFiles/Export/cmake/SQLite3Config.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"/home/yassine/Projects/AromaUI/examples/02_buttons/android/app/.cxx/Debug/2z35731k/arm64-v8a/sqlite3_config.h"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "sqlite3_build",
+		"source" : "/home/yassine/Projects/AromaUI/vendors/sqlite3"
+	}
+}

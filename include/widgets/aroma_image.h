@@ -97,6 +97,23 @@ AromaNode* aroma_image_create_from_texture(AromaNode* parent, unsigned int textu
 void aroma_image_set_source(AromaNode* image_node, const char* image_path);
 
 /**
+ * @brief Apply a background fetch result on the UI thread.
+ *
+ * Idempotent: ignored unless a fetch is still marked in-flight, so stale
+ * completions (e.g. after set_source replaced the URL) are harmless.
+ * NULL-safe.
+ *
+ * @param image_node Image node
+ * @param ok Whether the fetch succeeded
+ * @param cache_path Downloaded file path (copied when ok)
+ */
+void aroma_image_apply_fetch_result(AromaNode* image_node, bool ok,
+                                    const char* cache_path);
+
+/** Custom event type for background fetch completion (see apply above). */
+#define AROMA_IMAGE_FETCH_COMPLETE 1001
+
+/**
  * @brief Changes the image size
  *
  * @param image_node Image node

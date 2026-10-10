@@ -1,4 +1,5 @@
 #include "core/aroma_event.h"
+#include "aroma_gesture.h"
 #include "core/aroma_node.h"
 #include "aroma_ui.h"
 #include "core/aroma_common.h"
@@ -7,6 +8,10 @@
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_logger.h"
 #include "widgets/aroma_dropdown.h"
+#include "widgets/aroma_stepper.h"
+#include "widgets/aroma_calendar.h"
+#include "widgets/aroma_datepicker.h"
+#include "widgets/aroma_timepicker.h"
 #include "backends/aroma_abi.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include <stdlib.h>
@@ -75,8 +80,47 @@ static struct
 static uint64_t g_touch_captures[AROMA_MAX_TOUCHES]     = {0};
 static uint64_t g_scroll_captures[AROMA_MAX_TOUCHES]    = {0};
 static bool     g_scroll_intercepting[AROMA_MAX_TOUCHES] = {false};
+static int      g_down_x[AROMA_MAX_TOUCHES]             = {0};
+static int      g_down_y[AROMA_MAX_TOUCHES]             = {0};
 
 static AromaNode *find_scrollable_ancestor(AromaNode *start);
+static AromaNode *find_node_cached(uint64_t node_id);
+
+/* Swipe takeover: a touch that starts on content (button, slider, label)
+ * can still become a scroll. Once the finger moves past the touch slop
+ * along an axis the captured ScrollView can actually scroll, the gesture
+ * is handed to the container and the child receives a cancel, mirroring
+ * platform touch-interception behavior. */
+static bool swipe_should_take_over(int id, int x, int y, uint64_t scroll_id)
+{
+    if (aroma_datepicker_any_popup_open() ||
+        aroma_timepicker_any_popup_open() ||
+        aroma_calendar_any_popup_open())
+        return false;
+    AromaNode *scroll_node = find_node_cached(scroll_id);
+    if (!scroll_node || !aroma_container_is_scrollable(scroll_node))
+        return false;
+    int dx = x - g_down_x[id];
+    int dy = y - g_down_y[id];
+    int adx = dx < 0 ? -dx : dx;
+    int ady = dy < 0 ? -dy : dy;
+    int slop = aroma_container_touch_slop_px();
+    if (slop < 1)
+        slop = 1;
+    AromaScrollDirection dir = aroma_container_get_scroll_direction(scroll_node);
+    int cw = 0, ch = 0;
+    aroma_container_get_content_size(scroll_node, &cw, &ch);
+    AromaRect *r = aroma_node_get_rect(scroll_node);
+    int vw = r ? r->width : 0;
+    int vh = r ? r->height : 0;
+    bool can_h = (dir & AROMA_SCROLL_HORIZONTAL) && cw > vw;
+    bool can_v = (dir & AROMA_SCROLL_VERTICAL) && ch > vh;
+    if (can_h && adx >= slop && adx > ady)
+        return true;
+    if (can_v && ady >= slop && ady > adx)
+        return true;
+    return false;
+}
 
 #ifdef AROMA_THREAD_SAFE
 #define EVENT_LOCK()   pthread_mutex_lock(&g_event_system.mutex)
@@ -195,12 +239,17 @@ static AromaNode *find_node_cached(uint64_t node_id)
 {
     if (!node_id || !g_event_system.root_node) return NULL;
 
+    /* The tree mutates on the UI thread (add/remove) while workers
+     * resolve targets here: hold the lock for the whole walk. */
+    EVENT_LOCK();
     for (int i = 0; i < AROMA_NODE_CACHE_SIZE; i++)
     {
         if (g_event_system.node_cache[i].node_id == node_id)
         {
             g_event_system.node_cache[i].last_access = ++g_event_system.cache_counter;
-            return g_event_system.node_cache[i].node_ptr;
+            AromaNode *hit = g_event_system.node_cache[i].node_ptr;
+            EVENT_UNLOCK();
+            return hit;
         }
     }
 
@@ -218,6 +267,7 @@ static AromaNode *find_node_cached(uint64_t node_id)
         g_event_system.node_cache[oldest].node_ptr   = node;
         g_event_system.node_cache[oldest].last_access = ++g_event_system.cache_counter;
     }
+    EVENT_UNLOCK();
     return node;
 }
 
@@ -350,18 +400,33 @@ void aroma_event_system_shutdown(void)
     g_event_system.shutting_down = true;
     aroma_event_process_queue();
 
+    /* Drain without holding the lock across destroy: destroying an event
+     * releases its pool slot which takes the same (non-recursive) mutex,
+     * so holding it here would self-deadlock whenever the queue is
+     * non-empty at shutdown. Collect under lock, destroy after unlock. */
+    AromaEvent *pending[AROMA_MAX_EVENT_QUEUE];
+    size_t n_pending = 0;
     EVENT_LOCK();
-    while (g_event_system.queue_head != g_event_system.queue_tail)
+    while (g_event_system.queue_head != g_event_system.queue_tail &&
+           n_pending < AROMA_MAX_EVENT_QUEUE)
     {
-        AromaEvent *ev = g_event_system.event_queue[g_event_system.queue_head];
-        if (ev) aroma_event_destroy(ev);
+        pending[n_pending++] =
+            g_event_system.event_queue[g_event_system.queue_head];
+        g_event_system.event_queue[g_event_system.queue_head] = NULL;
         g_event_system.queue_head = (g_event_system.queue_head + 1) % AROMA_MAX_EVENT_QUEUE;
+        if (g_event_system.queue_count > 0)
+            g_event_system.queue_count--;
     }
     if (g_event_system.listener_map)
     {
         free(g_event_system.listener_map);
         g_event_system.listener_map = NULL;
     }
+    g_event_system.map_capacity = 0;
+    g_event_system.map_count = 0;
+    EVENT_UNLOCK();
+    for (size_t i = 0; i < n_pending; i++)
+        if (pending[i]) aroma_event_destroy(pending[i]);
 #ifdef AROMA_THREAD_SAFE
     pthread_mutex_destroy(&g_event_system.mutex);
 #endif
@@ -515,6 +580,8 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         target    = aroma_event_hit_test(g_event_system.root_node, x, y);
         target_id = target ? target->node_id : 0;
         g_touch_captures[id] = target_id;
+        g_down_x[id] = x;
+        g_down_y[id] = y;
         AromaNode *scr = target ? find_scrollable_ancestor(target) : NULL;
         /*
          * The expanded dropdown list is a temporary overlay. Its gesture is
@@ -525,10 +592,41 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         if (target && aroma_dropdown_overlay_hit_test(x, y, &overlay_target) &&
             overlay_target == target)
             scr = NULL;
+        /* Picker popups are modal overlays with the same ownership: while
+         * open, the picker owns the gesture, never the ScrollView behind
+         * its field. */
+        if (target &&
+            aroma_calendar_overlay_hit_test(x, y, &overlay_target) &&
+            overlay_target == target)
+            scr = NULL;
+        if (target &&
+            aroma_datepicker_overlay_hit_test(x, y, &overlay_target) &&
+            overlay_target == target)
+            scr = NULL;
+        if (target &&
+            aroma_timepicker_overlay_hit_test(x, y, &overlay_target) &&
+            overlay_target == target)
+            scr = NULL;
         /* Dropdown fields and their expanded overlays own the complete
          * gesture. Do not let the containing ScrollView steal a drag after
          * the dropdown receives TOUCH_DOWN. */
         if (target && target->draw_cb == aroma_dropdown_draw)
+            scr = NULL;
+        /* The numeric stepper is a vertical drag widget like the dropdown
+         * list: it owns the complete gesture. Do not let the containing
+         * ScrollView steal a vertical drag after the stepper receives
+         * TOUCH_DOWN, otherwise the picker value and the page scroll
+         * together. Steps mode is tap-only and stays scrollable. */
+        if (target && target->draw_cb == aroma_stepper_draw &&
+            aroma_stepper_owns_touch(target))
+            scr = NULL;
+        if (target &&
+            ((target->draw_cb == aroma_calendar_draw &&
+              aroma_calendar_is_popup_open(target)) ||
+             (target->draw_cb == aroma_datepicker_draw &&
+              aroma_datepicker_is_popup_open(target)) ||
+             (target->draw_cb == aroma_timepicker_draw &&
+              aroma_timepicker_is_popup_open(target))))
             scr = NULL;
         if (!scr && target &&
             target->node_type == NODE_TYPE_CONTAINER &&
@@ -594,17 +692,56 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
 
     if (!g_scroll_intercepting[id] && target_id != 0)
     {
-        AromaEvent *evt = aroma_event_create(type, target_id);
-        if (evt)
+        if (type == EVENT_TYPE_TOUCH_MOVE && scroll_id != 0 && target_id != scroll_id &&
+            swipe_should_take_over(id, x, y, scroll_id))
         {
-            evt->data.touch.id = id;
-            evt->data.touch.x  = x;
-            evt->data.touch.y  = y;
-            uint64_t consuming_node_id = 0;
-            aroma_event_dispatch_internal(evt, &consuming_node_id);
-            if (consuming_node_id == scroll_id && scroll_id != 0)
-                intercepted = true;
-            aroma_event_destroy(evt);
+            g_scroll_intercepting[id] = true;
+            AromaEvent *cancel = aroma_event_create(EVENT_TYPE_TOUCH_UP, target_id);
+            if (cancel)
+            {
+                cancel->data.touch.id = id;
+                cancel->data.touch.x = -1;
+                cancel->data.touch.y = -1;
+                aroma_event_dispatch(cancel);
+                aroma_event_destroy(cancel);
+            }
+            AromaEvent *down = aroma_event_create(EVENT_TYPE_TOUCH_DOWN, scroll_id);
+            if (down)
+            {
+                down->data.touch.id = id;
+                down->data.touch.x = g_down_x[id];
+                down->data.touch.y = g_down_y[id];
+                aroma_event_dispatch(down);
+                aroma_event_destroy(down);
+            }
+        }
+        if (g_scroll_intercepting[id])
+        {
+            AromaEvent *sev = aroma_event_create(type, scroll_id);
+            if (sev)
+            {
+                sev->data.touch.id = id;
+                sev->data.touch.x  = x;
+                sev->data.touch.y  = y;
+                aroma_event_dispatch(sev);
+                aroma_event_destroy(sev);
+            }
+            intercepted = true;
+        }
+        else
+        {
+            AromaEvent *evt = aroma_event_create(type, target_id);
+            if (evt)
+            {
+                evt->data.touch.id = id;
+                evt->data.touch.x  = x;
+                evt->data.touch.y  = y;
+                uint64_t consuming_node_id = 0;
+                aroma_event_dispatch_internal(evt, &consuming_node_id);
+                if (consuming_node_id == scroll_id && scroll_id != 0)
+                    intercepted = true;
+                aroma_event_destroy(evt);
+            }
         }
     }
 
@@ -631,6 +768,8 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         g_scroll_captures[id]    = 0;
         g_scroll_intercepting[id] = false;
     }
+
+    aroma_gesture_handle_touch(id, x, y, state);
 }
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down)
@@ -684,6 +823,13 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down)
                 platform->hide_keyboard();
         }
     }
+
+    if (button_down && !was_down)
+        aroma_gesture_handle_touch(0, x, y, 1);
+    else if (button_down && was_down)
+        aroma_gesture_handle_touch(0, x, y, 2);
+    else if (!button_down && was_down)
+        aroma_gesture_handle_touch(0, x, y, 0);
 }
 
 void aroma_event_resync_hover(void)
@@ -744,6 +890,12 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
     {
         AromaNode *overlay_target = NULL;
         if (aroma_dropdown_overlay_hit_test(x, y, &overlay_target))
+            return overlay_target;
+        if (aroma_calendar_overlay_hit_test(x, y, &overlay_target))
+            return overlay_target;
+        if (aroma_datepicker_overlay_hit_test(x, y, &overlay_target))
+            return overlay_target;
+        if (aroma_timepicker_overlay_hit_test(x, y, &overlay_target))
             return overlay_target;
     }
 
@@ -944,6 +1096,77 @@ bool aroma_event_unsubscribe(uint64_t node_id, AromaEventType type,
     }
     EVENT_UNLOCK();
     return false;
+}
+
+void aroma_event_lock(void)
+{
+    EVENT_LOCK();
+}
+
+void aroma_event_unlock(void)
+{
+    EVENT_UNLOCK();
+}
+
+void aroma_event_forget_node(uint64_t node_id)
+{    if (!node_id || !g_event_system.initialized)
+        return;
+    /* Collect first (destroying events releases pool slots, which takes
+     * the same lock, so payload cleanup happens after unlock). Queue
+     * slots are nulled in place rather than compacted: process_queue may
+     * be mid-iteration above us on this thread (destroy inside dispatch),
+     * and it already skips NULL slots safely. */
+    AromaEvent *dropped[AROMA_MAX_EVENT_QUEUE];
+    size_t n_dropped = 0;
+    EVENT_LOCK();
+    for (int i = 0; i < AROMA_NODE_CACHE_SIZE; i++) {
+        if (g_event_system.node_cache[i].node_id == node_id) {
+            g_event_system.node_cache[i].node_id = 0;
+            g_event_system.node_cache[i].node_ptr = NULL;
+        }
+    }
+    if (g_event_system.map_count > 0 && g_event_system.map_capacity > 0) {
+        uint32_t idx = hash_node_id(node_id, g_event_system.map_capacity);
+        uint32_t start = idx;
+        while (g_event_system.listener_map[idx].node_id != 0) {
+            if (g_event_system.listener_map[idx].node_id == node_id) {
+                g_event_system.listener_map[idx].node_id = UINT64_MAX;
+                g_event_system.listener_map[idx].listener_count = 0;
+                g_event_system.map_count--;
+                break;
+            }
+            idx = (idx + 1) & (g_event_system.map_capacity - 1);
+            if (idx == start)
+                break;
+        }
+    }
+    {
+        /* Null matching slots in place without touching queue_count:
+         * the count tracks buffer occupancy (head..tail distance) and is
+         * decremented exactly once by process_queue when it dequeues each
+         * slot (even NULL holes). Decrementing here as well would
+         * double-decrement and wrap queue_count to UINT32_MAX, making the
+         * queue look permanently full so all future inputs are dropped
+         * (this froze car_infotainment on Linux after any node teardown
+         * with a queued event). Snapshot the bound: queue_count must not
+         * be used as a mutating loop limit. Compaction is avoided on
+         * purpose: process_queue may be mid-iteration above us on this
+         * thread (destroy inside dispatch) and already skips NULL safely. */
+        uint32_t n = g_event_system.queue_count;
+        uint32_t cur = g_event_system.queue_head;
+        for (uint32_t k = 0; k < n; k++) {
+            AromaEvent *ev = g_event_system.event_queue[cur];
+            if (ev && ev->target_node_id == node_id) {
+                g_event_system.event_queue[cur] = NULL;
+                if (n_dropped < AROMA_MAX_EVENT_QUEUE)
+                    dropped[n_dropped++] = ev;
+            }
+            cur = (cur + 1) % AROMA_MAX_EVENT_QUEUE;
+        }
+    }
+    EVENT_UNLOCK();
+    for (size_t k = 0; k < n_dropped; k++)
+        aroma_event_destroy(dropped[k]);
 }
 
 

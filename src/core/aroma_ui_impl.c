@@ -884,6 +884,9 @@ static void window_update_callback(size_t window_id, void *data)
 
     render_dirty_window_internal(actual_window_id, AROMA_CLEAR_NONE);
     aroma_dropdown_render_overlays(actual_window_id);
+    aroma_calendar_render_overlays(actual_window_id);
+    aroma_datepicker_render_overlays(actual_window_id);
+    aroma_timepicker_render_overlays(actual_window_id);
 
     aroma_ui_end_frame(0);
 

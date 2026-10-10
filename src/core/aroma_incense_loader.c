@@ -6,6 +6,9 @@
 #include "aroma_material_icons.h"
 #include "core/aroma_logger.h"
 #include "widgets/aroma_canvas.h"
+#include "widgets/aroma_calendar.h"
+#include "widgets/aroma_carousel.h"
+#include "widgets/aroma_datepicker.h"
 #include "widgets/aroma_debug_overlay.h"
 #include "widgets/aroma_dropdown.h"
 #include "widgets/aroma_gif.h"
@@ -15,8 +18,10 @@
 #include "widgets/aroma_menu.h"
 #include "widgets/aroma_radiobutton.h"
 #include "widgets/aroma_sidebar.h"
+#include "widgets/aroma_stepper.h"
 #include "widgets/aroma_table.h"
 #include "widgets/aroma_tabs.h"
+#include "widgets/aroma_timepicker.h"
 #include "widgets/aroma_tooltip.h"
 #include "widgets/aroma_container.h"
 #include "widgets/aroma_listview.h"
@@ -379,6 +384,12 @@ static void embed_props_parse_from_source(const char *source)
     {
         while (*p == ' ' || *p == '\t' || *p == '\n')
             p++;
+        /* Skipping trailing blanks can land exactly on the terminator
+         * (every file ending in whitespace/newline). Stop here: falling
+         * through would run strncmp + p++ past the NUL and re-read one
+         * byte out of bounds (AddressSanitizer heap-buffer-overflow). */
+        if (!*p)
+            break;
         if (strncmp(p, "const embed_", 12) == 0)
         {
             p += 12;
@@ -930,6 +941,13 @@ static inline AromaNode *registry_find(const WidgetRegistry *reg, const char *id
         if (strcmp(reg->items[i].id, id) == 0)
             return reg->items[i].node;
     return NULL;
+}
+
+AromaNode *IncenseFindWidgetQuiet(const IncenseRegistry *registry, const char *id)
+{
+    if (!registry || !id || !id[0])
+        return NULL;
+    return registry_find(&registry->reg, id);
 }
 
 AromaNode *IncenseFindWidget(const IncenseRegistry *registry, const char *id)
@@ -2427,25 +2445,43 @@ static int match_enum(IncenseNode *node, const PropBag *bag, const char *key, in
     ERR_SUGGEST("Valid values: %s", safe_str(valid_list));
     return def;
 }
+static int valid_prop_cmp(const void *a, const void *b)
+{
+    const char *const *pa = (const char *const *)a;
+    const char *const *pb = (const char *const *)b;
+    return strcmp(*pa, *pb);
+}
+
 static void validate_properties(IncenseNode *node, const PropBag *bag)
 {
     if (!bag)
         return;
   static const char *const valid[] = {
-    "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_loop", "animation_start_val",
-    "attribution", "auto_rotate", "autoplay", "blur_radius", "cam_far", "cam_far_plane", "cam_fov", "cam_near", "cam_near_plane", "cam_phi", "cam_radius", "cam_target_x", "cam_target_y", "cam_target_z", "cam_theta", "checked", "color", "columns", "condition", "corner_radius", "direction", "duration", "far", "far_plane", "fill_color", "fill_thickness", "font", "fov", "group",
-    "header", "height", "hidden", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "interactive", "label", "lat", "layout", "length",
-    "light_x", "light_y", "light_z", "lon", "major_length", "major_ticks", "max", "message",
-    "min", "minor_length", "minor_ticks", "max_visible", "model", "near", "near_plane", "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "on_swipe_left", "on_swipe_right", "orientation", "parent", "phi", "placeholder", "popup",
-    "position", "progress", "radius", "scale", "selected", "secondary", "show", "size", "src", "start_angle", "end_angle", "style", "target_x", "target_y", "target_z", "text", "theta", "thickness", "title", "track_color", "track_thickness", "ticks", "tick_color", "tick_thickness", "type", "value",
-    "variant", "visible", "width", "x", "y", "zoom", "z_index", NULL};
+    "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_loop",
+    "animation_start_val", "attribution", "auto_rotate", "autoplay", "blur_radius", "cam_far", "cam_far_plane",
+    "cam_fov", "cam_near", "cam_near_plane", "cam_phi", "cam_radius", "cam_target_x", "cam_target_y", "cam_target_z",
+    "cam_theta", "checked", "color", "columns", "condition", "content_height", "content_width", "corner_radius", "day", "direction", "duration",
+    "end_angle", "far", "far_plane", "fill_color", "fill_thickness", "font", "fov", "group", "header", "height",
+    "hidden", "hour", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "interactive", "label", "lat",
+    "layout", "length", "light_x", "light_y", "light_z", "lon", "major_length", "major_ticks", "max", "max_visible",
+    "message", "min", "minor_length", "minor_ticks", "minute", "mode", "model", "month", "near", "near_plane",
+    "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "on_swipe_left",
+    "on_swipe_right", "orientation", "parent", "phi", "placeholder", "popup", "position", "progress", "radius",
+    "scale", "secondary", "selected", "show", "size", "src", "start_angle", "step", "style", "target_x", "target_y",
+    "target_z", "text", "theta", "thickness", "tick_color", "tick_thickness", "ticks", "title", "track_color",
+    "track_thickness", "type", "value", "variant", "visible", "width", "wrap", "x", "y", "year", "z_index", "zoom", NULL};
+    /* valid[] ends with a NULL sentinel for legacy iteration; keep it
+     * out of the bsearch range. */
+    size_t valid_count = sizeof(valid) / sizeof(valid[0]);
+    if (valid_count > 0)
+        valid_count--;
     for (int i = 0; i < bag->count; i++)
     {
         if (!bag->items[i].key)
             continue;
-        bool found = false;
-        for (int j = 0; valid[j] && !found; j++)
-            found = strcmp(bag->items[i].key, valid[j]) == 0;
+        const char *key = bag->items[i].key;
+        bool found = bsearch(&key, valid, valid_count, sizeof(valid[0]),
+                             valid_prop_cmp) != NULL;
         if (!found)
         {
             ERR_WARN_N_CTX(node, bag->items[i].key, "Unknown property '%s' in widget '%s'", bag->items[i].key, node ? safe_str(node->name) : "?");
@@ -2536,8 +2572,13 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
             float dens = plat->android_get_density();
             if (dens > 0.0f)
             {
-                start_val *= dens;
-                end_val *= dens;
+                /* Snap dp endpoints to the same rounded px grid the
+                 * widgets use (dp_to_px adds 0.5 before truncating).
+                 * Without this, a fractional px end (common on low
+                 * dpi) leaves the widget up to 1px off its layout
+                 * position after the animation finishes. */
+                start_val = roundf(start_val * dens);
+                end_val = roundf(end_val * dens);
             }
         }
     }
@@ -2545,6 +2586,15 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
                                                      start_val, end_val, duration);
     if (anim_obj)
     {
+        /* Slide values are authored parent-relative (x/y in dp, same
+         * space as the widget's layout position). Mark them so the
+         * engine adds the parent offset each tick; otherwise the first
+         * layout pass (viewer y=76, responsive moves) leaves the final
+         * rect parent_abs too high and e.g. the theming primary button
+         * (end 276) lands on the dropdown (196). Scale/fade are
+         * parent-independent. */
+        if (type == AROMA_ANIM_SLIDE_X || type == AROMA_ANIM_SLIDE_Y)
+            anim_obj->parent_relative = true;
         const char *ease = props_get(bag, "animation_easing");
         if (ease && ease[0])
         {
@@ -2789,6 +2839,49 @@ static void bridge_node_int(AromaNode *node, int index, void *ud)
     CallbackEntry *e = ud;
     if (e && e->fn && e->type == INCENSE_CALLBACK_NODE_INT_PTR)
         ((void (*)(AromaNode *, int, void *))e->fn)(node, index, e->userdata);
+}
+
+static void bridge_date_change(AromaNode *node, int year, int month, int day,
+                               void *ud)
+{
+    CallbackEntry *e = ud;
+    if (!e || !e->fn)
+        return;
+    if (e->type == INCENSE_CALLBACK_DATE_PTR)
+        ((void (*)(int, int, int, void *))e->fn)(year, month, day,
+                                                 e->userdata);
+    else if (e->type == INCENSE_CALLBACK_VOID_PTR)
+        ((void (*)(void *))e->fn)(e->userdata);
+    else if (e->type == INCENSE_CALLBACK_NODE_INT_PTR)
+        ((void (*)(AromaNode *, int, void *))e->fn)(node, day, e->userdata);
+}
+
+static void bridge_time_change(AromaNode *node, int hour, int minute,
+                               void *ud)
+{
+    CallbackEntry *e = ud;
+    if (!e || !e->fn)
+        return;
+    if (e->type == INCENSE_CALLBACK_TIME_PTR)
+        ((void (*)(int, int, void *))e->fn)(hour, minute, e->userdata);
+    else if (e->type == INCENSE_CALLBACK_VOID_PTR)
+        ((void (*)(void *))e->fn)(e->userdata);
+    else if (e->type == INCENSE_CALLBACK_NODE_INT_PTR)
+        ((void (*)(AromaNode *, int, void *))e->fn)(node, hour * 60 + minute,
+                                                    e->userdata);
+}
+
+static void bridge_stepper_change(AromaNode *node, int value, void *ud)
+{
+    CallbackEntry *e = ud;
+    if (!e || !e->fn)
+        return;
+    if (e->type == INCENSE_CALLBACK_NODE_INT_PTR)
+        ((void (*)(AromaNode *, int, void *))e->fn)(node, value, e->userdata);
+    else if (e->type == INCENSE_CALLBACK_INT_PTR)
+        ((void (*)(int, void *))e->fn)(value, e->userdata);
+    else if (e->type == INCENSE_CALLBACK_VOID_PTR)
+        ((void (*)(void *))e->fn)(e->userdata);
 }
 
 #define WIDGET_PREAMBLE(node, sp, ctx)                       \
@@ -3599,6 +3692,237 @@ static AromaNode *build_gauge(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
+static AromaNode *build_calendar(IncenseNode *node, AromaNode *sp,
+                                 BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
+    if (!on_change)
+        on_change = resolve_callback(node, &bag, "on_select");
+    AromaNode *built = aroma_calendar_create(
+        parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+        props_int(&bag, "width", 340), props_int(&bag, "height", 300));
+    if (!built) {
+        props_free(&bag);
+        return NULL;
+    }
+    if (node)
+        node->id = built->node_id;
+    if (props_get(&bag, "year") || props_get(&bag, "month") ||
+        props_get(&bag, "day"))
+        aroma_calendar_set_date(built, props_int(&bag, "year", 2026),
+                                props_int(&bag, "month", 10),
+                                props_int(&bag, "day", 6));
+    if (on_change)
+        aroma_calendar_set_on_select(built, bridge_date_change, on_change);
+    /* Popup-only widget: no inline mode exists, nothing to enable. */
+    aroma_calendar_set_font(built, _widget_font);
+    aroma_calendar_setup_events(built, NULL, NULL);
+    int zi = props_int(&bag, "z_index", 0);
+    if (zi)
+        aroma_node_set_z_index(built, zi);
+    apply_widget_animations(built, &bag, node);
+    maybe_register(&bag, built, ctx);
+    props_free(&bag);
+    return built;
+}
+
+static AromaNode *build_datepicker(IncenseNode *node, AromaNode *sp,
+                                    BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
+    AromaNode *built = aroma_datepicker_create(
+        parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+        props_int(&bag, "width", 340), props_int(&bag, "height", 340),
+        props_int(&bag, "year", 2026), props_int(&bag, "month", 10),
+        props_int(&bag, "day", 6));
+    if (!built) {
+        props_free(&bag);
+        return NULL;
+    }
+    if (node)
+        node->id = built->node_id;
+    if (on_change)
+        aroma_datepicker_set_on_change(built, bridge_date_change, on_change);
+    /* Popup-only widget: no inline mode exists, nothing to enable. */
+    if (props_get(&bag, "title")) {
+        char *title = props_str_dup(&bag, "title", NULL);
+        if (title && title[0])
+            aroma_datepicker_set_title(built, title);
+        free(title);
+    }
+    aroma_datepicker_set_font(built, _widget_font);
+    aroma_datepicker_setup_events(built, NULL, NULL);
+    int zi = props_int(&bag, "z_index", 0);
+    if (zi)
+        aroma_node_set_z_index(built, zi);
+    apply_widget_animations(built, &bag, node);
+    maybe_register(&bag, built, ctx);
+    props_free(&bag);
+    return built;
+}
+
+static AromaNode *build_timepicker(IncenseNode *node, AromaNode *sp,
+                                    BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
+    AromaNode *built = aroma_timepicker_create(
+        parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+        props_int(&bag, "width", 320), props_int(&bag, "height", 120),
+        props_int(&bag, "hour", 12), props_int(&bag, "minute", 0));
+    if (!built) {
+        props_free(&bag);
+        return NULL;
+    }
+    if (node)
+        node->id = built->node_id;
+    if (props_get(&bag, "mode")) {
+        char *mode = props_str_dup(&bag, "mode", "");
+        if (mode) {
+            if (!strcmp(mode, "24h") || !strcmp(mode, "24"))
+                aroma_timepicker_set_24h(built, true);
+            free(mode);
+        }
+    }
+    if (on_change)
+        aroma_timepicker_set_on_change(built, bridge_time_change, on_change);
+    if (props_get(&bag, "title")) {
+        char *title = props_str_dup(&bag, "title", NULL);
+        if (title && title[0])
+            aroma_timepicker_set_title(built, title);
+        free(title);
+    }
+    aroma_timepicker_set_font(built, _widget_font);
+    aroma_timepicker_setup_events(built, NULL, NULL);
+    int zi = props_int(&bag, "z_index", 0);
+    if (zi)
+        aroma_node_set_z_index(built, zi);
+    apply_widget_animations(built, &bag, node);
+    maybe_register(&bag, built, ctx);
+    props_free(&bag);
+    return built;
+}
+
+static AromaNode *build_stepper(IncenseNode *node, AromaNode *sp,
+                                 BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
+    char *mode = props_str_dup(&bag, "mode", "numeric");
+    AromaNode *built = NULL;
+    if (mode && (!strcmp(mode, "steps") || !strcmp(mode, "wizard"))) {
+        IncenseNode *items[AROMA_STEPPER_STEPS_MAX];
+        int n = collect_item_nodes(node, "Step", items,
+                                   AROMA_STEPPER_STEPS_MAX);
+        char *bufs[AROMA_STEPPER_STEPS_MAX];
+        const char *labels[AROMA_STEPPER_STEPS_MAX];
+        memset(bufs, 0, sizeof(bufs));
+        for (int i = 0; i < n; i++) {
+            PropBag ib;
+            props_collect(items[i], &ib);
+            bufs[i] = props_str_dup(&ib, "text", "");
+            if (!bufs[i])
+                bufs[i] = strdup("");
+            labels[i] = bufs[i] ? bufs[i] : "";
+            props_free(&ib);
+        }
+        built = aroma_stepper_create_steps(
+            parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+            props_int(&bag, "width", 340), props_int(&bag, "height", 72),
+            n > 0 ? labels : NULL, n);
+        for (int i = 0; i < n; i++)
+            free(bufs[i]);
+        if (built && props_get(&bag, "selected"))
+            aroma_stepper_set_step_index(built,
+                                         props_int(&bag, "selected", 0));
+    } else {
+        built = aroma_stepper_create_numeric(
+            parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+            props_int(&bag, "width", 220), props_int(&bag, "height", 44),
+            props_int(&bag, "min", 0), props_int(&bag, "max", 100),
+            props_int(&bag, "value", 1),
+            props_int(&bag, "step", 1));
+        if (built && props_get(&bag, "wrap"))
+            aroma_stepper_set_wrap(built, props_bool(&bag, "wrap", true));
+    }
+    free(mode);
+    if (!built) {
+        props_free(&bag);
+        return NULL;
+    }
+    if (node)
+        node->id = built->node_id;
+    if (on_change)
+        aroma_stepper_set_on_change(built, bridge_stepper_change, on_change);
+    aroma_stepper_set_font(built, _widget_font);
+    aroma_stepper_setup_events(built, NULL, NULL);
+    int zi = props_int(&bag, "z_index", 0);
+    if (zi)
+        aroma_node_set_z_index(built, zi);
+    apply_widget_animations(built, &bag, node);
+    maybe_register(&bag, built, ctx);
+    props_free(&bag);
+    return built;
+}
+
+static AromaNode *build_carousel(IncenseNode *node, AromaNode *sp,
+                                  BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    CallbackEntry *on_change = resolve_callback(node, &bag, "on_change");
+    AromaNode *built = aroma_carousel_create(
+        parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+        props_int(&bag, "width", 340), props_int(&bag, "height", 220));
+    if (!built) {
+        props_free(&bag);
+        return NULL;
+    }
+    if (node)
+        node->id = built->node_id;
+    if (on_change)
+        aroma_carousel_set_on_change(built, bridge_stepper_change, on_change);
+    aroma_carousel_set_font(built, _widget_font);
+    aroma_carousel_setup_events(built, NULL, NULL);
+    int zi = props_int(&bag, "z_index", 0);
+    if (zi)
+        aroma_node_set_z_index(built, zi);
+    apply_widget_animations(built, &bag, node);
+    maybe_register(&bag, built, ctx);
+    if (node) {
+        for (IncenseNode *ch = node->first_child; ch; ch = ch->next_sibling) {
+            if (!ch || ch->type != INCENSE_OBJECT || !ch->name)
+                continue;
+            if (strcmp(ch->name, "Page") != 0)
+                continue;
+            AromaNode *page = aroma_carousel_add_page(built);
+            if (page)
+                build_children(ch, page, ctx);
+        }
+        build_children(node, built, ctx);
+        int sel = props_int(&bag, "selected", 0);
+        if (sel)
+            aroma_carousel_set_page(built, sel);
+        else
+            aroma_carousel_set_page(built, 0);
+    } else {
+        build_children(node, built, ctx);
+    }
+    props_free(&bag);
+    return built;
+}
+
 static AromaNode *build_3d_viewer(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
     if (!ctx)
@@ -3813,8 +4137,6 @@ static AromaNode *build_menu(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     }
     if (!item_count)
         ERR_WARN_N(node, "Menu has no items");
-    else
-        aroma_menu_show(built);
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
@@ -4257,12 +4579,15 @@ static AromaNode *build_chip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 static const WidgetEntry WIDGET_TABLE[] = {
     {"Action", NULL},
     {"Button", build_button},
+    {"Calendar", build_calendar},
     {"Canvas", build_canvas},
     {"Card", build_card},
+    {"Carousel", build_carousel},
     {"Checkbox", build_checkbox},
     {"Chip", build_chip},
     {"Column", NULL},
     {"Container", build_container},
+    {"DatePicker", build_datepicker},
     {"DebugOverlay", build_debugoverlay},
     {"Dialog", build_dialog},
     {"DialogAction", NULL},
@@ -4285,6 +4610,7 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Menu", build_menu},
     {"MenuItem", NULL},
     {"Option", NULL},
+    {"Page", NULL},
     {"ProgressBar", build_progressbar},
     {"RadioButton", build_radiobutton},
     {"Row", NULL},
@@ -4295,12 +4621,15 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"Sidebar", build_sidebar},
     {"Slider", build_slider},
     {"Snackbar", build_snackbar},
+    {"Step", NULL},
+    {"Stepper", build_stepper},
     {"Switch", build_switch},
     {"Tab", NULL},
     {"Table", build_table},
     {"Tabs", build_tabs},
     {"Textbox", build_textbox},
     {"ThreeDViewer", build_3d_viewer},
+    {"TimePicker", build_timepicker},
     {"Tooltip", build_tooltip},
     {NULL, NULL}};
 

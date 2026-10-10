@@ -1,0 +1,156 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "sqlite3_build/libsqlite3d.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"install",
+			"target_compile_definitions"
+		],
+		"files" : 
+		[
+			"/home/yassine/Projects/AromaUI/vendors/sqlite3/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 40,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 95,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 47,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_DEFAULT_MEMSTATUS=0"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_DEFAULT_WAL_SYNCHRONOUS=1"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_DQS=0"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_ENABLE_MATH_FUNCTIONS"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_LIKE_DOESNT_MATCH_BLOBS"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_MAX_EXPR_DEPTH=0"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_OMIT_DECLTYPE"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_OMIT_DEPRECATED"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_OMIT_PROGRESS_CALLBACK"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_OMIT_SHARED_CACHE"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "SQLITE_USE_ALLOCA"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				0
+			],
+			"sysroot" : 
+			{
+				"path" : "/home/yassine/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+			}
+		}
+	],
+	"id" : "SQLite3::@04cd79d7ceb76f65af7f",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 2,
+				"path" : "lib"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "/usr/local"
+		}
+	},
+	"name" : "SQLite3",
+	"nameOnDisk" : "libsqlite3d.a",
+	"paths" : 
+	{
+		"build" : "sqlite3_build",
+		"source" : "/home/yassine/Projects/AromaUI/vendors/sqlite3"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "/home/yassine/Projects/AromaUI/vendors/sqlite3/sqlite3.c",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

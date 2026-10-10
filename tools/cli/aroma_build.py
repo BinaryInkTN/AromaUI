@@ -253,9 +253,9 @@ def cmd_run(args):
         exe = os.path.join(build_dir, os.path.basename(cwd))
         if not os.path.exists(exe):
             if os.path.isdir(build_dir):
-                for f in os.listdir(build_dir):
+                for f in sorted(os.listdir(build_dir)):
                     fp = os.path.join(build_dir, f)
-                    if os.access(fp, os.X_OK) and not f.endswith('.so'):
+                    if os.path.isfile(fp) and os.access(fp, os.X_OK) and not f.endswith('.so'):
                         exe = fp
                         break
         

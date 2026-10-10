@@ -1,0 +1,43 @@
+Window {
+    width: 360
+    height: 690
+    title: "Lists and Tables"
+
+    Label { text: "Inbox" x: 16 y: 16 style: "large" }
+    Label { id: "status" text: "Pick a row" x: 16 y: 44 style: "small" }
+    ListView { x: 16 y: 70 width: 328 height: 210 on_select: "listed"
+        Header { text: "Today" }
+        ListItem { text: "Ada" secondary: "Patch review tonight?" icon: "AROMA_ICON_EMAIL" }
+        ListItem { text: "Grace" secondary: "Meeting notes" icon: "AROMA_ICON_ATTACH_FILE" }
+        ListItem { text: "Linus" secondary: "Release plan v3" icon: "AROMA_ICON_EVENT" }
+        Separator { }
+        Header { text: "Starred" }
+        ListItem { text: "Margaret" secondary: "Bug report #421" icon: "AROMA_ICON_STAR" }
+        ListItem { text: "Ken" secondary: "Design doc draft" icon: "AROMA_ICON_EMAIL" }
+    }
+
+    Label { text: "Team roster" x: 16 y: 310 style: "large" }
+    Table { id: "grid" x: 16 y: 335 width: 328 height: 180
+        Column { header: "Name" width: 90 }
+        Column { header: "Role" width: 100 }
+        Column { header: "Level" width: 48 }
+        Column { header: "City" width: 90 }
+    }
+
+    Label { text: "Get started" x: 16 y: 525 style: "large" }
+    Carousel { x: 16 y: 550 width: 328 height: 150 on_change: "paged"
+        Page {
+            Label { text: "Welcome aboard" x: 16 y: 8 style: "large" }
+            Label { text: "Swipe the tour" x: 16 y: 42 style: "medium" }
+        }
+        Page {
+            Label { text: "Stay in sync" x: 16 y: 8 style: "large" }
+            Label { text: "Realtime updates" x: 16 y: 42 style: "medium" }
+        }
+        Page {
+            Label { text: "Ready" x: 16 y: 8 style: "large" }
+            Label { text: "Invite the team" x: 16 y: 42 style: "medium" }
+            Button { text: "Invite team" x: 16 y: 68 width: 160 height: 36 on_click: "invited" }
+        }
+    }
+}

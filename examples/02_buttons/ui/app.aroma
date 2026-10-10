@@ -1,0 +1,55 @@
+Window {
+    width: 360
+    height: 760
+    title: "Buttons"
+
+    Label { text: "Trip to Kyoto" x: 16 y: 16 style: "large" }
+    Label { text: "Actions and tags" x: 16 y: 48 style: "small" }
+
+    Button { text: "Reply" x: 16 y: 96 width: 328 height: 48 type: filled icon: "AROMA_ICON_REPLY" on_click: "act_reply" }
+    Button { text: "Forward" x: 16 y: 152 width: 328 height: 48 type: tonal icon: "AROMA_ICON_FORWARD" on_click: "act_forward" }
+    Button { text: "Delete" x: 16 y: 208 width: 328 height: 48 type: outlined icon: "AROMA_ICON_DELETE" on_click: "act_delete" }
+    Button { text: "Mark read" x: 16 y: 264 width: 328 height: 48 type: text on_click: "act_read" }
+    Button { text: "Snooze" x: 16 y: 320 width: 328 height: 48 type: elevated icon: "AROMA_ICON_SCHEDULE" on_click: "act_snooze" }
+
+    Label { text: "Quick actions" x: 16 y: 390 style: "large" }
+    Container {
+        x: 16
+        y: 424
+        width: 328
+        height: 56
+        layout: flex
+        direction: row
+
+        IconButton { icon: "AROMA_ICON_CALL" x: 0 y: 0 size: 48 variant: standard on_click: "act_call" }
+        IconButton { icon: "AROMA_ICON_VIDEOCAM" x: 0 y: 0 size: 48 variant: filled on_click: "act_video" }
+        IconButton { icon: "AROMA_ICON_STAR" x: 0 y: 0 size: 48 variant: tonal on_click: "act_pin" }
+        IconButton { icon: "AROMA_ICON_MORE_VERT" x: 0 y: 0 size: 48 variant: outlined on_click: "act_more" }
+    }
+
+    Label { text: "Tags" x: 16 y: 500 style: "large" }
+    Container {
+        x: 16
+        y: 534
+        width: 328
+        height: 40
+        layout: flex
+        direction: row
+
+        Chip { label: "Travel" x: 0 y: 0 type: assist icon: "AROMA_ICON_FLIGHT" }
+        Chip { label: "Important" x: 0 y: 0 type: filter selected: true }
+    }
+    Container {
+        x: 16
+        y: 582
+        width: 328
+        height: 40
+        layout: flex
+        direction: row
+
+        Chip { label: "Add tag" x: 0 y: 0 type: input icon: "AROMA_ICON_ADD" }
+        Chip { label: "Receipts" x: 0 y: 0 type: suggestion }
+    }
+
+    Label { id: "status" text: "Choose an action" x: 16 y: 650 style: "medium" }
+}

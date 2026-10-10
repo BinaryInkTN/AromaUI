@@ -1,0 +1,25 @@
+{
+  "project": {
+    "name": "DateTime",
+    "package": "com.example.datetime",
+    "version": "0.1.0",
+    "min_sdk": 24,
+    "target_sdk": 34,
+    "compile_sdk": 34
+  },
+  "bundle": {
+    "description": "DateTime built with AromaUI",
+    "maintainer": "Aroma Developer <dev@example.com>",
+    "license": "MIT",
+    "categories": "Utility;"
+  },
+  "build": {
+    "sdk_version": "34",
+    "build_tools": "34.0.0",
+    "ndk_version": "25.2.9519653",
+    "cmake_version": "3.22.1"
+  },
+  "run": {
+    "device_serial": "INAQMR55GQUOW8YX"
+  }
+}

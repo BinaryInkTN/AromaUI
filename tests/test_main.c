@@ -34,6 +34,8 @@
 #include "test_aroma_event_system.h"
 #include "test_aroma_drawlist.h"
 #include "test_aroma_timing.h"
+#include "test_aroma_velocity.h"
+#include "test_aroma_event_forget.h"
 #include "test_aroma_color.h"
 #include "test_aroma_theme.h"
 #include "test_aroma_font_measure.h"
@@ -53,6 +55,7 @@
 #include "test_aroma_forms.h"
 #include "test_aroma_canvas.h"
 #include "test_aroma_table.h"
+#include "test_aroma_pickers.h"
 #include "test_aroma_incense.h"
 #include <stdio.h>
 
@@ -97,6 +100,10 @@ int main(void)
     tally(passed, failed);
     run_timing_tests(&passed, &failed);
     tally(passed, failed);
+    run_velocity_tests(&passed, &failed);
+    tally(passed, failed);
+    run_event_forget_tests(&passed, &failed);
+    tally(passed, failed);
     run_color_tests(&passed, &failed);
     tally(passed, failed);
     run_theme_tests(&passed, &failed);
@@ -138,6 +145,8 @@ int main(void)
     run_canvas_tests(&passed, &failed);
     tally(passed, failed);
     run_table_tests(&passed, &failed);
+    tally(passed, failed);
+    run_pickers_tests(&passed, &failed);
     tally(passed, failed);
     end_category();
 

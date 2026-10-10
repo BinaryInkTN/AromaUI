@@ -1,0 +1,31 @@
+Window {
+    width: 360
+    height: 680
+    title: "Gestures"
+
+    Label { text: "Gesture lab" x: 16 y: 16 style: "large" }
+    Label { text: "Tap, swipe, pinch and hold the stage" x: 16 y: 48 style: "small" }
+
+    Card {
+        id: "stage"
+        x: 16
+        y: 96
+        width: 328
+        height: 280
+        type: filled
+
+        Label { text: "Touch here" x: 24 y: 24 style: "medium" }
+        Label { text: "One finger: tap, double tap," x: 24 y: 58 style: "small" }
+        Label { text: "hold, swipe, drag" x: 24 y: 84 style: "small" }
+        Label { text: "Two fingers: pinch" x: 24 y: 110 style: "small" }
+    }
+
+    Label { text: "Last gesture" x: 16 y: 396 style: "small" }
+    Label { id: "gesture" text: "Touch the stage" x: 16 y: 420 style: "medium" }
+    Label { text: "Detail" x: 16 y: 452 style: "small" }
+    Label { id: "detail" text: "Tap, swipe, pinch, hold" x: 16 y: 476 style: "medium" }
+
+    Button { text: "Clear" x: 16 y: 528 width: 150 height: 48 on_click: "cleared" }
+    Switch { x: 190 y: 534 width: 64 height: 36 value: true on_change: "toggled" }
+    Label { text: "Gestures on" x: 270 y: 540 style: "medium" }
+}

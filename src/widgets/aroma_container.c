@@ -1093,6 +1093,11 @@ AromaScrollDirection aroma_container_get_scroll_direction(AromaNode *node)
     return c->direction;
 }
 
+int aroma_container_touch_slop_px(void)
+{
+    return scroll_slop_px();
+}
+
 void aroma_container_get_scroll(AromaNode *node, int *scroll_x, int *scroll_y)
 {
     AromaContainer *c = aroma_container_get(node);

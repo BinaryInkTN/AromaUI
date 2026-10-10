@@ -20,6 +20,7 @@
 #include "aroma_time.h"
 #include "aroma_timer.h"
 #include "aroma_drawlist.h"
+#include "aroma_gesture.h"
 #include "aroma_ui.h"
 #include "aroma_widgets.h"
 #include "aroma_ubuntu_font.h"

@@ -1,0 +1,11 @@
+Window {
+    width: 360
+    height: 600
+    title: "Hello World"
+
+    Label { text: "Tap counter" x: 120 y: 150 style: "large" }
+    Label { text: "Your first AromaUI app" x: 95 y: 190 style: "medium" }
+    Label { id: "counter" text: "0" x: 175 y: 250 style: "large" }
+    Button { text: "Tap me" x: 45 y: 330 width: 125 height: 48 type: filled on_click: "tapped" }
+    Button { text: "Reset" x: 190 y: 330 width: 125 height: 48 type: outlined on_click: "reset" }
+}

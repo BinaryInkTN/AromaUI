@@ -36,6 +36,7 @@ void aroma_container_set_content_size(AromaNode* node, int content_width, int co
 void aroma_container_set_scroll_direction(AromaNode* node, AromaScrollDirection direction);
 
 AromaScrollDirection aroma_container_get_scroll_direction(AromaNode* node);
+int aroma_container_touch_slop_px(void);
 
 void aroma_container_get_scroll(AromaNode* node, int* scroll_x, int* scroll_y);
 
@@ -73,6 +74,9 @@ static inline void aroma_container_screen_to_content(AromaNode *container, int *
 }
 static inline AromaContainer* aroma_container_get(AromaNode* node) {
     if (!node || node->node_type != NODE_TYPE_CONTAINER) {
+        return NULL;
+    }
+    if (node->draw_cb != NULL && node->draw_cb != aroma_container_draw) {
         return NULL;
     }
     return AROMA_NODE_AS(node, AromaContainer);

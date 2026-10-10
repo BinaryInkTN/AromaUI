@@ -30,6 +30,12 @@ typedef struct
     bool glps_initialized;
     void (*frame_update_callback)(size_t window_id, void *data);
     void *frame_update_data;
+    /* Set once the window manager reports our window closed (WM_DELETE /
+     * DestroyNotify). X11 destroys the EGL state with the window, so every
+     * EGL touch below must stop once this is set; otherwise the next
+     * render dereferences the destroyed context (SIGSEGV). Cleared again
+     * if a window is (re)created. */
+    bool window_closed;
 } AromaGLPSContext;
 
 static AromaGLPSContext platform_ctx = (AromaGLPSContext){
@@ -44,7 +50,22 @@ static AromaGLPSContext platform_ctx = (AromaGLPSContext){
     .frame_rendered = false,
     .glps_initialized = false,
     .frame_update_callback = NULL,
-    .frame_update_data = NULL};
+    .frame_update_data = NULL,
+    .window_closed = false};
+
+static void glps_window_close_callback(size_t window_id, void *data)
+{
+    (void)window_id;
+    (void)data;
+    /* The window (and its EGL state) is gone or going away. Stop all
+     * rendering paths: detach the frame callback so no Expose-driven
+     * synchronous render can fire inside the event drain, and mark the
+     * context so make_context_current/swap_buffers become safe no-ops.
+     * run_event_loop() below turns this into a clean shutdown. */
+    platform_ctx.window_closed = true;
+    if (platform_ctx.wm)
+        glps_wm_window_set_frame_update_callback(platform_ctx.wm, NULL, NULL);
+}
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
@@ -338,6 +359,7 @@ static bool ensure_glps_initialized(void)
     glps_wm_set_scroll_callback(platform_ctx.wm, glps_scroll_callback, NULL);
     glps_wm_set_keyboard_callback(platform_ctx.wm, glps_keyboard_callback, NULL);
     glps_wm_set_touch_callback(platform_ctx.wm, glps_touch_callback, NULL);
+    glps_wm_window_set_close_callback(platform_ctx.wm, glps_window_close_callback, NULL);
 
     if (platform_ctx.frame_update_callback)
     {
@@ -363,6 +385,7 @@ size_t create_window(const char *title, int x, int y, int width, int height)
     if (!ensure_glps_initialized())
         return 0;
 
+    platform_ctx.window_closed = false;
     size_t window_id = glps_wm_window_create(platform_ctx.wm, title, x, y, width, height);
 
     if (!platform_ctx.has_primary_window)
@@ -385,6 +408,13 @@ void make_context_current(size_t window_id)
 {
     if (!ensure_glps_initialized())
         return;
+    if (platform_ctx.window_closed)
+        return;
+    if (window_id >= glps_wm_get_window_count(platform_ctx.wm))
+    {
+        LOG_ERROR("make_context_current: window %zu no longer exists", window_id);
+        return;
+    }
     glps_wm_set_window_ctx_curr(platform_ctx.wm, window_id);
 }
 
@@ -408,6 +438,8 @@ void set_window_update_callback(void (*callback)(size_t window_id, void *data), 
 
 void request_window_update(size_t window_id)
 {
+    if (platform_ctx.window_closed)
+        return;
     if (platform_ctx.frame_update_callback)
     {
         platform_ctx.frame_update_callback(window_id, platform_ctx.frame_update_data);
@@ -421,11 +453,24 @@ bool run_event_loop()
         LOG_ERROR("Window manager not initialized. Cannot run event loop.");
         return false;
     }
-    return !glps_wm_should_close(platform_ctx.wm);
+    if (platform_ctx.window_closed)
+        return false;
+    if (glps_wm_should_close(platform_ctx.wm))
+        return false;
+    /* X11 destroys the window (and its EGL state) while draining close /
+     * destroy events above, but should_close only evaluated the pre-drain
+     * state and unconditionally reports "keep running" afterwards. If the
+     * last window is gone, stop here: the next render would dereference
+     * the destroyed EGL context (SIGSEGV in eglMakeCurrent) instead of
+     * shutting down cleanly. */
+    return glps_wm_get_window_count(platform_ctx.wm) > 0;
 }
 
 void swap_buffers(size_t window_id)
 {
+    /* Skip swaps after close: the surface is destroyed. */
+    if (platform_ctx.window_closed)
+        return;
 #ifdef AROMA_HAS_VULKAN
 
     AromaGraphicsBackendType type = aroma_backend_abi.get_graphics_backend_type
@@ -458,6 +503,7 @@ void shutdown()
         platform_ctx.primary_window_id = 0;
         platform_ctx.has_primary_window = false;
         platform_ctx.glps_initialized = false;
+        platform_ctx.window_closed = false;
         return;
     }
 
@@ -466,6 +512,7 @@ void shutdown()
     platform_ctx.primary_window_id = 0;
     platform_ctx.has_primary_window = false;
     platform_ctx.glps_initialized = false;
+    platform_ctx.window_closed = false;
 }
 
 #ifdef AROMA_HAS_VULKAN

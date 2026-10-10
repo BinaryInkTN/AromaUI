@@ -32,8 +32,11 @@
 #include "widgets/aroma_3d_viewer.h"
 #include "aroma_node.h"
 #include "aroma_slab_alloc.h"
+#include "aroma_event.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int s_passed = 0;
 static int s_failed = 0;
@@ -278,6 +281,74 @@ static void test_image_no_load(void)
     __node_system_destroy();
 }
 
+static bool dummy_image_click(AromaNode *node, void *ud)
+{
+    (void)node;
+    (void)ud;
+    return true;
+}
+
+/* Forged worker payload: must match ImageFetchResult ({bool; char[1024]}). */
+typedef struct {
+    bool ok;
+    char cache[1024];
+} FakeFetchResult;
+
+static void test_image_fetch_marshal(void)
+{
+    __node_system_init();
+    aroma_event_system_init();
+    AromaNode *root = make_root();
+    aroma_event_set_root(root);
+
+    AromaNode *img = aroma_image_create(root, NULL, 10, 10, 64, 64);
+    CHECK(img != NULL, "image created for marshal test");
+    if (!img) {
+        aroma_event_system_shutdown();
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+    aroma_image_set_on_click(img, dummy_image_click, NULL);
+    aroma_node_mark_clean(img);
+
+    /* No fetch in flight: completions are stale and must be ignored. */
+    aroma_image_apply_fetch_result(img, true, "/tmp/x.png");
+    CHECK(!aroma_node_is_dirty(img), "stale fetch result ignored");
+
+    /* Worker completion routed worker->queue->handler must not crash and
+     * must be consumed without dirtying (still stale here). */
+    FakeFetchResult *res = (FakeFetchResult *)calloc(1, sizeof(*res));
+    CHECK(res != NULL, "forged payload allocated");
+    res->ok = false;
+    AromaEvent *ev = aroma_event_create_custom(img->node_id,
+                                               AROMA_IMAGE_FETCH_COMPLETE,
+                                               res, free);
+    CHECK(ev != NULL, "fetch-complete event created");
+    CHECK(aroma_event_queue(ev), "fetch-complete event queued");
+    aroma_event_process_queue();
+    CHECK(!aroma_node_is_dirty(img), "failed fetch ignored cleanly");
+
+    uint64_t dead_id = img->node_id;
+    aroma_image_apply_fetch_result(NULL, true, "/tmp/x.png");
+    aroma_image_destroy(img);
+    /* Event for the destroyed node must resolve to NULL, never crash. */
+    AromaEvent *ev2 = aroma_event_create_custom(dead_id,
+                                                AROMA_IMAGE_FETCH_COMPLETE,
+                                                NULL, NULL);
+    CHECK(ev2 == NULL || ev2->target_node == NULL,
+          "dead image id resolves to NULL");
+    if (ev2) {
+        CHECK(!aroma_event_dispatch(ev2), "dead image event dropped");
+        aroma_event_destroy(ev2);
+    }
+    CHECK(1, "apply NULL-safe");
+
+    aroma_event_system_shutdown();
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
 static void test_debug_overlay(void)
 {
     __node_system_init();
@@ -323,6 +394,7 @@ void run_display_tests(int *passed, int *failed)
     test_table();
     test_gif_rejections();
     test_image_no_load();
+    test_image_fetch_marshal();
     test_debug_overlay();
     test_3d_viewer_create();
     printf("Aroma Display: %d passed, %d failed\n", s_passed, s_failed);

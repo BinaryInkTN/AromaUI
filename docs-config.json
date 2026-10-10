@@ -217,6 +217,17 @@
             "file": "docs/widget-library/Input-and-Control-Widgets.md"
         },
         {
+            "title": "Pickers & Steppers",
+            "description": "Calendar, date/time pickers, steppers, and carousel.",
+            "icon": "calendar",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.1",
+            "updated": "2026-10-06",
+            "status": "stable",
+            "file": "docs/widget-library/Pickers-and-Steppers.md"
+        },
+        {
             "title": "Layout & Navigation",
             "description": "Containers, scrolling, ListView, tabs, sidebars, and menus.",
             "icon": "navigation",

@@ -1,0 +1,1 @@
+/home/yassine/Projects/AromaUI/examples/08_theming/android/app/build/intermediates/cxx/Debug/2z35731k/obj/armeabi-v7a

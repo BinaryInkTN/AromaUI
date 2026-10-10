@@ -1,0 +1,60 @@
+Window {
+    width: 360
+    height: 700
+    title: "Form Inputs"
+
+    Label { text: "Create account" x: 16 y: 16 style: "large" }
+    Label { text: "Every input in one form" x: 16 y: 48 style: "small" }
+
+    ScrollView {
+        x: 12
+        y: 84
+        width: 336
+        height: 580
+        direction: vertical
+
+        Label { text: "Name" x: 4 y: 6 style: "medium" }
+        Textbox { id: "name" placeholder: "Ada Lovelace" x: 4 y: 26 width: 296 height: 40 }
+        Label { text: "Email" x: 4 y: 78 style: "medium" }
+        Textbox { id: "email" placeholder: "ada@example.com" x: 4 y: 98 width: 296 height: 40 }
+
+        Label { text: "Plan" x: 4 y: 150 style: "medium" }
+        RadioButton { label: "Free" x: 4 y: 170 width: 96 height: 36 group: 0 selected: true on_click: "plan_free" }
+        RadioButton { label: "Pro" x: 104 y: 170 width: 96 height: 36 group: 0 on_click: "plan_pro" }
+        RadioButton { label: "Team" x: 204 y: 170 width: 96 height: 36 group: 0 on_click: "plan_team" }
+
+        Label { text: "Country" x: 4 y: 218 style: "medium" }
+        Dropdown { x: 4 y: 238 width: 200 height: 40 on_change: "drop" max_visible: 4
+            Option { text: "Canada" }
+            Option { text: "France" }
+            Option { text: "Japan" }
+            Option { text: "Tunisia" }
+        }
+
+        Label { text: "Age" x: 4 y: 290 style: "medium" }
+        Slider { id: "age" x: 4 y: 310 width: 296 height: 36 min: 13 max: 100 value: 30 }
+
+        Label { text: "Seats" x: 4 y: 358 style: "medium" }
+        Stepper { id: "seats" x: 4 y: 378 width: 190 height: 100 min: 1 max: 10 value: 2 step: 1 }
+
+        Checkbox { id: "terms" label: "I accept the terms" x: 4 y: 490 width: 290 height: 32 }
+        Checkbox { id: "news" label: "Email me news" x: 4 y: 524 width: 290 height: 32 checked: true }
+        Switch { id: "push" x: 4 y: 568 width: 64 height: 32 value: true }
+        Label { text: "Push alerts" x: 84 y: 572 style: "medium" }
+
+        Button { text: "Create account" x: 4 y: 612 width: 220 height: 48 on_click: "submit" }
+        Label { id: "status" text: "Fill the form" x: 4 y: 668 style: "small" }
+    }
+
+    Dialog {
+        id: "done"
+        title: "Welcome aboard"
+        message: ""
+        width: 320
+        height: 250
+        type: basic
+        visible: 0
+
+        DialogAction { text: "Start" on_click: "close_dialog" }
+    }
+}

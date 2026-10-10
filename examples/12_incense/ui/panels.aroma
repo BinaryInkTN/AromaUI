@@ -1,0 +1,1 @@
+    Label { text: "Panels embedded from panels file" x: 16 y: 648 style: "small" }

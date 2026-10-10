@@ -1,0 +1,43 @@
+Window {
+    width: 360
+    height: 680
+    title: "Date and Time"
+
+    Label { text: "Book a stay" x: 16 y: 16 style: "large" }
+    Label { text: "Pickers and calendar" x: 16 y: 48 style: "small" }
+
+    ScrollView {
+        x: 12
+        y: 84
+        width: 336
+        height: 560
+        direction: vertical
+
+        Label { text: "October 2026" x: 4 y: 6 style: "medium" }
+        Calendar { x: 4 y: 30 width: 296 height: 240 year: 2026 month: 10 day: 10 on_select: "picked_in" }
+
+        Label { text: "Check-in" x: 4 y: 286 style: "medium" }
+        DatePicker { x: 4 y: 310 width: 296 height: 70 year: 2026 month: 10 day: 10 on_change: "picked_in" }
+
+        Label { text: "Check-out" x: 4 y: 396 style: "medium" }
+        DatePicker { x: 4 y: 420 width: 296 height: 70 year: 2026 month: 10 day: 17 on_change: "picked_out" }
+
+        Label { text: "Arrival time" x: 4 y: 506 style: "medium" }
+        TimePicker { x: 4 y: 530 width: 296 height: 70 hour: 9 minute: 30 on_change: "picked_time" }
+
+        Button { text: "Book now" x: 4 y: 616 width: 190 height: 46 on_click: "book" }
+        Label { id: "status" text: "Pick dates" x: 4 y: 670 style: "small" }
+    }
+
+    Dialog {
+        id: "booked"
+        title: "Reservation held"
+        message: "Pay at the property."
+        width: 320
+        height: 220
+        type: basic
+        visible: 0
+
+        DialogAction { text: "Done" on_click: "close_dialog" }
+    }
+}

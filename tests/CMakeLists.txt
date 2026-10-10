@@ -13,6 +13,8 @@ add_executable(aroma_tests
     core/test_aroma_event_system.c
     core/test_aroma_drawlist.c
     core/test_aroma_timing.c
+    core/test_aroma_velocity.c
+    core/test_aroma_event_forget.c
     core/test_aroma_color.c
     core/test_aroma_theme.c
     core/test_aroma_font_measure.c
@@ -32,6 +34,7 @@ add_executable(aroma_tests
     widgets/test_aroma_forms.c
     widgets/test_aroma_canvas.c
     widgets/test_aroma_table.c
+    widgets/test_aroma_pickers.c
     markup/test_aroma_incense.c
 )
 

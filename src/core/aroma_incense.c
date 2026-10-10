@@ -1,5 +1,6 @@
 #include "aroma_incense.h"
 #include "core/utils/mpc.h"
+#include "backends/platforms/aroma_platform_interface.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,19 +89,6 @@ static IncenseNode *incense_node_new(IncenseNodeType type, const char *name, con
     n->name = incense_strdup(name);
     n->value = incense_strdup(value);
     return n;
-}
-
-static void incense_node_append_child(IncenseNode *parent, IncenseNode *child)
-{
-    if (!parent->first_child)
-    {
-        parent->first_child = child;
-        return;
-    }
-    IncenseNode *cur = parent->first_child;
-    while (cur->next_sibling)
-        cur = cur->next_sibling;
-    cur->next_sibling = child;
 }
 
 static void incense_node_destroy(IncenseNode *node)
@@ -343,6 +331,37 @@ static char *incense_resolve_includes(const char *source, const char *base_path)
                 FILE *fp = fopen(full_path, "rb");
                 char *file_content = NULL;
 
+                if (!fp)
+                {
+                    AromaPlatformInterface *plat = aroma_get_platform_interface();
+                    if (plat && plat->android_asset_exists && plat->android_asset_size && plat->android_asset_read)
+                    {
+                        const char *base = strrchr(full_path, '/');
+                        base = base ? base + 1 : full_path;
+                        const char *try_names[2] = {full_path, base};
+                        for (int ti = 0; ti < 2 && !file_content; ti++)
+                        {
+                            const char *nm = try_names[ti];
+                            if (!nm || !nm[0] || !plat->android_asset_exists(nm))
+                                continue;
+                            long asz = plat->android_asset_size(nm);
+                            if (asz <= 0 || asz > 10 * 1024 * 1024)
+                                continue;
+                            char *raw = malloc((size_t)asz + 1);
+                            if (!raw)
+                                break;
+                            long got = plat->android_asset_read(nm, raw, asz);
+                            if (got < 0)
+                            {
+                                free(raw);
+                                continue;
+                            }
+                            raw[got] = '\0';
+                            file_content = raw;
+                        }
+                    }
+                }
+
                 if (fp)
                 {
                     fseek(fp, 0, SEEK_END);
@@ -516,14 +535,23 @@ static IncenseNode *build_object(mpc_ast_t *ast, const char *source)
     if (!obj)
         return NULL;
 
+    /* Tail-tracked append: the child list would otherwise make object
+     * construction quadratic in sibling count. */
+    IncenseNode *tail = NULL;
     for (int i = 0; i < ast->children_num; i++)
     {
         mpc_ast_t *ch = ast->children[i];
         if (strstr(ch->tag, "item") || strstr(ch->tag, "object") || strstr(ch->tag, "property") || strstr(ch->tag, "embed"))
         {
             IncenseNode *child_node = build_node(ch, source);
-            if (child_node)
-                incense_node_append_child(obj, child_node);
+            if (!child_node)
+                continue;
+            child_node->next_sibling = NULL;
+            if (!obj->first_child)
+                obj->first_child = child_node;
+            else
+                tail->next_sibling = child_node;
+            tail = child_node;
         }
     }
     return obj;

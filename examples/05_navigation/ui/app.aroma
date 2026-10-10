@@ -1,0 +1,83 @@
+Window {
+    width: 360
+    height: 680
+    title: "Navigation"
+
+    IconButton { icon: "AROMA_ICON_MENU" x: 16 y: 16 size: 44 variant: standard on_click: "toggle_drawer" }
+    Label { text: "Music" x: 72 y: 26 style: "large" }
+
+    Tabs {
+        id: "pages"
+        x: 16
+        y: 76
+        width: 328
+        height: 52
+        on_change: "tabs_moved"
+
+        Tab { text: "Playlists" icon: "AROMA_ICON_QUEUE_MUSIC"
+            Label { text: "Top playlists" x: 36 y: 145 style: "large" }
+            Label { text: "Midnight drive - 42" x: 36 y: 185 style: "medium" }
+            Label { text: "Focus flow - 67" x: 36 y: 217 style: "medium" }
+            Label { text: "Gym fuel - 31" x: 36 y: 249 style: "medium" }
+            Button { text: "Play all" x: 36 y: 290 width: 180 height: 44 on_click: "play_lists" }
+        }
+        Tab { text: "Artists" icon: "AROMA_ICON_PERSON"
+            Label { text: "Top artists" x: 36 y: 145 style: "large" }
+            Label { text: "Aurora - 2.1M" x: 36 y: 185 style: "medium" }
+            Label { text: "Glasswing - 890K" x: 36 y: 217 style: "medium" }
+            Label { text: "Pale Saint - 410K" x: 36 y: 249 style: "medium" }
+            Button { text: "Shuffle" x: 36 y: 290 width: 180 height: 44 on_click: "play_artists" }
+        }
+        Tab { text: "Albums" icon: "AROMA_ICON_ALBUM"
+            Label { text: "New albums" x: 36 y: 145 style: "large" }
+            Label { text: "Northbound" x: 36 y: 185 style: "medium" }
+            Label { text: "Static Bloom" x: 36 y: 217 style: "medium" }
+            Label { text: "Low Orbit" x: 36 y: 249 style: "medium" }
+            Button { text: "Play latest" x: 36 y: 290 width: 180 height: 44 on_click: "play_albums" }
+        }
+    }
+
+    Card {
+        x: 16
+        y: 360
+        width: 328
+        height: 110
+        type: filled
+
+        Label { text: "Now playing" x: 16 y: 12 style: "small" }
+        Label { id: "track" text: "Midnight drive" x: 16 y: 36 style: "medium" }
+        ProgressBar { x: 16 y: 72 width: 296 height: 10 value: 0.4 }
+    }
+
+    Label { text: "Filter synced with tabs" x: 16 y: 490 style: "small" }
+    SegmentedControl {
+        id: "modes"
+        x: 16
+        y: 515
+        width: 328
+        height: 48
+        on_change: "modes_moved"
+
+        Segment { text: "Playlists" }
+        Segment { text: "Artists" }
+        Segment { text: "Albums" }
+    }
+
+    Label { id: "status" text: "Pick a destination" x: 16 y: 582 style: "medium" }
+
+    Sidebar {
+        id: "drawer"
+        x: 16
+        y: 16
+        width: 210
+        height: 540
+        visible: 0
+        z_index: 10
+        on_select: "side_picked"
+
+        Item { text: "Home" icon: "AROMA_ICON_HOME" }
+        Item { text: "Search" icon: "AROMA_ICON_SEARCH" }
+        Item { text: "Library" icon: "AROMA_ICON_LIBRARY_MUSIC" }
+        Item { text: "Settings" icon: "AROMA_ICON_SETTINGS" }
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "project": {
+    "name": "Incense",
+    "package": "com.example.incense",
+    "version": "0.1.0",
+    "min_sdk": 24,
+    "target_sdk": 34,
+    "compile_sdk": 34
+  },
+  "bundle": {
+    "description": "Incense built with AromaUI",
+    "maintainer": "Aroma Developer <dev@example.com>",
+    "license": "MIT",
+    "categories": "Utility;"
+  }
+}

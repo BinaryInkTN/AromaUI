@@ -16,7 +16,6 @@
 
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
-
 #include "aroma_3d.h"
 
 #include <stdio.h>

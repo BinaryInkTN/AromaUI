@@ -14,6 +14,20 @@
 static AromaAnimation* animation_list = NULL;
 static AromaTimer*     anim_timer     = NULL;
 
+/* While >0 we are inside aroma_animation_tick(). User callbacks
+ * (custom_cb, on_complete) may stop/clean up animations or start new ones;
+ * freeing list nodes synchronously would pull the node the tick loop is
+ * standing on (or its saved `next`) out from under it. Cleanup entry
+ * points therefore only mark nodes dead while a tick is in flight and the
+ * tick loop sweeps them at a safe point. */
+static int  s_tick_depth     = 0;
+static bool s_deferred_sweep = false;
+
+/* Pause state: while paused, ticks are no-ops and resume shifts every
+ * running animation's start_time forward by the paused wall-clock span. */
+static bool     s_paused      = false;
+static uint64_t s_pause_begin = 0;
+
 
 static float apply_easing(AromaEasingType easing, float t)
 {
@@ -44,13 +58,24 @@ static float apply_easing(AromaEasingType easing, float t)
 static void update_animations(void* arg)
 {
     (void)arg;
+    aroma_animation_tick(aroma_time_now_ms());
+}
+
+void aroma_animation_tick(uint64_t now)
+{
+    /* Frozen while paused (Android background / lost surface): timers are
+     * still pumped by the platform, but animation time must not advance. */
+    if (s_paused)
+        return;
 
     if (!animation_list) return;
 
-    uint64_t        now          = aroma_time_now_ms();
-    AromaAnimation* curr         = animation_list;
-    AromaAnimation* prev         = NULL;
-    bool            needs_redraw = false;
+    s_tick_depth++;
+    bool needs_redraw  = false;
+    bool still_running = false;
+
+    AromaAnimation* curr = animation_list;
+    AromaAnimation* prev = NULL;
 
     while (curr) {
 
@@ -64,11 +89,24 @@ static void update_animations(void* arg)
         }
 
         float raw_progress = (curr->duration_ms > 0)
-            ? (float)(now - curr->start_time) / (float)curr->duration_ms
+            ? (float)((int64_t)now - (int64_t)curr->start_time) / (float)curr->duration_ms
             : 1.0f;
 
         bool finished = (raw_progress >= 1.0f);
         float progress = finished ? 1.0f : raw_progress;
+
+        /* Clamp per-tick advance so a stalled frame cannot teleport the
+         * animation past intermediate states. After a hitch the animation
+         * eases through the missed interval over successive ticks instead
+         * of jumping, so transitions keep their visual pacing on 60/90/120Hz
+         * panels and after Android background gaps. Completion still fires
+         * exactly once when wall-clock progress reaches 1. */
+        if (!finished && curr->duration_ms > 0) {
+            float max_step = (float)AROMA_ANIM_MAX_TICK_STEP_MS / (float)curr->duration_ms;
+            float allowed  = curr->last_progress + max_step;
+            if (progress > allowed)
+                progress = allowed;
+        }
 
         /* Keep animation time locked to the wall clock: after a hitch the
            next tick jumps to the correct position instead of replaying
@@ -82,13 +120,34 @@ static void update_animations(void* arg)
 
         AromaRect* rect = aroma_node_get_rect(curr->target);
         if (rect) {
+            /* Round to nearest px so the final tick lands exactly on the
+             * rounded dp->px end position. Truncation ((int)val) sits up
+             * to 1px low whenever density scaling yields a fractional
+             * pixel, which is most visible on low-dpi (<1.0) screens.
+             * Incense slide values are parent-relative: add the parent's
+             * current position each tick so layout shifts (viewer at
+             * y=76, responsive moves, scroll containers) don't leave the
+             * widget parent_abs too high (e.g. theming button 276
+             * landing on dropdown 196). Programmatic absolute
+             * animations (parent_relative=false) are written as-is. */
+            int parent_x = 0, parent_y = 0;
+            if (curr->parent_relative && curr->target && curr->target->parent_node) {
+                AromaRect* pr = aroma_node_get_rect(curr->target->parent_node);
+                if (pr) {
+                    parent_x = pr->x;
+                    parent_y = pr->y;
+                }
+            }
             switch (curr->type) {
-                case AROMA_ANIM_SLIDE_X:  rect->x      = (int)curr->current_val; break;
-                case AROMA_ANIM_SLIDE_Y:  rect->y      = (int)curr->current_val; break;
-                case AROMA_ANIM_SCALE_X:  rect->width  = (int)curr->current_val; break;
-                case AROMA_ANIM_SCALE_Y:  rect->height = (int)curr->current_val; break;
+                case AROMA_ANIM_SLIDE_X:  rect->x      = parent_x + (int)roundf(curr->current_val); break;
+                case AROMA_ANIM_SLIDE_Y:  rect->y      = parent_y + (int)roundf(curr->current_val); break;
+                case AROMA_ANIM_SCALE_X:  rect->width  = (int)roundf(curr->current_val); break;
+                case AROMA_ANIM_SCALE_Y:  rect->height = (int)roundf(curr->current_val); break;
                 default: break;
             }
+            if ((curr->type == AROMA_ANIM_SLIDE_X || curr->type == AROMA_ANIM_SCALE_X) &&
+                curr->target)
+                aroma_layout_note_placed(curr->target);
         }
 
         if (curr->type == AROMA_ANIM_FADE && curr->target) {
@@ -97,6 +156,16 @@ static void update_animations(void* arg)
 
         if (curr->type == AROMA_ANIM_CUSTOM && curr->custom_cb) {
             curr->custom_cb(curr->target, curr->current_val, curr->user_data);
+            if (!curr->is_running) {
+                /* The callback stopped, cleaned up, or destroyed the
+                 * target node (__destroy_node from inside the callback is
+                 * legal): curr->target may dangle now. Skip this tick's
+                 * remainder; the sweep frees the animation without ever
+                 * touching the target again. */
+                prev = curr;
+                curr = curr->next;
+                continue;
+            }
         }
 
         aroma_node_invalidate(curr->target);
@@ -109,6 +178,7 @@ static void update_animations(void* arg)
                    seamlessly from the beginning. */
                 curr->start_time = now;
                 curr->last_progress = 0.0f;
+                still_running = true;
             } else if (curr->loop_mode == AROMA_LOOP_PINGPONG && curr->duration_ms > 0) {
                 /* Ping-pong: swap direction so the next cycle eases back
                    toward the start value with no visible jump. */
@@ -117,6 +187,7 @@ static void update_animations(void* arg)
                 curr->end_val = tmp;
                 curr->start_time = now;
                 curr->last_progress = 0.0f;
+                still_running = true;
             } else {
                 curr->is_running = false;
 
@@ -125,15 +196,77 @@ static void update_animations(void* arg)
                     curr->on_complete(curr->target, curr->user_data);
                 }
             }
+        } else {
+            still_running = true;
         }
 
         prev = curr;
         curr = curr->next;
     }
 
+    /* Sweep animations that user callbacks (custom_cb / on_complete above)
+     * marked dead mid-tick. They could only be flagged, never freed, while
+     * s_tick_depth > 0, so the node the loop stands on is always valid. */
+    if (s_deferred_sweep) {
+        s_deferred_sweep = false;
+        AromaAnimation* c = animation_list;
+        AromaAnimation* p = NULL;
+        while (c) {
+            if (!c->is_running) {
+                if (p) p->next = c->next;
+                else   animation_list = c->next;
+                AromaAnimation* dead = c;
+                c = c->next;
+                free(dead);
+                continue;
+            }
+            p = c;
+            c = c->next;
+        }
+    }
+    s_tick_depth--;
+
     if (needs_redraw) {
         aroma_ui_request_redraw(NULL);
+        if (still_running) {
+            /* Keep the frame chain alive. On Android frames are
+             * vsync-gated: without an explicit request the Choreographer
+             * posts nothing while the app is otherwise idle and the
+             * animation would stall. On Linux/GLPS this resolves to an
+             * immediate update callback and is harmless. */
+            aroma_ui_request_frame();
+        }
     }
+}
+
+void aroma_animation_pause_all(void)
+{
+    if (s_paused)
+        return;
+    s_paused = true;
+    s_pause_begin = aroma_time_now_ms();
+}
+
+void aroma_animation_resume_all(void)
+{
+    if (!s_paused)
+        return;
+    s_paused = false;
+    uint64_t now = aroma_time_now_ms();
+    uint64_t gap = (now >= s_pause_begin) ? (now - s_pause_begin) : 0;
+    if (gap > 0) {
+        for (AromaAnimation* c = animation_list; c; c = c->next) {
+            if (c->is_running)
+                c->start_time += gap;
+        }
+    }
+    if (animation_list)
+        aroma_ui_request_frame();
+}
+
+bool aroma_animation_is_paused(void)
+{
+    return s_paused;
 }
 
 
@@ -144,12 +277,30 @@ void aroma_animation_manager_init(void)
     }
 }
 
+bool aroma_animation_is_running_on(AromaNode *target)
+{
+    if (!target)
+        return false;
+    for (AromaAnimation *c = animation_list; c; c = c->next)
+    {
+        if (c->target == target && c->is_running)
+            return true;
+    }
+    return false;
+}
+
 void aroma_animation_manager_shutdown(void)
 {
     if (anim_timer) {
         aroma_timer_cancel(anim_timer);
         anim_timer = NULL;
     }
+    /* Previously the live list leaked here; free it so shutdown is clean
+     * on both Linux (process exit hygiene, LSAN builds) and Android
+     * (activity re-creation without process death). */
+    aroma_animation_cleanup_all();
+    s_paused = false;
+    s_pause_begin = 0;
 }
 
 AromaAnimation* aroma_animation_start(AromaNode*         target,
@@ -180,6 +331,12 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
     animation_list = anim;
 
     if (!anim_timer) aroma_animation_manager_init();
+
+    /* Guarantee the frame chain runs while this animation is alive. On
+     * Android frames only happen after an explicit request; without this,
+     * an animation started while the app is otherwise idle would never
+     * tick. No-op before UI init (tests) and cheap on Linux. */
+    aroma_ui_request_frame();
     return anim;
 }
 
@@ -194,12 +351,30 @@ static void cleanup_animation_list(void) {
 }
 
 void aroma_animation_cleanup_all(void) {
+    if (s_tick_depth > 0) {
+        /* Inside a tick callback: only flag, the tick loop sweeps. */
+        for (AromaAnimation* c = animation_list; c; c = c->next)
+            c->is_running = false;
+        s_deferred_sweep = true;
+        return;
+    }
     cleanup_animation_list();
 }
 
 void aroma_animation_cleanup_node(AromaNode* target) {
     if (!target) return;
-    
+
+    if (s_tick_depth > 0) {
+        /* Inside a tick callback (e.g. on_complete destroying its own
+         * target): only flag, the tick loop sweeps. Freeing here would
+         * invalidate the node the loop is standing on. */
+        for (AromaAnimation* c = animation_list; c; c = c->next) {
+            if (c->target == target)
+                c->is_running = false;
+        }
+        s_deferred_sweep = true;
+        return;
+    }
     AromaAnimation* curr = animation_list;
     AromaAnimation* prev = NULL;
     

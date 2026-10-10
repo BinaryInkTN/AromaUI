@@ -7,6 +7,15 @@
 extern "C" {
 #endif
 
+/* Upper bound (ms of animation time) a single engine tick may advance a
+ * mid-flight animation. Larger wall-clock gaps (frame hitch, backgrounding
+ * on Android where Choreographer callbacks stop, debugger pause) ease
+ * toward completion over successive ticks instead of teleporting.
+ * 64ms ~= 4 frames at 60Hz: hitches stay invisible, background gaps visibly
+ * catch up instead of jumping. Completion still fires exactly once when
+ * wall-clock progress reaches 1. */
+#define AROMA_ANIM_MAX_TICK_STEP_MS 64
+
 typedef enum {
     AROMA_ANIM_NONE,
     AROMA_ANIM_SLIDE_X,
@@ -65,12 +74,48 @@ typedef struct _AromaAnimation {
     // Last rendered progress (0..1). Used to clamp per-tick advances so a
     // stalled frame cannot teleport the animation past intermediate states.
     float last_progress;
+
+    // When true, start_val/end_val are parent-relative (Incense-authored
+    // dp positions, e.g. x: 24 with animation_end_val: 276). The engine
+    // adds the parent's current position each tick so the final rect
+    // lands on parent_abs + end_val (absolute content coordinates).
+    // Programmatic animations that pass absolute rect values (e.g.
+    // rect->x as start) leave this false and are written as-is.
+    bool parent_relative;
     
     struct _AromaAnimation* next;
 } AromaAnimation;
 
 void aroma_animation_manager_init(void);
-void aroma_animation_manager_shutdown(void);
+bool aroma_animation_is_running_on(AromaNode *target);void aroma_animation_manager_shutdown(void);
+
+/* Advance all running animations to the given wall-clock timestamp (ms,
+ * same clock domain as aroma_time_now_ms()).
+ *
+ * Platform contract:
+ * - Linux (GLPS/GLFW): driven by the 16ms engine timer, which is pumped
+ *   by aroma_timer_tick() from aroma_ui_process_events() each main-loop
+ *   iteration. No extra integration needed.
+ * - Android: driven by the same engine timer, pumped from the
+ *   Choreographer vsync callback. aroma_animation_start*() requests a
+ *   vsync frame so an animation started while idle still ticks.
+ *
+ * Large timestamp jumps (hitch, debugger, backgrounding) never teleport
+ * an animation: mid-flight progress advances at most
+ * AROMA_ANIM_MAX_TICK_STEP_MS worth per tick and eases toward the end.
+ * Use pause/resume across known gaps (Android window loss) to freeze
+ * animations instead of consuming their duration while hidden. */
+void aroma_animation_tick(uint64_t now_ms);
+
+/* Freeze all running animations (e.g. Android APP_CMD_TERM_WINDOW /
+ * APP_CMD_LOST_FOCUS). Ticks become no-ops until resume. Resume shifts
+ * every running animation's start_time forward by the paused duration,
+ * so wall-clock progress continues exactly where it visually stopped
+ * instead of jumping to the end. Safe to call redundantly; NULL-safe
+ * by design (no arguments). */
+void aroma_animation_pause_all(void);
+void aroma_animation_resume_all(void);
+bool aroma_animation_is_paused(void);
 AromaAnimation* aroma_animation_start(AromaNode* target, AromaAnimationType type, float start_val, float end_val, uint32_t duration_ms);
 void aroma_animation_stop(AromaNode* target);
 AromaAnimation* aroma_animation_start_custom(AromaNode* target, float start_val, float end_val, uint32_t duration_ms, AromaAnimationCallback cb, void* user_data);

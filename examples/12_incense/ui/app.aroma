@@ -1,0 +1,51 @@
+Window {
+    width: 360
+    height: 700
+    title: "Incense State"
+
+    Label { text: "state.welcome" x: 16 y: 16 style: "large" }
+    Label { text: "State and embeds" x: 16 y: 52 style: "small" }
+
+    Button { text: "Toggle details" x: 16 y: 100 width: 328 height: 44 on_click: "flip_details" }
+    Button { text: "Toggle extra" x: 16 y: 152 width: 328 height: 44 on_click: "flip_extra" }
+    Button { text: "Toggle beta" x: 16 y: 204 width: 328 height: 44 on_click: "flip_beta" }
+
+    If { condition: "state.details == true"
+        Then {
+            Card { x: 16 y: 265 width: 328 height: 110
+                Label { text: "Details" x: 20 y: 16 style: "medium" }
+                Label { text: "state.details is true" x: 20 y: 48 style: "small" }
+            }
+        }
+        Else {
+            Label { text: "Details hidden" x: 16 y: 280 style: "medium" }
+        }
+    }
+
+    If { condition: "state.extra == true"
+        Then {
+            Label { text: "Extra panel active" x: 16 y: 390 style: "medium" }
+        }
+        Else {
+            Label { text: "Extra panel off" x: 16 y: 390 style: "medium" }
+        }
+    }
+
+    If { condition: "state.beta == true"
+        Then {
+            Card { x: 16 y: 425 width: 328 height: 100 type: outlined
+                Label { text: "Beta unlocked" x: 20 y: 16 style: "medium" }
+                Label { text: "Thanks for testing" x: 20 y: 48 style: "small" }
+            }
+        }
+        Else {
+            Label { text: "Beta locked" x: 16 y: 440 style: "medium" }
+        }
+    }
+
+    Label { text: "Level from state" x: 16 y: 540 style: "medium" }
+    Slider { x: 16 y: 565 width: 308 min: 0 max: 100 value: "state.level" }
+    ProgressBar { x: 16 y: 615 width: 308 height: 14 value: "state.flevel" }
+
+    @embed "panels.aroma"
+}

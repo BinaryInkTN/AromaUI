@@ -94,6 +94,17 @@ typedef struct   {
 
     int _cache_x;
     int _cache_y;
+
+    /* First-placement: nested coordinates are authored parent-relative.
+     * The first layout pass after attach adds the parent position once;
+     * later parent moves are followed via the delta shift below. */
+    bool _placed;
+
+    /* Engine-managed: positioned directly by widget or animation code
+     * (carousel pages, slide/scale animation targets). Layout passes
+     * never move these: no first-placement, no delta follow, and the
+     * shrink fitter neither measures nor restores them. */
+    bool _managed;
 } AromaLayout;
 
 struct  AromaNode
@@ -180,6 +191,12 @@ void aroma_node_set_grid_cols(AromaNode* node, int cols);
 void aroma_node_set_grid_rows(AromaNode* node, int rows);
 
 void aroma_node_update_layout(AromaNode* root, int parent_x, int parent_y, int parent_width, int parent_height);
+
+/* Mark a node as engine-positioned: skips first-placement and records the
+ * current rect as the shrink-to-fit baseline so later layout passes
+ * neither move it nor snap it back. Used by widgets that manage child
+ * geometry directly (carousel pages) and by the animation engine. */
+void aroma_layout_note_placed(AromaNode *node);
 
 uint64_t __get_current_node_id_counter(void);
 

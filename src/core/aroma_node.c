@@ -2,6 +2,7 @@
 #include "core/aroma_logger.h"
 #include "core/aroma_event.h"
 #include "core/aroma_slab_alloc.h"
+#include "aroma_animation.h"
 #include "aroma_ui.h"
 
 #include <inttypes.h>
@@ -202,7 +203,13 @@ AromaNode *__add_child_node(AromaNodeType node_type,
         return NULL;
     }
 
-    if (!ensure_child_capacity(parent_node, parent_node->child_count + 1))
+    /* Ensure capacity and link under the event lock: worker threads
+     * resolve targets by walking this array (see find_node_cached).
+     * Creation itself stays outside (fresh nodes are unpublished). */
+    aroma_event_lock();
+    bool room = ensure_child_capacity(parent_node, parent_node->child_count + 1);
+    aroma_event_unlock();
+    if (!room)
     {
         LOG_ERROR("Failed to grow child array for parent %" PRIu64 ".", parent_node->node_id);
         return NULL;
@@ -212,7 +219,9 @@ AromaNode *__add_child_node(AromaNodeType node_type,
     if (!child)
         return NULL;
 
+    aroma_event_lock();
     parent_node->child_nodes[parent_node->child_count++] = child;
+    aroma_event_unlock();
     LOG_INFO("Node %" PRIu64 " added as child of %" PRIu64 ".",
              child->node_id, parent_node->node_id);
     return child;
@@ -226,6 +235,9 @@ AromaNode *__remove_child_node(AromaNode *parent_node, uint64_t node_id)
         return NULL;
     }
 
+    /* Unlink under the event lock (see __add_child_node). */
+    aroma_event_lock();
+    AromaNode *removed = NULL;
     for (uint64_t i = 0; i < parent_node->child_count; i++)
     {
         if (!parent_node->child_nodes[i])
@@ -233,14 +245,18 @@ AromaNode *__remove_child_node(AromaNode *parent_node, uint64_t node_id)
         if (parent_node->child_nodes[i]->node_id != node_id)
             continue;
 
-        AromaNode *removed = parent_node->child_nodes[i];
+        removed = parent_node->child_nodes[i];
 
         int64_t last = (int64_t)parent_node->child_count - 1;
         for (int64_t j = (int64_t)i; j < last; j++)
             parent_node->child_nodes[j] = parent_node->child_nodes[j + 1];
 
         parent_node->child_nodes[--parent_node->child_count] = NULL;
+        break;
+    }
+    aroma_event_unlock();
 
+    if (removed) {
         LOG_INFO("Removed node %" PRIu64 " from parent %" PRIu64 ".",
                  node_id, parent_node->node_id);
         return removed;
@@ -285,6 +301,16 @@ void __destroy_node(AromaNode *node)
     node->child_capacity = 0;
 
     dirty_list_remove(node);
+
+    /* Drop queued events / cached targets / listeners for this node so
+     * background threads that queued work just before teardown can
+     * never dispatch into freed memory. */
+    aroma_event_forget_node(node->node_id);
+
+    /* Detach running animations targeting this node. The next engine tick
+     * frees them without ever dereferencing the dead target; without this
+     * the 16ms timer would write rects/opacity through freed memory. */
+    aroma_animation_cleanup_node(node);
 
     uint64_t id = node->node_id;
     free_node(node);

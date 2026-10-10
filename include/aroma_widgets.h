@@ -42,6 +42,11 @@
 #include "widgets/aroma_table.h"
 #include "widgets/aroma_gauge.h"
 #include "widgets/aroma_3d_viewer.h"
+#include "widgets/aroma_calendar.h"
+#include "widgets/aroma_datepicker.h"
+#include "widgets/aroma_timepicker.h"
+#include "widgets/aroma_stepper.h"
+#include "widgets/aroma_carousel.h"
 
 #endif
 

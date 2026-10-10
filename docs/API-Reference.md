@@ -178,6 +178,28 @@ Return `true` from the callback (or event listener) to stay in the app; return `
 
 **Sources:**[include/aroma_event.h40-80](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_event.h#L40-L80)[src/core/aroma_event.c146-160](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_event.c#L146-L160)
 
+### Threading Contract
+
+Widgets are **not** thread-safe: all `aroma_*_set/draw` calls and node
+tree mutation must happen on the UI thread (the thread running
+`aroma_ui_process_events`). Background threads (image fetch, map tile
+workers, JNI sensor/BT/NFC callbacks) must never touch nodes or widget
+structs directly — torn reads misplace content and use-after-teardown
+crashes the app.
+
+| Function | Description | Source |
+| --- | --- | --- |
+| `aroma_event_create_custom` | Builds a worker-to-UI payload event (owning `data` + `free_data`). | [include/aroma_event.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_event.h) |
+| `aroma_event_queue` | Thread-safe handoff; drained on the UI thread. Queue failure destroys the event (and payload) itself — do not free after queueing. | [src/core/aroma_event.c](https://github.com/BinaryInkTN/AromaUI/blob/main/src/core/aroma_event.c) |
+| `aroma_event_forget_node` | Evicts a destroyed node (target cache, queued events, listeners). Called automatically by node destroy; safe to call redundantly. | [include/aroma_event.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_event.h) |
+| `aroma_image_apply_fetch_result` | Idempotent UI-thread application of a fetch result; ignores stale completions. | [include/widgets/aroma_image.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/widgets/aroma_image.h) |
+
+Established in-tree patterns: the map marshals worker results through
+custom events 998/999 with per-extra mutexes; the 3D loader stages
+off-thread and hands over via poll/finish with atomics; images marshal
+fetch completion as event 1001. `aroma_font_lock()` guards FreeType
+faces shared between measure and render paths.
+
 ## Android Platform
 
 | Function | Description | Source |

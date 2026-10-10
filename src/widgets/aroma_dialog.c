@@ -360,6 +360,52 @@ void aroma_dialog_set_font(AromaNode *dialog_node, AromaFont *font)
     __dialog_recompute_action_layout(dlg, gfx, 0);
 }
 
+void aroma_dialog_set_title(AromaNode *dialog_node, const char *title)
+{
+    if (!dialog_node || !dialog_node->node_widget_ptr)
+        return;
+
+    AromaDialog *dlg = (AromaDialog *)dialog_node->node_widget_ptr;
+    if (title)
+    {
+        strncpy(dlg->title, title, sizeof(dlg->title) - 1);
+        dlg->title[sizeof(dlg->title) - 1] = '\0';
+    }
+    else
+    {
+        dlg->title[0] = '\0';
+    }
+
+    __dialog_update_rect(dlg);
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    __dialog_recompute_action_layout(dlg, gfx, 0);
+    aroma_node_invalidate(dialog_node);
+    aroma_ui_request_redraw(NULL);
+}
+
+void aroma_dialog_set_message(AromaNode *dialog_node, const char *message)
+{
+    if (!dialog_node || !dialog_node->node_widget_ptr)
+        return;
+
+    AromaDialog *dlg = (AromaDialog *)dialog_node->node_widget_ptr;
+    if (message)
+    {
+        strncpy(dlg->message, message, sizeof(dlg->message) - 1);
+        dlg->message[sizeof(dlg->message) - 1] = '\0';
+    }
+    else
+    {
+        dlg->message[0] = '\0';
+    }
+
+    __dialog_update_rect(dlg);
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    __dialog_recompute_action_layout(dlg, gfx, 0);
+    aroma_node_invalidate(dialog_node);
+    aroma_ui_request_redraw(NULL);
+}
+
 void aroma_dialog_show(AromaNode *dialog_node)
 {
     if (!dialog_node || !dialog_node->node_widget_ptr)

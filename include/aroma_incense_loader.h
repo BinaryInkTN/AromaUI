@@ -20,7 +20,9 @@ typedef enum {
     INCENSE_CALLBACK_BOOL_PTR,
     INCENSE_CALLBACK_INT_PTR,
     INCENSE_CALLBACK_BOOL_BOOL_PTR,
-    INCENSE_CALLBACK_NODE_STRING_PTR
+    INCENSE_CALLBACK_NODE_STRING_PTR,
+    INCENSE_CALLBACK_DATE_PTR,
+    INCENSE_CALLBACK_TIME_PTR
 } IncenseCallbackType;
 
 typedef enum {
@@ -104,6 +106,7 @@ bool  IncenseLambdaExists(const char *name);
 typedef struct IncenseRegistry IncenseRegistry;
 
 AromaNode *IncenseFindWidget(const IncenseRegistry *registry, const char *id);
+AromaNode *IncenseFindWidgetQuiet(const IncenseRegistry *registry, const char *id);
 void       IncenseFreeRegistry(IncenseRegistry *registry);
 
 AromaWindow *IncenseLoad(const IncenseDocument *doc, AromaFont *font, AromaFont *icon_font);

@@ -6,12 +6,14 @@ add_library(aroma
     core/aroma_layout.c
     core/aroma_slab_alloc.c
     core/aroma_event.c
+    core/aroma_gesture.c
     core/aroma_font.c
     core/aroma_ubuntu_font.c
     core/aroma_graphics_wrapper.c
     core/aroma_style.c
     core/aroma_time.c
     core/aroma_timer.c
+    core/aroma_velocity.c
     core/aroma_drawlist.c
     core/aroma_native_utils.c
     core/utils/mpc.c
@@ -58,11 +60,13 @@ add_library(aroma
     widgets/aroma_loading.c
     widgets/aroma_table.c
     widgets/aroma_map.c
-)
-
-target_sources(aroma PRIVATE
     widgets/aroma_gauge.c
     widgets/aroma_3d_viewer.c
+    widgets/aroma_calendar.c
+    widgets/aroma_datepicker.c
+    widgets/aroma_timepicker.c
+    widgets/aroma_stepper.c
+    widgets/aroma_carousel.c
 )
 
 target_include_directories(aroma
@@ -79,6 +83,17 @@ target_include_directories(aroma
 target_link_libraries(aroma PRIVATE freetype m SQLite3)
 if(NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE GLESv2 EGL)
+endif()
+
+# Real event-system locking wherever pthreads exist (Linux, Android,
+# macOS). Workers (image/map fetch, JNI callbacks) queue events off the
+# UI thread; without this every EVENT_LOCK is a no-op and the queue,
+# pool, and target cache race. Single-threaded targets (Emscripten
+# without pthreads, MSVC, bare-metal ESP32) keep the status quo.
+include(CheckIncludeFile)
+check_include_file(pthread.h HAVE_PTHREAD_H)
+if(HAVE_PTHREAD_H AND NOT EMSCRIPTEN)
+    target_compile_definitions(aroma PRIVATE AROMA_THREAD_SAFE=1)
 endif()
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)

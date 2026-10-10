@@ -76,11 +76,24 @@ static unsigned int __image_load_texture(const char *image_path);
 static void __image_destroy_texture(AromaImage *image);
 
 #ifndef __EMSCRIPTEN__
+/* Custom event type for worker fetch completion (map uses 998/999). */
+#define AROMA_IMAGE_FETCH_COMPLETE 1001
+
 typedef struct {
-    AromaNode *node;
+    uint64_t node_id;
     char url[1024];
     char cache_path[1024];
 } ImageFetchJob;
+
+typedef struct {
+    bool ok;
+    char cache_path[1024];
+} ImageFetchResult;
+
+static void __image_fetch_result_free(void *data)
+{
+    free(data);
+}
 
 static void *__image_fetch_thread(void *arg)
 {
@@ -88,16 +101,22 @@ static void *__image_fetch_thread(void *arg)
     if (job) {
         bool ok = aroma_http_fetch_to_file(job->url, job->cache_path);
         LOG_INFO("AROMA_TEST img_fetch=%d url=%.48s", ok ? 1 : 0, job->url);
-        if (ok && job->node && job->node->node_widget_ptr) {
-            AromaImage *image = (AromaImage *)job->node->node_widget_ptr;
-            strncpy(image->remote_cache, job->cache_path, sizeof(image->remote_cache) - 1);
-            image->remote_fetch_done = true;
-            aroma_node_invalidate(job->node);
-        }
-        if (job->node) {
-            AromaImage *image = (AromaImage *)job->node->node_widget_ptr;
-            if (image) {
-                image->remote_fetching = false;
+        /* Never touch UI structs here: the node may be destroyed while
+         * this thread runs. Marshal the result to the UI thread. */
+        ImageFetchResult *res =
+            (ImageFetchResult *)calloc(1, sizeof(ImageFetchResult));
+        if (res) {
+            res->ok = ok;
+            strncpy(res->cache_path, job->cache_path,
+                    sizeof(res->cache_path) - 1);
+            AromaEvent *ev = aroma_event_create_custom(
+                job->node_id, AROMA_IMAGE_FETCH_COMPLETE, res,
+                __image_fetch_result_free);
+            if (ev) {
+                /* Queue failure destroys the event (and payload) itself. */
+                aroma_event_queue(ev);
+            } else {
+                free(res);
             }
         }
         free(job);
@@ -131,7 +150,7 @@ static void __image_fetch_remote_native(AromaNode *node, const char *url)
     ImageFetchJob *job = (ImageFetchJob *)calloc(1, sizeof(ImageFetchJob));
     if (!job)
         return;
-    job->node = node;
+    job->node_id = node->node_id;
     strncpy(job->url, url, sizeof(job->url) - 1);
     strncpy(job->cache_path, cache, sizeof(job->cache_path) - 1);
     image->remote_fetching = true;
@@ -245,6 +264,43 @@ static bool aroma_image_point_in_bounds(AromaImage* image, int x, int y)
             y >= image->rect.y && y <= (image->rect.y + image->rect.height));
 }
 
+/* UI-thread application of a worker fetch result. Safe to call with any
+ * node (NULL, live, or already destroyed-and-forgotten: the event layer
+ * drops dead targets before this runs). Exposed non-static for tests. */
+void aroma_image_apply_fetch_result(AromaNode *image_node, bool ok,
+                                    const char *cache_path)
+{
+    if (!image_node || !image_node->node_widget_ptr)
+        return;
+    AromaImage *image = (AromaImage *)image_node->node_widget_ptr;
+    if (!image->remote_fetching)
+        return;
+    if (ok && cache_path && cache_path[0]) {
+        strncpy(image->remote_cache, cache_path,
+                sizeof(image->remote_cache) - 1);
+        image->remote_cache[sizeof(image->remote_cache) - 1] = '\0';
+        image->remote_fetch_done = true;
+    }
+    image->remote_fetching = false;
+    aroma_node_invalidate(image_node);
+}
+
+static bool __image_fetch_complete_handler(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    if (!event || event->event_type != EVENT_TYPE_CUSTOM ||
+        event->data.custom.custom_type != AROMA_IMAGE_FETCH_COMPLETE)
+        return false;
+    if (!event->target_node)
+        return false;
+    ImageFetchResult *res = (ImageFetchResult *)event->data.custom.data;
+    if (!res)
+        return false;
+    aroma_image_apply_fetch_result(event->target_node, res->ok,
+                                   res->cache_path);
+    return true;
+}
+
 static bool __image_default_event_handler(AromaEvent* event, void* user_data)
 {
     if (!event || !event->target_node) return false;
@@ -350,6 +406,7 @@ static void __image_ensure_events_registered(AromaNode* image_node, AromaImage* 
     aroma_event_subscribe(image_node->node_id, EVENT_TYPE_TOUCH_DOWN, __image_default_event_handler, NULL, 90);
     aroma_event_subscribe(image_node->node_id, EVENT_TYPE_TOUCH_UP, __image_default_event_handler, NULL, 90);
     aroma_event_subscribe(image_node->node_id, EVENT_TYPE_TOUCH_MOVE, __image_default_event_handler, NULL, 80);
+    aroma_event_subscribe(image_node->node_id, EVENT_TYPE_CUSTOM, __image_fetch_complete_handler, NULL, 90);
 
     image->events_registered = true;
 }

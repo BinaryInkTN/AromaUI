@@ -30,6 +30,12 @@ void aroma_dialog_hide(AromaNode* dialog_node);
 // Set font
 void aroma_dialog_set_font(AromaNode* dialog_node, AromaFont* font);
 
+// Retarget a markup-built (or empty) dialog with runtime text.
+// Truncates into the dialog's fixed buffers and refreshes layout.
+// NULL-safe; NULL/empty clears the field.
+void aroma_dialog_set_title(AromaNode* dialog_node, const char* title);
+void aroma_dialog_set_message(AromaNode* dialog_node, const char* message);
+
 // Get the content area container where user widgets can be added
 AromaNode* aroma_dialog_get_content_area(AromaNode* dialog_node);
 

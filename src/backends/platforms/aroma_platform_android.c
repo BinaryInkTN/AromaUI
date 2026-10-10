@@ -49,6 +49,7 @@
 #include "core/aroma_timer.h"
 #include "core/aroma_time.h"
 #include "core/aroma_node.h"
+#include "aroma_animation.h"
 #include "aroma_ui.h"
 #include "widgets/aroma_window.h"
 #include "widgets/aroma_textbox.h"
@@ -2296,6 +2297,9 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
         {
             term_display_surface_only();
             init_display(app);
+            /* Surface is back: thaw animations from where they visually
+             * stopped and restart the vsync chain. */
+            aroma_animation_resume_all();
             request_frame();
         }
         break;
@@ -2338,9 +2342,18 @@ static void handle_cmd(struct android_app *app, int32_t cmd)
                 }
             }
         }
+        aroma_animation_resume_all();
         request_frame();
         break;
+    case APP_CMD_LOST_FOCUS:
+        /* No vsync while unfocused: freeze animation time instead of
+         * burning through durations off-screen. */
+        aroma_animation_pause_all();
+        break;
     case APP_CMD_TERM_WINDOW:
+        /* Surface is going away: freeze animation time so resume continues
+         * mid-flight instead of teleporting to the end state. */
+        aroma_animation_pause_all();
         term_display_surface_only();
         break;
     case APP_CMD_DESTROY:

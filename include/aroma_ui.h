@@ -1529,6 +1529,117 @@ extern "C"
         return overlay;
     }
 
+    static inline AromaNode *aroma_ui_calendar(
+        AromaNode *parent, int x, int y, int width, int height,
+        void (*on_select)(AromaNode *, int, int, int, void *),
+        void *user_data, AromaFont *font)
+    {
+        AromaNode *c = aroma_calendar_create(parent, x, y, width, height);
+        if (c)
+        {
+            if (on_select)
+                aroma_calendar_set_on_select(c, on_select, user_data);
+            if (font)
+                aroma_calendar_set_font(c, font);
+            aroma_calendar_setup_events(c, aroma_ui_request_redraw, NULL);
+        }
+        return c;
+    }
+
+    static inline AromaNode *aroma_ui_datepicker(
+        AromaNode *parent, int x, int y, int width, int height,
+        int year, int month, int day,
+        void (*on_change)(AromaNode *, int, int, int, void *),
+        void *user_data, AromaFont *font)
+    {
+        AromaNode *d = aroma_datepicker_create(parent, x, y, width, height,
+                                               year, month, day);
+        if (d)
+        {
+            if (on_change)
+                aroma_datepicker_set_on_change(d, on_change, user_data);
+            if (font)
+                aroma_datepicker_set_font(d, font);
+            aroma_datepicker_setup_events(d, aroma_ui_request_redraw, NULL);
+        }
+        return d;
+    }
+
+    static inline AromaNode *aroma_ui_timepicker(
+        AromaNode *parent, int x, int y, int width, int height,
+        int hour, int minute,
+        void (*on_change)(AromaNode *, int, int, void *),
+        void *user_data, AromaFont *font)
+    {
+        AromaNode *t = aroma_timepicker_create(parent, x, y, width, height,
+                                               hour, minute);
+        if (t)
+        {
+            if (on_change)
+                aroma_timepicker_set_on_change(t, on_change, user_data);
+            if (font)
+                aroma_timepicker_set_font(t, font);
+            aroma_timepicker_setup_events(t, aroma_ui_request_redraw, NULL);
+        }
+        return t;
+    }
+
+    static inline AromaNode *aroma_ui_stepper_numeric(
+        AromaNode *parent, int x, int y, int width, int height,
+        int min_val, int max_val, int value, int step,
+        void (*on_change)(AromaNode *, int, void *),
+        void *user_data, AromaFont *font)
+    {
+        AromaNode *s = aroma_stepper_create_numeric(parent, x, y, width,
+                                                    height, min_val, max_val,
+                                                    value, step);
+        if (s)
+        {
+            if (on_change)
+                aroma_stepper_set_on_change(s, on_change, user_data);
+            if (font)
+                aroma_stepper_set_font(s, font);
+            aroma_stepper_setup_events(s, aroma_ui_request_redraw, NULL);
+        }
+        return s;
+    }
+
+    static inline AromaNode *aroma_ui_stepper_steps(
+        AromaNode *parent, int x, int y, int width, int height,
+        const char **labels, int count,
+        void (*on_change)(AromaNode *, int, void *),
+        void *user_data, AromaFont *font)
+    {
+        AromaNode *s = aroma_stepper_create_steps(parent, x, y, width, height,
+                                                  labels, count);
+        if (s)
+        {
+            if (on_change)
+                aroma_stepper_set_on_change(s, on_change, user_data);
+            if (font)
+                aroma_stepper_set_font(s, font);
+            aroma_stepper_setup_events(s, aroma_ui_request_redraw, NULL);
+        }
+        return s;
+    }
+
+    static inline AromaNode *aroma_ui_carousel(
+        AromaNode *parent, int x, int y, int width, int height,
+        void (*on_change)(AromaNode *, int, void *),
+        void *user_data, AromaFont *font)
+    {
+        AromaNode *c = aroma_carousel_create(parent, x, y, width, height);
+        if (c)
+        {
+            if (on_change)
+                aroma_carousel_set_on_change(c, on_change, user_data);
+            if (font)
+                aroma_carousel_set_font(c, font);
+            aroma_carousel_setup_events(c, aroma_ui_request_redraw, NULL);
+        }
+        return c;
+    }
+
     /**
      * @brief Callback invoked when the system back button is pressed.
      *

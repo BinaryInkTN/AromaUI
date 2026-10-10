@@ -1,0 +1,87 @@
+Window {
+    width: 360
+    height: 640
+    title: "Animation"
+
+    Label {
+        text: "Welcome tour"
+        x: 16
+        y: 16
+        style: "large"
+        animation: slide_x
+        animation_duration: 500
+        animation_start_val: -200
+        animation_end_val: 0
+        animation_easing: ease_out_cubic
+    }
+    Label {
+        text: "Motion, easings and loops"
+        x: 16
+        y: 52
+        style: "small"
+        animation: fade
+        animation_duration: 900
+        animation_start_val: 0
+        animation_end_val: 1
+        animation_easing: linear
+    }
+
+    Container {
+        x: 16
+        y: 96
+        width: 328
+        height: 48
+        layout: flex
+        direction: row
+
+        Button { text: "Slide right" x: 0 y: 0 width: 104 height: 44 on_click: "slide_right" }
+        Button { text: "Slide back" x: 0 y: 0 width: 104 height: 44 on_click: "slide_back" }
+        Button { text: "Drop" x: 0 y: 0 width: 110 height: 44 on_click: "elastic_drop" }
+    }
+    Container {
+        x: 16
+        y: 152
+        width: 328
+        height: 48
+        layout: flex
+        direction: row
+
+        Button { text: "Fade" x: 0 y: 0 width: 159 height: 44 on_click: "fade_toggle" }
+        Button { text: "Pulse" x: 0 y: 0 width: 159 height: 44 on_click: "pulse" }
+    }
+    Label { id: "status" text: "Pick a move" x: 16 y: 212 style: "medium" }
+
+    Card {
+        id: "box"
+        x: 16
+        y: 250
+        width: 220
+        height: 150
+        type: filled
+        animation: fade
+        animation_duration: 800
+        animation_start_val: 0
+        animation_end_val: 1
+        animation_easing: linear
+
+        Label { text: "Hero card" x: 20 y: 24 style: "medium" }
+        Label { text: "Buttons drive me" x: 20 y: 58 style: "small" }
+        Label { text: "from C code" x: 20 y: 84 style: "small" }
+    }
+
+    Card {
+        x: 252
+        y: 250
+        width: 92
+        height: 52
+        type: outlined
+        animation: slide_y
+        animation_duration: 900
+        animation_start_val: 0
+        animation_end_val: -10
+        animation_easing: ease_out_cubic
+        animation_loop: pingpong
+
+        Label { text: "Live" x: 20 y: 16 style: "small" }
+    }
+}

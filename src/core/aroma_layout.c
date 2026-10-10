@@ -1,5 +1,6 @@
 #include "core/aroma_node.h"
 #include "core/aroma_common.h"
+#include "aroma_animation.h"
 #include "core/aroma_font.h"
 #include "widgets/aroma_label.h"
 #include "widgets/aroma_listview.h"
@@ -372,8 +373,6 @@ static inline bool fit_skip_child(const AromaNode* child)
 {
     if (!child)
         return true;
-    if (child->draw_cb == aroma_button_draw)
-        return true;
     if (child->draw_cb == aroma_label_draw)
         return true;
     if (child->draw_cb == aroma_listview_draw)
@@ -414,6 +413,10 @@ static void apply_shrink_to_fit(AromaNode* parent, int parent_abs_x, int parent_
             continue;
         if (fit_skip_child(child))
             continue;
+        if (child->layout._managed)
+            continue;
+        if (aroma_animation_is_running_on(child))
+            continue;
         AromaRect* cw = (AromaRect*)child->node_widget_ptr;
         if (!child->layout._fit_has)
         {
@@ -438,6 +441,10 @@ static void apply_shrink_to_fit(AromaNode* parent, int parent_abs_x, int parent_
                 continue;
             if (fit_skip_child(child))
                 continue;
+            if (child->layout._managed)
+                continue;
+            if (aroma_animation_is_running_on(child))
+                continue;
             AromaRect* cw = (AromaRect*)child->node_widget_ptr;
             cw->x = parent_abs_x + child->layout._fit_ox;
             if (!fit_x_only_child(child))
@@ -457,6 +464,10 @@ static void apply_shrink_to_fit(AromaNode* parent, int parent_abs_x, int parent_
         if (!is_valid_widget_ptr(child->node_widget_ptr))
             continue;
         if (fit_skip_child(child))
+            continue;
+        if (child->layout._managed)
+            continue;
+        if (aroma_animation_is_running_on(child))
             continue;
         AromaRect* cw = (AromaRect*)child->node_widget_ptr;
         cw->x = parent_abs_x + (int)(child->layout._fit_ox * scale);
@@ -500,6 +511,18 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
     int new_y = parent_y;
     int new_w = parent_width;
     int new_h = parent_height;
+
+    if (!start_node->parent_node)
+    {
+        widget->x      = parent_x;
+        widget->y      = parent_y;
+        widget->width  = parent_width;
+        widget->height = parent_height;
+        new_x = parent_x;
+        new_y = parent_y;
+        new_w = parent_width;
+        new_h = parent_height;
+    }
 
     switch (start_node->layout.type) {
         case AROMA_LAYOUT_FILL_PARENT:
@@ -612,9 +635,18 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
             AromaRect* child_w = aroma_node_get_rect(child);
             if (!child_w) continue;
 
-            if (child->layout.type == AROMA_LAYOUT_NONE && (delta_x || delta_y)) {
-                child_w->x += delta_x;
-                child_w->y += delta_y;
+            if (child->layout.type == AROMA_LAYOUT_NONE) {
+                if (!child->layout._placed) {
+                    child_w->x += new_x;
+                    child_w->y += new_y;
+                    child->layout._placed = true;
+                    child->layout._fit_ox = child_w->x - new_x;
+                    child->layout._fit_ow = child_w->width;
+                    child->layout._fit_has = true;
+                } else if ((delta_x || delta_y) && !child->layout._managed) {
+                    child_w->x += delta_x;
+                    child_w->y += delta_y;
+                }
             }
 
             if (!child->is_hidden) {
@@ -634,4 +666,23 @@ bool aroma_is_layout_ready(void) {
 
 void aroma_set_layout_ready(void) {
     g_layout_ready = true;
+}
+
+void aroma_layout_note_placed(AromaNode *node) {
+    if (!is_valid_node(node))
+        return;
+    node->layout._placed = true;
+    node->layout._managed = true;
+    AromaRect *r = aroma_node_get_rect(node);
+    if (!r)
+        return;
+    int parent_x = 0;
+    if (node->parent_node) {
+        AromaRect *pr = aroma_node_get_rect(node->parent_node);
+        if (pr)
+            parent_x = pr->x;
+    }
+    node->layout._fit_ox = r->x - parent_x;
+    node->layout._fit_ow = r->width;
+    node->layout._fit_has = true;
 }

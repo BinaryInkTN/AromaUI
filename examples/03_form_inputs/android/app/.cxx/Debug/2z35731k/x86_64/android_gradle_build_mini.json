@@ -1,0 +1,48 @@
+{
+  "buildFiles": [
+    "/home/yassine/Projects/AromaUI/examples/03_form_inputs/android/app/src/main/cpp/CMakeLists.txt",
+    "/home/yassine/Projects/AromaUI/src/CMakeLists.txt",
+    "/home/yassine/Projects/AromaUI/vendors/freetype/CMakeLists.txt",
+    "/home/yassine/Projects/AromaUI/vendors/sqlite3/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/yassine/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/yassine/Projects/AromaUI/examples/03_form_inputs/android/app/.cxx/Debug/2z35731k/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/yassine/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/yassine/Projects/AromaUI/examples/03_form_inputs/android/app/.cxx/Debug/2z35731k/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "SQLite3::@04cd79d7ceb76f65af7f": {
+      "artifactName": "SQLite3",
+      "abi": "x86_64",
+      "output": "/home/yassine/Projects/AromaUI/examples/03_form_inputs/android/app/.cxx/Debug/2z35731k/x86_64/sqlite3_build/libsqlite3d.a",
+      "runtimeFiles": []
+    },
+    "freetype::@bdc1e324bbc9e3c81525": {
+      "artifactName": "freetype",
+      "abi": "x86_64",
+      "output": "/home/yassine/Projects/AromaUI/examples/03_form_inputs/android/app/.cxx/Debug/2z35731k/x86_64/freetype_build/libfreetyped.a",
+      "runtimeFiles": []
+    },
+    "aroma::@9df0d65908e3390db40e": {
+      "artifactName": "aroma",
+      "abi": "x86_64",
+      "output": "/home/yassine/Projects/AromaUI/examples/03_form_inputs/android/app/.cxx/Debug/2z35731k/x86_64/aroma_lib/libaroma.a",
+      "runtimeFiles": []
+    },
+    "aroma_app::@6890427a1f51a3e7e1df": {
+      "artifactName": "aroma_app",
+      "abi": "x86_64",
+      "output": "/home/yassine/Projects/AromaUI/examples/03_form_inputs/android/app/build/intermediates/cxx/Debug/2z35731k/obj/x86_64/libaroma_app.so",
+      "runtimeFiles": []
+    }
+  }
+}

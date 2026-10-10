@@ -1,0 +1,38 @@
+Window {
+    width: 360
+    height: 740
+    title: "3D Viewer"
+
+    Label { text: "Product viewer" x: 16 y: 16 style: "large" }
+    Label { text: "Drag to orbit, pinch to zoom" x: 16 y: 48 style: "small" }
+
+    Label { text: "Cube" x: 16 y: 86 style: "medium" }
+    ThreeDViewer { id: "cube" x: 16 y: 112 width: 328 height: 190 model: cube auto_rotate: true interactive: true }
+
+    Label { text: "Fox" x: 16 y: 312 style: "medium" }
+    ThreeDViewer { id: "fox" x: 16 y: 338 width: 328 height: 190 model: fox auto_rotate: true interactive: true light_x: 2 light_y: 3 light_z: 4 }
+
+    Container {
+        x: 16
+        y: 538
+        width: 328
+        height: 48
+        layout: flex
+        direction: row
+
+        Button { text: "Toggle spin" x: 0 y: 0 width: 156 height: 44 on_click: "toggle_spin" }
+        Button { text: "Reset cameras" x: 0 y: 0 width: 156 height: 44 on_click: "reset_cam" }
+    }
+    Container {
+        x: 16
+        y: 592
+        width: 328
+        height: 44
+        layout: flex
+        direction: row
+
+        Button { text: "Orbit view" x: 0 y: 0 width: 156 height: 44 on_click: "view_orbit" }
+        Button { text: "Top view" x: 0 y: 0 width: 156 height: 44 on_click: "view_top" }
+    }
+    Label { id: "status" text: "Auto-rotate: on" x: 16 y: 646 style: "small" }
+}
