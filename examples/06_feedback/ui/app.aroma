@@ -28,12 +28,12 @@ Window {
 
     Snackbar { id: "snack" message: "report.pdf saved" duration: 4000 action: "Open" on_click: "snack_open" show: false }
 
-    Menu { id: "menu" x: 16 y: 266
-        MenuItem { text: "Name" icon: "AROMA_ICON_SORT_BY_ALPHA" on_click: "menu_name" }
-        MenuItem { text: "Date" icon: "AROMA_ICON_SCHEDULE" on_click: "menu_date" }
-        MenuItem { text: "Size" icon: "AROMA_ICON_STORAGE" on_click: "menu_size" }
+    Menu { id: "menu" x: 16 y: 266 z_index: 99999
+        MenuItem { text: "Name" on_click: "menu_name" }
+        MenuItem { text: "Date"  on_click: "menu_date" }
+        MenuItem { text: "Size"  on_click: "menu_size" }
         Separator { }
-        MenuItem { text: "Refresh" icon: "AROMA_ICON_REFRESH" on_click: "menu_refresh" }
+        MenuItem { text: "Refresh" on_click: "menu_refresh" }
     }
 
     Label { text: "Upload progress" x: 16 y: 300 style: "medium" }

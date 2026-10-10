@@ -24,20 +24,5 @@ Window {
         Column { header: "City" width: 90 }
     }
 
-    Label { text: "Get started" x: 16 y: 525 style: "large" }
-    Carousel { x: 16 y: 550 width: 328 height: 150 on_change: "paged"
-        Page {
-            Label { text: "Welcome aboard" x: 16 y: 8 style: "large" }
-            Label { text: "Swipe the tour" x: 16 y: 42 style: "medium" }
-        }
-        Page {
-            Label { text: "Stay in sync" x: 16 y: 8 style: "large" }
-            Label { text: "Realtime updates" x: 16 y: 42 style: "medium" }
-        }
-        Page {
-            Label { text: "Ready" x: 16 y: 8 style: "large" }
-            Label { text: "Invite the team" x: 16 y: 42 style: "medium" }
-            Button { text: "Invite team" x: 16 y: 68 width: 160 height: 36 on_click: "invited" }
-        }
-    }
+   
 }

@@ -58,6 +58,7 @@ static void played(void *userdata)
 
 static void toggle_drawer(void *userdata)
 {
+
     (void)userdata;
     AromaNode *drawer = IncenseFindWidget(g_registry, "drawer");
     if (drawer)
@@ -90,7 +91,10 @@ int main(void)
     IncenseRegisterCallback("play_lists", INCENSE_CALLBACK_VOID_PTR, played, "Playing all playlists");
     IncenseRegisterCallback("play_artists", INCENSE_CALLBACK_VOID_PTR, played, "Shuffling artists");
     IncenseRegisterCallback("play_albums", INCENSE_CALLBACK_VOID_PTR, played, "Playing latest albums");
+
     AromaWindow *window = IncenseLoadFileEx("ui/app.aroma", g_font, g_icon_font, &g_registry);
+        AromaNode* drawer = IncenseFindWidget(g_registry, "drawer");
+    aroma_node_set_hidden(drawer, true);
     if (!window)
     {
         int count = 0;

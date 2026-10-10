@@ -1,0 +1,1 @@
+/home/yassine/Projects/AromaUI/examples/07_lists_tables/android/app/build/intermediates/cxx/Debug/2z35731k/obj/arm64-v8a

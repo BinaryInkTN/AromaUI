@@ -1,0 +1,166 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "freetype_build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-freetype_build-Debug-e8149bfb5d34abe385e5.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "/home/yassine/Projects/AromaUI/vendors/freetype",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "sqlite3_build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-sqlite3_build-Debug-fc633a4881cdc2480b5f.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "/home/yassine/Projects/AromaUI/vendors/sqlite3",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "aroma_lib",
+					"jsonFile" : "directory-aroma_lib-Debug-0bab5940f02a26b0af7f.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "/home/yassine/Projects/AromaUI/src",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						3
+					],
+					"name" : "ListsTables_android",
+					"targetIndexes" : 
+					[
+						1,
+						2
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "freetype",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "SQLite3",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "SQLite3::@04cd79d7ceb76f65af7f",
+					"jsonFile" : "target-SQLite3-Debug-c2bf74c7e5f347302a90.json",
+					"name" : "SQLite3",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "aroma::@9df0d65908e3390db40e",
+					"jsonFile" : "target-aroma-Debug-522fb40923e1ecfbf236.json",
+					"name" : "aroma",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "aroma_app::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-aroma_app-Debug-16c0ca141c2f31e1d7d2.json",
+					"name" : "aroma_app",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "freetype::@bdc1e324bbc9e3c81525",
+					"jsonFile" : "target-freetype-Debug-0a3f2b4c0fb98c9b7073.json",
+					"name" : "freetype",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/yassine/Projects/AromaUI/examples/07_lists_tables/android/app/.cxx/Debug/2z35731k/x86_64",
+		"source" : "/home/yassine/Projects/AromaUI/examples/07_lists_tables/android/app/src/main/cpp"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}
