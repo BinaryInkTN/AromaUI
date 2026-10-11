@@ -26,6 +26,22 @@ static LogEntry *log_entries = NULL;
 static size_t log_capacity = 0;
 static size_t log_count = 0;
 
+static AromaLogHook log_hook = NULL;
+static void *log_hook_user_data = NULL;
+
+void aroma_log_set_hook(AromaLogHook hook, void *user_data)
+{
+    log_hook = hook;
+    log_hook_user_data = user_data;
+}
+
+static bool log_hook_emit(DebugLevel level, const char *message)
+{
+    if (log_hook)
+        return log_hook(level, message, log_hook_user_data);
+    return false;
+}
+
 void add_log_entry(const char *log_message)
 {
     if (log_count == log_capacity)
@@ -108,6 +124,8 @@ void log_message(DebugLevel level, const char *file, int line, const char *func,
     va_start(args, fmt);
     vsnprintf(log_line, sizeof(log_line), fmt, args);
     va_end(args);
+    if (log_hook_emit(level, log_line))
+        return;
     printf("[%s] %s%s%s [%s:%d] %s: %s\n", time_buffer, color, level_str, KNRM, file, line, func, log_line);
 
     #endif
@@ -118,6 +136,8 @@ void log_message(DebugLevel level, const char *file, int line, const char *func,
     va_start(args, fmt);
     vsnprintf(log_line, sizeof(log_line), fmt, args);
     va_end(args);
+    if (log_hook_emit(level, log_line))
+        return;
     printf("[%s] %s%s%s [%s:%d] %s: %s\n", "NONE", color, level_str, KNRM, file, line, func, log_line);
 
     #endif

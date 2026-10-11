@@ -229,6 +229,17 @@
             "status": "stable",
             "file": "docs/core-framework/Theming-and-Styling.md"
         },
+        {
+            "title": "Testing Framework",
+            "description": "Headless input simulation: clicks, taps, drags, keys, and spies.",
+            "icon": "flask-conical",
+            "color": "#006875",
+            "category": "Core Framework",
+            "version": "0.0.2",
+            "updated": "2026-10-11",
+            "status": "stable",
+            "file": "docs/core-framework/Testing-Framework.md"
+        },
 
         {
             "title": "Display & Feedback",
@@ -363,6 +374,17 @@
             "updated": "2026-09-28",
             "status": "stable",
             "file": "docs/backend-abstraction-layer/Platform-Backends.md"
+        },
+        {
+            "title": "Platform Feature Matrix",
+            "description": "What is implemented on each platform and what is still missing.",
+            "icon": "layout-grid",
+            "color": "#006875",
+            "category": "Backend Abstraction",
+            "version": "0.0.2",
+            "updated": "2026-10-11",
+            "status": "stable",
+            "file": "docs/backend-abstraction-layer/Platform-Feature-Matrix.md"
         },
         {
             "title": "Android Overview",

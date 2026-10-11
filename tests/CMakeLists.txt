@@ -17,6 +17,7 @@ add_executable(aroma_tests
     core/test_aroma_event_forget.c
     core/test_aroma_color.c
     core/test_aroma_theme.c
+    core/test_aroma_testfw.c
     core/test_aroma_font_measure.c
     widgets/test_aroma_button.c
     widgets/test_aroma_container.c

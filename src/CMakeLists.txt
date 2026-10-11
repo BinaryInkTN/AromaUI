@@ -15,6 +15,7 @@ add_library(aroma
     core/aroma_timer.c
     core/aroma_velocity.c
     core/aroma_drawlist.c
+    core/aroma_test.c
     core/aroma_native_utils.c
     core/utils/mpc.c
     core/aroma_3d.c

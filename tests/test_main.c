@@ -38,6 +38,7 @@
 #include "test_aroma_event_forget.h"
 #include "test_aroma_color.h"
 #include "test_aroma_theme.h"
+#include "test_aroma_testfw.h"
 #include "test_aroma_font_measure.h"
 #include "test_aroma_button.h"
 #include "test_aroma_container.h"
@@ -107,6 +108,8 @@ int main(void)
     run_color_tests(&passed, &failed);
     tally(passed, failed);
     run_theme_tests(&passed, &failed);
+    tally(passed, failed);
+    run_testfw_tests(&passed, &failed);
     tally(passed, failed);
     run_font_measure_tests(&passed, &failed);
     tally(passed, failed);

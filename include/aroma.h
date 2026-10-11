@@ -28,6 +28,7 @@
 #include "aroma_3d.h"
 #include "aroma_incense.h"
 #include "aroma_incense_loader.h"
+#include "aroma_test.h"
 
 #endif
 

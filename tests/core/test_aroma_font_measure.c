@@ -95,6 +95,6 @@ void run_font_measure_tests(int *passed, int *failed)
     test_ascii_stable();
     test_utf8_codepoints();
     printf("Aroma Font Measure: %d passed, %d failed\n", s_passed, s_failed);
-    *passed += s_passed;
-    *failed += s_failed;
+    *passed = s_passed;
+    *failed = s_failed;
 }

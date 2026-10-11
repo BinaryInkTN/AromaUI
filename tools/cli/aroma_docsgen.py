@@ -722,48 +722,38 @@ class DocGenerator:
             '<p class="kz-banner-brand">'
             "<span>AromaSDK</span></p>"
             '<h2 class="kz-banner-title">One codebase, every platform.</h2>'
+            '<div style="display:flex;gap:12px;flex-wrap:wrap">'
             '<a class="kz-btn-light" '
             'onclick="showPage(SLUG_TO_ID[\'architecture-overview\'],\'Overview\',null)">'
             '<span>Explore</span><i data-lucide="arrow-up-right"></i></a>'
+            '<a class="kz-btn-light" '
+            'onclick="showPage(SLUG_TO_ID[\'platform-feature-matrix\'],\'Backend Abstraction\',null)">'
+            '<span>Compare platforms</span><i data-lucide="arrow-up-right"></i></a>'
+            '</div>'
             "</div>"
             '<div class="kz-art" aria-hidden="true">'
-            '<div class="kz-chip kz-chip-1"></div>'
-            '<div class="kz-chip kz-chip-2"></div>'
-            '<div class="kz-chip kz-chip-3"></div>'
-            '<div class="kz-chip kz-chip-4"></div>'
-            "</div></div>"
+            '<div class="kz-sh-panel"></div>'
+            '<div class="kz-sh-planet"></div>'
+            '<div class="kz-sh-ring2"></div>'
+            '<div class="kz-sh-ring1"></div>'
+            '<div class="kz-sh-moon"></div>'
+            '<div class="kz-sh-star s1"></div>'
+            '<div class="kz-sh-star s2"></div>'
+            '<div class="kz-sh-star s3"></div>'
+            "</div></div></div>"
         )
-        kz_plat = (
-            '<div class="kz-wrap"><div class="kz-plat"><div>'
-            "<h2>Share code on your terms across every platform</h2>"
-            "<p>Build cross-platform projects in C with AromaUI. Write the interface "
-            "once in Incense markup, then ship it to Linux, "
-            "Android, Windows, embedded displays, and the Web with native performance "
-            "and full access to platform APIs.</p>"
-            '<a class="kz-btn-dark" '
-            'onclick="showPage(SLUG_TO_ID[\'platform-backends\'],\'Backend Abstraction\',null)">'
-            "<span>See supported platforms</span></a>"
-            "</div>"
-            '<svg class="kz-tree" viewBox="0 0 560 300" role="img" '
-            'aria-label="Shared core branching into platform targets">'
-            '<path class="kz-t-line" d="M280 52 V96"/>'
-            '<rect class="kz-t-hot" x="180" y="8" width="200" height="44" rx="8"/>'
-            '<text class="kz-t-hot-t" x="280" y="36" text-anchor="middle">Common C Core</text>'
-            '<rect class="kz-t-hot" x="180" y="96" width="200" height="44" rx="8"/>'
-            '<text class="kz-t-hot-t" x="280" y="124" text-anchor="middle">Shared UI Toolkit</text>'
-            '<path class="kz-t-line" d="M280 140 V172 M60 172 H500 '
-            "M80 172 V204 M180 172 V204 M280 172 V204 M380 172 V204 M480 172 V204\"/>"
-            '<g><rect class="kz-t-leaf" x="36" y="204" width="88" height="44" rx="8"/>'
-            '<text class="kz-t-leaf-t" x="80" y="231" text-anchor="middle">Linux</text></g>'
-            '<g><rect class="kz-t-leaf" x="136" y="204" width="88" height="44" rx="8"/>'
-            '<text class="kz-t-leaf-t" x="180" y="231" text-anchor="middle">Android</text></g>'
-            '<g><rect class="kz-t-leaf" x="236" y="204" width="88" height="44" rx="8"/>'
-            '<text class="kz-t-leaf-t" x="280" y="231" text-anchor="middle">Windows</text></g>'
-            '<g><rect class="kz-t-leaf" x="336" y="204" width="88" height="44" rx="8"/>'
-            '<text class="kz-t-leaf-t" x="380" y="231" text-anchor="middle">Embedded</text></g>'
-            '<g><rect class="kz-t-leaf" x="436" y="204" width="88" height="44" rx="8"/>'
-            '<text class="kz-t-leaf-t" x="480" y="231" text-anchor="middle">Web</text></g>'
-            "</svg></div></div></div>"
+        kz_test = (
+            '<div class="kz-wrap"><div class="kf-card kf-card-test">'
+            '<div class="kf-copy">'
+            "<h2>Test the interface, not the backend</h2>"
+            "<p>AromaTest simulates clicks, taps, drags, and key presses "
+            "on a headless node tree. No window or GPU needed. "
+            "Checks, data-driven cases, benchmarks, and a test runner "
+            "are built in.</p>"
+            '<a class="kz-btn-light" '
+            'onclick="showPage(SLUG_TO_ID[\'testing-framework\'],\'Core Framework\',null)">'
+            '<span>Read the testing guide</span><i data-lucide="arrow-up-right"></i></a>'
+            "</div></div></div>"
         )
         kf_sec = (
             '<div class="kz-wrap"><div class="kf-card">'
@@ -775,11 +765,6 @@ class DocGenerator:
             'href="https://github.com/BinaryInkTN/AromaUI" '
             'target="_blank" rel="noopener">'
             '<span>Learn more</span><i data-lucide="arrow-up-right"></i></a>'
-            "</div>"
-            '<div class="kf-art" aria-hidden="true">'
-            '<div class="kf-chip kf-chip-1"></div>'
-            '<div class="kf-chip kf-chip-2"></div>'
-            '<div class="kf-chip kf-chip-3"></div>'
             "</div></div></div>"
         )
 
@@ -787,8 +772,10 @@ class DocGenerator:
         return f'''
         <div class="welcome-page">
             {kz_banner}
-            {kz_plat}
+            <div class="kz-duo">
+            {kz_test}
             {kf_sec}
+            </div>
             {browse_html}
         </div>
         '''
@@ -1782,6 +1769,16 @@ body.has-announce .announce-bar{{display:flex}}
 [data-theme="light"] .kz-chip-2{{background:rgba(130,195,255,.62);border-color:rgba(185,215,255,.6);}}
 [data-theme="light"] .kz-chip-3{{background:rgba(150,210,255,.6);border-color:rgba(195,225,255,.6);}}
 [data-theme="light"] .kz-chip-4{{background:rgba(170,220,255,.55);border-color:rgba(205,230,255,.6);}}
+/* ===== Banner hero shapes (abstract 3D composition) ===== */
+.kz-sh-panel{{position:absolute;right:-80px;top:-60px;width:80%;height:140%;transform:rotate(10deg);background:linear-gradient(135deg,#FF7A3D 0%,#F94F8A 45%,#7C3AED 100%);border-radius:28px;}}
+.kz-sh-planet{{position:absolute;left:30%;top:28%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#DDD0FF,#8B5CF6 55%,#4C1D95);box-shadow:0 0 90px rgba(139,92,246,.55),20px 26px 50px rgba(0,0,0,.45);}}
+.kz-sh-ring1{{position:absolute;left:calc(30% - 50px);top:calc(28% + 25px);width:220px;height:70px;border:2px solid rgba(255,255,255,.55);border-radius:50%;transform:rotate(-18deg);}}
+.kz-sh-ring2{{position:absolute;left:calc(30% - 90px);top:calc(28% + 10px);width:300px;height:100px;border:2px solid rgba(255,255,255,.3);border-radius:50%;transform:rotate(-18deg);}}
+.kz-sh-moon{{position:absolute;left:calc(30% + 159px);top:calc(28% + 49px);width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#FFFFFF,#B9BEC7);box-shadow:0 4px 14px rgba(0,0,0,.4);}}
+.kz-sh-star{{position:absolute;border-radius:50%;background:#FFFFFF;}}
+.kz-sh-star.s1{{right:12%;top:14%;width:6px;height:6px;}}
+.kz-sh-star.s2{{right:26%;top:64%;width:4px;height:4px;opacity:.8;}}
+.kz-sh-star.s3{{left:8%;top:20%;width:5px;height:5px;opacity:.9;}}
 .kz-plat{{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;padding:88px 0 8px;}}
 .kz-plat h2{{margin:0 0 20px;font-family:var(--fd);font-size:clamp(28px,3.4vw,38px);font-weight:800;line-height:1.2;letter-spacing:-.02em;color:var(--ms-heading);}}
 .kz-plat p{{margin:0 0 32px;font-size:16px;line-height:1.7;color:var(--ms-secondary);max-width:52ch;}}
@@ -1813,6 +1810,18 @@ body.has-announce .announce-bar{{display:flex}}
   .kz-art{{min-height:220px;}}
   .kz-plat{{grid-template-columns:1fr;padding:64px 0 8px;gap:36px;}}
 }}
+/* ===== Home duo: two equal cards in a row ===== */
+.welcome-page .kz-duo{{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;
+  align-items:stretch;max-width:var(--rail);margin:0 auto;padding:48px 40px 0;
+}}
+.welcome-page .kz-duo>.kz-wrap{{max-width:none;margin:0;padding:0;min-width:0;}}
+.welcome-page .kz-duo .kf-card{{height:100%;min-height:0;margin-top:0;grid-template-columns:1fr;}}
+.welcome-page .kz-duo .kf-copy{{padding:32px 28px;}}
+.welcome-page .kz-duo .kf-art{{min-height:170px;}}
+@media(max-width:900px){{
+  .welcome-page .kz-duo{{grid-template-columns:1fr;padding:48px 20px 0;}}
+}}
 /* ===== Home community + open-source sections ===== */
 .kf-card{{
   position:relative;overflow:hidden;
@@ -1830,6 +1839,23 @@ body.has-announce .announce-bar{{display:flex}}
 .kf-chip-2{{width:150px;height:380px;left:170px;top:-90px;background:rgba(46,124,246,.6);}}
 .kf-chip-3{{width:150px;height:380px;left:310px;top:-120px;background:rgba(76,194,255,.55);}}
 [data-theme="dark"] .kf-card{{background:#161C28;}}
+/* ===== Modern chip art: gradient glow bars ===== */
+.kz-art .kz-chip,.kf-art .kf-chip{{
+  transform:rotate(10deg);
+  box-shadow:0 0 70px rgba(124,58,237,.35);
+}}
+.kz-art .kz-chip-1,.kf-art .kf-chip-1{{background:linear-gradient(180deg,#8B5CF6,#6D28D9);border-color:transparent;}}
+.kz-art .kz-chip-2,.kf-art .kf-chip-2{{background:linear-gradient(180deg,#EC4899,#8B5CF6);border-color:transparent;}}
+.kz-art .kz-chip-3,.kf-art .kf-chip-3{{background:linear-gradient(180deg,#38BDF8,#6366F1);border-color:transparent;}}
+.kz-art .kz-chip-4{{background:linear-gradient(180deg,#A3E635,#38BDF8);border-color:transparent;}}
+.welcome-page .kf-card-test{{background:linear-gradient(135deg,#6D28D9 0%,#7C3AED 45%,#4338CA 100%);}}
+.welcome-page .kf-card-test .kf-copy h2{{color:#FFFFFF;}}
+.welcome-page .kf-card-test .kf-copy p{{color:rgba(255,255,255,.88);}}
+.welcome-page .kf-card-test .kf-chip{{border-color:rgba(255,255,255,.35);}}
+.welcome-page .kf-card-test .kf-chip-1{{background:rgba(255,255,255,.14);}}
+.welcome-page .kf-card-test .kf-chip-2{{background:rgba(255,255,255,.10);}}
+.welcome-page .kf-card-test .kf-chip-3{{background:rgba(255,255,255,.18);}}
+[data-theme="dark"] .welcome-page .kf-card-test{{background:linear-gradient(135deg,#2E1065 0%,#4C1D95 50%,#312E81 100%);}}
 [data-theme="dark"] .kf-copy h2{{color:#F3F2F1;}}
 [data-theme="dark"] .kf-copy p{{color:#B9B9C0;}}
 @media(max-width:900px){{
@@ -1970,7 +1996,7 @@ body.has-announce .announce-bar{{display:flex}}
   box-shadow:var(--ms-elev-1);
   transition:box-shadow 150ms, border-color 150ms;
 }}
-[data-theme="dark"] .doc-card{{background:#252423;border-color:#3B3A39;}}
+[data-theme="dark"] .doc-card{{background:#222226;border-color:#35353B;}}
 .doc-card:hover{{border-color:var(--ms-blue);box-shadow:var(--ms-elev-2);}}
 .doc-card:hover .doc-card-title{{text-decoration:underline;color:var(--ms-link-hover);}}
 .doc-card-icon{{
@@ -2264,7 +2290,7 @@ body.has-announce .announce-bar{{display:flex}}
   min-width:0;background:#FFFFFF;
   box-shadow:var(--ms-elev-1);
 }}
-[data-theme="dark"] .doc-pn-link{{background:#252423;border-color:#3B3A39;}}
+[data-theme="dark"] .doc-pn-link{{background:#222226;border-color:#35353B;}}
 .doc-pn-link:hover{{border-color:var(--ms-blue);box-shadow:var(--ms-elev-2);}}
 .doc-pn-link.next{{grid-column:2;flex-direction:row-reverse;text-align:right}}
 .doc-pn-link i{{width:18px;height:18px;color:var(--ms-secondary);flex-shrink:0}}
@@ -2602,11 +2628,23 @@ body{{font-size:16px;letter-spacing:0;-webkit-font-smoothing:antialiased;}}
 .doc-pn-link{{border-radius:12px;background:#fff;border-color:#E5E5EA;}}
 .doc-pn-link:hover{{border-color:#307FFF;box-shadow:0 2px 6px rgba(25,25,28,.08);}}
 .doc-pn-title{{color:#19191C;font-weight:600;}}
-.doc-card{{border-radius:12px;border-color:#E5E5EA;padding:20px;}}
+[data-theme="dark"] .doc-pn-link{{background:#222226;border-color:#35353B;}}
+[data-theme="dark"] .doc-pn-link:hover{{border-color:#7AA2FF;box-shadow:0 2px 6px rgba(0,0,0,.4);}}
+[data-theme="dark"] .doc-pn-title{{color:#FFFFFF;}}
+[data-theme="dark"] .doc-pn-link:hover .doc-pn-title{{color:#BDD3FF;}}
+[data-theme="dark"] .doc-pn-label{{color:#B9B9C0;}}
+.doc-card{{border-radius:12px;border-color:#E5E5EA;padding:20px;background:#fff;}}
 .doc-card:hover{{border-color:#307FFF;box-shadow:0 2px 6px rgba(25,25,28,.08);}}
 .doc-card-icon{{border-radius:8px;width:44px;height:44px;background:#EBF1FF;color:#307FFF;}}
 .doc-card-title{{color:#19191C;font-weight:600;font-size:15px;}}
 .doc-card:hover .doc-card-title{{color:#1D4FD7;text-decoration:none;}}
+[data-theme="dark"] .doc-card{{background:#222226;border-color:#35353B;}}
+[data-theme="dark"] .doc-card:hover{{border-color:#7AA2FF;box-shadow:0 2px 6px rgba(0,0,0,.4);}}
+[data-theme="dark"] .doc-card-icon{{background:#1E2A4A;color:#7AA2FF;}}
+[data-theme="dark"] .doc-card-icon i{{color:#7AA2FF;}}
+[data-theme="dark"] .doc-card-title{{color:#FFFFFF;}}
+[data-theme="dark"] .doc-card:hover .doc-card-title{{color:#BDD3FF;}}
+[data-theme="dark"] .doc-card-desc{{color:#B9B9C0;}}
 .toc-panel{{background:transparent;}}
 .toc-label{{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6C6C72;}}
 .toc-item{{border-left:2px solid #E9E9EC;padding:5px 12px 5px 12px;border-radius:0;font-size:13px;}}

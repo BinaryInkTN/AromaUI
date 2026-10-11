@@ -95,6 +95,11 @@ typedef enum
 void log_message(DebugLevel level, const char *file, int line, const char *func, const char *fmt, ...);
 
 
+typedef bool (*AromaLogHook)(DebugLevel level, const char *message, void *user_data);
+
+void aroma_log_set_hook(AromaLogHook hook, void *user_data);
+
+
 
 
 
