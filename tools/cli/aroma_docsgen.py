@@ -716,50 +716,6 @@ class DocGenerator:
 
 
         hero_cfg = hero or {}
-        kb_cards = []
-        for c in (hero_cfg.get("cards") or []):
-            sub = c.get("subcategory") or ""
-            sub_js = f"'{sub}'" if sub else "null"
-            go = (
-                f"showPage(SLUG_TO_ID['{c.get('slug', '')}'],"
-                f"'{c.get('category', '')}',{sub_js})"
-            )
-            kb_cards.append(
-                f'<div class="kb-card" onclick="{go}">'
-                f'<i data-lucide="'
-                f'{_htmlesc.escape(str(c.get("icon", "box")), quote=True)}" class="kb-link-ico"></i>'
-                f'<span class="kb-label">'
-                f'{_htmlesc.escape(str(c.get("text", "")), quote=False)}</span>'
-                "</div>"
-            )
-        kb_primary = next(
-            (a for a in (hero_cfg.get("actions") or []) if a.get("primary")), None
-        )
-        kb_btn = (
-            f'<a class="kb-pill" onclick="{kb_primary.get("onclick", "")}">'
-            f'<span>{_htmlesc.escape(str(kb_primary.get("text", "")), quote=False)}</span></a>'
-            if kb_primary
-            else ""
-        )
-        kb_hero = (
-            '<div class="kb-hero"><div class="kb-art" aria-hidden="true">'
-            '<div class="kb-blob kb-blob-a"></div>'
-            '<div class="kb-blob kb-blob-b"></div>'
-            '<div class="kb-blob kb-blob-c"></div>'
-            '<div class="kb-slab kb-slab-1"></div>'
-            '<div class="kb-slab kb-slab-2"></div>'
-            '<div class="kb-grain"></div></div>'
-            '<div class="kb-hero-inner"><div class="kb-copy">'
-            f'<h1 class="kb-title">'
-            f'{_htmlesc.escape(str(hero_cfg.get("title") or project_name), quote=False)}</h1>'
-            f'<p class="kb-tagline">'
-            f'{_htmlesc.escape(str(hero_cfg.get("tagline") or ""), quote=False)}</p>'
-            f'<p class="kb-caption">'
-            f'{_htmlesc.escape(str(hero_cfg.get("caption") or ""), quote=False)}</p>'
-            f"{kb_btn}</div>"
-            f'<div class="kb-cards">{"".join(kb_cards)}</div>'
-            "</div></div>"
-        )
         kz_banner = (
             '<div class="kz-wrap"><div class="kz-banner">'
             '<div class="kz-banner-copy">'
@@ -830,7 +786,6 @@ class DocGenerator:
 
         return f'''
         <div class="welcome-page">
-            {kb_hero}
             {kz_banner}
             {kz_plat}
             {kf_sec}
@@ -1259,38 +1214,6 @@ body{{
   box-shadow:none;
 }}
 .top-app-bar.scrolled .ms-header-top{{box-shadow:0 1.6px 3.6px rgba(0,0,0,.11);}}
-/* ===== Hero-blend navbar: transparent over the home hero, solid elsewhere ===== */
-body.hero-blend .layout{{padding-top:0;}}
-body.hero-blend.has-announce .layout{{padding-top:0;}}
-@media(min-width:761px){{
-  body.hero-blend .nav-drawer{{padding-top:var(--top-bar-h);}}
-  body.hero-blend.has-announce .nav-drawer{{padding-top:calc(var(--top-bar-h) + 40px);}}
-}}
-body.hero-blend .ms-header-top{{background:rgba(7,13,26,.5);
-  -webkit-backdrop-filter:blur(20px) saturate(150%);
-  backdrop-filter:blur(20px) saturate(150%);
-  border-bottom-color:transparent;box-shadow:none;}}
-body.hero-blend .top-app-bar.scrolled .ms-header-top{{box-shadow:none;}}
-body.hero-blend .ms-breadcrumb-bar{{display:none;}}
-body.hero-blend .ms-learn-brand,body.hero-blend .tab-logo-name,body.hero-blend .ionic-nav a{{color:#FFFFFF;}}
-body.hero-blend .mob-btn,body.hero-blend .m3-icon-btn{{color:#FFFFFF;}}
-body.hero-blend .ms-logo img{{filter:invert(1);}}
-body.hero-blend .ms-logo-sep{{background:rgba(255,255,255,.35);}}
-body.hero-blend .search-bar{{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);}}
-body.hero-blend .search-bar:hover{{border-color:rgba(255,255,255,.6);}}
-body.hero-blend .search-bar svg{{color:rgba(255,255,255,.8);}}
-body.hero-blend .search-bar-input{{color:#FFFFFF;}}
-body.hero-blend .search-bar-input::placeholder{{color:rgba(255,255,255,.65);}}
-body.hero-blend .search-bar-input::-webkit-input-placeholder{{color:rgba(255,255,255,.65);}}
-body.hero-blend .search-bar-input::-moz-placeholder{{color:rgba(255,255,255,.65);}}
-body.hero-blend .search-bar-kbd kbd{{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);color:#FFFFFF;}}
-body.hero-blend .theme-toggle{{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.12);
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}}
-body.hero-blend .theme-toggle button{{color:rgba(255,255,255,.75);}}
-body.hero-blend .theme-toggle button:hover{{background:rgba(255,255,255,.14);color:#FFFFFF;}}
-body.hero-blend .theme-toggle button.active{{background:#FFFFFF;color:#0B1526;}}
-body.hero-blend .pf-chip{{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#FFFFFF;}}
-body.hero-blend .kb-hero-inner{{padding-top:calc(104px + var(--top-bar-h));}}
 [data-theme="dark"] .ms-header-top{{background:rgba(27,26,25,.78);border-bottom-color:#3B3A39;}}
 [data-theme="dark"] .tab-logo-name,[data-theme="dark"] .ms-learn-brand{{color:#F3F2F1;}}
 [data-theme="dark"] .ionic-nav a{{color:#F3F2F1;}}
@@ -1828,109 +1751,6 @@ body.has-announce .announce-bar{{display:flex}}
   font-size:13px;
   color:var(--ms-secondary);
 }}
-/* ===== Kotlin-style photo hero: dark canvas, purple glass art, frosted cards ===== */
-.kb-hero{{
-  position:relative;overflow:hidden;
-  background:#070D1A;color:#FFFFFF;
-  border-bottom:1px solid #101E33;
-}}
-.kb-art{{position:absolute;inset:0;overflow:hidden;}}
-.kb-blob{{position:absolute;border-radius:50%;filter:blur(70px);}}
-.kb-blob-a{{
-  width:640px;height:640px;right:-120px;top:-160px;
-  background:radial-gradient(circle,rgba(46,124,246,.7) 0%,rgba(46,124,246,0) 65%);
-}}
-.kb-blob-b{{
-  width:560px;height:560px;right:120px;bottom:-220px;
-  background:radial-gradient(circle,rgba(76,194,255,.5) 0%,rgba(76,194,255,0) 65%);
-}}
-.kb-blob-c{{
-  width:420px;height:420px;right:420px;top:40px;
-  background:radial-gradient(circle,rgba(0,102,204,.55) 0%,rgba(0,102,204,0) 65%);
-}}
-.kb-slab{{position:absolute;border-radius:64px;}}
-.kb-slab-1{{
-  width:380px;height:620px;right:180px;top:-120px;
-  transform:rotate(18deg);
-  background:rgba(46,124,246,.22);
-  border:1px solid rgba(120,180,255,.35);
-  filter:blur(2px);
-}}
-.kb-slab-2{{
-  width:300px;height:520px;right:-60px;top:80px;
-  transform:rotate(18deg);
-  background:rgba(76,194,255,.16);
-  border:1px solid rgba(140,200,255,.3);
-  filter:blur(3px);
-}}
-.kb-grain{{
-  position:absolute;inset:0;opacity:.14;mix-blend-mode:overlay;
-  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22/></filter><rect width=%22160%22 height=%22160%22 filter=%22url(%23n)%22 opacity=%220.6%22/></svg>');
-}}
-.kb-hero-inner{{
-  position:relative;z-index:1;
-  max-width:1200px;margin:0 auto;
-  padding:104px 40px 96px;
-  display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;
-}}
-.kb-title{{
-  margin:0 0 20px;font-family:var(--fd);
-  font-size:clamp(56px,7.5vw,104px);font-weight:800;line-height:1.02;letter-spacing:-.035em;
-  color:#FFFFFF;
-}}
-.kb-tagline{{
-  margin:0 0 12px;font-family:var(--fd);
-  font-size:clamp(22px,3vw,32px);font-weight:500;line-height:1.3;
-  color:rgba(255,255,255,.92);
-}}
-.kb-caption{{margin:0 0 36px;font-size:14px;color:rgba(255,255,255,.6);}}
-.kb-pill{{
-  display:inline-flex;align-items:center;justify-content:center;
-  height:52px;padding:0 40px;border-radius:999px;
-  background:#FFFFFF;color:#0058C4;
-  border:1px solid rgba(0,88,196,.35);
-  font-size:16px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;
-}}
-.kb-pill:hover{{background:#E8F1FD;color:#00479E;text-decoration:none;}}
-.kb-cards{{display:flex;flex-direction:column;gap:14px;margin:0;}}
-.kb-card{{
-  display:flex;align-items:center;gap:18px;
-  padding:18px 22px;border-radius:16px;cursor:pointer;
-  background:rgba(255,255,255,.07);
-  -webkit-backdrop-filter:blur(18px) saturate(150%);
-  backdrop-filter:blur(18px) saturate(150%);
-  border:1px solid rgba(255,255,255,.14);
-  transition:background .15s ease-in-out,transform .15s ease-in-out;
-}}
-.kb-card:hover{{background:rgba(255,255,255,.13);}}
-.kb-link-ico{{flex:0 0 auto;width:34px;height:34px;color:#C9DFFF;}}
-.kb-label{{flex:1 1 auto;font-size:17px;font-weight:500;color:#FFFFFF;}}
-@media(max-width:900px){{
-  .kb-hero-inner{{grid-template-columns:1fr;padding:72px 20px 64px;gap:44px;}}
-  .kb-blob-a{{right:-260px;}}
-  body.hero-blend .kb-hero-inner{{padding-top:calc(72px + var(--top-bar-h));}}
-}}
-/* ===== Photo hero: light-mode variant (dark styling above is the default) ===== */
-[data-theme="light"] .kb-hero{{background:#EDF2F9;border-bottom-color:#D8E2F0;}}
-[data-theme="light"] .kb-blob-a{{background:radial-gradient(circle,rgba(46,124,246,.35) 0%,rgba(46,124,246,0) 65%);}}
-[data-theme="light"] .kb-blob-b{{background:radial-gradient(circle,rgba(76,194,255,.35) 0%,rgba(76,194,255,0) 65%);}}
-[data-theme="light"] .kb-blob-c{{background:radial-gradient(circle,rgba(0,102,204,.28) 0%,rgba(0,102,204,0) 65%);}}
-[data-theme="light"] .kb-slab-1{{background:rgba(46,124,246,.14);border-color:rgba(46,124,246,.3);}}
-[data-theme="light"] .kb-slab-2{{background:rgba(76,194,255,.14);border-color:rgba(76,194,255,.32);}}
-[data-theme="light"] .kb-title{{color:#0B1526;}}
-[data-theme="light"] .kb-tagline{{color:rgba(11,21,38,.8);}}
-[data-theme="light"] .kb-caption{{color:rgba(11,21,38,.6);}}
-[data-theme="light"] .hero-glass{{
-  background:rgba(255,255,255,.68);
-  border-color:rgba(11,38,76,.12);
-  box-shadow:0 24px 64px rgba(11,38,76,.16), inset 0 1px 0 rgba(255,255,255,.7);
-}}
-[data-theme="light"] .kb-pill{{background:#0058C4;border-color:#0058C4;color:#FFFFFF;}}
-[data-theme="light"] .kb-pill:hover{{background:#00479E;color:#FFFFFF;}}
-[data-theme="light"] .kb-card{{background:rgba(255,255,255,.72);border-color:rgba(11,38,76,.12);}}
-[data-theme="light"] .kb-card:hover{{background:#FFFFFF;}}
-[data-theme="light"] .kb-label{{color:#0B1526;}}
-[data-theme="light"] .kb-link-ico{{color:#0058C4;}}
 /* ===== Home business banner + platform explainer (Kotlin-style sections) ===== */
 .kz-wrap{{max-width:var(--rail);margin:0 auto;padding:64px 40px 0;}}
 .kz-banner{{
@@ -3031,7 +2851,6 @@ function showSubcategoryFromBc(){{if(currentCategory&&currentSubcategory) showSu
 function _hideAll(){{
   ['welcomeView','categoryView','subcategoryView','docView'].forEach(id=>
     document.getElementById(id).style.display='none');
-  setTimeout(syncHeroBlendHome,0);
 }}
 
 function initHeroRelease(){{
@@ -3560,8 +3379,6 @@ document.getElementById('cScroll').addEventListener('scroll',function(){{
   document.getElementById('tocFill').style.width=(tot>0?Math.min(100,Math.round(this.scrollTop/tot*100)):0)+'%';
   updateTocActive();
   document.getElementById('topAppBar').classList.toggle('scrolled',this.scrollTop>8);
-  var _wv=document.getElementById('welcomeView');
-  document.body.classList.toggle('hero-blend',!!(_wv&&_wv.style.display!=='none')&&this.scrollTop<=40);
 }});
 
 function updateTocActive(){{
@@ -3882,10 +3699,6 @@ function toggleNavDrawer(){{
   if(window.matchMedia('(max-width:760px)').matches){{openDrawer();return;}}
   document.body.classList.toggle('nav-retracted');
 }}
-function syncHeroBlendHome(){{
-  var w=document.getElementById('welcomeView');
-  document.body.classList.toggle('hero-blend',!!(w&&w.style.display!=='none'));
-}}
 
 function closeDrawer(){{
   document.getElementById('navDrawer').classList.remove('open');
@@ -3908,7 +3721,6 @@ document.addEventListener('DOMContentLoaded',()=>{{
   initPF();
   loadFromURL();
   setTimeout(ic, 100);
-  setTimeout(syncHeroBlendHome,0);
 }});
 
 window.addEventListener('hashchange', () => {{

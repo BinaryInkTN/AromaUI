@@ -139,38 +139,6 @@ body{
   box-shadow:none;
 }
 .top-app-bar.scrolled .ms-header-top{box-shadow:0 1.6px 3.6px rgba(0,0,0,.11);}
-/* ===== Hero-blend navbar: transparent over the home hero, solid elsewhere ===== */
-body.hero-blend .layout{padding-top:0;}
-body.hero-blend.has-announce .layout{padding-top:0;}
-@media(min-width:761px){
-  body.hero-blend .nav-drawer{padding-top:var(--top-bar-h);}
-  body.hero-blend.has-announce .nav-drawer{padding-top:calc(var(--top-bar-h) + 40px);}
-}
-body.hero-blend .ms-header-top{background:rgba(7,13,26,.5);
-  -webkit-backdrop-filter:blur(20px) saturate(150%);
-  backdrop-filter:blur(20px) saturate(150%);
-  border-bottom-color:transparent;box-shadow:none;}
-body.hero-blend .top-app-bar.scrolled .ms-header-top{box-shadow:none;}
-body.hero-blend .ms-breadcrumb-bar{display:none;}
-body.hero-blend .ms-learn-brand,body.hero-blend .tab-logo-name,body.hero-blend .ionic-nav a{color:#FFFFFF;}
-body.hero-blend .mob-btn,body.hero-blend .m3-icon-btn{color:#FFFFFF;}
-body.hero-blend .ms-logo img{filter:invert(1);}
-body.hero-blend .ms-logo-sep{background:rgba(255,255,255,.35);}
-body.hero-blend .search-bar{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);}
-body.hero-blend .search-bar:hover{border-color:rgba(255,255,255,.6);}
-body.hero-blend .search-bar svg{color:rgba(255,255,255,.8);}
-body.hero-blend .search-bar-input{color:#FFFFFF;}
-body.hero-blend .search-bar-input::placeholder{color:rgba(255,255,255,.65);}
-body.hero-blend .search-bar-input::-webkit-input-placeholder{color:rgba(255,255,255,.65);}
-body.hero-blend .search-bar-input::-moz-placeholder{color:rgba(255,255,255,.65);}
-body.hero-blend .search-bar-kbd kbd{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);color:#FFFFFF;}
-body.hero-blend .theme-toggle{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.12);
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
-body.hero-blend .theme-toggle button{color:rgba(255,255,255,.75);}
-body.hero-blend .theme-toggle button:hover{background:rgba(255,255,255,.14);color:#FFFFFF;}
-body.hero-blend .theme-toggle button.active{background:#FFFFFF;color:#0B1526;}
-body.hero-blend .pf-chip{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#FFFFFF;}
-body.hero-blend .kb-hero-inner{padding-top:calc(104px + var(--top-bar-h));}
 [data-theme="dark"] .ms-header-top{background:rgba(27,26,25,.78);border-bottom-color:#3B3A39;}
 [data-theme="dark"] .tab-logo-name,[data-theme="dark"] .ms-learn-brand{color:#F3F2F1;}
 [data-theme="dark"] .ionic-nav a{color:#F3F2F1;}
@@ -708,109 +676,6 @@ body.has-announce .announce-bar{display:flex}
   font-size:13px;
   color:var(--ms-secondary);
 }
-/* ===== Kotlin-style photo hero: dark canvas, purple glass art, frosted cards ===== */
-.kb-hero{
-  position:relative;overflow:hidden;
-  background:#070D1A;color:#FFFFFF;
-  border-bottom:1px solid #101E33;
-}
-.kb-art{position:absolute;inset:0;overflow:hidden;}
-.kb-blob{position:absolute;border-radius:50%;filter:blur(70px);}
-.kb-blob-a{
-  width:640px;height:640px;right:-120px;top:-160px;
-  background:radial-gradient(circle,rgba(46,124,246,.7) 0%,rgba(46,124,246,0) 65%);
-}
-.kb-blob-b{
-  width:560px;height:560px;right:120px;bottom:-220px;
-  background:radial-gradient(circle,rgba(76,194,255,.5) 0%,rgba(76,194,255,0) 65%);
-}
-.kb-blob-c{
-  width:420px;height:420px;right:420px;top:40px;
-  background:radial-gradient(circle,rgba(0,102,204,.55) 0%,rgba(0,102,204,0) 65%);
-}
-.kb-slab{position:absolute;border-radius:64px;}
-.kb-slab-1{
-  width:380px;height:620px;right:180px;top:-120px;
-  transform:rotate(18deg);
-  background:rgba(46,124,246,.22);
-  border:1px solid rgba(120,180,255,.35);
-  filter:blur(2px);
-}
-.kb-slab-2{
-  width:300px;height:520px;right:-60px;top:80px;
-  transform:rotate(18deg);
-  background:rgba(76,194,255,.16);
-  border:1px solid rgba(140,200,255,.3);
-  filter:blur(3px);
-}
-.kb-grain{
-  position:absolute;inset:0;opacity:.14;mix-blend-mode:overlay;
-  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22/></filter><rect width=%22160%22 height=%22160%22 filter=%22url(%23n)%22 opacity=%220.6%22/></svg>');
-}
-.kb-hero-inner{
-  position:relative;z-index:1;
-  max-width:1200px;margin:0 auto;
-  padding:104px 40px 96px;
-  display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;
-}
-.kb-title{
-  margin:0 0 20px;font-family:var(--fd);
-  font-size:clamp(56px,7.5vw,104px);font-weight:800;line-height:1.02;letter-spacing:-.035em;
-  color:#FFFFFF;
-}
-.kb-tagline{
-  margin:0 0 12px;font-family:var(--fd);
-  font-size:clamp(22px,3vw,32px);font-weight:500;line-height:1.3;
-  color:rgba(255,255,255,.92);
-}
-.kb-caption{margin:0 0 36px;font-size:14px;color:rgba(255,255,255,.6);}
-.kb-pill{
-  display:inline-flex;align-items:center;justify-content:center;
-  height:52px;padding:0 40px;border-radius:999px;
-  background:#FFFFFF;color:#0058C4;
-  border:1px solid rgba(0,88,196,.35);
-  font-size:16px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;
-}
-.kb-pill:hover{background:#E8F1FD;color:#00479E;text-decoration:none;}
-.kb-cards{display:flex;flex-direction:column;gap:14px;margin:0;}
-.kb-card{
-  display:flex;align-items:center;gap:18px;
-  padding:18px 22px;border-radius:16px;cursor:pointer;
-  background:rgba(255,255,255,.07);
-  -webkit-backdrop-filter:blur(18px) saturate(150%);
-  backdrop-filter:blur(18px) saturate(150%);
-  border:1px solid rgba(255,255,255,.14);
-  transition:background .15s ease-in-out,transform .15s ease-in-out;
-}
-.kb-card:hover{background:rgba(255,255,255,.13);}
-.kb-link-ico{flex:0 0 auto;width:34px;height:34px;color:#C9DFFF;}
-.kb-label{flex:1 1 auto;font-size:17px;font-weight:500;color:#FFFFFF;}
-@media(max-width:900px){
-  .kb-hero-inner{grid-template-columns:1fr;padding:72px 20px 64px;gap:44px;}
-  .kb-blob-a{right:-260px;}
-  body.hero-blend .kb-hero-inner{padding-top:calc(72px + var(--top-bar-h));}
-}
-/* ===== Photo hero: light-mode variant (dark styling above is the default) ===== */
-[data-theme="light"] .kb-hero{background:#EDF2F9;border-bottom-color:#D8E2F0;}
-[data-theme="light"] .kb-blob-a{background:radial-gradient(circle,rgba(46,124,246,.35) 0%,rgba(46,124,246,0) 65%);}
-[data-theme="light"] .kb-blob-b{background:radial-gradient(circle,rgba(76,194,255,.35) 0%,rgba(76,194,255,0) 65%);}
-[data-theme="light"] .kb-blob-c{background:radial-gradient(circle,rgba(0,102,204,.28) 0%,rgba(0,102,204,0) 65%);}
-[data-theme="light"] .kb-slab-1{background:rgba(46,124,246,.14);border-color:rgba(46,124,246,.3);}
-[data-theme="light"] .kb-slab-2{background:rgba(76,194,255,.14);border-color:rgba(76,194,255,.32);}
-[data-theme="light"] .kb-title{color:#0B1526;}
-[data-theme="light"] .kb-tagline{color:rgba(11,21,38,.8);}
-[data-theme="light"] .kb-caption{color:rgba(11,21,38,.6);}
-[data-theme="light"] .hero-glass{
-  background:rgba(255,255,255,.68);
-  border-color:rgba(11,38,76,.12);
-  box-shadow:0 24px 64px rgba(11,38,76,.16), inset 0 1px 0 rgba(255,255,255,.7);
-}
-[data-theme="light"] .kb-pill{background:#0058C4;border-color:#0058C4;color:#FFFFFF;}
-[data-theme="light"] .kb-pill:hover{background:#00479E;color:#FFFFFF;}
-[data-theme="light"] .kb-card{background:rgba(255,255,255,.72);border-color:rgba(11,38,76,.12);}
-[data-theme="light"] .kb-card:hover{background:#FFFFFF;}
-[data-theme="light"] .kb-label{color:#0B1526;}
-[data-theme="light"] .kb-link-ico{color:#0058C4;}
 /* ===== Home business banner + platform explainer (Kotlin-style sections) ===== */
 .kz-wrap{max-width:var(--rail);margin:0 auto;padding:64px 40px 0;}
 .kz-banner{
@@ -1989,7 +1854,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
         <div class="c-inner wide" id="cInner">
           <div id="welcomeView">
         <div class="welcome-page">
-            <div class="kb-hero"><div class="kb-art" aria-hidden="true"><div class="kb-blob kb-blob-a"></div><div class="kb-blob kb-blob-b"></div><div class="kb-blob kb-blob-c"></div><div class="kb-slab kb-slab-1"></div><div class="kb-slab kb-slab-2"></div><div class="kb-grain"></div></div><div class="kb-hero-inner"><div class="kb-copy"><h1 class="kb-title">AromaSDK</h1><p class="kb-tagline">Modern UI For Everywhere!</p><p class="kb-caption">Free and open source under the MIT license</p><a class="kb-pill" onclick="showPage(SLUG_TO_ID['getting-started'],'Overview',null)"><span>Get Started</span></a></div><div class="kb-cards"><div class="kb-card" onclick="showPage(SLUG_TO_ID['architecture-overview'],'Overview',null)"><i data-lucide="layers" class="kb-link-ico"></i><span class="kb-label">Cross-platform</span></div><div class="kb-card" onclick="showPage(SLUG_TO_ID['input-controls'],'Widget Library',null)"><i data-lucide="layout-grid" class="kb-link-ico"></i><span class="kb-label">Widgets</span></div><div class="kb-card" onclick="showPage(SLUG_TO_ID['incense-declarative-ui'],'Widget Library',null)"><i data-lucide="code" class="kb-link-ico"></i><span class="kb-label">Incense UI</span></div><div class="kb-card" onclick="showPage(SLUG_TO_ID['android-overview'],'Backend Abstraction','Android')"><i data-lucide="smartphone" class="kb-link-ico"></i><span class="kb-label">Android</span></div><div class="kb-card" onclick="showPage(SLUG_TO_ID['building-deployment'],'Build & Deploy',null)"><i data-lucide="terminal" class="kb-link-ico"></i><span class="kb-label">Build and deploy</span></div></div></div></div>
             <div class="kz-wrap"><div class="kz-banner"><div class="kz-banner-copy"><p class="kz-banner-brand"><span>AromaSDK</span></p><h2 class="kz-banner-title">One codebase, every platform.</h2><a class="kz-btn-light" onclick="showPage(SLUG_TO_ID['architecture-overview'],'Overview',null)"><span>Explore</span><i data-lucide="arrow-up-right"></i></a></div><div class="kz-art" aria-hidden="true"><div class="kz-chip kz-chip-1"></div><div class="kz-chip kz-chip-2"></div><div class="kz-chip kz-chip-3"></div><div class="kz-chip kz-chip-4"></div></div></div>
             <div class="kz-wrap"><div class="kz-plat"><div><h2>Share code on your terms across every platform</h2><p>Build cross-platform projects in C with AromaUI. Write the interface once in Incense markup, then ship it to Linux, Android, Windows, embedded displays, and the Web with native performance and full access to platform APIs.</p><a class="kz-btn-dark" onclick="showPage(SLUG_TO_ID['platform-backends'],'Backend Abstraction',null)"><span>See supported platforms</span></a></div><svg class="kz-tree" viewBox="0 0 560 300" role="img" aria-label="Shared core branching into platform targets"><path class="kz-t-line" d="M280 52 V96"/><rect class="kz-t-hot" x="180" y="8" width="200" height="44" rx="8"/><text class="kz-t-hot-t" x="280" y="36" text-anchor="middle">Common C Core</text><rect class="kz-t-hot" x="180" y="96" width="200" height="44" rx="8"/><text class="kz-t-hot-t" x="280" y="124" text-anchor="middle">Shared UI Toolkit</text><path class="kz-t-line" d="M280 140 V172 M60 172 H500 M80 172 V204 M180 172 V204 M280 172 V204 M380 172 V204 M480 172 V204"/><g><rect class="kz-t-leaf" x="36" y="204" width="88" height="44" rx="8"/><text class="kz-t-leaf-t" x="80" y="231" text-anchor="middle">Linux</text></g><g><rect class="kz-t-leaf" x="136" y="204" width="88" height="44" rx="8"/><text class="kz-t-leaf-t" x="180" y="231" text-anchor="middle">Android</text></g><g><rect class="kz-t-leaf" x="236" y="204" width="88" height="44" rx="8"/><text class="kz-t-leaf-t" x="280" y="231" text-anchor="middle">Windows</text></g><g><rect class="kz-t-leaf" x="336" y="204" width="88" height="44" rx="8"/><text class="kz-t-leaf-t" x="380" y="231" text-anchor="middle">Embedded</text></g><g><rect class="kz-t-leaf" x="436" y="204" width="88" height="44" rx="8"/><text class="kz-t-leaf-t" x="480" y="231" text-anchor="middle">Web</text></g></svg></div></div></div>
             <div class="kz-wrap"><div class="kf-card"><div class="kf-copy"><h2>Free and open source</h2><p>AromaUI is MIT licensed. Use it in commercial products, modify it freely, and shape its future together with the community.</p><a class="kz-btn-dark" href="https://github.com/BinaryInkTN/AromaUI" target="_blank" rel="noopener"><span>Learn more</span><i data-lucide="arrow-up-right"></i></a></div><div class="kf-art" aria-hidden="true"><div class="kf-chip kf-chip-1"></div><div class="kf-chip kf-chip-2"></div><div class="kf-chip kf-chip-3"></div></div></div></div>
@@ -2129,7 +1993,6 @@ function showSubcategoryFromBc(){if(currentCategory&&currentSubcategory) showSub
 function _hideAll(){
   ['welcomeView','categoryView','subcategoryView','docView'].forEach(id=>
     document.getElementById(id).style.display='none');
-  setTimeout(syncHeroBlendHome,0);
 }
 
 function initHeroRelease(){
@@ -2658,8 +2521,6 @@ document.getElementById('cScroll').addEventListener('scroll',function(){
   document.getElementById('tocFill').style.width=(tot>0?Math.min(100,Math.round(this.scrollTop/tot*100)):0)+'%';
   updateTocActive();
   document.getElementById('topAppBar').classList.toggle('scrolled',this.scrollTop>8);
-  var _wv=document.getElementById('welcomeView');
-  document.body.classList.toggle('hero-blend',!!(_wv&&_wv.style.display!=='none')&&this.scrollTop<=40);
 });
 
 function updateTocActive(){
@@ -2980,10 +2841,6 @@ function toggleNavDrawer(){
   if(window.matchMedia('(max-width:760px)').matches){openDrawer();return;}
   document.body.classList.toggle('nav-retracted');
 }
-function syncHeroBlendHome(){
-  var w=document.getElementById('welcomeView');
-  document.body.classList.toggle('hero-blend',!!(w&&w.style.display!=='none'));
-}
 
 function closeDrawer(){
   document.getElementById('navDrawer').classList.remove('open');
@@ -3006,7 +2863,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   initPF();
   loadFromURL();
   setTimeout(ic, 100);
-  setTimeout(syncHeroBlendHome,0);
 });
 
 window.addEventListener('hashchange', () => {
