@@ -1770,11 +1770,11 @@ body.has-announce .announce-bar{{display:flex}}
 [data-theme="light"] .kz-chip-3{{background:rgba(150,210,255,.6);border-color:rgba(195,225,255,.6);}}
 [data-theme="light"] .kz-chip-4{{background:rgba(170,220,255,.55);border-color:rgba(205,230,255,.6);}}
 /* ===== Banner hero shapes (abstract 3D composition) ===== */
-.kz-sh-panel{{position:absolute;right:-80px;top:-60px;width:80%;height:140%;transform:rotate(10deg);background:linear-gradient(135deg,#FF7A3D 0%,#F94F8A 45%,#7C3AED 100%);border-radius:28px;}}
-.kz-sh-planet{{position:absolute;left:30%;top:28%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#DDD0FF,#8B5CF6 55%,#4C1D95);box-shadow:0 0 90px rgba(139,92,246,.55),20px 26px 50px rgba(0,0,0,.45);}}
+.kz-sh-panel{{position:absolute;right:-80px;top:-60px;width:80%;height:140%;transform:rotate(10deg);background:#F94F8A;border-radius:28px;}}
+.kz-sh-planet{{position:absolute;left:30%;top:28%;width:120px;height:120px;border-radius:50%;background:#8B5CF6;box-shadow:0 0 90px rgba(139,92,246,.55),20px 26px 50px rgba(0,0,0,.45);}}
 .kz-sh-ring1{{position:absolute;left:calc(30% - 50px);top:calc(28% + 25px);width:220px;height:70px;border:2px solid rgba(255,255,255,.55);border-radius:50%;transform:rotate(-18deg);}}
 .kz-sh-ring2{{position:absolute;left:calc(30% - 90px);top:calc(28% + 10px);width:300px;height:100px;border:2px solid rgba(255,255,255,.3);border-radius:50%;transform:rotate(-18deg);}}
-.kz-sh-moon{{position:absolute;left:calc(30% + 159px);top:calc(28% + 49px);width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#FFFFFF,#B9BEC7);box-shadow:0 4px 14px rgba(0,0,0,.4);}}
+.kz-sh-moon{{position:absolute;left:calc(30% + 159px);top:calc(28% + 49px);width:22px;height:22px;border-radius:50%;background:#FFFFFF;box-shadow:0 4px 14px rgba(0,0,0,.4);}}
 .kz-sh-star{{position:absolute;border-radius:50%;background:#FFFFFF;}}
 .kz-sh-star.s1{{right:12%;top:14%;width:6px;height:6px;}}
 .kz-sh-star.s2{{right:26%;top:64%;width:4px;height:4px;opacity:.8;}}
@@ -1839,23 +1839,14 @@ body.has-announce .announce-bar{{display:flex}}
 .kf-chip-2{{width:150px;height:380px;left:170px;top:-90px;background:rgba(46,124,246,.6);}}
 .kf-chip-3{{width:150px;height:380px;left:310px;top:-120px;background:rgba(76,194,255,.55);}}
 [data-theme="dark"] .kf-card{{background:#161C28;}}
-/* ===== Modern chip art: gradient glow bars ===== */
-.kz-art .kz-chip,.kf-art .kf-chip{{
-  transform:rotate(10deg);
-  box-shadow:0 0 70px rgba(124,58,237,.35);
-}}
-.kz-art .kz-chip-1,.kf-art .kf-chip-1{{background:linear-gradient(180deg,#8B5CF6,#6D28D9);border-color:transparent;}}
-.kz-art .kz-chip-2,.kf-art .kf-chip-2{{background:linear-gradient(180deg,#EC4899,#8B5CF6);border-color:transparent;}}
-.kz-art .kz-chip-3,.kf-art .kf-chip-3{{background:linear-gradient(180deg,#38BDF8,#6366F1);border-color:transparent;}}
-.kz-art .kz-chip-4{{background:linear-gradient(180deg,#A3E635,#38BDF8);border-color:transparent;}}
-.welcome-page .kf-card-test{{background:linear-gradient(135deg,#6D28D9 0%,#7C3AED 45%,#4338CA 100%);}}
+.welcome-page .kf-card-test{{background:#7C3AED;}}
 .welcome-page .kf-card-test .kf-copy h2{{color:#FFFFFF;}}
 .welcome-page .kf-card-test .kf-copy p{{color:rgba(255,255,255,.88);}}
 .welcome-page .kf-card-test .kf-chip{{border-color:rgba(255,255,255,.35);}}
 .welcome-page .kf-card-test .kf-chip-1{{background:rgba(255,255,255,.14);}}
 .welcome-page .kf-card-test .kf-chip-2{{background:rgba(255,255,255,.10);}}
 .welcome-page .kf-card-test .kf-chip-3{{background:rgba(255,255,255,.18);}}
-[data-theme="dark"] .welcome-page .kf-card-test{{background:linear-gradient(135deg,#2E1065 0%,#4C1D95 50%,#312E81 100%);}}
+[data-theme="dark"] .welcome-page .kf-card-test{{background:#4C1D95;}}
 [data-theme="dark"] .kf-copy h2{{color:#F3F2F1;}}
 [data-theme="dark"] .kf-copy p{{color:#B9B9C0;}}
 @media(max-width:900px){{
