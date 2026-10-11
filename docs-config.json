@@ -10,7 +10,7 @@
 
     "hero": {
         "title": "AromaSDK",
-        "tagline": "Fast. Native. Everywhere.",
+        "tagline": "Modern UI For Everywhere!",
         "caption": "Free and open source under the MIT license",
         "description": "Cross-platform application framework featuring a modern UI toolkit, rendering engine, backend abstraction layer, and tooling for Linux, Android, Windows, and Embedded devices.",
         "announcement": "AromaSDK 0.0.2 alpha is here",
