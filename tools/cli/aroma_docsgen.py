@@ -108,10 +108,10 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
         )
 
     base_node = (
-        'fontname="Google Sans" fontsize=13 style=filled '
-        'fillcolor="#E6F4FF" color="#005A9E"'
+        'fontname="Inter" fontsize=13 style=filled '
+        'fillcolor="#EBF1FF" color="#1D4FD7"'
     )
-    base_edge = 'fontname="Google Sans" fontsize=11 color="#5C5C5C"'
+    base_edge = 'fontname="Inter" fontsize=11 color="#5C5C5C"'
 
     id_map: Dict[str, str] = {}
     node_attrs: Dict[str, str] = {}
@@ -171,7 +171,7 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
                 [
                     f"subgraph {cluster_id} {{",
                     f'  label="{_dot_label(sg_label)}"',
-                    f'  style=filled fillcolor="#F2F8FF" color="#C7E0F4"',
+                    f'  style=filled fillcolor="#F4F6FF" color="#D8E5FF"',
                 ]
             )
             continue
@@ -233,10 +233,10 @@ def _mermaid_flowchart_to_dot(lines: List[str]) -> str:
     parts = [
         "digraph G {",
         f"  rankdir={direction}",
-        '  graph [fontname="Google Sans" bgcolor=white]',
-        '  node  [fontname="Google Sans" fontsize=13 style=filled '
-        'fillcolor="#E6F4FF" color="#005A9E"]',
-        '  edge  [fontname="Google Sans" fontsize=11 color="#5C5C5C"]',
+        '  graph [fontname="Inter" bgcolor=white]',
+        '  node  [fontname="Inter" fontsize=13 style=filled '
+        'fillcolor="#EBF1FF" color="#1D4FD7"]',
+        '  edge  [fontname="Inter" fontsize=11 color="#5C5C5C"]',
     ]
     for dot_id, attrs in node_attrs.items():
         parts.append(f"  {dot_id} [{attrs}]")
@@ -299,9 +299,9 @@ def _mermaid_sequence_to_dot(lines: List[str]) -> str:
     parts = [
         "digraph G {",
         "  rankdir=LR",
-        '  node [shape=box fontname="Google Sans" fontsize=13 style=filled '
-        'fillcolor="#E6F4FF" color="#005A9E"]',
-        '  edge [fontname="Google Sans" fontsize=11 color="#005A9E"]',
+        '  node [shape=box fontname="Inter" fontsize=13 style=filled '
+        'fillcolor="#EBF1FF" color="#1D4FD7"]',
+        '  edge [fontname="Inter" fontsize=11 color="#1D4FD7"]',
     ]
     for nid, display in actors:
         parts.append(f'  {nid} [label="{_dot_label(display)}"]')
@@ -713,102 +713,128 @@ class DocGenerator:
         version: str = "",
         browse_html: str = "",
     ) -> str:
-        hero = hero or {}
-        hero_title = hero.get("title", project_name)
-        hero_desc = hero.get("description", description)
-        hero_bg = hero.get("background", "#0066CC")
-        hero_actions = hero.get("actions", []) or []
 
-        if hero_actions:
-            buttons = "".join(
-                f'<button class="{"m3-btn-filled" if a.get("primary") else "m3-btn-outlined"}"'
-                f' onclick="{a.get("onclick", "")}">'
-                f'<span>{a.get("text", "")}</span>'
-                f"</button>"
-                for a in hero_actions
-            )
-        else:
-            buttons = (
-                '<button class="m3-btn-filled" onclick="showFirstDoc()">'
-                "<span>Start reading</span>"
-                "</button>"
-                '<button class="m3-btn-outlined" onclick="openSearch()">'
-                "<span>Search docs</span>"
-                "</button>"
-            )
 
-        features = [
-            ("Cross-platform core", "One codebase for Linux, Android, Web and embedded.", "layers",
-             "showPage(SLUG_TO_ID['architecture-overview'],'Overview',null)"),
-            ("Incense UI language", "Describe interfaces in code, preview them instantly.", "code",
-             "showPage(SLUG_TO_ID['incense-declarative-ui'],'Widget Library',null)"),
-            ("Widget library", "Buttons, lists, maps, dialogs and more, ready to use.", "layout-grid",
-             "showPage(SLUG_TO_ID['input-controls'],'Widget Library',null)"),
-            ("CLI toolchain", "Scaffold, build and deploy from one command.", "terminal",
-             "showPage(SLUG_TO_ID['building-deployment'],'Build & Deploy',null)"),
-        ]
-        tiles = (
-            '<div class="learn-tiles-zone">'
-            '<h2 class="section-heading" data-i18n="getStarted">Get started</h2>'
-            '<p class="learn-tiles-sub">Follow a path from your first window to shipping on desktop, mobile, and embedded.</p>'
-            '<div class="metro-tiles">'
-            + "".join(
-                f'<div class="metro-tile" onclick="{go}">'
-                f'<i data-lucide="{icon}" class="metro-icon"></i>'
-                f'<span class="metro-label">{title}</span>'
-                f'<span class="metro-desc">{desc}</span>'
-                f'<span class="metro-foot" data-i18n="learnMore">Learn more</span>'
-                f"</div>"
-                for title, desc, icon, go in features
+        hero_cfg = hero or {}
+        kb_cards = []
+        for c in (hero_cfg.get("cards") or []):
+            sub = c.get("subcategory") or ""
+            sub_js = f"'{sub}'" if sub else "null"
+            go = (
+                f"showPage(SLUG_TO_ID['{c.get('slug', '')}'],"
+                f"'{c.get('category', '')}',{sub_js})"
             )
-            + "</div></div>"
+            kb_cards.append(
+                f'<div class="kb-card" onclick="{go}">'
+                f'<i data-lucide="'
+                f'{_htmlesc.escape(str(c.get("icon", "box")), quote=True)}" class="kb-link-ico"></i>'
+                f'<span class="kb-label">'
+                f'{_htmlesc.escape(str(c.get("text", "")), quote=False)}</span>'
+                "</div>"
+            )
+        kb_primary = next(
+            (a for a in (hero_cfg.get("actions") or []) if a.get("primary")), None
         )
+        kb_btn = (
+            f'<a class="kb-pill" onclick="{kb_primary.get("onclick", "")}">'
+            f'<span>{_htmlesc.escape(str(kb_primary.get("text", "")), quote=False)}</span></a>'
+            if kb_primary
+            else ""
+        )
+        kb_hero = (
+            '<div class="kb-hero"><div class="kb-art" aria-hidden="true">'
+            '<div class="kb-blob kb-blob-a"></div>'
+            '<div class="kb-blob kb-blob-b"></div>'
+            '<div class="kb-blob kb-blob-c"></div>'
+            '<div class="kb-slab kb-slab-1"></div>'
+            '<div class="kb-slab kb-slab-2"></div>'
+            '<div class="kb-grain"></div></div>'
+            '<div class="kb-hero-inner"><div class="kb-copy">'
+            f'<h1 class="kb-title">'
+            f'{_htmlesc.escape(str(hero_cfg.get("title") or project_name), quote=False)}</h1>'
+            f'<p class="kb-tagline">'
+            f'{_htmlesc.escape(str(hero_cfg.get("tagline") or ""), quote=False)}</p>'
+            f'<p class="kb-caption">'
+            f'{_htmlesc.escape(str(hero_cfg.get("caption") or ""), quote=False)}</p>'
+            f"{kb_btn}</div>"
+            f'<div class="kb-cards">{"".join(kb_cards)}</div>'
+            "</div></div>"
+        )
+        kz_banner = (
+            '<div class="kz-wrap"><div class="kz-banner">'
+            '<div class="kz-banner-copy">'
+            '<p class="kz-banner-brand">'
+            "<span>AromaSDK</span></p>"
+            '<h2 class="kz-banner-title">One codebase, every platform.</h2>'
+            '<a class="kz-btn-light" '
+            'onclick="showPage(SLUG_TO_ID[\'architecture-overview\'],\'Overview\',null)">'
+            '<span>Explore</span><i data-lucide="arrow-up-right"></i></a>'
+            "</div>"
+            '<div class="kz-art" aria-hidden="true">'
+            '<div class="kz-chip kz-chip-1"></div>'
+            '<div class="kz-chip kz-chip-2"></div>'
+            '<div class="kz-chip kz-chip-3"></div>'
+            '<div class="kz-chip kz-chip-4"></div>'
+            "</div></div>"
+        )
+        kz_plat = (
+            '<div class="kz-wrap"><div class="kz-plat"><div>'
+            "<h2>Share code on your terms across every platform</h2>"
+            "<p>Build cross-platform projects in C with AromaUI. Write the interface "
+            "once in Incense markup, then ship it to Linux, "
+            "Android, Windows, embedded displays, and the Web with native performance "
+            "and full access to platform APIs.</p>"
+            '<a class="kz-btn-dark" '
+            'onclick="showPage(SLUG_TO_ID[\'platform-backends\'],\'Backend Abstraction\',null)">'
+            "<span>See supported platforms</span></a>"
+            "</div>"
+            '<svg class="kz-tree" viewBox="0 0 560 300" role="img" '
+            'aria-label="Shared core branching into platform targets">'
+            '<path class="kz-t-line" d="M280 52 V96"/>'
+            '<rect class="kz-t-hot" x="180" y="8" width="200" height="44" rx="8"/>'
+            '<text class="kz-t-hot-t" x="280" y="36" text-anchor="middle">Common C Core</text>'
+            '<rect class="kz-t-hot" x="180" y="96" width="200" height="44" rx="8"/>'
+            '<text class="kz-t-hot-t" x="280" y="124" text-anchor="middle">Shared UI Toolkit</text>'
+            '<path class="kz-t-line" d="M280 140 V172 M60 172 H500 '
+            "M80 172 V204 M180 172 V204 M280 172 V204 M380 172 V204 M480 172 V204\"/>"
+            '<g><rect class="kz-t-leaf" x="36" y="204" width="88" height="44" rx="8"/>'
+            '<text class="kz-t-leaf-t" x="80" y="231" text-anchor="middle">Linux</text></g>'
+            '<g><rect class="kz-t-leaf" x="136" y="204" width="88" height="44" rx="8"/>'
+            '<text class="kz-t-leaf-t" x="180" y="231" text-anchor="middle">Android</text></g>'
+            '<g><rect class="kz-t-leaf" x="236" y="204" width="88" height="44" rx="8"/>'
+            '<text class="kz-t-leaf-t" x="280" y="231" text-anchor="middle">Windows</text></g>'
+            '<g><rect class="kz-t-leaf" x="336" y="204" width="88" height="44" rx="8"/>'
+            '<text class="kz-t-leaf-t" x="380" y="231" text-anchor="middle">Embedded</text></g>'
+            '<g><rect class="kz-t-leaf" x="436" y="204" width="88" height="44" rx="8"/>'
+            '<text class="kz-t-leaf-t" x="480" y="231" text-anchor="middle">Web</text></g>'
+            "</svg></div></div></div>"
+        )
+        kf_sec = (
+            '<div class="kz-wrap"><div class="kf-card">'
+            '<div class="kf-copy">'
+            "<h2>Free and open source</h2>"
+            "<p>AromaUI is MIT licensed. Use it in commercial products, modify "
+            "it freely, and shape its future together with the community.</p>"
+            '<a class="kz-btn-dark" '
+            'href="https://github.com/BinaryInkTN/AromaUI" '
+            'target="_blank" rel="noopener">'
+            '<span>Learn more</span><i data-lucide="arrow-up-right"></i></a>'
+            "</div>"
+            '<div class="kf-art" aria-hidden="true">'
+            '<div class="kf-chip kf-chip-1"></div>'
+            '<div class="kf-chip kf-chip-2"></div>'
+            '<div class="kf-chip kf-chip-3"></div>'
+            "</div></div></div>"
+        )
+
 
         return f'''
         <div class="welcome-page">
-            <div class="home-hero">
-                <div class="hero-inner">
-                  <div class="hero-copy">
-                    <h1 class="home-title">{hero_title}</h1>
-                    <p class="home-tagline">{hero_desc}</p>
-                    <div class="home-hero-actions">
-                        {buttons}
-                    </div>
-                    <div class="hero-release">
-                        <a class="hero-dl-btn" id="heroDlBtn" href="https://github.com/BinaryInkTN/AromaUI/releases">
-                            <span id="heroDlTxt">Download</span>
-                        </a>
-                        <span class="hero-dl-meta" id="heroDlMeta">Latest release</span>
-                        <a class="hero-dl-btn" href="aroma-demo.apk" download>
-                            <span>Download Demo APK</span>
-                        </a>
-                        <span class="hero-dl-meta">Android · 20.2 MB</span>
-                    </div>
-                  </div>
-                  <div class="hero-graphic" aria-hidden="true">
-<svg viewBox="0 0 380 300" width="100%" role="img" aria-label="AromaUI runs on Android, Windows, Linux, and Web">
-<ellipse cx="190" cy="150" rx="160" ry="112" transform="rotate(-10 190 150)" fill="none" class="hero-orbit" stroke="#C7E0F4" stroke-width="2.5" stroke-dasharray="2 8" stroke-linecap="round"/>
-<g transform="translate(61.6,79.6) scale(3.2)"><path d="M18.4395 5.5586c-.675 1.1664-1.352 2.3318-2.0274 3.498-.0366-.0155-.0742-.0286-.1113-.043-1.8249-.6957-3.484-.8-4.42-.787-1.8551.0185-3.3544.4643-4.2597.8203-.084-.1494-1.7526-3.021-2.0215-3.4864a1.1451 1.1451 0 0 0-.1406-.1914c-.3312-.364-.9054-.4859-1.379-.203-.475.282-.7136.9361-.3886 1.5019 1.9466 3.3696-.0966-.2158 1.9473 3.3593.0172.031-.4946.2642-1.3926 1.0177C2.8987 12.176.452 14.772 0 18.9902h24c-.119-1.1108-.3686-2.099-.7461-3.0683-.7438-1.9118-1.8435-3.2928-2.7402-4.1836a12.1048 12.1048 0 0 0-2.1309-1.6875c.6594-1.122 1.312-2.2559 1.9649-3.3848.2077-.3615.1886-.7956-.0079-1.1191a1.1001 1.1001 0 0 0-.8515-.5332c-.5225-.0536-.9392.3128-1.0488.5449zm-.0391 8.461c.3944.5926.324 1.3306-.1563 1.6503-.4799.3197-1.188.0985-1.582-.4941-.3944-.5927-.324-1.3307.1563-1.6504.4727-.315 1.1812-.1086 1.582.4941zM7.207 13.5273c.4803.3197.5506 1.0577.1563 1.6504-.394.5926-1.1038.8138-1.584.4941-.48-.3197-.5503-1.0577-.1563-1.6504.4008-.6021 1.1087-.8106 1.584-.4941z" fill="#3DDC84"/></g>
-<g fill="#0078D4"><rect x="245" y="37" width="24" height="24" rx="1.5"/><rect x="275" y="37" width="24" height="24" rx="1.5"/><rect x="245" y="67" width="24" height="24" rx="1.5"/><rect x="275" y="67" width="24" height="24" rx="1.5"/></g>
-<g transform="translate(62.0,180.0) scale(3.0)"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 01-.018-.2v-.02a1.772 1.772 0 01.15-.768c.082-.22.232-.406.43-.533a.985.985 0 01.594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 00-.166-.267.248.248 0 00-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 00-.12.27.944.944 0 00-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 01-.131.068 2.62 2.62 0 01-.275-.402 1.772 1.772 0 01-.155-.667 1.759 1.759 0 01.08-.668 1.43 1.43 0 01.283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 01.016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 01-.448-.067 3.566 3.566 0 01-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 00-.402-.533 1.45 1.45 0 00-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 00.314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 01.647-2.876c.564-1.278 1.743-3.504 1.836-5.268.048.036.217.135.289.202.218.133.38.333.59.465.21.201.477.335.876.335.039.003.075.006.11.006.412 0 .73-.134.997-.268.29-.134.52-.334.74-.4h.005c.467-.135.835-.402 1.044-.7zm2.185 8.958c.037.6.343 1.245.882 1.377.588.134 1.434-.333 1.791-.765l.211-.01c.315-.007.577.01.847.268l.003.003c.208.199.305.53.391.876.085.4.154.78.409 1.066.486.527.645.906.636 1.14l.003-.007v.018l-.003-.012c-.015.262-.185.396-.498.595-.63.401-1.746.712-2.457 1.57-.618.737-1.37 1.14-2.036 1.191-.664.053-1.237-.2-1.574-.898l-.005-.003c-.21-.4-.12-1.025.056-1.69.176-.668.428-1.344.463-1.897.037-.714.076-1.335.195-1.814.12-.465.308-.797.641-.984l.045-.022zm-10.814.049h.01c.053 0 .105.005.157.014.376.055.706.333 1.023.752l.91 1.664.003.003c.243.533.754 1.064 1.189 1.637.434.598.77 1.131.729 1.57v.006c-.057.744-.48 1.148-1.125 1.294-.645.135-1.52.002-2.395-.464-.968-.536-2.118-.469-2.857-.602-.369-.066-.61-.2-.723-.4-.11-.2-.113-.602.123-1.23v-.004l.002-.003c.117-.334.03-.752-.027-1.118-.055-.401-.083-.71.043-.94.16-.334.396-.4.69-.533.294-.135.64-.202.915-.47h.002v-.002c.256-.268.445-.601.668-.838.19-.201.38-.336.663-.336zm7.159-9.074c-.435.201-.945.535-1.488.535-.542 0-.97-.267-1.28-.466-.154-.134-.28-.268-.373-.335-.164-.134-.144-.333-.074-.333.109.016.129.134.199.2.096.066.215.2.36.333.292.2.68.467 1.167.467.485 0 1.053-.267 1.398-.466.195-.135.445-.334.648-.467.156-.136.149-.267.279-.267.128.016.034.134-.147.332a8.097 8.097 0 01-.69.468zm-1.082-1.583V5.64c-.006-.02.013-.042.029-.05.074-.043.18-.027.26.004.063 0 .16.067.15.135-.006.049-.085.066-.135.066-.055 0-.092-.043-.141-.068-.052-.018-.146-.008-.163-.065zm-.551 0c-.02.058-.113.049-.166.066-.047.025-.086.068-.14.068-.05 0-.13-.02-.136-.068-.01-.066.088-.133.15-.133.08-.031.184-.047.259-.005.019.009.036.03.03.05v.02h.003z" fill="#FCC624"/></g>
-<g transform="translate(243.2,173.2) scale(3.4)"><path d="M3.489 10.164c-.565.548-.885 1.172-.885 1.835 0 2.167 3.415 3.921 7.631 3.921 2.339 0 4.437-.484 5.837-1.335-1.533 1.426-4.265 2.43-7.385 2.43C3.89 17.015 0 14.769 0 11.999s3.89-5.014 8.689-5.014c3.131.002 5.872 1.009 7.398 2.444-1.399-.856-3.504-1.351-5.852-1.351-2.506 0-4.73.621-6.121 1.579l.785 3.395.971-3.481h.737l.971 3.481.805-3.481h.805L7.953 14.11h-.717l-.991-3.566L5.24 14.11h-.714zm19.839 3.48h-.162v.424h-.142v-.424h-.164v-.122h.468zm.064-.122h.209l.095.364.096-.364H24v.546h-.133v-.415h-.002l-.113.415h-.109l-.115-.415h-.003v.415h-.133zm-5.699.515c-.2.084-.399.126-.601.126-.319 0-.608-.055-.863-.166q-.3825-.1665-.645-.459c-.175-.195-.311-.424-.404-.688-.093-.263-.14-.547-.14-.851 0-.313.047-.601.14-.869.093-.269.226-.502.402-.699.175-.2.39-.355.645-.468s.541-.171.863-.171c.215 0 .421.034.621.098.199.064.381.16.543.284s.295.279.399.463.169.395.193.632h-.874c-.055-.233-.159-.408-.315-.525-.155-.118-.343-.176-.567-.176-.207 0-.382.04-.526.12s-.262.187-.35.322a1.41 1.41 0 0 0-.196.459c-.039.171-.062.348-.062.532 0 .175.02.346.062.512.04.167.107.315.196.448.088.133.206.24.35.32s.319.119.526.119c.303 0 .539-.077.705-.23s.262-.375.29-.668h-.922v-.689h1.75v2.255h-.584l-.093-.472c-.162.21-.344.357-.543.441m2.708-4.14v3.395h2.033v.774h-2.949V9.897zm-9.204 1.585c.109.151.191.337.251.557.053.21.08.452.08.716v.047H9.372c.011.41.164.876.807.876.45 0 .703-.344.719-.537l.002-.042h.592l-.007.051c-.008.075-.051.222-.135.377-.049.086-.104.166-.166.239a1.3 1.3 0 0 1-.248.218c-.071.046-.158.1-.287.139-.148.047-.326.069-.543.069-.415 0-.763-.151-1.007-.434a1.43 1.43 0 0 1-.266-.482c-.06-.182-.091-.386-.091-.601 0-.485.12-.896.348-1.186.125-.158.278-.28.457-.362.191-.086.41-.131.654-.131.218 0 .413.043.581.127.165.082.304.202.415.359m-1.064.047c-.402 0-.741.357-.765.785h1.543c-.046-.528-.302-.785-.778-.785m4.373.388c.058.182.086.381.084.588 0 .19-.022.385-.064.563-.049.206-.122.39-.22.545-.11.178-.252.318-.419.415-.186.109-.408.164-.654.164-.228 0-.426-.057-.585-.173a.89.89 0 0 1-.198-.193v.282h-.561V9.983h.59v1.393c.093-.111.202-.2.324-.262.146-.078.313-.118.497-.12.199 0 .383.04.547.118.158.075.295.184.408.324.109.135.193.297.251.481m-.53.67c0-.2-.013-.459-.111-.672-.12-.26-.335-.384-.654-.384-.3 0-.506.135-.628.417-.084.195-.126.452-.126.785 0 .696.412.942.765.942.244 0 .435-.102.565-.303.125-.191.189-.462.189-.785" fill="#990000"/></g>
-</svg>
-</div>
-                </div>
-            </div>
-            {tiles}
+            {kb_hero}
+            {kz_banner}
+            {kz_plat}
+            {kf_sec}
             {browse_html}
-            <footer class="home-footer">
-                <div class="home-footer-inner">
-                    <h2>What are you building today? Share it with us</h2>
-                    <p>Built an app, a widget, or an example with AromaUI? Show it off, ask for feedback, or report a snag. The project grows through community builds.</p>
-                    <div class="home-footer-actions">
-                        <a class="m3-btn-filled" href="https://github.com/BinaryInkTN/AromaUI/discussions" target="_blank" rel="noopener"><span>Start a discussion</span></a>
-                        <a class="m3-btn-outlined" href="https://github.com/BinaryInkTN/AromaUI/issues" target="_blank" rel="noopener"><span>Report an issue</span></a>
-                        <a class="m3-btn-outlined" href="https://github.com/BinaryInkTN/AromaUI" target="_blank" rel="noopener"><span>View on GitHub</span></a>
-                    </div>
-                </div>
-            </footer>
         </div>
         '''
 
@@ -958,17 +984,17 @@ class DocGenerator:
   margin: 2.5cm 2cm;
   @top-center {
     content: "{{ title }}";
-    font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Ubuntu', system-ui, sans-serif;
     font-size: 9pt; color: #5C5C5C;
   }
   @bottom-center {
     content: "Page " counter(page) " of " counter(pages);
-    font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Ubuntu', system-ui, sans-serif;
     font-size: 9pt; color: #5C5C5C;
   }
 }
 body {
-  font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Ubuntu', system-ui, sans-serif;
   line-height: 1.7; color: #1C1B1F; font-size: 11pt;
 }
 h1 { font-size: 28pt; font-weight: 400; margin-top: 0; page-break-after: avoid; letter-spacing: -0.01em; }
@@ -976,9 +1002,9 @@ h2 { font-size: 18pt; font-weight: 500; margin-top: 32pt; page-break-after: avoi
 h3 { font-size: 14pt; font-weight: 500; margin-top: 24pt; page-break-after: avoid; }
 h4 { font-size: 12pt; font-weight: 500; margin-top: 18pt; color: #5C5C5C; page-break-after: avoid; }
 p  { margin: 0 0 12pt; }
-a  { color: #005A9E; text-decoration: none; border-bottom: 1pt solid #C7E0F4; }
+a  { color: #1D4FD7; text-decoration: none; border-bottom: 1pt solid #D8E5FF; }
 pre, code {
-  font-family: 'Roboto Mono', 'Menlo', monospace;
+  font-family: 'Ubuntu Mono', ui-monospace, monospace;
   background: #F8F9FA; border-radius: 4pt; font-size: 9.5pt;
 }
 pre {
@@ -989,8 +1015,8 @@ pre code { background: none; border: none; padding: 0; }
 code { padding: 2pt 5pt; border: 1pt solid #DADCE0; }
 blockquote {
   margin: 16pt 0; padding: 12pt 16pt;
-  border-left: 3pt solid #005A9E;
-  background: #F2F8FF;
+  border-left: 3pt solid #1D4FD7;
+  background: #F4F6FF;
   border-radius: 0 4pt 4pt 0;
 }
 blockquote p { color: #1C1B1F; margin: 0; font-style: normal; }
@@ -1049,12 +1075,12 @@ hr { border: none; border-top: 1pt solid #DADCE0; margin: 28pt 0; }
 .cover-title { font-size: 42pt; font-weight: 400; margin-bottom: 16pt; letter-spacing: -0.02em; }
 .cover-sub { font-size: 18pt; color: #5C5C5C; font-weight: 400; margin-bottom: 40pt; }
 .cover-meta { font-size: 11pt; color: #9AA0A6; margin-top: 56pt; line-height: 1.8; }
-.cover-line { width: 48pt; height: 3pt; background: #005A9E; margin: 28pt auto; border-radius: 2pt; }
+.cover-line { width: 48pt; height: 3pt; background: #1D4FD7; margin: 28pt auto; border-radius: 2pt; }
 .toc-page { page-break-after: always; }
 .toc-page h1 { border-bottom: 1pt solid #DADCE0; padding-bottom: 12pt; margin-bottom: 20pt; font-weight: 400; }
 .toc-entry { display: flex; align-items: baseline; margin: 8pt 0; font-size: 11pt; }
 .toc-title { flex: 1; font-weight: 400; }
-.toc-dots { flex: 2; border-bottom: 1pt dotted #C7E0F4; margin: 0 10pt; height: 0.7em; }
+.toc-dots { flex: 2; border-bottom: 1pt dotted #D8E5FF; margin: 0 10pt; height: 0.7em; }
 .toc-page-num { color: #5C5C5C; font-size: 10pt; }
 .section-break { page-break-before: always; }
 .section-title-rule { border-bottom: 1pt solid #DADCE0; margin-bottom: 24pt; padding-bottom: 12pt; }
@@ -1100,103 +1126,111 @@ hr { border: none; border-top: 1pt solid #DADCE0; margin: 28pt 0; }
 <title>{project_name} Documentation</title>
 <meta name="description" content="{description}">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,400;0,500;0,700;1,400&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-:root{{
-  --ms-blue: #0078D4;
-  --ms-blue-hover: #106EBE;
-  --ms-blue-dark: #005A9E;
-  --ms-link: #0067B8;
-  --ms-link-hover: #005A9E;
-  --ms-text: #323130;
-  --ms-heading: #201F1E;
-  --ms-secondary: #605E5C;
-  --ms-tertiary: #8A8886;
+/* ===== Kotlin docs theme (kotlinlang.org / Writerside, primary #307FFF) ===== */
+ :root{{
+  --ms-blue: #307FFF;
+  --ms-blue-hover: #2563D6;
+  --ms-blue-dark: #1D4FD7;
+  --ms-link: #307FFF;
+  --ms-link-hover: #1D4FD7;
+  --ms-text: #19191C;
+  --ms-heading: #19191C;
+  --ms-secondary: #6C6C72;
+  --ms-tertiary: #9C9CA3;
   --ms-bg: #FFFFFF;
-  --ms-surface: #FAF9F8;
-  --ms-surface-2: #F3F2F1;
-  --ms-border: #EDEBE9;
-  --ms-border-dark: #C8C6C4;
-  --ms-code-bg: #F3F2F1;
-  --ms-note-bg: #EFF6FC;
-  --ms-note-border: #0078D4;
-  --ms-elev-1: 0 1.6px 3.6px rgba(0,0,0,.11), 0 .3px .9px rgba(0,0,0,.07);
-  --ms-elev-2: 0 3.2px 7.2px rgba(0,0,0,.13), 0 .6px 1.8px rgba(0,0,0,.11);
-  --md-primary: #0078D4;
+  --ms-surface: #F7F7F8;
+  --ms-surface-2: #F4F4F5;
+  --ms-border: #E9E9EC;
+  --ms-border-dark: #DBDBE0;
+  --ms-code-bg: #F4F4F5;
+  --ms-note-bg: #EBF1FF;
+  --ms-note-border: #307FFF;
+  --ms-elev-1: 0 1px 2px rgba(0,0,0,.08), 0 1px 3px 1px rgba(0,0,0,.06);
+  --ms-elev-2: 0 1px 3px rgba(0,0,0,.1), 0 4px 8px 3px rgba(0,0,0,.05);
+  --md-primary: #307FFF;
   --md-on-primary: #FFFFFF;
-  --md-primary-container: #EFF6FC;
-  --md-on-primary-cont: #005A9E;
-  --md-secondary: #605E5C;
+  --md-primary-container: #EBF1FF;
+  --md-on-primary-cont: #1D4FD7;
+  --md-secondary: #6C6C72;
   --md-on-secondary: #FFFFFF;
-  --md-secondary-cont: #F3F2F1;
-  --md-on-secondary-cont: #323130;
+  --md-secondary-cont: #F4F4F5;
+  --md-on-secondary-cont: #19191C;
   --md-background: #FFFFFF;
   --md-surface: #FFFFFF;
-  --md-surface-variant: #FAF9F8;
-  --md-on-surface: #323130;
-  --md-on-surface-var: #605E5C;
-  --md-on-surface-3: #8A8886;
-  --md-outline: #C8C6C4;
-  --md-outline-variant: #EDEBE9;
-  --md-surf-1: #FAF9F8;
-  --md-surf-2: #F3F2F1;
+  --md-surface-variant: #F7F7F8;
+  --md-on-surface: #19191C;
+  --md-on-surface-var: #6C6C72;
+  --md-on-surface-3: #9C9CA3;
+  --md-outline: #DBDBE0;
+  --md-outline-variant: #E9E9EC;
+  --md-surf-1: #F7F7F8;
+  --md-surf-2: #F4F4F5;
   --md-surf-3: #FFFFFF;
-  --md-surf-4: #EDEBE9;
-  --md-state-hover: rgba(0, 0, 0, 0.04);
-  --md-state-focus: rgba(0, 120, 212, 0.12);
-  --md-state-pressed: rgba(0, 0, 0, 0.08);
-  --md-elev-1: 0 1.6px 3.6px rgba(0,0,0,.11), 0 .3px .9px rgba(0,0,0,.07);
-  --md-elev-2: 0 3.2px 7.2px rgba(0,0,0,.13), 0 .6px 1.8px rgba(0,0,0,.11);
-  --md-elev-3: 0 6.4px 14.4px rgba(0,0,0,.18), 0 1.2px 3.6px rgba(0,0,0,.11);
-  --nav-drawer-w: 296px;
-  --top-bar-h: 96px;
-  --toc-w: 264px;
-  --content-max: 800px;
-  --fb: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --fd: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --fm: Cascadia Code, Consolas, "Courier New", monospace;
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
+  --md-surf-4: #E9E9EC;
+  --md-state-hover: rgba(48, 127, 255, 0.06);
+  --md-state-focus: rgba(48, 127, 255, 0.14);
+  --md-state-pressed: rgba(48, 127, 255, 0.10);
+  --md-elev-1: 0 1px 2px rgba(25,25,28,.06), 0 1px 3px rgba(25,25,28,.08);
+  --md-elev-2: 0 2px 6px rgba(25,25,28,.08), 0 8px 24px rgba(25,25,28,.08);
+  --md-elev-3: 0 8px 28px rgba(25,25,28,.12), 0 2px 6px rgba(25,25,28,.10);
+  --gd-green: #1A7F37;
+  --gd-yellow: #B06000;
+  --gd-red: #D93025;
+  --nav-drawer-w: 288px;
+  --top-bar-h: 104px;
+  --toc-w: 240px;
+  --content-max: 780px;
+  --fb: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --fd: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --fm: "Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 8px;
 }}
 
 [data-theme="dark"]{{
-  --ms-blue: #4CC2FF;
-  --ms-blue-hover: #6CB8F0;
-  --ms-link: #4CC2FF;
-  --ms-link-hover: #8ED3FF;
-  --ms-text: #F3F2F1;
+  --ms-blue: #7AA2FF;
+  --ms-blue-hover: #9DBBFF;
+  --ms-link: #7AA2FF;
+  --ms-link-hover: #BDD3FF;
+  --ms-text: #E8E8EA;
   --ms-heading: #FFFFFF;
-  --ms-secondary: #C8C6C4;
-  --ms-bg: #1B1A19;
-  --ms-surface: #252423;
-  --ms-surface-2: #292828;
-  --ms-border: #3B3A39;
-  --ms-border-dark: #484644;
-  --ms-code-bg: #292828;
-  --ms-note-bg: #082338;
-  --md-primary: #4CC2FF;
-  --md-on-primary: #082338;
-  --md-primary-container: #082338;
-  --md-on-primary-cont: #8ED3FF;
-  --md-secondary: #C8C6C4;
-  --md-on-secondary: #1B1A19;
-  --md-secondary-cont: #292828;
-  --md-on-secondary-cont: #F3F2F1;
-  --md-background: #1B1A19;
-  --md-surface: #1B1A19;
-  --md-surface-variant: #252423;
-  --md-on-surface: #F3F2F1;
-  --md-on-surface-var: #C8C6C4;
-  --md-on-surface-3: #8A8886;
-  --md-outline: #484644;
-  --md-outline-variant: #3B3A39;
-  --md-surf-1: #252423;
-  --md-surf-2: #292828;
-  --md-surf-3: #323130;
-  --md-surf-4: #3B3A39;
-  --md-state-hover: rgba(255, 255, 255, 0.06);
-  --md-state-focus: rgba(76, 194, 255, 0.18);
-  --md-state-pressed: rgba(255, 255, 255, 0.10);
+  --ms-secondary: #B9B9C0;
+  --ms-bg: #19191C;
+  --ms-surface: #222226;
+  --ms-surface-2: #2A2A30;
+  --ms-border: #35353B;
+  --ms-border-dark: #4A4A52;
+  --ms-code-bg: #2A2A30;
+  --ms-note-bg: #1E2A4A;
+  --md-primary: #7AA2FF;
+  --md-on-primary: #0F1F4B;
+  --md-primary-container: #1E2A4A;
+  --md-on-primary-cont: #BDD3FF;
+  --md-secondary: #B9B9C0;
+  --md-on-secondary: #19191C;
+  --md-secondary-cont: #2A2A30;
+  --md-on-secondary-cont: #E8E8EA;
+  --md-background: #19191C;
+  --md-surface: #19191C;
+  --md-surface-variant: #222226;
+  --md-on-surface: #E8E8EA;
+  --md-on-surface-var: #B9B9C0;
+  --md-on-surface-3: #9C9CA3;
+  --md-outline: #4A4A52;
+  --md-outline-variant: #35353B;
+  --md-surf-1: #222226;
+  --md-surf-2: #2A2A30;
+  --md-surf-3: #35353B;
+  --md-surf-4: #4A4A52;
+  --md-state-hover: rgba(122, 162, 255, 0.08);
+  --md-state-focus: rgba(122, 162, 255, 0.16);
+  --md-state-pressed: rgba(122, 162, 255, 0.12);
 }}
 
 *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
@@ -1225,12 +1259,46 @@ body{{
   box-shadow:none;
 }}
 .top-app-bar.scrolled .ms-header-top{{box-shadow:0 1.6px 3.6px rgba(0,0,0,.11);}}
-[data-theme="dark"] .ms-header-top{{background:#1B1A19;border-bottom-color:#3B3A39;}}
+/* ===== Hero-blend navbar: transparent over the home hero, solid elsewhere ===== */
+body.hero-blend .layout{{padding-top:0;}}
+body.hero-blend.has-announce .layout{{padding-top:0;}}
+@media(min-width:761px){{
+  body.hero-blend .nav-drawer{{padding-top:var(--top-bar-h);}}
+  body.hero-blend.has-announce .nav-drawer{{padding-top:calc(var(--top-bar-h) + 40px);}}
+}}
+body.hero-blend .ms-header-top{{background:rgba(7,13,26,.5);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  backdrop-filter:blur(20px) saturate(150%);
+  border-bottom-color:transparent;box-shadow:none;}}
+body.hero-blend .top-app-bar.scrolled .ms-header-top{{box-shadow:none;}}
+body.hero-blend .ms-breadcrumb-bar{{display:none;}}
+body.hero-blend .ms-learn-brand,body.hero-blend .tab-logo-name,body.hero-blend .ionic-nav a{{color:#FFFFFF;}}
+body.hero-blend .mob-btn,body.hero-blend .m3-icon-btn{{color:#FFFFFF;}}
+body.hero-blend .ms-logo img{{filter:invert(1);}}
+body.hero-blend .ms-logo-sep{{background:rgba(255,255,255,.35);}}
+body.hero-blend .search-bar{{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);}}
+body.hero-blend .search-bar:hover{{border-color:rgba(255,255,255,.6);}}
+body.hero-blend .search-bar svg{{color:rgba(255,255,255,.8);}}
+body.hero-blend .search-bar-input{{color:#FFFFFF;}}
+body.hero-blend .search-bar-input::placeholder{{color:rgba(255,255,255,.65);}}
+body.hero-blend .search-bar-input::-webkit-input-placeholder{{color:rgba(255,255,255,.65);}}
+body.hero-blend .search-bar-input::-moz-placeholder{{color:rgba(255,255,255,.65);}}
+body.hero-blend .search-bar-kbd kbd{{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);color:#FFFFFF;}}
+body.hero-blend .theme-toggle{{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.12);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}}
+body.hero-blend .theme-toggle button{{color:rgba(255,255,255,.75);}}
+body.hero-blend .theme-toggle button:hover{{background:rgba(255,255,255,.14);color:#FFFFFF;}}
+body.hero-blend .theme-toggle button.active{{background:#FFFFFF;color:#0B1526;}}
+body.hero-blend .pf-chip{{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#FFFFFF;}}
+body.hero-blend .kb-hero-inner{{padding-top:calc(104px + var(--top-bar-h));}}
+[data-theme="dark"] .ms-header-top{{background:rgba(27,26,25,.78);border-bottom-color:#3B3A39;}}
 [data-theme="dark"] .tab-logo-name,[data-theme="dark"] .ms-learn-brand{{color:#F3F2F1;}}
 [data-theme="dark"] .ionic-nav a{{color:#F3F2F1;}}
 .ms-header-top{{
   height:54px;flex-shrink:0;
-  background:#FFFFFF;
+  background:rgba(255,255,255,.75);
+  -webkit-backdrop-filter:blur(16px) saturate(160%);
+  backdrop-filter:blur(16px) saturate(160%);
   border-bottom:1px solid var(--ms-border);
   display:flex;align-items:center;
   padding:0 20px;
@@ -1411,13 +1479,6 @@ body{{
 }}
 .search-result-item:first-child{{border-top:none;}}
 .search-result-item:hover,.search-result-item.selected{{background:var(--ms-surface-2);}}
-.search-result-icon{{
-  width:32px;height:32px;border-radius:2px;
-  background:var(--ms-note-bg);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--ms-blue);flex-shrink:0;
-}}
-.search-result-icon i{{width:16px;height:16px}}
 .search-result-title{{font-size:14px;font-weight:600;color:var(--ms-heading);}}
 .search-result-path{{font-size:12px;color:var(--ms-secondary);margin-top:1px;}}
 .search-dropdown-footer{{
@@ -1483,7 +1544,7 @@ body.has-announce .layout{{padding-top:calc(var(--top-bar-h) + 38px)}}
   padding:0 44px 0 16px;
   background:#0078D4;
   color:#FFFFFF;font-size:13px;white-space:nowrap;
-  border-bottom:1px solid #005A9E;
+  border-bottom:1px solid #1D4FD7;
 }}
 body.has-announce .announce-bar{{display:flex}}
 .announce-bar span{{overflow:hidden;text-overflow:ellipsis}}
@@ -1505,8 +1566,9 @@ body.has-announce .announce-bar{{display:flex}}
   display:flex;flex-direction:column;
   overflow:hidden;
   border-right:1px solid var(--ms-border);
-  transition:transform 200ms ease,background 200ms;
+  transition:transform 200ms ease,background 200ms,width 200ms ease;
 }}
+@media(min-width:761px){{body.nav-retracted .nav-drawer{{width:0;border-right-color:transparent;}}}}
 [data-theme="dark"] .nav-drawer{{background:#1B1A19;}}
 [data-theme="dark"] .nav-dest{{color:#C8C6C4;}}
 [data-theme="dark"] .nav-section-header{{color:#A19F9D;}}
@@ -1674,44 +1736,6 @@ body.has-announce .announce-bar{{display:flex}}
   border-left-color:transparent;
   font-weight:600;
 }}
-.author-card{{
-  margin:24px 20px 0 0;
-  padding:16px;
-  border:1px solid var(--ms-border);
-  border-radius:4px;
-  background:var(--ms-surface);
-}}
-.author-label{{
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  color:var(--ms-secondary);
-  margin-bottom:10px;
-}}
-.author-row{{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}}
-.author-avatar{{
-  width:36px;height:36px;flex-shrink:0;
-  border-radius:50%;
-  background:var(--ms-blue);
-  color:#FFFFFF;
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:600;
-}}
-.author-name{{
-  font-size:14px;
-  font-weight:600;
-  color:var(--ms-heading);
-  line-height:1.3;
-}}
-.author-role{{
-  font-size:12px;
-  color:var(--ms-secondary);
-}}
 /* ===== Learn home: hero + cards ===== */
 .section-heading{{
   font-family:var(--fd);
@@ -1741,7 +1765,7 @@ body.has-announce .announce-bar{{display:flex}}
 .hero-graphic svg,.hero-graphic img{{display:block;width:100%;height:auto;}}
 .hero-plat-label{{fill:#323130;}}
 [data-theme="dark"] .hero-plat-label{{fill:#F3F2F1;}}
-.hero-dots{{fill:#C7E0F4;}}
+.hero-dots{{fill:#D8E5FF;}}
 [data-theme="dark"] .hero-dots{{fill:#3B3A39;}}
 .hero-tux-body{{fill:#323130;}}
 [data-theme="dark"] .hero-tux-body{{fill:#F3F2F1;}}
@@ -1751,7 +1775,7 @@ body.has-announce .announce-bar{{display:flex}}
 [data-theme="dark"] .hero-tux-eye{{fill:#1B1A19;}}
 .hero-web{{stroke:#0078D4;}}
 [data-theme="dark"] .hero-web{{stroke:#4CC2FF;}}
-.hero-orbit{{stroke:#C7E0F4;}}
+.hero-orbit{{stroke:#D8E5FF;}}
 [data-theme="dark"] .hero-orbit{{stroke:#3B3A39;}}
 @media(max-width:900px){{.hero-graphic{{display:none;}}.hero-inner{{gap:0;}}}}
 .home-title{{
@@ -1804,6 +1828,195 @@ body.has-announce .announce-bar{{display:flex}}
   font-size:13px;
   color:var(--ms-secondary);
 }}
+/* ===== Kotlin-style photo hero: dark canvas, purple glass art, frosted cards ===== */
+.kb-hero{{
+  position:relative;overflow:hidden;
+  background:#070D1A;color:#FFFFFF;
+  border-bottom:1px solid #101E33;
+}}
+.kb-art{{position:absolute;inset:0;overflow:hidden;}}
+.kb-blob{{position:absolute;border-radius:50%;filter:blur(70px);}}
+.kb-blob-a{{
+  width:640px;height:640px;right:-120px;top:-160px;
+  background:radial-gradient(circle,rgba(46,124,246,.7) 0%,rgba(46,124,246,0) 65%);
+}}
+.kb-blob-b{{
+  width:560px;height:560px;right:120px;bottom:-220px;
+  background:radial-gradient(circle,rgba(76,194,255,.5) 0%,rgba(76,194,255,0) 65%);
+}}
+.kb-blob-c{{
+  width:420px;height:420px;right:420px;top:40px;
+  background:radial-gradient(circle,rgba(0,102,204,.55) 0%,rgba(0,102,204,0) 65%);
+}}
+.kb-slab{{position:absolute;border-radius:64px;}}
+.kb-slab-1{{
+  width:380px;height:620px;right:180px;top:-120px;
+  transform:rotate(18deg);
+  background:rgba(46,124,246,.22);
+  border:1px solid rgba(120,180,255,.35);
+  filter:blur(2px);
+}}
+.kb-slab-2{{
+  width:300px;height:520px;right:-60px;top:80px;
+  transform:rotate(18deg);
+  background:rgba(76,194,255,.16);
+  border:1px solid rgba(140,200,255,.3);
+  filter:blur(3px);
+}}
+.kb-grain{{
+  position:absolute;inset:0;opacity:.14;mix-blend-mode:overlay;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22/></filter><rect width=%22160%22 height=%22160%22 filter=%22url(%23n)%22 opacity=%220.6%22/></svg>');
+}}
+.kb-hero-inner{{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:104px 40px 96px;
+  display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;
+}}
+.kb-title{{
+  margin:0 0 20px;font-family:var(--fd);
+  font-size:clamp(56px,7.5vw,104px);font-weight:800;line-height:1.02;letter-spacing:-.035em;
+  color:#FFFFFF;
+}}
+.kb-tagline{{
+  margin:0 0 12px;font-family:var(--fd);
+  font-size:clamp(22px,3vw,32px);font-weight:500;line-height:1.3;
+  color:rgba(255,255,255,.92);
+}}
+.kb-caption{{margin:0 0 36px;font-size:14px;color:rgba(255,255,255,.6);}}
+.kb-pill{{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:52px;padding:0 40px;border-radius:999px;
+  background:#FFFFFF;color:#0058C4;
+  border:1px solid rgba(0,88,196,.35);
+  font-size:16px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;
+}}
+.kb-pill:hover{{background:#E8F1FD;color:#00479E;text-decoration:none;}}
+.kb-cards{{display:flex;flex-direction:column;gap:14px;margin:0;}}
+.kb-card{{
+  display:flex;align-items:center;gap:18px;
+  padding:18px 22px;border-radius:16px;cursor:pointer;
+  background:rgba(255,255,255,.07);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  backdrop-filter:blur(18px) saturate(150%);
+  border:1px solid rgba(255,255,255,.14);
+  transition:background .15s ease-in-out,transform .15s ease-in-out;
+}}
+.kb-card:hover{{background:rgba(255,255,255,.13);}}
+.kb-link-ico{{flex:0 0 auto;width:34px;height:34px;color:#C9DFFF;}}
+.kb-label{{flex:1 1 auto;font-size:17px;font-weight:500;color:#FFFFFF;}}
+@media(max-width:900px){{
+  .kb-hero-inner{{grid-template-columns:1fr;padding:72px 20px 64px;gap:44px;}}
+  .kb-blob-a{{right:-260px;}}
+  body.hero-blend .kb-hero-inner{{padding-top:calc(72px + var(--top-bar-h));}}
+}}
+/* ===== Photo hero: light-mode variant (dark styling above is the default) ===== */
+[data-theme="light"] .kb-hero{{background:#EDF2F9;border-bottom-color:#D8E2F0;}}
+[data-theme="light"] .kb-blob-a{{background:radial-gradient(circle,rgba(46,124,246,.35) 0%,rgba(46,124,246,0) 65%);}}
+[data-theme="light"] .kb-blob-b{{background:radial-gradient(circle,rgba(76,194,255,.35) 0%,rgba(76,194,255,0) 65%);}}
+[data-theme="light"] .kb-blob-c{{background:radial-gradient(circle,rgba(0,102,204,.28) 0%,rgba(0,102,204,0) 65%);}}
+[data-theme="light"] .kb-slab-1{{background:rgba(46,124,246,.14);border-color:rgba(46,124,246,.3);}}
+[data-theme="light"] .kb-slab-2{{background:rgba(76,194,255,.14);border-color:rgba(76,194,255,.32);}}
+[data-theme="light"] .kb-title{{color:#0B1526;}}
+[data-theme="light"] .kb-tagline{{color:rgba(11,21,38,.8);}}
+[data-theme="light"] .kb-caption{{color:rgba(11,21,38,.6);}}
+[data-theme="light"] .hero-glass{{
+  background:rgba(255,255,255,.68);
+  border-color:rgba(11,38,76,.12);
+  box-shadow:0 24px 64px rgba(11,38,76,.16), inset 0 1px 0 rgba(255,255,255,.7);
+}}
+[data-theme="light"] .kb-pill{{background:#0058C4;border-color:#0058C4;color:#FFFFFF;}}
+[data-theme="light"] .kb-pill:hover{{background:#00479E;color:#FFFFFF;}}
+[data-theme="light"] .kb-card{{background:rgba(255,255,255,.72);border-color:rgba(11,38,76,.12);}}
+[data-theme="light"] .kb-card:hover{{background:#FFFFFF;}}
+[data-theme="light"] .kb-label{{color:#0B1526;}}
+[data-theme="light"] .kb-link-ico{{color:#0058C4;}}
+/* ===== Home business banner + platform explainer (Kotlin-style sections) ===== */
+.kz-wrap{{max-width:var(--rail);margin:0 auto;padding:64px 40px 0;}}
+.kz-banner{{
+  position:relative;overflow:hidden;
+  background:#0B0F1A;color:#FFFFFF;
+  border-radius:16px;
+  display:grid;grid-template-columns:1.1fr .9fr;
+  min-height:340px;
+}}
+.kz-banner-copy{{padding:48px 0 48px 48px;display:flex;flex-direction:column;justify-content:center;}}
+.kz-banner-brand{{display:flex;align-items:center;gap:12px;margin:0 0 28px;font-size:22px;font-weight:700;color:#FFFFFF;}}
+.kz-banner-brand img{{width:30px;height:30px;display:block;}}
+.kz-banner-title{{margin:0 0 40px;font-family:var(--fd);font-size:clamp(30px,4vw,46px);font-weight:800;line-height:1.12;letter-spacing:-.02em;color:#FFFFFF;max-width:16ch;}}
+.kz-btn-light{{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:10px;
+  height:48px;padding:0 30px;border-radius:999px;
+  background:#FFFFFF;color:#0B0F1A;
+  font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;
+}}
+.kz-btn-light:hover{{background:#E8F1FD;color:#0B0F1A;text-decoration:none;}}
+.kz-btn-light svg{{width:18px;height:18px;}}
+.kz-art{{position:relative;overflow:hidden;min-height:280px;}}
+.kz-chip{{position:absolute;border-radius:36px;border:1px solid rgba(140,190,255,.4);filter:blur(1px);}}
+.kz-chip-1{{width:170px;height:420px;left:36px;top:-40px;background:rgba(30,90,200,.5);}}
+.kz-chip-2{{width:170px;height:420px;left:190px;top:-70px;background:rgba(46,124,246,.55);}}
+.kz-chip-3{{width:170px;height:420px;left:344px;top:-100px;background:rgba(76,194,255,.5);}}
+.kz-chip-4{{width:150px;height:300px;left:470px;top:-60px;background:rgba(120,200,255,.45);}}
+[data-theme="light"] .kz-chip-1{{background:rgba(90,160,255,.6);border-color:rgba(170,205,255,.55);}}
+[data-theme="light"] .kz-chip-2{{background:rgba(130,195,255,.62);border-color:rgba(185,215,255,.6);}}
+[data-theme="light"] .kz-chip-3{{background:rgba(150,210,255,.6);border-color:rgba(195,225,255,.6);}}
+[data-theme="light"] .kz-chip-4{{background:rgba(170,220,255,.55);border-color:rgba(205,230,255,.6);}}
+.kz-plat{{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;padding:88px 0 8px;}}
+.kz-plat h2{{margin:0 0 20px;font-family:var(--fd);font-size:clamp(28px,3.4vw,38px);font-weight:800;line-height:1.2;letter-spacing:-.02em;color:var(--ms-heading);}}
+.kz-plat p{{margin:0 0 32px;font-size:16px;line-height:1.7;color:var(--ms-secondary);max-width:52ch;}}
+.kz-btn-dark{{
+  display:inline-flex;align-items:center;gap:10px;
+  height:48px;padding:0 30px;border-radius:999px;
+  background:#101418;color:#FFFFFF;
+  font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;
+}}
+.kz-btn-dark:hover{{background:#23272E;color:#FFFFFF;text-decoration:none;}}
+.kz-tree{{width:100%;height:auto;display:block;}}
+.kz-tree text{{font-family:var(--fd);}}
+.kz-t-hot{{fill:#2E7CF6;}}
+.kz-t-hot-t{{fill:#FFFFFF;font-size:15px;font-weight:700;}}
+.kz-t-line{{stroke:#B9BEC7;stroke-width:2;fill:none;}}
+.kz-t-leaf{{fill:#ECEEF1;}}
+.kz-t-leaf-t{{fill:#323130;font-size:14px;font-weight:600;}}
+[data-theme="dark"] .kz-plat h2{{color:#F3F2F1;}}
+[data-theme="dark"] .kz-plat p{{color:#B9B9C0;}}
+[data-theme="dark"] .kz-btn-dark{{background:#F3F2F1;color:#101418;}}
+[data-theme="dark"] .kz-btn-dark:hover{{background:#FFFFFF;color:#101418;}}
+[data-theme="dark"] .kz-t-line{{stroke:#4A5160;}}
+[data-theme="dark"] .kz-t-leaf{{fill:#262B36;}}
+[data-theme="dark"] .kz-t-leaf-t{{fill:#E8EAF0;}}
+@media(max-width:900px){{
+  .kz-wrap{{padding:48px 20px 0;}}
+  .kz-banner{{grid-template-columns:1fr;}}
+  .kz-banner-copy{{padding:36px 28px;}}
+  .kz-art{{min-height:220px;}}
+  .kz-plat{{grid-template-columns:1fr;padding:64px 0 8px;gap:36px;}}
+}}
+/* ===== Home community + open-source sections ===== */
+.kf-card{{
+  position:relative;overflow:hidden;
+  margin-top:88px;border-radius:16px;
+  background:#EFF1F4;color:#101418;
+  display:grid;grid-template-columns:1.1fr .9fr;
+  min-height:320px;
+}}
+.kf-copy{{padding:48px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;}}
+.kf-copy h2{{margin:0 0 12px;font-family:var(--fd);font-size:clamp(26px,3vw,34px);font-weight:800;letter-spacing:-.02em;color:#101418;}}
+.kf-copy p{{margin:0 0 28px;font-size:15px;line-height:1.65;color:#4A4E57;max-width:52ch;}}
+.kf-art{{position:relative;overflow:hidden;min-height:260px;}}
+.kf-chip{{position:absolute;border-radius:32px;border:1px solid rgba(140,190,255,.45);filter:blur(1px);}}
+.kf-chip-1{{width:150px;height:380px;left:30px;top:-60px;background:rgba(30,90,200,.55);}}
+.kf-chip-2{{width:150px;height:380px;left:170px;top:-90px;background:rgba(46,124,246,.6);}}
+.kf-chip-3{{width:150px;height:380px;left:310px;top:-120px;background:rgba(76,194,255,.55);}}
+[data-theme="dark"] .kf-card{{background:#161C28;}}
+[data-theme="dark"] .kf-copy h2{{color:#F3F2F1;}}
+[data-theme="dark"] .kf-copy p{{color:#B9B9C0;}}
+@media(max-width:900px){{
+  .kf-card{{grid-template-columns:1fr;margin-top:64px;}}
+  .kf-copy{{padding:36px 28px;}}
+  .kf-art{{min-height:200px;}}
+}}
 .m3-btn-filled,.m3-btn-outlined{{
   display:inline-flex;align-items:center;justify-content:center;
   padding:8px 16px;
@@ -1830,18 +2043,6 @@ body.has-announce .announce-bar{{display:flex}}
 .m3-btn-filled span,.m3-btn-outlined span{{position:relative;z-index:1}}
 
 .home-section{{margin:0;}}
-.learn-tiles-zone{{
-  max-width:var(--rail);margin:0 auto;padding:72px 40px 0;
-}}
-.learn-tiles-zone .section-heading{{margin:0 0 8px;}}
-.learn-tiles-sub{{color:var(--ms-secondary);font-size:15px;margin:0 0 28px;max-width:72ch;line-height:1.6;}}
-.learn-tiles-zone .metro-tiles{{padding:0;margin:0;max-width:none;}}
-.metro-foot{{
-  margin-top:12px;padding-top:0;
-  color:var(--ms-link);font-size:13px;font-weight:600;
-}}
-.metro-foot::after{{content:" ›";}}
-.metro-tile:hover .metro-foot{{text-decoration:underline;color:var(--ms-link-hover);}}
 .learn-browse-zone{{
   max-width:var(--rail);margin:0 auto;padding:72px 40px 0;
 }}
@@ -1866,57 +2067,6 @@ body.has-announce .announce-bar{{display:flex}}
   padding:10px 0 2px!important;
 }}
 .learn-browse-sub:first-child{{padding-top:0!important;}}
-/* Get-started cards: 4-up grid, tinted icon chips, bottom-aligned links */
-.metro-tiles{{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:20px;
-  margin:0;
-  max-width:none;
-  padding:0;
-}}
-@media(max-width:1100px){{.metro-tiles{{grid-template-columns:repeat(2,minmax(0,1fr));}}}}
-@media(max-width:620px){{.metro-tiles{{grid-template-columns:minmax(0,1fr);}}}}
-.metro-tile{{
-  min-height:200px;
-  border-radius:6px;
-  cursor:pointer;
-  overflow:hidden;
-  padding:24px;
-  background:#FFFFFF;
-  border:1px solid var(--ms-border);
-  box-shadow:var(--ms-elev-1);
-  transition:box-shadow 150ms, border-color 150ms;
-  display:flex;flex-direction:column;gap:10px;
-}}
-[data-theme="dark"] .metro-tile{{background:#252423;border-color:#3B3A39;}}
-.metro-tile:hover{{border-color:var(--ms-blue);box-shadow:var(--ms-elev-2);}}
-.metro-icon{{
-  width:42px;height:42px;padding:10px;
-  box-sizing:border-box;
-  background:var(--ms-note-bg);
-  border-radius:8px;
-  color:var(--ms-blue);
-  margin-bottom:8px;
-}}
-.metro-label{{
-  color:var(--ms-link);
-  font-size:17px;font-weight:600;line-height:1.35;
-  white-space:normal;overflow:visible;text-overflow:clip;
-}}
-.metro-tile:hover .metro-label{{text-decoration:underline;color:var(--ms-link-hover);}}
-.metro-desc{{
-  color:var(--ms-secondary);
-  font-size:14px;font-weight:400;line-height:1.6;flex:1;
-  white-space:normal;overflow:visible;text-overflow:clip;
-}}
-.home-footer{{margin:64px 0 0;border-top:1px solid var(--ms-border);background:#FFFFFF;}}
-[data-theme="dark"] .home-footer{{background:#1B1A19;}}
-.home-footer-inner{{max-width:var(--rail);margin:0 auto;padding:72px 40px;text-align:left;}}
-.home-footer h2{{font-family:var(--fd);font-size:28px;font-weight:600;color:var(--ms-heading);margin:0 0 12px;line-height:1.3;letter-spacing:-.01em;}}
-.home-footer p{{font-size:15px;line-height:1.65;color:var(--ms-secondary);margin:0 0 28px;max-width:680px;}}
-.home-footer-actions{{display:flex;gap:12px;flex-wrap:wrap;}}
-.home-footer-actions a.m3-btn-filled,.home-footer-actions a.m3-btn-outlined{{text-decoration:none;}}
 .demo-frame{{border:1px solid var(--ms-border);border-radius:4px;overflow:hidden;background:#FFFFFF;margin:0 0 24px;box-shadow:var(--ms-elev-1);}}
 [data-theme="dark"] .demo-frame{{background:#252423;}}
 .demo-head{{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid var(--ms-border);font-size:13px;color:var(--ms-secondary);background:var(--ms-surface);}}
@@ -1926,9 +2076,7 @@ body.has-announce .announce-bar{{display:flex}}
 @media(max-width:760px){{
   .hero-inner{{padding:56px 20px 48px;}}
   .home-title{{font-size:32px;}}
-  .learn-tiles-zone,.learn-browse-zone{{padding:56px 20px 0;}}
-  .home-footer-inner{{padding:56px 20px;}}
-  .metro-tiles{{gap:16px;}}
+  .learn-browse-zone{{padding:56px 20px 0;}}
 }}
 
 .category-page{{padding:32px 40px;max-width:1280px;margin:0 auto;}}
@@ -2194,6 +2342,8 @@ body.has-announce .announce-bar{{display:flex}}
 .md blockquote strong{{color:var(--ms-heading)}}
 .md hr{{border:none;border-top:1px solid var(--ms-border);margin:32px 0}}
 .md img{{max-width:100%;border-radius:4px;border:1px solid var(--ms-border);box-shadow:var(--ms-elev-1)}}
+[data-theme="dark"] .md img{{filter:brightness(.92);}}
+[data-theme="dark"] img{{filter:brightness(.92);}}
 
 .mermaid-wrapper{{
   background:#FFFFFF;
@@ -2269,7 +2419,7 @@ body.has-announce .announce-bar{{display:flex}}
 .doc-updated{{font-size:12px;color:var(--ms-secondary);white-space:nowrap;}}
 .doc-status{{display:inline-flex;align-items:center;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 10px;border-radius:2px;white-space:nowrap;border:1px solid var(--ms-border);}}
 .doc-status.new{{background:#DFF6DD;color:#0B6A0B;border-color:#0B6A0B;}}
-.doc-status.updated{{background:#EFF6FC;color:#005A9E;border-color:#0078D4;}}
+.doc-status.updated{{background:#EFF6FC;color:#1D4FD7;border-color:#0078D4;}}
 .doc-status.beta{{background:#FFF4CE;color:#7A6200;border-color:#C19C00;}}
 .doc-status.experimental{{background:#F2EBFA;color:#5C2D91;border-color:#5C2D91;}}
 .doc-status.stable{{background:var(--ms-surface-2);color:var(--ms-secondary);}}
@@ -2277,8 +2427,6 @@ body.has-announce .announce-bar{{display:flex}}
 [data-theme="dark"] .doc-status.updated{{background:#082338;color:#8ED3FF;}}
 [data-theme="dark"] .doc-status.beta{{background:#3A2E0A;color:#FDD663;}}
 [data-theme="dark"] .doc-status.experimental{{background:#2A2356;color:#B39DDB;}}
-.top-ver{{font-size:11px;font-weight:600;color:var(--ms-blue-dark);background:var(--ms-note-bg);border:1px solid var(--ms-border);border-radius:10px;padding:2px 8px;white-space:nowrap;margin-left:8px;}}
-[data-theme="dark"] .top-ver{{color:#8ED3FF;}}
 
 .doc-pn-nav{{
   margin-top:40px;
@@ -2421,7 +2569,7 @@ body.has-announce .announce-bar{{display:flex}}
 
 .sb-scrim{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:40}}
 .mob-btn{{
-  display:none;align-items:center;justify-content:center;
+  display:flex;align-items:center;justify-content:center;
   width:36px;height:36px;border-radius:2px;
   border:none;background:transparent;
   color:var(--ms-text);cursor:pointer;
@@ -2456,25 +2604,223 @@ body.has-announce .announce-bar{{display:flex}}
   .ms-breadcrumb-bar{{padding:0 12px;}}
   .category-page,.subcategory-page{{padding:24px 20px;}}
   .ms-footer-inner{{padding:20px;}}
-  .top-ver{{display:none;}}
 }}
+/* ================= Kotlin docs theme (kotlinlang.org / Writerside) ================= */
+::selection{{background:#D8E5FF;}}
+:focus-visible{{outline:2px solid #307FFF;outline-offset:2px;border-radius:6px}}
+body{{font-size:16px;letter-spacing:0;-webkit-font-smoothing:antialiased;}}
+.top-app-bar{{backdrop-filter:none;}}
+.ms-header-top{{
+  height:60px;background:rgba(255,255,255,.75);
+  -webkit-backdrop-filter:blur(16px) saturate(160%);
+  backdrop-filter:blur(16px) saturate(160%);
+  border-bottom:1px solid #E9E9EC;padding:0 24px;gap:10px;
+}}
+[data-theme="dark"] .ms-header-top{{background:rgba(25,25,28,.78);border-bottom-color:#35353B;}}
+.top-app-bar.scrolled .ms-header-top{{box-shadow:0 1px 2px rgba(25,25,28,.08);}}
+.ms-logo{{margin-right:6px;}}
+.ms-logo img{{height:28px;border-radius:6px;}}
+.ms-logo-sep{{display:none;}}
+.ms-learn-brand{{
+  font-size:18px;font-weight:800;letter-spacing:-.01em;margin-right:2px;
+  background:none;-webkit-background-clip:border-box;background-clip:border-box;color:#19191C;
+}}
+.ms-learn-brand:hover{{text-decoration:none;opacity:1;}}
+.tab-logo-name{{font-size:18px;font-weight:400;color:#6C6C72;margin-right:28px;gap:8px;}}
+[data-theme="dark"] .ms-learn-brand{{background:none;color:#FFFFFF;}}
+[data-theme="dark"] .tab-logo-name{{color:#B9B9C0;}}
+.ionic-nav a{{
+  font-size:14px;font-weight:500;color:#19191C;padding:7px 12px;border-radius:8px;
+}}
+.ionic-nav a:hover{{background:#F4F4F5;color:#19191C;text-decoration:none;}}
+[data-theme="dark"] .ionic-nav a{{color:#E8E8EA;}}
+[data-theme="dark"] .ionic-nav a:hover{{background:#2A2A30;}}
+.ms-breadcrumb-bar{{
+  height:44px;background:#FFFFFF;border-bottom:1px solid #E9E9EC;padding:0 24px;
+}}
+[data-theme="dark"] .ms-breadcrumb-bar{{background:#19191C;border-bottom-color:#35353B;}}
+.nav-crumbs{{font-size:13px;gap:4px;}}
+.nav-crumbs .bc-seg{{color:#6C6C72;font-weight:400;padding:4px 6px;border-radius:6px;}}
+.nav-crumbs .bc-seg:hover{{color:#307FFF;background:transparent;text-decoration:underline;text-underline-offset:3px;}}
+.nav-crumbs .bc-seg.cur{{color:#19191C;font-weight:600;background:transparent;}}
+[data-theme="dark"] .nav-crumbs .bc-seg.cur{{color:#fff;}}
+.nav-crumbs .bc-sep{{color:#9C9CA3;font-size:0;}}
+.nav-crumbs .bc-sep::after{{content:"/";font-size:13px;}}
+#bcHomeSep,#bcCatSep,#bcSubSep{{font-size:0;}}
+#bcHomeSep::after,#bcCatSep::after,#bcSubSep::after{{content:"/";font-size:13px;color:#9C9CA3;}}
+.search-bar{{
+  max-width:360px;height:36px;border-radius:8px;background:#F4F4F5;
+  border:1px solid transparent;padding:0 8px 0 12px;gap:8px;
+}}
+.search-bar:hover{{background:#ECECEE;border-color:transparent;box-shadow:none;}}
+.search-bar.open,.search-bar:focus-within{{
+  background:#fff;border-color:#307FFF;border-radius:8px 8px 0 0;
+  box-shadow:0 0 0 3px rgba(48,127,255,.15);
+}}
+[data-theme="dark"] .search-bar{{background:#2A2A30;}}
+[data-theme="dark"] .search-bar:hover{{background:#35353B;}}
+[data-theme="dark"] .search-bar.open,[data-theme="dark"] .search-bar:focus-within{{background:#222226;}}
+.search-bar-input{{font-size:14px;}}
+.search-dropdown{{border-radius:0 0 12px 12px;border-color:#E9E9EC;box-shadow:var(--md-elev-2);}}
+.theme-toggle{{border:1px solid #E9E9EC;border-radius:8px;padding:2px;background:#F7F7F8;}}
+.theme-toggle button{{border-radius:6px;width:32px;height:32px;}}
+.theme-toggle button.active{{background:#307FFF;color:#fff;}}
+[data-theme="dark"] .theme-toggle{{background:#222226;border-color:#35353B;}}
+[data-theme="dark"] .theme-toggle button.active{{background:#7AA2FF;color:#0F1F4B;}}
+.pf-chip{{border-radius:8px;height:36px;padding:0 14px;border-color:#DBDBE0;background:#fff;font-weight:500;font-size:13px;}}
+.pf-chip.open{{border-color:#307FFF;background:#EBF1FF;color:#1D4FD7;}}
+.pf-menu{{border-radius:12px;min-width:240px;padding:6px;border-color:#E9E9EC;}}
+.pf-menu-item{{border-radius:8px;padding:9px 12px;font-size:14px;}}
+.nav-drawer{{background:#fff;border-right:1px solid #E9E9EC;}}
+[data-theme="dark"] .nav-drawer{{background:#19191C;}}
+.nav-drawer-content{{padding:12px 12px 32px 12px;}}
+.nav-section-header{{
+  font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6C6C72;
+  padding:20px 12px 8px;
+}}
+.nav-section-header:hover{{color:#19191C;}}
+.nav-dest{{
+  font-size:14px;color:#19191C;padding:7px 12px;margin:1px 4px 1px 0;
+  border-radius:8px;border-left:none;font-weight:400;line-height:1.45;
+}}
+.nav-dest:hover{{background:#F4F4F5;color:#19191C;text-decoration:none;}}
+.nav-dest.active{{
+  background:#EBF1FF;color:#1D4FD7;font-weight:600;border-left:none;
+}}
+[data-theme="dark"] .nav-dest{{color:#E8E8EA;}}
+[data-theme="dark"] .nav-dest:hover{{background:#2A2A30;}}
+[data-theme="dark"] .nav-dest.active{{background:#1E2A4A;color:#BDD3FF;}}
+.nav-sub-header{{border-radius:8px;padding:7px 12px;font-size:14px;font-weight:600;}}
+.nav-sub-header:hover{{background:#F4F4F5;color:#307FFF;}}
+.nav-dest.sub{{border-radius:8px;padding-left:12px;margin-left:16px;font-size:13.5px;}}
+.home-hero{{
+  background:#FFFFFF;
+  border-bottom:1px solid #E9E9EC;
+}}
+[data-theme="dark"] .home-hero{{background:#19191C;border-bottom-color:#35353B;}}
+.hero-inner{{padding:56px 40px 48px;gap:48px;max-width:1200px;}}
+.hero-eyebrow{{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:600;color:#1D4FD7;background:#EBF1FF;
+  border:1px solid #D8E5FF;padding:5px 12px;border-radius:6px;margin-bottom:16px;
+}}
+[data-theme="dark"] .hero-eyebrow{{background:#1E2A4A;color:#BDD3FF;border-color:#2C3D6E;}}
+.hero-eyebrow .dot{{display:none;}}
+.home-title{{font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.02em;color:#19191C;}}
+[data-theme="dark"] .home-title{{color:#fff;}}
+.home-title .grad{{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:#307FFF;font-weight:800;}}
+[data-theme="dark"] .home-title .grad{{color:#7AA2FF;}}
+.home-tagline{{font-size:17px;color:#6C6C72;line-height:1.6;max-width:60ch;}}
+[data-theme="dark"] .home-tagline{{color:#B9B9C0;}}
+.home-hero-actions .m3-btn-filled,.home-hero-actions .m3-btn-outlined{{
+  height:40px;padding:0 20px;border-radius:8px;font-size:14px;font-weight:600;
+}}
+.m3-btn-filled{{background:#307FFF;border-color:#307FFF;box-shadow:none;}}
+.m3-btn-filled:hover{{background:#2563D6;border-color:#2563D6;box-shadow:none;}}
+.m3-btn-outlined{{border-color:#DBDBE0;color:#19191C;background:#fff;border-radius:8px;}}
+.m3-btn-outlined:hover{{background:#F7F7F8;border-color:#307FFF;color:#307FFF;}}
+[data-theme="dark"] .m3-btn-filled{{background:#7AA2FF;border-color:#7AA2FF;color:#0F1F4B;}}
+[data-theme="dark"] .m3-btn-outlined{{background:transparent;color:#E8E8EA;border-color:#4A4A52;}}
+.hero-platforms{{display:none;}}
+.hero-stats{{display:flex;gap:0;margin-top:20px;padding-top:0;border-top:none;}}
+.hero-stat{{padding:0 20px;border-left:1px solid #E9E9EC;}}
+.hero-stat:first-child{{padding-left:0;border-left:none;}}
+.hero-stat b{{display:block;font-size:15px;font-weight:700;color:#19191C;letter-spacing:0;}}
+.hero-stat span{{font-size:13px;color:#6C6C72;}}
+[data-theme="dark"] .hero-stat b{{color:#fff;}}
+[data-theme="dark"] .hero-stat{{border-color:#35353B;}}
+.hero-device,.hero-graphic{{display:none!important;}}
+.hero-release{{border-top:1px solid #E9E9EC;margin-top:24px;padding-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}}
+.hero-dl-btn{{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 16px;
+  background:#307FFF;color:#fff;border:1px solid #307FFF;border-radius:8px;
+  font-size:14px;font-weight:600;text-decoration:none;
+}}
+.hero-dl-btn:hover{{background:#2563D6;color:#fff;text-decoration:none;}}
+.hero-dl-meta{{font-size:13px;color:#6C6C72;}}
+.learn-browse-zone{{max-width:1200px;}}
+.section-heading{{font-size:24px;font-weight:700;letter-spacing:-.01em;color:#19191C;}}
+[data-theme="dark"] .section-heading{{color:#fff;}}
+.learn-browse-col h3{{border-bottom:2px solid #EBF1FF;padding-bottom:10px;font-size:15px;}}
+.learn-browse-col li a{{color:#307FFF;}}
+.doc-hdr{{border-bottom:1px solid #E9E9EC;padding-bottom:20px;margin-bottom:24px;}}
+.doc-title{{font-size:36px;font-weight:800;letter-spacing:-.02em;color:#19191C;}}
+[data-theme="dark"] .doc-title{{color:#fff;}}
+.doc-sub{{font-size:16px;color:#6C6C72;}}
+.md{{font-size:16px;line-height:1.7;color:#19191C;}}
+[data-theme="dark"] .md{{color:#E8E8EA;}}
+.md h1,.md h2,.md h3{{letter-spacing:-.01em;}}
+.md h1{{font-size:28px;font-weight:800;border-bottom:none;padding-bottom:0;margin-top:40px;}}
+.md h2{{font-size:24px;font-weight:700;border-bottom:none;padding-bottom:0;margin-top:36px;}}
+.md h3{{font-size:18px;font-weight:600;}}
+.md a{{color:#307FFF;font-weight:500;text-decoration:none;}}
+.md a:hover{{color:#1D4FD7;text-decoration:underline;text-underline-offset:3px;}}
+[data-theme="dark"] .md a{{color:#7AA2FF;}}
+.md code{{
+  color:#19191C;background:#F4F4F5;border:1px solid #E9E9EC;border-radius:6px;
+  padding:2px 6px;font-size:85%;font-family:var(--fm);
+}}
+[data-theme="dark"] .md code{{color:#E8E8EA;background:#2A2A30;border-color:#35353B;}}
+.md pre{{border-radius:12px;border:1px solid #E9E9EC;background:#F7F7F8;padding:16px;}}
+[data-theme="dark"] .md pre{{background:#222226;border-color:#35353B;}}
+.md pre code{{background:transparent;border:none;color:inherit;padding:0;font-size:13.5px;}}
+.md blockquote{{
+  border-radius:8px;border:1px solid #D8E5FF;border-left:3px solid #307FFF;
+  background:#EBF1FF;
+}}
+[data-theme="dark"] .md blockquote{{background:#1E2A4A;border-color:#2C3D6E;border-left-color:#7AA2FF;}}
+.md blockquote p{{font-size:14px;}}
+.md table{{border-radius:8px;border:1px solid #E9E9EC;font-size:14px;}}
+.md th{{background:#F7F7F8;font-weight:600;font-size:13px;}}
+[data-theme="dark"] .md th{{background-color:#222226;}}
+.doc-ver{{border-radius:6px;background:#EBF1FF;color:#1D4FD7;border-color:#D8E5FF;}}
+[data-theme="dark"] .doc-ver{{background:#1E2A4A;color:#BDD3FF;}}
+.dbtn{{border-radius:8px;background:#fff;border-color:#DBDBE0;font-size:13px;font-weight:500;}}
+.dbtn:hover{{background:#F7F7F8;border-color:#307FFF;color:#1D4FD7;}}
+.copy-btn{{border-radius:6px;font-weight:500;}}
+.doc-pn-nav{{gap:12px;}}
+.doc-pn-link{{border-radius:12px;background:#fff;border-color:#E5E5EA;}}
+.doc-pn-link:hover{{border-color:#307FFF;box-shadow:0 2px 6px rgba(25,25,28,.08);}}
+.doc-pn-title{{color:#19191C;font-weight:600;}}
+.doc-card{{border-radius:12px;border-color:#E5E5EA;padding:20px;}}
+.doc-card:hover{{border-color:#307FFF;box-shadow:0 2px 6px rgba(25,25,28,.08);}}
+.doc-card-icon{{border-radius:8px;width:44px;height:44px;background:#EBF1FF;color:#307FFF;}}
+.doc-card-title{{color:#19191C;font-weight:600;font-size:15px;}}
+.doc-card:hover .doc-card-title{{color:#1D4FD7;text-decoration:none;}}
+.toc-panel{{background:transparent;}}
+.toc-label{{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6C6C72;}}
+.toc-item{{border-left:2px solid #E9E9EC;padding:5px 12px 5px 12px;border-radius:0;font-size:13px;}}
+.toc-item:hover{{color:#307FFF;background:transparent;text-decoration:none;}}
+.toc-item.active{{color:#1D4FD7;font-weight:600;border-left-color:#307FFF;background:transparent;}}
+[data-theme="dark"] .toc-item{{border-color:#35353B;}}
+[data-theme="dark"] .toc-item.active{{background:transparent;color:#BDD3FF;border-left-color:#7AA2FF;}}
+.ms-footer{{background:#F7F7F8;border-top:1px solid #E9E9EC;}}
+[data-theme="dark"] .ms-footer{{background:#222226;}}
+.mermaid-wrapper{{border-radius:12px;border-color:#E9E9EC;}}
+.announce-bar{{background:#19191C;border-bottom:1px solid #35353B;height:40px;font-weight:500;font-size:13px;}}
+.announce-bar a{{color:#7AA2FF;}}
+body.has-announce .top-app-bar{{top:40px}}
+body.has-announce .layout{{padding-top:calc(var(--top-bar-h) + 40px)}}
+@media(max-width:900px){{.home-title{{font-size:32px;}}.hero-inner{{padding:40px 24px;}}}}
+
+
 {pygments_styles}
 
 </style>
 </head>
-<body>
+<body class="nav-retracted">
 {announce_html}
 <header class="top-app-bar" id="topAppBar">
   <div class="ms-header-top">
-    <button class="mob-btn" onclick="openDrawer()" style="margin-right:4px;flex-shrink:0" aria-label="Open navigation">
+    <button class="mob-btn" onclick="toggleNavDrawer()" style="margin-right:4px;flex-shrink:0" aria-label="Toggle navigation">
       <i data-lucide="menu"></i>
     </button>
     <div class="ms-logo" onclick="showFirstPage()" title="Home" aria-label="Home">
       <img src="logo.png" alt="Home">
     </div>
     <span class="ms-logo-sep" aria-hidden="true"></span>
-    <span class="ms-learn-brand" onclick="showFirstPage()">Learn</span>
-    <div class="tab-logo-name" onclick="showFirstPage()" title="{project_name} home">{project_name}<span class="top-ver" title="Documentation version">v{docs_version}</span></div>
+    <span class="ms-learn-brand" onclick="showFirstPage()">{project_name}</span>
+    <div class="tab-logo-name" onclick="showFirstPage()" title="{project_name} docs">Docs</div>
     <nav class="ionic-nav" aria-label="Primary">
       <a href="sandbox.html" target="_blank" rel="noopener">Sandbox</a>
       <a onclick="window.open('https://github.com/BinaryInkTN/AromaUI','_blank')">GitHub</a>
@@ -2485,7 +2831,7 @@ body.has-announce .announce-bar{{display:flex}}
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
         <input class="search-bar-input" id="searchInput" type="text"
-               placeholder="Search" data-i18n="searchPh"
+               placeholder="Search docs" data-i18n="searchPh"
                autocomplete="off"
                oninput="renderSearchResults(this.value)"
                onfocus="openSearch()"
@@ -2591,7 +2937,6 @@ body.has-announce .announce-bar{{display:flex}}
         <div class="toc-label" data-i18n="toc">In this article</div>
         <div class="toc-progress"><div class="toc-fill" id="tocFill"></div></div>
         <div id="tocList"></div>
-        {author_html}
       </div>
     </div>
   </div>
@@ -2686,6 +3031,7 @@ function showSubcategoryFromBc(){{if(currentCategory&&currentSubcategory) showSu
 function _hideAll(){{
   ['welcomeView','categoryView','subcategoryView','docView'].forEach(id=>
     document.getElementById(id).style.display='none');
+  setTimeout(syncHeroBlendHome,0);
 }}
 
 function initHeroRelease(){{
@@ -3214,6 +3560,8 @@ document.getElementById('cScroll').addEventListener('scroll',function(){{
   document.getElementById('tocFill').style.width=(tot>0?Math.min(100,Math.round(this.scrollTop/tot*100)):0)+'%';
   updateTocActive();
   document.getElementById('topAppBar').classList.toggle('scrolled',this.scrollTop>8);
+  var _wv=document.getElementById('welcomeView');
+  document.body.classList.toggle('hero-blend',!!(_wv&&_wv.style.display!=='none')&&this.scrollTop<=40);
 }});
 
 function updateTocActive(){{
@@ -3383,7 +3731,6 @@ function renderSearchResults(q){{
   c.innerHTML=searchResults.map((item,i)=>`
     <div class="search-result-item" data-index="${{i}}" data-id="${{item.id}}"
          onclick="selectSearchResult('${{item.id}}')">
-      <div class="search-result-icon"><i data-lucide="file-text"></i></div>
       <div class="search-result-text">
         <div class="search-result-title">${{item.title}}</div>
         <div class="search-result-path">${{[item.category,item.subcategory].filter(Boolean).join(' › ')}}</div>
@@ -3413,17 +3760,17 @@ function mCfg(t){{
   const d=t==='dark';
   // Fills are light in light mode / dark in dark mode so they contrast
   // with the docs text color (dark-on-light, light-on-dark). This also
-  // matches the PDF graphviz palette (#E6F4FF fills). Do NOT use white
+  // matches the PDF graphviz palette (#EBF1FF fills). Do NOT use white
   // text in light mode: htmlLabels render as HTML and follow CSS text.
   const txt=d?'#E8EAED':'#1C1B1F';
   const bg=d?'#1D1D1F':'#FFFFFF';
   return{{theme:'base',themeVariables:{{
     background: bg,
-    primaryColor: d?'#082338':'#E6F4FF',
+    primaryColor: d?'#082338':'#EBF1FF',
     primaryTextColor: txt,
-    primaryBorderColor: d?'#4CC2FF':'#005A9E',
+    primaryBorderColor: d?'#4CC2FF':'#1D4FD7',
     lineColor: d?'#9AA0A6':'#5C5C5C',
-    secondaryColor: d?'#2C2C2E':'#F2F8FF',
+    secondaryColor: d?'#2C2C2E':'#F4F6FF',
     secondaryTextColor: txt,
     tertiaryColor: d?'#2C3A4A':'#EFF6FC',
     tertiaryTextColor: txt,
@@ -3436,23 +3783,23 @@ function mCfg(t){{
     actorTextColor: txt,
     signalTextColor: txt,
     signalColor: d?'#E8EAED':'#1C1B1F',
-    actorBorder: d?'#4CC2FF':'#005A9E',
-    actorBkg: d?'#082338':'#E6F4FF',
+    actorBorder: d?'#4CC2FF':'#1D4FD7',
+    actorBkg: d?'#082338':'#EBF1FF',
     actorLineColor: d?'#9AA0A6':'#5C5C5C',
-    activationBkgColor: d?'#1E3A5F':'#C7E0F4',
-    activationBorderColor: d?'#4CC2FF':'#005A9E',
+    activationBkgColor: d?'#1E3A5F':'#D8E5FF',
+    activationBorderColor: d?'#4CC2FF':'#1D4FD7',
     labelBoxBkgColor: bg,
-    labelBoxBorderColor: d?'#4CC2FF':'#005A9E',
+    labelBoxBorderColor: d?'#4CC2FF':'#1D4FD7',
     sequenceNumberColor: txt,
-    labelBorder: d?'#4CC2FF':'#005A9E',
+    labelBorder: d?'#4CC2FF':'#1D4FD7',
     labelBkg: bg,
     noteBkgColor: d?'#3A2E0A':'#FEF7E0',
     noteBorderColor: d?'#FDD663':'#B06000',
     noteTextColor: txt,
     taskTextColor: txt,
-    clusterBkg: d?'#252528':'#F2F8FF',
-    clusterBorder: d?'#48484A':'#C7E0F4',
-    fontFamily:"'Segoe UI',system-ui,sans-serif",fontSize:'14px',
+    clusterBkg: d?'#252528':'#F4F6FF',
+    clusterBorder: d?'#48484A':'#D8E5FF',
+    fontFamily:"'Ubuntu',system-ui,sans-serif",fontSize:'14px',
   }},startOnLoad:false,securityLevel:'loose',logLevel:'error',
   flowchart:{{useMaxWidth:true,htmlLabels:true,curve:'basis'}}}};
 }}
@@ -3531,6 +3878,14 @@ function openDrawer(){{
   document.getElementById('navDrawer').classList.add('open');
   document.getElementById('sbScrim').classList.add('open');
 }}
+function toggleNavDrawer(){{
+  if(window.matchMedia('(max-width:760px)').matches){{openDrawer();return;}}
+  document.body.classList.toggle('nav-retracted');
+}}
+function syncHeroBlendHome(){{
+  var w=document.getElementById('welcomeView');
+  document.body.classList.toggle('hero-blend',!!(w&&w.style.display!=='none'));
+}}
 
 function closeDrawer(){{
   document.getElementById('navDrawer').classList.remove('open');
@@ -3553,6 +3908,7 @@ document.addEventListener('DOMContentLoaded',()=>{{
   initPF();
   loadFromURL();
   setTimeout(ic, 100);
+  setTimeout(syncHeroBlendHome,0);
 }});
 
 window.addEventListener('hashchange', () => {{
@@ -3923,23 +4279,6 @@ window.addEventListener('hashchange', () => {{
             for sid in page_objects
         }
 
-        author = config.get("author", {}) or {}
-        author_name = str(author.get("name", "Yassine Ahmed Ali"))
-        author_role = str(author.get("role", "Maintainer"))
-        author_initials = "".join(
-            w[0] for w in author_name.split() if w
-        )[:2].upper() or "A"
-        author_html = (
-            '<div class="author-card">'
-            '<div class="author-label">Author</div>'
-            '<div class="author-row">'
-            f'<div class="author-avatar">{_htmlesc.escape(author_initials)}</div>'
-            '<div>'
-            f'<div class="author-name">{_htmlesc.escape(author_name)}</div>'
-            f'<div class="author-role">{_htmlesc.escape(author_role)}</div>'
-            "</div></div></div>"
-        )
-
         def _esc(s: str) -> str:
             return s.replace("</script>", "<\\/script>")
 
@@ -3967,7 +4306,6 @@ window.addEventListener('hashchange', () => {{
             pdf_url=pdf_url,
             page_icons_js=page_icons_js,
             announce_html=announce_html,
-            author_html=author_html,
             docs_version=_htmlesc.escape(str(project_version)),
             page_versions_json=json.dumps(page_versions),
             page_updated_json=json.dumps(page_updated),

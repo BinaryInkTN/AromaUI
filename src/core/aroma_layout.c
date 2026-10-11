@@ -630,12 +630,6 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
     } else if (start_node->layout.mode == AROMA_LAYOUT_MODE_GRID) {
         apply_grid_layout(start_node, new_x, new_y, layout_w, layout_h);
     } else {
-
-
-
-
-        if (start_node->layout.mode == AROMA_LAYOUT_MODE_NONE)
-            apply_shrink_to_fit(start_node, new_x, new_w);
         int delta_x = new_x - prev_cache_x;
         int delta_y = new_y - prev_cache_y;
 
@@ -660,6 +654,21 @@ void aroma_node_update_layout(AromaNode* start_node, int parent_x, int parent_y,
                     child_w->y += delta_y;
                 }
             }
+        }
+
+        // Exact re-anchor AFTER the relative shifts. The shrink restore is
+        // an idempotent absolute assignment, so running it last corrects
+        // the double application (restore + delta) that used to make
+        // nested widgets drift off their parent during slide animations
+        // and snap back at rest. With a static parent (delta == 0) this
+        // ordering is behavior-identical.
+        if (start_node->layout.mode == AROMA_LAYOUT_MODE_NONE)
+            apply_shrink_to_fit(start_node, new_x, new_w);
+
+        for (uint64_t i = 0; i < start_node->child_count; i++) {
+            AromaNode* child = start_node->child_nodes[i];
+            if (!is_valid_node(child)) continue;
+            if (!is_valid_widget_ptr(child->node_widget_ptr)) continue;
 
             if (!child->is_hidden) {
                 aroma_node_update_layout(child, new_x, new_y, new_w, new_h);

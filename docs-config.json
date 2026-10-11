@@ -10,6 +10,8 @@
 
     "hero": {
         "title": "AromaSDK",
+        "tagline": "Fast. Native. Everywhere.",
+        "caption": "Free and open source under the MIT license",
         "description": "Cross-platform application framework featuring a modern UI toolkit, rendering engine, backend abstraction layer, and tooling for Linux, Android, Windows, and Embedded devices.",
         "announcement": "AromaSDK 0.0.2 alpha is here",
         "changelog_url": "https://github.com/BinaryInkTN/AromaUI/releases",
@@ -21,13 +23,47 @@
                 "icon": "rocket",
                 "text": "Get Started",
                 "primary": true,
-                "onclick": "showCategory('Overview')"
+                "onclick": "showPage(SLUG_TO_ID['getting-started'],'Overview',null)"
             },
             {
                 "icon": "github",
                 "text": "View on GitHub",
                 "primary": false,
                 "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"
+            }
+        ],
+
+        "cards": [
+            {
+                "icon": "layers",
+                "text": "Cross-platform",
+                "slug": "architecture-overview",
+                "category": "Overview"
+            },
+            {
+                "icon": "layout-grid",
+                "text": "Widgets",
+                "slug": "input-controls",
+                "category": "Widget Library"
+            },
+            {
+                "icon": "code",
+                "text": "Incense UI",
+                "slug": "incense-declarative-ui",
+                "category": "Widget Library"
+            },
+            {
+                "icon": "smartphone",
+                "text": "Android",
+                "slug": "android-overview",
+                "category": "Backend Abstraction",
+                "subcategory": "Android"
+            },
+            {
+                "icon": "terminal",
+                "text": "Build and deploy",
+                "slug": "building-deployment",
+                "category": "Build & Deploy"
             }
         ],
 
