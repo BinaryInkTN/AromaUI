@@ -3,6 +3,7 @@
 #ifndef AROMA_SLAB_ALLOC_H
 #define AROMA_SLAB_ALLOC_H
 
+#include <stddef.h>
 #include <stdlib.h>
 #include "aroma_node.h"
 #ifdef __cplusplus
@@ -11,6 +12,14 @@ extern "C" {
 
 
 #define AROMA_GENERIC_PAGE_SIZE 2048
+
+/* Every slot handed out by a pool must satisfy the alignment of any
+ * object it can hold (AromaNode needs 8). The page base (static array
+ * or malloc) only guarantees pointer/max alignment on some targets
+ * (4 on wasm32), so align the storage and round object sizes up.
+ * Without this, is_valid_node_ptr() rejects legitimately allocated
+ * nodes depending on link order, blanking all rendering. */
+#define AROMA_SLAB_ALIGN _Alignof(max_align_t)
 
 #define AROMA_MAX_PAGES 32
 
@@ -27,7 +36,7 @@ typedef struct  AromaFreeSlot {
 
 
 typedef struct  AromaSlabAllocatorPage {
-    uint8_t data[AROMA_GENERIC_PAGE_SIZE];
+    _Alignas(AROMA_SLAB_ALIGN) uint8_t data[AROMA_GENERIC_PAGE_SIZE];
     struct AromaSlabAllocatorPage* next_page;
     uint8_t is_stack_page;
 } AromaSlabAllocatorPage;

@@ -249,11 +249,6 @@ int main(void)
 {
     if (!aroma_ui_init())
         return 1;
-    /* The emscripten platform requests immediate mode during initialize,
-     * but aroma_ui_init_impl resets it from AROMA_UI_IMMEDIATE (unset on
-     * web). Previews need a frame every rAF for entrance animations and
-     * continuous interaction, so force it back on. */
-    aroma_ui_set_immediate_mode(true);
     aroma_sandbox_init();
     return 0;
 }

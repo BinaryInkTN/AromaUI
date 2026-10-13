@@ -11,7 +11,7 @@ AromaMemorySystem global_memory_system = {0};
 void __slab_pool_init(AromaSlabAllocator* pool, size_t object_size) {
     if (!pool) return;
     memset(pool, 0, sizeof(AromaSlabAllocator));
-    pool->object_size = object_size;
+    pool->object_size = (object_size + AROMA_SLAB_ALIGN - 1) & ~(AROMA_SLAB_ALIGN - 1);
 }
 
 void __slab_pool_destroy(AromaSlabAllocator* pool) {
