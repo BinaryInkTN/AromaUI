@@ -4131,6 +4131,9 @@ static AromaNode *build_menu(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     int zi = props_int(&bag, "z_index", 0);
     if (zi)
         aroma_node_set_z_index(built, zi);
+    aroma_menu_setup_events(built, NULL, NULL);
+    if (props_get(&bag, "visible") && props_bool(&bag, "visible", false))
+        aroma_menu_show(built);
     apply_widget_animations(built, &bag, node);
     maybe_register(&bag, built, ctx);
     build_children(node, built, ctx);

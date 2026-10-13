@@ -69,7 +69,7 @@ Window {
 | `Tabs` | `x`, `y`, `width`, `height`, `variant`, `selected`, `on_change` | `Tab` |
 | `SegmentedControl` | `x`, `y`, `width`, `height`, `selected`, `on_change` | `Segment` |
 | `Sidebar` | `x`, `y`, `width`, `height`, `on_select` | `Item` |
-| `Menu` | `x`, `y` | `MenuItem`, `Separator` |
+| `Menu` | `x`, `y`, `visible` | `MenuItem`, `Separator` |
 | `Chip` | `x`, `y`, `label`, `icon`, `type`, `selected` | - |
 | `Tooltip` | `text`, `x`, `y`, `position` | - |
 | `GIF` | `x`, `y`, `width`, `height`, `src`, `autoplay`, `corner_radius`, `scale` | - |

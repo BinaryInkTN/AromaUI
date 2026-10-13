@@ -8,6 +8,7 @@
 #include "core/aroma_slab_alloc.h"
 #include "core/aroma_logger.h"
 #include "widgets/aroma_dropdown.h"
+#include "widgets/aroma_menu.h"
 #include "widgets/aroma_stepper.h"
 #include "widgets/aroma_calendar.h"
 #include "widgets/aroma_datepicker.h"
@@ -862,6 +863,8 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
     {
         AromaNode *overlay_target = NULL;
         if (aroma_dropdown_overlay_hit_test(x, y, &overlay_target))
+            return overlay_target;
+        if (aroma_menu_overlay_hit_test(x, y, &overlay_target))
             return overlay_target;
         if (aroma_calendar_overlay_hit_test(x, y, &overlay_target))
             return overlay_target;

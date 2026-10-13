@@ -36,6 +36,11 @@ void aroma_menu_add_separator(AromaNode* menu_node);
 void aroma_menu_show(AromaNode* menu_node);
 void aroma_menu_hide(AromaNode* menu_node);
 
+void aroma_menu_setup_events(AromaNode* menu_node,
+                             void (*on_redraw)(void*), void* user_data);
+
+bool aroma_menu_overlay_hit_test(int x, int y, AromaNode** out_node);
+
 
 void aroma_menu_set_font(AromaNode* menu_node, AromaFont* font);
 

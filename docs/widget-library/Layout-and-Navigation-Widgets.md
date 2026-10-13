@@ -128,10 +128,21 @@ Responsive: retracts to icon-only mode below a breakpoint.
 AromaNode *menu = aroma_menu_create(root, x, y);
 aroma_menu_add_item(menu, "Edit", on_edit, NULL);
 aroma_menu_add_item(menu, "Delete", on_delete, NULL);
+aroma_menu_setup_events(menu, NULL, NULL);
 aroma_menu_show(menu);
 ```
 
-Floating context menu with click-away dismiss.
+Floating context menu with click-away dismiss. In markup it opens on
+long-press within its parent and takes an optional `visible` prop:
+
+```incense
+Menu {
+    x: 20 y: 260
+    MenuItem { text: "Reply" }
+    MenuItem { text: "Copy" }
+    MenuItem { text: "Delete" }
+}
+```
 
 ```incense-demo menu
 ```

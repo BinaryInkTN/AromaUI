@@ -179,6 +179,23 @@ static void test_menu(void)
     aroma_menu_set_font(menu, NULL);
     aroma_menu_set_icon_font(menu, NULL);
 
+    aroma_menu_setup_events(menu, NULL, NULL);
+    aroma_menu_setup_events(NULL, NULL, NULL);
+    aroma_menu_show(menu);
+    {
+        AromaNode *hit = NULL;
+        CHECK(aroma_menu_overlay_hit_test(0, 0, &hit) && hit == menu,
+              "open menu intercepts overlay hit test");
+    }
+    aroma_menu_hide(menu);
+    {
+        AromaNode *hit = (AromaNode *)0x1;
+        CHECK(!aroma_menu_overlay_hit_test(0, 0, &hit),
+              "closed menu releases overlay hit test");
+    }
+    CHECK(!aroma_menu_overlay_hit_test(0, 0, NULL),
+          "overlay hit test tolerates NULL out-param");
+
     aroma_menu_destroy(NULL);
     aroma_menu_destroy(menu);
     __destroy_node(root);
