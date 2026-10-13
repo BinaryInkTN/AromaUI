@@ -3703,6 +3703,8 @@ static AromaNode *build_calendar(IncenseNode *node, AromaNode *sp,
     if (on_change)
         aroma_calendar_set_on_select(built, bridge_date_change, on_change);
 
+    if (props_get(&bag, "popup"))
+        aroma_calendar_set_popup(built, props_bool(&bag, "popup", true));
     aroma_calendar_set_font(built, _widget_font);
     aroma_calendar_setup_events(built, NULL, NULL);
     int zi = props_int(&bag, "z_index", 0);
@@ -3735,6 +3737,8 @@ static AromaNode *build_datepicker(IncenseNode *node, AromaNode *sp,
     if (on_change)
         aroma_datepicker_set_on_change(built, bridge_date_change, on_change);
 
+    if (props_get(&bag, "popup"))
+        aroma_datepicker_set_popup(built, props_bool(&bag, "popup", true));
     if (props_get(&bag, "title")) {
         char *title = props_str_dup(&bag, "title", NULL);
         if (title && title[0])

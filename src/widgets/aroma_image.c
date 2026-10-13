@@ -265,6 +265,7 @@ void aroma_image_apply_fetch_result(AromaNode *image_node, bool ok,
 }
 
 static bool __image_fetch_complete_handler(AromaEvent *event, void *user_data)
+#ifndef __EMSCRIPTEN__
 {
     (void)user_data;
     if (!event || event->event_type != EVENT_TYPE_CUSTOM ||
@@ -279,6 +280,13 @@ static bool __image_fetch_complete_handler(AromaEvent *event, void *user_data)
                                    res->cache_path);
     return true;
 }
+#else
+{
+    (void)event;
+    (void)user_data;
+    return false;
+}
+#endif
 
 static bool __image_default_event_handler(AromaEvent* event, void* user_data)
 {
