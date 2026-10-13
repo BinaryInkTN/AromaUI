@@ -1,19 +1,33 @@
 
-Start here. On Linux, the fastest path is the GUI installer. No cloning, no toolchain setup.
+Start here. On Linux, the fastest path is the installer. No cloning, no toolchain setup.
 
-## Recommended: Download the GUI Installer for Linux
+## Recommended: one-line install (Linux)
 
-[Download aroma-lavender-linux.tar.xz (v0.0.2)](https://github.com/BinaryInkTN/AromaUI/releases/download/v0.0.2/aroma-lavender-linux.tar.xz)
+Download, extract, and run the installer with a single command:
 
-Or get it step by step:
+```bash
+curl -fLO https://github.com/BinaryInkTN/AromaUI/releases/download/v0.0.2/aroma-lavender-linux.tar.xz \
+&& tar -xf aroma-lavender-linux.tar.xz \
+&& ./aroma_installer
+```
 
-1. Open the [releases page](https://github.com/BinaryInkTN/AromaUI/releases).
-2. Download the Linux installer archive (`aroma-lavender-linux.tar.xz`).
-3. Extract it:
-   ```bash
-   tar -xf aroma-lavender-linux.tar.xz
-   ```
-4. Run the installer, pick the components you want, and follow the screens.
+This checks your prerequisites (Python 3.8+, GCC, CMake, Make), installs
+the SDK to `~/.aroma/sdk`, puts `aroma` on your PATH via `~/.local/bin`,
+and runs `aroma doctor` to report what's ready. Non-interactive setups
+can pass `--yes` (skip the prompt) and `--prefix DIR` (custom location).
+A newer release out? Swap `v0.0.2` in the URL for the new tag.
+
+Then:
+
+```bash
+aroma create myapp
+cd myapp && aroma run linux
+```
+
+Prefer manual steps? Download the archive from the
+[releases page](https://github.com/BinaryInkTN/AromaUI/releases),
+extract it (`tar -xf aroma-lavender-linux.tar.xz`), and run
+`./aroma-lavender/install.sh` — same result.
 
 What you need for the installer to run:
 
