@@ -131,7 +131,7 @@
     window.Module = window.Module || {};
     // Bust cached wasm/js after fixes ship: keep this version in sync
     // with the <script src="incense_sandbox.js?v=N"> tag below.
-    window.Module.locateFile = function(path) { return path + '?v=19'; };
+    window.Module.locateFile = function(path) { return path + '?v=20'; };
     // Embed mode for docs pages: ?embed=1 shows preview only (no editor),
     // ?example=NAME loads a curated demo, ?autorun=1 runs on boot.
     // Theme cascade: follow the embedding docs page theme when present,
@@ -243,7 +243,7 @@
     };
 
   </script>
-  <script src="incense_sandbox.js?v=19"></script>
+  <script src="incense_sandbox.js?v=20"></script>
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.min.js"></script>
   <script>
     window.setStatus = function(type, msg) {
