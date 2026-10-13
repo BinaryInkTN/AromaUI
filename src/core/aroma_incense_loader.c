@@ -2458,13 +2458,13 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
     "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_loop",
     "animation_start_val", "attribution", "auto_rotate", "autoplay", "blur_radius", "cam_far", "cam_far_plane",
     "cam_fov", "cam_near", "cam_near_plane", "cam_phi", "cam_radius", "cam_target_x", "cam_target_y", "cam_target_z",
-    "cam_theta", "checked", "color", "columns", "condition", "content_height", "content_width", "corner_radius", "day", "direction", "duration",
-    "end_angle", "far", "far_plane", "fill_color", "fill_thickness", "font", "fov", "group", "header", "height",
+    "cam_theta", "checked", "color", "cols", "columns", "condition", "content_height", "content_width", "corner_radius", "day", "direction", "duration",
+    "end_angle", "far", "far_plane", "fill_color", "fill_thickness", "font", "fov", "gap", "group", "header", "height",
     "hidden", "hour", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "interactive", "label", "lat",
     "layout", "length", "light_x", "light_y", "light_z", "lon", "major_length", "major_ticks", "max", "max_visible",
     "message", "min", "minor_length", "minor_ticks", "minute", "mode", "model", "month", "near", "near_plane",
     "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "on_swipe_left",
-    "on_swipe_right", "orientation", "parent", "phi", "placeholder", "popup", "position", "progress", "radius",
+    "on_swipe_right", "orientation", "parent", "phi", "placeholder", "popup", "position", "progress", "radius", "rows",
     "scale", "secondary", "selected", "show", "size", "src", "start_angle", "step", "style", "target_x", "target_y",
     "target_z", "text", "theta", "thickness", "tick_color", "tick_thickness", "ticks", "title", "track_color",
     "track_thickness", "type", "value", "variant", "visible", "width", "wrap", "x", "y", "year", "z_index", "zoom", NULL};
@@ -2978,15 +2978,23 @@ static AromaNode *build_container(IncenseNode *node, AromaNode *sp, BuildCtx *ct
     if (!ctx)
         return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
-    static const char *const layout_names[] = {"flex"};
-    static const int layout_values[] = {AROMA_LAYOUT_MODE_FLEX};
-    AromaLayoutMode layout = (AromaLayoutMode)match_enum(node, &bag, "layout", AROMA_LAYOUT_MODE_NONE, layout_names, layout_values, 1, "layout", "flex");
+    static const char *const layout_names[] = {"flex", "grid"};
+    static const int layout_values[] = {AROMA_LAYOUT_MODE_FLEX, AROMA_LAYOUT_MODE_GRID};
+    AromaLayoutMode layout = (AromaLayoutMode)match_enum(node, &bag, "layout", AROMA_LAYOUT_MODE_NONE, layout_names, layout_values, 2, "layout", "flex, grid");
     static const char *const dir_names[] = {"row", "column"};
     static const int dir_values[] = {AROMA_FLEX_ROW, AROMA_FLEX_COLUMN};
     AromaFlexDirection dir = (AromaFlexDirection)match_enum(node, &bag, "direction", AROMA_FLEX_COLUMN, dir_names, dir_values, 2, "direction", "row, column");
     AromaNode *built = aroma_ui_container(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
                                           props_int(&bag, "width", 200), props_int(&bag, "height", 200), layout, dir, AROMA_JUSTIFY_START, AROMA_ALIGN_START);
     if (built) {
+        if (props_get(&bag, "gap"))
+            aroma_node_set_gap(built, props_int(&bag, "gap", 0));
+        if (layout == AROMA_LAYOUT_MODE_GRID) {
+            if (props_get(&bag, "cols"))
+                aroma_node_set_grid_cols(built, props_int(&bag, "cols", 1));
+            if (props_get(&bag, "rows"))
+                aroma_node_set_grid_rows(built, props_int(&bag, "rows", 1));
+        }
         CallbackEntry *swl = resolve_callback(node, &bag, "on_swipe_left");
         if (swl)
             aroma_container_set_on_swipe_left(built, bridge_void_ptr, swl);
@@ -5485,6 +5493,10 @@ static AromaWindow *IncenseLoadCore(const IncenseDocument *doc, AromaFont *font,
     AromaNode *root_node = (AromaNode *)window;
     BuildCtx ctx = {.registry = ireg ? &ireg->reg : NULL, .font_registry = freg, .default_font = font, .icon_font = icon_font};
     build_children(root, root_node, &ctx);
+
+    /* Arrange immediately so the first presented frame never flashes
+     * widgets stacked at the origin before layout runs. */
+    aroma_node_update_layout(root_node, 0, 0, w, h);
 
     free(freg);
     if (out_registry)

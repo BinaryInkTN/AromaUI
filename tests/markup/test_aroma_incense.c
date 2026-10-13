@@ -125,6 +125,63 @@ static void test_minimal_document(void)
 
 
 
+static void test_grid_layout(void)
+{
+    __node_system_init();
+    AromaNode *parent = make_parent();
+    if (!parent)
+    {
+        CHECK(0, "grid parent created");
+        __node_system_destroy();
+        return;
+    }
+
+    const char *src =
+        "Window {\n"
+        "    width: 320\n"
+        "    height: 480\n"
+        "    Container { x: 0 y: 0 width: 320 height: 480 layout: grid cols: 2 rows: 2 gap: 8\n"
+        "        Label { text: \"A\" x: 0 y: 0 }\n"
+        "        Label { text: \"B\" x: 0 y: 0 }\n"
+        "        Label { text: \"C\" x: 0 y: 0 }\n"
+        "        Label { text: \"D\" x: 0 y: 0 }\n"
+        "    }\n"
+        "}\n";
+    IncenseRegistry *reg = NULL;
+    bool ok = IncenseLoadStringIntoParent(src, parent, NULL, NULL, &reg);
+    CHECK(ok, "grid document mounts");
+    int nerrs = 0;
+    IncenseGetErrors(&nerrs);
+    CHECK(nerrs == 0, "grid document loads without errors");
+
+    /* One layout pass, as a single frame would perform. */
+    aroma_node_update_layout(parent, 0, 0, 1024, 600);
+
+    AromaNode *box = NULL;
+    if (parent->child_count > 0)
+        box = parent->child_nodes[parent->child_count - 1];
+    CHECK(box && box->child_count == 4, "grid has four cells");
+    if (box && box->child_count == 4)
+    {
+        /* 2x2 over 320x480 with gap 8: cells 156x236 at
+         * (0,0), (164,0), (0,244), (164,244). Positions must hold
+         * without pumping any frames (no corner flash). */
+        static const int ex[4] = {0, 164, 0, 164};
+        static const int ey[4] = {0, 0, 244, 244};
+        for (uint64_t i = 0; i < 4; i++)
+        {
+            AromaRect *r = aroma_node_get_rect(box->child_nodes[i]);
+            char name[64];
+            snprintf(name, sizeof(name), "grid cell %llu placed", (unsigned long long)i);
+            CHECK(r && r->x == ex[i] && r->y == ey[i], name);
+        }
+    }
+    if (reg)
+        IncenseFreeRegistry(reg);
+    __destroy_node(parent->parent_node);
+    __node_system_destroy();
+}
+
 static void test_animation_settles_on_layout(void)
 {
     __node_system_init();
@@ -243,6 +300,7 @@ void run_incense_tests(int *passed, int *failed)
     printf("=== Aroma Incense Tests ===\n");
     test_rejections();
     test_minimal_document();
+    test_grid_layout();
     test_animation_settles_on_layout();
     printf("Aroma Incense: %d passed, %d failed\n", s_passed, s_failed);
     *passed = s_passed;

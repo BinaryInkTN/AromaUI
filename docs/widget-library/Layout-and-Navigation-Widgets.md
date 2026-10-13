@@ -14,6 +14,19 @@ Containers are the primary structural widget. They support flexbox, grid, and sc
 ```incense-demo layout
 ```
 
+Grid mode arranges children into fixed cells (`cols`, `rows`, `gap`):
+
+```incense
+Container {
+    x: 20 y: 200 width: 280 height: 200
+    layout: grid cols: 2 rows: 2 gap: 8
+    Label { text: "A" }
+    Label { text: "B" }
+    Label { text: "C" }
+    Label { text: "D" }
+}
+```
+
 ## Scrollable Container
 
 ```c
