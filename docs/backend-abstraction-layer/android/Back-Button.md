@@ -1,4 +1,4 @@
-> Android specific. This page covers the system back button. The core callback API is cross-platform; this page adds the Android wiring.
+> Android specific. This page covers the system back button. The core callback API is cross-platform; this page adds the Android-specific handling.
 
 ## Overview
 
@@ -50,7 +50,7 @@ aroma_event_subscribe(root->node_id, EVENT_TYPE_BACK_PRESS,
 
 `AromaBackCallback` is `bool (*)(void *user_data)`.
 
-## Android wiring
+## Android Behavior
 
 * NDK: `handle_input()` in `aroma_platform_android.c` intercepts `AKEYCODE_BACK` on `ACTION_DOWN` and calls `aroma_ui_handle_back_press()`. Consumed presses return `1` and stay in the app. Unconsumed presses call `ANativeActivity_finish()` (NativeActivity does not exit on its own when the native queue reports unhandled) and return `1`. The release (`ACTION_UP`) is swallowed.
 * Java: `AromaActivity.onBackPressed()` calls `nativeOnBackPressed()` (registered dynamically onto the app's `AromaActivity` class as `()Z`). When native returns `true` the activity stays; otherwise `super.onBackPressed()` runs. This covers gesture / predictive-back paths that bypass the key event.
@@ -58,7 +58,7 @@ aroma_event_subscribe(root->node_id, EVENT_TYPE_BACK_PRESS,
 
 No manifest or permission changes are needed. `AromaActivity` and `AromaHelper` templates already contain the override; new projects from `aroma create` get it automatically.
 
-## Example: catalog drill-down
+## Example: Catalog Drill-Down
 
 ```c
 // DemoApp pattern: detail page -> back returns to list.
@@ -76,7 +76,7 @@ aroma_ui_set_back_callback(demo_incense_handle_back, NULL);
 
 Test on device with `adb logcat`: the DemoApp logs `back_press handled: closing <demo>` when it pops, and `back_press unhandled: at catalog root` when it lets Android exit.
 
-## Next
+## Next Steps
 
 * Read [System UI](System-UI.md) for toast, vibration, and immersive mode.
 * Read [Event System](../../core-framework/Event-System.md) for `aroma_event_subscribe()` semantics.

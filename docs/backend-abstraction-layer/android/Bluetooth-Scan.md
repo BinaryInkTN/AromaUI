@@ -23,7 +23,7 @@ Register these before you scan. Each one maps to a Java event. Pass NULL for eve
 | `connection_cb` | `void (*)(bool ok, const char* addr, int mode, int type)` | A connection attempt completes. |
 | `data_cb` | `void (*)(const char* data, int len)` | Bytes arrive from the peer. |
 
-## Scan functions
+## Scan Functions
 
 | Function | Signature | What it does |
 |---|---|---|
@@ -63,7 +63,7 @@ aroma_android_bt_scan(AROMA_BT_SCAN_MODE_ALL, on_device);
 
 **Sources:** [include/aroma_android.h26-62](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L26-L62) [include/aroma_android.h197-257](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L197-L257) [src/backends/platforms/aroma_platform_android.c269-350](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L269-L350) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl434-568](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L434-L568)
 
-## Next
+## Next Steps
 
 * Read [Bluetooth Connect](Bluetooth-Connect.md) to pair and send data.
 * Read [Permissions](Permissions.md) to request Bluetooth permissions first.

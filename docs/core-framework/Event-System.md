@@ -5,7 +5,7 @@ AromaUI's event system captures raw platform input and dispatches it to the corr
 
 ```mermaid
 flowchart LR
-    Platform["Platform captures<br/>raw input"] --> Create["aroma_event_create()<br/>allocates from static pool"]
+    Platform["Platform captures<br/>raw input"] --> Create["aroma_event_create()<br/>creates the event"]
     Create --> Queue["aroma_event_queue()<br/>adds to thread-safe queue"]
     Queue --> Process["aroma_event_process_queue()<br/>drains queue"]
     Process --> Dispatch["aroma_event_dispatch()<br/>finds target"]
@@ -15,7 +15,7 @@ flowchart LR
     Consumed -->|Yes| End["End propagation"]
 ```
 
-## Hit-Testing
+## Hit Testing
 
 When a pointer event arrives, `aroma_event_hit_test()` recursively searches the scene graph from the root. It respects:
 - **Z-order** - top-most nodes are tested first
@@ -63,13 +63,15 @@ Scrollable containers (like `AromaContainer`) intercept touch events to implemen
 2. `TOUCH_MOVE` - tracks delta; if movement exceeds the 8px slop threshold (`SCROLL_SLOP`), the container intercepts
 3. Once intercepted, the container handles scrolling and children stop receiving the gesture
 
-## Memory: Static Event Pool
+## Event Capacity
 
-Events are allocated from a fixed pool of 256 entries (`g_event_pool`). This guarantees O(1) allocation and zero heap fragmentation - critical for ESP32 and WASM targets.
+The event queue holds a fixed number of pending events (256), which keeps
+memory use predictable, including on small embedded and web targets.
 
-## Internal APIs
+## Event APIs
 
-The event system exposes these lower-level functions for framework internals and advanced use cases:
+These are the functions behind event handling. Most apps only need
+`aroma_event_subscribe`:
 
 | Function | Role |
 |---|---|
@@ -84,7 +86,7 @@ The event system exposes these lower-level functions for framework internals and
 
 Application code typically interacts with events through widget-specific callbacks (e.g., `aroma_button_set_on_click`) rather than calling these functions directly.
 
-## What's Next
+## Next Steps
 
 - Learn how [Layout](Layout-Engine.md) positions nodes.
 - See how events interact with [Rendering](Rendering-Pipeline-and-DrawList.md).

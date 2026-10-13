@@ -73,8 +73,6 @@ void aroma_dropdown_set_font(AromaNode* dropdown_node, AromaFont* font);
 void aroma_dropdown_set_text_color(AromaNode* dropdown_node, uint32_t text_color);
 
 
-
-
 void aroma_dropdown_set_max_visible_rows(AromaNode* dropdown_node, int rows);
 
 void aroma_dropdown_destroy(AromaNode* dropdown_node);

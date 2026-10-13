@@ -21,7 +21,6 @@ void aroma_table_set_font(AromaNode* table_node, AromaFont* font);
 void aroma_table_set_cell_widget(AromaNode* table_node, int row_idx, int col_idx, AromaNode* widget);
 
 
-
 void aroma_table_clear_rows(AromaNode* table_node, bool destroy_widgets);
 
 void aroma_table_set_row_height(AromaNode* table_node, int height);

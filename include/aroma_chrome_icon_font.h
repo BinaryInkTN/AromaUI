@@ -2,20 +2,6 @@
 #define AROMA_CHROME_ICON_FONT_H
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 typedef struct    __attribute__((packed, aligned(1)))
-{ 
+{
     char text[128];
     char secondary_text[128];
     char icon[32];

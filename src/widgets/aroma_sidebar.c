@@ -195,7 +195,7 @@ static bool __sidebar_handle_event(AromaEvent *event, void *user_data)
         }
         cur = cur->parent_node;
     }
-    
+
 
     bool in_bounds = (adjusted_x >= sidebar->rect.x && adjusted_x <= sidebar->rect.x + sidebar->rect.width &&
                       adjusted_y >= sidebar->rect.y && adjusted_y <= sidebar->rect.y + sidebar->rect.height);

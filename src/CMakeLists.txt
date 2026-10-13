@@ -86,11 +86,11 @@ if(NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE GLESv2 EGL)
 endif()
 
-# Real event-system locking wherever pthreads exist (Linux, Android,
-# macOS). Workers (image/map fetch, JNI callbacks) queue events off the
-# UI thread; without this every EVENT_LOCK is a no-op and the queue,
-# pool, and target cache race. Single-threaded targets (Emscripten
-# without pthreads, MSVC, bare-metal ESP32) keep the status quo.
+
+
+
+
+
 include(CheckIncludeFile)
 check_include_file(pthread.h HAVE_PTHREAD_H)
 if(HAVE_PTHREAD_H AND NOT EMSCRIPTEN)

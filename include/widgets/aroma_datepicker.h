@@ -28,7 +28,6 @@ void aroma_datepicker_set_year_view(AromaNode *dp_node, bool show_years);
 bool aroma_datepicker_get_year_view(AromaNode *dp_node);
 
 
-
 void aroma_datepicker_set_popup(AromaNode *dp_node, bool popup);
 void aroma_datepicker_open_popup(AromaNode *dp_node);
 void aroma_datepicker_close_popup(AromaNode *dp_node);

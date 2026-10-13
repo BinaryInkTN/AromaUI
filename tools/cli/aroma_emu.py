@@ -33,6 +33,11 @@ def select_from_list(title: str, options: List[str], default_idx: int = 0) -> Op
     while True:
         try:
             choice = input(f"\nSelect (1-{len(options)}) [Q=quit]: ").strip()
+        except EOFError:
+            print()
+            Logger.error("No input available (re-run with explicit flags or in a terminal)")
+            return None
+        try:
             if choice.lower() == 'q':
                 return None
             idx = int(choice) - 1
@@ -201,11 +206,11 @@ def start_emulator(detector: Detector) -> Optional[str]:
     avds = []
     
     if os.path.isdir(avd_dir):
-        for item in os.listdir(avd_dir):
+        for item in sorted(os.listdir(avd_dir)):
             if item.endswith(".avd"):
                 avd_name = item.replace(".avd", "")
                 ini_file = os.path.join(avd_dir, f"{avd_name}.ini")
-                if os.path.exists(ini_file):
+                if os.path.exists(ini_file) and avd_name not in avds:
                     avds.append(avd_name)
             elif item.endswith(".ini"):
                 avd_name = item.replace(".ini", "")

@@ -16,13 +16,6 @@
 #endif
 
 
-
-
-
-
-
-
-
 static inline int tdp(int v)
 {
 #ifdef __ANDROID__

@@ -1,10 +1,5 @@
 
 
-
-
-
-
-
 #ifndef AROMA_EVENT_H
 #define AROMA_EVENT_H
 
@@ -24,8 +19,6 @@ typedef struct  AromaEvent AromaEvent;
 #define AROMA_KEY_MOD_SHIFT 0x0004u
 
 #define AROMA_KEY_MOD_ALT 0x0008u
-
-
 
 
 typedef enum AromaEventType {
@@ -51,15 +44,11 @@ typedef enum AromaEventType {
 } AromaEventType;
 
 
-
-
 typedef struct  {
     int id;
     int x;
     int y;
 } AromaTouchEventData;
-
-
 
 
 typedef struct  {
@@ -76,14 +65,10 @@ typedef struct  {
 } AromaMouseEventData;
 
 
-
-
 typedef struct  {
     int width;
     int height;
 } AromaWindowResizeEventData;
-
-
 
 
 typedef struct  {
@@ -96,15 +81,11 @@ typedef struct  {
 } AromaKeyEventData;
 
 
-
-
 typedef struct  {
     uint32_t custom_type;
     void* data;
     void (*free_data)(void*);
 } AromaCustomEventData;
-
-
 
 
 struct AromaEvent {
@@ -126,14 +107,7 @@ struct AromaEvent {
 };
 
 
-
-
-
-
-
 typedef bool (*AromaEventHandler)(AromaEvent* event, void* user_data);
-
-
 
 
 typedef struct  {
@@ -144,69 +118,31 @@ typedef struct  {
 } AromaEventListener;
 
 
-
-
-
 bool aroma_event_system_init(void);
-
-
 
 
 void aroma_event_system_shutdown(void);
 
 
-
-
-
 void aroma_event_set_root(AromaNode* root);
-
-
-
 
 
 AromaNode* aroma_event_get_root(void);
 
 
-
-
-
-
-
 AromaEvent* aroma_event_create(AromaEventType event_type, uint64_t target_node_id);
-
-
-
-
 
 
 bool aroma_event_dispatch(AromaEvent* event);
 
 
-
-
-
-
 bool aroma_event_queue(AromaEvent* event);
-
-
 
 
 void aroma_event_process_queue(void);
 
 
-
-
-
-
-
-
-
 void aroma_event_handle_touch(int id, int x, int y, int state);
-
-
-
-
-
 
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down);
@@ -231,16 +167,6 @@ AromaEvent* aroma_event_create_custom(uint64_t target_node_id, uint32_t custom_t
                                       void* data, void (*free_func)(void*));
 
 
-
-
-
-
-
-
-
-
-
-
 AromaEvent* aroma_event_create_back(uint64_t target_node_id);
 
 void aroma_event_destroy(AromaEvent* event);
@@ -249,23 +175,7 @@ void aroma_event_consume(AromaEvent* event);
 void aroma_event_set_disabled(AromaEvent* event, bool disabled);
 
 
-
-
-
-
-
-
-
-
-
 void aroma_event_forget_node(uint64_t node_id);
-
-
-
-
-
-
-
 
 
 void aroma_event_lock(void);

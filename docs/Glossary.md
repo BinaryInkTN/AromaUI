@@ -1,5 +1,5 @@
 
-This page provides definitions for codebase-specific terms, abbreviations, and domain concepts used throughout the AromaUI framework. It serves as a technical reference for onboarding engineers to understand the internal nomenclature and implementation pointers.
+This page defines the terms, abbreviations, and code pointers used throughout the AromaUI documentation.
 
 ## Core Concepts
 
@@ -24,7 +24,7 @@ A command-buffer system used for deferred rendering. Instead of immediate execut
 - **Implementation:**[src/core/aroma_drawlist.c1-150](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_drawlist.c#L1-L150)
 - **Usage:** Collected during the frame update via `collect_draw_tasks`[src/core/aroma_ui_impl.c71-73](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_ui_impl.c#L71-L73)
 
-### Dirty-Region Tracking
+### Dirty Region Tracking
 
 An optimization technique where only portions of the screen that have changed are re-rendered. Nodes are marked "dirty" via `aroma_node_invalidate`, adding them to a global dirty list.
 
@@ -71,7 +71,7 @@ flowchart LR
 
 ---
 
-## Technical Terms & Abbreviations
+## Technical Terms and Abbreviations
 
 | Term | Definition | Code Pointer |
 | --- | --- | --- |
@@ -138,7 +138,7 @@ flowchart LR
 
 ---
 
-## Embedded & Web Terms
+## Embedded and Web Terms
 
 - **TFT_eSPI:** A specific backend for ESP32/embedded displays that uses tiled rendering to fit within small RAM constraints. [src/backends/graphics/aroma_graphics_tft_espi.cpp1-50](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/backends/graphics/aroma_graphics_tft_espi.cpp#L1-L50)
 - **Emscripten/WASM:** The toolchain and target for running AromaUI in a web browser.

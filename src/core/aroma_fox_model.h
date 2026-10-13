@@ -1,10 +1,5 @@
 
 
-
-
-
-
-
 #ifndef AROMA_EMBEDDED_MODEL_H
 #define AROMA_EMBEDDED_MODEL_H
 

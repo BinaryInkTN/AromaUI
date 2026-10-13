@@ -1,32 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef AROMA_LOGGER_H
 #define AROMA_LOGGER_H
 
@@ -67,9 +40,6 @@ typedef enum
 #else
 
 
-
-
-
 #define LOG_MESSAGE(level, fmt, ...) \
     log_message(level, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
 
@@ -84,14 +54,6 @@ typedef enum
 #endif
 
 
-
-
-
-
-
-
-
-
 void log_message(DebugLevel level, const char *file, int line, const char *func, const char *fmt, ...);
 
 
@@ -100,41 +62,22 @@ typedef bool (*AromaLogHook)(DebugLevel level, const char *message, void *user_d
 void aroma_log_set_hook(AromaLogHook hook, void *user_data);
 
 
-
-
-
 void log_performance(char *message);
 
 
 #define LOG_PERFORMANCE(message) log_performance(message)
 
 
-
-
-
 void set_logging_enabled(bool enabled);
-
-
-
 
 
 void set_minimum_log_level(DebugLevel level);
 
 
-
-
 void print_stack_trace(void);
 
 
-
-
-
-
-
 void dump_memory(const char *label, const void *buffer, size_t size);
-
-
-
 
 
 void save_log_file(const char *path);

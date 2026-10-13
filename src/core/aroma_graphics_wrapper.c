@@ -65,7 +65,7 @@ void aroma_platform_request_window_update(size_t window_id)
 
 void aroma_platform_set_window_update_callback(void (*callback)(size_t window_id, void* data), void* user_data)
 {
-   
+
 
 }
 

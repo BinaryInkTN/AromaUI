@@ -1,11 +1,11 @@
 find_package(Freetype REQUIRED)
 
-# Test sources, grouped by framework category:
-#   core/    - foundations: memory, scene graph, events, draw list, timing,
-#              style/theme (headless, no GPU).
-#   widgets/ - every widget, headless (no GPU, no display).
-#   markup/  - Incense UI markup loading, headless.
-#   gpu/     - real-GPU tests (separate binary, Linux + EGL only, see below).
+
+
+
+
+
+
 add_executable(aroma_tests
     test_main.c
     core/test_aroma_slab_alloc.c
@@ -39,12 +39,12 @@ add_executable(aroma_tests
     markup/test_aroma_incense.c
 )
 
-# AROMA_ROOT must work whether tests are added from the top-level build
-# (CMAKE_SOURCE_DIR == repo root) or nested via
+
+
 # examples/car_infotainment (CMAKE_SOURCE_DIR == example dir).
 get_filename_component(AROMA_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
-# Incense + package helpers now live in the framework (libaroma);
+
 # tests link `aroma` directly with no example sources.
 target_link_libraries(aroma_tests PRIVATE aroma)
 
@@ -59,8 +59,8 @@ if(UNIX)
 endif()
 
 target_include_directories(aroma_tests 
-    # Public API first: bare "aroma_*.h" must resolve to include/,
-    # not to the src/core/ forwarding wrappers of the same name.
+
+
     PRIVATE ${AROMA_ROOT}/include
     PRIVATE ${AROMA_ROOT}/src
     PRIVATE ${AROMA_ROOT}/src/core
@@ -80,9 +80,9 @@ endif()
 
 add_test(NAME aroma_tests COMMAND aroma_tests)
 
-# Headless GPU tests for backdrop blur: only on Linux desktops with EGL +
-# GLESv2 available (Mesa software rendering is fine). Skipped elsewhere so
-# embedded/web/CI builds stay portable.
+
+
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_path(EGL_INCLUDE_DIR EGL/egl.h QUIET)
     find_library(EGL_LIB EGL QUIET)

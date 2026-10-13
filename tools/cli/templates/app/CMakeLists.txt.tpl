@@ -5,9 +5,9 @@ project({{PROJECT_NAME}} C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-#
-# Default to GLFW on desktop Linux
-#
+
+
+
 if(NOT ANDROID AND NOT EMSCRIPTEN)
     option(ENABLE_GLFW "Use GLFW instead of GLPS for windowing" OFF)
 else()
@@ -26,9 +26,9 @@ endif()
 
 message(STATUS "Using Aroma SDK at: ${AROMA_DIR}")
 
-#
-# Build Aroma SDK
-#
+
+
+
 if(NOT TARGET aroma)
     add_subdirectory(${AROMA_DIR} aroma_sdk)
 endif()
@@ -42,9 +42,9 @@ target_link_libraries({{PROJECT_NAME}}
     aroma
 )
 
-#
-# Optional Vulkan support on native platforms
-#
+
+
+
 if(NOT EMSCRIPTEN)
     find_package(Vulkan QUIET)
 
@@ -56,9 +56,9 @@ if(NOT EMSCRIPTEN)
     endif()
 endif()
 
-#
-# Emscripten
-#
+
+
+
 if(EMSCRIPTEN)
 
     set_target_properties({{PROJECT_NAME}}
@@ -83,16 +83,16 @@ if(EMSCRIPTEN)
 
     message(STATUS "Windowing Backend: EMSCRIPTEN/WebGL")
 
-#
-# Android
-#
+
+
+
 elseif(ANDROID)
 
     message(STATUS "Windowing Backend: Android Native")
 
-#
-# Desktop
-#
+
+
+
 elseif(ENABLE_GLFW)
 
     message(STATUS "Windowing Backend: GLFW")

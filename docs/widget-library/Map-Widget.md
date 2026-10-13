@@ -1,7 +1,7 @@
 
 A high-performance, interactive map component supporting OpenStreetMap tiles, markers, and routing.
 
-## Quick Start
+## Getting Started
 
 ```c
 AromaNode *map = aroma_ui_map(root, 0, 0, 700, 400);
@@ -32,16 +32,16 @@ aroma_map_set_route(map, 48.8566, 2.3522, 48.8049, 2.1204, 0xFF35A8FE);
 | `aroma_map_set_route(lat1, lon1, lat2, lon2, color)` | Draw route polyline |
 | `aroma_map_clear_route()` | Clear current route |
 
-## Architecture
+## How It Works
 
-The map widget runs tile fetching on background worker threads to avoid blocking the UI. It uses spherical mercator projection to convert lat/lon to pixel coordinates and supports pan/zoom gestures with momentum.
+Tile fetching runs in the background, so panning and zooming never block the UI. The map supports pan and zoom gestures with momentum.
 
-## Live demo
+## Live Demonstration
 
 ```incense-demo map
 ```
 
-## What's Next
+## Next Steps
 
 - Learn [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
 - Explore [Input & Controls](Input-and-Control-Widgets.md) for interactive elements.

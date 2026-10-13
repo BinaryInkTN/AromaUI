@@ -108,7 +108,7 @@ These functions control node layout behavior:
 
 Higher-level factory functions in `include/aroma_ui.h` wrap many of these calls.
 
-## What's Next
+## Next Steps
 
 - Learn how nodes are rendered in the [Rendering Pipeline](Rendering-Pipeline-and-DrawList.md).
 - See how [Events](Event-System.md) interact with scroll containers.

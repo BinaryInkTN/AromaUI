@@ -42,7 +42,7 @@ if (!aroma_android_check_permission("android.permission.BLUETOOTH_SCAN")) {
 
 **Sources:** [include/aroma_android.h111-144](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L111-L144) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl379-412](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L379-L412)
 
-## Next
+## Next Steps
 
 * Read [Device APIs](Device-APIs.md) for battery and WiFi.
 * Read [Preferences](Preferences.md) to store settings.

@@ -47,13 +47,11 @@ extern "C"
     } GeocodeResult;
 
 
-
     typedef struct
     {
         double lat;
         double lon;
     } OSRMNode;
-
 
 
     typedef struct

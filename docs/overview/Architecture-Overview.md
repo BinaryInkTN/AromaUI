@@ -7,7 +7,7 @@ AromaUI has four layers. Learn these layers once and the rest of the framework m
 flowchart TD
     App["Application Layer<br/>aroma_ui_button(), aroma_ui_label()"]
     Core["Core Framework<br/>AromaNode, Layout, Events, DrawList"]
-    ABI["Backend Abstraction Layer<br/>AromaBackendABI proxy"]
+    ABI["Backend Abstraction Layer<br/>backend interface"]
     Backends["Platform & Graphics Backends<br/>GLES3, Vulkan, TFT_eSPI, Android"]
     
     App --> Core
@@ -58,7 +58,7 @@ flowchart LR
     ABI --> Screen["Screen updates"]
 ```
 
-## File Map
+## Source File Map
 
 | Area | Key Files |
 |---|---|
@@ -70,7 +70,7 @@ flowchart LR
 | Graphics | `src/backends/graphics/aroma_graphics_gles3.c` |
 | Platforms | `src/backends/platforms/aroma_platform_glfw.c` |
 
-## What's Next
+## Next Steps
 
 * Read [Scene Graph](../core-framework/Scene-Graph-and-Node-System.md) for node lifecycle.
 * Read [Events](../core-framework/Event-System.md) for input flow.

@@ -5,6 +5,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.1.1'
+{{CHAQUOPY_CLASSPATH}}
     }
 }
 allprojects {

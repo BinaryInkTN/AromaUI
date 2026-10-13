@@ -28,7 +28,6 @@ void aroma_calendar_set_year_view(AromaNode *cal_node, bool show_years);
 bool aroma_calendar_get_year_view(AromaNode *cal_node);
 
 
-
 void aroma_calendar_set_popup(AromaNode *cal_node, bool popup);
 void aroma_calendar_open_popup(AromaNode *cal_node);
 void aroma_calendar_close_popup(AromaNode *cal_node);

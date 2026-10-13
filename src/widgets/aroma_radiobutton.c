@@ -185,8 +185,6 @@ AromaNode* aroma_radio_button_create(AromaNode* parent, AromaRadioGroup* group,
     }
 
 
-
-
 #ifdef __ANDROID__
 x = aroma_android_dp_to_px(x);
 y = aroma_android_dp_to_px(y);
@@ -370,7 +368,7 @@ if (data->use_theme_colors) {
         data->background_color = theme.colors.surface;
     }
 
-    
+
     uint32_t ring_color = data->ring_color;
     if (data->is_hovered) {
         ring_color = __radio_lighten(ring_color, 0.12f);
@@ -400,7 +398,7 @@ static bool __radio_handle_event(AromaEvent* event, void* user_data)
     if (!data) return false;
 
     AromaRect* r = &data->rect;
-   
+
       int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
     if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
@@ -419,10 +417,10 @@ static bool __radio_handle_event(AromaEvent* event, void* user_data)
         }
         cur = cur->parent_node;
     }
-    
+
     bool in_bounds = (adjusted_x >= r->x && adjusted_x <= r->x + r->width &&
                       adjusted_y >= r->y && adjusted_y <= r->y + r->height);
- 
+
 
     switch (event->event_type) {
         case EVENT_TYPE_MOUSE_ENTER:

@@ -1,24 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "widgets/aroma_tooltip.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -62,7 +43,6 @@ typedef struct   AromaTooltip {
 AromaNode* aroma_tooltip_create(AromaNode* parent, const char* text, int x, int y, AromaTooltipPosition position)
 {
     if (!parent || !text) return NULL;
-
 
 
 #ifdef __ANDROID__

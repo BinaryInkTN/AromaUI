@@ -47,3 +47,6 @@ examples/incense_sandbox/incense_sandbox.js
 *-wal
 # Sandbox IDE runtime workspaces (created via ide_server.py / aroma CLI).
 examples/incense_sandbox/workspace/
+# Generated Python bindings (python3 tools/generate_python_bindings.py).
+# The generator script is committed; its output is not.
+bindings/

@@ -15,7 +15,7 @@ AromaNode *btn = aroma_ui_button(root, "Click Me", 20, 20, 160, 48,
                                  on_button_click, NULL, NULL);
 ```
 
-### Button types
+### Button Types
 
 Text buttons come in five Material-style types with theme-aware colors:
 
@@ -140,7 +140,7 @@ aroma_chip_set_selected(chip, true);
 | `CHIP_TYPE_INPUT` | Text input chip |
 | `CHIP_TYPE_SUGGESTION` | Selection from options |
 
-## Live demo
+## Live Demonstration
 
 ```incense-demo inputs
 ```
@@ -157,7 +157,7 @@ aroma_chip_set_selected(chip, true);
 ```incense-demo toggles
 ```
 
-## What's Next
+## Next Steps
 
 - Learn [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.
 - Explore the [Map Widget](Map-Widget.md) for interactive maps.

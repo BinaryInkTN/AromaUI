@@ -99,7 +99,6 @@ void fill_rectangle(size_t window_id, int x, int y, int w, int h,
     }
 
 
-
     if (USING_SPRITE()) {
 
             int sx = x - g_clip.x;

@@ -2,17 +2,6 @@
 #define AROMA_DP_H
 
 
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #define AROMA_DP(x) ((float)aroma_android_dp_to_px_f((float)(x)))

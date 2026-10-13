@@ -24,13 +24,10 @@ AromaNode* aroma_card_create(AromaNode* parent, int x, int y, int width, int hei
 void aroma_card_set_colors(AromaNode* card_node, uint32_t bg_color, uint32_t border_color);
 
 
-
 void aroma_card_set_backdrop_blur(AromaNode* card_node, float radius_px);
 
 
-
 float aroma_card_get_backdrop_blur(AromaNode* card_node);
-
 
 
 bool aroma_graphics_supports_backdrop_blur(void);

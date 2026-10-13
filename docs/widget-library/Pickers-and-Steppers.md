@@ -165,7 +165,18 @@ Carousel {
 }
 ```
 
-## DemoApp
+## Live Demonstration
+
+```incense-demo pickers
+```
+
+```incense-demo steps
+```
+
+```incense-demo carousel
+```
+
+## Demo Application
 
 The `DemoApp` catalog (`~/DemoApp`) has one demo per widget under
 `src/assets/demos/`: `calendar`, `date`, `time`, `stepper`, `carousel`.
@@ -179,14 +190,11 @@ Demos mount lazily on first
 open, so startup only parses the shell (~19ms) instead of all 37 demos
 (~140ms).
 
-## DPI, polish, clipping
+## Scaling and Visual Polish
 
-Every dimensional constant (touch targets, radii, insets, stroke widths,
-dot sizes, footer pills) is authored in dp and converted with
-`aroma_android_dp_to_px[_f]` on Android, so targets stay 48dp from ldpi
-to xxxhdpi while desktop keeps 1:1 pixels. Tappable chrome (chevrons,
-Cancel/OK) shows a shaded pressed state; selected days get a filled
-circle, today a ring, dials a filled face with a selection hand.
-The NumberPicker clips its rolling values with a scissor rect
-(`graphics_set_clip`/`clear_clip`, guarded for backends without clip
-support) so dragged rows never paint outside the frame.
+Sizes are authored in density-independent units, so touch targets stay
+48dp from ldpi to xxxhdpi on Android while desktop keeps 1:1 pixels.
+Tappable controls show a shaded pressed state; selected days get a filled
+circle, today a ring, and dials a filled face with a selection hand. The
+NumberPicker clips its rolling values so dragged rows never paint outside
+the frame.

@@ -67,7 +67,7 @@ def build_fragment(icons):
         blob = "%s %s %04x" % (short.replace("_", " "), const.lower(), code)
         tiles.append(
             '<div class="icon-tile" data-name="%s" onclick="copyIconName(\'%s\',this)"'
-            ' title="%s (U+%04X) — click to copy">'
+            ' title="%s (U+%04X): click to copy">'
             '<span class="icon-glyph">&#x%x;</span>'
             '<span class="icon-name">%s</span>'
             '<span class="icon-code">U+%04X</span>'

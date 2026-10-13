@@ -1,7 +1,7 @@
 
 Every AromaUI app shares one C core. What differs per target is the platform backend (windows, input, event loop) and the graphics backend (draw calls). This page lists what is implemented on each platform and what is still missing. Status is derived from the backend sources in `src/backends/`.
 
-## At a glance
+## Overview
 
 | Platform | Window backend | Graphics | Status |
 |---|---|---|---|
@@ -12,7 +12,7 @@ Every AromaUI app shares one C core. What differs per target is the platform bac
 | ESP32 (TFT_eSPI) | `aroma_platform_tft_espi.cpp` | `aroma_graphics_tft_espi.cpp` | Experimental |
 | Windows | GLPS Win32 / GLFW | GLES3 via WGL context (unverified) | Partial, no build/CI wiring |
 
-## Windowing and main loop
+## Windowing and Main Loop
 
 | Feature | Linux GLPS | Linux GLFW | Android | Web | ESP32 | Windows |
 |---|---|---|---|---|---|---|
@@ -48,7 +48,7 @@ Every AromaUI app shares one C core. What differs per target is the platform bac
 | In-app keyboard overlay | Yes (opt-in via `aroma_textbox_enable_virtual_keyboard`) | Yes | Yes | Yes | Yes | Partial (core code, unverified) |
 | System back button | Yes (Escape) | Yes (Escape) | Yes (back key/gesture) | Yes (Escape) | Missing | Partial (shared Escape path, unverified) |
 
-## Text, media, network
+## Text, Media, and Network
 
 | Feature | Linux | Android | Web | ESP32 | Windows |
 |---|---|---|---|---|---|
@@ -60,6 +60,6 @@ Every AromaUI app shares one C core. What differs per target is the platform bac
 | Clipboard copy/paste | Missing | Yes | Missing | Missing | Missing |
 | Camera / gallery picker | Missing | Yes (intents + activity results) | Missing | Missing | Missing |
 
-## Android-only device APIs
+## Android-Only Device APIs
 
 These exist only on Android (`aroma_platform_android.c` + `AromaHelper.java` bridge, 19 guides under `Backend Abstraction / Android`): runtime permissions, toast, vibration (incl. effects), sensors, notifications, Bluetooth classic + BLE, NFC/RFID, biometric, location, preferences, TTS, torch, wake lock, orientation lock, PiP, shortcuts, wallpaper, volume, storage info, screenshots, contacts, IR, display metrics, assets. No other backend implements these slots.

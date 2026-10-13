@@ -16,16 +16,6 @@ static inline float canvas_dp_f(float dp) { return dp; }
 #endif
 
 
-
-
-
-
-
-
-
-
-
-
 static AromaCanvasOp *aroma_canvas_push_op(AromaCanvas *canvas)
 {
     if (canvas->op_count >= AROMA_CANVAS_MAX_OPS)
@@ -125,10 +115,6 @@ void aroma_canvas_draw(AromaNode *node, size_t window_id)
     }
 
 
-
-
-
-
     for (size_t i = 0; i < canvas->op_count; i++)
     {
         aroma_canvas_draw_op(&canvas->ops[i], gfx, window_id);
@@ -142,11 +128,6 @@ void aroma_canvas_clear(AromaNode *node, uint32_t color)
     AromaCanvas *canvas = (AromaCanvas *)node->node_widget_ptr;
     if (!canvas)
         return;
-
-
-
-
-
 
 
     canvas->op_count = 0;
@@ -179,7 +160,6 @@ AromaNode *aroma_canvas_create(AromaNode *parent, int x, int y, int width, int h
         LOG_ERROR("Failed to allocate memory for canvas");
         return NULL;
     }
-
 
 
     canvas->op_count = 0;

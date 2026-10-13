@@ -204,8 +204,6 @@ AromaNode *__add_child_node(AromaNodeType node_type,
     }
 
 
-
-
     aroma_event_lock();
     bool room = ensure_child_capacity(parent_node, parent_node->child_count + 1);
     aroma_event_unlock();
@@ -303,11 +301,7 @@ void __destroy_node(AromaNode *node)
     dirty_list_remove(node);
 
 
-
-
     aroma_event_forget_node(node->node_id);
-
-
 
 
     aroma_animation_cleanup_node(node);

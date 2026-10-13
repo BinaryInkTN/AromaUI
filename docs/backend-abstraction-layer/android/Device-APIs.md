@@ -1,6 +1,6 @@
 > Android specific. This page only applies to Android builds. All functions here need `__ANDROID__`.
 
-## Battery and WiFi
+## Battery and Wi-Fi
 
 | Function | Signature | What it does |
 |---|---|---|
@@ -15,7 +15,7 @@ if (level >= 0 && level < 20) {
 }
 ```
 
-## Camera and gallery
+## Camera and Gallery
 
 | Function | Signature | What it does |
 |---|---|---|
@@ -55,7 +55,7 @@ void choose_avatar(void) {
 
 Request camera and storage permissions first. See [Permissions](Permissions.md). You do not call the two `android_*` backend functions directly. Call the `aroma_android_*` wrappers or the platform interface slots.
 
-## Storage and services
+## Storage and Services
 
 | Function | Signature | What it does |
 |---|---|---|
@@ -74,7 +74,7 @@ if (dir) {
 
 **Sources:** [include/aroma_android.h146-183](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L146-L183) [include/aroma_android.h422-481](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L422-L481) [src/backends/platforms/aroma_platform_android.c832-987](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L832-L987)
 
-## Next
+## Next Steps
 
 * Read [Display](Display.md) for density and screen size.
 * Read [Preferences](Preferences.md) to persist small values.

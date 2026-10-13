@@ -3,6 +3,7 @@
 import argparse
 import sys
 
+from aroma_bindings import cmd_bindings
 from aroma_bundle import cmd_bundle
 from aroma_build import cmd_build, cmd_run
 from aroma_constants import AROMA_INSTALL_DIR, AROMA_SDK_DIR
@@ -15,7 +16,7 @@ def main():
         prog="aroma",
         description="AromaUI CLI Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=f"Examples:\n  aroma doctor\n  aroma create myapp\n  aroma build android\n  aroma run android --emu\n  aroma bundle linux deb appimage\n  aroma bundle linux --format deb,rpm,flatpak,snap,tar.gz\n\nPaths:\n  Install: {AROMA_INSTALL_DIR}\n  SDK:     {AROMA_SDK_DIR}"
+        epilog=f"Examples:\n  aroma doctor\n  aroma create myapp\n  aroma create myapp --python\n  aroma bindings --check\n  aroma build android\n  aroma run android --emu\n  aroma bundle linux deb appimage\n  aroma bundle linux --format deb,rpm,flatpak,snap,tar.gz\n\nPaths:\n  Install: {AROMA_INSTALL_DIR}\n  SDK:     {AROMA_SDK_DIR}"
     )
     
     parser.add_argument("--config", help="Config file path")
@@ -27,6 +28,29 @@ def main():
     
     p = subparsers.add_parser("create", help="Create new project")
     p.add_argument("name", nargs="?", help="Project name")
+    p.add_argument("--python", action="store_true",
+                   help="Scaffold a Python app (src/main.py + Chaquopy Android bootstrap)")
+    
+    p = subparsers.add_parser(
+        "bindings",
+        help="Generate Python ctypes bindings",
+        description="Generate the Python ctypes bindings (aroma.py + aroma_raw.py) "
+                    "from the public C headers via tools/generate_python_bindings.py.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="Examples:\n"
+               "  aroma bindings\n"
+               "  aroma bindings --output bindings/python/aroma.py --check\n"
+               "  aroma bindings --stats\n",
+    )
+    p.add_argument("--output", "-o", default=None,
+                   help="Where to write aroma.py "
+                        "(default: bindings/python/aroma.py under the current directory)")
+    p.add_argument("--include-dir", default=None,
+                   help="Headers to parse (default: ./include if present, else the SDK include dir)")
+    p.add_argument("--check", action="store_true",
+                   help="Import the generated module and report bound/missing counts")
+    p.add_argument("--stats", action="store_true",
+                   help="Print parse stats only (no files written)")
     
     p = subparsers.add_parser("build", help="Build project")
     p.add_argument("platform", choices=["linux", "android", "web"], nargs="?", default="linux")
@@ -101,6 +125,8 @@ def main():
         cmd_doctor(args)
     elif args.command == "create":
         cmd_create(args)
+    elif args.command == "bindings":
+        cmd_bindings(args)
     elif args.command == "build":
         cmd_build(args)
     elif args.command == "run":

@@ -536,7 +536,6 @@ static IncenseNode *build_object(mpc_ast_t *ast, const char *source)
         return NULL;
 
 
-
     IncenseNode *tail = NULL;
     for (int i = 0; i < ast->children_num; i++)
     {

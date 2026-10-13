@@ -1,26 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "widgets/aroma_icon.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -86,7 +65,6 @@ static void __icon_cleanup_texture(AromaIcon* icon) {
 
 AromaNode* aroma_icon_create(AromaNode* parent, int x, int y, int size) {
     if (!parent) return NULL;
-
 
 
 #ifdef __ANDROID__

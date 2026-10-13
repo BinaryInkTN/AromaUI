@@ -303,7 +303,6 @@ static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int act
 {
 
 
-
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
         if (aroma_ui_handle_back_press())

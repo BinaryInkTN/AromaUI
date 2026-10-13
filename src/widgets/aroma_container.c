@@ -22,9 +22,6 @@
 #endif
 
 
-
-
-
 #define SCROLLBAR_WIDTH_DP 4
 #define SCROLLBAR_MIN_THUMB_DP 24
 #define SCROLLBAR_PADDING_DP 2
@@ -40,8 +37,6 @@ static inline int scroll_bottom_padding_px(void)
     return SCROLL_BOTTOM_PADDING_DP;
 #endif
 }
-
-
 
 
 #define FLING_TICK_MS 16
@@ -826,7 +821,6 @@ static bool scroll_event_handler(AromaEvent *event, void *user_data)
     }
 
 
-
     default:
         break;
     }
@@ -1266,11 +1260,6 @@ void aroma_container_update_auto_content_size(AromaNode *node)
 }
 
 
-
-
-
-
-
 static void draw_subtree_recursive(AromaNode *node, size_t window_id,
                                    const AromaRect *viewport_screen,
                                    int offset_x, int offset_y)
@@ -1347,9 +1336,6 @@ void aroma_container_draw(AromaNode *container_node, size_t window_id)
         };
 
         drawlist_proxy_push_offset(-eff_sx, -eff_sy);
-
-
-
 
 
         int content_offset_x = 0;

@@ -1,12 +1,5 @@
 
 
-
-
-
-
-
-
-
 #ifndef mpc_h
 #define mpc_h
 
@@ -23,18 +16,12 @@ extern "C" {
 #include <ctype.h>
 
 
-
-
-
 typedef struct {
   long pos;
   long row;
   long col;
   int term;
 } mpc_state_t;
-
-
-
 
 
 typedef struct {
@@ -50,9 +37,6 @@ void mpc_err_delete(mpc_err_t *e);
 char *mpc_err_string(mpc_err_t *e);
 void mpc_err_print(mpc_err_t *e);
 void mpc_err_print_to(mpc_err_t *e, FILE *f);
-
-
-
 
 
 typedef void mpc_val_t;
@@ -72,9 +56,6 @@ int mpc_parse_pipe(const char *filename, FILE *pipe, mpc_parser_t *p, mpc_result
 int mpc_parse_contents(const char *filename, mpc_parser_t *p, mpc_result_t *r);
 
 
-
-
-
 typedef void(*mpc_dtor_t)(mpc_val_t*);
 typedef mpc_val_t*(*mpc_ctor_t)(void);
 
@@ -86,9 +67,6 @@ typedef int(*mpc_check_t)(mpc_val_t**);
 typedef int(*mpc_check_with_t)(mpc_val_t**,void*);
 
 
-
-
-
 mpc_parser_t *mpc_new(const char *name);
 mpc_parser_t *mpc_copy(mpc_parser_t *a);
 mpc_parser_t *mpc_define(mpc_parser_t *p, mpc_parser_t *a);
@@ -96,9 +74,6 @@ mpc_parser_t *mpc_undefine(mpc_parser_t *p);
 
 void mpc_delete(mpc_parser_t *p);
 void mpc_cleanup(int n, ...);
-
-
-
 
 
 mpc_parser_t *mpc_any(void);
@@ -110,9 +85,6 @@ mpc_parser_t *mpc_satisfy(int(*f)(char));
 mpc_parser_t *mpc_string(const char *s);
 
 
-
-
-
 mpc_parser_t *mpc_pass(void);
 mpc_parser_t *mpc_fail(const char *m);
 mpc_parser_t *mpc_failf(const char *fmt, ...);
@@ -120,9 +92,6 @@ mpc_parser_t *mpc_lift(mpc_ctor_t f);
 mpc_parser_t *mpc_lift_val(mpc_val_t *x);
 mpc_parser_t *mpc_anchor(int(*f)(char,char));
 mpc_parser_t *mpc_state(void);
-
-
-
 
 
 mpc_parser_t *mpc_expect(mpc_parser_t *a, const char *e);
@@ -147,9 +116,6 @@ mpc_parser_t *mpc_or(int n, ...);
 mpc_parser_t *mpc_and(int n, mpc_fold_t f, ...);
 
 mpc_parser_t *mpc_predictive(mpc_parser_t *a);
-
-
-
 
 
 mpc_parser_t *mpc_eoi(void);
@@ -194,9 +160,6 @@ mpc_parser_t *mpc_regex_lit(void);
 mpc_parser_t *mpc_ident(void);
 
 
-
-
-
 mpc_parser_t *mpc_startwith(mpc_parser_t *a);
 mpc_parser_t *mpc_endwith(mpc_parser_t *a, mpc_dtor_t da);
 mpc_parser_t *mpc_whole(mpc_parser_t *a, mpc_dtor_t da);
@@ -221,9 +184,6 @@ mpc_parser_t *mpc_tok_brackets(mpc_parser_t *a, mpc_dtor_t ad);
 mpc_parser_t *mpc_tok_squares(mpc_parser_t *a, mpc_dtor_t ad);
 
 mpc_parser_t *mpc_sepby1(mpc_fold_t f, mpc_parser_t *sep, mpc_parser_t *a);
-
-
-
 
 
 void mpcf_dtor_null(mpc_val_t *x);
@@ -264,9 +224,6 @@ mpc_val_t *mpcf_freefold(int n, mpc_val_t** xs);
 mpc_val_t *mpcf_strfold(int n, mpc_val_t** xs);
 
 
-
-
-
 enum {
   MPC_RE_DEFAULT   = 0,
   MPC_RE_M         = 1,
@@ -277,9 +234,6 @@ enum {
 
 mpc_parser_t *mpc_re(const char *re);
 mpc_parser_t *mpc_re_mode(const char *re, int mode);
-
-
-
 
 
 typedef struct mpc_ast_t {
@@ -328,8 +282,6 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav);
 void mpc_ast_traverse_free(mpc_ast_trav_t **trav);
 
 
-
-
 int mpc_ast_eq(mpc_ast_t *a, mpc_ast_t *b);
 
 mpc_val_t *mpcf_fold_ast(int n, mpc_val_t **as);
@@ -364,10 +316,6 @@ mpc_err_t *mpca_lang(int flags, const char *language, ...);
 mpc_err_t *mpca_lang_file(int flags, FILE *f, ...);
 mpc_err_t *mpca_lang_pipe(int flags, FILE *f, ...);
 mpc_err_t *mpca_lang_contents(int flags, const char *filename, ...);
-
-
-
-
 
 
 void mpc_print(mpc_parser_t *p);

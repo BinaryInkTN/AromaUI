@@ -726,7 +726,7 @@ class DocGenerator:
             '<a class="kz-btn-light" '
             'onclick="showPage(SLUG_TO_ID[\'architecture-overview\'],\'Overview\',null)">'
             '<span>Explore</span><i data-lucide="arrow-up-right"></i></a>'
-            '<a class="kz-btn-light" '
+            '<a class="kz-btn-tonal" '
             'onclick="showPage(SLUG_TO_ID[\'platform-feature-matrix\'],\'Backend Abstraction\',null)">'
             '<span>Compare platforms</span><i data-lucide="arrow-up-right"></i></a>'
             '</div>'
@@ -756,15 +756,32 @@ class DocGenerator:
             "</div></div></div>"
         )
         kf_sec = (
-            '<div class="kz-wrap"><div class="kf-card">'
+            '<div class="kz-wrap"><div class="kf-card kf-card-oss">'
             '<div class="kf-copy">'
             "<h2>Free and open source</h2>"
             "<p>AromaUI is MIT licensed. Use it in commercial products, modify "
             "it freely, and shape its future together with the community.</p>"
-            '<a class="kz-btn-dark" '
+            '<a class="kz-btn-tonal" '
             'href="https://github.com/BinaryInkTN/AromaUI" '
             'target="_blank" rel="noopener">'
             '<span>Learn more</span><i data-lucide="arrow-up-right"></i></a>'
+            "</div></div></div>"
+        )
+        kz_python = (
+            '<div class="kz-wrap kz-python-wrap"><div class="kf-card kf-card-python">'
+            '<div class="kf-copy">'
+            "<h2>Write apps in Python</h2>"
+            "<p>Use the full AromaUI widget set from Python. A single command "
+            "builds the bindings from the C headers and keeps them updated. "
+            "No wrappers to write by hand.</p>"
+            '<a class="kz-btn-light" '
+            'onclick="showPage(SLUG_TO_ID[\'python-bindings\'],\'Reference\',null)">'
+            '<span>Read the Python bindings guide</span><i data-lucide="arrow-up-right"></i></a>'
+            "</div>"
+            '<div class="kf-art" aria-hidden="true">'
+            '<div class="kf-chip kf-chip-1"></div>'
+            '<div class="kf-chip kf-chip-2"></div>'
+            '<div class="kf-chip kf-chip-3"></div>'
             "</div></div></div>"
         )
 
@@ -776,6 +793,7 @@ class DocGenerator:
             {kz_test}
             {kf_sec}
             </div>
+            {kz_python}
             {browse_html}
         </div>
         '''
@@ -1738,44 +1756,55 @@ body.has-announce .announce-bar{{display:flex}}
   font-size:13px;
   color:var(--ms-secondary);
 }}
-/* ===== Home business banner + platform explainer (Kotlin-style sections) ===== */
+/* ===== Home hero: neutral flagship hero (theme-aware) ===== */
 .kz-wrap{{max-width:var(--rail);margin:0 auto;padding:64px 40px 0;}}
 .kz-banner{{
   position:relative;overflow:hidden;
-  background:#0B0F1A;color:#FFFFFF;
-  border-radius:16px;
+  background:var(--ms-surface);
+  color:var(--ms-heading);
+  border:1px solid var(--ms-border);
+  border-radius:28px;
   display:grid;grid-template-columns:1.1fr .9fr;
   min-height:340px;
+  box-shadow:var(--ms-elev-1);
 }}
 .kz-banner-copy{{padding:48px 0 48px 48px;display:flex;flex-direction:column;justify-content:center;}}
-.kz-banner-brand{{display:flex;align-items:center;gap:12px;margin:0 0 28px;font-size:22px;font-weight:700;color:#FFFFFF;}}
+.kz-banner-brand{{display:flex;align-items:center;gap:12px;margin:0 0 20px;font-size:22px;font-weight:600;letter-spacing:-.01em;color:var(--ms-heading);}}
 .kz-banner-brand img{{width:30px;height:30px;display:block;}}
-.kz-banner-title{{margin:0 0 40px;font-family:var(--fd);font-size:clamp(30px,4vw,46px);font-weight:800;line-height:1.12;letter-spacing:-.02em;color:#FFFFFF;max-width:16ch;}}
+.kz-banner-title{{margin:0 0 28px;font-family:var(--fd);font-size:clamp(32px,4vw,48px);font-weight:600;line-height:1.08;letter-spacing:-.022em;color:var(--ms-heading);max-width:16ch;}}
 .kz-btn-light{{
   align-self:flex-start;display:inline-flex;align-items:center;gap:10px;
-  height:48px;padding:0 30px;border-radius:999px;
-  background:#FFFFFF;color:#0B0F1A;
-  font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;
+  height:40px;padding:0 24px;border-radius:20px;
+  background:var(--ms-blue);color:#FFFFFF;border:1px solid var(--ms-blue);
+  font-size:14px;font-weight:600;letter-spacing:.01em;text-decoration:none;white-space:nowrap;cursor:pointer;
+  box-shadow:var(--ms-elev-1);
 }}
-.kz-btn-light:hover{{background:#E8F1FD;color:#0B0F1A;text-decoration:none;}}
+.kz-btn-light:hover{{background:var(--ms-blue-hover);border-color:var(--ms-blue-hover);color:#FFFFFF;text-decoration:none;}}
 .kz-btn-light svg{{width:18px;height:18px;}}
+.kz-btn-tonal{{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:10px;
+  height:40px;padding:0 24px;border-radius:20px;
+  background:var(--ms-surface-2);color:var(--ms-heading);border:1px solid var(--ms-border-dark);
+  font-size:14px;font-weight:600;letter-spacing:.01em;text-decoration:none;white-space:nowrap;cursor:pointer;
+}}
+.kz-btn-tonal:hover{{background:var(--ms-surface-2);border-color:var(--ms-blue);color:var(--ms-link);text-decoration:none;}}
+.kz-btn-tonal svg{{width:18px;height:18px;}}
 .kz-art{{position:relative;overflow:hidden;min-height:280px;}}
-.kz-chip{{position:absolute;border-radius:36px;border:1px solid rgba(140,190,255,.4);filter:blur(1px);}}
-.kz-chip-1{{width:170px;height:420px;left:36px;top:-40px;background:rgba(30,90,200,.5);}}
-.kz-chip-2{{width:170px;height:420px;left:190px;top:-70px;background:rgba(46,124,246,.55);}}
-.kz-chip-3{{width:170px;height:420px;left:344px;top:-100px;background:rgba(76,194,255,.5);}}
-.kz-chip-4{{width:150px;height:300px;left:470px;top:-60px;background:rgba(120,200,255,.45);}}
-[data-theme="light"] .kz-chip-1{{background:rgba(90,160,255,.6);border-color:rgba(170,205,255,.55);}}
-[data-theme="light"] .kz-chip-2{{background:rgba(130,195,255,.62);border-color:rgba(185,215,255,.6);}}
-[data-theme="light"] .kz-chip-3{{background:rgba(150,210,255,.6);border-color:rgba(195,225,255,.6);}}
-[data-theme="light"] .kz-chip-4{{background:rgba(170,220,255,.55);border-color:rgba(205,230,255,.6);}}
-/* ===== Banner hero shapes (abstract 3D composition) ===== */
-.kz-sh-panel{{position:absolute;right:-80px;top:-60px;width:80%;height:140%;transform:rotate(10deg);background:#F94F8A;border-radius:28px;}}
-.kz-sh-planet{{position:absolute;left:30%;top:28%;width:120px;height:120px;border-radius:50%;background:#8B5CF6;box-shadow:0 0 90px rgba(139,92,246,.55),20px 26px 50px rgba(0,0,0,.45);}}
-.kz-sh-ring1{{position:absolute;left:calc(30% - 50px);top:calc(28% + 25px);width:220px;height:70px;border:2px solid rgba(255,255,255,.55);border-radius:50%;transform:rotate(-18deg);}}
-.kz-sh-ring2{{position:absolute;left:calc(30% - 90px);top:calc(28% + 10px);width:300px;height:100px;border:2px solid rgba(255,255,255,.3);border-radius:50%;transform:rotate(-18deg);}}
-.kz-sh-moon{{position:absolute;left:calc(30% + 159px);top:calc(28% + 49px);width:22px;height:22px;border-radius:50%;background:#FFFFFF;box-shadow:0 4px 14px rgba(0,0,0,.4);}}
-.kz-sh-star{{position:absolute;border-radius:50%;background:#FFFFFF;}}
+.kz-chip{{position:absolute;border-radius:28px;border:1px solid var(--ms-border);filter:none;}}
+.kz-chip-1{{width:170px;height:420px;left:36px;top:-40px;background:var(--ms-note-bg);}}
+.kz-chip-2{{width:170px;height:420px;left:190px;top:-70px;background:var(--ms-surface-2);}}
+.kz-chip-3{{width:170px;height:420px;left:344px;top:-100px;background:var(--md-surf-4);}}
+.kz-chip-4{{width:150px;height:300px;left:470px;top:-60px;background:var(--ms-surface-2);}}
+[data-theme="dark"] .kz-banner{{background:var(--ms-surface);border-color:var(--ms-border);color:var(--ms-heading);box-shadow:none;}}
+[data-theme="dark"] .kz-banner-title{{color:var(--ms-heading);}}
+[data-theme="dark"] .kz-banner-brand{{color:var(--ms-heading);}}
+/* ===== Banner hero shapes: neutral theme tones ===== */
+.kz-sh-panel{{position:absolute;right:-80px;top:-60px;width:80%;height:140%;transform:rotate(10deg);background:var(--ms-surface-2);border-radius:28px;}}
+.kz-sh-planet{{position:absolute;left:30%;top:28%;width:120px;height:120px;border-radius:50%;background:var(--ms-blue);box-shadow:var(--ms-elev-2);}}
+.kz-sh-ring1{{position:absolute;left:calc(30% - 50px);top:calc(28% + 25px);width:220px;height:70px;border:2px solid var(--ms-border-dark);border-radius:50%;transform:rotate(-18deg);}}
+.kz-sh-ring2{{position:absolute;left:calc(30% - 90px);top:calc(28% + 10px);width:300px;height:100px;border:2px solid var(--ms-border);border-radius:50%;transform:rotate(-18deg);}}
+.kz-sh-moon{{position:absolute;left:calc(30% + 159px);top:calc(28% + 49px);width:22px;height:22px;border-radius:50%;background:var(--ms-secondary);box-shadow:var(--ms-elev-1);}}
+.kz-sh-star{{position:absolute;border-radius:50%;background:var(--ms-tertiary);opacity:.6;}}
 .kz-sh-star.s1{{right:12%;top:14%;width:6px;height:6px;}}
 .kz-sh-star.s2{{right:26%;top:64%;width:4px;height:4px;opacity:.8;}}
 .kz-sh-star.s3{{left:8%;top:20%;width:5px;height:5px;opacity:.9;}}
@@ -1784,11 +1813,12 @@ body.has-announce .announce-bar{{display:flex}}
 .kz-plat p{{margin:0 0 32px;font-size:16px;line-height:1.7;color:var(--ms-secondary);max-width:52ch;}}
 .kz-btn-dark{{
   display:inline-flex;align-items:center;gap:10px;
-  height:48px;padding:0 30px;border-radius:999px;
-  background:#101418;color:#FFFFFF;
-  font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;
+  height:40px;padding:0 24px;border-radius:20px;
+  background:var(--ms-blue);color:#FFFFFF;border:1px solid var(--ms-blue);
+  font-size:14px;font-weight:600;letter-spacing:.01em;text-decoration:none;white-space:nowrap;cursor:pointer;
+  box-shadow:var(--ms-elev-1);
 }}
-.kz-btn-dark:hover{{background:#23272E;color:#FFFFFF;text-decoration:none;}}
+.kz-btn-dark:hover{{background:var(--ms-blue-hover);border-color:var(--ms-blue-hover);color:#FFFFFF;text-decoration:none;}}
 .kz-tree{{width:100%;height:auto;display:block;}}
 .kz-tree text{{font-family:var(--fd);}}
 .kz-t-hot{{fill:#2E7CF6;}}
@@ -1798,8 +1828,12 @@ body.has-announce .announce-bar{{display:flex}}
 .kz-t-leaf-t{{fill:#323130;font-size:14px;font-weight:600;}}
 [data-theme="dark"] .kz-plat h2{{color:#F3F2F1;}}
 [data-theme="dark"] .kz-plat p{{color:#B9B9C0;}}
-[data-theme="dark"] .kz-btn-dark{{background:#F3F2F1;color:#101418;}}
-[data-theme="dark"] .kz-btn-dark:hover{{background:#FFFFFF;color:#101418;}}
+[data-theme="dark"] .kz-btn-dark{{background:var(--ms-blue);border-color:var(--ms-blue);color:#FFFFFF;}}
+[data-theme="dark"] .kz-btn-dark:hover{{background:var(--ms-blue-hover);border-color:var(--ms-blue-hover);color:#FFFFFF;}}
+[data-theme="dark"] .kz-btn-light{{background:var(--ms-blue);border-color:var(--ms-blue);color:#FFFFFF;}}
+[data-theme="dark"] .kz-btn-light:hover{{background:var(--ms-blue-hover);border-color:var(--ms-blue-hover);color:#FFFFFF;}}
+[data-theme="dark"] .kz-btn-tonal{{background:var(--ms-surface-2);border-color:var(--ms-border-dark);color:var(--ms-heading);}}
+[data-theme="dark"] .kz-btn-tonal:hover{{border-color:var(--ms-blue);color:var(--ms-link);}}
 [data-theme="dark"] .kz-t-line{{stroke:#4A5160;}}
 [data-theme="dark"] .kz-t-leaf{{fill:#262B36;}}
 [data-theme="dark"] .kz-t-leaf-t{{fill:#E8EAF0;}}
@@ -1822,36 +1856,41 @@ body.has-announce .announce-bar{{display:flex}}
 @media(max-width:900px){{
   .welcome-page .kz-duo{{grid-template-columns:1fr;padding:48px 20px 0;}}
 }}
-/* ===== Home community + open-source sections ===== */
+/* ===== Home feature cards: neutral flagship cards, theme-aware dark ===== */
+.kf-icon{{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:48px;height:48px;border-radius:16px;margin-bottom:20px;
+  background:var(--ms-note-bg);color:var(--ms-blue);border:1px solid var(--ms-border);
+}}
+.kf-icon i,.kf-icon svg{{width:24px;height:24px;}}
+[data-theme="dark"] .kf-icon{{background:#1E2A4A;color:#7AA2FF;border-color:#35353B;}}
 .kf-card{{
   position:relative;overflow:hidden;
-  margin-top:88px;border-radius:16px;
-  background:#EFF1F4;color:#101418;
+  margin-top:32px;border-radius:28px;
+  background:var(--ms-surface);color:var(--ms-heading);
+  border:1px solid var(--ms-border);
+  box-shadow:var(--ms-elev-1);
   display:grid;grid-template-columns:1.1fr .9fr;
   min-height:320px;
 }}
-.kf-copy{{padding:48px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;}}
-.kf-copy h2{{margin:0 0 12px;font-family:var(--fd);font-size:clamp(26px,3vw,34px);font-weight:800;letter-spacing:-.02em;color:#101418;}}
-.kf-copy p{{margin:0 0 28px;font-size:15px;line-height:1.65;color:#4A4E57;max-width:52ch;}}
+.kf-copy{{padding:40px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;}}
+.kf-copy h2{{margin:0 0 12px;font-family:var(--fd);font-size:clamp(24px,2.8vw,32px);font-weight:600;letter-spacing:-.01em;line-height:1.2;color:var(--ms-heading);}}
+.kf-copy p{{margin:0 0 24px;font-size:15px;line-height:1.65;color:var(--ms-secondary);max-width:52ch;}}
 .kf-art{{position:relative;overflow:hidden;min-height:260px;}}
-.kf-chip{{position:absolute;border-radius:32px;border:1px solid rgba(140,190,255,.45);filter:blur(1px);}}
-.kf-chip-1{{width:150px;height:380px;left:30px;top:-60px;background:rgba(30,90,200,.55);}}
-.kf-chip-2{{width:150px;height:380px;left:170px;top:-90px;background:rgba(46,124,246,.6);}}
-.kf-chip-3{{width:150px;height:380px;left:310px;top:-120px;background:rgba(76,194,255,.55);}}
-[data-theme="dark"] .kf-card{{background:#161C28;}}
-.welcome-page .kf-card-test{{background:#7C3AED;}}
-.welcome-page .kf-card-test .kf-copy h2{{color:#FFFFFF;}}
-.welcome-page .kf-card-test .kf-copy p{{color:rgba(255,255,255,.88);}}
-.welcome-page .kf-card-test .kf-chip{{border-color:rgba(255,255,255,.35);}}
-.welcome-page .kf-card-test .kf-chip-1{{background:rgba(255,255,255,.14);}}
-.welcome-page .kf-card-test .kf-chip-2{{background:rgba(255,255,255,.10);}}
-.welcome-page .kf-card-test .kf-chip-3{{background:rgba(255,255,255,.18);}}
-[data-theme="dark"] .welcome-page .kf-card-test{{background:#4C1D95;}}
-[data-theme="dark"] .kf-copy h2{{color:#F3F2F1;}}
+.kf-chip{{position:absolute;border-radius:28px;border:1px solid var(--ms-border);filter:none;}}
+.kf-chip-1{{width:150px;height:380px;left:30px;top:-60px;background:var(--ms-note-bg);}}
+.kf-chip-2{{width:150px;height:380px;left:170px;top:-90px;background:var(--ms-surface-2);}}
+.kf-chip-3{{width:150px;height:380px;left:310px;top:-120px;background:var(--md-surf-4);}}
+[data-theme="dark"] .kf-card{{background:#222226;border-color:#35353B;box-shadow:none;}}
+[data-theme="dark"] .kf-copy h2{{color:#FFFFFF;}}
 [data-theme="dark"] .kf-copy p{{color:#B9B9C0;}}
+.welcome-page .kf-card-test,.welcome-page .kf-card-oss,.welcome-page .kf-card-python{{background:var(--ms-surface);border-color:var(--ms-border);}}
+[data-theme="dark"] .welcome-page .kf-card-test,[data-theme="dark"] .welcome-page .kf-card-oss,[data-theme="dark"] .welcome-page .kf-card-python{{background:#222226;border-color:#35353B;}}
+.welcome-page .kz-python-wrap{{max-width:var(--rail);margin:0 auto;padding:48px 40px 0;}}
+.welcome-page .kf-card-python{{margin-top:0;}}
 @media(max-width:900px){{
-  .kf-card{{grid-template-columns:1fr;margin-top:64px;}}
-  .kf-copy{{padding:36px 28px;}}
+  .kf-card{{grid-template-columns:1fr;margin-top:24px;}}
+  .kf-copy{{padding:32px 24px;}}
   .kf-art{{min-height:200px;}}
 }}
 .m3-btn-filled,.m3-btn-outlined{{

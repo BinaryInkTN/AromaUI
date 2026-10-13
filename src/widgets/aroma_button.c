@@ -578,10 +578,6 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
             float gap = (button->label[0] != '\0' && button->icon[0] != '\0') ? (float)button->icon_padding : 0;
 
 
-
-
-
-
             float raw_text_w = 0.0f;
             if (button->label[0] != '\0' && button->font)
             {
@@ -618,7 +614,6 @@ void aroma_button_draw(AromaNode *button_node, size_t window_id)
             float content_start_x = button->rect.x + (button->rect.width - total_w) / 2.0f;
             if (content_start_x < button->rect.x + padding)
                 content_start_x = button->rect.x + padding;
-
 
 
             bool clipped = false;

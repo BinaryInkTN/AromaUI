@@ -1,23 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef ESP32
 
 #ifndef AROMA_VULKAN_TEXT_H

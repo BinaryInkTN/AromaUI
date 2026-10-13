@@ -138,7 +138,7 @@ aroma_ui_set_back_callback(on_back, NULL);
 
 Backends invoke `aroma_ui_handle_back_press()` for you. It dispatches `EVENT_TYPE_BACK_PRESS` to the event root first, then runs the callback if unconsumed. Return `true` to stay in the app. Call `aroma_ui_handle_back_press()` yourself from a custom on-screen back button to reuse the same path. See [Android Back Button](../backend-abstraction-layer/android/Back-Button.md).
 
-## Live demo
+## Live Demonstration
 
 ```incense-demo tabs
 ```
@@ -146,7 +146,7 @@ Backends invoke `aroma_ui_handle_back_press()` for you. It dispatches `EVENT_TYP
 ```incense-demo list
 ```
 
-## What's Next
+## Next Steps
 
 - Learn [Input & Controls](Input-and-Control-Widgets.md) for interactive elements.
 - Explore the [Map Widget](Map-Widget.md) for geographic data.

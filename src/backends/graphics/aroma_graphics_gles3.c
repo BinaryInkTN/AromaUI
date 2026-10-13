@@ -121,9 +121,6 @@ typedef struct
     GLuint text_vertex_shader;
 
 
-
-
-
     GLuint snap_tex;
     int snap_w;
     int snap_h;
@@ -136,9 +133,6 @@ typedef struct
     CachedFrameState frame_cache;
     ShapeBatch batch;
     mat4x4 projection;
-
-
-
 
 
 #define GLES3_SCISSOR_STACK_MAX 16
@@ -532,7 +526,6 @@ static void flush_shape_batch(void)
                        (const GLfloat *)ctx.frame_cache.projection);
 
 
-
     glUniform1f(ctx.shape_uniforms.blurRadius, 0.0f);
     glUniform2f(ctx.shape_uniforms.blurTexel, 0.0f, 0.0f);
     glUniform1f(ctx.shape_uniforms.blurLod, 0.0f);
@@ -924,11 +917,6 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
 
-
-
-
-
-
     float half_len = length * 0.5f + thickness * 0.5f;
     float half_thick = thickness * 0.5f;
 
@@ -941,11 +929,6 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
     batch_try_append(window_id, BATCH_MODE_LINE,
                      length + thickness, thickness, 0.0f, 0.0f,
                      round_cap ? 1 : 0, 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
-
-
-
-
-
 
 
     float local_corners[4][2] = {
@@ -965,10 +948,6 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
     }
 
     Vertex *v = &ctx.batch.vertices[ctx.batch.count];
-
-
-
-
 
 
     static const int corner_index[6] = {0, 1, 2, 1, 3, 2};
@@ -1002,18 +981,12 @@ static void draw_arc(size_t window_id, int cx, int cy, int radius,
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
 
-
-
     float outer_extent = (float)radius + (float)thickness * 0.5f;
     float box_size = outer_extent * 2.0f;
 
     batch_try_append(window_id, BATCH_MODE_ARC,
                      box_size, box_size, (float)radius, (float)thickness,
                      0, 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
-
-
-
-
 
 
     assert(ctx.batch.count == 0 &&
@@ -1067,7 +1040,6 @@ void unload_image(unsigned int texture_id)
         glDeleteTextures(1, &texture_id);
     __image_size_forget(texture_id);
 }
-
 
 
 #define AROMA_GLES3_TRACKED_IMAGES 256
@@ -1472,7 +1444,6 @@ void draw_image_uv(size_t window_id, int x, int y, int width, int height,
     Vertex *v = &ctx.batch.vertices[ctx.batch.count];
 
 
-
     fill_quad_vertices(v, x0, y0, x1, y1, 1.0f, 1.0f, 1.0f, 1.0f);
     ctx.batch.count += VERTS_PER_QUAD;
 }
@@ -1520,11 +1491,6 @@ static void gles3_set_clip(int x, int y, int w, int h)
         if (platform && platform->get_window_size)
             platform->get_window_size(fallback_window, &window_width, &window_height);
     }
-
-
-
-
-
 
 
     int gl_y = window_height - y - h;
@@ -1575,12 +1541,6 @@ static void gles3_clear_clip(void)
         ctx.scissor_depth--;
     gles3_apply_scissor_top();
 }
-
-
-
-
-
-
 
 
 static void gles3_blur_backdrop(size_t window_id, int x, int y,
@@ -1666,7 +1626,6 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     blend_enabled = glIsEnabled(GL_BLEND);
     glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src);
     glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst);
-
 
 
     float fx0 = (float)cx, fy0 = (float)cy;

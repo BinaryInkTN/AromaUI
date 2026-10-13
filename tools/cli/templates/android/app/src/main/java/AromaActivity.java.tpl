@@ -130,8 +130,8 @@ public class AromaActivity extends NativeActivity {
                     out = AromaHelper.copyUriToCache(this, uri, requestCode == REQ_PICK_IMAGE ? "aroma_pick_" : "aroma_doc_");
                 }
             } else if (requestCode == REQ_CAPTURE_PHOTO) {
-                // Prefer the MediaStore file offered via EXTRA_OUTPUT (full
-                // resolution); fall back to the thumbnail bitmap.
+                
+                
                 Uri pending = AromaHelper.takeCaptureOutputUri();
                 if (pending != null) {
                     try {

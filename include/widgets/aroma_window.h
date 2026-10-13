@@ -18,11 +18,6 @@ void aroma_window_get_size(AromaNode* window_node, int* width, int* height);
 void aroma_window_destroy(AromaNode* window_node);
 
 
-
-
-
-
-
 void aroma_window_set_fullscreen(AromaNode* window_node, bool enable);
 
 #ifdef __cplusplus

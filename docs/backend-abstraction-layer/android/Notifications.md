@@ -2,11 +2,11 @@
 
 Notifications post to the system tray through `NotificationManager`. On API 26 and newer every notification belongs to a channel. Create the channel once, then post any number of notifications into it.
 
-## Setup first
+## Prerequisites
 
 Posting needs nothing on older releases. On API 33 and newer the app must hold `android.permission.POST_NOTIFICATIONS`, requested at runtime with [Permissions](Permissions.md). The template manifest already declares it. Use `aroma_android_notify_enabled` to check whether the user muted the app.
 
-## Importance levels
+## Importance Levels
 
 | Constant | Value | Meaning |
 |---|---|---|
@@ -44,7 +44,7 @@ void download_done(void) {
 
 **Sources:** [include/aroma_android.h835-839](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L835-L839) [include/aroma_android.h874-908](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L874-L908)
 
-## Next
+## Next Steps
 
 * Read [Permissions](Permissions.md) for requesting `POST_NOTIFICATIONS` on API 33+.
 * Read [System UI](System-UI.md) for toast and vibration feedback.

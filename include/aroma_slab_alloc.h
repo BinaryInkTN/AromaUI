@@ -1,10 +1,5 @@
 
 
-
-
-
-
-
 #ifndef AROMA_SLAB_ALLOC_H
 #define AROMA_SLAB_ALLOC_H
 
@@ -26,13 +21,9 @@ extern "C" {
 #define AROMA_WIDGET_BUCKET_SIZES {32, 64, 128, 256, 512, 1024, 2048}
 
 
-
-
 typedef struct  AromaFreeSlot {
     struct AromaFreeSlot* next;
 } AromaFreeSlot;
-
-
 
 
 typedef struct  AromaSlabAllocatorPage {
@@ -40,8 +31,6 @@ typedef struct  AromaSlabAllocatorPage {
     struct AromaSlabAllocatorPage* next_page;
     uint8_t is_stack_page;
 } AromaSlabAllocatorPage;
-
-
 
 
 typedef struct  AromaSlabAllocator {
@@ -52,8 +41,6 @@ typedef struct  AromaSlabAllocator {
     size_t total_allocated;
     size_t total_freed;
 } AromaSlabAllocator;
-
-
 
 
 typedef struct  AromaMemorySystem {
@@ -73,31 +60,16 @@ void* __slab_pool_alloc(AromaSlabAllocator* pool);
 void __slab_pool_free(AromaSlabAllocator* pool, void* object);
 
 
-
-
-
-
-
 void* aroma_widget_alloc(size_t size);
-
-
-
 
 
 void aroma_widget_free(void* widget);
 
 
-
-
-
 void aroma_memory_system_init(void);
 
 
-
-
 void aroma_memory_system_destroy(void);
-
-
 
 
 void aroma_memory_system_stats(void);

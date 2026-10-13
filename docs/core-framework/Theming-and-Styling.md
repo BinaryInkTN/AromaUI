@@ -1,7 +1,7 @@
 
 AromaUI's theming system provides centralized control over colors, typography, spacing, and shadows. It supports built-in presets (Material, Dark, High Contrast) and runtime theme switching.
 
-## Quick Start
+## Getting Started
 
 ```c
 // Use a built-in dark theme
@@ -31,7 +31,7 @@ aroma_button_apply_style(btn, &style);
 | `AromaTheme` | Top-level container | Combines Palette, Spacing, Typography |
 | `AromaStyle` | Component styling | State colors (`idle`, `hover`, `active`), shadow |
 
-## Built-in Presets
+## Built-In Presets
 
 | Function | Description |
 |---|---|
@@ -64,7 +64,7 @@ aroma_style_apply_shadow(&style, &shadow);
 
 Presets: `aroma_shadow_create_soft()`, `aroma_shadow_create_subtle()`, `aroma_shadow_create_deep()`
 
-## How Themes Apply
+## Theme Application
 
 1. Set a global theme with `aroma_ui_set_theme(&theme)`
 2. `aroma_ui_set_theme()` invalidates every window and requests a redraw,
@@ -76,7 +76,7 @@ Presets: `aroma_shadow_create_soft()`, `aroma_shadow_create_subtle()`, `aroma_sh
    `aroma_gauge_set_colors()`), which opts that widget out
 4. Call `aroma_style_create_from_theme(&theme)` to map theme colors to a
    widget's state colors
-5. The widget uses these colors during its `draw_cb`
+5. The widget uses these colors when drawing
 
 Helpers for theme-aware code:
 
@@ -108,7 +108,7 @@ The theme system exposes these functions for runtime customization:
 
 Widgets follow the live global theme on every draw. Override per-widget appearance with an explicit setter (e.g. `aroma_button_set_colors()`); the override persists across theme switches for that widget.
 
-## Live demo
+## Live Demonstration
 
 Toggle the docs light/dark switch and watch this preview follow it. The
 dropdown at the top lists every built-in theme - picking one re-themes the
@@ -117,7 +117,7 @@ whole preview instantly:
 ```incense-demo theming
 ```
 
-## What's Next
+## Next Steps
 
 - Explore [Widget Library](../widget-library/Layout-and-Navigation-Widgets.md) to see theming in action.
 - Learn [Rendering](Rendering-Pipeline-and-DrawList.md) for draw optimization.

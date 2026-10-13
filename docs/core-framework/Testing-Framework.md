@@ -17,7 +17,7 @@ aroma_test_shutdown(&t);
 
 `aroma_test_set_default_delay(ms)` makes every simulated event wait first. `aroma_test_set_default_timeout(ms)` sets the timeout used by all `TRY_*` macros without an explicit timeout (default 5000 ms).
 
-## Emulated input
+## Simulated Input
 
 ```c
 aroma_test_mouse_click(t.root, 100, 120, AROMA_TEST_BUTTON_LEFT);
@@ -56,7 +56,7 @@ aroma_test_key_event(AROMA_KEY_PRESS, tb, key, mods, delay_ms);
 
 Wait helpers for async UI state: `aroma_test_wait_visible()`, `aroma_test_wait_hidden()`, `aroma_test_wait_focused()`.
 
-## Checks: verify / compare / try / fail / skip
+## Verification Checks
 
 Abort-style macros for `void` test functions (a failure records, prints `file:line`, and returns):
 
@@ -85,7 +85,7 @@ AROMA_TEST_TRY_COMPARE_INT_WITH_TIMEOUT(a, b, ms);        // + relational _NE/_L
 
 `aroma_test_begin(name)` / `aroma_test_end()` track the current test for messages; `aroma_test_current_func()`, `aroma_test_current_failed()`, `aroma_test_current_resolved()`, and `aroma_test_stats(&p, &f, &s)` expose results. `AROMA_TCHECK()` remains for the older continue-style suites.
 
-## Data-driven tests
+## Data-Driven Tests
 
 ```c
 aroma_test_data_clear();
@@ -105,7 +105,7 @@ aroma_test_bench_result(&metric);
 aroma_bench_metric_name(m);
 ```
 
-## Runner
+## Test Runner
 
 ```c
 AROMA_TEST_CASE(name) { /* test */ }   // auto-registers the case
@@ -116,7 +116,7 @@ AROMA_TEST_MAIN()                       // main() calling aroma_test_run()
 
 `aroma_test_run(argc, argv)` supports `--list` and `--filter=SUBSTR`, prints `PASS:`/`FAIL:`/`SKIP:` per case (`name:tag` per data row) plus totals, and returns the failure count.
 
-## Spies, warnings, test data
+## Test Spies and Diagnostics
 
 `AromaTestSpy` observes events before widget handlers consume them (priority 2000, never consumes): `aroma_test_spy_start/stop/clear/count/wait`.
 
@@ -129,7 +129,7 @@ aroma_test_find_data("file.txt");
 
 No resource-extraction equivalent exists (Aroma has no bundled resource system); point `AROMA_TESTDATA` at a directory to resolve files.
 
-## Notes
+## Additional Notes
 
 - Coordinates are in the same space as widget rects. `aroma_test_center()` / `aroma_test_rect()` / `aroma_test_hit()` help resolve them.
 - Mouse injection hit-tests at press and release separately, like the real backends. Pressing inside and releasing outside does not activate buttons.

@@ -1,7 +1,7 @@
 
 Start here. On Linux, the fastest path is the GUI installer. No cloning, no toolchain setup.
 
-## Recommended: download the GUI installer for Linux
+## Recommended: Download the GUI Installer for Linux
 
 [Download aroma-lavender-linux.tar.xz (v0.0.2)](https://github.com/BinaryInkTN/AromaUI/releases/download/v0.0.2/aroma-lavender-linux.tar.xz)
 
@@ -107,7 +107,11 @@ python3 bin/aroma create MyApp
 cd MyApp
 ```
 
-You get this layout:
+When asked for a language, pick `1` for C (the default) or `2` for
+Python. To skip the question, use `python3 bin/aroma create MyApp --python`.
+
+You get this layout (C shown; Python projects have `src/main.py` plus a
+native bootstrap instead of a desktop `CMakeLists.txt`):
 
 * `src/main.c`: app entry point
 * `CMakeLists.txt`: build config for Linux and Web
@@ -131,7 +135,7 @@ make -j$(nproc)
 ./MyApp
 ```
 
-A window opens with "Hello, World!" and a counter that updates each second. If the build fails, see Common errors below.
+A window opens with "Hello, World!" and a counter that updates each second. If the build fails, see Troubleshooting below.
 
 ### 5. Build for Web
 
@@ -155,7 +159,7 @@ python3 ../bin/aroma run android --emu
 
 Use `--release` or `--aab` only for store builds.
 
-## Your first C app
+## Your First C Application
 
 `aroma create` gives you this working program in `src/main.c`:
 
@@ -215,7 +219,7 @@ The pattern is always the same:
 4. Loop with `aroma_ui_process_events()` and `aroma_ui_render()`.
 5. Clean up with `aroma_ui_shutdown()`.
 
-## Common errors
+## Troubleshooting
 
 * `cmake: command not found`: install CMake, then open a new terminal.
 * Empty clone or missing headers: you cloned without `--recursive`. Run `git submodule update --init --recursive`.
@@ -224,7 +228,7 @@ The pattern is always the same:
 * `Not an Aroma project (no android/ directory)`: run Android commands inside the folder created by `aroma create`.
 * Sandbox shows an error: read the status bar. Fix the line it points to, then click Run.
 
-## What's next
+## Next Steps
 
 * Read [Architecture Overview](Architecture-Overview.md) to learn how nodes, layout, and rendering fit together.
 * Browse [Input and Controls](../widget-library/Input-and-Control-Widgets.md) for buttons, text, sliders, and lists.

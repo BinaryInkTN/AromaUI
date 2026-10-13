@@ -69,11 +69,11 @@ height = aroma_android_dp_to_px(height);
         return NULL;
     }
     aroma_node_set_draw_cb(node, aroma_progressbar_draw);
-   
+
     #ifdef ESP32
     aroma_node_invalidate(node);
     #endif
-   
+
     return node;
 }
 
@@ -118,7 +118,7 @@ if (bar->use_theme_colors) {
         bar->indicator_color = theme.colors.primary;
     }
 
-    
+
     gfx->fill_rectangle(window_id, bar->rect.x, bar->rect.y, bar->rect.width, bar->rect.height,
                         bar->track_color, true, bar->corner_radius);
 

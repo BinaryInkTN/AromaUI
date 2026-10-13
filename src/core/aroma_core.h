@@ -2,10 +2,6 @@
 #define AROMA_CORE_H
 
 
-
-
-
-
 #include "aroma_common.h"
 #include "aroma_event.h"
 #include "aroma_font.h"

@@ -41,7 +41,7 @@ void rfid_teardown(void) {
 
 **Sources:** [include/aroma_android.h](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl)
 
-## Next
+## Next Steps
 
 * Read [NFC](NFC.md) for NDEF text payloads from the same taps.
 * Read [Permissions](Permissions.md) for the NFC declaration.

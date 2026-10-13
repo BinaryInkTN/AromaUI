@@ -17,12 +17,6 @@
 #endif
 
 
-
-
-
-
-
-
 static inline int tdp(int v)
 {
 #ifdef __ANDROID__
@@ -187,7 +181,6 @@ static void cal_month_year(const AromaCalendar *c, int off, int *y, int *m)
         (*y)++;
     }
 }
-
 
 
 static int cal_pick(AromaCalendar *c, int x, int y, int *month_off,
@@ -1205,7 +1198,6 @@ void aroma_calendar_destroy(AromaNode *node)
         node->node_widget_ptr = NULL;
     }
 }
-
 
 
 void aroma_calendar_set_popup(AromaNode *n, bool popup)

@@ -252,8 +252,6 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
     }
 
 
-
-
     aroma_font_lock();
     FT_Error error = FT_Load_Char(face, 'M', FT_LOAD_RENDER);
     if (error) {
@@ -274,13 +272,6 @@ void gles3_text_renderer_load_font(GLES3TextRenderer* renderer, FT_Face face) {
     {
         GlyphAtlas* atlas = &renderer->atlases[i];
         glBindTexture(GL_TEXTURE_2D, atlas->texture_id);
-
-
-
-
-
-
-
 
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, renderer->atlas_width, renderer->atlas_height,

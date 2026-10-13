@@ -66,12 +66,6 @@ static inline void _css_to_canvas_scale(double *out_sx, double *out_sy)
 {
 
 
-
-
-
-
-
-
     double css_w = 0.0, css_h = 0.0;
     emscripten_get_element_css_size("#canvas", &css_w, &css_h);
 

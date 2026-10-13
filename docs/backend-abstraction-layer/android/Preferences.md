@@ -35,7 +35,7 @@ if (first) {
 
 **Sources:** [include/aroma_android.h750-826](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L750-L826) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl1413-1463](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L1413-1463)
 
-## Next
+## Next Steps
 
 * Read [Device APIs](Device-APIs.md) for file storage paths.
 * Read [System UI](System-UI.md) for user visible feedback.

@@ -105,7 +105,6 @@ static void __dialog_update_rect(AromaDialog *dlg)
     {
 
 
-
         int max_w = win_w - 2 * dialog_dp(AROMA_DIALOG_SCREEN_MARGIN_DP);
         int max_h = win_h - 2 * dialog_dp(AROMA_DIALOG_SCREEN_MARGIN_DP);
         if (max_w < 1)
@@ -448,9 +447,6 @@ AromaNode *aroma_dialog_get_content_area(AromaNode *dialog_node)
 }
 
 
-
-
-
 static size_t dialog_utf8_step(const char *s)
 {
     unsigned char c = (unsigned char)*s;
@@ -487,7 +483,6 @@ static void dialog_draw_wrapped(AromaGraphicsInterface *gfx, size_t window_id,
     const char *p = text;
     char line[1024];
     size_t line_len = 0;
-
 
 
     bool truncated = false;

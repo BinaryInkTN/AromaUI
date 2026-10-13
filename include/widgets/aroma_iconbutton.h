@@ -10,10 +10,10 @@ extern "C" {
 #endif
 
 typedef enum {
-    ICON_BUTTON_STANDARD,    
-    ICON_BUTTON_FILLED,      
-    ICON_BUTTON_TONAL,       
-    ICON_BUTTON_OUTLINED     
+    ICON_BUTTON_STANDARD,
+    ICON_BUTTON_FILLED,
+    ICON_BUTTON_TONAL,
+    ICON_BUTTON_OUTLINED
 } AromaIconButtonVariant;
 
 typedef struct  AromaIconButton AromaIconButton;
@@ -42,4 +42,4 @@ void aroma_iconbutton_destroy(AromaNode* button_node);
 #ifdef __cplusplus
 }
 #endif
-#endif 
+#endif

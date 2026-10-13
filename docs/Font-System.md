@@ -1,7 +1,7 @@
 
 AromaUI's font system loads, manages, and renders typography across Linux, Android, Web, and embedded targets.
 
-## Quick Start
+## Getting Started
 
 ```c
 // Load from bundled Ubuntu font
@@ -58,7 +58,7 @@ AromaFont *font = aroma_font_create_from_memory(ttf, len, px);
 - **Web/WASM**: Uses Emscripten's file system for font loading, or memory buffers for portability.
 - **Android**: Bridges to system font services via JNI when needed.
 
-## What's Next
+## Next Steps
 
 - Explore [Theming](core-framework/Theming-and-Styling.md) for typography configuration.
 - Learn [Rendering](core-framework/Rendering-Pipeline-and-DrawList.md) for text draw optimization.

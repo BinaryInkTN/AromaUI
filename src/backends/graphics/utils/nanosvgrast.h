@@ -1,27 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef NANOSVGRAST_H
 #define NANOSVGRAST_H
 #ifndef ESP32
@@ -36,28 +14,7 @@ extern "C" {
 typedef struct  NSVGrasterizer NSVGrasterizer;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 NSVGrasterizer* nsvgCreateRasterizer(void);
-
-
-
-
-
-
-
-
 
 
 void nsvgRasterize(NSVGrasterizer* r,
@@ -921,8 +878,6 @@ static void nsvg__fillScanline(unsigned char* scanline, int len, int x0, int x1,
 }
 
 
-
-
 static void nsvg__fillActiveEdges(unsigned char* scanline, int len, NSVGactiveEdge* e, int maxWeight, int* xmin, int* xmax, char fillRule)
 {
 
@@ -1074,7 +1029,6 @@ static void nsvg__scanlineSolid(unsigned char* dst, int count, unsigned char* co
 	} else if (cache->type == NSVG_PAINT_RADIAL_GRADIENT) {
 
 
-
 		float fx, fy, dx, gx, gy, gd;
 		float* t = cache->xform;
 		int i, cr, cg, cb, ca;
@@ -1137,7 +1091,6 @@ static void nsvg__rasterizeSortedEdges(NSVGrasterizer *r, float tx, float ty, fl
 
 			float scany = (float)(y*NSVG__SUBSAMPLES + s) + 0.5f;
 			NSVGactiveEdge **step = &active;
-
 
 
 			while (*step) {
@@ -1331,47 +1284,6 @@ static void nsvg__initPaint(NSVGcachedPaint* cache, NSVGpaint* paint, float opac
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void nsvgRasterize(NSVGrasterizer* r,
 				   NSVGimage* image, float tx, float ty, float scale,
 				   unsigned char* dst, int w, int h, int stride)
@@ -1435,8 +1347,6 @@ void nsvgRasterize(NSVGrasterizer* r,
                 r->nedges = 0;
 
                 nsvg__flattenShapeStroke(r, shape, scale);
-
-
 
 
                 for (i = 0; i < r->nedges; i++) {

@@ -25,7 +25,6 @@ typedef struct   AromaCard
     uint32_t shadow_color;
 
 
-
     float blur_radius;
     bool use_theme_colors;
     void (*click_callback)(void *user_data);
@@ -134,8 +133,6 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
                             card->rect.width, card->rect.height,
                             card->shadow_color, true, card->border_radius);
     }
-
-
 
 
     if (card->type == CARD_TYPE_GLASS && card->blur_radius > 0.0f &&

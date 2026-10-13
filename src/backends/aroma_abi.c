@@ -150,7 +150,7 @@ static void drawlist_proxy_unload_image(unsigned int texture_id)
 
 #ifndef ESP32
 static unsigned int drawlist_proxy_load_image_from_memory(unsigned char* data, size_t binary_length)
-#else 
+#else
 static unsigned int drawlist_proxy_load_image_from_memory(const uint16_t* data, size_t binary_length)
 #endif
 {
@@ -265,7 +265,6 @@ static void drawlist_proxy_shutdown(void)
         real->shutdown();
     }
 }
-
 
 
 void drawlist_proxy_graphics_set_clip(int x, int y, int w, int h) {

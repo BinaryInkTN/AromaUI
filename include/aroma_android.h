@@ -1,14 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
 #ifndef AROMA_ANDROID_H
 #define AROMA_ANDROID_H
 
@@ -23,13 +14,9 @@ extern "C" {
 #endif
 
 
-
-
 #define AROMA_BT_SCAN_MODE_PAIRED 0
 #define AROMA_BT_SCAN_MODE_NEW    1
 #define AROMA_BT_SCAN_MODE_ALL    2
-
-
 
 
 #define AROMA_BT_TYPE_UNKNOWN    0
@@ -46,14 +33,10 @@ extern "C" {
 #define AROMA_BT_TYPE_RASPBERRY  11
 
 
-
-
 #define AROMA_BT_MODE_DATA  0
 #define AROMA_BT_MODE_AUDIO 1
 #define AROMA_BT_MODE_HID   2
 #define AROMA_BT_MODE_AUTO  3
-
-
 
 
 #define AROMA_BT_BOND_NONE     10
@@ -61,29 +44,13 @@ extern "C" {
 #define AROMA_BT_BOND_BONDED   12
 
 
-
-
-
-
-
 JNIEnv* aroma_android_get_env();
-
-
-
 
 
 jobject aroma_android_get_activity();
 
 
-
-
-
 JavaVM* aroma_android_get_jvm();
-
-
-
-
-
 
 
 static inline bool aroma_android_check_permission(const char* permission_name) {
@@ -95,22 +62,12 @@ static inline bool aroma_android_check_permission(const char* permission_name) {
 }
 
 
-
-
-
-
-
 static inline void aroma_android_request_permission(const char** permissions, int permCount) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_request_permission) {
         platform->android_request_permission(permissions, permCount);
     }
 }
-
-
-
-
-
 
 
 static inline void aroma_android_toast(const char* msg, bool long_duration) {
@@ -121,9 +78,6 @@ static inline void aroma_android_toast(const char* msg, bool long_duration) {
 }
 
 
-
-
-
 static inline void aroma_android_open_settings() {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_open_settings) {
@@ -132,20 +86,12 @@ static inline void aroma_android_open_settings() {
 }
 
 
-
-
-
-
 static inline void aroma_android_vibrate(int ms) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_vibrate) {
         platform->android_vibrate(ms);
     }
 }
-
-
-
-
 
 
 static inline int aroma_android_get_battery_level() {
@@ -157,10 +103,6 @@ static inline int aroma_android_get_battery_level() {
 }
 
 
-
-
-
-
 static inline bool aroma_android_is_wifi_enabled() {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_is_wifi_enabled) {
@@ -170,20 +112,12 @@ static inline bool aroma_android_is_wifi_enabled() {
 }
 
 
-
-
-
-
 static inline void aroma_android_set_wifi_enabled(bool enabled) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_set_wifi_enabled) {
         platform->android_set_wifi_enabled(enabled);
     }
 }
-
-
-
-
 
 
 static inline bool aroma_android_is_bluetooth_enabled() {
@@ -195,12 +129,6 @@ static inline bool aroma_android_is_bluetooth_enabled() {
 }
 
 
-
-
-
-
-
-
 static inline int aroma_android_bt_scan(int scan_mode, void (*callback)(const char* addr, const char* name, int type, int rssi)) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_scan) {
@@ -210,23 +138,12 @@ static inline int aroma_android_bt_scan(int scan_mode, void (*callback)(const ch
 }
 
 
-
-
-
 static inline void aroma_android_bt_stop_scan(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_stop_scan) {
         platform->android_bt_stop_scan();
     }
 }
-
-
-
-
-
-
-
-
 
 
 static inline void aroma_android_bt_register_callbacks(void (*device_cb)(const char*, const char*, int, int),
@@ -241,13 +158,6 @@ static inline void aroma_android_bt_register_callbacks(void (*device_cb)(const c
 }
 
 
-
-
-
-
-
-
-
 static inline int aroma_android_bt_get_paired(char out_addrs[][18], char out_names[][248], int max_devices) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_get_paired) {
@@ -255,11 +165,6 @@ static inline int aroma_android_bt_get_paired(char out_addrs[][18], char out_nam
     }
     return 0;
 }
-
-
-
-
-
 
 
 static inline bool aroma_android_bt_pair(const char* addr) {
@@ -271,11 +176,6 @@ static inline bool aroma_android_bt_pair(const char* addr) {
 }
 
 
-
-
-
-
-
 static inline bool aroma_android_bt_unpair(const char* addr) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_unpair) {
@@ -283,11 +183,6 @@ static inline bool aroma_android_bt_unpair(const char* addr) {
     }
     return false;
 }
-
-
-
-
-
 
 
 static inline int aroma_android_bt_get_pair_state(const char* addr) {
@@ -299,11 +194,6 @@ static inline int aroma_android_bt_get_pair_state(const char* addr) {
 }
 
 
-
-
-
-
-
 static inline bool aroma_android_bt_connect(const char* addr) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_connect) {
@@ -311,12 +201,6 @@ static inline bool aroma_android_bt_connect(const char* addr) {
     }
     return false;
 }
-
-
-
-
-
-
 
 
 static inline bool aroma_android_bt_connect_with_mode(const char* addr, int mode) {
@@ -328,21 +212,12 @@ static inline bool aroma_android_bt_connect_with_mode(const char* addr, int mode
 }
 
 
-
-
-
 static inline void aroma_android_bt_disconnect(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_disconnect) {
         platform->android_bt_disconnect();
     }
 }
-
-
-
-
-
-
 
 
 static inline int aroma_android_bt_send(const char* data, int len) {
@@ -354,10 +229,6 @@ static inline int aroma_android_bt_send(const char* data, int len) {
 }
 
 
-
-
-
-
 static inline bool aroma_android_bt_is_connected(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_is_connected) {
@@ -365,10 +236,6 @@ static inline bool aroma_android_bt_is_connected(void) {
     }
     return false;
 }
-
-
-
-
 
 
 static inline int aroma_android_bt_get_device_type(void) {
@@ -380,10 +247,6 @@ static inline int aroma_android_bt_get_device_type(void) {
 }
 
 
-
-
-
-
 static inline const char* aroma_android_bt_get_device_name(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_get_device_name) {
@@ -391,10 +254,6 @@ static inline const char* aroma_android_bt_get_device_name(void) {
     }
     return NULL;
 }
-
-
-
-
 
 
 static inline int aroma_android_bt_get_current_mode(void) {
@@ -406,10 +265,6 @@ static inline int aroma_android_bt_get_current_mode(void) {
 }
 
 
-
-
-
-
 static inline const char* aroma_android_bt_get_mode_name(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_bt_get_mode_name) {
@@ -417,9 +272,6 @@ static inline const char* aroma_android_bt_get_mode_name(void) {
     }
     return NULL;
 }
-
-
-
 
 
 static inline void aroma_android_launch_camera() {
@@ -430,20 +282,12 @@ static inline void aroma_android_launch_camera() {
 }
 
 
-
-
-
 static inline void aroma_android_launch_gallery() {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_launch_gallery) {
         platform->android_launch_gallery();
     }
 }
-
-
-
-
-
 
 
 static inline jobject aroma_android_get_system_service(const char* service_name) {
@@ -455,10 +299,6 @@ static inline jobject aroma_android_get_system_service(const char* service_name)
 }
 
 
-
-
-
-
 static inline const char* aroma_android_get_internal_path() {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_get_internal_path) {
@@ -466,10 +306,6 @@ static inline const char* aroma_android_get_internal_path() {
     }
     return NULL;
 }
-
-
-
-
 
 
 static inline const char* aroma_android_get_external_path() {
@@ -481,13 +317,6 @@ static inline const char* aroma_android_get_external_path() {
 }
 
 
-
-
-
-
-
-
-
 static inline float aroma_android_get_density(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_get_density) {
@@ -495,10 +324,6 @@ static inline float aroma_android_get_density(void) {
     }
     return 1.0f;
 }
-
-
-
-
 
 
 static inline int aroma_android_get_density_dpi(void) {
@@ -510,10 +335,6 @@ static inline int aroma_android_get_density_dpi(void) {
 }
 
 
-
-
-
-
 static inline float aroma_android_get_scaled_density(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_get_scaled_density) {
@@ -521,11 +342,6 @@ static inline float aroma_android_get_scaled_density(void) {
     }
     return 1.0f;
 }
-
-
-
-
-
 
 
 static inline int aroma_android_dp_to_px(int dp) {
@@ -537,11 +353,6 @@ static inline int aroma_android_dp_to_px(int dp) {
 }
 
 
-
-
-
-
-
 static inline int aroma_android_px_to_dp(int px) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_px_to_dp) {
@@ -549,11 +360,6 @@ static inline int aroma_android_px_to_dp(int px) {
     }
     return px;
 }
-
-
-
-
-
 
 
 static inline int aroma_android_sp_to_px(int sp) {
@@ -565,11 +371,6 @@ static inline int aroma_android_sp_to_px(int sp) {
 }
 
 
-
-
-
-
-
 static inline int aroma_android_px_to_sp(int px) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_px_to_sp) {
@@ -577,12 +378,6 @@ static inline int aroma_android_px_to_sp(int px) {
     }
     return px;
 }
-
-
-
-
-
-
 
 
 static inline float aroma_android_dp_to_px_f(float dp) {
@@ -597,11 +392,6 @@ static inline float aroma_android_dp_to_px_f(float dp) {
 }
 
 
-
-
-
-
-
 static inline float aroma_android_sp_to_px_f(float sp) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_sp_to_px_f) {
@@ -612,9 +402,6 @@ static inline float aroma_android_sp_to_px_f(float sp) {
     }
     return sp;
 }
-
-
-
 
 
 static inline float aroma_android_px_to_dp_f(float px) {
@@ -630,11 +417,6 @@ static inline float aroma_android_px_to_dp_f(float px) {
 }
 
 
-
-
-
-
-
 static inline void aroma_android_get_available_size_dp(int *width_dp, int *height_dp) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_get_available_size_dp) {
@@ -644,11 +426,6 @@ static inline void aroma_android_get_available_size_dp(int *width_dp, int *heigh
         *height_dp = 0;
     }
 }
-
-
-
-
-
 
 
 static inline void aroma_android_get_screen_size_inches(float *width_inches, float *height_inches) {
@@ -662,10 +439,6 @@ static inline void aroma_android_get_screen_size_inches(float *width_inches, flo
 }
 
 
-
-
-
-
 static inline float aroma_android_get_screen_diagonal_inches(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_get_screen_diagonal_inches) {
@@ -673,10 +446,6 @@ static inline float aroma_android_get_screen_diagonal_inches(void) {
     }
     return 0.0f;
 }
-
-
-
-
 
 
 static inline const char* aroma_android_get_screen_size_category(void) {
@@ -688,10 +457,6 @@ static inline const char* aroma_android_get_screen_size_category(void) {
 }
 
 
-
-
-
-
 static inline float aroma_android_get_xdpi(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_get_xdpi) {
@@ -699,10 +464,6 @@ static inline float aroma_android_get_xdpi(void) {
     }
     return 160.0f;
 }
-
-
-
-
 
 
 static inline float aroma_android_get_ydpi(void) {
@@ -714,23 +475,12 @@ static inline float aroma_android_get_ydpi(void) {
 }
 
 
-
-
-
-
-
-
-
-
 static inline void aroma_android_lock_orientation(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_lock_orientation) {
         platform->android_lock_orientation();
     }
 }
-
-
-
 
 
 static inline void aroma_android_unlock_orientation(void) {
@@ -741,18 +491,12 @@ static inline void aroma_android_unlock_orientation(void) {
 }
 
 
-
-
-
 static inline void aroma_android_set_orientation_portrait(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_set_orientation_portrait) {
         platform->android_set_orientation_portrait();
     }
 }
-
-
-
 
 
 static inline void aroma_android_set_orientation_landscape(void) {
@@ -763,19 +507,12 @@ static inline void aroma_android_set_orientation_landscape(void) {
 }
 
 
-
-
-
 static inline void aroma_android_set_orientation_sensor(void) {
     AromaPlatformInterface* platform = aroma_get_platform_interface();
     if (platform && platform->android_set_orientation_sensor) {
         platform->android_set_orientation_sensor();
     }
 }
-
-
-
-
 
 
 static inline int aroma_android_get_current_orientation(void) {
@@ -785,10 +522,6 @@ static inline int aroma_android_get_current_orientation(void) {
     }
     return -1;
 }
-
-
-
-
 
 
 static inline bool aroma_android_is_orientation_locked(void) {
@@ -1640,9 +1373,6 @@ static inline const char* aroma_android_asset_cache_path(const char* name) {
     }
     return NULL;
 }
-
-
-
 
 
 #ifdef __cplusplus

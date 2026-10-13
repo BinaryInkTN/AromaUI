@@ -1,24 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "widgets/aroma_image.h"
 #include "core/aroma_logger.h"
 #include "core/aroma_slab_alloc.h"
@@ -263,8 +244,6 @@ static bool aroma_image_point_in_bounds(AromaImage* image, int x, int y)
     return (x >= image->rect.x && x <= (image->rect.x + image->rect.width) &&
             y >= image->rect.y && y <= (image->rect.y + image->rect.height));
 }
-
-
 
 
 void aroma_image_apply_fetch_result(AromaNode *image_node, bool ok,

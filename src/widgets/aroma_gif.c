@@ -199,8 +199,6 @@ AromaNode* aroma_gif_create(AromaNode* parent, const char* gif_path, int x, int 
     if (!parent || !gif_path) return NULL;
 
 
-
-
     FILE* f = fopen(gif_path, "rb");
     if (!f) {
         LOG_ERROR("Could not open GIF file: %s", gif_path);

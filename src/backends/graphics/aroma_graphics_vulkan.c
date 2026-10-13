@@ -1327,11 +1327,6 @@ static void batch_add_rect(size_t window_id, int x, int y, int w, int h, uint32_
 }
 
 
-
-
-
-
-
 #ifndef VK_TWO_PI
 #define VK_TWO_PI 6.28318530717958647692f
 #endif
@@ -2217,7 +2212,6 @@ static void vk_draw_image_uv(size_t window_id, int x, int y, int width, int heig
     float x1 = x0 + (float)width, y1 = y0 + (float)height;
 
 
-
     float uu[6] = {u0, u1, u0, u1, u1, u0};
     float vv[6] = {1.0f - v0, 1.0f - v0, 1.0f - v1, 1.0f - v0, 1.0f - v1, 1.0f - v1};
     for (int i = 0; i < 6; i++)
@@ -2307,8 +2301,6 @@ static void vk_apply_stack_top(void)
 static void vk_set_clip(int x, int y, int w, int h)
 {
     flush_shape_batch();
-
-
 
 
     if (w < 0)

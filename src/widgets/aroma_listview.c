@@ -165,7 +165,6 @@ static void update_content_height(AromaListViewInternal *list)
     list->rect.height = list->viewport_height > 0 ? list->viewport_height : 1;
 
 
-
     if (list->self_node && list->self_node->parent_node &&
         aroma_container_is_scrollable(list->self_node->parent_node))
     {
@@ -179,9 +178,6 @@ static void update_content_height(AromaListViewInternal *list)
             content_y -= viewport->y;
 
 
-
-
-
             if (content_x < 0)
                 content_x = 0;
             if (content_y < 0)
@@ -189,12 +185,7 @@ static void update_content_height(AromaListViewInternal *list)
         }
 
 
-
-
         int content_width = content_x + list->rect.width;
-
-
-
 
 
         int trailing_reveal = list_dp(AROMA_LIST_TRAILING_REVEAL_DP);
@@ -329,11 +320,6 @@ static bool listview_handle_event(AromaEvent *ev, void *user_data)
     list_screen_origin(node, list, &screen_x, &screen_y);
     bounds.x = screen_x;
     bounds.y = screen_y;
-
-
-
-
-
 
 
     AromaNode *scroll_container = node->parent_node;
@@ -1074,7 +1060,6 @@ void aroma_listview_draw(AromaNode *node, size_t window_id)
 
         current_y += ih;
     }
-
 
 
 }

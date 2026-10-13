@@ -62,7 +62,6 @@ bool aroma_container_is_scrollable(AromaNode* node);
 void aroma_container_get_content_size(AromaNode* node, int* out_w, int* out_h);
 
 
-
 void aroma_container_update_auto_content_size(AromaNode* node);
 static inline void aroma_container_screen_to_content(AromaNode *container, int *x, int *y)
 {

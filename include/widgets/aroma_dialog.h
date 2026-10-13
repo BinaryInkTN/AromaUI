@@ -17,7 +17,6 @@ typedef enum {
 typedef struct  AromaDialog AromaDialog;
 
 
-
 AromaNode* aroma_dialog_create(AromaNode* parent, const char* title, const char* message, int width, int height, AromaDialogType type);
 
 
@@ -29,8 +28,6 @@ void aroma_dialog_hide(AromaNode* dialog_node);
 
 
 void aroma_dialog_set_font(AromaNode* dialog_node, AromaFont* font);
-
-
 
 
 void aroma_dialog_set_title(AromaNode* dialog_node, const char* title);

@@ -1902,10 +1902,6 @@ static void update_surface_size(void)
     g_height = h;
 
 
-
-
-
-
     g_phys_cached = false;
     cache_physical_screen_info(g_app);
 
@@ -1940,8 +1936,6 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event)
         {
             if (action == AKEY_EVENT_ACTION_DOWN)
             {
-
-
 
 
                 bool consumed = aroma_ui_handle_back_press();
@@ -2220,7 +2214,6 @@ static void term_display(void)
 }
 
 
-
 static int android_get_current_orientation(void)
 {
     if (!g_app || !g_app->activity)
@@ -2473,11 +2466,6 @@ void get_window_size(size_t window_id, int *window_width, int *window_height)
         *window_height = 0;
         return;
     }
-
-
-
-
-
 
 
     int viewport_width = 0;
@@ -3964,7 +3952,6 @@ static bool helper_string_to_buf(JNIEnv *env, jmethodID mid, char *out, size_t o
 }
 
 
-
 static void request_permissions_code(const char **permissions, int permCount, int requestCode)
 
 {
@@ -4121,7 +4108,6 @@ static void request_permissions_code(const char **permissions, int permCount, in
 }
 
 
-
 void impl_android_request_permission_cb(const char **permissions, int permCount, void (*cb)(const char *permission, bool granted))
 
 {
@@ -4169,7 +4155,6 @@ void impl_android_request_permission_cb(const char **permissions, int permCount,
 }
 
 
-
 static int media_slot_for_code(int code)
 
 {
@@ -4203,7 +4188,6 @@ static int media_slot_for_code(int code)
 }
 
 
-
 static void media_start_request(int code, void (*cb)(const char *path))
 
 {
@@ -4225,7 +4209,6 @@ static void media_start_request(int code, void (*cb)(const char *path))
     g_media_requests[slot].result_cb = cb;
 
 }
-
 
 
 void impl_android_pick_image(void (*cb)(const char *path))
@@ -4307,7 +4290,6 @@ void impl_android_pick_image(void (*cb)(const char *path))
 }
 
 
-
 void impl_android_capture_photo(void (*cb)(const char *path))
 
 {
@@ -4385,7 +4367,6 @@ void impl_android_capture_photo(void (*cb)(const char *path))
     detach_jni_env(attach);
 
 }
-
 
 
 void impl_android_open_document(const char *mime, void (*cb)(const char *path))
@@ -4471,7 +4452,6 @@ void impl_android_open_document(const char *mime, void (*cb)(const char *path))
 }
 
 
-
 static void impl_android_notify_channel(int id, const char *name, const char *desc, int importance)
 
 {
@@ -4529,7 +4509,6 @@ static void impl_android_notify_channel(int id, const char *name, const char *de
     detach_jni_env(attach);
 
 }
-
 
 
 static void impl_android_notify_show(int id, const char *channel, const char *title, const char *text)
@@ -4607,7 +4586,6 @@ static void impl_android_notify_show(int id, const char *channel, const char *ti
 }
 
 
-
 static void impl_android_notify_cancel(int id)
 
 {
@@ -4649,7 +4627,6 @@ static void impl_android_notify_cancel(int id)
 }
 
 
-
 static void impl_android_notify_cancel_all(void)
 
 {
@@ -4689,7 +4666,6 @@ static void impl_android_notify_cancel_all(void)
     detach_jni_env(attach);
 
 }
-
 
 
 static bool impl_android_notify_enabled(void)
@@ -4737,7 +4713,6 @@ static bool impl_android_notify_enabled(void)
 }
 
 
-
 static void impl_android_vibrate_effect(int ms, int amplitude)
 
 {
@@ -4777,7 +4752,6 @@ static void impl_android_vibrate_effect(int ms, int amplitude)
     detach_jni_env(attach);
 
 }
-
 
 
 static void impl_android_set_clipboard_text(const char *text)
@@ -4825,7 +4799,6 @@ static void impl_android_set_clipboard_text(const char *text)
 }
 
 
-
 static const char *impl_android_get_clipboard_text(void)
 
 {
@@ -4869,7 +4842,6 @@ static const char *impl_android_get_clipboard_text(void)
     return buf;
 
 }
-
 
 
 static void impl_android_share_text(const char *text, const char *title)
@@ -4933,7 +4905,6 @@ static void impl_android_share_text(const char *text, const char *title)
 }
 
 
-
 static void impl_android_set_immersive(bool enabled)
 
 {
@@ -4987,7 +4958,6 @@ static void impl_android_set_immersive(bool enabled)
 }
 
 
-
 static void impl_android_set_keep_screen_on(bool enabled)
 
 {
@@ -5039,7 +5009,6 @@ static void impl_android_set_keep_screen_on(bool enabled)
     detach_jni_env(attach);
 
 }
-
 
 
 static void impl_android_orient_call(int which, int mode)
@@ -5135,7 +5104,6 @@ static void impl_android_orient_call(int which, int mode)
 }
 
 
-
 static void impl_android_orient_lock_new(void)
 
 {
@@ -5143,7 +5111,6 @@ static void impl_android_orient_lock_new(void)
     impl_android_orient_call(0, 0);
 
 }
-
 
 
 static void impl_android_orient_unlock_new(void)
@@ -5155,7 +5122,6 @@ static void impl_android_orient_unlock_new(void)
 }
 
 
-
 static void impl_android_orient_portrait_new(void)
 
 {
@@ -5163,7 +5129,6 @@ static void impl_android_orient_portrait_new(void)
     impl_android_orient_call(1, 1);
 
 }
-
 
 
 static void impl_android_orient_landscape_new(void)
@@ -5175,7 +5140,6 @@ static void impl_android_orient_landscape_new(void)
 }
 
 
-
 static void impl_android_orient_sensor_new(void)
 
 {
@@ -5183,7 +5147,6 @@ static void impl_android_orient_sensor_new(void)
     impl_android_orient_call(1, 2);
 
 }
-
 
 
 static bool impl_android_orient_locked_new(void)
@@ -5243,7 +5206,6 @@ static bool impl_android_orient_locked_new(void)
 }
 
 
-
 void impl_android_sensor_register_callbacks(void (*cb)(int, float, float, float, long long))
 
 {
@@ -5251,7 +5213,6 @@ void impl_android_sensor_register_callbacks(void (*cb)(int, float, float, float,
     g_sensor_callbacks.sensor_cb = cb;
 
 }
-
 
 
 static void impl_android_sensor_start_new(int type, int rate_us, void (*cb)(int, float, float, float, long long))
@@ -5303,7 +5264,6 @@ static void impl_android_sensor_start_new(int type, int rate_us, void (*cb)(int,
 }
 
 
-
 static void impl_android_sensor_stop_new(int type)
 
 {
@@ -5343,7 +5303,6 @@ static void impl_android_sensor_stop_new(int type)
     detach_jni_env(attach);
 
 }
-
 
 
 static bool impl_android_sensor_available_new(int type)
@@ -5391,7 +5350,6 @@ static bool impl_android_sensor_available_new(int type)
 }
 
 
-
 static void impl_android_tts_speak_new(const char *text)
 
 {
@@ -5437,7 +5395,6 @@ static void impl_android_tts_speak_new(const char *text)
 }
 
 
-
 static void impl_android_tts_stop_new(void)
 
 {
@@ -5477,7 +5434,6 @@ static void impl_android_tts_stop_new(void)
     detach_jni_env(attach);
 
 }
-
 
 
 static bool impl_android_tts_is_speaking_new(void)
@@ -5523,7 +5479,6 @@ static bool impl_android_tts_is_speaking_new(void)
     return res == JNI_TRUE;
 
 }
-
 
 
 static const char *impl_android_simple_string_new(int which)
@@ -5665,7 +5620,6 @@ static const char *impl_android_simple_string_new(int which)
 }
 
 
-
 static long impl_android_simple_long_new(int which)
 
 {
@@ -5737,7 +5691,6 @@ static long impl_android_simple_long_new(int which)
 }
 
 
-
 static int impl_android_simple_int_new(int which)
 
 {
@@ -5799,7 +5752,6 @@ static int impl_android_simple_int_new(int which)
     return (int)res;
 
 }
-
 
 
 static bool impl_android_simple_bool_new(int which)
@@ -5889,7 +5841,6 @@ static bool impl_android_simple_bool_new(int which)
 }
 
 
-
 static void impl_android_wakelock_acquire_new(long timeout_ms)
 
 {
@@ -5931,7 +5882,6 @@ static void impl_android_wakelock_acquire_new(long timeout_ms)
 }
 
 
-
 static void impl_android_wakelock_release_new(void)
 
 {
@@ -5971,7 +5921,6 @@ static void impl_android_wakelock_release_new(void)
     detach_jni_env(attach);
 
 }
-
 
 
 static bool impl_android_torch_set_new(bool enabled)
@@ -6019,7 +5968,6 @@ static bool impl_android_torch_set_new(bool enabled)
 }
 
 
-
 void impl_android_btle_register_callbacks(
 
     void (*device_cb)(const char *, const char *, int),
@@ -6049,7 +5997,6 @@ void impl_android_btle_register_callbacks(
     g_ble_callbacks.write_cb = write_cb;
 
 }
-
 
 
 static void impl_android_btle_scan_new(int timeout_ms, const char *service_uuids)
@@ -6111,7 +6058,6 @@ static void impl_android_btle_scan_new(int timeout_ms, const char *service_uuids
 }
 
 
-
 static void impl_android_btle_stop_scan_new(void)
 
 {
@@ -6151,7 +6097,6 @@ static void impl_android_btle_stop_scan_new(void)
     detach_jni_env(attach);
 
 }
-
 
 
 static void impl_android_btle_connect_new(const char *addr)
@@ -6199,7 +6144,6 @@ static void impl_android_btle_connect_new(const char *addr)
 }
 
 
-
 static void impl_android_btle_disconnect_new(void)
 
 {
@@ -6239,7 +6183,6 @@ static void impl_android_btle_disconnect_new(void)
     detach_jni_env(attach);
 
 }
-
 
 
 static bool impl_android_btle_is_connected_new(void)
@@ -6287,7 +6230,6 @@ static bool impl_android_btle_is_connected_new(void)
 }
 
 
-
 static bool impl_android_btle_discover_new(void)
 
 {
@@ -6331,7 +6273,6 @@ static bool impl_android_btle_discover_new(void)
     return res == JNI_TRUE;
 
 }
-
 
 
 static bool impl_android_btle_gatt_op_new(int op, const char *svc, const char *chr_uuid, const char *data, int len, int arg)
@@ -6449,7 +6390,6 @@ static bool impl_android_btle_gatt_op_new(int op, const char *svc, const char *c
 }
 
 
-
 static bool impl_android_btle_read_new(const char *svc, const char *chr_uuid)
 
 {
@@ -6457,7 +6397,6 @@ static bool impl_android_btle_read_new(const char *svc, const char *chr_uuid)
     return impl_android_btle_gatt_op_new(0, svc, chr_uuid, NULL, 0, 0);
 
 }
-
 
 
 static bool impl_android_btle_write_new(const char *svc, const char *chr_uuid, const char *data, int len, int write_type)
@@ -6469,7 +6408,6 @@ static bool impl_android_btle_write_new(const char *svc, const char *chr_uuid, c
 }
 
 
-
 static bool impl_android_btle_notify_new(const char *svc, const char *chr_uuid, bool enable)
 
 {
@@ -6477,7 +6415,6 @@ static bool impl_android_btle_notify_new(const char *svc, const char *chr_uuid, 
     return impl_android_btle_gatt_op_new(2, svc, chr_uuid, NULL, 0, enable ? 1 : 0);
 
 }
-
 
 
 static const char * impl_android_get_locale_tag(void)

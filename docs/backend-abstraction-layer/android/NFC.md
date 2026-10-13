@@ -38,7 +38,7 @@ void scan_setup(void) {
 
 **Sources:** [include/aroma_android.h1242-1288](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L1242-L1288) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl2440-2507](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L2440-L2507)
 
-## Next
+## Next Steps
 
 * Read [App Setup](App-Setup.md) for the `AromaActivity` intent wiring.
 * Read [Permissions](Permissions.md) for the NFC declaration.

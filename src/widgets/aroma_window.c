@@ -1,24 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "widgets/aroma_window.h"
 #include "core/aroma_node.h"
 #include "core/aroma_slab_alloc.h"
@@ -128,7 +109,6 @@ void aroma_window_destroy(AromaNode* window_node) {
 
 
     aroma_event_unsubscribe(window_node->node_id, EVENT_TYPE_WINDOW_RESIZE, window_resize_handler);
-
 
 
     extern void __destroy_node_tree(AromaNode*);

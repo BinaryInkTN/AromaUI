@@ -1,29 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if !defined(_CRT_SECURE_NO_DEPRECATE) && defined(_MSC_VER)
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
@@ -318,8 +294,6 @@ static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_bu
     {
         return false;
     }
-
-
 
 
     for (i = 0; can_access_at_index(input_buffer, i); i++)
@@ -644,7 +618,6 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
     }
 
 
-
     for (i = 0; i < ((size_t)length); i++)
     {
         if (number_buffer[i] == decimal_point)
@@ -697,7 +670,6 @@ static unsigned parse_hex4(const unsigned char * const input)
 
     return h;
 }
-
 
 
 static unsigned char utf16_literal_to_utf8(const unsigned char * const input_pointer, const unsigned char * const input_end, unsigned char **output_pointer)
@@ -754,7 +726,6 @@ static unsigned char utf16_literal_to_utf8(const unsigned char * const input_poi
         }
 
 
-
         codepoint = 0x10000 + (((first_code & 0x3FF) << 10) | (second_code & 0x3FF));
     }
     else
@@ -762,8 +733,6 @@ static unsigned char utf16_literal_to_utf8(const unsigned char * const input_poi
         sequence_length = 6;
         codepoint = first_code;
     }
-
-
 
 
     if (codepoint < 0x80)
@@ -1373,7 +1342,6 @@ static cJSON_bool parse_value(cJSON * const item, parse_buffer * const input_buf
     }
 
 
-
     if (can_read(input_buffer, 4) && (strncmp((const char*)buffer_at_offset(input_buffer), "null", 4) == 0))
     {
         item->type = cJSON_NULL;
@@ -1607,7 +1575,6 @@ static cJSON_bool print_array(const cJSON * const item, printbuffer * const outp
     {
         return false;
     }
-
 
 
     output_pointer = ensure(output_buffer, 1);
@@ -1915,7 +1882,6 @@ CJSON_PUBLIC(int) cJSON_GetArraySize(const cJSON *array)
     }
 
 
-
     return (int)size;
 }
 
@@ -2034,7 +2000,6 @@ static cJSON_bool add_item_to_array(cJSON *array, cJSON *item)
     }
 
     child = array->child;
-
 
 
     if (child == NULL)
@@ -2394,7 +2359,6 @@ CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemViaPointer(cJSON * const parent, cJSON
     }
     else
     {
-
 
 
         if (replacement->prev != NULL)
@@ -3169,7 +3133,6 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
                     return false;
                 }
             }
-
 
 
             cJSON_ArrayForEach(b_element, b)

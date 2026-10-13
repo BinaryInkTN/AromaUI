@@ -103,7 +103,7 @@ is a single-select pill switcher with `Segment { text }` children;
 
 ## Live Preview Design Rules
 
-Every `incense-demo` preview below follows one strict system so all 19
+Every `incense-demo` preview below follows one strict system so all 23
 screens feel like they ship in the same OS:
 
 - **Headers**: one `large` title at `(20, 16)` plus one `small` subtitle
@@ -126,7 +126,8 @@ screens feel like they ship in the same OS:
 - **One screen, one app**: each preview clones a single recognizable
   flow (login, filter sheet, player, booking, settings, home, recipe,
   store, fitness, plan picker, alert, chat menu, feed, motion study,
-  appearance, widgets, trip map, photo grid, 3D studio) - no two share a layout formula.
+  appearance, widgets, trip map, photo grid, 3D studio, visit booking,
+  checkout, highlights) - no two share a layout formula.
 - **Motion**: every preview plays a staggered entrance on load - headers
   slide in (`slide_y`, `ease_out_cubic`), heroes and cards fade
   (`fade`, 600–800ms), primary buttons rise with `ease_out_back`.
@@ -260,7 +261,7 @@ Container {
     }
 }
 
-## What's Next
+## Next Steps
 
 - Learn the C APIs in [Widget Library](Layout-and-Navigation-Widgets.md).
 - Read [Core Framework](../core-framework/Scene-Graph-and-Node-System.md) to see how Incense maps to `AromaNode`.

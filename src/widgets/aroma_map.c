@@ -397,7 +397,6 @@ static void latlon_to_pixel(double lat, double lon, int zoom, double *px_x, doub
 }
 
 
-
 typedef struct
 {
     uint32_t node;
@@ -665,8 +664,6 @@ static void osrm_dijkstra(OSRMGraph *graph, uint32_t start, uint32_t end, uint32
         *path = NULL;
         return;
     }
-
-
 
 
     float *dist = malloc(graph->node_count * sizeof(float));
@@ -1383,10 +1380,6 @@ extern unsigned char *stbi_load(const char *filename, int *x, int *y, int *chann
 extern void stbi_image_free(void *retval_from_stbi_load);
 
 
-
-
-
-
 static void __map_apply_dark_filter(unsigned char *rgba, int width, int height)
 {
     if (!rgba || width <= 0 || height <= 0)
@@ -1661,7 +1654,6 @@ static void *tile_fetch_worker(void *arg)
                 continue;
             }
             char url[512];
-
 
 
             snprintf(url, sizeof(url), "https://tile.openstreetmap.org/%d/%d/%d.png", req.z, req.x, req.y);
@@ -1977,8 +1969,6 @@ static void update_chunks(struct AromaMapExtra *extra, int center_tile_x, int ce
         }
         else if (extra->chunks[i].z == z - 1)
         {
-
-
 
 
             int p_center_cx = (wrapped_center_tile_x / 2) / CHUNK_SIZE;
@@ -3717,7 +3707,6 @@ static void __map_draw(AromaNode *node, size_t window_id)
     bool theme_is_dark = ((r * 299 + g * 587 + b * 114) / 1000) < 128;
 
 
-
     uint64_t theme_version = aroma_theme_get_version();
     if (extra->theme_version != theme_version)
     {
@@ -4120,7 +4109,6 @@ void aroma_map_zoom_in(AromaNode *node)
         extra->display_px_x *= 2.0;
         extra->center_px_y *= 2.0;
         extra->display_px_y *= 2.0;
-
 
 
     }

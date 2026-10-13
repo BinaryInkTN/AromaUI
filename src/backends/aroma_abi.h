@@ -38,8 +38,6 @@ typedef struct AromaBackendABI {
 AromaGraphicsBackendType aroma_get_graphics_backend_type(void);
 
 
-
-
 bool aroma_graphics_supports_backdrop_blur(void);
 
 extern AromaBackendABI aroma_backend_abi;

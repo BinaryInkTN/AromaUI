@@ -1,36 +1,18 @@
 
 Every UI element in AromaUI is an `AromaNode`. Nodes form a tree, and the framework traverses this tree for layout, hit-testing, and rendering.
 
-## The AromaNode Struct
+## Node Structure
 
-```c
-struct AromaNode {
-    AromaNodeType node_type;        // NODE_TYPE_ROOT, NODE_TYPE_CONTAINER, NODE_TYPE_WIDGET
-    uint64_t node_id;
-    int32_t z_index;
-    float opacity;                  // animated by AROMA_ANIM_FADE
-    AromaNode *parent_node;
-    AromaNode **child_nodes;        // growable array (see limits below)
-    void *node_widget_ptr;          // widget-specific data (geometry lives here)
-    AromaNodeDrawFn draw_cb;        // void (*)(AromaNode *node, size_t window_id)
-    void (*destroy_cb)(struct AromaNode *node);
-    uint64_t child_count;
-    uint64_t child_capacity;
-    bool is_dirty;
-    bool subtree_dirty;
-    bool is_hidden;                 // set via aroma_node_set_hidden()
-    // ... plus AromaLayout layout hints
-};
-```
+Each node holds its type (root, container, or widget), a unique id,
+geometry, layout hints, visibility, Z-index, and opacity. You work with
+these through functions, never by touching fields directly.
 
 **Key limits:**
-- **128 children per node** (`AROMA_MAX_CHILD_NODES`) - growable array avoids per-node over-allocation
-- **64 properties per widget** - enforced by the Incense loader
-- **1024 dirty nodes per frame** (`AROMA_MAX_DIRTY_NODES`) - global dirty list capacity
+- **128 children per node** (`AROMA_MAX_CHILD_NODES`)
+- **64 properties per widget** in Incense markup
+- **1024 dirty nodes per frame** (`AROMA_MAX_DIRTY_NODES`)
 
-Geometry (`x, y, width, height`) lives in each widget's own struct and is
-reached through `aroma_node_get_rect(node)` - there is no `rect` field on
-`AromaNode` itself. Visibility is `is_hidden`, toggled with
+Read geometry with `aroma_node_get_rect(node)` and toggle visibility with
 `aroma_node_set_hidden()`.
 
 ## Node Lifecycle
@@ -42,14 +24,15 @@ AromaNode *container = aroma_container_create(root, 0, 0, 800, 480);
 ```
 
 Build nodes with the widget factory functions in `include/aroma_ui.h`
-(containers, buttons, labels, …). Nodes are allocated from a slab allocator. For embedded targets (ESP32), this avoids heap fragmentation. For desktop/web, standard `malloc` is used as a fallback.
+(containers, buttons, labels, …). The framework manages node memory for
+you, including on small embedded targets.
 
 ### Parenting
 
 Factories attach the new node to its parent automatically.
 
 - Child limit is enforced at 128 (`AROMA_MAX_CHILD_NODES`).
-- `subtree_dirty` propagates up to the root on invalidation.
+- Invalidating a node refreshes its whole branch up to the root.
 
 ### Destruction
 
@@ -57,9 +40,9 @@ Factories attach the new node to its parent automatically.
 aroma_ui_destroy_window(window);
 ```
 
-Destroying a window recursively destroys its subtree. Widgets can provide a `destroy_cb` to free internal state.
+Destroying a window recursively destroys its subtree.
 
-## Dirty-Region Tracking
+## Dirty Region Tracking
 
 Only dirty nodes are processed during layout and rendering.
 
@@ -67,30 +50,18 @@ Only dirty nodes are processed during layout and rendering.
 void aroma_node_invalidate(AromaNode *node);
 ```
 
-Sets `is_dirty = true` on the node and `subtree_dirty = true` on all ancestors. The renderer skips branches where `subtree_dirty` is false.
+Marks the node and refreshes its ancestors. The renderer skips branches that need no work.
 
 ## Memory Management
 
-### Slab Allocator
+Node and widget memory is managed for you in fixed pools, sized to run
+well on small embedded targets as well as desktops. There is nothing to
+configure; the limits listed above are the only constraints to design
+around.
 
-For embedded targets, AromaUI uses a slab allocator with pools ranging from 32 bytes to 2048 bytes. Widget data (e.g., `AromaListViewInternal`) is allocated from these pools.
+## Node APIs
 
-```mermaid
-flowchart LR
-    Request["aroma_widget_alloc(size)"] --> Check{"size <= 2048?"}
-    Check -->|Yes| Bucket["Find bucket index"]
-    Bucket --> Slab["__slab_pool_alloc()"]
-    Slab --> Pool["AromaSlabAllocator"]
-    Check -->|No| Malloc["standard malloc()"]
-```
-
-### Alignment
-
-`AromaNode` includes explicit padding to ensure 8-byte alignment, preventing bus errors on RISC architectures and WASM.
-
-## Internal APIs
-
-The framework exposes these lower-level functions for advanced use cases and internal machinery:
+Use these functions to arrange and control nodes directly:
 
 | Function | Role |
 |---|---|
@@ -104,7 +75,7 @@ The framework exposes these lower-level functions for advanced use cases and int
 
 Most applications should use the higher-level factory functions in `include/aroma_ui.h` instead of calling these directly.
 
-## What's Next
+## Next Steps
 
 - Learn how [Events](Event-System.md) are dispatched to nodes.
 - Understand [Layout](Layout-Engine.md) calculation.

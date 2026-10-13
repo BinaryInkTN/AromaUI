@@ -52,8 +52,6 @@ extern "C"
     bool aroma_3d_render_to_rect(const Aroma3DModel *model, const Aroma3DCamera *camera, int x, int y, int w, int h, int win_w, int win_h);
 
 
-
-
     void aroma_3d_set_antialiasing(bool enabled);
     bool aroma_3d_get_antialiasing(void);
 

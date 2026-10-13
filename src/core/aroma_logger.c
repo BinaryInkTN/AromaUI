@@ -143,10 +143,6 @@ void log_message(DebugLevel level, const char *file, int line, const char *func,
     #endif
 
 
-
-
-
-
 }
 
 void set_logging_enabled(bool enabled)
@@ -178,16 +174,6 @@ void save_log_file(const char *path)
 
 void print_stack_trace(void)
 {
-
-
-
-
-
-
-
-
-
-
 
 
 }

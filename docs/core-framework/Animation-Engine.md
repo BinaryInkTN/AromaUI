@@ -1,7 +1,7 @@
 
 AromaUI includes a lightweight animation engine for smooth property transitions. It interpolates values over time using easing functions and integrates with the dirty-region system to trigger redraws automatically.
 
-## Quick Start
+## Getting Started
 
 ```c
 // Animate a node sliding in from the left
@@ -102,7 +102,7 @@ The animation engine exposes these functions for property transitions:
 
 Animations update node properties directly and integrate with the dirty-region system. The layout engine picks up changes automatically during the next frame.
 
-## Live demo
+## Live Demonstration
 
 A mini "Now Playing" screen where every widget animates in with a different
 type and easing. The title drops from above (`slide_y`), the album card pops
@@ -115,7 +115,7 @@ jump - reload it to replay the entrance.
 ```incense-demo animation
 ```
 
-## What's Next
+## Next Steps
 
 - Learn how [Layout](Layout-Engine.md) resolves node positions.
 - See how [Rendering](Rendering-Pipeline-and-DrawList.md) draws animated nodes.

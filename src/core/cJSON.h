@@ -1,25 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef cJSON__h
 #define cJSON__h
 
@@ -33,23 +13,6 @@ extern "C"
 #endif
 
 #ifdef __WINDOWS__
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #define CJSON_CDECL __cdecl
@@ -132,11 +95,9 @@ typedef struct  __attribute__((packed, aligned(1))) cJSON_Hooks
 typedef int cJSON_bool;
 
 
-
 #ifndef CJSON_NESTING_LIMIT
 #define CJSON_NESTING_LIMIT 1000
 #endif
-
 
 
 #ifndef CJSON_CIRCULAR_LIMIT
@@ -148,7 +109,6 @@ CJSON_PUBLIC(const char*) cJSON_Version(void);
 
 
 CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks);
-
 
 
 CJSON_PUBLIC(cJSON *) cJSON_Parse(const char *value);
@@ -210,13 +170,11 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateArray(void);
 CJSON_PUBLIC(cJSON *) cJSON_CreateObject(void);
 
 
-
 CJSON_PUBLIC(cJSON *) cJSON_CreateStringReference(const char *string);
 
 
 CJSON_PUBLIC(cJSON *) cJSON_CreateObjectReference(const cJSON *child);
 CJSON_PUBLIC(cJSON *) cJSON_CreateArrayReference(const cJSON *child);
-
 
 
 CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count);
@@ -227,7 +185,6 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int co
 
 CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToArray(cJSON *array, cJSON *item);
 CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item);
-
 
 
 CJSON_PUBLIC(cJSON_bool) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item);
@@ -255,16 +212,10 @@ CJSON_PUBLIC(cJSON_bool) cJSON_ReplaceItemInObjectCaseSensitive(cJSON *object,co
 CJSON_PUBLIC(cJSON *) cJSON_Duplicate(const cJSON *item, cJSON_bool recurse);
 
 
-
-
-
 CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * const b, const cJSON_bool case_sensitive);
 
 
-
-
 CJSON_PUBLIC(void) cJSON_Minify(char *json);
-
 
 
 CJSON_PUBLIC(cJSON*) cJSON_AddNullToObject(cJSON * const object, const char * const name);

@@ -28,21 +28,6 @@ extern "C"
     } CanvasDrawMode;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     typedef struct
     {
         CanvasDrawMode draw_mode;
@@ -68,17 +53,6 @@ extern "C"
     } AromaCanvasOp;
 
 
-
-
-
-
-
-
-
-
-
-
-
 #define AROMA_CANVAS_MAX_OPS 64
 
     typedef struct
@@ -94,64 +68,10 @@ extern "C"
     void aroma_canvas_draw_text(AromaNode *node, const char *text, int x, int y, uint32_t color, AromaFont *font);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     void aroma_canvas_clear(AromaNode *node, uint32_t color);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     void aroma_canvas_draw_arc(AromaNode *node, int center_x, int center_y, int radius, float start_angle, float end_angle, uint32_t color, int thickness);
-
-
-
-
-
-
-
-
-
-
-
 
 
     void aroma_canvas_reset(AromaNode *node);

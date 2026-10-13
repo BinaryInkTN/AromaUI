@@ -15,12 +15,6 @@
 #endif
 
 
-
-
-
-
-
-
 static inline int tdp(int v)
 {
 #ifdef __ANDROID__
@@ -122,7 +116,6 @@ static int st_span(AromaStepper *s)
 }
 
 
-
 static int st_slot(AromaStepper *s, int k)
 {
     int v = s->value + k * s->step;
@@ -162,7 +155,6 @@ static void st_kill_timers(AromaStepper *s)
 }
 
 
-
 static int st_landed_value(AromaStepper *s, int rows)
 {
     int landed = s->value + rows * s->step;
@@ -182,8 +174,6 @@ static int st_landed_value(AromaStepper *s, int rows)
     }
     return landed;
 }
-
-
 
 
 static void st_commit_pending(AromaNode *node, AromaStepper *s)
@@ -263,8 +253,6 @@ static void st_snap(AromaNode *node, AromaStepper *s)
 }
 
 
-
-
 static void st_finish_drag(AromaNode *node, AromaStepper *s, float v)
 {
     float density = 1.0f;
@@ -299,8 +287,6 @@ static void st_finish_drag(AromaNode *node, AromaStepper *s, float v)
         st_snap(node, s);
     }
 }
-
-
 
 
 static bool st_tap_step(AromaNode *node, AromaStepper *s, int dir)
@@ -387,9 +373,6 @@ static bool st_handle(AromaEvent *e, void *ud)
 {
     if (!e || !e->target_node)
         return false;
-
-
-
 
 
     if (e->event_type == EVENT_TYPE_TOUCH_UP &&
@@ -485,9 +468,6 @@ static bool st_handle(AromaEvent *e, void *ud)
         if (!s->mouse_down)
             return in;
         {
-
-
-
 
 
             int rh = st_row_h(s);
@@ -646,10 +626,6 @@ static bool st_handle(AromaEvent *e, void *ud)
     case EVENT_TYPE_MOUSE_CLICK: {
 
 
-
-
-
-
         if (s->active_pointer_id != -1 || !in)
             break;
 
@@ -710,8 +686,6 @@ static bool st_handle(AromaEvent *e, void *ud)
         return true;
     }
     case EVENT_TYPE_MOUSE_SCROLL: {
-
-
 
 
         if (!in)
@@ -1009,7 +983,6 @@ void aroma_stepper_draw(AromaNode *node, size_t window_id)
                                    s->rect.height);
         float frac = s->offset_px / (float)rh;
         int sel_j = -(int)(frac > 0.0f ? frac + 0.5f : frac - 0.5f);
-
 
 
         for (int j = sel_j - 2; j <= sel_j + 2; j++) {

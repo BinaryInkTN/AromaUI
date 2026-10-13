@@ -21,7 +21,7 @@ aroma_gif_play(gif_node);  // start animation
 
 Images are loaded via stb_image and cached as GPU textures. GIFs maintain a frame timer for automatic playback.
 
-### Rounded corners
+### Rounded Corners
 
 Both widgets clip with anti-aliased rounded rectangles (GLES3; other
 backends draw square):
@@ -39,7 +39,7 @@ aroma_gif_set_corner_radius(gif, 16.0f);
   asynchronously on web builds (e.g. Pexels photos) and pop in when
   ready; place a `Card` behind the `Image` as a placeholder.
 
-### Scale modes
+### Scale Modes
 
 Like iOS contentMode / Android scaleType / CSS object-fit, the source
 pixels can map onto the widget rectangle three ways:
@@ -164,7 +164,7 @@ AromaNode *card = aroma_ui_card(root, 20, 20, 300, 100, CARD_TYPE_ELEVATED);
 | `CARD_TYPE_GLASS` | Frosted glass: blurs the backdrop in place, then draws a translucent tint with glossy edge |
 | `CARD_TYPE_OUTLINED` | Hollow with border |
 
-### Frosted glass
+### Frosted Glass
 
 Glass cards blur whatever was rendered behind them (backdrop blur) before
 drawing their translucent tint, so they read as frosted glass instead of
@@ -254,7 +254,7 @@ Dialog {
 ```incense-demo dialog
 ```
 
-## Live demo
+## Live Demonstration
 
 ```incense-demo cards
 ```
@@ -262,7 +262,7 @@ Dialog {
 ```incense-demo gauge
 ```
 
-## What's Next
+## Next Steps
 
 - Learn [Input & Controls](Input-and-Control-Widgets.md) for interactive widgets.
 - Explore [Layout & Navigation](Layout-and-Navigation-Widgets.md) for containers and scrolling.

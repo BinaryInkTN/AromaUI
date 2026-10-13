@@ -1,6 +1,6 @@
 > Android specific. This page only applies to Android builds. All functions here need `__ANDROID__`.
 
-## Entry point
+## Application Entry Point
 
 Every Android app starts in `android_main`. Register the native app state, then run the same `main` used on other platforms. Do not rename the `aroma_app` library.
 
@@ -43,7 +43,7 @@ The generated manifest declares `.AromaActivity`, a thin `NativeActivity` subcla
           android:configChanges="orientation|keyboardHidden|screenSize|density|screenLayout|smallestScreenSize">
 ```
 
-## JNI handles
+## JNI Accessors
 
 Use these to get raw JNI handles. Prefer the typed wrappers on other pages unless you write custom JNI code.
 
@@ -55,7 +55,7 @@ Use these to get raw JNI handles. Prefer the typed wrappers on other pages unles
 
 **Sources:** [include/aroma_ui.h1516-1525](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_ui.h#L1516-L1525) [tools/cli/templates/app/main.c.tpl63-71](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/app/main.c.tpl#L63-L71) [tools/cli/templates/android/app/src/main/AndroidManifest.xml](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/AndroidManifest.xml) [include/aroma_android.h65-81](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L65-L81) [src/backends/platforms/aroma_platform_android.c184-218](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L184-L218)
 
-## Next
+## Next Steps
 
 * Read [Permissions](Permissions.md) to request runtime permissions.
 * Read [Internals](Internals.md) to see how the backend uses these handles.

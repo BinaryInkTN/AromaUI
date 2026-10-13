@@ -20,13 +20,13 @@ flowchart LR
 
 **Sources:** [include/aroma_android.h1-20](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L1-L20) [src/backends/platforms/aroma_platform_android.c5029-5168](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L5029-L5168)
 
-## Pages in this section
+## Section Contents
 
 Read them in order. Each page covers one topic. The header range column tells you where each API lives in `aroma_android.h`.
 
 | Page | Topic | Header range |
 |---|---|---|
-| [App Setup](App-Setup.md) | Entry point, manifest, JNI handles | `aroma_ui.h` + `aroma_android.h` 65-81 |
+| [App Setup](App-Setup.md) | Entry point, manifest, native handles | `aroma_ui.h` + `aroma_android.h` 65-81 |
 | [Permissions](Permissions.md) | Check and request runtime permissions | `aroma_android.h` 84-108 |
 | [System UI](System-UI.md) | Toast, settings screen, vibration | `aroma_android.h` 111-144 |
 | [Bluetooth Scan](Bluetooth-Scan.md) | Scan modes, device types, discovery, callbacks | `aroma_android.h` 26-62, 197-257 |
@@ -41,9 +41,9 @@ Read them in order. Each page covers one topic. The header range column tells yo
 | [Device APIs](Device-APIs.md) | Battery, WiFi, camera, gallery, storage, services | `aroma_android.h` 146-183, 422-481 |
 | [Display](Display.md) | Density, units, screen size, orientation | `aroma_android.h` 484-749 |
 | [Preferences](Preferences.md) | SharedPreferences for settings | `aroma_android.h` 750-826 |
-| [Internals](Internals.md) | Backend lifecycle and Java bridge reference | `aroma_platform_android.c` |
+| [Internals](Internals.md) | Platform backend and Java bridge reference | `aroma_platform_android.c` |
 
-## Rule for all pages
+## Usage Rules
 
 Guard Android code with `#ifdef __ANDROID__`. Include `aroma_android.h` only inside that guard. The backend slots for these APIs are stubs on other platforms.
 

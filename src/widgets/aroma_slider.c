@@ -240,7 +240,7 @@ static bool __slider_default_mouse_handler(AromaEvent* event, void* user_data)
     if (!event || !event->target_node) return false;
     AromaSlider* slider = (AromaSlider*)event->target_node->node_widget_ptr;
     if (!slider) return false;
-    
+
      int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
     if (event->event_type == EVENT_TYPE_TOUCH_DOWN ||
@@ -259,7 +259,6 @@ static bool __slider_default_mouse_handler(AromaEvent* event, void* user_data)
         }
         cur = cur->parent_node;
     }
-    
 
 
     switch (event->event_type) {

@@ -129,7 +129,6 @@ static void __tabs_update_content_visibility(AromaTabs* tabs)
                 if (content_rect) {
 
 
-
                     aroma_node_update_layout(content,
                                            content_rect->x,
                                            content_rect->y,
@@ -472,8 +471,6 @@ bool aroma_tabs_setup_events(AromaNode* tabs_node, void (*on_redraw_callback)(vo
     if (!tabs_node) return false;
 
 
-
-
     aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_MOUSE_MOVE,
                          __tabs_handle_event, (void*)on_redraw_callback, 80);
     aroma_event_subscribe(tabs_node->node_id, EVENT_TYPE_MOUSE_EXIT,
@@ -682,8 +679,6 @@ void aroma_tabs_destroy(AromaNode* tabs_node)
             }
             tabs->content_counts[i] = 0;
         }
-
-
 
 
         aroma_widget_free(tabs);

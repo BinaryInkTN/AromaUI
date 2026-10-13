@@ -1,25 +1,21 @@
-> Android specific. This page only applies to Android builds. You do not call these directly. They implement the `AromaPlatformInterface` slots for Android.
+> Android specific. This page only applies to Android builds. You do not call anything here directly. It maps how the backend connects your app to the OS, which helps when tracking down device-specific behavior.
 
-Read this page when you debug the backend or change the Java bridge.
+## Platform Backend
 
-## Backend
-
-Each row maps to code in `aroma_platform_android.c`.
-
-* Lifecycle: `initialize` and `shutdown` set up and tear down EGL, the JNI bridge, and `AromaHelper`. `handle_cmd` handles `APP_CMD_*` events for surface, focus, memory, and destroy.
-* VSYNC: `choreographer_callback` and `request_frame` sync frames with the display through `AChoreographer`. No polling.
-* Display: `init_display`, `term_display`, `update_surface_size`, `create_window`, `make_context_current`, `swap_buffers`, `get_window_size`.
-* Input: `handle_input` turns `AInputEvent` values into `AromaEvent` values.
-* Keyboard: `android_show_keyboard` and `android_hide_keyboard` fill the `show_keyboard` and `hide_keyboard` slots.
-* Event loop: `run_event_loop` polls the native looper and dispatches sources.
-* Table: `aroma_platform_android` wires each `android_*` slot to its `impl_*` or `android_*` function. Slots cover open URL, intents, orientation, density, preferences, Bluetooth classic and BLE, toast, vibrate, permissions, camera, gallery, document picker, notifications, clipboard, sharing, sensors, TTS, device info, storage, and keyboard.
-* Results: `AromaActivity` forwards `onRequestPermissionsResult` and `onActivityResult` into `native_on_permission_result` and `native_on_activity_result`. Pending C callbacks are matched by request code.
+* Lifecycle: the backend sets up and tears down graphics, the Java bridge, and helpers as the activity starts and stops. Surface, focus, memory, and destroy events are handled for you.
+* Frames: rendering syncs with the display refresh, with no polling.
+* Display: window creation, sizing, orientation, and density just work, including surface changes on rotation.
+* Input: touches, keys, and the system back button arrive as framework events.
+* Keyboard: the on-screen keyboard shows and hides on request.
+* Device features: one backend covers open URL, intents, preferences, Bluetooth classic and BLE, toast, vibrate, permissions, camera, gallery, document picker, notifications, clipboard, sharing, sensors, TTS, device info, storage, and keyboard.
+* Results: permission answers and picker results are routed back to your callbacks automatically.
 
 **Sources:** [src/backends/platforms/aroma_platform_android.c86-184](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L86-L184) [src/backends/platforms/aroma_platform_android.c1036-1551](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L1036-L1551) [src/backends/platforms/aroma_platform_android.c3170-3258](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L3170-L3258)
 
-## Java bridge
+## Java Bridge
 
-`AromaHelper` is copied from the `.tpl` template into each app with the app package applied. Call `init` once before any other call.
+`AromaHelper` is copied from the project template into each app with the
+app package applied. It is initialized for you at startup.
 
 | Member | What it does |
 |---|---|
@@ -49,11 +45,11 @@ Each row maps to code in `aroma_platform_android.c`.
 
 **Sources:** [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl112-167](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L112-L167) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl1359-1463](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L1359-1463)
 
-## Build
+## Building
 
 The CLI builds these sources with Gradle through `aroma build android`. It runs them on devices or emulators with `aroma run android --emu`. It scaffolds the Java bridge and manifest with `aroma create`. See [Building and Deployment](../../cli-toolchain/Building-and-Deployment.md) and [Project Creation](../../cli-toolchain/Project-Creation-and-Scaffolding.md).
 
-## Next
+## Next Steps
 
 * Read [Platform Backends](../Platform-Backends.md) for the cross platform interface.
 * Read [Overview](Overview.md) for the full Android page list.

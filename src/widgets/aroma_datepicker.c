@@ -16,10 +16,6 @@
 #endif
 
 
-
-
-
-
 static inline int tdp(int v)
 {
 #ifdef __ANDROID__
@@ -331,7 +327,6 @@ static void dp_overlay_unregister(AromaNode *node)
 }
 
 
-
 static bool dp_field_screen(AromaNode *node, AromaDatePicker *d,
                             AromaRect *out)
 {
@@ -369,8 +364,6 @@ static int dp_panel_h(void)
     int h = tdp(DP_PANEL_H_DP);
     return h > 0 ? h : 1;
 }
-
-
 
 
 static bool dp_compute_popup(AromaNode *node, AromaDatePicker *d)
@@ -779,8 +772,6 @@ static bool dp_handle_inner(AromaEvent *e, void *ud)
     }
     return false;
 }
-
-
 
 
 static bool dp_handle(AromaEvent *e, void *ud)
@@ -1382,7 +1373,6 @@ void aroma_datepicker_destroy(AromaNode *node)
         node->node_widget_ptr = NULL;
     }
 }
-
 
 
 void aroma_datepicker_set_popup(AromaNode *n, bool popup)

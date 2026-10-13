@@ -4,7 +4,7 @@ Scan first. See [Bluetooth Scan](Bluetooth-Scan.md). Then use the functions belo
 
 Pair, connect, and send are async. A true return means the request started. Completion arrives through the callbacks registered with `aroma_android_bt_register_callbacks`.
 
-## Bluetooth state
+## Bluetooth State
 
 | Function | Signature | What it does |
 |---|---|---|
@@ -71,7 +71,7 @@ if (!aroma_android_is_bluetooth_enabled()) {
 
 **Sources:** [include/aroma_android.h189-195](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L189-L195) [include/aroma_android.h260-419](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L260-L419) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl598-1120](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L598-L1120)
 
-## Next
+## Next Steps
 
 * Read [Bluetooth Scan](Bluetooth-Scan.md) for discovery.
 * Read [Internals](Internals.md) for the JNI callback path.

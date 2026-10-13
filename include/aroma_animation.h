@@ -8,12 +8,6 @@ extern "C" {
 #endif
 
 
-
-
-
-
-
-
 #define AROMA_ANIM_MAX_TICK_STEP_MS 64
 
 typedef enum {
@@ -67,18 +61,10 @@ typedef struct _AromaAnimation {
     AromaAnimationCompleteCallback on_complete;
 
 
-
-
     AromaLoopMode loop_mode;
 
 
-
     float last_progress;
-
-
-
-
-
 
 
     bool parent_relative;
@@ -90,27 +76,7 @@ void aroma_animation_manager_init(void);
 bool aroma_animation_is_running_on(AromaNode *target);void aroma_animation_manager_shutdown(void);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void aroma_animation_tick(uint64_t now_ms);
-
-
-
-
-
 
 
 void aroma_animation_pause_all(void);
@@ -124,10 +90,7 @@ void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing);
 void aroma_animation_set_on_complete(AromaAnimation* anim, AromaAnimationCompleteCallback cb);
 
 
-
-
 void aroma_animation_set_loop(AromaAnimation* anim, bool loop);
-
 
 
 void aroma_animation_set_loop_mode(AromaAnimation* anim, AromaLoopMode mode);

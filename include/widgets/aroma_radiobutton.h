@@ -16,7 +16,6 @@ typedef struct  AromaRadioGroup AromaRadioGroup;
 AromaNode* aroma_radiobutton_create(AromaNode* parent, const char* label, int x, int y, int width, int height, int group_id);
 
 
-
 AromaRadioGroup* aroma_radio_group_create(void);
 void aroma_radio_group_destroy(AromaRadioGroup* group);
 int aroma_radio_group_get_selected(const AromaRadioGroup* group);

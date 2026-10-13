@@ -90,11 +90,6 @@ extern "C"
             float corner_radius);
 
 
-
-
-
-
-
         bool (*get_image_size)(
             unsigned int texture_id,
             int *width, int *height);
@@ -131,13 +126,6 @@ extern "C"
         void (*notify_dirty_region)(int x, int y, int w, int h);
 
         bool (*get_pending_dirty_rect)(int *x, int *y, int *w, int *h);
-
-
-
-
-
-
-
 
 
         void (*blur_backdrop)(

@@ -144,9 +144,6 @@ struct AromaFont {
 static FT_Library ft_library = NULL;
 
 
-
-
-
 static pthread_mutex_t s_ft_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void aroma_font_lock(void)
@@ -261,8 +258,6 @@ void aroma_font_destroy(AromaFont* font) {
 }
 
 
-
-
 static uint32_t aroma_font_utf8_next(const char **pp)
 {
     const unsigned char *p = (const unsigned char *)*pp;
@@ -308,11 +303,6 @@ int aroma_font_get_line_width(AromaFont* font, const char* text) {
     aroma_font_lock();
     int width = 0;
     FT_GlyphSlot slot = font->face->glyph;
-
-
-
-
-
 
 
     const char *p = text;

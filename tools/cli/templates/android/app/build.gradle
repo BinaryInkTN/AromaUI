@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
 }
-
+{{CHAQUOPY_APPLY}}
 android {
     namespace '{{PACKAGE_NAME}}'
     compileSdk {{COMPILE_SDK}}
@@ -12,7 +12,7 @@ android {
         targetSdk {{TARGET_SDK}}
         versionCode 1
         versionName "1.0"
-
+{{CHAQUOPY_NDK}}
         externalNativeBuild {
             cmake {
                 cppFlags ""
@@ -32,3 +32,4 @@ android {
         }
     }
 }
+{{CHAQUOPY_BLOCK}}

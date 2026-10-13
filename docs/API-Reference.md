@@ -5,7 +5,7 @@ This page provides a high-level index of the public AromaUI API. For detailed do
 
 | Function | Description | Source |
 | --- | --- | --- |
-| `aroma_ui_init` | Initializes the framework, slab allocator, and global state. | [include/aroma_ui.h175-183](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L175-L183) |
+| `aroma_ui_init` | Initializes the framework, memory, and global state. | [include/aroma_ui.h175-183](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L175-L183) |
 | `aroma_ui_shutdown` | Releases all resources and resets global state. | [include/aroma_ui.h212-217](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L212-L217) |
 | `aroma_ui_is_running` | Returns true while the main loop should continue. | [include/aroma_ui.h225-230](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L225-L230) |
 | `aroma_ui_process_events` | Processes pending input, timer, and system events. | [include/aroma_ui.h240-245](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_ui.h#L240-L245) |

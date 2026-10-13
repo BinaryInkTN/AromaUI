@@ -55,7 +55,6 @@ typedef struct  AromaButton {
     void* user_data;
 
 
-
     char icon[8];
     AromaFont* icon_font;
     int icon_padding;

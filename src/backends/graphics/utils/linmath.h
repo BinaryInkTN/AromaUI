@@ -6,9 +6,6 @@
 #include <string.h>
 
 
-
-
-
 #ifdef LINMATH_NO_INLINE
 #define LINMATH_H_FUNC static
 #else
@@ -405,10 +402,6 @@ LINMATH_H_FUNC void mat4x4_look_at(mat4x4 m, vec3 const eye, vec3 const center, 
 {
 
 
-
-
-
-
 	vec3 f;
 	vec3_sub(f, center, eye);
 	vec3_norm(f, f);
@@ -482,9 +475,6 @@ LINMATH_H_FUNC void quat_rotate(quat r, float angle, vec3 const axis) {
 }
 LINMATH_H_FUNC void quat_mul_vec3(vec3 r, quat const q, vec3 const v)
 {
-
-
-
 
 
 	vec3 t;

@@ -1,6 +1,6 @@
 The `Aroma3DViewer` widget provides an interactive viewport for rendering 3D models using AromaUI's built-in software rasterizer. It supports camera orbit, zoom, pan, and auto-rotation, making it suitable for product visualization, automotive configurators, and diagnostic overlays.
 
-## Live Demo
+## Live Demonstration
 
 A small 3D studio below: full-bleed viewport with an `Object Mode`
 chip and `Reset` in a top bar, Fox/Cube object tabs, then one panel
@@ -117,40 +117,12 @@ In the browser sandbox the filesystem is in-memory, so local paths
 resolve to whatever the host preloaded there - use native builds for
 real `.glb` files on disk.
 
-## Widget Architecture
+## Component Overview
 
-The 3D viewer is built on two layers: the `Aroma3DViewer` widget (which handles input, layout, and draw callbacks) and the `aroma_3d` core library (which manages models, meshes, cameras, and rasterization).
-
-### Component Interaction
-
-```mermaid
-flowchart TD
-    subgraph subGraph2 ["3D Core (aroma_3d.h)"]
-        MODEL["Aroma3DModel"]
-        MESH["Aroma3DMesh"]
-        CAM["Aroma3DCamera"]
-        RASTER["aroma_3d_render_to_rect()"]
-    end
-    subgraph subGraph1 ["Widget Layer (aroma_3d_viewer.c)"]
-        VIEWER["Aroma3DViewer"]
-        EVT["viewer_event_handler"]
-        DRAW["viewer_draw"]
-    end
-    subgraph subGraph0 ["Application"]
-        API["aroma_ui_3d_viewer()"]
-        APP["App Code"]
-    end
-    APP --> API
-    API --> VIEWER
-    VIEWER --> EVT
-    EVT --> CAM
-    VIEWER --> DRAW
-    DRAW --> RASTER
-    RASTER --> MODEL
-    MODEL --> MESH
-```
-
-**Sources:**[include/widgets/aroma_3d_viewer.h12-30](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/widgets/aroma_3d_viewer.h#L12-L30)[src/widgets/aroma_3d_viewer.c13-23](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_3d_viewer.c#L13-L23)[include/aroma_3d.h16-25](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_3d.h#L16-L25)
+The viewer pairs a widget (input, layout, and display) with a 3D core
+(models, cameras, and rendering). You create a viewer, assign a model,
+and control the camera; loading, interaction, and drawing are handled
+for you.
 
 ---
 
@@ -275,27 +247,11 @@ The viewer subscribes to the following events with high priority to ensure smoot
 
 ---
 
-## Rendering Pipeline
+## Rendering Approach
 
-The viewer does not use the standard DrawList for 3D content. Instead, it renders directly to the framebuffer via `aroma_3d_render_to_rect`, which performs software rasterization into the widget's bounding rectangle.
-
-### Render Flow
-
-```mermaid
-sequenceDiagram
-    participant V as Viewer Widget
-    participant C as aroma_3d_camera
-    participant R as aroma_3d_render_to_rect
-    participant G as Graphics Backend
-    V->>V: viewer_draw(node, window_id)
-    V->>C: Update view/projection matrices
-    V->>R: Render model into rect
-    R->>G: fill_rectangle (background)
-    R->>G: Software rasterize triangles
-    Note over R,G: Depth test, shading, texturing
-```
-
-**Sources:**[src/widgets/aroma_3d_viewer.c81-114](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_3d_viewer.c#L81-L114)[src/core/aroma_3d.c300-400](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/core/aroma_3d.c#L300-L400)
+3D content renders straight into the widget rectangle with a built-in
+software rasterizer: no GPU-specific setup on your side. Depth testing,
+shading, and texturing are included.
 
 ---
 
@@ -325,22 +281,11 @@ aroma_3d_viewer_set_camera(state.viewer_3d, &state.camera);
 
 ---
 
-## Implementation Details
+## Automatic Camera Fitting
 
-### Widget Lifecycle
+Assigning a model frames it for you automatically:
 
-1. **Allocation**: `aroma_3d_viewer_create` allocates the `Aroma3DViewer` struct via `aroma_widget_alloc` and attaches it to a new `AromaNode` [src/widgets/aroma_3d_viewer.c116-130](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_3d_viewer.c#L116-L130).
-2. **Event Subscription**: The widget registers high-priority listeners for mouse and touch events to intercept drag and scroll before child nodes [src/widgets/aroma_3d_viewer.c139-146](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_3d_viewer.c#L139-L146).
-3. **Draw Registration**: `aroma_node_set_draw_cb` binds `viewer_draw`, which is called during the frame render phase [src/widgets/aroma_3d_viewer.c137](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_3d_viewer.c#L137-L137).
-
-### Auto-Fit on Model Change
-
-When a new model is assigned via `aroma_3d_viewer_set_model`, the widget automatically:
-
-1. Destroys the previous model.
-2. Initializes the camera to a default orbit.
-3. Computes the model's bounding box using `aroma_3d_get_model_bounds`.
-4. Sets the camera target to the bounding box center.
-5. Adjusts the camera radius to 1.5x the largest bounding dimension (minimum 1.0 unit).
-
-**Sources:**[src/widgets/aroma_3d_viewer.c151-180](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/src/widgets/aroma_3d_viewer.c#L151-L180)[include/aroma_3d.h36](https://github.com/BinaryInkTN/AromaUI/blob/afd1c6b6/include/aroma_3d.h#L36-L36)
+1. The previous model is released.
+2. The camera takes a default orbit position.
+3. The target moves to the center of the model.
+4. The distance fits the largest model dimension.

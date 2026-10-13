@@ -22,7 +22,7 @@ Check your setup first:
 python3 bin/aroma doctor
 ```
 
-## Linux build
+## Linux Builds
 
 ```bash
 python3 bin/aroma build linux
@@ -40,7 +40,7 @@ make -j$(nproc)
 
 The binary name matches your project folder. If `run` cannot find it, open `build/` and launch the binary directly.
 
-## Android build
+## Android Builds
 
 You need JDK 17, an Android SDK platform, build tools, NDK, and CMake. The build asks you to pick versions the first time and saves them.
 
@@ -63,7 +63,7 @@ python3 bin/aroma run android --emu
 
 For release builds, set up your keystore in the Android project first. Gradle signs the output.
 
-## Web build
+## Web Builds
 
 You need the Emscripten SDK under `vendors/emscripten` or `~/.aroma/vendors/emscripten`.
 
@@ -74,7 +74,7 @@ python3 -m http.server 8080 --directory build_web
 
 Open `http://localhost:8080` in your browser. Output goes to `build_web/`.
 
-## Build flow
+## Build Flow
 
 ```
 aroma build <target>
@@ -83,7 +83,7 @@ aroma build <target>
   web:     Emscripten with CMake, then WASM plus JS
 ```
 
-## Linux bundling
+## Linux Bundling
 
 `aroma bundle linux` mirrors electron-builder / Tauri / CPack coverage on
 Linux. It builds a Release binary if needed, stages an AppDir (binary +
@@ -129,14 +129,14 @@ tools are missing either auto-download (`appimagetool`) or scaffold their
 metadata (`packaging/flatpak/*.json`, `snap/snapcraft.yaml`) and print the
 manual build command, so `flatpak`/`snap`/`rpm` never silently do nothing.
 
-## Common errors
+## Troubleshooting
 
 * `Emscripten SDK not found`: install the SDK in one of the paths above, then retry.
 * `No Android SDK platforms found`: install a platform with the SDK Manager and set `ANDROID_HOME`.
 * `Not an Aroma project (no android/ directory)`: run the command inside a folder made by `aroma create`.
 * `Executable not found. Run 'aroma build linux' first`: build before you run.
 
-## What's next
+## Next Steps
 
 * Learn [Project Creation](Project-Creation-and-Scaffolding.md) to scaffold a new app.
 * Explore the [Widget Library](../widget-library/Input-and-Control-Widgets.md) to build your UI.

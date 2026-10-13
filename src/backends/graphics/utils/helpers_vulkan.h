@@ -120,8 +120,6 @@ typedef struct AromaVulkanContext
     bool hasDeferredScissor;
 
 
-
-
 #define VK_SCISSOR_STACK_MAX 16
     VkRect2D scissorStack[VK_SCISSOR_STACK_MAX];
     int scissorDepth;

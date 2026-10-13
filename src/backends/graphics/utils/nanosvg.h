@@ -1,31 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef NANOSVG_H
 #define NANOSVG_H
 #ifndef ESP32
@@ -34,41 +8,6 @@
 extern "C" {
 #endif
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 enum NSVGpaintType {
@@ -177,7 +116,6 @@ typedef struct  NSVGimage
 NSVGimage* nsvgParseFromFile(const char* filename, const char* units, float dpi);
 
 
-
 NSVGimage* nsvgParse(char* input, const char* units, float dpi);
 
 
@@ -237,8 +175,6 @@ static int nsvg__isdigit(char c)
 
 static NSVG_INLINE float nsvg__minf(float a, float b) { return a < b ? a : b; }
 static NSVG_INLINE float nsvg__maxf(float a, float b) { return a > b ? a : b; }
-
-
 
 
 #define NSVG_XML_TAG 1
@@ -362,8 +298,6 @@ int nsvg__parseXML(char* input,
 
 	return 1;
 }
-
-
 
 
 #define NSVG_MAX_ATTR 128
@@ -585,7 +519,6 @@ static void nsvg__curveBounds(float* bounds, float* curve)
 	bounds[1] = nsvg__minf(v0[1], v3[1]);
 	bounds[2] = nsvg__maxf(v0[0], v3[0]);
 	bounds[3] = nsvg__maxf(v0[1], v3[1]);
-
 
 
 	if (nsvg__ptInBounds(v1, bounds) && nsvg__ptInBounds(v2, bounds))
@@ -1245,9 +1178,6 @@ static unsigned int nsvg__parseColorHex(const char* str)
 }
 
 
-
-
-
 static unsigned int nsvg__parseColorRGB(const char* str)
 {
 	int i;
@@ -1263,13 +1193,6 @@ static unsigned int nsvg__parseColorRGB(const char* str)
 			if (*str == '+') str++;
 			if (!*str) break;
 			rgbf[i] = nsvg__atof(str);
-
-
-
-
-
-
-
 
 
 			while (*str && nsvg__isdigit(*str)) str++;
@@ -2208,8 +2131,6 @@ static void nsvg__pathArcTo(NSVGparser* p, float* cpx, float* cpy, float* args, 
 	cosrx = cosf(rotx);
 
 
-
-
 	x1p = cosrx * dx / 2.0f + sinrx * dy / 2.0f;
 	y1p = -sinrx * dx / 2.0f + cosrx * dy / 2.0f;
 	d = nsvg__sqr(x1p)/nsvg__sqr(rx) + nsvg__sqr(y1p)/nsvg__sqr(ry);
@@ -2243,8 +2164,6 @@ static void nsvg__pathArcTo(NSVGparser* p, float* cpx, float* cpy, float* args, 
 	da = nsvg__vecang(ux,uy, vx,vy);
 
 
-
-
 	if (fs == 0 && da > 0)
 		da -= 2 * NSVG_PI;
 	else if (fs == 1 && da < 0)
@@ -2254,7 +2173,6 @@ static void nsvg__pathArcTo(NSVGparser* p, float* cpx, float* cpy, float* args, 
 	t[0] = cosrx; t[1] = sinrx;
 	t[2] = -sinrx; t[3] = cosrx;
 	t[4] = cx; t[5] = cy;
-
 
 
 	ndivs = (int)(fabsf(da) / (NSVG_PI*0.5f) + 1.0f);

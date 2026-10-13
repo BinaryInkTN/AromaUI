@@ -50,7 +50,7 @@ int main(void)
         aroma_label_set_text(counter_label, counter_text);
 
         aroma_ui_render(window);
-        usleep(1000000); // Update once per second
+        usleep(1000000); 
     }
 
     aroma_font_destroy(font);

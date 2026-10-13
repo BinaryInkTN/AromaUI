@@ -19,9 +19,11 @@ flowchart TD
 - **Batching**: Multiple rectangles can be merged into a single `glDrawArrays` call
 - **Frustum culling**: Offscreen nodes are skipped during collection
 
-## AromaBackendABI
+## Backend Interface
 
-The ABI sits between the core framework and hardware backends. When a DrawList is active, it records commands. Otherwise, it passes calls directly to the backend (immediate mode).
+Drawing commands flow from the framework to the active graphics backend
+automatically. As a widget author you only record into the DrawList; the
+pipeline takes care of the rest.
 
 ```c
 // Typical widget draw callback: record into the DrawList,
@@ -36,35 +38,27 @@ void aroma_button_draw(AromaNode *node, size_t window_id) {
 
 ## Backend Flush
 
-During `aroma_drawlist_flush()`:
-1. Iterate buffered commands
-2. Dispatch to the active `AromaGraphicsInterface` (GLES3, Vulkan, or TFT_eSPI)
-3. For TFT_eSPI: use smart tiling - only flush dirty horizontal tiles to avoid full-screen buffer allocation
+Each frame the pipeline sends the buffered commands to the active
+graphics backend (GLES3, Vulkan, or TFT_eSPI). On small TFT displays,
+only the changed screen tiles are sent, which saves memory.
 
-## Batching Optimizations
+## Performance Characteristics
 
-### GLES3 Shape Batching
+The GLES3 backend batches up to 256 shapes per draw call, which keeps
+UIs with many simple rectangles fast. Glyph textures are cached
+per-window (max 16 fonts); the least recently used font is evicted when
+the cache is full.
 
-The GLES3 backend buffers up to 256 quads before issuing a draw call. This reduces GPU state changes for UIs with many simple rectangles.
+## Controlling Rendering
 
-### Font LRU Cache
+Most rendering happens automatically, but you can influence it:
 
-Glyph textures are cached per-window (max 16 fonts). When the cache is full, the least recently used font is evicted.
-
-## Implementation Notes
-
-The rendering pipeline relies on these internal mechanisms:
-
-| Concern | How It Works |
+| Goal | How |
 |---|---|
-| Force redraw | `aroma_ui_request_redraw(window)` marks the window dirty |
+| Force a redraw | `aroma_ui_request_redraw(window)` marks the window dirty |
 | Draw order | Higher `z_index` draws later (on top) |
-| Clip region | Set via `graphics_set_clip(x, y, w, h)` before drawing |
-| Backend selection | Configured at platform init (`aroma_backend_abi_init`) |
 
-Most render control happens automatically through the DrawList and dirty-region system. Direct manipulation is rarely needed in application code.
-
-## What's Next
+## Next Steps
 
 - Learn about [Animation](Animation-Engine.md) for smooth property transitions.
 - Explore [Theming](Theming-and-Styling.md) for visual customization.

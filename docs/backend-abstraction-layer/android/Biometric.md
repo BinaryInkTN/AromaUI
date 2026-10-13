@@ -34,7 +34,7 @@ void unlock_vault(void) {
 
 **Sources:** [include/aroma_android.h1290-1310](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L1290-L1310) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl2509-2578](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L2509-L2578)
 
-## Next
+## Next Steps
 
 * Read [Permissions](Permissions.md) for the `USE_BIOMETRIC` declaration.
 * Read [System UI](System-UI.md) for feedback after unlock.

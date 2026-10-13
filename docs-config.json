@@ -64,6 +64,12 @@
                 "text": "Build and deploy",
                 "slug": "building-deployment",
                 "category": "Build & Deploy"
+            },
+            {
+                "icon": "braces",
+                "text": "Python bindings",
+                "slug": "python-bindings",
+                "category": "Reference"
             }
         ],
 
@@ -153,7 +159,7 @@
         },
         {
             "title": "Architecture Overview",
-            "description": "How AromaUI works under the hood: layers, data flow, and key abstractions.",
+            "description": "How AromaUI works: layers, data flow, and key abstractions.",
             "icon": "boxes",
             "color": "#4285F4",
             "category": "Overview",
@@ -331,6 +337,17 @@
             "file": "docs/cli-toolchain/Project-Creation-and-Scaffolding.md"
         },
         {
+            "title": "Python on Android",
+            "description": "Write apps in Python (Chaquopy) and deploy them with the aroma CLI.",
+            "icon": "terminal",
+            "color": "#386A20",
+            "category": "Build & Deploy",
+            "version": "0.0.2",
+            "updated": "2026-10-12",
+            "status": "stable",
+            "file": "docs/cli-toolchain/Python-on-Android.md"
+        },
+        {
             "title": "Building & Deployment",
             "description": "Compile for Linux, Android, and Web. Sign, package, and run.",
             "icon": "hammer",
@@ -400,7 +417,7 @@
         },
         {
             "title": "Android App Setup",
-            "description": "Entry point, manifest, and JNI handles.",
+            "description": "Application entry point, manifest, and native handles.",
             "icon": "smartphone",
             "color": "#006875",
             "category": "Backend Abstraction",
@@ -508,7 +525,7 @@
         },
         {
             "title": "Android Device APIs",
-            "description": "Battery, WiFi, camera, gallery, and storage.",
+            "description": "Battery, Wi-Fi, camera, gallery, and storage.",
             "icon": "smartphone",
             "color": "#006875",
             "category": "Backend Abstraction",
@@ -604,7 +621,7 @@
         },
         {
             "title": "Android Internals",
-            "description": "Backend lifecycle and Java bridge reference.",
+            "description": "Platform backend and Java bridge reference.",
             "icon": "smartphone",
             "color": "#006875",
             "category": "Backend Abstraction",
@@ -669,6 +686,17 @@
             "updated": "2026-09-28",
             "status": "stable",
             "file": "docs/API-Reference.md"
+        },
+        {
+            "title": "Python Bindings",
+            "description": "Generate ctypes bindings from the C headers and drive AromaUI from Python.",
+            "icon": "code",
+            "color": "#4A4458",
+            "category": "Reference",
+            "version": "0.0.2",
+            "updated": "2026-10-12",
+            "status": "stable",
+            "file": "docs/Python-Bindings.md"
         }
     ]
 }

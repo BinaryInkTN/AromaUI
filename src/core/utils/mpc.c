@@ -1,9 +1,6 @@
 #include "mpc.h"
 
 
-
-
-
 static mpc_state_t mpc_state_invalid(void) {
   mpc_state_t s;
   s.pos = -1;
@@ -21,40 +18,6 @@ static mpc_state_t mpc_state_new(void) {
   s.term = 0;
   return s;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 enum {
@@ -569,9 +532,6 @@ static mpc_state_t *mpc_input_state_copy(mpc_input_t *i) {
 }
 
 
-
-
-
 void mpc_err_delete(mpc_err_t *x) {
   int i;
   for (i = 0; i < x->expected_num; i++) { free(x->expected[i]); }
@@ -879,9 +839,6 @@ static mpc_err_t *mpc_err_merge(mpc_input_t *i, mpc_err_t *x, mpc_err_t *y) {
 }
 
 
-
-
-
 enum {
   MPC_TYPE_UNDEFINED  = 0,
   MPC_TYPE_PASS       = 1,
@@ -1087,7 +1044,6 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
   switch (p->type) {
 
 
-
     case MPC_TYPE_ANY:     MPC_PRIMITIVE(mpc_input_any(i, (char**)&r->output));
     case MPC_TYPE_SINGLE:  MPC_PRIMITIVE(mpc_input_char(i, p->data.single.x, (char**)&r->output));
     case MPC_TYPE_RANGE:   MPC_PRIMITIVE(mpc_input_range(i, p->data.range.x, p->data.range.y, (char**)&r->output));
@@ -1100,14 +1056,12 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
     case MPC_TYPE_EOI:     MPC_PRIMITIVE(mpc_input_eoi(i, (char**)&r->output));
 
 
-
     case MPC_TYPE_UNDEFINED: MPC_FAILURE(mpc_err_fail(i, "Parser Undefined!"));
     case MPC_TYPE_PASS:      MPC_SUCCESS(NULL);
     case MPC_TYPE_FAIL:      MPC_FAILURE(mpc_err_fail(i, p->data.fail.m));
     case MPC_TYPE_LIFT:      MPC_SUCCESS(p->data.lift.lf());
     case MPC_TYPE_LIFT_VAL:  MPC_SUCCESS(p->data.lift.x);
     case MPC_TYPE_STATE:     MPC_SUCCESS(mpc_input_state_copy(i));
-
 
 
     case MPC_TYPE_APPLY:
@@ -1169,9 +1123,6 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
       }
 
 
-
-
-
     case MPC_TYPE_NOT:
       mpc_input_mark(i);
       mpc_input_suppress_enable(i);
@@ -1193,7 +1144,6 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
         *e = mpc_err_merge(i, *e, r->error);
         MPC_SUCCESS(p->data.not.lf());
       }
-
 
 
     case MPC_TYPE_MANY:
@@ -1287,7 +1237,6 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
       }
 
 
-
     case MPC_TYPE_OR:
 
       if (p->data.or.n == 0) { MPC_SUCCESS(NULL); }
@@ -1330,7 +1279,6 @@ static int mpc_parse_run(mpc_input_t *i, mpc_parser_t *p, mpc_result_t *r, mpc_e
       MPC_SUCCESS(
         mpc_parse_fold(i, p->data.and.f, j, (mpc_val_t**)results);
         if (p->data.or.n > MPC_PARSE_STACK_MIN) { mpc_free(i, results); });
-
 
 
     default:
@@ -1407,9 +1355,6 @@ int mpc_parse_contents(const char *filename, mpc_parser_t *p, mpc_result_t *r) {
   fclose(f);
   return res;
 }
-
-
-
 
 
 static void mpc_undefine_unretained(mpc_parser_t *p, int force);
@@ -1676,25 +1621,6 @@ mpc_parser_t *mpc_fail(const char *m) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 mpc_parser_t *mpc_failf(const char *fmt, ...) {
 
   va_list va;
@@ -1754,25 +1680,6 @@ mpc_parser_t *mpc_expect(mpc_parser_t *a, const char *expected) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 mpc_parser_t *mpc_expectf(mpc_parser_t *a, const char *fmt, ...) {
   va_list va;
   char *buffer;
@@ -1793,9 +1700,6 @@ mpc_parser_t *mpc_expectf(mpc_parser_t *a, const char *fmt, ...) {
   p->data.expect.m = buffer;
   return p;
 }
-
-
-
 
 
 mpc_parser_t *mpc_any(void) {
@@ -1850,9 +1754,6 @@ mpc_parser_t *mpc_string(const char *s) {
   strcpy(p->data.string.x, s);
   return mpc_expectf(p, "\"%s\"", s);
 }
-
-
-
 
 
 mpc_parser_t *mpc_apply(mpc_parser_t *a, mpc_apply_t f) {
@@ -2040,9 +1941,6 @@ mpc_parser_t *mpc_and(int n, mpc_fold_t f, ...) {
 }
 
 
-
-
-
 mpc_parser_t *mpc_soi(void) {
   mpc_parser_t *p = mpc_undefined();
   p->type = MPC_TYPE_SOI;
@@ -2103,7 +2001,6 @@ mpc_parser_t *mpc_number(void) { return mpc_expect(mpc_or(3, mpc_int(), mpc_hex(
 mpc_parser_t *mpc_real(void) {
 
 
-
   mpc_parser_t *p0, *p1, *p2, *p30, *p31, *p32, *p3;
 
   p0 = mpc_maybe_lift(mpc_oneof("+-"), mpcf_ctor_str);
@@ -2144,9 +2041,6 @@ mpc_parser_t *mpc_ident(void) {
 }
 
 
-
-
-
 mpc_parser_t *mpc_startwith(mpc_parser_t *a) { return mpc_and(2, mpcf_snd, mpc_soi(), a, mpcf_dtor_null); }
 mpc_parser_t *mpc_endwith(mpc_parser_t *a, mpc_dtor_t da) { return mpc_and(2, mpcf_fst, a, mpc_eoi(), da); }
 mpc_parser_t *mpc_whole(mpc_parser_t *a, mpc_dtor_t da) { return mpc_and(3, mpcf_snd, mpc_soi(), a, mpc_eoi(), mpcf_dtor_null, da); }
@@ -2180,55 +2074,6 @@ mpc_parser_t *mpc_tok_parens(mpc_parser_t *a, mpc_dtor_t ad)   { return mpc_tok_
 mpc_parser_t *mpc_tok_braces(mpc_parser_t *a, mpc_dtor_t ad)   { return mpc_tok_between(a, ad, "<", ">"); }
 mpc_parser_t *mpc_tok_brackets(mpc_parser_t *a, mpc_dtor_t ad) { return mpc_tok_between(a, ad, "{", "}"); }
 mpc_parser_t *mpc_tok_squares(mpc_parser_t *a, mpc_dtor_t ad)  { return mpc_tok_between(a, ad, "[", "]"); }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 static mpc_val_t *mpcf_re_or(int n, mpc_val_t **xs) {
@@ -2491,9 +2336,6 @@ mpc_parser_t *mpc_re_mode(const char *re, int mode) {
 }
 
 
-
-
-
 void mpcf_dtor_null(mpc_val_t *x) { (void) x; return; }
 
 mpc_val_t *mpcf_ctor_null(void) { return NULL; }
@@ -2650,7 +2492,7 @@ static mpc_val_t *mpcf_unescape_new(mpc_val_t *x, const char *input, const char 
     if (*s == '\0') { break; }
     else { s++; }
   }
-  
+
   y[y_len] = '\0';
   return y;
 
@@ -2752,11 +2594,7 @@ mpc_val_t *mpcf_strfold(int n, mpc_val_t **xs) {
 }
 
 
-
-
-
 static void mpc_print_unretained(mpc_parser_t *p, int force) {
-
 
 
   int i;
@@ -2893,20 +2731,6 @@ void mpc_print(mpc_parser_t *p) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int mpc_test_fail(mpc_parser_t *p, const char *s, const void *d,
   int(*tester)(const void*, const void*),
   mpc_dtor_t destructor,
@@ -2956,10 +2780,6 @@ int mpc_test_pass(mpc_parser_t *p, const char *s, const void *d,
   }
 
 }
-
-
-
-
 
 
 void mpc_ast_delete(mpc_ast_t *a) {
@@ -3238,8 +3058,6 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
       ret = (*trav)->curr_node;
 
 
-
-
       to_free = *trav;
       *trav = (*trav)->parent;
       free(to_free);
@@ -3254,7 +3072,6 @@ mpc_ast_t *mpc_ast_traverse_next(mpc_ast_trav_t **trav) {
       if((*trav)->curr_child >= (*trav)->curr_node->children_num) {
         break;
       }
-
 
 
       while((*trav)->curr_node->children_num > 0) {
@@ -3410,49 +3227,6 @@ mpc_parser_t *mpca_and(int n, ...) {
 }
 
 mpc_parser_t *mpca_total(mpc_parser_t *a) { return mpc_total(a, (mpc_dtor_t)mpc_ast_delete); }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 typedef struct {
@@ -3986,7 +3760,6 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
   if (p->retained && !force) { return; }
 
 
-
   if (p->type == MPC_TYPE_EXPECT)     { mpc_optimise_unretained(p->data.expect.x, 0); }
   if (p->type == MPC_TYPE_APPLY)      { mpc_optimise_unretained(p->data.apply.x, 0); }
   if (p->type == MPC_TYPE_APPLY_TO)   { mpc_optimise_unretained(p->data.apply_to.x, 0); }
@@ -4014,7 +3787,6 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
       mpc_optimise_unretained(p->data.and.xs[i], 0);
     }
   }
-
 
 
   while (1) {

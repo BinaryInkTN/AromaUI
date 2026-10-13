@@ -277,7 +277,6 @@ void aroma_3d_viewer_set_auto_rotate(AromaNode *node, bool auto_rotate)
     viewer->auto_rotate = auto_rotate;
 
 
-
     if (auto_rotate)
     {
         if (!viewer->orbit_timer)

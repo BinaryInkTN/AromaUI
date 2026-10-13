@@ -1,12 +1,5 @@
 
 
-
-
-
-
-
-
-
 #ifndef AROMA_BACKEND_INTERFACE_H
 #define AROMA_BACKEND_INTERFACE_H
 
@@ -19,44 +12,16 @@ extern "C" {
 #endif
 
 
-
-
 typedef struct AromaDrawList AromaDrawList;
-
-
-
-
-
-
-
-
 
 
 typedef struct AromaPlatformInterface {
 
 
-
-
-
-
-
     int  (*initialize)(void);
 
 
-
-
     void (*shutdown)(void);
-
-
-
-
-
-
-
-
-
-
-
 
 
     size_t (*create_window)(
@@ -66,22 +31,13 @@ typedef struct AromaPlatformInterface {
     );
 
 
-
-
     void (*make_context_current)(size_t window_id);
-
-
-
-
-
 
 
     void (*set_window_update_callback)(
         void (*callback)(size_t window_id, void *data),
         void* data
     );
-
-
 
 
     void (*get_window_size)(
@@ -91,32 +47,16 @@ typedef struct AromaPlatformInterface {
     );
 
 
-
-
     void (*request_window_update)(size_t window_id);
-
-
-
-
 
 
     bool (*run_event_loop)(void);
 
 
-
-
     void (*swap_buffers)(size_t window_id);
 
 
-
-
-
-
     void* (*get_tft_context)(void);
-
-
-
-
 
 
     void (*call_flush_function_ptr)(
@@ -130,33 +70,19 @@ typedef struct AromaPlatformInterface {
     );
 
 
-
-
     void (*tft_mark_tiles_dirty)(int y, int h);
-
-
 
 
     void (*set_clear_color)(uint16_t color);
 
 
-
-
-
-
     void (*set_android_app)(void* app_state);
-
-
 
 
     void (*set_fullscreen)(size_t window_id, bool enabled);
 
 
-
-
     void (*open_url)(const char* url);
-
-
 
 
     void (*android_send_intent)(
@@ -168,21 +94,13 @@ typedef struct AromaPlatformInterface {
     );
 
 
-
-
     void (*show_keyboard)(void);
-
-
 
 
     void (*hide_keyboard)(void);
 
 
-
-
     bool (*android_check_permission)(const char* permission_name);
-
-
 
 
     void (*android_request_permission)(
@@ -191,32 +109,22 @@ typedef struct AromaPlatformInterface {
     );
 
 
-
-
     void (*android_toast)(const char* msg, bool long_duration);
-
-
 
 
     void (*android_open_settings)(void);
 
 
-
-
     void (*android_vibrate)(int ms);
 
 
-
-
     int (*android_get_battery_level)(void);
-
 
 
     bool (*android_is_wifi_enabled)(void);
     void (*android_set_wifi_enabled)(bool enabled);
 
     bool (*android_is_bluetooth_enabled)(void);
-
 
 
     int (*android_bt_scan)(
@@ -261,13 +169,11 @@ typedef struct AromaPlatformInterface {
     const char* (*android_bt_get_mode_name)(void);
 
 
-
     void (*android_launch_camera)(void);
     void (*android_launch_gallery)(void);
     void* (*android_get_system_service)(const char* service_name);
     const char* (*android_get_internal_path)(void);
     const char* (*android_get_external_path)(void);
-
 
 
     float (*android_get_density)(void);
@@ -278,7 +184,6 @@ typedef struct AromaPlatformInterface {
     int (*android_px_to_dp)(int px);
     int (*android_sp_to_px)(int sp);
     int (*android_px_to_sp)(int px);
-
 
 
     float (*android_dp_to_px_f)(float dp);
@@ -302,155 +207,58 @@ typedef struct AromaPlatformInterface {
     float (*android_get_ydpi)(void);
 
 
-
-
-
-
     void (*android_lock_orientation)(void);
-
-
 
 
     void (*android_unlock_orientation)(void);
 
 
-
-
     void (*android_set_orientation_portrait)(void);
-
-
 
 
     void (*android_set_orientation_landscape)(void);
 
 
-
-
     void (*android_set_orientation_sensor)(void);
-
-
-
 
 
     int (*android_get_current_orientation)(void);
 
 
-
-
-
     bool (*android_is_orientation_locked)(void);
-
-
-
-
-
-
-
-
-
 
 
     bool (*create_vulkan_surface)(size_t window_id, void* vk_instance, void** vk_surface_out);
 
 
-
-
-
-
-
     const char** (*get_vulkan_instance_extensions)(uint32_t* count_out);
-
-
-
-
-
-
-
-
-
 
 
     const char* (*android_get_preference_string)(const char* key, const char* default_value);
 
 
-
-
-
-
-
-
     void (*android_set_preference_string)(const char* key, const char* value);
-
-
-
-
-
-
 
 
     bool (*android_get_preference_bool)(const char* key, bool default_value);
 
 
-
-
-
-
-
     void (*android_set_preference_bool)(const char* key, bool value);
-
-
-
-
-
-
-
-
 
 
     int (*android_get_preference_int)(const char* key, int default_value);
 
 
-
-
-
-
-
-
     void (*android_set_preference_int)(const char* key, int value);
-
-
-
-
-
-
 
 
     float (*android_get_preference_float)(const char* key, float default_value);
 
 
-
-
-
-
-
-
     void (*android_set_preference_float)(const char* key, float value);
 
 
-
-
-
-
-
-
     void (*android_set_preference_long)(const char* key, long value);
-
-
-
-
-
-
-
 
 
     long (*android_get_preference_long)(const char* key, long default_value);
@@ -576,24 +384,13 @@ typedef struct AromaPlatformInterface {
 } AromaPlatformInterface;
 
 
-
-
-
-
-
 AromaPlatformInterface* aroma_get_platform_interface(void);
-
-
 
 
 extern AromaPlatformInterface aroma_platform_glps;
 
 
-
-
 extern AromaPlatformInterface aroma_platform_tft;
-
-
 
 
 extern AromaPlatformInterface aroma_platform_android;

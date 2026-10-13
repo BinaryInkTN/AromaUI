@@ -195,7 +195,7 @@ static bool __switch_default_mouse_handler(AromaEvent *event, void *user_data)
         }
         cur = cur->parent_node;
     }
-    
+
 
     if (event->event_type == EVENT_TYPE_MOUSE_MOVE || event->event_type == EVENT_TYPE_MOUSE_ENTER)
     {

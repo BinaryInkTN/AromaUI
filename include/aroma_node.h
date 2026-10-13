@@ -86,8 +86,6 @@ typedef struct   {
     int grid_col_gap;
 
 
-
-
     int _fit_ox;
     int _fit_ow;
     bool _fit_has;
@@ -96,12 +94,7 @@ typedef struct   {
     int _cache_y;
 
 
-
-
     bool _placed;
-
-
-
 
 
     bool _managed;
@@ -165,13 +158,11 @@ uint64_t __generate_node_id(void);
 void __reset_node_id_counter(void);
 
 
-
 void aroma_node_set_layout_anchor(AromaNode* node, int left, int top, int right, int bottom);
 
 void aroma_node_set_layout_fill(AromaNode* node);
 
 void aroma_node_set_layout_center(AromaNode* node);
-
 
 
 void aroma_node_set_layout_mode(AromaNode* node, AromaLayoutMode mode);
@@ -191,9 +182,6 @@ void aroma_node_set_grid_cols(AromaNode* node, int cols);
 void aroma_node_set_grid_rows(AromaNode* node, int rows);
 
 void aroma_node_update_layout(AromaNode* root, int parent_x, int parent_y, int parent_width, int parent_height);
-
-
-
 
 
 void aroma_layout_note_placed(AromaNode *node);

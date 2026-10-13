@@ -12,7 +12,7 @@ Use DP for layout sizes. Use SP for text sizes. Use PX only when you need raw pi
 | `aroma_android_get_xdpi` | `float aroma_android_get_xdpi(void)` | Physical dots per inch on the X axis. Returns 160.0 when unknown. |
 | `aroma_android_get_ydpi` | `float aroma_android_get_ydpi(void)` | Physical dots per inch on the Y axis. Returns 160.0 when unknown. |
 
-## Unit conversion
+## Unit Conversion
 
 | Function | Signature | What it does |
 |---|---|---|
@@ -26,7 +26,7 @@ int pad_px = aroma_android_dp_to_px(16);
 int text_px = aroma_android_sp_to_px(14);
 ```
 
-## Screen size
+## Screen Size
 
 | Function | Signature | What it does |
 |---|---|---|
@@ -62,7 +62,7 @@ aroma_android_set_orientation_sensor();
 
 **Sources:** [include/aroma_android.h484-749](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L484-L749) [src/backends/platforms/aroma_platform_android.c591-823](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L591-L823) [src/backends/platforms/aroma_platform_android.c1304-1415](https://github.com/BinaryInkTN/AromaUI/blob/main/src/backends/platforms/aroma_platform_android.c#L1304-L1415)
 
-## Next
+## Next Steps
 
 * Read [App Setup](App-Setup.md) for lifecycle basics.
 * Read [Device APIs](Device-APIs.md) for storage paths.

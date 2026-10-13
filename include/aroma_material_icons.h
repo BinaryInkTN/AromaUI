@@ -2,13 +2,6 @@
 #define AROMA_MATERIAL_ICONS_H
 
 
-
-
-
-
-
-
-
 #define AROMA_ICON_3D_ROTATION "\ue84d"
 #define AROMA_ICON_AC_UNIT "\ueb3b"
 #define AROMA_ICON_ACCESS_ALARM "\ue190"

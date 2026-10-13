@@ -2,14 +2,6 @@
 #define AROMA_UI_H
 
 
-
-
-
-
-
-
-
-
 #include "aroma_common.h"
 #include "aroma_node.h"
 #include "aroma_event.h"
@@ -66,9 +58,6 @@ extern "C"
     typedef struct  AromaIcon AromaIcon;
 
 
-
-
-
     typedef struct
     {
 
@@ -96,25 +85,16 @@ extern "C"
     extern void aroma_graphics_load_font_for_window(size_t window_id, AromaFont *font);
 
 
-
-
-
     static inline AromaNode *aroma_ui_get_focused_node(void)
     {
         return g_focused_node;
     }
 
 
-
-
-
     static inline void aroma_ui_set_focused_node(AromaNode *node)
     {
         g_focused_node = node;
     }
-
-
-
 
 
     static inline void aroma_ui_clear_focused_node(AromaNode *node)
@@ -126,16 +106,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_loading(
         AromaNode *parent,
         int x, int y, int radius, int thickness,
@@ -143,15 +113,6 @@ extern "C"
     {
         return aroma_loading_create(parent, x, y, radius, thickness, color);
     }
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_map(
@@ -174,9 +135,6 @@ extern "C"
     extern bool aroma_ui_init_impl(void);
 
 
-
-
-
     static inline bool aroma_ui_init(void)
     {
         if (g_ui_initialized)
@@ -186,16 +144,6 @@ extern "C"
         }
         return aroma_ui_init_impl();
     }
-
-
-
-
-
-
-
-
-
-
 
 
     static inline void aroma_ui_set_theme(const AromaTheme *theme)
@@ -214,17 +162,12 @@ extern "C"
     }
 
 
-
-
-
     static inline AromaTheme aroma_ui_get_theme(void)
     {
         return aroma_theme_get_global();
     }
 
     extern void aroma_ui_shutdown_impl(void);
-
-
 
 
     static inline void aroma_ui_shutdown(void)
@@ -237,9 +180,6 @@ extern "C"
     extern bool aroma_ui_is_running_impl(void);
 
 
-
-
-
     static inline bool aroma_ui_is_running(void)
     {
         if (!g_ui_initialized)
@@ -248,11 +188,6 @@ extern "C"
     }
 
     extern void aroma_ui_process_events_impl(void);
-
-
-
-
-
 
 
     static inline void aroma_ui_process_events(void)
@@ -264,9 +199,6 @@ extern "C"
 
     extern void aroma_ui_render_impl(struct AromaWindow *window_data);
     extern void aroma_ui_render_all_windows_impl(void);
-
-
-
 
 
     static inline void aroma_ui_render(AromaWindow *window)
@@ -290,19 +222,12 @@ extern "C"
     }
 
 
-
-
     static inline void aroma_ui_render_all(void)
     {
         if (!g_ui_initialized)
             return;
         aroma_ui_render_all_windows_impl();
     }
-
-
-
-
-
 
 
     static inline AromaFont *aroma_ui_load_font(const char *path, int size_px)
@@ -326,9 +251,6 @@ extern "C"
     }
 
 
-
-
-
     static inline void aroma_ui_unload_font(AromaFont *font)
     {
         if (font)
@@ -347,13 +269,6 @@ extern "C"
 
     extern AromaWindow *aroma_ui_create_window_impl(const char *title, int width, int height);
     extern void aroma_ui_open_url_impl(const char *url);
-
-
-
-
-
-
-
 
 
     static inline AromaWindow *aroma_ui_create_window(const char *title, int width, int height)
@@ -376,23 +291,11 @@ extern "C"
     extern void aroma_ui_destroy_window_impl(AromaWindow *window);
 
 
-
-
-
     extern void aroma_ui_set_offscreen_mode(bool offscreen);
     extern void aroma_ui_set_use_surfaceless(bool use_surfaceless);
 
 
-
-
-
-
-
-
     extern void aroma_ui_read_pixels(AromaWindow *window, void* buffer, int width, int height);
-
-
-
 
 
     static inline void aroma_ui_destroy_window(AromaWindow *window)
@@ -403,20 +306,12 @@ extern "C"
     }
 
 
-
-
-
-
     static inline void aroma_ui_window_set_background(AromaWindow *window, uint32_t color)
     {
         if (!window)
             return;
         LOG_INFO("Window background color set to 0x%06X", color);
     }
-
-
-
-
 
 
     static inline void aroma_ui_window_set_visible(AromaWindow *window, bool visible)
@@ -427,17 +322,10 @@ extern "C"
     }
 
 
-
-
-
     static inline int aroma_ui_window_count(void)
     {
         return g_window_count;
     }
-
-
-
-
 
 
     static inline AromaWindow *aroma_ui_get_window_at(int index)
@@ -446,9 +334,6 @@ extern "C"
             return NULL;
         return g_windows[index].window;
     }
-
-
-
 
 
     static inline void aroma_ui_open_url(const char *url)
@@ -466,9 +351,6 @@ extern "C"
     void aroma_graphics_swap_buffers(size_t window_id);
 
 
-
-
-
     typedef enum
     {
 
@@ -484,9 +366,6 @@ extern "C"
     } AromaIntentAction;
 
 
-
-
-
     typedef struct
     {
 
@@ -494,15 +373,6 @@ extern "C"
 
         const char *string_value;
     } AromaIntentExtra;
-
-
-
-
-
-
-
-
-
 
 
     static inline void aroma_ui_android_intent(AromaIntentAction action, const char *uri, const char *type, const AromaIntentExtra *extras, int extra_count)
@@ -514,19 +384,6 @@ extern "C"
     }
 
     void aroma_platform_set_window_update_callback(void (*callback)(size_t, void *), void *user_data);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_button(
@@ -556,10 +413,6 @@ extern "C"
     }
 
 
-
-
-
-
     static inline AromaNode *aroma_ui_button_with_type(
         AromaNode *parent,
         const char *text,
@@ -574,21 +427,6 @@ extern "C"
             aroma_button_set_type(btn, type);
         return btn;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_button_with_icon(
@@ -608,16 +446,6 @@ extern "C"
         }
         return btn;
     }
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_label(
@@ -658,19 +486,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_scrollable_container(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -680,7 +495,6 @@ extern "C"
         if (c)
         {
             aroma_container_set_scrollable(c, true);
-
 
 
             aroma_node_set_layout_mode(c, AROMA_LAYOUT_MODE_FLEX);
@@ -711,17 +525,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_icon(
         AromaNode *parent,
         const char *icon_code,
@@ -740,19 +543,6 @@ extern "C"
         }
         return node;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_checkbox(
@@ -774,20 +564,6 @@ extern "C"
         }
         return cb;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_radiobutton(
@@ -812,18 +588,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_switch(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -842,20 +606,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_slider(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -872,19 +622,6 @@ extern "C"
         }
         return sl;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_textbox(
@@ -910,19 +647,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_iconbutton(
         AromaNode *parent,
         const char *icon,
@@ -943,18 +667,6 @@ extern "C"
         }
         return btn;
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_chip(
@@ -997,16 +709,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_card(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1014,20 +716,6 @@ extern "C"
     {
         return aroma_card_create(parent, x, y, width, height, type);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_frosted_card(
@@ -1045,17 +733,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_progressbar(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1071,15 +748,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_divider(
         AromaNode *parent,
         int x, int y, int length,
@@ -1087,24 +755,6 @@ extern "C"
     {
         return aroma_divider_create(parent, x, y, length, orientation);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_listview(
@@ -1147,17 +797,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_table(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1184,14 +823,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_menu(
         AromaNode *parent,
         int x, int y,
@@ -1204,17 +835,6 @@ extern "C"
         }
         return menu;
     }
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_dialog(
@@ -1232,20 +852,6 @@ extern "C"
         }
         return dlg;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_tabs(
@@ -1294,12 +900,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_tabbar(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1317,20 +917,6 @@ extern "C"
             aroma_tabs_set_variant(tabs, TABS_VARIANT_BAR);
         return tabs;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_segmented(
@@ -1354,14 +940,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_snackbar(
         AromaNode *parent,
         const char *message,
@@ -1375,16 +953,6 @@ extern "C"
         }
         return snk;
     }
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_tooltip(
@@ -1401,20 +969,6 @@ extern "C"
         }
         return tt;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_sidebar(
@@ -1463,21 +1017,6 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     static inline AromaNode *aroma_ui_dropdown(
         AromaNode *parent,
         int x, int y, int width, int height,
@@ -1505,15 +1044,6 @@ extern "C"
         }
         return dd;
     }
-
-
-
-
-
-
-
-
-
 
 
     static inline AromaNode *aroma_ui_debug_overlay(
@@ -1641,67 +1171,24 @@ extern "C"
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     typedef bool (*AromaBackCallback)(void *user_data);
-
-
-
-
-
-
-
-
-
-
 
 
     void aroma_ui_set_back_callback(AromaBackCallback callback, void *user_data);
 
 
-
-
     void aroma_ui_clear_back_callback(void);
-
-
-
 
 
     bool aroma_ui_has_back_callback(void);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     bool aroma_ui_handle_back_press(void);
-
 
 
 #ifdef __ANDROID__
 
     struct android_app;
-
-
-
 
 
     void aroma_android_set_app(struct android_app *state);

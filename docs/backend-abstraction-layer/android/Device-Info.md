@@ -2,7 +2,7 @@
 
 Device info getters read `Build`, `PackageManager`, `ActivityManager`, `ConnectivityManager`, `PowerManager`, `BatteryManager`, `TelephonyManager`, `CameraManager`, and the system locale. Every getter is null-safe and returns a default when the service is missing.
 
-## Network types
+## Network Types
 
 | Constant | Value | Meaning |
 |---|---|---|
@@ -69,7 +69,7 @@ void log_device(char* out, int cap) {
 
 **Sources:** [include/aroma_android.h831-834](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L831-L834) [include/aroma_android.h939-1110](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L939-L1110) [include/aroma_android.h1422-1511](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L1422-L1511)
 
-## Next
+## Next Steps
 
 * Read [Device APIs](Device-APIs.md) for battery level and WiFi state.
 * Read [Display](Display.md) for density and screen metrics.

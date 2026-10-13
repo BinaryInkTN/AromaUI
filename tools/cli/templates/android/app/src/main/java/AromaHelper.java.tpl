@@ -195,7 +195,7 @@ public class AromaHelper {
     private static String pendingAudioConnectionAddress = null;
     private static Runnable audioConnectionTimeoutRunnable = null;
     private static boolean audioConnectionVerified = false;
-    /* BLUETOOTH */
+    
     public interface BluetoothCallback {
         void onConnectionResult(boolean success, String deviceName, int deviceType, int mode);
         void onDataReceived(byte[] data, int length);
@@ -1518,7 +1518,7 @@ public class AromaHelper {
         Log.d(TAG, "Cleanup complete");
     }
 
-    /* Prefs */
+    
     public static void setPref(String key, String value) {
         if (appContext == null) return;
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
@@ -2068,7 +2068,7 @@ public class AromaHelper {
 
     private static Uri captureOutputUri = null;
 
-    /** Take and clear the pending capture output URI (one-shot). */
+    
     public static Uri takeCaptureOutputUri() {
         Uri u = captureOutputUri;
         captureOutputUri = null;
@@ -2078,9 +2078,9 @@ public class AromaHelper {
     public static void capturePhoto(Activity activity, int requestCode) {
         if (activity == null) return;
         try {
-            // Offer a MediaStore output file: many camera apps return
-            // RESULT_OK with null data when no EXTRA_OUTPUT is supplied,
-            // which previously surfaced as "Cancelled" with no preview.
+            
+            
+            
             Uri outUri = null;
             try {
                 ContentValues cv = new ContentValues();
@@ -2480,9 +2480,9 @@ public class AromaHelper {
             PendingIntent pi = PendingIntent.getActivity(activity, 0, intent, flags);
             IntentFilter ndef = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
             try { ndef.addDataType("*/*"); } catch (IntentFilter.MalformedMimeTypeException e) { }
-            // Catch-all: text-record, blank and non-NDEF tags arrive as
-            // TECH_DISCOVERED/TAG_DISCOVERED and would otherwise bypass
-            // foreground dispatch entirely.
+            
+            
+            
             IntentFilter tech = new IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED);
             IntentFilter tag = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
             a.enableForegroundDispatch(activity, pi, new IntentFilter[]{ndef, tech, tag}, null);
@@ -2504,7 +2504,7 @@ public class AromaHelper {
         nfcAdapter = null;
     }
 
-    /** Tag UID bytes as uppercase hex ("" when unavailable). */
+    
     public static String rfidUidHex(Tag tag) {
         if (tag == null) return "";
         try {
@@ -2527,7 +2527,7 @@ public class AromaHelper {
             }
         }
         if (!delivered) {
-            // Deliver directly when nothing registered yet, same as NFC.
+            
             try {
                 new NativeCallback().onRfidTag(uid != null ? uid : "");
             } catch (Throwable t) {
@@ -2544,8 +2544,8 @@ public class AromaHelper {
             }
         }
         if (!delivered) {
-            // No callback registered yet (e.g. NFC demo opened before any
-            // Bluetooth flow): deliver directly so taps are never dropped.
+            
+            
             try {
                 new NativeCallback().onNfcTag(payload != null ? payload : "");
             } catch (Throwable t) {

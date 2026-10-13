@@ -31,21 +31,21 @@ class Logger:
     
     @classmethod
     def step(cls, msg: str):
-        print(f"{Colors.OKBLUE}==>{Colors.ENDC} {Colors.BOLD}{msg}{Colors.ENDC}")
+        print(f"{Colors.OKBLUE}==>{Colors.ENDC} {Colors.BOLD}{msg}{Colors.ENDC}", flush=True)
     
     @classmethod
     def success(cls, msg: str):
-        print(f"{Colors.OKGREEN}OK {msg}{Colors.ENDC}")
+        print(f"{Colors.OKGREEN}OK {msg}{Colors.ENDC}", flush=True)
     
     @classmethod
     def error(cls, msg: str):
-        print(f"{Colors.FAIL}ERROR: {msg}{Colors.ENDC}", file=sys.stderr)
+        print(f"{Colors.FAIL}ERROR: {msg}{Colors.ENDC}", file=sys.stderr, flush=True)
     
     @classmethod
     def info(cls, msg: str):
         if cls._verbose:
-            print(f"{Colors.OKCYAN}INFO {msg}{Colors.ENDC}")
+            print(f"{Colors.OKCYAN}INFO {msg}{Colors.ENDC}", flush=True)
     
     @classmethod
     def warning(cls, msg: str):
-        print(f"{Colors.WARNING}WARN: {msg}{Colors.ENDC}")
+        print(f"{Colors.WARNING}WARN: {msg}{Colors.ENDC}", flush=True)

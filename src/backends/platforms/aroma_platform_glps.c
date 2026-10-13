@@ -32,9 +32,6 @@ typedef struct
     void *frame_update_data;
 
 
-
-
-
     bool window_closed;
 } AromaGLPSContext;
 
@@ -57,9 +54,6 @@ static void glps_window_close_callback(size_t window_id, void *data)
 {
     (void)window_id;
     (void)data;
-
-
-
 
 
     platform_ctx.window_closed = true;
@@ -457,10 +451,6 @@ bool run_event_loop()
         return false;
     if (glps_wm_should_close(platform_ctx.wm))
         return false;
-
-
-
-
 
 
     return glps_wm_get_window_count(platform_ctx.wm) > 0;

@@ -1304,10 +1304,6 @@ static bool upload_mesh_attr(GLuint *vbo, const GLTFDocument *doc, const GLTFBuf
 }
 
 
-
-
-
-
 static float *generate_missing_normals(const unsigned char *pos_base, size_t pos_stride,
                                        int vertex_count,
                                        const unsigned char *idx_base, int index_count,
@@ -3306,7 +3302,6 @@ Aroma3DModel *aroma_3d_create_cube(void)
     mesh->index_offset = 0;
 
 
-
     memset(mesh->world_transform, 0, sizeof(mesh->world_transform));
     mesh->world_transform[0] = 1.0f;
     mesh->world_transform[5] = 1.0f;
@@ -3346,12 +3341,6 @@ Aroma3DModel *aroma_3d_create_cube(void)
     model->bounds_max[0] = model->bounds_max[1] = model->bounds_max[2] = 0.5f;
     return model;
 }
-
-
-
-
-
-
 
 
 #if defined(__arm__) || defined(__aarch64__)
@@ -3600,7 +3589,6 @@ bool aroma_3d_render_to_rect(const Aroma3DModel *model, const Aroma3DCamera *cam
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
-
 
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);

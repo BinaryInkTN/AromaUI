@@ -126,8 +126,6 @@ AromaWindow *IncenseLoadStringEx(const char *source,
                                  IncenseRegistry **out_registry);
 
 
-
-
 bool IncenseLoadStringIntoParent(const char *source, AromaNode *parent,
                                  AromaFont *font, AromaFont *icon_font,
                                  IncenseRegistry **out_registry);
@@ -135,7 +133,6 @@ bool IncenseLoadStringIntoParent(const char *source, AromaNode *parent,
 bool IncenseLoadFileIntoParent(const char *path, AromaNode *parent,
                                AromaFont *font, AromaFont *icon_font,
                                IncenseRegistry **out_registry);
-
 
 
 const char *aroma_icon_codepoint_from_name(const char *name);

@@ -41,7 +41,7 @@ void track_once(void) {
 
 **Sources:** [include/aroma_android.h1312-1333](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L1312-L1333) [tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl2580-2637](https://github.com/BinaryInkTN/AromaUI/blob/main/tools/cli/templates/android/app/src/main/java/AromaHelper.java.tpl#L2580-L2637)
 
-## Next
+## Next Steps
 
 * Read [Permissions](Permissions.md) for location permissions.
 * Read [Sensors](Sensors.md) for motion input without permissions.

@@ -39,9 +39,6 @@ void aroma_stepper_set_on_change(AromaNode *st_node, AromaStepperChangeCb cb,
 void aroma_stepper_set_font(AromaNode *st_node, AromaFont *font);
 
 
-
-
-
 bool aroma_stepper_owns_touch(AromaNode *st_node);
 bool aroma_stepper_setup_events(AromaNode *st_node, void (*on_redraw)(void *),
                                 void *user_data);

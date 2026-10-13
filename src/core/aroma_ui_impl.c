@@ -85,9 +85,6 @@ static inline bool is_valid_node_ptr(const AromaNode *node)
 }
 
 
-
-
-
 static inline bool node_hidden_including_ancestors(const AromaNode *node)
 {
     const AromaNode *cur = node;
@@ -777,11 +774,6 @@ static void collect_draw_tasks(struct AromaNode *node, AromaDrawTask *tasks,
     }
 
     append_draw_task(node, tasks, task_count, max_tasks);
-
-
-
-
-
 
 
     if (aroma_container_is_scrollable(node))

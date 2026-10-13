@@ -386,8 +386,6 @@ static void embed_props_parse_from_source(const char *source)
             p++;
 
 
-
-
         if (!*p)
             break;
         if (strncmp(p, "const embed_", 12) == 0)
@@ -2574,9 +2572,6 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
             {
 
 
-
-
-
                 start_val = roundf(start_val * dens);
                 end_val = roundf(end_val * dens);
             }
@@ -2586,11 +2581,6 @@ static void apply_widget_animations(AromaNode *built, const PropBag *bag, Incens
                                                      start_val, end_val, duration);
     if (anim_obj)
     {
-
-
-
-
-
 
 
         if (type == AROMA_ANIM_SLIDE_X || type == AROMA_ANIM_SLIDE_Y)
@@ -2940,8 +2930,6 @@ static AromaNode *build_button(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
                 aroma_button_set_icon(built, resolved ? resolved : ir,
                                       ctx->icon_font ? ctx->icon_font : _widget_font);
             }
-
-
 
 
             if (props_get(&bag, "width") || props_get(&bag, "height"))
@@ -3472,9 +3460,6 @@ static AromaNode *build_dialog(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         maybe_register(&bag, built, ctx);
 
 
-
-
-
         AromaNode *content = aroma_dialog_get_content_area(built);
         build_children(node, content ? content : built, ctx);
         props_free(&bag);
@@ -3940,9 +3925,6 @@ static AromaNode *build_3d_viewer(IncenseNode *node, AromaNode *sp, BuildCtx *ct
             props_float(&bag, "light_z", 1.0f));
 
 
-
-
-
         const char *model_path = props_get(&bag, "model");
         if (!model_path || !model_path[0])
             model_path = props_get(&bag, "src");
@@ -3967,9 +3949,6 @@ static AromaNode *build_3d_viewer(IncenseNode *node, AromaNode *sp, BuildCtx *ct
             else
                 ERR_WARN_N(node, "Failed to load 3D model: %s", resolved_path);
         }
-
-
-
 
 
         {
@@ -5732,10 +5711,6 @@ void IncenseHotReloadStopAll(void)
 }
 
 
-
-
-
-
 static bool build_doc_into_parent(const IncenseDocument *doc, AromaNode *parent,
                                   AromaFont *font, AromaFont *icon_font,
                                   IncenseRegistry **out_registry)
@@ -5791,8 +5766,6 @@ static bool build_doc_into_parent(const IncenseDocument *doc, AromaNode *parent,
 
     BuildCtx ctx = {.registry = ireg ? &ireg->reg : NULL, .font_registry = freg, .default_font = font, .icon_font = icon_font};
     build_children(root, parent, &ctx);
-
-
 
 
     aroma_node_invalidate_tree(parent);

@@ -1,24 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "widgets/aroma_menu.h"
 #include "widgets/aroma_container.h"
 #include "core/aroma_logger.h"
@@ -107,7 +88,6 @@ AromaNode* aroma_menu_create(AromaNode* parent, int x, int y)
     if (!parent) return NULL;
 
 
-
 #ifdef __ANDROID__
 x = aroma_android_dp_to_px(x);
 y = aroma_android_dp_to_px(y);
@@ -148,7 +128,6 @@ y = aroma_android_dp_to_px(y);
 
     return node;
 }
-
 
 
 static void __menu_sync_rect(AromaNode* menu_node)

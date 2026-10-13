@@ -15,12 +15,6 @@
 #endif
 
 
-
-
-
-
-
-
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -79,7 +73,6 @@ struct AromaTimePicker {
     int down_y;
     bool dial_armed;
     int pressed_foot;
-
 
 
     bool popup_open;
@@ -335,7 +328,6 @@ static void tp_overlay_unregister(AromaNode *node)
 }
 
 
-
 static bool tp_field_screen(AromaNode *node, AromaTimePicker *t,
                             AromaRect *out)
 {
@@ -361,7 +353,6 @@ static bool tp_field_screen(AromaNode *node, AromaTimePicker *t,
     }
     return true;
 }
-
 
 
 static bool tp_compute_popup(AromaNode *node, AromaTimePicker *t)
@@ -461,8 +452,6 @@ void aroma_timepicker_close_popups(void)
         aroma_timepicker_close_popup(node);
     }
 }
-
-
 
 
 static bool tp_handle(AromaEvent *e, void *ud)
@@ -956,7 +945,6 @@ void aroma_timepicker_draw(AromaNode *node, size_t window_id)
     uint32_t dial_bg = aroma_color_blend(t->bg_color, t->text_color, 0.05f);
     gfx->fill_rectangle(window_id, cx - r, cy - r, 2 * r, 2 * r, dial_bg,
                         true, (float)r);
-
 
 
     int ring_w = tdp(2);

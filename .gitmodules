@@ -13,3 +13,6 @@
 [submodule "vendors/sqlite3"]
 	path = vendors/sqlite3
 	url = https://github.com/azadkuh/sqlite-amalgamation.git
+[submodule "vendors/ctypesgen"]
+	path = vendors/ctypesgen
+	url = https://github.com/ctypesgen/ctypesgen.git

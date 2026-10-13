@@ -2,11 +2,11 @@
 
 Bluetooth Low Energy uses a different radio path than classic Bluetooth. Classic Bluetooth in [Bluetooth Scan](Bluetooth-Scan.md) and [Bluetooth Connect](Bluetooth-Connect.md) targets headsets, speakers, and serial devices. BLE targets sensors, beacons, wearables, and custom gadgets through GATT services and characteristics.
 
-## Setup first
+## Prerequisites
 
 BLE needs `android.permission.BLUETOOTH_SCAN` and `android.permission.BLUETOOTH_CONNECT` on API 31 and newer, plus `android.permission.ACCESS_FINE_LOCATION` on older releases. Declare them in `AndroidManifest.xml` and request them with [Permissions](Permissions.md). The template manifest already declares them.
 
-## Write types
+## GATT Write Types
 
 | Constant | Value | Meaning |
 |---|---|---|
@@ -57,7 +57,7 @@ void start_heart_rate(const char* addr) {
 
 **Sources:** [include/aroma_android.h826-827](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L826-L827) [include/aroma_android.h1162-1240](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L1162-L1240)
 
-## Next
+## Next Steps
 
 * Read [Bluetooth Scan](Bluetooth-Scan.md) for classic device discovery.
 * Read [Permissions](Permissions.md) for the scan and connect permissions.

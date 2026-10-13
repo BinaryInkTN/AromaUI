@@ -15,14 +15,8 @@ static AromaAnimation* animation_list = NULL;
 static AromaTimer*     anim_timer     = NULL;
 
 
-
-
-
-
-
 static int  s_tick_depth     = 0;
 static bool s_deferred_sweep = false;
-
 
 
 static bool     s_paused      = false;
@@ -96,20 +90,12 @@ void aroma_animation_tick(uint64_t now)
         float progress = finished ? 1.0f : raw_progress;
 
 
-
-
-
-
-
         if (!finished && curr->duration_ms > 0) {
             float max_step = (float)AROMA_ANIM_MAX_TICK_STEP_MS / (float)curr->duration_ms;
             float allowed  = curr->last_progress + max_step;
             if (progress > allowed)
                 progress = allowed;
         }
-
-
-
 
 
         curr->last_progress = progress;
@@ -120,14 +106,6 @@ void aroma_animation_tick(uint64_t now)
 
         AromaRect* rect = aroma_node_get_rect(curr->target);
         if (rect) {
-
-
-
-
-
-
-
-
 
 
             int parent_x = 0, parent_y = 0;
@@ -159,9 +137,6 @@ void aroma_animation_tick(uint64_t now)
             if (!curr->is_running) {
 
 
-
-
-
                 prev = curr;
                 curr = curr->next;
                 continue;
@@ -173,7 +148,6 @@ void aroma_animation_tick(uint64_t now)
 
         if (finished) {
             if (curr->loop_mode == AROMA_LOOP_RESTART && curr->duration_ms > 0) {
-
 
 
                 curr->start_time = now;
@@ -205,8 +179,6 @@ void aroma_animation_tick(uint64_t now)
     }
 
 
-
-
     if (s_deferred_sweep) {
         s_deferred_sweep = false;
         AromaAnimation* c = animation_list;
@@ -229,9 +201,6 @@ void aroma_animation_tick(uint64_t now)
     if (needs_redraw) {
         aroma_ui_request_redraw(NULL);
         if (still_running) {
-
-
-
 
 
             aroma_ui_request_frame();
@@ -297,7 +266,6 @@ void aroma_animation_manager_shutdown(void)
     }
 
 
-
     aroma_animation_cleanup_all();
     s_paused = false;
     s_pause_begin = 0;
@@ -333,9 +301,6 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
     if (!anim_timer) aroma_animation_manager_init();
 
 
-
-
-
     aroma_ui_request_frame();
     return anim;
 }
@@ -365,7 +330,6 @@ void aroma_animation_cleanup_node(AromaNode* target) {
     if (!target) return;
 
     if (s_tick_depth > 0) {
-
 
 
         for (AromaAnimation* c = animation_list; c; c = c->next) {

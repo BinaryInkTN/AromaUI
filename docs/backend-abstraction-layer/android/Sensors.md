@@ -2,7 +2,7 @@
 
 Sensors stream through `SensorManager`. Register a listener for the sensor you need, read values from the callback, unregister when the screen hides. No manifest permission is needed for motion and magnetic sensors.
 
-## Sensor types
+## Sensor Types
 
 | Constant | Value | Sensor |
 |---|---|---|
@@ -54,7 +54,7 @@ void motion_off(void) {
 
 **Sources:** [include/aroma_android.h828-830](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L828-L830) [include/aroma_android.h1133-1160](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L1133-L1160)
 
-## Next
+## Next Steps
 
 * Read [Device APIs](Device-APIs.md) for battery and connectivity state.
 * Read [Display](Display.md) for orientation locking during motion input.

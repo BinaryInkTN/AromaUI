@@ -131,7 +131,7 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
         if (red_start_normalized < 0.0f) red_start_normalized = 0.0f;
         if (red_start_normalized > 1.0f) red_start_normalized = 1.0f;
         float red_start_angle = gauge->start_angle + red_start_normalized * (gauge->end_angle - gauge->start_angle);
-        
+
         gfx->draw_arc(window_id, cx, cy, base_radius, red_start_angle, gauge->end_angle, 0xFFFF1111, gauge->track_thickness + gauge_dp(AROMA_GAUGE_RED_ZONE_EXTRA_DP));
     }
 
@@ -279,7 +279,7 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
         int base_y = cy + (int)(sin(fill_end) * needle_start_r);
 
         gfx->draw_line(window_id, base_x, base_y, tip_x, tip_y, gauge->needle_color, gauge->needle_thickness, true);
-        
+
         if (gfx->fill_rectangle) {
             int base_radius = gauge->needle_thickness * 2;
             gfx->fill_rectangle(window_id, base_x - base_radius, base_y - base_radius, base_radius * 2, base_radius * 2, gauge->needle_color, true, base_radius);

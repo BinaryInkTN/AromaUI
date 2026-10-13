@@ -1,6 +1,6 @@
 > Android specific. This page only applies to Android builds. All functions here need `__ANDROID__`.
 
-## Setup first
+## Prerequisites
 
 Declare each permission in `AndroidManifest.xml` before you check it. Without the manifest entry, checks always fail. Results for requests arrive async, so check again after the user responds.
 
@@ -12,7 +12,7 @@ Declare each permission in `AndroidManifest.xml` before you check it. Without th
 | `aroma_android_request_permission` | `void aroma_android_request_permission(const char** permissions, int permCount)` | Requests runtime permissions from the user. Pass an array of strings plus its length. No return value, results arrive async. |
 | `aroma_android_request_permissions_cb` | `void aroma_android_request_permissions_cb(const char** permissions, int permCount, void (*result_cb)(const char* permission, bool granted))` | Same request, but `result_cb` fires once per permission with the grant result. Needs `AromaActivity`; see [App Setup](App-Setup.md). |
 
-## Results with callback
+## Receiving Results via Callback
 
 The plain request is fire and forget. When the app needs the answer, pass a callback. It runs on the UI thread once per requested permission.
 
@@ -37,7 +37,7 @@ void start_scan_flow(void) {
 #endif
 ```
 
-## Which string to use
+## Permission Strings
 
 | Feature | Manifest string |
 |---|---|
@@ -67,7 +67,7 @@ if (!aroma_android_check_permission("android.permission.BLUETOOTH_CONNECT")) {
 
 **Sources:** [include/aroma_android.h84-108](https://github.com/BinaryInkTN/AromaUI/blob/main/include/aroma_android.h#L84-L108)
 
-## Next
+## Next Steps
 
 * Read [System UI](System-UI.md) for toast and vibration.
 * Read [App Setup](App-Setup.md) for manifest placement.

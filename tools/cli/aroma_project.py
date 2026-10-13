@@ -5,11 +5,13 @@ import platform
 import re
 import shutil
 import stat
+import sys
 from typing import Any, Dict, List, Optional
 
 from aroma_constants import PREFERRED_GRADLE_VERSIONS
 from aroma_detector import Detector
 from aroma_output import Colors, Logger
+from aroma_python_deps import REQUIREMENTS_SEED, render_chaquopy_block
 from aroma_util import (
     find_aroma_root,
     load_config,
@@ -26,20 +28,27 @@ class ProjectCreator:
         self.templates_dir = templates_dir
         self.config = config
     
-    def create(self, name: str = None) -> bool:
+    def create(self, name: str = None, python: bool = False) -> bool:
         Logger.step("Create New Project")
-        
-        project_name = name or secure_input("Project Name", min_length=1)
-        target_dir = os.path.abspath(project_name)
-        
+
+        raw_name = (name or secure_input("Project Name", min_length=1)).strip().rstrip("/\\")
+        target_dir = os.path.abspath(raw_name)
+        project_name = os.path.basename(target_dir)
+
         if os.path.exists(target_dir):
-            Logger.error(f"Directory exists: {project_name}")
+            Logger.error(f"Directory exists: {target_dir}")
             return False
-        
-        default_pkg = f"com.example.{project_name.lower().replace('-', '')}"
+
+        safe_base = re.sub(r'[^A-Za-z0-9]', '', project_name).lower() or "myapp"
+        default_pkg = f"com.example.{safe_base}"
         package = secure_input("Package Name", default=default_pkg,
                               validator=validate_package_name,
                               error_msg="Invalid package name (e.g. com.example.myapp)")
+        
+        if python:
+            language = "python"
+        else:
+            language = self._prompt_language()
         
         sdk_ver = resolve_value("android.sdk_version", self.config, "34")
         
@@ -59,6 +68,7 @@ class ProjectCreator:
         print(f"\n{Colors.BOLD}Configuration:{Colors.ENDC}")
         print(f"  Name:        {project_name}")
         print(f"  Package:     {package}")
+        print(f"  Language:    {language}")
         print(f"  Min SDK:     {min_sdk}")
         print(f"  Target SDK:  {target_sdk}")
         print(f"  Compile SDK: {compile_sdk}")
@@ -68,16 +78,41 @@ class ProjectCreator:
             return False
         
         return self._generate(target_dir, project_name, package,
-                             str(min_sdk), str(target_sdk), str(compile_sdk))
+                             str(min_sdk), str(target_sdk), str(compile_sdk),
+                             language)
     
+    @staticmethod
+    def _prompt_language() -> str:
+        """Ask the user to pick C or Python. Defaults to C."""
+        print(f"\n{Colors.BOLD}Language:{Colors.ENDC}")
+        print("  1. C")
+        print("  2. Python")
+        valid = {"1": "c", "2": "python", "c": "c", "python": "python"}
+        while True:
+            try:
+                choice = input("Select language [1]: ").strip().lower()
+            except KeyboardInterrupt:
+                print()
+                sys.exit(130)
+            except EOFError:
+                print()
+                return "c"
+            if not choice:
+                return "c"
+            if choice in valid:
+                return valid[choice]
+            print(f"{Colors.FAIL}Enter 1 for C or 2 for Python.{Colors.ENDC}")
+
     def _generate(self, target_dir: str, name: str, package: str,
-                  min_sdk: str, target_sdk: str, compile_sdk: str) -> bool:
-        Logger.step(f"Creating {name}")
+                  min_sdk: str, target_sdk: str, compile_sdk: str,
+                  language: str = "c") -> bool:
+        Logger.step(f"Creating {name} ({language})")
         
         try:
             os.makedirs(target_dir, exist_ok=True)
             os.makedirs(os.path.join(target_dir, "src"), exist_ok=True)
             
+            is_python = (language == "python")
             replacements = {
                 "{{PROJECT_NAME}}": name,
                 "{{PACKAGE_NAME}}": package,
@@ -85,10 +120,28 @@ class ProjectCreator:
                 "{{TARGET_SDK}}": target_sdk,
                 "{{COMPILE_SDK}}": compile_sdk,
                 "{{AROMA_ROOT}}": find_aroma_root(),
+                "{{CHAQUOPY_CLASSPATH}}": (
+                    "        classpath 'com.chaquo.python:gradle:17.0.0'"
+                    if is_python else ""),
+                "{{CHAQUOPY_APPLY}}": (
+                    "apply plugin: 'com.chaquo.python'" if is_python else ""),
+                "{{CHAQUOPY_NDK}}": (
+                    "        ndk {\n"
+                    "            abiFilters 'arm64-v8a', 'x86_64'\n"
+                    "        }" if is_python else ""),
+                "{{CHAQUOPY_BLOCK}}": (render_chaquopy_block([]) if is_python else ""),
+                "{{AROMA_SHARED_LIBS}}": (
+                    "set(_AROMA_SAVED_BUILD_SHARED_LIBS \"${BUILD_SHARED_LIBS}\")\n"
+                    "set(BUILD_SHARED_LIBS ON CACHE BOOL \"\" FORCE)\n"
+                    if is_python else ""),
             }
             
-            self._copy_tpl("app/main.c.tpl", os.path.join(target_dir, "src", "main.c"), replacements)
-            self._copy_tpl("app/CMakeLists.txt.tpl", os.path.join(target_dir, "CMakeLists.txt"), replacements)
+            if is_python:
+                self._copy_tpl("python/main.py.tpl", os.path.join(target_dir, "src", "main.py"), replacements)
+                self._copy_tpl("python/bootstrap.c.tpl", os.path.join(target_dir, "src", "main.c"), replacements)
+            else:
+                self._copy_tpl("app/main.c.tpl", os.path.join(target_dir, "src", "main.c"), replacements)
+                self._copy_tpl("app/CMakeLists.txt.tpl", os.path.join(target_dir, "CMakeLists.txt"), replacements)
             
             android_src = os.path.join(self.templates_dir, "android")
             android_dst = os.path.join(target_dir, "android")
@@ -106,11 +159,27 @@ class ProjectCreator:
                         "Project created, but Gradle wrapper generation failed. "
                         "You can retry manually — see the error above for the fix."
                     )
+
+            if is_python:
+                os.makedirs(os.path.join(android_dst, "app", "src", "main", "python"),
+                            exist_ok=True)
+                req_txt = os.path.join(target_dir, "requirements.txt")
+                if not os.path.exists(req_txt):
+                    with open(req_txt, 'w') as f:
+                        f.write(REQUIREMENTS_SEED)
+
+            gitignore = os.path.join(target_dir, ".gitignore")
+            if not os.path.exists(gitignore):
+                with open(gitignore, 'w') as f:
+                    f.write("build/\nbuild_web/\nbindings/\n"
+                            "android/build/\nandroid/app/build/\n"
+                            "android/local.properties\n")
             
             project_config = {
                 "project": {
                     "name": name,
                     "package": package,
+                    "language": language,
                     "version": "0.1.0",
                     "min_sdk": int(min_sdk),
                     "target_sdk": int(target_sdk),
@@ -123,10 +192,12 @@ class ProjectCreator:
                     "categories": "Utility;",
                 },
             }
+            if is_python:
+                project_config["project"]["python"] = {"requirements": []}
             save_project_config(target_dir, project_config)
-            
+
             Logger.success(f"Project created: {name}")
-            self._show_next(name)
+            self._show_next(name, language)
             return True
         except Exception as e:
             Logger.error(f"Failed: {e}")
@@ -252,29 +323,42 @@ class ProjectCreator:
         detector = Detector()
         installed_versions = detector.detect_all_gradle()
         version = self._pick_gradle_version(installed_versions)
-        
-        if not version:
-            Logger.error(
-                "No Gradle distribution found under "
-                f"{os.path.join(detector.install_path, 'gradle')} "
-                "(expected e.g. gradle-8.7/bin/gradle). Install a Gradle "
-                "distribution there, or generate the wrapper manually with "
-                "'gradle wrapper --gradle-version <version>' inside the "
-                "project's android/ directory."
-            )
-            return False
-        
-        gradle_bin = os.path.join(detector.install_path, "gradle", f"gradle-{version}", "bin", "gradle")
-        if platform.system() == "Windows":
-            gradle_bin_bat = gradle_bin + ".bat"
-            if os.path.isfile(gradle_bin_bat):
-                gradle_bin = gradle_bin_bat
-        
-        if not os.path.isfile(gradle_bin):
-            Logger.error(f"Gradle binary not found at expected path: {gradle_bin}")
-            return False
-        
-        gradle_home = os.path.join(detector.install_path, "gradle", f"gradle-{version}")
+        gradle_bin = None
+        gradle_home = None
+        dist_url = None
+
+        if version:
+            managed_bin = os.path.join(detector.install_path, "gradle", f"gradle-{version}", "bin", "gradle")
+            if platform.system() == "Windows":
+                managed_bat = managed_bin + ".bat"
+                if os.path.isfile(managed_bat):
+                    managed_bin = managed_bat
+            if os.path.isfile(managed_bin):
+                gradle_bin = managed_bin
+                gradle_home = os.path.join(detector.install_path, "gradle", f"gradle-{version}")
+                dist_url = f"file\\://{gradle_home}"
+            else:
+                Logger.warning(f"Gradle {version} listed but binary missing at {managed_bin}; trying system Gradle...")
+                version = None
+
+        if gradle_bin is None:
+
+
+            gradle_bin = shutil.which("gradle")
+            if gradle_bin is None:
+                Logger.error(
+                    "No Gradle distribution found under "
+                    f"{os.path.join(detector.install_path, 'gradle')} "
+                    "(expected e.g. gradle-8.7/bin/gradle) and no 'gradle' "
+                    "on PATH. Install Gradle and re-run, or generate the "
+                    "wrapper manually with 'gradle wrapper --gradle-version "
+                    "<version>' inside the project's android/ directory."
+                )
+                return False
+            version = sorted(PREFERRED_GRADLE_VERSIONS)[-1]
+            dist_url = (f"https\\://services.gradle.org/distributions/"
+                        f"gradle-{version}-bin.zip")
+            Logger.info(f"Using system Gradle to generate wrapper ({version})...")
         wrapper_props_dir = os.path.join(android_dir, "gradle", "wrapper")
         os.makedirs(wrapper_props_dir, exist_ok=True)
         
@@ -282,7 +366,7 @@ class ProjectCreator:
         with open(wrapper_props_path, 'w') as f:
             f.write(f"distributionBase=GRADLE_USER_HOME\n")
             f.write(f"distributionPath=wrapper/dists\n")
-            f.write(f"distributionUrl=file\\://{gradle_home}\n")
+            f.write(f"distributionUrl={dist_url}\n")
             f.write(f"networkTimeout=10000\n")
             f.write(f"zipStoreBase=GRADLE_USER_HOME\n")
             f.write(f"zipStorePath=wrapper/dists\n")
@@ -308,11 +392,11 @@ class ProjectCreator:
                     f.write(f"zipStorePath=wrapper/dists\n")
                 return False
         
-        if os.path.isfile(gradle_home):
+        if dist_url and dist_url.startswith("file"):
             with open(wrapper_props_path, 'w') as f:
                 f.write(f"distributionBase=GRADLE_USER_HOME\n")
                 f.write(f"distributionPath=wrapper/dists\n")
-                f.write(f"distributionUrl=file\\://{gradle_home}\n")
+                f.write(f"distributionUrl={dist_url}\n")
                 f.write(f"networkTimeout=10000\n")
                 f.write(f"zipStoreBase=GRADLE_USER_HOME\n")
                 f.write(f"zipStorePath=wrapper/dists\n")
@@ -324,9 +408,11 @@ class ProjectCreator:
         Logger.success(f"Gradle wrapper ready (Gradle {version}, project-local, no download needed)")
         return True
     
-    def _show_next(self, name: str):
+    def _show_next(self, name: str, language: str = "c"):
         print(f"\n{Colors.BOLD}Next steps:{Colors.ENDC}")
         print(f"  cd {name}")
+        if language == "python":
+            print("  # add third-party packages to requirements.txt, then:")
         print("  aroma run linux")
         print("  aroma run android --emu")
         print("  aroma build android --release")
@@ -336,4 +422,5 @@ class ProjectCreator:
 def cmd_create(args):
     config = load_config(getattr(args, 'config', None))
     templates = os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
-    ProjectCreator(templates, config).create(getattr(args, 'name', None))
+    ProjectCreator(templates, config).create(
+        getattr(args, 'name', None), python=getattr(args, 'python', False))

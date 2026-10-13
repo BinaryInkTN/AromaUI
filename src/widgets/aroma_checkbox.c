@@ -301,7 +301,6 @@ static bool __checkbox_handle_event(AromaEvent* event, void* user_data)
     bool in_bounds = (event->data.mouse.x >= r->x && event->data.mouse.x <= r->x + r->width &&
                       event->data.mouse.y >= r->y && event->data.mouse.y <= r->y + r->height);
 
-    
 
     int adjusted_x = event->data.mouse.x;
     int adjusted_y = event->data.mouse.y;
@@ -323,7 +322,7 @@ static bool __checkbox_handle_event(AromaEvent* event, void* user_data)
         }
         cur = cur->parent_node;
     }
-    
+
     in_bounds = (adjusted_x >= r->x && adjusted_x <= r->x + r->width &&
                  adjusted_y >= r->y && adjusted_y <= r->y + r->height);
 
