@@ -390,6 +390,11 @@ static EM_BOOL _cb_key_up(int et, const EmscriptenKeyboardEvent *e, void *ud)
 static void _frame_trampoline(void *arg)
 {
     (void)arg;
+    /* Native/GLFW mains pump this explicitly in their loops; on web the
+     * browser owns the loop, so pump here before rendering. Without it
+     * the queued mouse/touch/keyboard events (and timers) never run and
+     * no live preview is interactive. */
+    aroma_ui_process_events();
     if (platform_ctx.frame_callback) {
 
         platform_ctx.frame_callback(1, platform_ctx.frame_callback_data);
