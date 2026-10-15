@@ -782,6 +782,98 @@ class DocGenerator:
             '<div class="kf-chip kf-chip-1"></div>'
             '<div class="kf-chip kf-chip-2"></div>'
             '<div class="kf-chip kf-chip-3"></div>'
+            '<div class="kf-logo">'
+            '<svg width="92" height="92" viewBox="0.21 -0.077 110 110" xmlns="http://www.w3.org/2000/svg">'
+            '<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="63.8159" y1="56.6829" x2="118.4934" y2="1.8225" gradientTransform="matrix(1 0 0 -1 -53.2974 66.4321)">'
+            '<stop offset="0" style="stop-color:#387EB8"/>'
+            '<stop offset="1" style="stop-color:#366994"/>'
+            "</linearGradient>"
+            '<path fill="url(#SVGID_1_)" d="M55.023-0.077c-25.971,0-26.25,10.081-26.25,12.156c0,3.148,0,12.594,0,12.594h26.75v3.781 c0,0-27.852,0-37.375,0c-7.949,0-17.938,4.833-17.938,26.25c0,19.673,7.792,27.281,15.656,27.281c2.335,0,9.344,0,9.344,0 s0-9.765,0-13.125c0-5.491,2.721-15.656,15.406-15.656c15.91,0,19.971,0,26.531,0c3.902,0,14.906-1.696,14.906-14.406 c0-13.452,0-17.89,0-24.219C82.054,11.426,81.515-0.077,55.023-0.077z M40.273,8.392c2.662,0,4.813,2.15,4.813,4.813 c0,2.661-2.151,4.813-4.813,4.813s-4.813-2.151-4.813-4.813C35.46,10.542,37.611,8.392,40.273,8.392z"/>'
+            '<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="97.0444" y1="21.6321" x2="155.6665" y2="-34.5308" gradientTransform="matrix(1 0 0 -1 -53.2974 66.4321)">'
+            '<stop offset="0" style="stop-color:#FFE052"/>'
+            '<stop offset="1" style="stop-color:#FFC331"/>'
+            "</linearGradient>"
+            '<path fill="url(#SVGID_2_)" d="M55.397,109.923c25.959,0,26.282-10.271,26.282-12.156c0-3.148,0-12.594,0-12.594H54.897v-3.781 c0,0,28.032,0,37.375,0c8.009,0,17.938-4.954,17.938-26.25c0-23.322-10.538-27.281-15.656-27.281c-2.336,0-9.344,0-9.344,0 s0,10.216,0,13.125c0,5.491-2.631,15.656-15.406,15.656c-15.91,0-19.476,0-26.532,0c-3.892,0-14.906,1.896-14.906,14.406 c0,14.475,0,18.265,0,24.219C28.366,100.497,31.562,109.923,55.397,109.923z M70.148,101.454c-2.662,0-4.813-2.151-4.813-4.813 s2.15-4.813,4.813-4.813c2.661,0,4.813,2.151,4.813,4.813S72.809,101.454,70.148,101.454z"/>'
+            "</svg>"
+            "</div>"
+            "</div></div></div>"
+        )
+
+
+        kz_rust = (
+            '<div class="kz-wrap kz-python-wrap"><div class="kf-card kf-card-rust">'
+            '<div class="kf-copy">'
+            "<h2>Write apps in Rust</h2>"
+            "<p>Use the full AromaUI widget set from Rust. A single command "
+            "builds the bindings crate from the C headers and keeps it updated. "
+            "No wrappers to write by hand.</p>"
+            '<a class="kz-btn-light" '
+            'onclick="showPage(SLUG_TO_ID[\'rust-bindings\'],\'Reference\',null)">'
+            '<span>Read the Rust bindings guide</span><i data-lucide="arrow-up-right"></i></a>'
+            "</div>"
+            '<div class="kf-art" aria-hidden="true">'
+            '<div class="kf-chip kf-chip-1"></div>'
+            '<div class="kf-chip kf-chip-2"></div>'
+            '<div class="kf-chip kf-chip-3"></div>'
+            '<div class="kf-logo">'
+            '<svg width="92" height="92" viewBox="0 0 106 106" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            '<g transform="translate(53, 53)">'
+            '<path transform="translate(0.5, 0.5)" stroke="black" stroke-width="1" stroke-linejoin="round" d="M -9,-15 H 4 C 12,-15 12,-7 4,-7 H -9 Z M -40,22 H 0 V 11 H -9 V 3 H 1 C 12,3 6,22 15,22 H 40 V 3 H 34 V 5 C 34,13 25,12 24,7 C 23,2 19,-2 18,-2 C 33,-10 24,-26 12,-26 H -35 V -15 H -25 V 11 H -40 Z"/>'
+            '<g mask="url(#rust-holes)">'
+            '<circle r="43" fill="none" stroke="black" stroke-width="9"/>'
+            '<g>'
+            '<polygon id="rust-cog" stroke="black" stroke-width="3" stroke-linejoin="round" points="46,3 51,0 46,-3"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(11.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(22.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(33.75)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(45.00)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(56.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(67.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(78.75)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(90.00)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(101.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(112.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(123.75)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(135.00)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(146.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(157.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(168.75)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(180.00)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(191.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(202.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(213.75)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(225.00)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(236.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(247.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(258.75)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(270.00)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(281.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(292.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(303.75)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(315.00)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(326.25)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(337.50)"/>'
+            '<use xlink:href="#rust-cog" transform="rotate(348.75)"/>'
+            "</g>"
+            '<g>'
+            '<polygon id="rust-mount" stroke="black" stroke-width="6" stroke-linejoin="round" points="-7,-42 0,-35 7,-42"/>'
+            '<use xlink:href="#rust-mount" transform="rotate(72)"/>'
+            '<use xlink:href="#rust-mount" transform="rotate(144)"/>'
+            '<use xlink:href="#rust-mount" transform="rotate(216)"/>'
+            '<use xlink:href="#rust-mount" transform="rotate(288)"/>'
+            "</g>"
+            "</g>"
+            '<mask id="rust-holes">'
+            '<rect x="-60" y="-60" width="120" height="120" fill="white"/>'
+            '<circle id="rust-hole" cy="-40" r="3"/>'
+            '<use xlink:href="#rust-hole" transform="rotate(72)"/>'
+            '<use xlink:href="#rust-hole" transform="rotate(144)"/>'
+            '<use xlink:href="#rust-hole" transform="rotate(216)"/>'
+            '<use xlink:href="#rust-hole" transform="rotate(288)"/>'
+            "</mask>"
+            "</g>"
+            "</svg>"
+            "</div>"
             "</div></div></div>"
         )
 
@@ -794,6 +886,7 @@ class DocGenerator:
             {kf_sec}
             </div>
             {kz_python}
+            {kz_rust}
             {browse_html}
         </div>
         '''
@@ -1884,10 +1977,12 @@ body.has-announce .announce-bar{{display:flex}}
 [data-theme="dark"] .kf-card{{background:#222226;border-color:#35353B;box-shadow:none;}}
 [data-theme="dark"] .kf-copy h2{{color:#FFFFFF;}}
 [data-theme="dark"] .kf-copy p{{color:#B9B9C0;}}
-.welcome-page .kf-card-test,.welcome-page .kf-card-oss,.welcome-page .kf-card-python{{background:var(--ms-surface);border-color:var(--ms-border);}}
-[data-theme="dark"] .welcome-page .kf-card-test,[data-theme="dark"] .welcome-page .kf-card-oss,[data-theme="dark"] .welcome-page .kf-card-python{{background:#222226;border-color:#35353B;}}
+.welcome-page .kf-card-test,.welcome-page .kf-card-oss,.welcome-page .kf-card-python,.welcome-page .kf-card-rust{{background:var(--ms-surface);border-color:var(--ms-border);}}
+[data-theme="dark"] .welcome-page .kf-card-test,[data-theme="dark"] .welcome-page .kf-card-oss,[data-theme="dark"] .welcome-page .kf-card-python,[data-theme="dark"] .welcome-page .kf-card-rust{{background:#222226;border-color:#35353B;}}
 .welcome-page .kz-python-wrap{{max-width:var(--rail);margin:0 auto;padding:48px 40px 0;}}
-.welcome-page .kf-card-python{{margin-top:0;}}
+.welcome-page .kf-card-python,.welcome-page .kf-card-rust{{margin-top:0;}}
+.welcome-page .kf-logo{{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150px;height:150px;border-radius:50%;background:#FFFFFF;border:1px solid var(--ms-border);display:flex;align-items:center;justify-content:center;box-shadow:var(--ms-elev-1);z-index:1;}}
+.welcome-page .kf-logo svg{{width:92px;height:92px;display:block;}}
 @media(max-width:900px){{
   .kf-card{{grid-template-columns:1fr;margin-top:24px;}}
   .kf-copy{{padding:32px 24px;}}

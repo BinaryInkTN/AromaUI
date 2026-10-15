@@ -354,6 +354,17 @@
             "file": "docs/cli-toolchain/Python-on-Android.md"
         },
         {
+            "title": "Write apps in Rust",
+            "description": "Write apps in Rust (cargo) and run them with the aroma CLI.",
+            "icon": "terminal",
+            "color": "#8A4B2A",
+            "category": "Build & Deploy",
+            "version": "0.0.2",
+            "updated": "2026-10-15",
+            "status": "stable",
+            "file": "docs/cli-toolchain/Rust-on-Linux.md"
+        },
+        {
             "title": "Building & Deployment",
             "description": "Compile for Linux, Android, and Web. Sign, package, and run.",
             "icon": "hammer",

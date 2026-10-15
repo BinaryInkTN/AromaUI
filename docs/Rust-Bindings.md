@@ -145,3 +145,5 @@ python3 tools/generate_rust_bindings.py --stats
 | `cargo: command not found` anywhere | Install the Rust toolchain (`rustup`), then re-run `--check` |
 | `vk*` undefined symbols at link time | Your `libaroma.a` was built with Vulkan support but `-lvulkan` wasn't linked. Regenerate bindings (`build.rs` now links it) and rebuild |
 | Taps stop working | Your callback was dropped. Keep `extern "C" fn` items at module level |
+
+To ship a full app in Rust, see [Write apps in Rust](cli-toolchain/Rust-on-Linux.md).
