@@ -1,8 +1,0 @@
-build/
-build_web/
-bindings/
-android/build/
-android/app/build/
-android/local.properties
-/target
-Cargo.lock
