@@ -51,3 +51,4 @@ examples/incense_sandbox/workspace/
 # python3 tools/generate_rust_bindings.py). The generator scripts are
 # committed; their output is not.
 bindings/
+testingrust/

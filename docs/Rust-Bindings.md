@@ -19,7 +19,12 @@ aroma bindings --language rust --check
 ```
 
 If that prints `crate ok; functions=... structs=... enums=...`, you are
-ready. Now run the hello example (from the repo root, after building
+ready. The `ERROR:` / `WARNING:` lines above it (unparsable `_Alignas`
+fields, glibc internals, function-like macros) are normal parser noise from
+`ctypesgen` -- generation succeeds as long as it ends with
+`wrote ... (63 headers, ...)`.
+
+Now run the hello example (from the repo root, after building
 `libaroma.so`):
 
 ```bash
@@ -40,7 +45,9 @@ This scaffolds `src/main.rs` (a tap-counter hello app) and `Cargo.toml`
 with a path dependency on the generated `aroma` crate. `aroma build linux`
 generates `bindings/rust` from the C headers, builds `libaroma.so` once
 into `build/aroma-lib/`, then runs `cargo build`; `aroma run linux` runs
-it. Only the Linux desktop target is wired for Rust so far -- Android and
+it. The first build takes several minutes (it compiles freetype from
+source) -- wait for `OK Build successful` at the end. Only the Linux
+desktop target is wired for Rust so far -- Android and
 Web builds report an error instead of failing obscurely halfway through.
 
 ## First Application
@@ -131,6 +138,10 @@ python3 tools/generate_rust_bindings.py --stats
 | --- | --- |
 | `No public headers (aroma*.h)` | Run from the repo root or pass `--include-dir` pointing at the SDK `include/` |
 | `ctypesgen submodule is empty` | `git submodule update --init vendors/ctypesgen` |
+| `aroma` doesn't know `--rust` / takes the C build path for a Rust project | Your installed `aroma` (`~/.aroma`) is older than the repo. Re-sync it (`cp -a tools/cli/. ~/.aroma/tools/cli/` plus `tools/generate_*_bindings.py`, `include/`, `src/`) or reinstall the SDK, then retry |
+| `AROMA_LIB=... does not exist; ignoring` | That path doesn't exist; drop the override and let `build.rs` find the lib (`build/aroma-lib/src/` in the project, `build/src/` in the SDK) |
 | `libaroma.so not found` / link errors | `build.rs` uses `build/src/libaroma.a` automatically when no `.so` exists. For a shared lib: `cmake -S . -B build -DBUILD_SHARED_LIBS=ON && cmake --build build`, or set `AROMA_LIB` to its full path |
-| `cargo: command not found` | Install the Rust toolchain (`rustup`), then re-run `--check` |
+| `cargo: command not found` under `aroma` (but `cargo` works in your terminal) | Your shell finds cargo via `~/.cargo/bin`, which non-interactive shells don't inherit. Either `export PATH="$HOME/.cargo/bin:$PATH"` first or add it to `~/.profile` |
+| `cargo: command not found` anywhere | Install the Rust toolchain (`rustup`), then re-run `--check` |
+| `vk*` undefined symbols at link time | Your `libaroma.a` was built with Vulkan support but `-lvulkan` wasn't linked. Regenerate bindings (`build.rs` now links it) and rebuild |
 | Taps stop working | Your callback was dropped. Keep `extern "C" fn` items at module level |
