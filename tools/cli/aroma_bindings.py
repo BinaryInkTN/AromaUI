@@ -80,6 +80,15 @@ def _check_ctypesgen():
         sys.exit(1)
 
 
+def _check_bindgen():
+    if shutil.which("bindgen") is None:
+        Logger.error("`bindgen` CLI not found; install it with:\n"
+                     "  cargo install bindgen-cli\n"
+                     "and make libclang available:\n"
+                     "  apt install libclang-dev  # or export LIBCLANG_PATH=/usr/lib/llvm-19/lib")
+        sys.exit(1)
+
+
 def cmd_bindings(args):
     if getattr(args, "check", False) and getattr(args, "stats", False):
         Logger.error("--check and --stats are mutually exclusive (choose one)")
@@ -102,7 +111,10 @@ def cmd_bindings(args):
         Logger.error(f"No public headers (aroma*.h) in {include_dir}")
         sys.exit(1)
 
-    _check_ctypesgen()
+    if language == "rust":
+        _check_bindgen()
+    else:
+        _check_ctypesgen()
 
     output = _resolve_output(getattr(args, "output", None), language)
 

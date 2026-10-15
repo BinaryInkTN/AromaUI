@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""Generate Rust bindings for AromaUI using ctypesgen JSON IR.
+"""Generate Rust bindings for AromaUI using rust-bindgen.
 
-The bindings themselves are produced from the real C parser in the
-``vendors/ctypesgen`` submodule (same backend as
-``tools/generate_python_bindings.py``); this script only selects the public
-headers, stages sanitized copies (``static inline`` bodies reduced to
-prototypes, binary font-data headers stubbed), asks ctypesgen for its JSON
-description (``--output-language json``), and converts that IR to a Rust
-crate (``Cargo.toml`` + ``build.rs`` + ``src/ffi.rs`` + ``src/lib.rs`` +
+The raw FFI layer (``src/ffi.rs``) is produced by ``bindgen`` (the standard
+``rust-bindgen`` tool) directly from the public C headers. This script only
+selects the headers, writes a temporary ``wrapper.h``, invokes ``bindgen``
+with an aroma-specific allowlist/blocklist, and scaffolds a small Rust crate
+(``Cargo.toml`` + ``build.rs`` + ``src/ffi.rs`` + ``src/lib.rs`` +
 ``examples/hello.rs``).
 
 Usage:
@@ -16,19 +14,19 @@ Usage:
     python3 tools/generate_rust_bindings.py --stats
 
 The generated crate is a build artifact (git-ignored under ``bindings/``,
-never committed). Requires gcc (C preprocessor) and the ctypesgen submodule
-(``git submodule update --init vendors/ctypesgen``). ``cargo check`` is used
-for ``--check`` only when cargo is available; otherwise the check verifies
-that the expected symbols were emitted.
+never committed). Requires the ``bindgen`` CLI (``cargo install bindgen-cli``)
+and libclang (``apt install libclang-dev`` or set ``LIBCLANG_PATH``).
+``cargo check``/``cargo metadata`` is used for ``--check`` only when cargo is
+available; otherwise the check verifies that the expected symbols were
+emitted.
 """
 
 import argparse
-import ast
 import glob
-import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -36,327 +34,122 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DEFAULT_INCLUDE = os.path.join(ROOT, "include")
 DEFAULT_OUTPUT = os.path.join(ROOT, "bindings", "rust")
 
-STUB_HEADERS = frozenset({
-    "aroma_ubuntu_font.h",
+# Umbrella header has no declarations itself; the two blob headers hold huge
+# `static const` font arrays with no .so symbols. They are excluded from the
+# explicit wrapper (still parsed transitively via aroma_ui.h) and blocklisted
+# from bindgen output. aroma_ubuntu_font.h *is* included: it declares extern
+# font data with a real symbol in libaroma.
+SKIP_HEADERS = frozenset({"aroma.h"})
+BLOB_HEADERS = frozenset({
     "aroma_material_font.h",
     "aroma_chrome_icon_font.h",
 })
-SKIP_HEADERS = frozenset({"aroma.h"}) | STUB_HEADERS
 
-RUST_KEYWORDS = frozenset({
-    "as", "break", "const", "continue", "crate", "else", "enum", "extern",
-    "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod",
-    "move", "mut", "pub", "ref", "return", "self", "Self", "static",
-    "struct", "super", "trait", "true", "type", "unsafe", "use", "where",
-    "while", "async", "await", "dyn", "abstract", "become", "box", "do",
-    "final", "macro", "override", "priv", "typeof", "unsized", "virtual",
-    "yield", "try", "union",
-})
-
-
-def _ensure_pygen():
-    tools_dir = os.path.dirname(os.path.abspath(__file__))
-    if tools_dir not in sys.path:
-        sys.path.insert(0, tools_dir)
-    try:
-        import generate_python_bindings as pygen
-        return pygen
-    except ImportError as exc:
-        print("error: cannot import generate_python_bindings: %s" % exc,
-              file=sys.stderr)
-        return None
+ALLOWLIST_FUNCTIONS = ["aroma_.*", "log_.*"]
+ALLOWLIST_TYPES = [
+    "Aroma.*",
+    "Incense.*",
+    "GPS.*|Geocode.*|OSRM.*|Route.*|Turn.*|PointOfInterest|POI.*|Maneuver.*",
+]
+ALLOWLIST_VARS = (
+    "aroma_.*|g_.*|AROMA_.*|K.*|NODE_.*|BUTTON_.*|LABEL_.*|CARD_.*|CHIP_.*|"
+    "DIALOG_.*|DIVIDER_.*|ICON_.*|PROGRESS_.*|TABS_.*|TOOLTIP_.*|CANVAS_.*|"
+    "DEBUG_.*|INCENSE_.*|MANEUVER_.*|POI_.*|UINT32_MAX"
+)
+BLOCKLIST_ITEMS = "icon_ttf.*|chrome_icon_ttf.*"
 
 
-def find_inline_helpers(include_dir):
-    """Names of ``static inline aroma_*`` helpers (no symbols in the .so)."""
-    names = set()
-    pats = [os.path.join(include_dir, "aroma*.h"),
-            os.path.join(include_dir, "widgets", "*.h")]
-    files = [h for pat in pats for h in glob.glob(pat)]
-    for path in files:
-        try:
-            with open(path, encoding="utf-8", errors="replace") as f:
-                text = f.read()
-        except OSError:
+def collect_headers(include_dir):
+    """Public headers for the bindgen wrapper (blobs + umbrella excluded)."""
+    headers = []
+    for path in sorted(glob.glob(os.path.join(include_dir, "aroma*.h"))):
+        base = os.path.basename(path)
+        if base in SKIP_HEADERS or base in BLOB_HEADERS:
             continue
-        for m in re.finditer(r"\bstatic\s+inline\b", text):
-            # Look ahead for the first aroma_* identifier before '('.
-            tail = text[m.end():m.end() + 2000]
-            fm = re.search(r"\b(aroma_\w+)\s*\(", tail)
-            if not fm:
-                continue
-            # Make sure we did not cross the function body of a previous
-            # match: the identifier must appear before any '{' or ';'.
-            prefix = tail[:fm.start()]
-            if "{" in prefix or ";" in prefix:
-                # The identifier belongs to a later declaration; still take
-                # it if the prefix looks like a declaration tail.
-                if len(prefix) > 600:
-                    continue
-            names.add(fm.group(1))
-    return names
+        headers.append(path)
+    widgets = os.path.join(include_dir, "widgets")
+    if os.path.isdir(widgets):
+        headers += sorted(glob.glob(os.path.join(widgets, "*.h")))
+    return headers
 
 
-def sanitize_ident(name, fallback="arg"):
-    if not name:
-        return fallback
-    name = re.sub(r"\W", "_", name)
-    if not name or name[0].isdigit():
-        name = "_" + name
-    if name in RUST_KEYWORDS:
-        return "r#" + name
-    return name
+def write_wrapper(headers, include_dir, path):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("// bindgen wrapper generated by tools/generate_rust_bindings.py\n")
+        f.write("// (do not edit by hand; regenerate with the script above).\n")
+        for h in headers:
+            rel = os.path.relpath(h, include_dir)
+            f.write('#include "%s"\n' % rel)
 
 
-def c_simple_to_rust(name, signed, longs):
+def ensure_bindgen():
+    exe = shutil.which("bindgen")
+    if exe is None:
+        print("error: `bindgen` CLI not found on PATH.", file=sys.stderr)
+        print("  install it with: cargo install bindgen-cli", file=sys.stderr)
+        print("  and make sure libclang is available:", file=sys.stderr)
+        print("    apt install libclang-dev  # provides libclang.so", file=sys.stderr)
+        print("    # or: export LIBCLANG_PATH=/usr/lib/llvm-19/lib", file=sys.stderr)
+        return None
+    return exe
+
+
+def bindgen_cmd(wrapper, include_dir, output):
+    cmd = [ensure_bindgen() or "bindgen", wrapper, "-o", output]
+    for pat in ALLOWLIST_FUNCTIONS:
+        cmd += ["--allowlist-function", pat]
+    for pat in ALLOWLIST_TYPES:
+        cmd += ["--allowlist-type", pat]
+    cmd += ["--allowlist-var", ALLOWLIST_VARS]
+    cmd += ["--blocklist-item", BLOCKLIST_ITEMS]
+    cmd += ["--default-enum-style", "consts",
+            "--no-prepend-enum-name",
+            "--no-layout-tests"]
+    cmd += ["--", "-I", include_dir]
+    return cmd
+
+
+def run_bindgen(headers, include_dir, ffi_out):
+    exe = ensure_bindgen()
+    if exe is None:
+        return False
+    tmp = tempfile.mkdtemp(prefix="aroma-bindgen-")
+    wrapper = os.path.join(tmp, "wrapper.h")
     try:
-        signed = bool(signed) if isinstance(signed, bool) else bool(signed)
-    except Exception:
-        signed = True
-    try:
-        longs = int(longs)
-    except Exception:
-        longs = 0
-    key = (name, signed, longs)
-    table = {
-        ("void", True, 0): "c_void",
-        ("int", True, 0): "c_int",
-        ("int", False, 0): "c_uint",
-        ("int", True, 1): "c_long",
-        ("int", False, 1): "c_ulong",
-        ("char", True, 0): "c_char",
-        ("char", False, 0): "c_uchar",
-        ("short", True, 0): "c_short",
-        ("short", False, 0): "c_ushort",
-        ("float", True, 0): "c_float",
-        ("double", True, 0): "c_double",
-        ("double", True, 1): "c_double",  # long double: best effort
-        ("int", True, -1): "c_short",
-        ("int", False, -1): "c_ushort",
-        ("int", True, 2): "i64",
-        ("int", False, 2): "u64",
-        ("_Bool", True, 0): "bool",
-        ("bool", True, 0): "bool",
-        ("size_t", True, 0): "usize",
-        ("ssize_t", True, 0): "isize",
-        ("ptrdiff_t", True, 0): "isize",
-        ("wchar_t", True, 0): "c_int",
-        ("va_list", True, 0): "*mut c_void",
-        ("int8_t", True, 0): "i8",
-        ("__int8_t", True, 0): "i8",
-        ("int16_t", True, 0): "i16",
-        ("__int16_t", True, 0): "i16",
-        ("int32_t", True, 0): "i32",
-        ("__int32_t", True, 0): "i32",
-        ("int64_t", True, 0): "i64",
-        ("__int64_t", True, 0): "i64",
-        ("uint8_t", False, 0): "u8",
-        ("__uint8_t", False, 0): "u8",
-        ("uint16_t", False, 0): "u16",
-        ("__uint16_t", False, 0): "u16",
-        ("uint32_t", False, 0): "u32",
-        ("__uint32_t", False, 0): "u32",
-        ("uint64_t", False, 0): "u64",
-        ("__uint64_t", False, 0): "u64",
-        ("uint8_t", True, 0): "u8",
-        ("uint16_t", True, 0): "u16",
-        ("uint32_t", True, 0): "u32",
-        ("uint64_t", True, 0): "u64",
-        ("int8_t", False, 0): "i8",
-        ("int16_t", False, 0): "i16",
-        ("int32_t", False, 0): "i32",
-        ("int64_t", False, 0): "i64",
-    }
-    if key in table:
-        return table[key]
-    # Fallback: raw C name may be a typedef emitted elsewhere.
-    if name in ("unsigned", "signed"):
-        return "c_int"
-    return name
+        write_wrapper(headers, include_dir, wrapper)
+        cmd = bindgen_cmd(wrapper, include_dir, ffi_out)
+        # Drop the placeholder exe from bindgen_cmd (it re-resolves).
+        cmd[0] = exe
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode != 0:
+            print("error: bindgen failed:\n%s" % ((r.stderr or r.stdout).strip()),
+                  file=sys.stderr)
+            print("  hint: libclang missing? apt install libclang-dev, or set",
+                  file=sys.stderr)
+            print("  LIBCLANG_PATH to the dir holding libclang.so*", file=sys.stderr)
+            return False
+        return True
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
-def eval_int_expr(node, known=None):
-    """Evaluate a ctypesgen count expression to int, or None."""
-    if node is None:
-        return None
-    k = node.get("Klass")
-    if k == "ConstantExpressionNode":
-        v = node.get("value")
-        if isinstance(v, bool):
-            return int(v)
-        if isinstance(v, (int, float)):
-            return int(v)
-        if isinstance(v, str):
-            try:
-                return int(ast.literal_eval(v))
-            except Exception:
-                pass
-            if known and v in known:
-                return known[v]
-        return None
-    if k == "IdentifierExpressionNode":
-        name = node.get("name")
-        if known and name in known:
-            return known[name]
-        return None
-    if k == "BinaryExpressionNode":
-        op = node.get("name")
-        left = eval_int_expr(node.get("left"), known)
-        right = eval_int_expr(node.get("right"), known)
-        if left is None or right is None:
-            return None
-        try:
-            if op in ("addition", "add"):
-                return left + right
-            if op in ("subtraction", "sub"):
-                return left - right
-            if op in ("multiplication", "mul"):
-                return left * right
-            if op in ("division", "div") and right != 0:
-                return left // right
-            if op in ("left_shift", "lshift", "shift_left"):
-                return left << right
-            if op in ("right_shift", "rshift", "shift_right"):
-                return left >> right
-        except Exception:
-            return None
-        return None
-    if k == "UnaryExpressionNode":
-        return eval_int_expr(node.get("child") or node.get("operand"), known)
-    return None
-
-
-def ctype_to_rust(ctype, ctx="value"):
-    """Convert a ctypesgen JSON ctype node to a Rust type string."""
-    if ctype is None:
-        return "c_void"
-    k = ctype.get("Klass")
-    if k == "CtypesSimple":
-        name = ctype.get("name")
-        signed = ctype.get("signed", True)
-        longs = ctype.get("longs", 0)
-        if name == "void":
-            if ctx in ("return",):
-                return "()"
-            return "c_void"
-        return c_simple_to_rust(name, signed, longs)
-    if k == "CtypesSpecial":
-        name = ctype.get("name")
-        if name == "String":
-            return "*const c_char" if ctx != "return" else "*mut c_char"
-        if name == "c_char_p":
-            return "*const c_char" if ctx != "return" else "*mut c_char"
-        if name == "c_void_p":
-            return "*mut c_void"
-        if name == "c_ubyte":
-            return "u8"
-        return name
-    if k == "CtypesTypedef":
-        return sanitize_ident(ctype.get("name"), fallback="c_void")
-    if k == "CtypesPointer":
-        dest = ctype.get("destination")
-        quals = ctype.get("qualifiers") or []
-        if dest and dest.get("Klass") == "CtypesFunction":
-            return fn_ptr_to_rust(dest, optional=True)
-        if dest and dest.get("Klass") == "CtypesSimple" and dest.get("name") == "void":
-            return "*const c_void" if "const" in quals else "*mut c_void"
-        inner = ctype_to_rust(dest, ctx="pointee")
-        if inner == "()":
-            inner = "c_void"
-        if inner == "c_void":
-            return "*const c_void" if "const" in quals else "*mut c_void"
-        return ("*const " if "const" in quals else "*mut ") + inner
-    if k == "CtypesArray":
-        base = ctype_to_rust(ctype.get("base"), ctx="pointee")
-        # C array parameters decay to pointers; emitting `[T; N]` by value
-        # in an `extern "C" fn` is not FFI-safe (and rustc warns). Struct
-        # fields and statics keep the real array type.
-        if ctx == "arg":
-            return "*mut %s" % base
-        n = eval_int_expr(ctype.get("count")) or 0
-        return "[%s; %d]" % (base, n)
-    if k == "CtypesStruct":
-        tag = ctype.get("tag") or "Anon"
-        return sanitize_ident(str(tag))
-    if k == "CtypesEnum":
-        tag = ctype.get("tag") or "Anon"
-        return sanitize_ident(str(tag))
-    if k == "CtypesFunction":
-        return fn_ptr_to_rust(ctype, optional=False)
-    if k == "CtypesBitfield":
-        return ctype_to_rust(ctype.get("base"), ctx=ctx)
-    return "c_void"
-
-
-def fn_ptr_to_rust(fn_node, optional=True):
-    args = fn_node.get("argtypes") or []
-    parts = []
-    for a in args:
-        # Skip a lone void parameter if it ever appears.
-        if (a.get("Klass") == "CtypesSimple" and a.get("name") == "void"):
-            continue
-        parts.append(ctype_to_rust(a, ctx="arg"))
-    ret = ctype_to_rust(fn_node.get("restype"), ctx="return")
-    sig = "extern \"C\" fn(%s)" % (", ".join(parts))
-    if ret not in ("()", "c_void"):
-        sig += " -> %s" % ret
-    if optional:
-        return "Option<%s>" % sig
-    return sig
-
-
-def rust_string_literal(py_str):
-    out = ['"']
-    for ch in py_str:
-        o = ord(ch)
-        if ch == '"':
-            out.append('\\"')
-        elif ch == "\\":
-            out.append("\\\\")
-        elif ch == "\n":
-            out.append("\\n")
-        elif ch == "\r":
-            out.append("\\r")
-        elif ch == "\t":
-            out.append("\\t")
-        elif ch == "\0":
-            out.append("\\0")
-        elif 0x20 <= o < 0x7F:
-            out.append(ch)
-        elif o <= 0xFFFF:
-            out.append("\\u{%x}" % o)
-        else:
-            out.append("\\u{%x}" % o)
-    out.append('"')
-    return "".join(out)
-
-
-def infer_int_const_type(value_str, known_u32):
-    try:
-        v = ast.literal_eval(value_str)
-    except Exception:
-        v = None
-    if isinstance(v, bool):
-        return "bool"
-    if isinstance(v, int) and not isinstance(v, bool):
-        if 0 <= v <= 0x7FFFFFFF:
-            return "c_int"
-        if 0 <= v <= 0xFFFFFFFF:
-            return "c_uint"
-        if -0x80000000 <= v <= 0x7FFFFFFFFFFFFFFF:
-            return "i64"
-        return "u64"
-    if isinstance(value_str, str):
-        for name in known_u32:
-            if re.search(r"\b%s\b" % re.escape(name), value_str):
-                return "c_uint"
-        if re.search(r"\bUINT32_MAX\b", value_str):
-            return "c_uint"
-    return "c_int"
+def count_symbols(ffi_text):
+    n_fn = len(re.findall(r"pub fn aroma_", ffi_text))
+    n_struct = len(re.findall(r"pub struct", ffi_text))
+    n_union = len(re.findall(r"pub union", ffi_text))
+    # Enum types are `pub type X` with at least one `pub const ...: X`.
+    const_types = {}
+    for m in re.finditer(r"pub const \w+:\s*(\w+)", ffi_text):
+        const_types[m.group(1)] = const_types.get(m.group(1), 0) + 1
+    type_names = set(re.findall(r"pub type (\w+)", ffi_text))
+    n_enum = sum(1 for t in type_names if t in const_types)
+    return {"functions": n_fn, "structs": n_struct + n_union,
+            "enums": n_enum, "types": len(type_names),
+            "constants": len(re.findall(r"pub const", ffi_text))}
 
 
 CARGO_TOML_TEMPLATE = """\
-# Generated by tools/generate_rust_bindings.py (do not edit by hand).
+# Generated by tools/generate_rust_bindings.py via rust-bindgen (do not edit by hand).
 # Regenerate: python3 tools/generate_rust_bindings.py --output {output_rel}
 [package]
 name = "aroma"
@@ -644,11 +437,11 @@ fn main() {
 README_TEMPLATE = """\
 # AromaUI Rust bindings (generated, do not edit)
 
-Generated by `tools/generate_rust_bindings.py` on top of the vendored
-`ctypesgen` C parser (same backend as the Python bindings) from
+Generated by `tools/generate_rust_bindings.py` via
+[`rust-bindgen`](https://github.com/rust-lang/rust-bindgen) from
 {N_HEADERS} public headers. Regenerate:
 
-    git submodule update --init vendors/ctypesgen
+    cargo install bindgen-cli
     python3 tools/generate_rust_bindings.py --output {output_rel}
     python3 tools/generate_rust_bindings.py --output {output_rel} --check
 
@@ -658,12 +451,13 @@ links that instead -- no extra step needed.
 
 ## Layout
 
-- `src/ffi.rs` — raw `extern "C"` bindings (structs, enums, functions).
-- `src/lib.rs` — safe ports of the C `static inline` helpers from
+- `wrapper.h` -- bindgen entry point (`#include`s every public header).
+- `src/ffi.rs` -- raw `extern "C"` bindings emitted by `bindgen`.
+- `src/lib.rs` -- safe ports of the C `static inline` helpers from
   `aroma_ui.h` (`ui_init`, `ui_button`, `ui_label`, `ui_container`, ...).
   Those inlines have no symbols in the `.so`; like the Python bindings we
   call the same `*_impl` / `aroma_*_create` entry points.
-- `examples/hello.rs` — hello-world port of `docs/Python-Bindings.md`.
+- `examples/hello.rs` -- hello-world port of `docs/Python-Bindings.md`.
 
 ## Build
 
@@ -674,454 +468,7 @@ AROMA_LIB=$PWD/build/src/libaroma.so cargo run --example hello
 """
 
 
-def convert_items(items, inline_helpers):
-    """Split ctypesgen JSON IR into Rust-ready groups."""
-    structs = []   # (rust_name, variety, fields|None)
-    enums = []     # (rust_name, [(variant, expr_node)])
-    typedefs = []  # (name, ctype)
-    funcs = []
-    variables = []
-    constants = []
-    macros = []
-    for it in items:
-        t = it.get("type")
-        if t in ("struct", "union"):
-            structs.append((it.get("name"), t, it.get("fields")))
-        elif t == "enum":
-            enums.append((it.get("name"), it.get("fields") or []))
-        elif t == "typedef":
-            typedefs.append(it)
-        elif t == "function":
-            funcs.append(it)
-        elif t == "variable":
-            variables.append(it)
-        elif t == "constant":
-            constants.append(it)
-        elif t == "macro":
-            macros.append(it)
-        # macro_function / undef / libraries: handled separately / skipped.
-    return structs, enums, typedefs, funcs, variables, constants, macros
-
-
-def build_rust_module(items, n_headers, inline_helpers):
-    structs, enums, typedefs, funcs, variables, constants, macros = convert_items(items, inline_helpers)
-
-    # Map anonymous struct/union/enum tags to their public typedef names.
-    anon_to_pub = {}
-    for td in typedefs:
-        ctype = td.get("ctype") or {}
-        if ctype.get("Klass") in ("CtypesStruct", "CtypesEnum"):
-            tag = ctype.get("tag")
-            if tag and str(tag).startswith("anon_"):
-                anon_to_pub.setdefault(str(tag), td.get("name"))
-
-    # ---- structs / unions (dedup, prefer definitions with fields) ----
-    # ctypesgen emits both raw struct/union items (tagged, e.g. "AromaRect"
-    # or "anon_3") and typedef items wrapping them (e.g. Aroma3DCamera ->
-    # anon_3). Anonymous tags covered by a public typedef are emitted once
-    # under the public name; the union-vs-struct keyword comes from the raw
-    # item's variety for the same tag.
-    struct_defs = {}  # rust_name -> (variety, fields|None)
-    raw_variety = {}
-    for tag, variety, fields in structs:
-        raw_variety[str(tag)] = variety
-    for tag, variety, fields in structs:
-        if str(tag).startswith("anon_") and str(tag) in anon_to_pub:
-            continue  # covered by the typedef below
-        name = sanitize_ident(str(tag))
-        if name in struct_defs:
-            if fields and not struct_defs[name][1]:
-                struct_defs[name] = (variety, fields)
-        else:
-            struct_defs[name] = (variety, fields)
-    for td in typedefs:
-        ctype = td.get("ctype") or {}
-        if ctype.get("Klass") == "CtypesStruct":
-            tag = str(ctype.get("tag") or "")
-            variety = raw_variety.get(tag, "struct")
-            name = sanitize_ident(td.get("name"))
-            members = ctype.get("members")
-            fields = None
-            if members:
-                fields = [{"name": n, "ctype": c} for n, c in members]
-            if name in struct_defs:
-                if fields and not struct_defs[name][1]:
-                    struct_defs[name] = (variety, fields)
-            else:
-                struct_defs[name] = (variety, fields)
-
-    # ---- enums (dedup) ----
-    enum_defs = {}  # rust_name -> [(variant, expr_node)]
-    for td in typedefs:
-        ctype = td.get("ctype") or {}
-        if ctype.get("Klass") == "CtypesEnum":
-            name = sanitize_ident(td.get("name"))
-            members = ctype.get("enumerators") or []
-            conv = []
-            for m in members:
-                if isinstance(m, (list, tuple)) and len(m) == 2:
-                    conv.append((m[0], m[1]))
-            if name not in enum_defs or (not enum_defs[name] and conv):
-                enum_defs[name] = conv
-    for tag, fields in enums:
-        if str(tag).startswith("anon_") and str(tag) in anon_to_pub:
-            continue
-        name = sanitize_ident(str(tag))
-        conv = []
-        for f in fields or []:
-            conv.append((f.get("name"), f.get("ctype")))
-        if name in enum_defs:
-            if not enum_defs[name] and conv:
-                enum_defs[name] = conv
-        else:
-            enum_defs[name] = conv
-
-    # ---- other typedefs ----
-    alias_defs = []  # (name, ctype) excluding struct/enum/function
-    fn_typedefs = []  # (name, fn_node)
-    plain_struct_typedefs = set(struct_defs.keys())
-    for td in typedefs:
-        ctype = td.get("ctype") or {}
-        k = ctype.get("Klass")
-        name = td.get("name")
-        if k in ("CtypesStruct", "CtypesEnum"):
-            continue  # emitted as struct/enum above
-        if k == "CtypesFunction":
-            fn_typedefs.append((name, ctype))
-        elif (k == "CtypesPointer" and (ctype.get("destination") or {}).get("Klass") == "CtypesFunction"):
-            fn_typedefs.append((name, ctype.get("destination")))
-        else:
-            alias_defs.append((name, ctype))
-    # Dedup aliases by name (first wins; prefer non-trivial?).
-    seen_alias = set()
-    uniq_aliases = []
-    for name, ctype in alias_defs:
-        if name in seen_alias:
-            continue
-        seen_alias.add(name)
-        uniq_aliases.append((name, ctype))
-    alias_defs = uniq_aliases
-
-    # ---- functions ----
-    inline_set = set(inline_helpers)
-    extern_fns = []
-    skipped_inline = []
-    skipped_variadic = []
-    seen_fn = set()
-    for fn in funcs:
-        name = fn.get("name")
-        if not name or name in seen_fn:
-            continue
-        seen_fn.add(name)
-        if name in inline_set:
-            skipped_inline.append(name)
-            continue
-        if fn.get("variadic"):
-            skipped_variadic.append(name)
-            continue
-        extern_fns.append(fn)
-
-    # ---- variables (only real globals) ----
-    extern_vars = []
-    seen_var = set()
-    for v in variables:
-        name = v.get("name")
-        if not name or name in seen_var:
-            continue
-        seen_var.add(name)
-        if not (name.startswith("g_") or name.startswith("aroma_")):
-            continue  # struct-member noise from unparsable headers
-        extern_vars.append(v)
-
-    # ---- constants / macros ----
-    emitted_consts = set()
-    for variants in enum_defs.values():
-        for vname, _ in variants:
-            emitted_consts.add(vname)
-    const_items = []  # (name, expr_str)
-    for c in constants:
-        name = c.get("name")
-        if not name or name in emitted_consts:
-            continue
-        emitted_consts.add(name)
-        const_items.append((name, c.get("value")))
-    macro_items = []  # (name, value)
-    skipped_fn_macros = 0
-    for m in macros:
-        name = m.get("name")
-        if not name or name in emitted_consts:
-            continue
-        emitted_consts.add(name)
-        macro_items.append((name, m.get("value")))
-    # macro_function items are function-like macros (AROMA_DP, ...): skip.
-    for it in items:
-        if it.get("type") == "macro_function":
-            skipped_fn_macros += 1
-
-    # Known u32 consts for type inference (collect literal-evaluated big ones).
-    known_u32 = {"UINT32_MAX"}
-    for name, val in const_items + macro_items:
-        try:
-            v = ast.literal_eval(val) if isinstance(val, str) else None
-        except Exception:
-            v = None
-        if isinstance(v, int) and not isinstance(v, bool) and v > 0x7FFFFFFF:
-            known_u32.add(name)
-
-    # ================= emit =================
-    L = []
-    L.append("// Generated by tools/generate_rust_bindings.py (do not edit by hand).")
-    L.append("// %d public headers -> %d functions, %d structs/unions, %d enums." % (
-        n_headers, len(extern_fns), len(struct_defs), len(enum_defs)))
-    L.append("// Regenerate: python3 tools/generate_rust_bindings.py")
-    L.append("#![allow(non_camel_case_types, non_snake_case, non_upper_case_globals, dead_code, unused_imports)]")
-    L.append("use std::os::raw::{c_char, c_double, c_float, c_int, c_long, c_short, c_uchar, c_uint, c_ulong, c_ushort, c_void};")
-    L.append("")
-    L.append("// Fixed-width aliases always available (some headers also typedef these).")
-    L.append("#[allow(dead_code)]")
-    L.append("pub type __aroma_u8 = u8;")
-    L.append("")
-
-    # Structs / unions, sorted for deterministic output.
-    for name in sorted(struct_defs):
-        variety, fields = struct_defs[name]
-        rname = sanitize_ident(name)
-        if not fields:
-            L.append("/// Opaque type (forward declaration in C).")
-            L.append("#[repr(C)]")
-            L.append("pub struct %s { _private: [u8; 0] }" % rname)
-            L.append("")
-            continue
-        kw = "union" if variety == "union" else "struct"
-        L.append("#[repr(C)]")
-        L.append("#[derive(Copy, Clone)]")
-        L.append("pub %s %s {" % (kw, rname))
-        seen_fields = set()
-        for f in fields:
-            fname = sanitize_ident(f.get("name") or "field", fallback="field")
-            base = fname
-            i = 0
-            while fname in seen_fields:
-                i += 1
-                fname = "%s_%d" % (base, i)
-            seen_fields.add(fname)
-            ftype = f.get("ctype")
-            if ftype and ftype.get("Klass") == "CtypesFunction":
-                rtype = fn_ptr_to_rust(ftype, optional=True)
-            else:
-                rtype = ctype_to_rust(ftype)
-            L.append("    pub %s: %s," % (fname, rtype))
-        L.append("}")
-        L.append("")
-
-    # Enums: type alias + per-variant constants.
-    for name in sorted(enum_defs):
-        variants = enum_defs[name]
-        rname = sanitize_ident(name)
-        L.append("pub type %s = c_int;" % rname)
-        for vname, expr in variants or []:
-            rv = sanitize_ident(vname)
-            val = "0"
-            if isinstance(expr, dict):
-                k = expr.get("Klass")
-                if k == "ConstantExpressionNode":
-                    v = expr.get("value")
-                    try:
-                        lit = ast.literal_eval(repr(v) if isinstance(v, str) and not v.lstrip("-").isdigit() else v)
-                        val = str(int(lit))
-                    except Exception:
-                        try:
-                            val = str(int(v))
-                        except Exception:
-                            val = "0"
-                elif k == "IdentifierExpressionNode":
-                    val = sanitize_ident(expr.get("name") or "0")
-                elif k == "BinaryExpressionNode":
-                    fmt = expr.get("format") or "(%s + %s)"
-                    left = expr_to_rust_operand(expr.get("left"))
-                    right = expr_to_rust_operand(expr.get("right"))
-                    try:
-                        val = fmt % (left, right)
-                    except Exception:
-                        val = "0"
-                    # ctypesgen formats enums as "(A + 1)"; outer parens are
-                    # unnecessary in Rust and trigger warnings.
-                    val = val.strip()
-                    if val.startswith("(") and val.endswith(")"):
-                        val = val[1:-1].strip()
-                else:
-                    val = "0"
-            L.append("pub const %s: %s = %s;" % (rv, rname, val))
-        L.append("")
-
-    # Function-pointer typedefs.
-    for name, fn_node in sorted(fn_typedefs):
-        rname = sanitize_ident(name)
-        L.append("pub type %s = %s;" % (rname, fn_ptr_to_rust(fn_node, optional=True)))
-    if fn_typedefs:
-        L.append("")
-
-    # Plain typedefs.
-    for name, ctype in sorted(alias_defs):
-        rname = sanitize_ident(name)
-        if rname in struct_defs or rname in enum_defs:
-            continue
-        rtype = ctype_to_rust(ctype)
-        if rtype == rname:
-            continue
-        L.append("pub type %s = %s;" % (rname, rtype))
-    if alias_defs:
-        L.append("")
-
-    # Integer / string constants.
-    for name, val in const_items + macro_items:
-        rname = sanitize_ident(name)
-        if not isinstance(val, str):
-            continue
-        # Try string literal first.
-        try:
-            lit = ast.literal_eval(val)
-        except Exception:
-            lit = None
-        if isinstance(lit, str):
-            # ctypesgen double-escapes C string escapes (C "\x1B" arrives as
-            # the 7-char Python string "\\x1B..."); decode to real chars.
-            if "\\" in lit:
-                try:
-                    lit = lit.encode("utf-8").decode("unicode_escape")
-                except Exception:
-                    pass
-            L.append("pub const %s: &str = %s;" % (rname, rust_string_literal(lit)))
-            continue
-        if isinstance(lit, bool):
-            L.append("pub const %s: bool = %s;" % (rname, "true" if lit else "false"))
-            continue
-        if isinstance(lit, (int, float)) and not isinstance(lit, bool):
-            if isinstance(lit, float):
-                L.append("pub const %s: c_double = %r;" % (rname, lit))
-            else:
-                t = infer_int_const_type(val, known_u32)
-                L.append("pub const %s: %s = %s;" % (rname, t, str(lit)))
-            continue
-        # Expression referencing other consts (e.g. (X + 1), UINT32_MAX).
-        # Outer parens are stripped: unnecessary in Rust, rustc warns.
-        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", val.strip()):
-            t = infer_int_const_type(val, known_u32)
-            L.append("pub const %s: %s = %s;" % (rname, t, sanitize_ident(val.strip())))
-            continue
-        if re.fullmatch(r"\(?[A-Za-z_][A-Za-z0-9_]*(\s*[-+*/|&^<>]+\s*\(?[A-Za-z0-9_]+\)?)+\)?", val.strip()):
-            t = infer_int_const_type(val, known_u32)
-            expr = val.strip()
-            if expr.startswith("(") and expr.endswith(")"):
-                expr = expr[1:-1].strip()
-            L.append("pub const %s: %s = %s;" % (rname, t, expr))
-            continue
-        if re.fullmatch(r"\(?\d[\dxXa-fA-F_]*\)?", val.strip()):
-            t = infer_int_const_type(val, known_u32)
-            expr = val.strip()
-            if expr.startswith("(") and expr.endswith(")"):
-                expr = expr[1:-1].strip()
-            L.append("pub const %s: %s = %s;" % (rname, t, expr))
-            continue
-        if re.fullmatch(r"0x[0-9a-fA-F]+", val.strip()):
-            L.append("pub const %s: c_uint = %s;" % (rname, val.strip()))
-            continue
-        # Anything else (casts, sizeof, string pastes): keep as comment.
-        L.append("// skipped macro %s = %s (non-integer expression)" % (rname, val.strip()[:160]))
-    if const_items or macro_items:
-        L.append("")
-
-    # Functions.
-    L.append("extern \"C\" {")
-    for fn in sorted(extern_fns, key=lambda f: f.get("name")):
-        fname = sanitize_ident(fn.get("name"))
-        args = fn.get("args") or []
-        parts = []
-        for i, a in enumerate(args):
-            aname = sanitize_ident(a.get("identifier") or ("arg%d" % i), fallback=("arg%d" % i))
-            # Function-pointer params arrive as CtypesFunction (by value in
-            # JSON); they are really pointers.
-            if a.get("Klass") == "CtypesFunction":
-                atype = fn_ptr_to_rust(a, optional=True)
-            else:
-                atype = ctype_to_rust(a, ctx="arg")
-                if atype == "()":
-                    continue
-            parts.append("%s: %s" % (aname, atype))
-        ret = ctype_to_rust(fn.get("return"), ctx="return")
-        if ret in ("()", "c_void"):
-            L.append("    pub fn %s(%s);" % (fname, ", ".join(parts)))
-        else:
-            L.append("    pub fn %s(%s) -> %s;" % (fname, ", ".join(parts), ret))
-    # Globals.
-    for v in sorted(extern_vars, key=lambda v: v.get("name")):
-        vname = sanitize_ident(v.get("name"))
-        vtype = ctype_to_rust(v.get("ctype"), ctx="value")
-        L.append("    pub static %s: %s;" % (vname, vtype))
-    L.append("}")
-    L.append("")
-    if skipped_inline:
-        L.append("// %d C `static inline` helpers (no .so symbol) are not declared here;" % len(skipped_inline))
-        L.append("// safe ports live in `src/lib.rs` (ui_init, ui_button, ...).")
-    if skipped_variadic:
-        L.append("// Skipped %d variadic C functions (no stable Rust extern): %s." % (
-            len(skipped_variadic), ", ".join(sorted(skipped_variadic)[:8])))
-    if skipped_fn_macros:
-        L.append("// Skipped %d function-like macros (use the safe wrappers instead)." % skipped_fn_macros)
-
-    stats = {
-        "functions": len(extern_fns),
-        "structs": len(struct_defs),
-        "enums": len(enum_defs),
-        "typedefs": len(alias_defs) + len(fn_typedefs),
-        "constants": len(const_items),
-        "macros": len(macro_items),
-        "variables": len(extern_vars),
-        "skipped_inline": len(skipped_inline),
-        "skipped_variadic": len(skipped_variadic),
-    }
-    return "\n".join(L) + "\n", stats
-
-
-def expr_to_rust_operand(node):
-    if not isinstance(node, dict):
-        return "0"
-    k = node.get("Klass")
-    if k == "ConstantExpressionNode":
-        try:
-            return str(int(node.get("value")))
-        except Exception:
-            return "0"
-    if k == "IdentifierExpressionNode":
-        return sanitize_ident(node.get("name") or "0")
-    # Nested binary: best effort.
-    if k == "BinaryExpressionNode":
-        fmt = node.get("format") or "(%s + %s)"
-        try:
-            return fmt % (expr_to_rust_operand(node.get("left")),
-                          expr_to_rust_operand(node.get("right")))
-        except Exception:
-            return "0"
-    return "0"
-
-
-def run_ctypesgen_json(pygen, staged, staged_dir):
-    tmp = tempfile.mkdtemp(prefix="aroma-rustgen-")
-    js = os.path.join(tmp, "ir.json")
-    try:
-        ok = pygen.run_ctypesgen(staged, staged_dir, js, ["--output-language", "json"])
-        if not ok or not os.path.isfile(js):
-            return None, None
-        with open(js, encoding="utf-8") as f:
-            items = json.load(f)
-        return items, tmp
-    except Exception as exc:
-        print("error: ctypesgen failed: %s" % exc, file=sys.stderr)
-        shutil.rmtree(tmp, ignore_errors=True)
-        return None, None
-
-
-def write_crate(output_dir, ffi_src, n_headers, stats):
+def write_crate(output_dir, ffi_body, wrapper_body, n_headers, stats):
     os.makedirs(os.path.join(output_dir, "src"), exist_ok=True)
     os.makedirs(os.path.join(output_dir, "examples"), exist_ok=True)
     rel = os.path.relpath(output_dir, ROOT)
@@ -1129,48 +476,48 @@ def write_crate(output_dir, ffi_src, n_headers, stats):
         f.write(CARGO_TOML_TEMPLATE.format(output_rel=rel))
     with open(os.path.join(output_dir, "build.rs"), "w", encoding="utf-8") as f:
         f.write(BUILD_RS_TEMPLATE)
+    header = ("// Generated by tools/generate_rust_bindings.py via rust-bindgen"
+              " (do not edit by hand).\n"
+              "// %d public headers -> %d functions, %d structs/unions, %d enums.\n"
+              "// Regenerate: python3 tools/generate_rust_bindings.py\n"
+              "#![allow(non_camel_case_types, non_snake_case,"
+              " non_upper_case_globals, dead_code, unused_imports)]\n"
+              % (n_headers, stats["functions"], stats["structs"], stats["enums"]))
     with open(os.path.join(output_dir, "src", "ffi.rs"), "w", encoding="utf-8") as f:
-        f.write(ffi_src)
+        f.write(header + ffi_body)
     with open(os.path.join(output_dir, "src", "lib.rs"), "w", encoding="utf-8") as f:
         f.write(LIB_RS_TEMPLATE)
     with open(os.path.join(output_dir, "examples", "hello.rs"), "w", encoding="utf-8") as f:
         f.write(HELLO_RS_TEMPLATE)
+    with open(os.path.join(output_dir, "wrapper.h"), "w", encoding="utf-8") as f:
+        f.write(wrapper_body)
     with open(os.path.join(output_dir, "README.md"), "w", encoding="utf-8") as f:
         f.write(README_TEMPLATE.format(N_HEADERS=n_headers, output_rel=rel))
     return [os.path.join(output_dir, p) for p in
-            ("Cargo.toml", "build.rs", "src/ffi.rs", "src/lib.rs",
+            ("Cargo.toml", "build.rs", "wrapper.h", "src/ffi.rs", "src/lib.rs",
              "examples/hello.rs", "README.md")]
 
 
-def cmd_stats(pygen, include_dir):
-    headers = pygen.collect_headers(include_dir)
+def cmd_stats(include_dir):
+    headers = collect_headers(include_dir)
     if not headers:
         print("error: no headers found in %s" % include_dir, file=sys.stderr)
         return 1
-    if pygen.ensure_ctypesgen() is None:
+    if ensure_bindgen() is None:
         return 1
-    tmp = tempfile.mkdtemp(prefix="aroma-rustgen-")
+    tmp = tempfile.mkdtemp(prefix="aroma-bindgen-stats-")
     try:
-        staged_dir = os.path.join(tmp, "staged")
-        pygen.stage_headers(pygen.collect_headers(include_dir, for_staging=True),
-                            include_dir, staged_dir)
-        staged = [os.path.join(staged_dir, os.path.relpath(h, include_dir))
-                  for h in headers]
-        items, js_tmp = run_ctypesgen_json(pygen, staged, staged_dir)
-        if items is None:
+        ffi_tmp = os.path.join(tmp, "ffi.rs")
+        if not run_bindgen(headers, include_dir, ffi_tmp):
             return 1
-        try:
-            kinds = {}
-            for item in items:
-                kinds[item.get("type", "?")] = kinds.get(item.get("type", "?"), 0) + 1
-            print("headers: %d" % len(headers))
-            for kind in sorted(kinds):
-                print("  %s: %d" % (kind, kinds[kind]))
-            inline_helpers = find_inline_helpers(include_dir)
-            print("  static_inline_helpers: %d" % len(inline_helpers))
-        finally:
-            if js_tmp:
-                shutil.rmtree(js_tmp, ignore_errors=True)
+        with open(ffi_tmp, encoding="utf-8") as f:
+            stats = count_symbols(f.read())
+        print("headers: %d" % len(headers))
+        print("  functions: %d" % stats["functions"])
+        print("  structs: %d" % stats["structs"])
+        print("  enums: %d" % stats["enums"])
+        print("  types: %d" % stats["types"])
+        print("  constants: %d" % stats["constants"])
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     return 0
@@ -1187,45 +534,36 @@ def main(argv=None):
     ap.add_argument("--stats", action="store_true", help="print parse stats only")
     args = ap.parse_args(argv)
 
-    pygen = _ensure_pygen()
-    if pygen is None:
-        return 1
     if args.stats:
-        return cmd_stats(pygen, args.include_dir)
+        return cmd_stats(args.include_dir)
 
-    headers = pygen.collect_headers(args.include_dir)
+    headers = collect_headers(args.include_dir)
     if not headers:
         print("error: no headers found in %s" % args.include_dir, file=sys.stderr)
         return 1
-    if pygen.ensure_ctypesgen() is None:
-        return 1
-    if not shutil.which("gcc"):
-        print("error: gcc is required (C preprocessor)", file=sys.stderr)
+    if ensure_bindgen() is None:
         return 1
 
     out_dir = os.path.abspath(args.output)
-    tmp = tempfile.mkdtemp(prefix="aroma-rustgen-")
+    tmp = tempfile.mkdtemp(prefix="aroma-bindgen-")
     try:
-        staged_dir = os.path.join(tmp, "staged")
-        pygen.stage_headers(pygen.collect_headers(args.include_dir, for_staging=True),
-                            args.include_dir, staged_dir)
-        staged = [os.path.join(staged_dir, os.path.relpath(h, args.include_dir))
-                  for h in headers]
-        items, js_tmp = run_ctypesgen_json(pygen, staged, staged_dir)
-        if items is None:
-            print("error: ctypesgen JSON generation failed", file=sys.stderr)
+        ffi_tmp = os.path.join(tmp, "ffi.rs")
+        if not run_bindgen(headers, args.include_dir, ffi_tmp):
             return 1
-        try:
-            inline_helpers = find_inline_helpers(args.include_dir)
-            ffi_src, stats = build_rust_module(items, len(headers), inline_helpers)
-        finally:
-            if js_tmp:
-                shutil.rmtree(js_tmp, ignore_errors=True)
+        with open(ffi_tmp, encoding="utf-8") as f:
+            ffi_body = f.read()
+        stats = count_symbols(ffi_body)
+        # Build the exact wrapper body for provenance (same as generation).
+        lines = ["// bindgen wrapper generated by tools/generate_rust_bindings.py",
+                 "// (do not edit by hand; regenerate with the script above)."]
+        for h in headers:
+            lines.append('#include "%s"' % os.path.relpath(h, args.include_dir))
+        wrapper_body = "\n".join(lines) + "\n"
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    files = write_crate(out_dir, ffi_src, len(headers), stats)
-    print("wrote %s (%d headers, ~%d functions, %d structs, %d enums)" % (
+    files = write_crate(out_dir, ffi_body, wrapper_body, len(headers), stats)
+    print("wrote %s (%d headers, ~%d functions, %d structs, %d enums) via rust-bindgen" % (
         out_dir, len(headers), stats["functions"], stats["structs"], stats["enums"]))
     for p in files:
         print("  " + os.path.relpath(p, ROOT))
@@ -1235,7 +573,6 @@ def main(argv=None):
         if missing:
             print("check: missing files: %s" % ", ".join(missing), file=sys.stderr)
             return 1
-        # Sanity: key symbols must be present in ffi.rs.
         with open(os.path.join(out_dir, "src", "ffi.rs"), encoding="utf-8") as f:
             ffi_text = f.read()
         probes = ["pub fn aroma_button_create", "pub fn aroma_ui_init_impl",
@@ -1244,16 +581,14 @@ def main(argv=None):
         if absent:
             print("check: ffi.rs missing: %s" % ", ".join(absent), file=sys.stderr)
             return 1
-        # Inlines must NOT be declared extern (they have no .so symbol).
+        # Static inlines have no .so symbol and must not be declared extern.
         for name in ("aroma_ui_init", "aroma_ui_button", "aroma_ui_label"):
             if ("pub fn %s(" % name) in ffi_text:
                 print("check: ffi.rs must not declare static-inline %s" % name,
                       file=sys.stderr)
                 return 1
-        print("check: crate ok; functions=%d structs=%d enums=%d "
-              "skipped_inline=%d skipped_variadic=%d" % (
-                  stats["functions"], stats["structs"], stats["enums"],
-                  stats["skipped_inline"], stats["skipped_variadic"]))
+        print("check: crate ok; functions=%d structs=%d enums=%d" % (
+            stats["functions"], stats["structs"], stats["enums"]))
         if shutil.which("cargo"):
             import subprocess
             r = subprocess.run(["cargo", "metadata", "--no-deps", "--format-version", "1"],
