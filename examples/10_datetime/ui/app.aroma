@@ -17,7 +17,7 @@ Window {
         Calendar { x: 4 y: 30 width: 296 height: 240 year: 2026 month: 10 day: 10 on_select: "picked_in" }
 
         Label { text: "Check-in" x: 4 y: 286 style: "medium" }
-        DatePicker { x: 4 y: 310 width: 296 height: 70 year: 2026 month: 10 day: 10 on_change: "picked_in" }
+        DatePicker { x: 4 y: 310 width: 296 height: 70 year: 2028 month: 10 day: 10 on_change: "picked_in" }
 
         Label { text: "Check-out" x: 4 y: 396 style: "medium" }
         DatePicker { x: 4 y: 420 width: 296 height: 70 year: 2026 month: 10 day: 17 on_change: "picked_out" }

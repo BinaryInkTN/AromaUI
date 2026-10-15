@@ -70,6 +70,12 @@
                 "text": "Python bindings",
                 "slug": "python-bindings",
                 "category": "Reference"
+            },
+            {
+                "icon": "braces",
+                "text": "Rust bindings",
+                "slug": "rust-bindings",
+                "category": "Reference"
             }
         ],
 
@@ -697,6 +703,17 @@
             "updated": "2026-10-12",
             "status": "stable",
             "file": "docs/Python-Bindings.md"
+        },
+        {
+            "title": "Rust Bindings",
+            "description": "Generate a Rust crate from the C headers and drive AromaUI from Rust.",
+            "icon": "code",
+            "color": "#4A4458",
+            "category": "Reference",
+            "version": "0.0.2",
+            "updated": "2026-10-15",
+            "status": "stable",
+            "file": "docs/Rust-Bindings.md"
         }
     ]
 }

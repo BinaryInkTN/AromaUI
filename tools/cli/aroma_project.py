@@ -28,8 +28,12 @@ class ProjectCreator:
         self.templates_dir = templates_dir
         self.config = config
     
-    def create(self, name: str = None, python: bool = False) -> bool:
+    def create(self, name: str = None, python: bool = False, rust: bool = False) -> bool:
         Logger.step("Create New Project")
+
+        if python and rust:
+            Logger.error("Choose one language: --python or --rust (not both)")
+            return False
 
         raw_name = (name or secure_input("Project Name", min_length=1)).strip().rstrip("/\\")
         target_dir = os.path.abspath(raw_name)
@@ -44,9 +48,11 @@ class ProjectCreator:
         package = secure_input("Package Name", default=default_pkg,
                               validator=validate_package_name,
                               error_msg="Invalid package name (e.g. com.example.myapp)")
-        
+
         if python:
             language = "python"
+        elif rust:
+            language = "rust"
         else:
             language = self._prompt_language()
         
@@ -83,11 +89,13 @@ class ProjectCreator:
     
     @staticmethod
     def _prompt_language() -> str:
-        """Ask the user to pick C or Python. Defaults to C."""
+        """Ask the user to pick C, Python, or Rust. Defaults to C."""
         print(f"\n{Colors.BOLD}Language:{Colors.ENDC}")
         print("  1. C")
         print("  2. Python")
-        valid = {"1": "c", "2": "python", "c": "c", "python": "python"}
+        print("  3. Rust")
+        valid = {"1": "c", "2": "python", "3": "rust",
+                 "c": "c", "python": "python", "rust": "rust"}
         while True:
             try:
                 choice = input("Select language [1]: ").strip().lower()
@@ -101,7 +109,7 @@ class ProjectCreator:
                 return "c"
             if choice in valid:
                 return valid[choice]
-            print(f"{Colors.FAIL}Enter 1 for C or 2 for Python.{Colors.ENDC}")
+            print(f"{Colors.FAIL}Enter 1 for C, 2 for Python, or 3 for Rust.{Colors.ENDC}")
 
     def _generate(self, target_dir: str, name: str, package: str,
                   min_sdk: str, target_sdk: str, compile_sdk: str,
@@ -113,8 +121,12 @@ class ProjectCreator:
             os.makedirs(os.path.join(target_dir, "src"), exist_ok=True)
             
             is_python = (language == "python")
+            is_rust = (language == "rust")
+            crate_name = (re.sub(r'[^a-z0-9]+', '_', name.lower()).strip('_')
+                          or "myapp")
             replacements = {
                 "{{PROJECT_NAME}}": name,
+                "{{CRATE_NAME}}": crate_name,
                 "{{PACKAGE_NAME}}": package,
                 "{{MIN_SDK}}": min_sdk,
                 "{{TARGET_SDK}}": target_sdk,
@@ -139,6 +151,9 @@ class ProjectCreator:
             if is_python:
                 self._copy_tpl("python/main.py.tpl", os.path.join(target_dir, "src", "main.py"), replacements)
                 self._copy_tpl("python/bootstrap.c.tpl", os.path.join(target_dir, "src", "main.c"), replacements)
+            elif is_rust:
+                self._copy_tpl("rust/Cargo.toml.tpl", os.path.join(target_dir, "Cargo.toml"), replacements)
+                self._copy_tpl("rust/main.rs.tpl", os.path.join(target_dir, "src", "main.rs"), replacements)
             else:
                 self._copy_tpl("app/main.c.tpl", os.path.join(target_dir, "src", "main.c"), replacements)
                 self._copy_tpl("app/CMakeLists.txt.tpl", os.path.join(target_dir, "CMakeLists.txt"), replacements)
@@ -174,6 +189,8 @@ class ProjectCreator:
                     f.write("build/\nbuild_web/\nbindings/\n"
                             "android/build/\nandroid/app/build/\n"
                             "android/local.properties\n")
+                    if is_rust:
+                        f.write("/target\nCargo.lock\n")
             
             project_config = {
                 "project": {
@@ -414,6 +431,9 @@ class ProjectCreator:
         if language == "python":
             print("  # add third-party packages to requirements.txt, then:")
         print("  aroma run linux")
+        if language == "rust":
+            print("  # Android/Web targets are not supported for Rust yet (Linux desktop only)")
+            return
         print("  aroma run android --emu")
         print("  aroma build android --release")
         print("  aroma bundle linux deb appimage   # package for Linux")
@@ -423,4 +443,5 @@ def cmd_create(args):
     config = load_config(getattr(args, 'config', None))
     templates = os.path.join(os.path.dirname(os.path.realpath(__file__)), "templates")
     ProjectCreator(templates, config).create(
-        getattr(args, 'name', None), python=getattr(args, 'python', False))
+        getattr(args, 'name', None), python=getattr(args, 'python', False),
+        rust=getattr(args, 'rust', False))

@@ -82,7 +82,7 @@ int main(void)
     aroma_ui_init();
     AromaTheme theme = aroma_theme_create_material_blue_dark();
     aroma_ui_set_theme(&theme);
-    g_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);
+    g_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 20);
     g_icon_font = aroma_font_create_from_memory(icon_ttf, icon_ttf_len, 24);
     IncenseRegisterCallback("picked_in", INCENSE_CALLBACK_DATE_PTR, picked_in, NULL);
     IncenseRegisterCallback("picked_out", INCENSE_CALLBACK_DATE_PTR, picked_out, NULL);

@@ -34,6 +34,11 @@ def cmd_build(args):
     detector = Detector()
     cwd = os.getcwd()
     config = load_config()
+
+    if _project_language(cwd) == "rust" and args.platform in ("android", "web"):
+        print(f"{Colors.FAIL}ERROR: Rust projects support the Linux desktop target only "
+              f"(Android/Web are not wired for Rust yet).{Colors.ENDC}")
+        sys.exit(1)
     
     if args.platform == "android":
         sdk_versions = detector.detect_all_sdk()
@@ -225,6 +230,80 @@ def _prepare_python_linux(cwd: str):
     return {"py_dir": py_dir, "lib": lib}
 
 
+def _rust_bindings_up_to_date(rs_dir: str, aroma_root: str) -> bool:
+    """True when the generated Rust crate exists and is newer than headers."""
+    import glob as _glob
+    for name in ("Cargo.toml", os.path.join("src", "ffi.rs"),
+                 os.path.join("src", "lib.rs")):
+        if not os.path.isfile(os.path.join(rs_dir, name)):
+            return False
+    patterns = (os.path.join(aroma_root, "include", "aroma*.h"),
+                os.path.join(aroma_root, "include", "widgets", "*.h"))
+    headers = [h for pat in patterns for h in _glob.glob(pat)]
+    if not headers:
+        return False
+    newest_header = max(os.path.getmtime(h) for h in headers)
+    oldest_binding = min(
+        os.path.getmtime(os.path.join(rs_dir, name))
+        for name in ("Cargo.toml", os.path.join("src", "ffi.rs"),
+                     os.path.join("src", "lib.rs")))
+    return newest_header <= oldest_binding
+
+
+def _ensure_rust_bindings(cwd: str, aroma_root: str):
+    """Generate the project-local Rust bindings crate. Returns its dir."""
+    rs_dir = os.path.join(cwd, "bindings", "rust")
+    if _rust_bindings_up_to_date(rs_dir, aroma_root):
+        return rs_dir
+    gen = load_bindings_generator("rust")
+    if gen is None:
+        print(f"{Colors.FAIL}ERROR: binding generator not found "
+              f"(tools/generate_rust_bindings.py){Colors.ENDC}")
+        return None
+    os.makedirs(rs_dir, exist_ok=True)
+    print(f"{Colors.OKBLUE}==>{Colors.ENDC} Generating Rust bindings...")
+    try:
+        rc = gen.main(["--include-dir", os.path.join(aroma_root, "include"),
+                       "--output", rs_dir])
+    except Exception as e:
+        print(f"{Colors.FAIL}ERROR: Rust binding generation failed: {e}{Colors.ENDC}")
+        return None
+    if isinstance(rc, int) and rc != 0:
+        print(f"{Colors.FAIL}ERROR: Rust binding generation failed{Colors.ENDC}")
+        return None
+    for name in ("Cargo.toml", os.path.join("src", "ffi.rs"),
+                 os.path.join("src", "lib.rs")):
+        if not os.path.isfile(os.path.join(rs_dir, name)):
+            print(f"{Colors.FAIL}ERROR: expected binding missing: {name}{Colors.ENDC}")
+            return None
+    return rs_dir
+
+
+def _prepare_rust_linux(cwd: str):
+    """Prepare everything needed to build/run a Rust project on Linux."""
+    import shutil as _shutil
+    if _shutil.which("cargo") is None:
+        print(f"{Colors.FAIL}ERROR: cargo not found. Install the Rust toolchain (rustup).{Colors.ENDC}")
+        return None
+    aroma_root = find_aroma_root()
+    rs_dir = _ensure_rust_bindings(cwd, aroma_root)
+    if rs_dir is None:
+        return None
+    lib = _ensure_python_lib(cwd, aroma_root)
+    if lib is None:
+        return None
+    return {"rs_dir": rs_dir, "lib": lib}
+
+
+def _rust_cargo_env(lib: str):
+    """Env so the bindings build.rs finds libaroma at build and run time."""
+    env = os.environ.copy()
+    env["AROMA_LIB"] = lib
+    env["LD_LIBRARY_PATH"] = (os.path.dirname(lib) + os.pathsep +
+                              env.get("LD_LIBRARY_PATH", ""))
+    return env
+
+
 def _sync_python_app(cwd: str, android_dir: str) -> bool:
     """Stage a Python app for the Android build.
 
@@ -295,6 +374,25 @@ def _do_build(build_platform: str, sdk_root: str, sdk_ver: str, bt_ver: str, ndk
                 sys.exit(1)
             print(f"{Colors.OKGREEN}OK Python Linux ready{Colors.ENDC}")
             print(f"  bindings: {prep['py_dir']}")
+            print(f"  lib:      {prep['lib']}")
+            print(f"  run:      aroma run linux")
+            return
+        if _project_language(cwd) == "rust":
+            prep = _prepare_rust_linux(cwd)
+            if prep is None:
+                sys.exit(1)
+            cmd = ["cargo", "build", "--manifest-path",
+                   os.path.join(cwd, "Cargo.toml")]
+            if release:
+                cmd.append("--release")
+            print(f"{Colors.OKBLUE}==>{Colors.ENDC} Building (cargo)...")
+            result = run_command(cmd, cwd=cwd, env=_rust_cargo_env(prep["lib"]),
+                                 timeout=1200)
+            if result is None or result.returncode != 0:
+                print(f"{Colors.FAIL}ERROR: cargo build failed{Colors.ENDC}")
+                sys.exit(1)
+            print(f"{Colors.OKGREEN}OK Build successful{Colors.ENDC}")
+            print(f"  bindings: {prep['rs_dir']}")
             print(f"  lib:      {prep['lib']}")
             print(f"  run:      aroma run linux")
             return
@@ -399,8 +497,26 @@ def cmd_run(args):
     detector = Detector()
     cwd = os.getcwd()
     config = load_config()
-    
+
+    if _project_language(cwd) == "rust" and args.platform in ("android", "web"):
+        print(f"{Colors.FAIL}ERROR: Rust projects support the Linux desktop target only "
+              f"(Android/Web are not wired for Rust yet).{Colors.ENDC}")
+        sys.exit(1)
+
     if args.platform == "linux":
+        if _project_language(cwd) == "rust":
+            prep = _prepare_rust_linux(cwd)
+            if prep is None:
+                sys.exit(1)
+            main_rs = os.path.join(cwd, "src", "main.rs")
+            if not os.path.isfile(main_rs):
+                print(f"{Colors.FAIL}ERROR: Rust project has no src/main.rs{Colors.ENDC}")
+                sys.exit(1)
+            print(f"{Colors.OKBLUE}==>{Colors.ENDC} Launching {main_rs} (cargo run)")
+            subprocess.run(["cargo", "run", "--manifest-path",
+                            os.path.join(cwd, "Cargo.toml")],
+                           env=_rust_cargo_env(prep["lib"]))
+            return
         if _project_language(cwd) == "python":
             prep = _prepare_python_linux(cwd)
             if prep is None:

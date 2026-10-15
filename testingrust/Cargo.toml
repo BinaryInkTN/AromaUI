@@ -1,0 +1,10 @@
+[package]
+name = "testingrust"
+version = "0.1.0"
+edition = "2021"
+
+# The `aroma` crate is generated from the AromaUI C headers on first build
+# (`aroma build linux` writes it to bindings/rust). Do not edit it by hand;
+# regenerate with `aroma bindings --language rust`.
+[dependencies]
+aroma = { path = "bindings/rust" }

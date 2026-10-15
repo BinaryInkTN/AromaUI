@@ -1,4 +1,4 @@
-"""Python bindings generation (aroma bindings)."""
+"""Bindings generation (aroma bindings --language python|rust)."""
 
 import glob
 import os
@@ -9,24 +9,36 @@ from aroma_output import Colors, Logger
 from aroma_util import find_aroma_root
 
 
-def load_bindings_generator():
-    """Import tools/generate_python_bindings.py. Returns None on failure."""
+def load_bindings_generator(language="python"):
+    """Import tools/generate_{python,rust}_bindings.py. None on failure."""
     cli_dir = os.path.dirname(os.path.realpath(__file__))
     tools_dir = os.path.dirname(cli_dir)
     if tools_dir not in sys.path:
         sys.path.insert(0, tools_dir)
+    mod = {"python": "generate_python_bindings",
+           "rust": "generate_rust_bindings"}.get(language, "generate_python_bindings")
     try:
-        import generate_python_bindings as gen
-        return gen
+        __import__(mod)
+        return sys.modules[mod]
     except ImportError:
         return None
 
 
-def _load_generator():
-    """Import tools/generate_python_bindings.py. Returns None on failure."""
-    gen = load_bindings_generator()
+def load_python_generator():
+    """Back-compat alias used by aroma_build (always the Python generator)."""
+    return load_bindings_generator("python")
+
+
+# Back-compat: aroma_build imports this name directly.
+def load_bindings_generator_py():
+    return load_python_generator()
+
+
+def _load_generator(language="python"):
+    """Import the bindings generator for a language. None + error on failure."""
+    gen = load_bindings_generator(language)
     if gen is None:
-        Logger.error("Cannot load the bindings generator (tools/generate_python_bindings.py)")
+        Logger.error(f"Cannot load the bindings generator (tools/generate_{language}_bindings.py)")
     return gen
 
 
@@ -43,13 +55,29 @@ def _resolve_include_dir(flag: str = None) -> str:
     return os.path.join(find_aroma_root(), "include")
 
 
-def _resolve_output(flag: str = None) -> str:
+def _resolve_output(flag: str = None, language: str = "python") -> str:
     if flag:
         path = os.path.abspath(flag)
         if os.path.isdir(path):
+            if language == "rust":
+                return path
             path = os.path.join(path, "aroma.py")
         return path
+    if language == "rust":
+        return os.path.join(os.getcwd(), "bindings", "rust")
     return os.path.join(os.getcwd(), "bindings", "python", "aroma.py")
+
+
+def _check_ctypesgen():
+    if not shutil.which("gcc"):
+        Logger.error("gcc is required (C preprocessor) but was not found on PATH")
+        sys.exit(1)
+    vendor_main = os.path.join(find_aroma_root(), "vendors", "ctypesgen",
+                               "ctypesgen", "main.py")
+    if not os.path.isfile(vendor_main):
+        Logger.error("ctypesgen submodule is empty; run:\n"
+                     "  git submodule update --init vendors/ctypesgen")
+        sys.exit(1)
 
 
 def cmd_bindings(args):
@@ -57,7 +85,12 @@ def cmd_bindings(args):
         Logger.error("--check and --stats are mutually exclusive (choose one)")
         sys.exit(2)
 
-    gen = _load_generator()
+    language = getattr(args, "language", None) or "python"
+    if language not in ("python", "rust"):
+        Logger.error(f"Unknown language: {language} (choose python or rust)")
+        sys.exit(2)
+
+    gen = _load_generator(language)
     if gen is None:
         sys.exit(1)
 
@@ -69,19 +102,14 @@ def cmd_bindings(args):
         Logger.error(f"No public headers (aroma*.h) in {include_dir}")
         sys.exit(1)
 
-    if not shutil.which("gcc"):
-        Logger.error("gcc is required (C preprocessor) but was not found on PATH")
-        sys.exit(1)
-    vendor_main = os.path.join(find_aroma_root(), "vendors", "ctypesgen",
-                               "ctypesgen", "main.py")
-    if not os.path.isfile(vendor_main):
-        Logger.error("ctypesgen submodule is empty; run:\n"
-                     "  git submodule update --init vendors/ctypesgen")
-        sys.exit(1)
+    _check_ctypesgen()
 
-    output = _resolve_output(getattr(args, "output", None))
+    output = _resolve_output(getattr(args, "output", None), language)
 
-    Logger.step("Generate Python bindings")
+    if language == "rust":
+        Logger.step("Generate Rust bindings")
+    else:
+        Logger.step("Generate Python bindings")
     print(f"  Headers: {include_dir}")
     print(f"  Output:  {output}")
 
@@ -105,6 +133,19 @@ def cmd_bindings(args):
         sys.exit(1)
     if isinstance(rc, int) and rc != 0:
         sys.exit(rc)
+
+    if language == "rust":
+        missing = [p for p in (os.path.join(output, "Cargo.toml"),
+                               os.path.join(output, "src", "ffi.rs"),
+                               os.path.join(output, "src", "lib.rs"))
+                   if not os.path.isfile(p)]
+        if missing:
+            Logger.error(f"Generator reported success but missing: {', '.join(missing)}")
+            sys.exit(1)
+        Logger.success(f"Bindings written: {output} (Cargo.toml + src/ffi.rs + src/lib.rs)")
+        print(f"\n{Colors.BOLD}Next steps:{Colors.ENDC}")
+        print("  AROMA_LIB=build/src/libaroma.so cargo run --manifest-path bindings/rust/Cargo.toml --example hello")
+        return
 
     raw_out = os.path.join(os.path.dirname(output), "aroma_raw.py")
     missing = [p for p in (output, raw_out) if not os.path.isfile(p)]
