@@ -89,3 +89,5 @@ verify it loads, `--stats` to peek at what's inside without writing files.
 | Taps stop working | Your callback was a local. Move it to module level |
 
 To ship a full app in Python, see [Python on Android](Python-on-Android.md).
+Prefer Rust? The same generator backend produces a Rust crate instead --
+see [Rust Bindings](Rust-Bindings.md).

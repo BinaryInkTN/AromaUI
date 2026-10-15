@@ -1,6 +1,6 @@
 
-`aroma create` makes a new cross platform project in seconds, in C or in
-Python. Run it from the AromaUI repo root.
+`aroma create` makes a new cross platform project in seconds, in C,
+Python, or Rust. Run it from the AromaUI repo root.
 
 ## Creating a Project
 
@@ -16,14 +16,16 @@ The CLI then asks which language to use:
 Language:
   1. C
   2. Python
+  3. Rust
 Select language [1]:
 ```
 
-Pick `1` (or press Enter) for a C project, `2` for Python. To skip the
-question, pass the flag up front:
+Pick `1` (or press Enter) for a C project, `2` for Python, `3` for Rust.
+To skip the question, pass the flag up front:
 
 ```bash
 python3 bin/aroma create MyApp --python
+python3 bin/aroma create MyApp --rust
 ```
 
 ## Generated Project Structure
@@ -48,6 +50,15 @@ A Python project (`--python` or option `2`) instead contains
 for third-party packages, and the same
 `android/` project with Chaquopy wired in. See
 [Python on Android](Python-on-Android.md) for the full story.
+
+A Rust project (`--rust` or option `3`) instead contains
+`src/main.rs` (your app, using the generated `aroma` crate) plus a
+`Cargo.toml` with a path dependency on `bindings/rust` (written by
+`aroma build linux`; never edit it by hand). There is no desktop
+`CMakeLists.txt` -- cargo is the build system. See
+[Rust Bindings](../Rust-Bindings.md) for the full story.
+(Rust targets Linux desktop only for now; Android and Web builds report
+an error.)
 
 ## Starter Code
 

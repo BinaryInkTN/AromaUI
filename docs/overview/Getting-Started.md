@@ -121,11 +121,14 @@ python3 bin/aroma create MyApp
 cd MyApp
 ```
 
-When asked for a language, pick `1` for C (the default) or `2` for
-Python. To skip the question, use `python3 bin/aroma create MyApp --python`.
+When asked for a language, pick `1` for C (the default), `2` for
+Python, or `3` for Rust. To skip the question, use `python3 bin/aroma create MyApp --python`
+(or `--rust`).
 
 You get this layout (C shown; Python projects have `src/main.py` plus a
-native bootstrap instead of a desktop `CMakeLists.txt`):
+native bootstrap instead of a desktop `CMakeLists.txt`; Rust projects have
+`src/main.rs` plus a `Cargo.toml` with a path dependency on the generated
+bindings crate):
 
 * `src/main.c`: app entry point
 * `CMakeLists.txt`: build config for Linux and Web
@@ -246,5 +249,6 @@ The pattern is always the same:
 
 * Read [Architecture Overview](Architecture-Overview.md) to learn how nodes, layout, and rendering fit together.
 * Browse [Input and Controls](../widget-library/Input-and-Control-Widgets.md) for buttons, text, sliders, and lists.
-* Open [Incense Declarative UI](../widget-library/Incense-Sandbox.md) to prototype screens fast, then port them to C.
+* Open [Incense Declarative UI](../widget-library/Incense-Sandbox.md) to prototype screens fast, then port them to C, Python, or Rust.
 * See [Building and Deployment](../cli-toolchain/Building-and-Deployment.md) for Linux, Android, and Web builds in full detail.
+* Write your app in [Python](../Python-Bindings.md) or [Rust](../Rust-Bindings.md) with generated bindings that match the C API.

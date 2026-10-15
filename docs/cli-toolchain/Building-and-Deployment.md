@@ -29,7 +29,7 @@ python3 bin/aroma build linux
 python3 bin/aroma run linux
 ```
 
-The same steps by hand:
+The same steps by hand (C projects):
 
 ```bash
 mkdir build && cd build
@@ -39,6 +39,12 @@ make -j$(nproc)
 ```
 
 The binary name matches your project folder. If `run` cannot find it, open `build/` and launch the binary directly.
+
+Rust projects build through cargo instead: `aroma build linux`
+generates `bindings/rust`, builds `libaroma.so` once into
+`build/aroma-lib/`, then runs `cargo build` (needs the Rust toolchain).
+The first build takes several minutes. See
+[Rust Bindings](../Rust-Bindings.md).
 
 ## Android Builds
 
@@ -135,6 +141,7 @@ manual build command, so `flatpak`/`snap`/`rpm` never silently do nothing.
 * `No Android SDK platforms found`: install a platform with the SDK Manager and set `ANDROID_HOME`.
 * `Not an Aroma project (no android/ directory)`: run the command inside a folder made by `aroma create`.
 * `Executable not found. Run 'aroma build linux' first`: build before you run.
+* `Rust projects support the Linux desktop target only`: Android and Web are not wired for Rust yet; use a C or Python project for those targets.
 
 ## Next Steps
 

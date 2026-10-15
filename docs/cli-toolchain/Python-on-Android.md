@@ -101,4 +101,6 @@ aroma run linux              # launches src/main.py
 ```
 
 So the full matrix works from one codebase: C and Python projects,
-each targeting Android and Linux, all via `aroma create/build/run`.
+each targeting Android and Linux, plus Rust projects on Linux,
+all via `aroma create/build/run`. (Rust on Android/Web is not supported
+yet -- see [Rust Bindings](../Rust-Bindings.md).)
