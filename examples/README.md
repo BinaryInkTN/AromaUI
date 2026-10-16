@@ -37,4 +37,6 @@ with `aroma build linux` and runs with `aroma run linux`.
 | `11_3d_viewer` | Built-in 3D model with orbit, zoom, auto-rotate |
 | `12_incense` | State bindings and conditional UI |
 | `13_gestures` | Gesture engine: tap, double-tap, long-press, swipes, pan, pinch |
+| `14_video` | Video playback: MP4/WebM/MKV/AVI/MPEG files and live frame streams |
+| `15_webview` | WebView: local HTML pages, history, text scaling |
 | `14_python_bindings` | Python ctypes bindings demo (headless, generated on demand) |

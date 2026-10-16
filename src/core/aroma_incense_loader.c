@@ -12,6 +12,8 @@
 #include "widgets/aroma_debug_overlay.h"
 #include "widgets/aroma_dropdown.h"
 #include "widgets/aroma_gif.h"
+#include "widgets/aroma_video.h"
+#include "widgets/aroma_webview.h"
 #include "widgets/aroma_icon.h"
 #include "widgets/aroma_loading.h"
 #include "widgets/aroma_map.h"
@@ -3620,6 +3622,68 @@ static AromaNode *build_gif(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
+static AromaNode *build_webview(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    AromaNode *built = aroma_webview_create(parent, props_int(&bag, "x", 0),
+                                            props_int(&bag, "y", 0),
+                                            props_int(&bag, "width", 320),
+                                            props_int(&bag, "height", 240));
+    if (built) {
+        char *url = props_str_dup(&bag, "url", NULL);
+        if (!url || !url[0]) {
+            free(url);
+            url = props_str_dup(&bag, "src", NULL);
+        }
+        char *html = props_str_dup(&bag, "html", NULL);
+        if (url && url[0]) {
+            aroma_webview_load_url(built, url);
+        } else if (html && html[0]) {
+            aroma_webview_load_html(built, html, NULL);
+        }
+        free(url);
+        free(html);
+        float ts = props_float(&bag, "text_scale", 0.0f);
+        if (ts > 0.0f)
+            aroma_webview_set_text_scale(built, ts);
+    }
+    WIDGET_POSTAMBLE(built, bag, node, ctx);
+}
+
+static AromaNode *build_video(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
+{
+    if (!ctx)
+        return NULL;
+    WIDGET_PREAMBLE(node, sp, ctx);
+    char *path = props_str_dup(&bag, "src", "");
+    AromaNode *built = aroma_video_create(parent, (path && path[0]) ? path : NULL,
+                                          props_int(&bag, "x", 0), props_int(&bag, "y", 0),
+                                          props_int(&bag, "width", 320),
+                                          props_int(&bag, "height", 180));
+    if (built) {
+        aroma_video_set_looping(built, props_bool(&bag, "loop", false));
+        aroma_video_set_muted(built, props_bool(&bag, "muted", true));
+        aroma_video_set_click_to_toggle(built, props_bool(&bag, "click_to_toggle", true));
+        aroma_video_set_show_controls(built, props_bool(&bag, "controls", true));
+        float cr = props_float(&bag, "corner_radius", -1.0f);
+        if (cr < 0.0f)
+            cr = props_float(&bag, "radius", 0.0f);
+        if (cr > 0.0f)
+            aroma_video_set_corner_radius(built, cr);
+        static const char *const scale_names[] = {"fill", "fit", "cover"};
+        static const int scale_values[] = {AROMA_IMAGE_SCALE_FILL, AROMA_IMAGE_SCALE_FIT, AROMA_IMAGE_SCALE_COVER};
+        AromaImageScaleMode sm = (AromaImageScaleMode)match_enum(node, &bag, "scale", AROMA_IMAGE_SCALE_FIT, scale_names, scale_values, 3, "video scale", "fill, fit, cover");
+        if (sm != AROMA_IMAGE_SCALE_FIT)
+            aroma_video_set_scale_mode(built, sm);
+        if (props_bool(&bag, "autoplay", false))
+            aroma_video_play(built);
+    }
+    free(path);
+    WIDGET_POSTAMBLE(built, bag, node, ctx);
+}
+
 static AromaNode *build_loading(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
     if (!ctx)
@@ -4625,6 +4689,8 @@ static const WidgetEntry WIDGET_TABLE[] = {
     {"ThreeDViewer", build_3d_viewer},
     {"TimePicker", build_timepicker},
     {"Tooltip", build_tooltip},
+    {"Video", build_video},
+    {"WebView", build_webview},
     {NULL, NULL}};
 
 #define WIDGET_TABLE_COUNT (sizeof(WIDGET_TABLE) / sizeof(WIDGET_TABLE[0]) - 1)

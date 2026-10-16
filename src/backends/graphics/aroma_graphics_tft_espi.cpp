@@ -260,6 +260,10 @@ bool get_image_size(unsigned int texture_id, int *width, int *height) {
 
     return false;
 }
+bool update_image_rgba(unsigned int texture_id, unsigned char *data, int width, int height) {
+    (void)texture_id; (void)data; (void)width; (void)height;
+    return false;
+}
 void draw_image_uv(size_t window_id, int x, int y,
                    int width, int height, unsigned int texture_id, float corner_radius,
                    float u0, float v0, float u1, float v1) {
@@ -308,6 +312,7 @@ AromaGraphicsInterface aroma_graphics_tft = {
     .load_image_from_memory          = load_image_from_memory,
     .draw_image                      = draw_image,
     .get_image_size                  = get_image_size,
+    .update_image_rgba               = update_image_rgba,
     .draw_image_uv                   = draw_image_uv,
     .graphics_set_tft_context        = graphics_set_tft_context,
     .graphics_set_sprite_mode        = graphics_set_sprite_mode,

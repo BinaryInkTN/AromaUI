@@ -55,6 +55,8 @@
 #include "test_aroma_display.h"
 #include "test_aroma_forms.h"
 #include "test_aroma_canvas.h"
+#include "test_aroma_video.h"
+#include "test_aroma_webview.h"
 #include "test_aroma_table.h"
 #include "test_aroma_pickers.h"
 #include "test_aroma_incense.h"
@@ -146,6 +148,10 @@ int main(void)
     run_forms_tests(&passed, &failed);
     tally(passed, failed);
     run_canvas_tests(&passed, &failed);
+    tally(passed, failed);
+    run_video_tests(&passed, &failed);
+    tally(passed, failed);
+    run_webview_tests(&passed, &failed);
     tally(passed, failed);
     run_table_tests(&passed, &failed);
     tally(passed, failed);

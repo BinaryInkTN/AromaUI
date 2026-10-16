@@ -1414,6 +1414,46 @@ unsigned int load_image_from_memory(unsigned char *data, size_t binary_length)
     return texture;
 }
 
+static bool update_image_rgba(unsigned int texture_id, unsigned char *img_data,
+                               int width, int height)
+{
+    if (texture_id == 0 || !img_data || width <= 0 || height <= 0)
+        return false;
+    if (!glIsTexture(texture_id))
+        return false;
+
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current)
+        platform->make_context_current(0);
+
+    int tw = 0, th = 0;
+    bool have_size = get_image_size(texture_id, &tw, &th);
+
+    flush_shape_batch();
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    if (have_size && tw == width && th == height)
+    {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+                        GL_RGBA, GL_UNSIGNED_BYTE, img_data);
+    }
+    else
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, img_data);
+    }
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (glGetError() != GL_NO_ERROR)
+        return false;
+
+    __image_size_track(texture_id, width, height);
+    return true;
+}
+
 void draw_image_uv(size_t window_id, int x, int y, int width, int height,
                    unsigned int texture_id, float corner_radius,
                    float u0, float v0, float u1, float v1)
@@ -1714,6 +1754,7 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .load_image_from_memory = load_image_from_memory,
     .draw_image = draw_image,
     .get_image_size = get_image_size,
+    .update_image_rgba = update_image_rgba,
     .draw_image_uv = draw_image_uv,
     .shutdown = shutdown,
     .graphics_set_clip = gles3_set_clip,

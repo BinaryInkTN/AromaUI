@@ -2187,6 +2187,45 @@ static bool vk_get_image_size(unsigned int texture_id, int *width, int *height)
     return true;
 }
 
+static bool vk_update_image_rgba(unsigned int texture_id, unsigned char *data,
+                                  int width, int height)
+{
+    if (texture_id == 0 || !data || width <= 0 || height <= 0)
+        return false;
+    if (!vk_ctx.initialized)
+        return false;
+    VkTextureHandle *tex = find_texture_by_id(texture_id);
+    if (!tex)
+        return false;
+    if (tex->width != width || tex->height != height)
+        return false;
+
+    VkDeviceSize imageSize = (VkDeviceSize)width * height * 4;
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingMemory;
+    if (!vk_create_buffer(&vk_ctx, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                          &stagingBuffer, &stagingMemory))
+    {
+        return false;
+    }
+    vk_copy_to_buffer(&vk_ctx, stagingMemory, data, imageSize);
+
+    vkDeviceWaitIdle(vk_ctx.device);
+    vk_transition_image_layout(&vk_ctx, tex->image,
+                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vk_copy_buffer_to_image(&vk_ctx, stagingBuffer, tex->image,
+                            (uint32_t)width, (uint32_t)height);
+    vk_transition_image_layout(&vk_ctx, tex->image,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkDestroyBuffer(vk_ctx.device, stagingBuffer, NULL);
+    vkFreeMemory(vk_ctx.device, stagingMemory, NULL);
+    return true;
+}
+
 static void vk_draw_image_uv(size_t window_id, int x, int y, int width, int height, unsigned int texture_id, float corner_radius,
                              float u0, float v0, float u1, float v1)
 {
@@ -2438,6 +2477,7 @@ AromaGraphicsInterface aroma_graphics_vulkan = {
     .load_image_from_memory = vk_load_image_from_memory,
     .draw_image = vk_draw_image,
     .get_image_size = vk_get_image_size,
+    .update_image_rgba = vk_update_image_rgba,
     .draw_image_uv = vk_draw_image_uv,
     .draw_line = vk_draw_line,
     .shutdown = vk_shutdown,

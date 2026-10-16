@@ -1171,6 +1171,32 @@ extern "C"
     }
 
 
+    static inline AromaNode *aroma_ui_video(
+        AromaNode *parent, const char *path,
+        int x, int y, int width, int height,
+        bool autoplay, bool loop)
+    {
+        AromaNode *v = aroma_video_create(parent, path, x, y, width, height);
+        if (v)
+        {
+            aroma_video_set_looping(v, loop);
+            if (autoplay)
+                aroma_video_play(v);
+        }
+        return v;
+    }
+
+    static inline AromaNode *aroma_ui_webview(
+        AromaNode *parent, const char *url,
+        int x, int y, int width, int height)
+    {
+        AromaNode *w = aroma_webview_create(parent, x, y, width, height);
+        if (w && url && url[0])
+            aroma_webview_load_url(w, url);
+        return w;
+    }
+
+
     typedef bool (*AromaBackCallback)(void *user_data);
 
 

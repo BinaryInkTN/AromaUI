@@ -227,6 +227,16 @@ static bool drawlist_proxy_get_image_size(unsigned int texture_id, int *width, i
     }
     return false;
 }
+static bool drawlist_proxy_update_image_rgba(unsigned int texture_id,
+                                             unsigned char *data,
+                                             int width, int height)
+{
+    AromaGraphicsInterface* real = get_real_graphics_interface();
+    if (real && real->update_image_rgba) {
+        return real->update_image_rgba(texture_id, data, width, height);
+    }
+    return false;
+}
 static void drawlist_proxy_graphics_set_tft_context(void* tft) {
     AromaGraphicsInterface* real = get_real_graphics_interface();
     if (real && real->graphics_set_tft_context) {
@@ -348,6 +358,7 @@ static AromaGraphicsInterface drawlist_proxy = {
     .draw_image = drawlist_proxy_draw_image,
     .draw_image_uv = drawlist_proxy_draw_image_uv,
     .get_image_size = drawlist_proxy_get_image_size,
+    .update_image_rgba = drawlist_proxy_update_image_rgba,
     .draw_line = drawlist_proxy_draw_line,
     .render_text = drawlist_proxy_render_text,
     .measure_text = drawlist_proxy_measure_text,

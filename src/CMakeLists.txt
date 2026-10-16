@@ -58,6 +58,9 @@ add_library(aroma
     widgets/aroma_icon.c
     widgets/aroma_canvas.c
     widgets/aroma_gif.c
+    widgets/aroma_video.c
+    widgets/aroma_video_codec.c
+    widgets/aroma_webview.c
     widgets/aroma_loading.c
     widgets/aroma_table.c
     widgets/aroma_map.c
@@ -84,6 +87,123 @@ target_include_directories(aroma
 target_link_libraries(aroma PRIVATE freetype m SQLite3)
 if(NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE GLESv2 EGL)
+endif()
+
+# ---- Vendored FFmpeg: decode all major video formats from source ----
+# Builds minimal static libavformat/libavcodec/libswscale/libavutil from
+# vendors/ffmpeg (git submodule, no system FFmpeg required). Desktop Linux
+# only; all other platforms fall back to the built-in MPEG-1 decoder.
+option(AROMA_ENABLE_FFMPEG "Build vendored FFmpeg for full video format support" ON)
+set(AROMA_HAS_FFMPEG FALSE)
+if(AROMA_ENABLE_FFMPEG AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AND NOT EMSCRIPTEN)
+    set(FFMPEG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/ffmpeg")
+    if(EXISTS "${FFMPEG_SOURCE_DIR}/configure")
+        include(ExternalProject)
+        include(ProcessorCount)
+        ProcessorCount(AROMA_FFMPEG_JOBS)
+        if(NOT AROMA_FFMPEG_JOBS)
+            set(AROMA_FFMPEG_JOBS 4)
+        endif()
+        set(FFMPEG_PREFIX "${CMAKE_BINARY_DIR}/ffmpeg")
+        set(FFMPEG_INSTALL_DIR "${FFMPEG_PREFIX}/install")
+        # Imported targets require their include dir to exist at configure
+        # time; the FFmpeg install step creates it during the build.
+        file(MAKE_DIRECTORY "${FFMPEG_INSTALL_DIR}/include")
+        ExternalProject_Add(ffmpeg_external
+            SOURCE_DIR "${FFMPEG_SOURCE_DIR}"
+            BINARY_DIR "${FFMPEG_PREFIX}/build"
+            INSTALL_DIR "${FFMPEG_INSTALL_DIR}"
+            CONFIGURE_COMMAND "${FFMPEG_SOURCE_DIR}/configure"
+                --prefix=${FFMPEG_INSTALL_DIR}
+                --disable-everything
+                --disable-programs --disable-doc --disable-debug
+                --disable-avdevice --disable-swresample --disable-avfilter
+                --disable-network --disable-x86asm
+                --disable-zlib --disable-bzlib --disable-lzma
+                --disable-libdrm --disable-vaapi --disable-vdpau --disable-vulkan
+                --disable-hwaccels
+                --enable-pic --enable-static --disable-shared
+                --cc=${CMAKE_C_COMPILER}
+                --extra-cflags=-O2\ -fPIC
+                --enable-demuxer=asf,avi,flv,gif,matroska,mov,mp3,mpegps,mpegts,mpegvideo,ogg,wav,aac,flac
+                --enable-decoder=h264,hevc,vp8,vp9,av1,mpeg1video,mpeg2video,mpeg4,h263,msmpeg4v3,wmv3,vc1,vp6,vp6a,vp6f,flv,theora,mjpeg,gif,aac,ac3,alac,flac,mp3,pcm_s16be,pcm_s16le,vorbis
+                --enable-parser=aac,ac3,av1,flac,h264,hevc,mjpeg,mpegaudio,mpeg4video,mpegvideo,opus,png,vorbis,vp9,h263,vc1,gif
+                --enable-protocol=file
+            BUILD_COMMAND make -j${AROMA_FFMPEG_JOBS}
+            INSTALL_COMMAND make install
+            BUILD_BYPRODUCTS
+                "${FFMPEG_INSTALL_DIR}/lib/libavformat.a"
+                "${FFMPEG_INSTALL_DIR}/lib/libavcodec.a"
+                "${FFMPEG_INSTALL_DIR}/lib/libswscale.a"
+                "${FFMPEG_INSTALL_DIR}/lib/libavutil.a"
+            UPDATE_COMMAND ""
+            UPDATE_DISCONNECTED TRUE
+            LOG_CONFIGURE TRUE
+            LOG_BUILD TRUE
+            LOG_INSTALL TRUE
+        )
+        foreach(_lib avformat avcodec swscale avutil)
+            add_library(FFmpeg::${_lib} STATIC IMPORTED GLOBAL)
+            set_target_properties(FFmpeg::${_lib} PROPERTIES
+                IMPORTED_LOCATION "${FFMPEG_INSTALL_DIR}/lib/lib${_lib}.a")
+            target_include_directories(FFmpeg::${_lib} INTERFACE "${FFMPEG_INSTALL_DIR}/include")
+            add_dependencies(FFmpeg::${_lib} ffmpeg_external)
+        endforeach()
+        target_link_libraries(aroma PRIVATE
+            FFmpeg::avformat FFmpeg::avcodec FFmpeg::swscale FFmpeg::avutil)
+        target_compile_definitions(aroma PRIVATE AROMA_HAS_FFMPEG=1)
+        # Decoder sources need the vendored headers too.
+        target_include_directories(aroma PRIVATE "${FFMPEG_INSTALL_DIR}/include")
+        set(AROMA_HAS_FFMPEG TRUE)
+        message(STATUS "AromaUI: building vendored FFmpeg (full video format support)")
+    else()
+        message(STATUS "AromaUI: vendors/ffmpeg missing (submodule not initialized) - video falls back to MPEG-1 only")
+    endif()
+endif()
+
+# ---- Vendored litehtml: software HTML/CSS webview, no system browser ----
+option(AROMA_ENABLE_WEBVIEW "Build vendored litehtml HTML renderer for the webview widget" ON)
+set(AROMA_HAS_WEBVIEW FALSE)
+if(AROMA_ENABLE_WEBVIEW AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AND NOT EMSCRIPTEN)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/litehtml/CMakeLists.txt")
+        enable_language(CXX)
+        set(LITEHTML_ENABLE_LINT OFF)
+        set(LITEHTML_BUILD_TESTING OFF)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../vendors/litehtml" litehtml_build)
+        target_sources(aroma PRIVATE widgets/aroma_webview_render.cpp)
+        set_source_files_properties(widgets/aroma_webview_render.cpp PROPERTIES
+            CXX_STANDARD 17
+            COMPILE_OPTIONS "-fexceptions")
+        target_link_libraries(aroma PRIVATE litehtml)
+        # Consumers link with the C driver, so export the C++ runtime.
+        target_link_libraries(aroma PUBLIC stdc++)
+        # QuickJS: embeddable JS engine (scripts, DOM, timers, bridges).
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/quickjs/quickjs.c")
+            target_sources(aroma PRIVATE
+                ../vendors/quickjs/quickjs.c
+                ../vendors/quickjs/dtoa.c
+                ../vendors/quickjs/libregexp.c
+                ../vendors/quickjs/libunicode.c
+                ../vendors/quickjs/cutils.c)
+            target_include_directories(aroma PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/quickjs")
+            set_source_files_properties(
+                ../vendors/quickjs/quickjs.c
+                ../vendors/quickjs/dtoa.c
+                ../vendors/quickjs/libregexp.c
+                ../vendors/quickjs/libunicode.c
+                ../vendors/quickjs/cutils.c PROPERTIES
+                COMPILE_DEFINITIONS "_GNU_SOURCE;CONFIG_VERSION=\"2026-06-04\"")
+            target_compile_definitions(aroma PRIVATE AROMA_WEBVIEW_JS=1)
+            message(STATUS "AromaUI: JavaScript enabled in webview (vendored QuickJS)")
+        else()
+            message(STATUS "AromaUI: vendors/quickjs missing - webview without JavaScript")
+        endif()
+        target_compile_definitions(aroma PRIVATE AROMA_HAS_WEBVIEW=1)
+        set(AROMA_HAS_WEBVIEW TRUE)
+        message(STATUS "AromaUI: building vendored litehtml (webview support)")
+    else()
+        message(STATUS "AromaUI: vendors/litehtml missing (submodule not initialized) - webview disabled")
+    endif()
 endif()
 
 

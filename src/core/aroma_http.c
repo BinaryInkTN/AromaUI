@@ -129,7 +129,9 @@ static size_t http_write_cb(char *ptr, size_t size, size_t nmemb, void *userdata
     return n;
 }
 
-static bool http_fetch_curl(const char *url, const char *dest_path)
+static bool http_fetch_curl(const char *url, const char *dest_path,
+                             const char *cookie_header,
+                             char *set_cookie_out, size_t set_cookie_len)
 {
     char tmp[1024];
     snprintf(tmp, sizeof(tmp), "%s.part", dest_path);
@@ -154,9 +156,64 @@ static bool http_fetch_curl(const char *url, const char *dest_path)
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    if (cookie_header && cookie_header[0])
+        curl_easy_setopt(curl, CURLOPT_COOKIE, cookie_header);
+    if (set_cookie_out && set_cookie_len > 0)
+    {
+        /* Enable the cookie engine so we can read Set-Cookie lines. */
+        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "");
+        set_cookie_out[0] = '\0';
+    }
     CURLcode res = curl_easy_perform(curl);
     long code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+    if (set_cookie_out && set_cookie_len > 0)
+    {
+        struct curl_slist *cookies = NULL;
+        if (curl_easy_getinfo(curl, CURLINFO_COOKIELIST, &cookies) == CURLE_OK && cookies)
+        {
+            size_t pos = 0;
+            for (struct curl_slist *nc = cookies; nc; nc = nc->next)
+            {
+                /* Netscape format: domain<TAB>...<TAB>name<TAB>value */
+                const char *line = nc->data;
+                const char *tab = NULL;
+                int tabs = 0;
+                const char *name = NULL;
+                for (const char *p = line; *p; p++)
+                {
+                    if (*p == '\t' && ++tabs == 5)
+                    {
+                        name = p + 1;
+                        break;
+                    }
+                }
+                (void)tab;
+                if (!name || !name[0])
+                    continue;
+                const char *vend = strchr(name, '\t');
+                size_t nlen = vend ? (size_t)(vend - name) : strlen(name);
+                const char *value = vend ? vend + 1 : "";
+                size_t vlen = strlen(value);
+                if (nlen == 0)
+                    continue;
+                if (pos > 0 && pos + 2 < set_cookie_len)
+                {
+                    set_cookie_out[pos++] = ';';
+                    set_cookie_out[pos++] = ' ';
+                }
+                if (pos + nlen + 1 + vlen + 1 >= set_cookie_len)
+                    break;
+                memcpy(set_cookie_out + pos, name, nlen);
+                pos += nlen;
+                set_cookie_out[pos++] = '=';
+                memcpy(set_cookie_out + pos, value, vlen);
+                pos += vlen;
+                set_cookie_out[pos] = '\0';
+            }
+            curl_slist_free_all(cookies);
+        }
+    }
     curl_easy_cleanup(curl);
     fclose(fp);
     if (res != CURLE_OK || code < 200 || code >= 300 || sink.total == 0)
@@ -181,6 +238,23 @@ bool aroma_http_fetch_to_file(const char *url, const char *dest_path)
 #ifdef __ANDROID__
     return aroma_android_http_fetch(url, dest_path);
 #else
-    return http_fetch_curl(url, dest_path);
+    return http_fetch_curl(url, dest_path, NULL, NULL, 0);
+#endif
+}
+
+bool aroma_http_fetch_to_file_cookies(const char *url, const char *dest_path,
+                                      const char *cookie_header,
+                                      char *set_cookie_out, size_t set_cookie_len)
+{
+    if (!url || !url[0] || !dest_path || !dest_path[0])
+        return false;
+#ifdef __ANDROID__
+    (void)cookie_header;
+    (void)set_cookie_out;
+    (void)set_cookie_len;
+    return aroma_android_http_fetch(url, dest_path);
+#else
+    return http_fetch_curl(url, dest_path, cookie_header,
+                           set_cookie_out, set_cookie_len);
 #endif
 }

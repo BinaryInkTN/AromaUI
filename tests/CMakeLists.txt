@@ -34,6 +34,8 @@ add_executable(aroma_tests
     widgets/test_aroma_display.c
     widgets/test_aroma_forms.c
     widgets/test_aroma_canvas.c
+    widgets/test_aroma_video.c
+    widgets/test_aroma_webview.c
     widgets/test_aroma_table.c
     widgets/test_aroma_pickers.c
     markup/test_aroma_incense.c
@@ -69,6 +71,9 @@ target_include_directories(aroma_tests
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/widgets
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/markup
 )
+
+target_compile_definitions(aroma_tests PRIVATE
+    AROMA_WEBVIEW_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/webview")
 
 if(ENABLE_ASAN AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(aroma_tests PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
@@ -107,6 +112,28 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
         )
         add_test(NAME aroma_image_gl_tests COMMAND aroma_image_gl_tests)
+
+        add_executable(aroma_video_gl_tests test_aroma_video_gl.c)
+        target_link_libraries(aroma_video_gl_tests PRIVATE aroma ${EGL_LIB} ${GLESV2_LIB})
+        target_include_directories(aroma_video_gl_tests
+            PRIVATE ${EGL_INCLUDE_DIR}
+            PRIVATE ${AROMA_ROOT}/include
+            PRIVATE ${AROMA_ROOT}/src/
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        target_compile_definitions(aroma_video_gl_tests PRIVATE
+            AROMA_VIDEO_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/video")
+        add_test(NAME aroma_video_gl_tests COMMAND aroma_video_gl_tests)
+
+        add_executable(aroma_webview_gl_tests test_aroma_webview_gl.c)
+        target_link_libraries(aroma_webview_gl_tests PRIVATE aroma ${EGL_LIB} ${GLESV2_LIB})
+        target_include_directories(aroma_webview_gl_tests
+            PRIVATE ${EGL_INCLUDE_DIR}
+            PRIVATE ${AROMA_ROOT}/include
+            PRIVATE ${AROMA_ROOT}/src/
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        add_test(NAME aroma_webview_gl_tests COMMAND aroma_webview_gl_tests)
 
         add_executable(aroma_fox_gl_tests test_aroma_fox_gl.c)
         target_link_libraries(aroma_fox_gl_tests PRIVATE aroma ${EGL_LIB} ${GLESV2_LIB})

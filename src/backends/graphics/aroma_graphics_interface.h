@@ -94,6 +94,11 @@ extern "C"
             unsigned int texture_id,
             int *width, int *height);
 
+        bool (*update_image_rgba)(
+            unsigned int texture_id,
+            unsigned char *data,
+            int width, int height);
+
         void (*draw_image_uv)(
             size_t window_id,
             int x, int y,

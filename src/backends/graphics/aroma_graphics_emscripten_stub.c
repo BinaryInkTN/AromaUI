@@ -20,6 +20,7 @@ static unsigned int stub_load_image_from_memory(unsigned char *data, unsigned lo
 static void stub_draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id, float corner_radius) { (void)window_id; (void)x; (void)y; (void)width; (void)height; (void)texture_id; (void)corner_radius; }
 static bool stub_get_image_size(unsigned int texture_id, int *width, int *height) { (void)texture_id; (void)width; (void)height; return false; }
 static void stub_draw_image_uv(size_t window_id, int x, int y, int width, int height, unsigned int texture_id, float corner_radius, float u0, float v0, float u1, float v1) { (void)window_id; (void)x; (void)y; (void)width; (void)height; (void)texture_id; (void)corner_radius; (void)u0; (void)v0; (void)u1; (void)v1; }
+static bool stub_update_image_rgba(unsigned int texture_id, unsigned char *data, int width, int height) { (void)texture_id; (void)data; (void)width; (void)height; return false; }
 static void stub_graphics_set_tft_context(void *tft) { (void)tft; }
 static void stub_graphics_set_sprite_mode(bool enable, void *sprite) { (void)enable; (void)sprite; }
 static void stub_graphics_set_clip(int x, int y, int w, int h) { (void)x; (void)y; (void)w; (void)h; }
@@ -45,6 +46,7 @@ AromaGraphicsInterface aroma_graphics_vulkan = {
     .load_image_from_memory = stub_load_image_from_memory,
     .draw_image = stub_draw_image,
     .get_image_size = stub_get_image_size,
+    .update_image_rgba = stub_update_image_rgba,
     .draw_image_uv = stub_draw_image_uv,
     .graphics_set_tft_context = stub_graphics_set_tft_context,
     .graphics_set_sprite_mode = stub_graphics_set_sprite_mode,

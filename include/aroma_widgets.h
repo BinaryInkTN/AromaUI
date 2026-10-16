@@ -34,6 +34,8 @@
 #include "widgets/aroma_canvas.h"
 #include "widgets/aroma_map.h"
 #include "widgets/aroma_gif.h"
+#include "widgets/aroma_video.h"
+#include "widgets/aroma_webview.h"
 #include "widgets/aroma_loading.h"
 #include "widgets/aroma_table.h"
 #include "widgets/aroma_gauge.h"

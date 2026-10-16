@@ -1,0 +1,20 @@
+Window {
+    width: 360
+    height: 600
+    title: "WebView Docs"
+
+    Label { text: "WebView Docs" x: 20 y: 20 style: "large" }
+    Label { id: "addr" text: "docs" x: 20 y: 52 style: "small" }
+
+    WebView { id: "web" x: 20 y: 84 width: 320 height: 330 }
+
+    Button { text: "Back" x: 20 y: 422 width: 100 height: 40 type: outlined on_click: "back" }
+    Button { text: "Reload" x: 130 y: 422 width: 100 height: 40 type: outlined on_click: "reload" }
+    Button { text: "Fwd" x: 240 y: 422 width: 100 height: 40 type: outlined on_click: "forward" }
+
+    Button { text: "Docs" x: 20 y: 468 width: 100 height: 40 type: filled on_click: "page_docs" }
+    Button { text: "Styling" x: 130 y: 468 width: 100 height: 40 type: filled on_click: "page_style" }
+    Button { text: "JS" x: 240 y: 468 width: 100 height: 40 type: filled on_click: "page_js" }
+    Button { text: "Forms" x: 20 y: 514 width: 100 height: 40 type: filled on_click: "page_forms" }
+    Label { text: "offline demo" x: 130 y: 526 style: "small" }
+}

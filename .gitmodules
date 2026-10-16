@@ -16,3 +16,18 @@
 [submodule "vendors/ctypesgen"]
 	path = vendors/ctypesgen
 	url = https://github.com/ctypesgen/ctypesgen.git
+[submodule "vendors/ffmpeg"]
+	path = vendors/ffmpeg
+	url = https://github.com/FFmpeg/FFmpeg.git
+	branch = n8.0
+	shallow = true
+[submodule "vendors/litehtml"]
+	path = vendors/litehtml
+	url = https://github.com/litehtml/litehtml.git
+	branch = master
+	shallow = true
+[submodule "vendors/quickjs"]
+	path = vendors/quickjs
+	url = https://github.com/bellard/quickjs.git
+	branch = master
+	shallow = true
