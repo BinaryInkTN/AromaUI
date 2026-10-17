@@ -5,6 +5,7 @@
 #include "backends/aroma_abi.h"
 #include "backends/platforms/aroma_platform_interface.h"
 #include "widgets/aroma_video.h"
+#include "widgets/aroma_video_codec.h"
 #include "aroma_node.h"
 #include "aroma_slab_alloc.h"
 #include "aroma_timer.h"
@@ -263,6 +264,51 @@ static void test_decode_all_formats(void)
     CHECK(decode_fixture("sample_mjpeg.avi", 0.5), "mjpeg/avi decodes and seeks");
 }
 
+static int s_alpha_frames = 0;
+static int s_alpha_bad_frames = 0;
+
+static void alpha_probe_cb(const unsigned char *rgba, int w, int h,
+                           double pts, void *user)
+{
+    (void)pts;
+    (void)user;
+    s_alpha_frames++;
+    for (int i = 3; i < w * h * 4; i += 4)
+    {
+        if (rgba[i] != 0xFF)
+        {
+            s_alpha_bad_frames++;
+            break;
+        }
+    }
+}
+
+// pl_mpeg's frame->RGBA conversion only writes the RGB bytes (the alpha
+// byte is left as uninitialized memory), which made web previews fully
+// transparent. Every backend must deliver opaque frames.
+static void test_decoded_frames_are_opaque(void)
+{
+    char path[1024];
+    fixture_path(path, sizeof(path), "sample_mpeg1.mpg");
+
+    char err[256] = { 0 };
+    s_alpha_frames = 0;
+    s_alpha_bad_frames = 0;
+    AromaVideoCodec *c = aroma_video_codec_open_file(path, alpha_probe_cb, NULL,
+                                                     err, sizeof(err));
+    CHECK(c != NULL, "codec opens mpeg1 fixture for alpha probe");
+    if (!c)
+        return;
+
+    printf("  alpha probe backend: %s\n", aroma_video_codec_backend(c));
+    for (int i = 0; i < 40 && s_alpha_frames == 0; i++)
+        aroma_video_codec_step(c, 0.1);
+
+    CHECK(s_alpha_frames > 0, "codec delivers at least one decoded frame");
+    CHECK(s_alpha_bad_frames == 0, "decoded RGBA frames are fully opaque");
+    aroma_video_codec_close(c);
+}
+
 static void test_decode_memory_and_playback(void)
 {
     char path[1024];
@@ -419,6 +465,7 @@ int main(void)
     test_update_rgba_fast_path();
     test_push_frame_streaming();
     test_decode_all_formats();
+    test_decoded_frames_are_opaque();
     test_decode_memory_and_playback();
     test_osd_renders();
 

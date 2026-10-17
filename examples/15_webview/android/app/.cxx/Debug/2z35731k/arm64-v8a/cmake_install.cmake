@@ -1,4 +1,4 @@
-# Install script for directory: /home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/src/main/cpp
+# Install script for directory: /home/yassine/Projects/AromaUI/examples/15_webview/android/app/src/main/cpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -44,17 +44,17 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/arm64-v8a/freetype_build/cmake_install.cmake")
+  include("/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/arm64-v8a/freetype_build/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/arm64-v8a/sqlite3_build/cmake_install.cmake")
+  include("/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/arm64-v8a/sqlite3_build/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/arm64-v8a/aroma_lib/cmake_install.cmake")
+  include("/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/arm64-v8a/aroma_lib/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -65,5 +65,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

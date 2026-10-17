@@ -16,6 +16,10 @@ typedef void (*AromaWebViewLoadCb)(AromaNode *node, void *user_data);
 typedef void (*AromaWebViewJsBridgeCb)(AromaNode *node, const char *name, const char *arg,
                                        char *out, size_t outlen, void *user_data);
 
+// EVENT_TYPE_CUSTOM payload: UTF-8 text committed by the platform IME.
+// data is a heap string owned by the event (freed via its free_data hook).
+#define AROMA_WEBVIEW_TEXT_INPUT_EVENT 0x57545631u
+
 AromaNode *aroma_webview_create(AromaNode *parent, int x, int y, int width, int height);
 
 bool aroma_webview_load_url(AromaNode *webview_node, const char *url);

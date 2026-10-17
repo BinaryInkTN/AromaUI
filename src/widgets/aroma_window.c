@@ -20,7 +20,7 @@ static bool window_resize_handler(AromaEvent* event, void* user_data) {
     if (event->event_type == EVENT_TYPE_WINDOW_RESIZE) {
         int w = event->data.resize.width;
         int h = event->data.resize.height;
-        LOG_INFO("Handling window resize event for node %lu: new size %dx%d", window_node->node_id, w, h);
+        LOG_INFO("Handling window resize event for node %llu: new size %dx%d", (unsigned long long)window_node->node_id, w, h);
         aroma_node_update_layout(window_node, 0, 0, w, h);
         return true;
     }

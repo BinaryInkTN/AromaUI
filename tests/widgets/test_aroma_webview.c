@@ -8,6 +8,7 @@
 #include "aroma_ui.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -306,6 +307,144 @@ static void test_webview_js(void)
     __node_system_destroy();
 }
 
+// Platform IME integration: tapping an input focuses it, committed UTF-8
+// text lands at the cursor, backspace deletes, and tapping elsewhere blurs.
+static void test_webview_ime_input(void)
+{
+    __node_system_init();
+    aroma_event_system_init();
+    AromaNode *root = make_root();
+    aroma_event_set_root(root);
+    AromaNode *wv = aroma_webview_create(root, 0, 0, 320, 240);
+    CHECK(wv != NULL, "ime node created");
+    if (!wv) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+
+    const char *html =
+        "<html><head><title>IME</title></head><body style=\"margin:0;\">"
+        "<input id=\"q\" type=\"text\" value=\"\" "
+        "style=\"width:120px;height:30px;margin:0;\">"
+        "<div id=\"bg\" style=\"height:200px;\"></div>"
+        "</body></html>";
+    CHECK(aroma_webview_load_html(wv, html, NULL), "ime page loads");
+
+    // Hover-free tap helper: press + release at the same point.
+    const int taps[][2] = {{10, 15}, {5, 100}};
+    for (int i = 0; i < 2; i++) {
+        AromaEvent *dn = aroma_event_create(EVENT_TYPE_MOUSE_CLICK, wv->node_id);
+        AromaEvent *up = aroma_event_create(EVENT_TYPE_MOUSE_RELEASE, wv->node_id);
+        if (dn && up) {
+            dn->data.mouse.x = taps[i][0];
+            dn->data.mouse.y = taps[i][1];
+            up->data.mouse.x = taps[i][0];
+            up->data.mouse.y = taps[i][1];
+            aroma_event_dispatch(dn);
+            aroma_event_dispatch(up);
+        }
+        aroma_event_destroy(dn);
+        aroma_event_destroy(up);
+
+        if (i == 0) {
+            // Committed IME text (UTF-8) goes into the focused input.
+            const char *text = "h\xC3\xA9llo";
+            size_t len = strlen(text);
+            char *payload = (char *)malloc(len + 1);
+            CHECK(payload != NULL, "ime payload allocated");
+            if (payload) {
+                memcpy(payload, text, len + 1);
+                AromaEvent *ev = aroma_event_create_custom(
+                    wv->node_id, AROMA_WEBVIEW_TEXT_INPUT_EVENT, payload, free);
+                CHECK(ev != NULL, "ime text event created");
+                if (ev) {
+                    aroma_event_dispatch(ev);
+                    aroma_event_destroy(ev);
+                } else {
+                    free(payload);
+                }
+            }
+            js_eval_is(wv, "document.getElementById('q').value", "h\xC3\xA9llo",
+                       "ime text lands in focused input");
+
+            // Backspace deletes one char at the cursor.
+            AromaEvent *bs =
+                aroma_event_create_key(EVENT_TYPE_KEY_PRESS, wv->node_id, 8, 0);
+            if (bs) {
+                aroma_event_dispatch(bs);
+                aroma_event_destroy(bs);
+            }
+            js_eval_is(wv, "document.getElementById('q').value", "h\xC3\xA9ll",
+                       "ime backspace deletes at cursor");
+        }
+    }
+
+    // The second tap hit a plain div: the input is blurred, so the next
+    // IME commit must be ignored.
+    char *payload = (char *)malloc(4);
+    if (payload) {
+        memcpy(payload, "abc", 4);
+        AromaEvent *ev = aroma_event_create_custom(
+            wv->node_id, AROMA_WEBVIEW_TEXT_INPUT_EVENT, payload, free);
+        if (ev) {
+            aroma_event_dispatch(ev);
+            aroma_event_destroy(ev);
+        } else {
+            free(payload);
+        }
+    }
+    js_eval_is(wv, "document.getElementById('q').value", "h\xC3\xA9ll",
+               "ime text ignored after blur");
+
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
+// Form reset: inputs revert to their value attribute and a textarea
+// reverts to its text content (its default value in HTML).
+static void test_webview_form_reset(void)
+{
+    __node_system_init();
+    aroma_event_system_init();
+    AromaNode *root = make_root();
+    aroma_event_set_root(root);
+    AromaNode *wv = aroma_webview_create(root, 0, 0, 320, 240);
+    CHECK(wv != NULL, "reset node created");
+    if (!wv) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+
+    const char *html =
+        "<html><head><title>Reset</title></head><body style=\"margin:0;\">"
+        "<form id=\"f\">"
+        "<input type=\"text\" name=\"q\" id=\"q\" value=\"seed\">"
+        "<textarea id=\"t\">draft</textarea>"
+        "<input type=\"reset\" id=\"r\" value=\"Reset\">"
+        "</form></body></html>";
+    CHECK(aroma_webview_load_html(wv, html, NULL), "reset page loads");
+
+    js_eval_is(wv, "document.getElementById('q').value = 'typed'; 'ok'", "ok",
+               "reset edits input");
+    // Read first: the drawn field seeds its value on first access, which
+    // is what makes the old reset path leave the textarea empty.
+    js_eval_is(wv, "document.getElementById('t').value", "draft",
+               "reset textarea default reads");
+    js_eval_is(wv, "document.getElementById('t').value = 'edited'; 'ok'", "ok",
+               "reset edits textarea");
+    js_eval_is(wv, "document.getElementById('r').click(); 'ok'", "ok",
+               "reset button clicks");
+    js_eval_is(wv, "document.getElementById('q').value", "seed",
+               "reset restores input default");
+    js_eval_is(wv, "document.getElementById('t').value", "draft",
+               "reset restores textarea default");
+
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
 static void test_webview_file_pages(void)
 {
     __node_system_init();
@@ -352,6 +491,8 @@ void run_webview_tests(int *passed, int *failed)
     test_webview_html_navigation();
     test_webview_file_pages();
     test_webview_js();
+    test_webview_form_reset();
+    test_webview_ime_input();
     printf("Aroma WebView: %d passed, %d failed\n", s_passed, s_failed);
     *passed = s_passed;
     *failed = s_failed;

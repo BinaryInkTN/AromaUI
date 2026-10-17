@@ -1737,6 +1737,88 @@ static void gles3_flush(void)
     ctx.current_frame++;
 }
 
+/* Streaming upload path for video/webview frames: LINEAR filtering and
+ * no mipmaps, so every-frame re-uploads skip mipmap regeneration (the
+ * dominant cost of the previous load/update_image_rgba path for ~1MP
+ * dynamic textures). Composition/scaling of the texture stays on the GPU. */
+static unsigned int load_dynamic_image(unsigned char *img_data, int width, int height)
+{
+    if (!img_data || width <= 0 || height <= 0)
+        return 0;
+
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current)
+        platform->make_context_current(0);
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    if (texture == 0)
+        return 0;
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, img_data);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+    if (glGetError() != GL_NO_ERROR)
+    {
+        glDeleteTextures(1, &texture);
+        return 0;
+    }
+
+    __image_size_track(texture, width, height);
+
+    return texture;
+}
+
+static bool update_dynamic_image(unsigned int texture_id, unsigned char *img_data,
+                                 int width, int height)
+{
+    if (texture_id == 0 || !img_data || width <= 0 || height <= 0)
+        return false;
+    if (!glIsTexture(texture_id))
+        return false;
+
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->make_context_current)
+        platform->make_context_current(0);
+
+    int tw = 0, th = 0;
+    bool have_size = get_image_size(texture_id, &tw, &th);
+
+    flush_shape_batch();
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    /* Keep LINEAR filtering: a mipmap chain must never be required here. */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    if (have_size && tw == width && th == height)
+    {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height,
+                        GL_RGBA, GL_UNSIGNED_BYTE, img_data);
+    }
+    else
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, img_data);
+    }
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (glGetError() != GL_NO_ERROR)
+        return false;
+
+    __image_size_track(texture_id, width, height);
+    return true;
+}
+
 AromaGraphicsInterface aroma_graphics_gles3 = {
     .setup_shared_window_resources = setup_shared_window_resources,
     .setup_separate_window_resources = setup_separate_window_resources,
@@ -1755,6 +1837,8 @@ AromaGraphicsInterface aroma_graphics_gles3 = {
     .draw_image = draw_image,
     .get_image_size = get_image_size,
     .update_image_rgba = update_image_rgba,
+    .load_dynamic_image = load_dynamic_image,
+    .update_dynamic_image = update_dynamic_image,
     .draw_image_uv = draw_image_uv,
     .shutdown = shutdown,
     .graphics_set_clip = gles3_set_clip,

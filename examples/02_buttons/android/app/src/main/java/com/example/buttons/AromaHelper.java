@@ -2001,16 +2001,26 @@ public class AromaHelper {
         }
     }
 
-    public static void uiKeepScreenOn(Activity activity, boolean on) {
+    public static void uiKeepScreenOn(final Activity activity, final boolean on) {
         if (activity == null) return;
+        // Window flags must change on the UI thread; native callers
+        // (video playback ticks) run on the render thread, where a direct
+        // call throws CalledFromWrongThreadException and silently no-ops.
         try {
-            Window window = activity.getWindow();
-            if (window == null) return;
-            if (on) {
-                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            } else {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            }
+            activity.runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        Window window = activity.getWindow();
+                        if (window == null) return;
+                        if (on) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+            });
         } catch (Exception e) {
         }
     }

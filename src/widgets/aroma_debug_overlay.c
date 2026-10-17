@@ -369,6 +369,9 @@ void aroma_debug_overlay_draw(AromaNode *overlay_node, size_t window_id)
         case PLATFORM_BACKEND_GLPS:
             plat_backend = "GLPS";
             break;
+        case PLATFORM_BACKEND_GLFW:
+            plat_backend = "GLFW";
+            break;
         case PLATFORM_BACKEND_ANDROID:
             plat_backend = "Android";
             break;

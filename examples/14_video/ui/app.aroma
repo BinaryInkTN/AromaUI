@@ -6,7 +6,7 @@ Window {
     Label { text: "Video playback" x: 20 y: 20 style: "large" }
     Label { id: "source" text: "Sintel (CC-BY) sample clip" x: 20 y: 52 style: "small" }
 
-    Video { id: "player" x: 20 y: 84 width: 320 height: 180 scale: "fit" corner_radius: 12 autoplay: true loop: true }
+    Video { id: "player" x: 20 y: 84 width: 320 height: 180 scale: "fit" corner_radius: 12 autoplay: true loop: true muted: false }
 
     Label { id: "status" text: "ready" x: 20 y: 276 style: "small" }
 

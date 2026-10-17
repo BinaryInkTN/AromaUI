@@ -24,6 +24,7 @@ static AromaGraphicsInterface* get_real_graphics_interface(void) {
     if (type == GRAPHICS_BACKEND_GLES3)
         return &aroma_graphics_gles3;
 #endif
+    return &aroma_graphics_gles3;
 }
 
 static void drawlist_proxy_clear(size_t window_id, uint32_t color)

@@ -16,11 +16,16 @@
 #include "aroma_native_utils.h"
 #include "aroma_ubuntu_font.h"
 #include "core/aroma_logger.h"
+#ifdef __ANDROID__
+#include "aroma_android.h"
+#endif
 
 #ifdef AROMA_WEBVIEW_JS
 #include <quickjs.h>
 #endif
 #include <chrono>
+
+#include <pthread.h>
 
 #include <cctype>
 #include <cmath>
@@ -29,6 +34,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
+#include <atomic>
 #include <map>
 #include <string>
 #include <vector>
@@ -135,19 +141,83 @@ std::string url_unescape(const std::string &in)
 bool read_local_file(const std::string &path, std::vector<uint8_t> &out)
 {
     FILE *f = fopen(path.c_str(), "rb");
-    if (!f)
-        return false;
-    fseek(f, 0, SEEK_END);
-    long size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (size < 0 || size > (long)(64 * 1024 * 1024)) {
+    if (f) {
+        fseek(f, 0, SEEK_END);
+        long size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        if (size < 0 || size > (long)(64 * 1024 * 1024)) {
+            fclose(f);
+            return false;
+        }
+        out.resize((size_t)size);
+        bool ok = size == 0 || fread(out.data(), 1, (size_t)size, f) == (size_t)size;
         fclose(f);
-        return false;
+        if (ok)
+            return true;
+        out.clear();
     }
-    out.resize((size_t)size);
-    bool ok = size == 0 || fread(out.data(), 1, (size_t)size, f) == (size_t)size;
-    fclose(f);
-    return ok;
+#ifdef __ANDROID__
+    // APK assets are not visible to fopen: fall back to the asset manager
+    // (tries both the full relative path and its basename, matching the
+    // image/incense loaders).
+    {
+        const char *cpath = path.c_str();
+        const char *slash = strrchr(cpath, '/');
+        const char *base = slash ? slash + 1 : cpath;
+        const char *try_names[2] = { cpath, base };
+        // Strip a leading "assets/" prefix: Gradle puts ui/ at the asset
+        // root, so "assets/foo.html" is stored as "foo.html".
+        std::string stripped;
+        const char *extra = NULL;
+        if (strncmp(cpath, "assets/", 7) == 0) {
+            stripped = std::string(cpath + 7);
+            extra = stripped.c_str();
+        }
+        const char *candidates[3] = { try_names[0], try_names[1], extra };
+        for (int i = 0; i < 3; i++) {
+            const char *nm = candidates[i];
+            if (!nm || !nm[0])
+                continue;
+            if (!aroma_android_asset_exists(nm))
+                continue;
+            long asz = aroma_android_asset_size(nm);
+            if (asz <= 0 || asz > (long)(64 * 1024 * 1024))
+                continue;
+            out.resize((size_t)asz);
+            long got = aroma_android_asset_read(nm, (char *)out.data(), asz);
+            if (got == asz)
+                return true;
+            out.clear();
+        }
+        // Large files (video posters, images): try the cache-file path.
+        for (int i = 0; i < 3; i++) {
+            const char *nm = candidates[i];
+            if (!nm || !nm[0])
+                continue;
+            const char *cached = aroma_android_asset_cache_path(nm);
+            if (cached && cached[0]) {
+                FILE *cf = fopen(cached, "rb");
+                if (cf) {
+                    fseek(cf, 0, SEEK_END);
+                    long size = ftell(cf);
+                    fseek(cf, 0, SEEK_SET);
+                    if (size >= 0 && size <= (long)(64 * 1024 * 1024)) {
+                        out.resize((size_t)size);
+                        bool ok = size == 0 ||
+                            fread(out.data(), 1, (size_t)size, cf) == (size_t)size;
+                        fclose(cf);
+                        if (ok)
+                            return true;
+                        out.clear();
+                    } else {
+                        fclose(cf);
+                    }
+                }
+            }
+        }
+    }
+#endif
+    return false;
 }
 
 bool fetch_bytes(const std::string &url, std::vector<uint8_t> &out)
@@ -364,6 +434,7 @@ class AromaContainer : public litehtml::document_container
     int view_w = 1;
     int view_h = 1;
     float text_scale = 1.0f;
+    float device_scale = 1.0f;
     std::string base_url;
     std::string pending_nav;
     std::string title;
@@ -377,6 +448,29 @@ class AromaContainer : public litehtml::document_container
     {
         for (auto &kv : fonts)
             delete kv.second;
+    }
+
+    // CSS px (layout units) -> physical px (buffer units) for DPI-aware output.
+    int to_phys(int css) const
+    {
+        if (device_scale < 0.01f || device_scale == 1.0f)
+            return css;
+        float v = (float)css * device_scale;
+        return (int)(v + (v >= 0.0f ? 0.5f : -0.5f));
+    }
+
+    int css_w() const
+    {
+        if (device_scale < 0.01f || device_scale == 1.0f)
+            return view_w;
+        return (int)((float)view_w / device_scale + 0.5f);
+    }
+
+    int css_h() const
+    {
+        if (device_scale < 0.01f || device_scale == 1.0f)
+            return view_h;
+        return (int)((float)view_h / device_scale + 0.5f);
     }
 
     IRect clip_now(int bw, int bh) const
@@ -415,6 +509,11 @@ class AromaContainer : public litehtml::document_container
     {
         if (!buf || w <= 0 || h <= 0 || c.alpha == 0)
             return;
+        // Scale CSS -> physical so dp-authored boxes keep physical size.
+        x = to_phys(x);
+        y = to_phys(y);
+        w = to_phys(w);
+        h = to_phys(h);
         int bw = view_w, bh = view_h;
         IRect clip = clip_now(bw, bh);
         int x0 = x > clip.x ? x : clip.x;
@@ -448,6 +547,10 @@ class AromaContainer : public litehtml::document_container
     {
         if (!buf || dw <= 0 || dh <= 0 || img.px.empty())
             return;
+        dx = to_phys(dx);
+        dy = to_phys(dy);
+        dw = to_phys(dw);
+        dh = to_phys(dh);
         IRect clip = clip_now(view_w, view_h);
         for (int y = 0; y < dh; y++) {
             int sy = dy + y;
@@ -487,7 +590,11 @@ class AromaContainer : public litehtml::document_container
     {
         if (!buf || r <= 0)
             return;
+        cx = to_phys(cx);
+        cy = to_phys(cy);
+        r = to_phys(r);
         IRect clip = clip_now(view_w, view_h);
+        float stroke = device_scale > 1.0f ? device_scale : 1.0f;
         for (int y = cy - r; y <= cy + r; y++) {
             for (int x = cx - r; x <= cx + r; x++) {
                 int ddx = x - cx, ddy = y - cy;
@@ -496,7 +603,7 @@ class AromaContainer : public litehtml::document_container
                     if (d <= (float)r + 0.5f)
                         blend_px(x, y, c.red, c.green, c.blue, c.alpha, view_w, view_h, clip);
                 } else {
-                    if (d >= (float)r - 0.75f && d <= (float)r + 0.5f)
+                    if (d >= (float)r - 0.75f * stroke && d <= (float)r + 0.5f * stroke)
                         blend_px(x, y, c.red, c.green, c.blue, c.alpha, view_w, view_h, clip);
                 }
             }
@@ -647,20 +754,38 @@ class AromaContainer : public litehtml::document_container
         LiteFont *f = (LiteFont *)hFont;
         if (!text || !f || !buf)
             return;
-        int baseline = px(pos.y) + px(pos.height) - f->descent;
+        // Layout (pos, font metrics) is in CSS px; rasterize in physical px.
+        float ds = device_scale > 0.1f ? device_scale : 1.0f;
+        int css_x = px(pos.x);
+        int css_y = px(pos.y);
+        int css_h = px(pos.height);
+        int baseline_css = css_y + css_h - f->descent;
+        int baseline = to_phys(baseline_css);
+        int pen = to_phys(css_x);
+        int phys_px = (int)((float)f->px * ds + 0.5f);
+        if (phys_px < 4)
+            phys_px = 4;
         FT_Face face = font_env().face;
         if (!face) {
-            fill_rect(px(pos.x), baseline - f->ascent, px(text_width(text, hFont)),
+            fill_rect(css_x, baseline_css - f->ascent, px(text_width(text, hFont)),
                       f->ascent + f->descent, color);
             return;
         }
-        FT_Set_Pixel_Sizes(face, 0, (FT_UInt)f->px);
+        FT_Set_Pixel_Sizes(face, 0, (FT_UInt)phys_px);
+        // Scale pen offsets that were measured in CSS advances: track CSS pen
+        // separately so kerning stays in CSS then convert? Simpler: work fully
+        // in physical using scaled advances from FT (already scaled via phys_px).
         bool kern = FT_HAS_KERNING(face) != 0;
+        // Kerning values from FT are already in physical px (scaled size), but
+        // to keep CSS kerning proportional we scale CSS kern by ds. Easiest:
+        // query kerning in CSS size then scale. Instead, set FT to CSS size for
+        // kern measurement? Simpler: measure kern at physical size directly.
         const char *p = text;
         const char *end = text + strlen(text);
-        int pen = px(pos.x);
         uint32_t prev = 0;
         int shear_q = f->italic ? 22 : 0;
+        // For correct physical kerning, we need previous glyph at physical size;
+        // FT_Get_Kerning scales with current pixel size, so direct use is fine.
         while (p < end) {
             uint32_t cp = utf8_next(p, end);
             FT_UInt idx = FT_Get_Char_Index(face, cp);
@@ -675,24 +800,31 @@ class AromaContainer : public litehtml::document_container
             if (idx != 0 && !FT_Load_Glyph(face, idx, FT_LOAD_DEFAULT) &&
                 !FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL)) {
                 FT_GlyphSlot g = face->glyph;
-                int gx = pen + g->bitmap_left;
-                int gy = baseline - g->bitmap_top;
+                int gx = pen + (int)((float)g->bitmap_left + 0.5f);
+                int gy = baseline - (int)((float)g->bitmap_top + 0.5f);
                 blit_glyph(&g->bitmap, gx, gy, color, shear_q, 100);
-                if (f->bold)
-                    blit_glyph(&g->bitmap, gx + 1, gy, color, shear_q, 100);
+                if (f->bold) {
+                    int bx = (ds > 1.5f) ? to_phys(1) : 1;
+                    blit_glyph(&g->bitmap, gx + bx, gy, color, shear_q, 100);
+                }
                 pen += (int)(g->advance.x >> 6);
             }
             prev = cp;
         }
         if (f->deco) {
             litehtml::web_color dc = (f->deco_color.alpha) ? f->deco_color : color;
-            int w = pen - px(pos.x);
+            int css_w = (int)(((float)(pen - to_phys(css_x)) / ds) + 0.5f);
+            if (css_w < 0)
+                css_w = 0;
+            int thick_css = f->deco_thickness;
+            if (thick_css < 1)
+                thick_css = 1;
             if (f->deco & litehtml::text_decoration_line_underline)
-                fill_rect(px(pos.x), baseline + f->descent / 3, w, f->deco_thickness, dc);
+                fill_rect(css_x, baseline_css + f->descent / 3, css_w, thick_css, dc);
             if (f->deco & litehtml::text_decoration_line_line_through)
-                fill_rect(px(pos.x), baseline - f->ascent / 3, w, f->deco_thickness, dc);
+                fill_rect(css_x, baseline_css - f->ascent / 3, css_w, thick_css, dc);
             if (f->deco & litehtml::text_decoration_line_overline)
-                fill_rect(px(pos.x), baseline - f->ascent, w, f->deco_thickness, dc);
+                fill_rect(css_x, baseline_css - f->ascent, css_w, thick_css, dc);
         }
     }
 
@@ -976,7 +1108,7 @@ class AromaContainer : public litehtml::document_container
                   const litehtml::border_radiuses &bdr_radius) override
     {
         (void)bdr_radius;
-        clip_stack.push_back({px(pos.x), px(pos.y), px(pos.width), px(pos.height)});
+        clip_stack.push_back({to_phys(px(pos.x)), to_phys(px(pos.y)), to_phys(px(pos.width)), to_phys(px(pos.height))});
     }
 
     void del_clip() override
@@ -989,8 +1121,10 @@ class AromaContainer : public litehtml::document_container
     {
         viewport.x = 0;
         viewport.y = 0;
-        viewport.width = view_w;
-        viewport.height = view_h;
+        // Layout viewport is in CSS px so media queries and fixed layout are dp-aware.
+        AromaContainer *self = const_cast<AromaContainer *>(this);
+        viewport.width = self->css_w();
+        viewport.height = self->css_h();
     }
 
     litehtml::element::ptr create_element(const char *tag_name,
@@ -1000,14 +1134,18 @@ class AromaContainer : public litehtml::document_container
     void get_media_features(litehtml::media_features &media) const override
     {
         media.type = litehtml::media_type_screen;
-        media.width = view_w;
-        media.height = view_h;
-        media.device_width = view_w;
-        media.device_height = view_h;
+        AromaContainer *self = const_cast<AromaContainer *>(this);
+        int cw = self->css_w();
+        int ch = self->css_h();
+        media.width = cw;
+        media.height = ch;
+        media.device_width = cw;
+        media.device_height = ch;
         media.color = 8;
         media.monochrome = 0;
         media.color_index = 0;
-        media.resolution = 96;
+        float ds = device_scale > 0.1f ? device_scale : 1.0f;
+        media.resolution = (int)(96.0f * ds + 0.5f);
     }
 
     void get_language(std::string &language, std::string &culture) const override
@@ -1018,6 +1156,9 @@ class AromaContainer : public litehtml::document_container
 
     std::vector<litehtml::element::ptr> controls;
     AromaControl *focused = nullptr;
+    // Set when the current native click activated an editable control; lets
+    // aroma_webpage_click blur stale focus when tapping elsewhere.
+    bool click_edit_focus = false;
     AromaWebPage *owner = nullptr;
 
     void draw_focus_ring(int x, int y, int w, int h, const litehtml::web_color &c)
@@ -1097,6 +1238,26 @@ std::string url_encode(const std::string &in)
     return out;
 }
 
+// litehtml keeps a render-item tree parallel to the DOM.  Removing a DOM
+// child must also drop its render item, or the stale item keeps reserving
+// inline space: the following content then drifts every time children are
+// replaced (e.g. textContent updates pushed a button right on each tap).
+static void detach_render_tree(const litehtml::element::ptr &el)
+{
+    if (!el)
+        return;
+    for (const auto &ch : el->children())
+        detach_render_tree(ch);
+    auto ri = el->get_render_item();
+    if (!ri)
+        return;
+    auto par = ri->parent();
+    if (par) {
+        auto &kids = par->children();
+        kids.remove(ri);
+    }
+}
+
 static void clear_children(const litehtml::element::ptr &el)
 {
     if (!el)
@@ -1104,8 +1265,10 @@ static void clear_children(const litehtml::element::ptr &el)
     std::vector<litehtml::element::ptr> kids;
     for (const auto &ch : el->children())
         kids.push_back(ch);
-    for (const auto &ch : kids)
+    for (const auto &ch : kids) {
+        detach_render_tree(ch);
         el->removeChild(ch);
+    }
 }
 
 void serialize_node(const litehtml::element::ptr &el, std::string &out);
@@ -1644,7 +1807,11 @@ class AromaControl : public litehtml::html_tag
                 ac->draw_focus_ring(bx - 2, by - 2, bw + 4, bh + 4, focus);
             return;
         }
-        if (kind == Submit || kind == Button) {
+        // Selects reuse kind=Button so clicks cycle options, but they draw
+        // as fields with the chosen label and a dropdown arrow. Without
+        // this guard they take the button path and paint every option
+        // label concatenated (e.g. "RedGreenBlue").
+        if (!is_select && (kind == Submit || kind == Button)) {
             ac->fill_rect(bx, by, bw, bh, disabled ? gray : face);
             litehtml::borders b;
             b.top.width = b.bottom.width = b.left.width = b.right.width = 1;
@@ -1769,6 +1936,38 @@ class AromaFormHelper
 struct AromaWebPage;
 static void js_engine_reset(AromaWebPage *page);
 static void js_engine_free(AromaWebPage *page);
+
+// Global recursive lock serializing ALL page mutation and raster. Pages
+// share the FreeType face in font_env(), so raster must be mutually
+// exclusive with loads/resizes across pages too. Recursive so page API
+// entry points can nest (JS callbacks -> relayout, eval -> navigation).
+static pthread_mutex_t g_web_mutex;
+static pthread_once_t g_web_once = PTHREAD_ONCE_INIT;
+
+static void web_mutex_init(void)
+{
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&g_web_mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+}
+
+static inline void web_lock(void)
+{
+    pthread_once(&g_web_once, web_mutex_init);
+    pthread_mutex_lock(&g_web_mutex);
+}
+
+static inline void web_unlock(void) { pthread_mutex_unlock(&g_web_mutex); }
+
+// RAII guard: every aroma_webpage_* entry point holds the global lock,
+// so the raster worker never races loads, resizes, scrolls or JS cookie
+// access. Recursive mutex: JS/DOM callbacks legitimately nest page calls.
+struct WebLock {
+    WebLock() { web_lock(); }
+    ~WebLock() { web_unlock(); }
+};
 static void js_run_page_scripts(AromaWebPage *page);
 static void js_fire_load_events(AromaWebPage *page);
 static bool js_dispatch_click(AromaWebPage *page, const litehtml::element::ptr &el);
@@ -1792,6 +1991,7 @@ struct AromaWebPage {
     std::vector<uint8_t> buf;
     int view_w = 1;
     int view_h = 1;
+    float device_scale = 1.0f;
     int content_w = 0;
     int content_h = 0;
     std::string url;
@@ -1824,6 +2024,31 @@ struct AromaWebPage {
     int pending_scroll_y = 0;
     int view_scroll_x = 0;
     int view_scroll_y = 0;
+    // Async raster worker (multithreaded rendering): the widget posts a
+    // scroll snapshot and keeps drawing the old texture; the worker
+    // rasterizes off the UI thread and the widget uploads on completion.
+    // Job handoff state (job/quit/job_sx/job_sy/job_seq) is guarded by its
+    // own mutex so the worker can wake, observe quit and exit without
+    // g_web_mutex — a thread destroying the page may hold that lock while
+    // joining. The raster result (job_done/done_w/done_h/done_seq) stays
+    // guarded by g_web_mutex, like the rest of the page state.
+    // Sequences let the widget reject stale frames: only a frame whose seq
+    // equals its latest request may be uploaded (see render_async/poll).
+    pthread_t worker;
+    bool worker_on = false;
+    pthread_mutex_t wmutex;
+    bool quit = false;
+    bool job = false;
+    int job_sx = 0;
+    int job_sy = 0;
+    unsigned job_seq = 0;
+    // Written under g_web_mutex, read lock-free by async_ready() (advisory
+    // idle wake-up), hence atomic.
+    std::atomic<bool> job_done{false};
+    int done_w = 0;
+    int done_h = 0;
+    unsigned done_seq = 0;
+    pthread_cond_t cond;
 #ifdef AROMA_WEBVIEW_JS
     JsEngine *js = nullptr;
 #endif
@@ -1882,6 +2107,141 @@ static void page_clear_doc(AromaWebPage *page)
     page->cont->forget_controls();
 }
 
+static int page_css_w(AromaWebPage *page)
+{
+    if (!page)
+        return 1;
+    if (page->device_scale < 0.01f || page->device_scale == 1.0f)
+        return page->view_w;
+    return (int)((float)page->view_w / page->device_scale + 0.5f);
+}
+
+static int page_css_h(AromaWebPage *page)
+{
+    if (!page)
+        return 1;
+    if (page->device_scale < 0.01f || page->device_scale == 1.0f)
+        return page->view_h;
+    return (int)((float)page->view_h / page->device_scale + 0.5f);
+}
+
+static void page_sync_scale(AromaWebPage *page)
+{
+    if (!page || !page->cont)
+        return;
+    page->cont->device_scale = page->device_scale;
+}
+
+// Render one frame without taking the global lock (caller must hold it,
+// or guarantee no other thread can touch this page). Shared by the sync
+// API and the async raster worker.
+static const unsigned char *page_render_nolock(AromaWebPage *page, int scroll_x,
+                                               int scroll_y, int *out_w, int *out_h)
+{
+    if (out_w)
+        *out_w = 0;
+    if (out_h)
+        *out_h = 0;
+    if (!page || !page->doc)
+        return nullptr;
+    if (scroll_x < 0)
+        scroll_x = 0;
+    if (scroll_y < 0)
+        scroll_y = 0;
+    page_sync_scale(page);
+    size_t need = (size_t)page->view_w * (size_t)page->view_h * 4u;
+    if (page->buf.size() != need)
+        page->buf.assign(need, 255);
+    else
+        std::fill(page->buf.begin(), page->buf.end(), 255);
+    page->cont->buf = &page->buf;
+    page->cont->clip_stack.clear();
+    // Clip/draw offsets are in CSS px; container scales to physical internally.
+    litehtml::position clip(0, 0, page_css_w(page), page_css_h(page));
+    try {
+        page->doc->draw((litehtml::uint_ptr)page->cont, -scroll_x, -scroll_y, &clip);
+    } catch (...) {
+        page->cont->buf = nullptr;
+        return nullptr;
+    }
+    page->cont->buf = nullptr;
+    if (out_w)
+        *out_w = page->view_w;
+    if (out_h)
+        *out_h = page->view_h;
+    return page->buf.data();
+}
+
+// Async raster worker: waits for scroll jobs and rasterizes off the UI
+// thread so scrolling never blocks input, layout or compositing. Takes the
+// global lock only around the draw, so page mutation (load/resize/scroll)
+// and the shared FreeType face stay mutually exclusive while the worker
+// itself stays stoppable by a thread that already holds the global lock.
+// Only one worker per page; jobs coalesce (newest scroll wins).
+static void *page_worker_main(void *arg)
+{
+    AromaWebPage *page = (AromaWebPage *)arg;
+    for (;;) {
+        pthread_mutex_lock(&page->wmutex);
+        while (!page->job && !page->quit)
+            pthread_cond_wait(&page->cond, &page->wmutex);
+        if (page->quit) {
+            pthread_mutex_unlock(&page->wmutex);
+            return nullptr;
+        }
+        int sx = page->job_sx, sy = page->job_sy;
+        unsigned seq = page->job_seq;
+        page->job = false;
+        pthread_mutex_unlock(&page->wmutex);
+
+        web_lock();
+        int w = 0, h = 0;
+        const unsigned char *px = page_render_nolock(page, sx, sy, &w, &h);
+        page->done_w = w;
+        page->done_h = h;
+        page->done_seq = seq;
+        page->job_done.store(px != nullptr);
+        web_unlock();
+    }
+}
+
+static void page_worker_start(AromaWebPage *page)
+{
+    if (!page || page->worker_on)
+        return;
+    page->quit = false;
+    page->job = false;
+    page->job_seq = 0;
+    page->job_done.store(false);
+    page->done_seq = 0;
+    pthread_mutex_init(&page->wmutex, nullptr);
+    pthread_cond_init(&page->cond, nullptr);
+    if (pthread_create(&page->worker, nullptr, page_worker_main, page) == 0) {
+        page->worker_on = true;
+    } else {
+        pthread_cond_destroy(&page->cond);
+        pthread_mutex_destroy(&page->wmutex);
+    }
+}
+
+static void page_worker_stop(AromaWebPage *page)
+{
+    if (!page || !page->worker_on)
+        return;
+    // Signal quit on the control mutex, then join without taking
+    // g_web_mutex: the worker acquires it to finish an in-flight raster,
+    // so joining while holding it would deadlock.
+    pthread_mutex_lock(&page->wmutex);
+    page->quit = true;
+    pthread_cond_signal(&page->cond);
+    pthread_mutex_unlock(&page->wmutex);
+    pthread_join(page->worker, nullptr);
+    page->worker_on = false;
+    page->quit = false;
+    pthread_cond_destroy(&page->cond);
+    pthread_mutex_destroy(&page->wmutex);
+}
+
 static bool page_build(AromaWebPage *page, const std::string &html, const std::string &base)
 {
     page_clear_doc(page);
@@ -1895,7 +2255,8 @@ static bool page_build(AromaWebPage *page, const std::string &html, const std::s
         return false;
     page->source_html = html;
     page->source_base = base;
-    page->doc->render(page->view_w);
+    page_sync_scale(page);
+    page->doc->render(page_css_w(page));
     page->content_w = px(page->doc->width());
     page->content_h = px(page->doc->height());
     if (page->content_w < 0)
@@ -2461,12 +2822,23 @@ static JSValue js_win_add_listener(JSContext *ctx, JSValueConst, int argc, JSVal
 
 static JSValue js_win_inner_w(JSContext *ctx, JSValueConst)
 {
-    return JS_NewInt32(ctx, js_engine(ctx)->page->view_w);
+    AromaWebPage *p = js_engine(ctx)->page;
+    int css = (p->device_scale > 1.0f) ? (int)((float)p->view_w / p->device_scale + 0.5f) : p->view_w;
+    return JS_NewInt32(ctx, css);
 }
 
 static JSValue js_win_inner_h(JSContext *ctx, JSValueConst)
 {
-    return JS_NewInt32(ctx, js_engine(ctx)->page->view_h);
+    AromaWebPage *p = js_engine(ctx)->page;
+    int css = (p->device_scale > 1.0f) ? (int)((float)p->view_h / p->device_scale + 0.5f) : p->view_h;
+    return JS_NewInt32(ctx, css);
+}
+
+static JSValue js_win_dpr(JSContext *ctx, JSValueConst)
+{
+    AromaWebPage *p = js_engine(ctx)->page;
+    float ds = (p && p->device_scale > 0.1f) ? p->device_scale : 1.0f;
+    return JS_NewFloat64(ctx, (double)ds);
 }
 
 static JSValue js_win_scroll_x(JSContext *ctx, JSValueConst)
@@ -2524,8 +2896,9 @@ void JsEngine::install_globals()
         JS_CGETSET_DEF("innerHeight", js_win_inner_h, nullptr),
         JS_CGETSET_DEF("scrollX", js_win_scroll_x, nullptr),
         JS_CGETSET_DEF("scrollY", js_win_scroll_y, nullptr),
+        JS_CGETSET_DEF("devicePixelRatio", js_win_dpr, nullptr),
     };
-    JS_SetPropertyFunctionList(ctx, global, win_gets, 4);
+    JS_SetPropertyFunctionList(ctx, global, win_gets, 5);
     JS_SetPropertyStr(ctx, global, "scrollTo",
                       JS_NewCFunction(ctx, js_win_scroll_to, "scrollTo", 2));
     JSValue nav = JS_NewObject(ctx);
@@ -3087,8 +3460,10 @@ static JSValue js_el_remove(JSContext *ctx, JSValueConst t, int, JSValueConst *)
     if (!el)
         return JS_UNDEFINED;
     auto par = el->parent();
-    if (par && par->removeChild(el))
+    if (par && par->removeChild(el)) {
+        detach_render_tree(el);
         page_relayout(eng->page);
+    }
     return JS_UNDEFINED;
 }
 
@@ -3852,7 +4227,8 @@ static void page_relayout(AromaWebPage *page)
         return;
     }
     page->layout_pending = false;
-    page->doc->render(page->view_w);
+    page_sync_scale(page);
+    page->doc->render(page_css_w(page));
     page->content_w = px(page->doc->width());
     page->content_h = px(page->doc->height());
     if (page->content_w < 0)
@@ -4053,11 +4429,20 @@ void AromaControl::activate(AromaWebPage *page)
             if (form)
                 AromaFormHelper::collect_controls(form, ctls);
             for (auto *c : ctls) {
-                const char *v = c->get_attr("value");
-                c->ctl_value = v ? v : "";
-                c->checked = c->get_attr("checked") != nullptr;
-                if (c->is_select)
+                if (c->is_select) {
                     c->collect_options();
+                } else if (c->is_textarea) {
+                    // Browsers reset a textarea to its default value, which
+                    // is its text content, not a value attribute.
+                    c->ctl_value.clear();
+                    c->value_init = false;
+                    c->ensure_value();
+                } else {
+                    const char *v = c->get_attr("value");
+                    c->ctl_value = v ? v : "";
+                    c->cursor = (int)c->ctl_value.size();
+                }
+                c->checked = c->get_attr("checked") != nullptr;
             }
             page->dom_dirty = true;
         }
@@ -4066,6 +4451,7 @@ void AromaControl::activate(AromaWebPage *page)
     case Password:
     case File:
         cont->focused = this;
+        cont->click_edit_focus = true;
         cursor = (int)ctl_value.size();
         page->dom_dirty = true;
         break;
@@ -4082,6 +4468,7 @@ void AromaControl::activate(AromaWebPage *page)
     }
     if (is_textarea) {
         cont->focused = this;
+        cont->click_edit_focus = true;
         cursor = (int)ctl_value.size();
         page->dom_dirty = true;
     }
@@ -4350,12 +4737,13 @@ extern "C" {
 
 AromaWebPage *aroma_webpage_create(int width, int height)
 {
+    WebLock _gl;
     if (width <= 0 || height <= 0)
         return nullptr;
-    if (width > 4096)
-        width = 4096;
-    if (height > 4096)
-        height = 4096;
+    if (width > 8192)
+        width = 8192;
+    if (height > 8192)
+        height = 8192;
     AromaWebPage *page = new (std::nothrow) AromaWebPage();
     if (!page)
         return nullptr;
@@ -4374,13 +4762,17 @@ AromaWebPage *aroma_webpage_create(int width, int height)
     }
     page->fonts_on = true;
     page->buf.assign((size_t)width * (size_t)height * 4u, 255);
+    page_worker_start(page);
     return page;
 }
 
 void aroma_webpage_destroy(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!page)
         return;
+    // Stop the raster worker first so nothing touches doc/buf below.
+    page_worker_stop(page);
     js_engine_free(page);
     page_clear_doc(page);
     delete page->cont;
@@ -4391,21 +4783,29 @@ void aroma_webpage_destroy(AromaWebPage *page)
 
 void aroma_webpage_resize(AromaWebPage *page, int width, int height)
 {
+    WebLock _gl;
     if (!page || width <= 0 || height <= 0)
         return;
-    if (width > 4096)
-        width = 4096;
-    if (height > 4096)
-        height = 4096;
+    if (width > 8192)
+        width = 8192;
+    if (height > 8192)
+        height = 8192;
+    // Drop any in-flight/stale async frame: it belongs to the old size.
+    // The global mutex alone serializes us against a worker mid-render.
+    pthread_mutex_lock(&page->wmutex);
+    page->job = false;
+    pthread_mutex_unlock(&page->wmutex);
+    page->job_done.store(false);
     if (width == page->view_w && height == page->view_h)
         return;
     page->view_w = width;
     page->view_h = height;
     page->cont->view_w = width;
     page->cont->view_h = height;
+    page_sync_scale(page);
     page->buf.assign((size_t)width * (size_t)height * 4u, 255);
     if (page->doc) {
-        page->doc->render(width);
+        page->doc->render(page_css_w(page));
         page->content_w = px(page->doc->width());
         page->content_h = px(page->doc->height());
     }
@@ -4413,6 +4813,7 @@ void aroma_webpage_resize(AromaWebPage *page, int width, int height)
 
 bool aroma_webpage_load_html(AromaWebPage *page, const char *html, const char *base_url)
 {
+    WebLock _gl;
     if (!page || !html)
         return false;
     std::string base = base_url ? base_url : "";
@@ -4425,6 +4826,7 @@ bool aroma_webpage_load_html(AromaWebPage *page, const char *html, const char *b
 
 bool aroma_webpage_load_url(AromaWebPage *page, const char *url)
 {
+    WebLock _gl;
     if (!page || !url || !url[0])
         return false;
     std::string text = fetch_jar_text(&page->cookies, url);
@@ -4440,40 +4842,83 @@ bool aroma_webpage_load_url(AromaWebPage *page, const char *url)
 const unsigned char *aroma_webpage_render(AromaWebPage *page, int scroll_x, int scroll_y,
                                           int *out_w, int *out_h)
 {
+    WebLock _gl;
     if (out_w)
         *out_w = 0;
     if (out_h)
         *out_h = 0;
-    if (!page || !page->doc)
+    if (!page)
         return nullptr;
+    // A stale async frame must never win over an explicit sync render.
+    // The global mutex alone serializes us against an in-flight worker
+    // frame, so no extra waiting is needed here.
+    pthread_mutex_lock(&page->wmutex);
+    page->job = false;
+    pthread_mutex_unlock(&page->wmutex);
+    page->job_done.store(false);
+    return page_render_nolock(page, scroll_x, scroll_y, out_w, out_h);
+}
+
+// Queue an off-thread raster of the given scroll position. Coalesces: if
+// the worker is still busy, only the newest position is kept. Returns
+// false when no worker exists (caller should render synchronously).
+bool aroma_webpage_render_async(AromaWebPage *page, int scroll_x, int scroll_y,
+                                unsigned seq)
+{
+    WebLock _gl;
+    if (!page || !page->worker_on)
+        return false;
     if (scroll_x < 0)
         scroll_x = 0;
     if (scroll_y < 0)
         scroll_y = 0;
-    size_t need = (size_t)page->view_w * (size_t)page->view_h * 4u;
-    if (page->buf.size() != need)
-        page->buf.assign(need, 255);
-    else
-        std::fill(page->buf.begin(), page->buf.end(), 255);
-    page->cont->buf = &page->buf;
-    page->cont->clip_stack.clear();
-    litehtml::position clip(0, 0, page->view_w, page->view_h);
-    try {
-        page->doc->draw((litehtml::uint_ptr)page->cont, -scroll_x, -scroll_y, &clip);
-    } catch (...) {
-        page->cont->buf = nullptr;
-        return nullptr;
-    }
-    page->cont->buf = nullptr;
+    pthread_mutex_lock(&page->wmutex);
+    page->job_sx = scroll_x;
+    page->job_sy = scroll_y;
+    page->job_seq = seq;
+    page->job = true;
+    pthread_cond_signal(&page->cond);
+    pthread_mutex_unlock(&page->wmutex);
+    return true;
+}
+
+// Non-blocking: returns the finished frame (and its size and job sequence)
+// if the worker is done, else NULL. Callers must reject frames whose
+// sequence is older than their latest request. The pointer stays valid
+// until the next render, resize or load call on the same thread.
+const unsigned char *aroma_webpage_poll_async(AromaWebPage *page, int *out_w,
+                                              int *out_h, unsigned *out_seq)
+{
+    WebLock _gl;
     if (out_w)
-        *out_w = page->view_w;
+        *out_w = 0;
     if (out_h)
-        *out_h = page->view_h;
+        *out_h = 0;
+    if (out_seq)
+        *out_seq = 0;
+    if (!page || !page->job_done.load() || page->buf.empty())
+        return nullptr;
+    page->job_done.store(false);
+    if (out_w)
+        *out_w = page->done_w;
+    if (out_h)
+        *out_h = page->done_h;
+    if (out_seq)
+        *out_seq = page->done_seq;
     return page->buf.data();
+}
+
+// Advisory, non-consuming: true when a finished async frame is waiting for
+// poll_async. Used as an idle wake-up hint (invalidate -> draw -> poll);
+// callers must still poll to consume and validate the frame.
+bool aroma_webpage_async_ready(AromaWebPage *page)
+{
+    return page && page->job_done.load();
 }
 
 const unsigned char *aroma_webpage_pixels(AromaWebPage *page, int *w, int *h)
 {
+    WebLock _gl;
     if (w)
         *w = 0;
     if (h)
@@ -4489,6 +4934,7 @@ const unsigned char *aroma_webpage_pixels(AromaWebPage *page, int *w, int *h)
 
 void aroma_webpage_content_size(AromaWebPage *page, int *w, int *h)
 {
+    WebLock _gl;
     if (w)
         *w = 0;
     if (h)
@@ -4503,9 +4949,11 @@ void aroma_webpage_content_size(AromaWebPage *page, int *w, int *h)
 
 bool aroma_webpage_click(AromaWebPage *page, int x, int y)
 {
+    WebLock _gl;
     if (!page || !page->doc)
         return false;
     auto noop = [](const litehtml::position &) {};
+    page->cont->click_edit_focus = false;
     page->in_doc_call = true;
     try {
         page->doc->on_lbutton_down(x, y, x, y, noop);
@@ -4515,6 +4963,13 @@ bool aroma_webpage_click(AromaWebPage *page, int x, int y)
         return false;
     }
     page->in_doc_call = false;
+    // A click that did not land on an editable control blurs it, the same
+    // way a browser drops input focus when you tap elsewhere. This is what
+    // lets the widget hide the platform IME again.
+    if (!page->cont->click_edit_focus && page->cont->focused) {
+        page->cont->focused = nullptr;
+        page->dom_dirty = true;
+    }
     if (page->layout_pending)
         page_relayout(page);
     if (page->cont->pending_nav.empty())
@@ -4530,6 +4985,7 @@ bool aroma_webpage_click(AromaWebPage *page, int x, int y)
 
 const char *aroma_webpage_url(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!page)
         return nullptr;
     return page->url.c_str();
@@ -4537,6 +4993,7 @@ const char *aroma_webpage_url(AromaWebPage *page)
 
 const char *aroma_webpage_title(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!page)
         return nullptr;
     return page->cont->title.c_str();
@@ -4544,11 +5001,13 @@ const char *aroma_webpage_title(AromaWebPage *page)
 
 bool aroma_webpage_can_go_back(AromaWebPage *page)
 {
+    WebLock _gl;
     return page && page->hindex > 0;
 }
 
 bool aroma_webpage_can_go_forward(AromaWebPage *page)
 {
+    WebLock _gl;
     return page && page->hindex + 1 < (int)page->hist.size();
 }
 
@@ -4566,6 +5025,7 @@ static bool page_restore(AromaWebPage *page, int idx)
 
 bool aroma_webpage_go_back(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!aroma_webpage_can_go_back(page))
         return false;
     return page_restore(page, page->hindex - 1);
@@ -4573,6 +5033,7 @@ bool aroma_webpage_go_back(AromaWebPage *page)
 
 bool aroma_webpage_go_forward(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!aroma_webpage_can_go_forward(page))
         return false;
     return page_restore(page, page->hindex + 1);
@@ -4580,6 +5041,7 @@ bool aroma_webpage_go_forward(AromaWebPage *page)
 
 void aroma_webpage_set_text_scale(AromaWebPage *page, float scale)
 {
+    WebLock _gl;
     if (!page)
         return;
     if (!(scale > 0.0f))
@@ -4597,6 +5059,7 @@ void aroma_webpage_set_text_scale(AromaWebPage *page, float scale)
 
 float aroma_webpage_text_scale(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!page)
         return 1.0f;
     return page->cont->text_scale;
@@ -4723,8 +5186,75 @@ static bool page_key(AromaWebPage *page, unsigned key)
     return consumed;
 }
 
+bool aroma_webpage_has_focus_control(AromaWebPage *page)
+{
+    WebLock _gl;
+    if (!page || !page->cont)
+        return false;
+    AromaControl *ctl = page->cont->focused;
+    if (!ctl || ctl->disabled)
+        return false;
+    return ctl->kind == AromaControl::Text || ctl->kind == AromaControl::Password ||
+           ctl->is_textarea;
+}
+
+bool aroma_webpage_text_input(AromaWebPage *page, const char *utf8)
+{
+    WebLock _gl;
+    if (!page || !utf8 || !utf8[0])
+        return false;
+    AromaControl *ctl = page->cont->focused;
+    if (!ctl || ctl->disabled)
+        return false;
+    // Only editable controls take IME text; select/checkbox/etc. do not.
+    if (ctl->kind != AromaControl::Text && ctl->kind != AromaControl::Password &&
+        !ctl->is_textarea)
+        return false;
+    if (ctl->readonly)
+        return true;
+    std::string ins(utf8);
+    std::string &v = ctl->ctl_value;
+    size_t cur = (size_t)(ctl->cursor < 0 ? 0 : ctl->cursor);
+    if (cur > v.size())
+        cur = v.size();
+    if (ctl->maxlen >= 0) {
+        int have = (int)utf8_count(v);
+        if (have + (int)utf8_count(ins) > ctl->maxlen) {
+            // Truncate the commit to the remaining budget (whole chars).
+            size_t p = 0;
+            int n = 0;
+            while (p < ins.size() && have + n < ctl->maxlen) {
+                p = utf8_next_pos(ins, p);
+                n++;
+            }
+            ins.resize(p);
+        }
+    }
+    if (!ins.empty()) {
+        v.insert(cur, ins);
+        ctl->cursor = (int)(cur + ins.size());
+        ctl->dirty = true;
+        js_dispatch_event(page, ctl->shared_from_this(), "input");
+        page->dom_dirty = true;
+        page_process_pending(page);
+    }
+    return true;
+}
+
+void aroma_webpage_blur(AromaWebPage *page)
+{
+    WebLock _gl;
+    if (!page || !page->cont)
+        return;
+    if (page->cont->focused) {
+        page->cont->focused = nullptr;
+        page->dom_dirty = true;
+    }
+}
+
 const char *aroma_webpage_eval(AromaWebPage *page, const char *code)
 {
+    WebLock _gl;
     if (!page)
         return "";
     page->last_js_result.clear();
@@ -4774,6 +5304,7 @@ bool aroma_webpage_add_bridge(AromaWebPage *page, const char *name,
 
 bool aroma_webpage_run_timers(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!page)
         return false;
     return js_run_timers(page);
@@ -4781,6 +5312,7 @@ bool aroma_webpage_run_timers(AromaWebPage *page)
 
 bool aroma_webpage_key(AromaWebPage *page, unsigned key_code)
 {
+    WebLock _gl;
     if (!page)
         return false;
     bool consumed = page_key(page, (unsigned)key_code);
@@ -4791,6 +5323,7 @@ bool aroma_webpage_key(AromaWebPage *page, unsigned key_code)
 
 bool aroma_webpage_dom_dirty(AromaWebPage *page)
 {
+    WebLock _gl;
     if (!page)
         return false;
     bool d = page->dom_dirty;
@@ -4800,14 +5333,51 @@ bool aroma_webpage_dom_dirty(AromaWebPage *page)
 
 void aroma_webpage_set_view_scroll(AromaWebPage *page, int x, int y)
 {
+    WebLock _gl;
     if (!page)
         return;
     page->view_scroll_x = x;
     page->view_scroll_y = y;
 }
 
+void aroma_webpage_set_device_scale(AromaWebPage *page, float scale)
+{
+    WebLock _gl;
+    if (!page)
+        return;
+    if (!(scale > 0.1f))
+        scale = 1.0f;
+    if (scale < 0.5f)
+        scale = 0.5f;
+    if (scale > 4.0f)
+        scale = 4.0f;
+    if (scale == page->device_scale)
+        return;
+    page->device_scale = scale;
+    page_sync_scale(page);
+    if (page->doc) {
+        page->doc->render(page_css_w(page));
+        page->content_w = px(page->doc->width());
+        page->content_h = px(page->doc->height());
+        if (page->content_w < 0)
+            page->content_w = 0;
+        if (page->content_h < 0)
+            page->content_h = 0;
+        page->dom_dirty = true;
+    }
+}
+
+float aroma_webpage_get_device_scale(AromaWebPage *page)
+{
+    WebLock _gl;
+    if (!page)
+        return 1.0f;
+    return page->device_scale > 0.1f ? page->device_scale : 1.0f;
+}
+
 unsigned aroma_webpage_nav_gen(AromaWebPage *page)
 {
+    WebLock _gl;
     return page ? page->nav_gen : 0;
 }
 

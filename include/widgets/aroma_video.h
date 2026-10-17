@@ -47,7 +47,13 @@ bool aroma_video_get_looping(AromaNode *video_node);
 
 void aroma_video_set_muted(AromaNode *video_node, bool muted);
 bool aroma_video_get_muted(AromaNode *video_node);
+// muted=false plays the file's audio track (44.1kHz stereo PCM sink:
+// ALSA on Linux, OpenSL ES on Android); muted=true drops PCM immediately.
 
+// Tap/click behavior. By default a tap on the video only brings up the
+// on-screen controls (never toggling playback, matching touch platforms);
+// call with enabled=true to make a plain tap/click also toggle play/pause.
+// The OSD play/pause button always works regardless of this setting.
 void aroma_video_set_click_to_toggle(AromaNode *video_node, bool enabled);
 
 void aroma_video_set_on_finished(AromaNode *video_node,
@@ -66,6 +72,9 @@ int aroma_video_get_video_width(AromaNode *video_node);
 int aroma_video_get_video_height(AromaNode *video_node);
 unsigned int aroma_video_get_texture_id(AromaNode *video_node);
 const char *aroma_video_get_source(AromaNode *video_node);
+// Human-readable failure reason, or NULL/"" when healthy. Useful on
+// Android where logcat is not always at hand (e.g. show it in a label).
+const char *aroma_video_get_error(AromaNode *video_node);
 
 void aroma_video_set_corner_radius(AromaNode *video_node, float radius);
 float aroma_video_get_corner_radius(AromaNode *video_node);

@@ -320,6 +320,17 @@
             "file": "docs/widget-library/3D-Viewer-Widget.md"
         },
         {
+            "title": "Video Widget",
+            "description": "Play video files and live frame streams with built-in playback controls.",
+            "icon": "video",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.1",
+            "updated": "2026-10-17",
+            "status": "stable",
+            "file": "docs/widget-library/Video-Widget.md"
+        },
+        {
             "title": "Incense Declarative UI",
             "description": "Write UIs in a declarative language with live preview in the browser.",
             "icon": "code",

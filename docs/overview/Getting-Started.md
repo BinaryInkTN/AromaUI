@@ -27,7 +27,7 @@ cd myapp && aroma run linux
 Prefer manual steps? Download the archive from the
 [releases page](https://github.com/BinaryInkTN/AromaUI/releases),
 extract it (`tar -xf aroma-lavender-linux.tar.xz`), and run
-`./aroma-lavender/install.sh` — same result.
+`./aroma-lavender/install.sh` gives the same result.
 
 What you need for the installer to run:
 

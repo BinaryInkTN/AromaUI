@@ -60,6 +60,7 @@ add_library(aroma
     widgets/aroma_gif.c
     widgets/aroma_video.c
     widgets/aroma_video_codec.c
+    widgets/aroma_audio_out.c
     widgets/aroma_webview.c
     widgets/aroma_loading.c
     widgets/aroma_table.c
@@ -117,7 +118,7 @@ if(AROMA_ENABLE_FFMPEG AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AN
                 --prefix=${FFMPEG_INSTALL_DIR}
                 --disable-everything
                 --disable-programs --disable-doc --disable-debug
-                --disable-avdevice --disable-swresample --disable-avfilter
+                --disable-avdevice --disable-avfilter
                 --disable-network --disable-x86asm
                 --disable-zlib --disable-bzlib --disable-lzma
                 --disable-libdrm --disable-vaapi --disable-vdpau --disable-vulkan
@@ -135,6 +136,7 @@ if(AROMA_ENABLE_FFMPEG AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AN
                 "${FFMPEG_INSTALL_DIR}/lib/libavformat.a"
                 "${FFMPEG_INSTALL_DIR}/lib/libavcodec.a"
                 "${FFMPEG_INSTALL_DIR}/lib/libswscale.a"
+                "${FFMPEG_INSTALL_DIR}/lib/libswresample.a"
                 "${FFMPEG_INSTALL_DIR}/lib/libavutil.a"
             UPDATE_COMMAND ""
             UPDATE_DISCONNECTED TRUE
@@ -142,7 +144,7 @@ if(AROMA_ENABLE_FFMPEG AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AN
             LOG_BUILD TRUE
             LOG_INSTALL TRUE
         )
-        foreach(_lib avformat avcodec swscale avutil)
+        foreach(_lib avformat avcodec swscale swresample avutil)
             add_library(FFmpeg::${_lib} STATIC IMPORTED GLOBAL)
             set_target_properties(FFmpeg::${_lib} PROPERTIES
                 IMPORTED_LOCATION "${FFMPEG_INSTALL_DIR}/lib/lib${_lib}.a")
@@ -150,7 +152,7 @@ if(AROMA_ENABLE_FFMPEG AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AN
             add_dependencies(FFmpeg::${_lib} ffmpeg_external)
         endforeach()
         target_link_libraries(aroma PRIVATE
-            FFmpeg::avformat FFmpeg::avcodec FFmpeg::swscale FFmpeg::avutil)
+            FFmpeg::avformat FFmpeg::avcodec FFmpeg::swscale FFmpeg::swresample FFmpeg::avutil)
         target_compile_definitions(aroma PRIVATE AROMA_HAS_FFMPEG=1)
         # Decoder sources need the vendored headers too.
         target_include_directories(aroma PRIVATE "${FFMPEG_INSTALL_DIR}/include")
@@ -164,19 +166,38 @@ endif()
 # ---- Vendored litehtml: software HTML/CSS webview, no system browser ----
 option(AROMA_ENABLE_WEBVIEW "Build vendored litehtml HTML renderer for the webview widget" ON)
 set(AROMA_HAS_WEBVIEW FALSE)
-if(AROMA_ENABLE_WEBVIEW AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AND NOT EMSCRIPTEN)
+if(AROMA_ENABLE_WEBVIEW AND (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID) AND NOT EMSCRIPTEN)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/litehtml/CMakeLists.txt")
         enable_language(CXX)
-        set(LITEHTML_ENABLE_LINT OFF)
-        set(LITEHTML_BUILD_TESTING OFF)
+        # NOTE: CACHE FORCE is required here. litehtml's own option() calls
+        # clear normal variables under CMP0077-OLD, which silently re-enabled
+        # its clang-tidy lint (fails Android builds: incompatible .clang-tidy
+        # plus VirtualCall warnings-as-errors) and its test suite.
+        set(LITEHTML_ENABLE_LINT OFF CACHE BOOL "" FORCE)
+        set(LITEHTML_BUILD_TESTING OFF CACHE BOOL "" FORCE)
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../vendors/litehtml" litehtml_build)
         target_sources(aroma PRIVATE widgets/aroma_webview_render.cpp)
         set_source_files_properties(widgets/aroma_webview_render.cpp PROPERTIES
-            CXX_STANDARD 17
-            COMPILE_OPTIONS "-fexceptions")
+            COMPILE_OPTIONS "-fexceptions;-Wno-c99-designator")
+        # Vendored code: silence warnings we don't own (NDK clang is far
+        # pickier than desktop GCC; e.g. QuickJS-style macros are fine).
+        foreach(_vendored litehtml gumbo)
+            if(TARGET ${_vendored})
+                target_compile_options(${_vendored} PRIVATE -w)
+            endif()
+        endforeach()
+        # NOTE: CXX_STANDARD is a target property — setting it on a source
+        # file is silently ignored. Desktop GCC defaults to C++17 so this
+        # went unnoticed, but NDK clang defaults to C++14 and litehtml
+        # needs C++17 (optional/variant/clamp, folds, inline variables).
+        # (Mirrors vendors/litehtml's own set_target_properties.)
+        set_target_properties(aroma PROPERTIES CXX_STANDARD 17)
         target_link_libraries(aroma PRIVATE litehtml)
         # Consumers link with the C driver, so export the C++ runtime.
-        target_link_libraries(aroma PUBLIC stdc++)
+        # (Android provides libc++ via the NDK toolchain — do not force libstdc++.)
+        if(NOT ANDROID)
+            target_link_libraries(aroma PUBLIC stdc++)
+        endif()
         # QuickJS: embeddable JS engine (scripts, DOM, timers, bridges).
         if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/quickjs/quickjs.c")
             target_sources(aroma PRIVATE
@@ -192,7 +213,8 @@ if(AROMA_ENABLE_WEBVIEW AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID A
                 ../vendors/quickjs/libregexp.c
                 ../vendors/quickjs/libunicode.c
                 ../vendors/quickjs/cutils.c PROPERTIES
-                COMPILE_DEFINITIONS "_GNU_SOURCE;CONFIG_VERSION=\"2026-06-04\"")
+                COMPILE_DEFINITIONS "_GNU_SOURCE;CONFIG_VERSION=\"2026-06-04\""
+                COMPILE_OPTIONS "-w")
             target_compile_definitions(aroma PRIVATE AROMA_WEBVIEW_JS=1)
             message(STATUS "AromaUI: JavaScript enabled in webview (vendored QuickJS)")
         else()
@@ -216,9 +238,17 @@ check_include_file(pthread.h HAVE_PTHREAD_H)
 if(HAVE_PTHREAD_H AND NOT EMSCRIPTEN)
     target_compile_definitions(aroma PRIVATE AROMA_THREAD_SAFE=1)
 endif()
+check_include_file(alsa/asoundlib.h HAVE_ALSA_H)
+if(HAVE_ALSA_H AND UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
+    target_compile_definitions(aroma PRIVATE AROMA_HAS_ALSA=1)
+endif()
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
     target_link_libraries(aroma PRIVATE curl pthread)
+    find_library(ALSA_LIB asound)
+    if(ALSA_LIB)
+        target_link_libraries(aroma PRIVATE "${ALSA_LIB}")
+    endif()
 endif()
 
 find_package(Vulkan QUIET)
@@ -249,7 +279,7 @@ endif()
 
 if(ANDROID)
     target_sources(aroma PRIVATE backends/platforms/aroma_platform_android.c)
-    target_link_libraries(aroma PRIVATE android EGL log GLESv3)
+    target_link_libraries(aroma PRIVATE android EGL log GLESv3 mediandk OpenSLES)
     target_include_directories(aroma PRIVATE "${ANDROID_NDK}/sources/android/native_app_glue")
 elseif(EMSCRIPTEN)
     target_sources(aroma PRIVATE

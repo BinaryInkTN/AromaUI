@@ -48,24 +48,24 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xheadersx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/freetype2/freetype/config" TYPE FILE FILES
-    "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/include/freetype/config/ftconfig.h"
-    "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/include/freetype/config/ftoption.h"
+    "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/include/freetype/config/ftconfig.h"
+    "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/include/freetype/config/ftoption.h"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xpkgconfigx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/freetype2.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/freetype2.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/libfreetyped.a")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/libfreetyped.a")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xheadersx" OR NOT CMAKE_INSTALL_COMPONENT)
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype/freetype-config.cmake")
     file(DIFFERENT EXPORT_FILE_CHANGED FILES
          "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype/freetype-config.cmake"
-         "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/CMakeFiles/Export/lib/cmake/freetype/freetype-config.cmake")
+         "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/CMakeFiles/Export/lib/cmake/freetype/freetype-config.cmake")
     if(EXPORT_FILE_CHANGED)
       file(GLOB OLD_CONFIG_FILES "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype/freetype-config-*.cmake")
       if(OLD_CONFIG_FILES)
@@ -74,13 +74,13 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xheadersx" OR NOT CMAKE_INSTALL_COMP
       endif()
     endif()
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/CMakeFiles/Export/lib/cmake/freetype/freetype-config.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/CMakeFiles/Export/lib/cmake/freetype/freetype-config.cmake")
   if("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
-    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/CMakeFiles/Export/lib/cmake/freetype/freetype-config-debug.cmake")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/CMakeFiles/Export/lib/cmake/freetype/freetype-config-debug.cmake")
   endif()
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xheadersx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/01_hello_world/android/app/.cxx/Debug/2z35731k/x86/freetype_build/freetype-config-version.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/freetype" TYPE FILE FILES "/home/yassine/Projects/AromaUI/examples/15_webview/android/app/.cxx/Debug/2z35731k/x86/freetype_build/freetype-config-version.cmake")
 endif()
 

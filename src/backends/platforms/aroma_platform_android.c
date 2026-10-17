@@ -53,6 +53,7 @@
 #include "aroma_ui.h"
 #include "widgets/aroma_window.h"
 #include "widgets/aroma_textbox.h"
+#include "widgets/aroma_webview.h"
 #define AROMA_MAX_TOUCHES 10
 
 #ifndef EGL_SWAP_BEHAVIOR_PRESERVED_BIT
@@ -515,19 +516,44 @@ static void JNICALL native_on_text_input(JNIEnv *env, jobject thiz, jstring text
     const char *utf = (*env)->GetStringUTFChars(env, text, NULL);
     if (!utf)
         return;
-    AromaNode *focused = aroma_textbox_get_focused();
-    if (!focused)
-        focused = aroma_ui_get_focused_node();
-    if (focused)
+    AromaNode *textbox = aroma_textbox_get_focused();
+    if (textbox)
     {
         const char *p = utf;
         while (*p)
         {
-            aroma_textbox_on_char(focused, *p);
+            aroma_textbox_on_char(textbox, *p);
             p++;
         }
-        aroma_ui_request_redraw(NULL);
     }
+    else
+    {
+        // Webviews (and other custom text consumers) take the committed
+        // UTF-8 string as a custom event on the UI-focused node.
+        AromaNode *focused = aroma_ui_get_focused_node();
+        if (focused)
+        {
+            size_t len = strlen(utf);
+            char *copy = (char *)malloc(len + 1);
+            if (copy)
+            {
+                memcpy(copy, utf, len + 1);
+                AromaEvent *ev = aroma_event_create_custom(focused->node_id,
+                                                           AROMA_WEBVIEW_TEXT_INPUT_EVENT,
+                                                           copy, free);
+                if (ev)
+                {
+                    aroma_event_dispatch(ev);
+                    aroma_event_destroy(ev);
+                }
+                else
+                {
+                    free(copy);
+                }
+            }
+        }
+    }
+    aroma_ui_request_redraw(NULL);
     (*env)->ReleaseStringUTFChars(env, text, utf);
 }
 
@@ -535,23 +561,60 @@ static void JNICALL native_on_backspace(JNIEnv *env, jobject thiz)
 {
     (void)env;
     (void)thiz;
-    AromaNode *focused = aroma_textbox_get_focused();
-    if (!focused)
-        focused = aroma_ui_get_focused_node();
-    if (focused)
+    AromaNode *textbox = aroma_textbox_get_focused();
+    if (textbox)
     {
-        aroma_textbox_on_backspace(focused);
-        aroma_ui_request_redraw(NULL);
+        aroma_textbox_on_backspace(textbox);
     }
+    else
+    {
+        // Route backspace as a key event: the webview's own key handling
+        // deletes at its focused control's cursor.
+        AromaNode *focused = aroma_ui_get_focused_node();
+        if (focused)
+        {
+            AromaEvent *ev = aroma_event_create_key(EVENT_TYPE_KEY_PRESS,
+                                                    focused->node_id, 8, 0);
+            if (ev)
+            {
+                aroma_event_dispatch(ev);
+                aroma_event_destroy(ev);
+            }
+        }
+    }
+    aroma_ui_request_redraw(NULL);
 }
 
 static void JNICALL native_on_editor_done(JNIEnv *env, jobject thiz)
 {
     (void)env;
     (void)thiz;
+    AromaNode *textbox = aroma_textbox_get_focused();
+    if (textbox)
+    {
+        aroma_textbox_set_focused(textbox, false);
+        return;
+    }
+    // Enter semantics first: submits a single-line input, newlines in a
+    // textarea. Then drop focus and put the IME away.
     AromaNode *focused = aroma_ui_get_focused_node();
     if (focused)
-        aroma_textbox_set_focused(focused, false);
+    {
+        AromaEvent *ev = aroma_event_create_key(EVENT_TYPE_KEY_PRESS,
+                                                focused->node_id, 13, 0);
+        if (ev)
+        {
+            aroma_event_dispatch(ev);
+            aroma_event_destroy(ev);
+        }
+        aroma_ui_clear_focused_node(focused);
+    }
+    {
+        AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+        if (platform && platform->hide_keyboard)
+            platform->hide_keyboard();
+    }
+    aroma_ui_request_redraw(NULL);
 }
 
 static jboolean JNICALL native_on_back_pressed(JNIEnv *env, jobject thiz)
@@ -3568,7 +3631,7 @@ static void impl_android_launch_gallery(void)
 
 #ifdef AROMA_HAS_VULKAN
 
-static bool android_create_vulkan_surface(size_t window_id, void *vk_instance, void *vk_surface_out)
+static bool android_create_vulkan_surface(size_t window_id, void *vk_instance, void **vk_surface_out)
 {
     (void)window_id;
     if (!vk_instance || !vk_surface_out)

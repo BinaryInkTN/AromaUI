@@ -2460,11 +2460,11 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
     "action", "animation", "animation_duration", "animation_easing", "animation_end_val", "animation_loop",
     "animation_start_val", "attribution", "auto_rotate", "autoplay", "blur_radius", "cam_far", "cam_far_plane",
     "cam_fov", "cam_near", "cam_near_plane", "cam_phi", "cam_radius", "cam_target_x", "cam_target_y", "cam_target_z",
-    "cam_theta", "checked", "color", "cols", "columns", "condition", "content_height", "content_width", "corner_radius", "day", "direction", "duration",
+    "cam_theta", "checked", "click_to_toggle", "color", "cols", "columns", "condition", "content_height", "content_width", "controls", "corner_radius", "day", "direction", "duration",
     "end_angle", "far", "far_plane", "fill_color", "fill_thickness", "font", "fov", "gap", "group", "header", "height",
     "hidden", "hour", "hub", "hub_color", "hub_radius", "hub_thickness", "icon", "id", "interactive", "label", "lat",
-    "layout", "length", "light_x", "light_y", "light_z", "lon", "major_length", "major_ticks", "max", "max_visible",
-    "message", "min", "minor_length", "minor_ticks", "minute", "mode", "model", "month", "near", "near_plane",
+    "layout", "length", "light_x", "light_y", "light_z", "lon", "loop", "major_length", "major_ticks", "max", "max_visible",
+    "message", "min", "minor_length", "minor_ticks", "minute", "mode", "model", "month", "muted", "near", "near_plane",
     "needle", "needle_color", "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "on_swipe_left",
     "on_swipe_right", "orientation", "parent", "phi", "placeholder", "popup", "position", "progress", "radius", "rows",
     "scale", "secondary", "selected", "show", "size", "src", "start_angle", "step", "style", "target_x", "target_y",
@@ -3665,8 +3665,10 @@ static AromaNode *build_video(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     if (built) {
         aroma_video_set_looping(built, props_bool(&bag, "loop", false));
         aroma_video_set_muted(built, props_bool(&bag, "muted", true));
-        aroma_video_set_click_to_toggle(built, props_bool(&bag, "click_to_toggle", true));
+        aroma_video_set_click_to_toggle(built, props_bool(&bag, "click_to_toggle", false));
         aroma_video_set_show_controls(built, props_bool(&bag, "controls", true));
+        if (_widget_font)
+            aroma_video_set_font(built, _widget_font);
         float cr = props_float(&bag, "corner_radius", -1.0f);
         if (cr < 0.0f)
             cr = props_float(&bag, "radius", 0.0f);
@@ -5459,7 +5461,9 @@ static bool reload_hot_window(HotReloadWatcher *watcher)
         }
     }
     root_node->child_count = 0;
-    memset(root_node->child_nodes, 0, sizeof(root_node->child_nodes));
+    if (root_node->child_nodes && root_node->child_capacity > 0)
+        memset(root_node->child_nodes, 0,
+               root_node->child_capacity * sizeof(*root_node->child_nodes));
 
     BuildCtx ctx = {
         .registry = (watcher->out_registry && *watcher->out_registry) ? &(*watcher->out_registry)->reg : NULL,

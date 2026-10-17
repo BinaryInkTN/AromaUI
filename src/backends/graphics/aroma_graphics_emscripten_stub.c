@@ -16,7 +16,7 @@ static float stub_measure_text(size_t window_id, AromaFont *font, const char *te
 static void stub_unload_image(unsigned int texture_id) { (void)texture_id; }
 static unsigned int stub_load_image(const char *image_path) { (void)image_path; return 0u; }
 static unsigned int stub_load_image_from_rgba(unsigned char *data, int width, int height) { (void)data; (void)width; (void)height; return 0u; }
-static unsigned int stub_load_image_from_memory(unsigned char *data, unsigned long binary_length) { (void)data; (void)binary_length; return 0u; }
+static unsigned int stub_load_image_from_memory(unsigned char *data, size_t binary_length) { (void)data; (void)binary_length; return 0u; }
 static void stub_draw_image(size_t window_id, int x, int y, int width, int height, unsigned int texture_id, float corner_radius) { (void)window_id; (void)x; (void)y; (void)width; (void)height; (void)texture_id; (void)corner_radius; }
 static bool stub_get_image_size(unsigned int texture_id, int *width, int *height) { (void)texture_id; (void)width; (void)height; return false; }
 static void stub_draw_image_uv(size_t window_id, int x, int y, int width, int height, unsigned int texture_id, float corner_radius, float u0, float v0, float u1, float v1) { (void)window_id; (void)x; (void)y; (void)width; (void)height; (void)texture_id; (void)corner_radius; (void)u0; (void)v0; (void)u1; (void)v1; }

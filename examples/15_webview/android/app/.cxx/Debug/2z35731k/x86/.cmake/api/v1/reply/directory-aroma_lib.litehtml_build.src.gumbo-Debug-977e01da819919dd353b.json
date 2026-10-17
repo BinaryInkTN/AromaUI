@@ -1,0 +1,80 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"/home/yassine/Projects/AromaUI/vendors/litehtml/src/gumbo/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 56,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 63,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "libraries",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"aroma_lib/litehtml_build/src/gumbo/libgumbo.a"
+			],
+			"targetId" : "gumbo::@2b900b9b24aa372ca00b",
+			"targetIndex" : 4,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include/gumbo",
+			"paths" : 
+			[
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/src/gumbo/src/gumbo.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/src/gumbo/src/tag_enum.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/gumbo",
+			"exportName" : "gumbo",
+			"exportTargets" : 
+			[
+				{
+					"id" : "gumbo::@2b900b9b24aa372ca00b",
+					"index" : 4
+				}
+			],
+			"paths" : 
+			[
+				"aroma_lib/litehtml_build/src/gumbo/CMakeFiles/Export/lib/cmake/gumbo/gumboConfig.cmake"
+			],
+			"type" : "export"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "aroma_lib/litehtml_build/src/gumbo",
+		"source" : "/home/yassine/Projects/AromaUI/vendors/litehtml/src/gumbo"
+	}
+}

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define WIN_W 256
 #define WIN_H 256
@@ -126,6 +127,24 @@ static void read_pixels(unsigned char *out)
     glReadPixels(0, 0, WIN_W, WIN_H, GL_RGBA, GL_UNSIGNED_BYTE, out);
 }
 
+/* Renders are rasterized by the page's async worker; the widget only
+ * uploads a finished frame on a later draw. Pump draw calls (with short
+ * sleeps so the worker thread gets scheduled) until the frame has had
+ * ample time to land. */
+static void pump_widget(AromaNode *wv, int frames)
+{
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    AromaNodeDrawFn draw = aroma_node_get_draw_cb(wv);
+    for (int i = 0; i < frames; i++) {
+        gfx->clear(0, 0xFF202020);
+        if (draw)
+            draw(wv, 0);
+        gfx->graphics_flush();
+        if (i + 1 < frames)
+            usleep(2000);
+    }
+}
+
 static void px_rgb(const unsigned char *buf, int ux, int uy,
                    int *r, int *g, int *b)
 {
@@ -172,13 +191,7 @@ static void test_render_pixels(void)
     }
 
     /* Pump frames so the texture uploads and draws. */
-    for (int i = 0; i < 4; i++) {
-        gfx->clear(0, 0xFF202020);
-        AromaNodeDrawFn draw = aroma_node_get_draw_cb(wv);
-        if (draw)
-            draw(wv, 0);
-        gfx->graphics_flush();
-    }
+    pump_widget(wv, 64);
     read_pixels(buf);
     int r, g, b;
     /* Red box at page (0..100, 0..60) -> window (10..110, 10..70). */
@@ -193,13 +206,7 @@ static void test_render_pixels(void)
 
     /* Scroll down: red box leaves the viewport. */
     aroma_webview_scroll_to(wv, 0, 100);
-    for (int i = 0; i < 4; i++) {
-        gfx->clear(0, 0xFF202020);
-        AromaNodeDrawFn draw = aroma_node_get_draw_cb(wv);
-        if (draw)
-            draw(wv, 0);
-        gfx->graphics_flush();
-    }
+    pump_widget(wv, 64);
     read_pixels(buf);
     px_rgb(buf, 10 + 50, 10 + 30, &r, &g, &b);
     CHECK(!(r > 200 && g < 80 && b < 80), "gl red box scrolled away");
@@ -209,16 +216,195 @@ static void test_render_pixels(void)
     const char *res = aroma_webview_eval_js(
         wv, "document.querySelector('div').style.setProperty('background', '#0000ff'); 'ok'");
     CHECK(res && res[0] == 'o', "gl js restyle evaluates");
-    for (int i = 0; i < 4; i++) {
-        gfx->clear(0, 0xFF202020);
-        AromaNodeDrawFn draw = aroma_node_get_draw_cb(wv);
-        if (draw)
-            draw(wv, 0);
-        gfx->graphics_flush();
-    }
+    pump_widget(wv, 64);
     read_pixels(buf);
     px_rgb(buf, 10 + 50, 10 + 30, &r, &g, &b);
     CHECK(b > 200 && r < 80, "gl js restyle paints blue");
+
+    free(buf);
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
+static const char *kPageB =
+    "<html><head><title>Second</title></head>"
+    "<body style=\"margin:0;background:#ffffff;\">"
+    "<div style=\"width:100px;height:60px;background:#0000ff;\">two</div>"
+    "</body></html>";
+
+/* Regression: switching pages (as the JS example does) must repaint the
+ * widget while it is otherwise idle. The async raster lands on a later
+ * draw; with no periodic redraw the frame used to be dropped. */
+static void test_second_page_lands(void)
+{
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    __node_system_init();
+    AromaNode *root = make_root();
+
+    AromaNode *wv = aroma_webview_create(root, 10, 10, 200, 200);
+    CHECK(wv != NULL, "page2 node created");
+    if (!wv) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+    unsigned char *buf = (unsigned char *)malloc(WIN_W * WIN_H * 4);
+    CHECK(buf != NULL, "page2 pixel buffer allocated");
+    if (!buf) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+
+    CHECK(aroma_webview_load_html(wv, kPage, NULL), "page2 first load");
+    pump_widget(wv, 64);
+
+    CHECK(aroma_webview_load_html(wv, kPageB, NULL), "page2 second load");
+    pump_widget(wv, 64);
+    read_pixels(buf);
+    int r, g, b;
+    /* Blue box from the second page at page (0..100, 0..60). */
+    px_rgb(buf, 10 + 50, 10 + 30, &r, &g, &b);
+    CHECK(b > 200 && r < 80, "page2 second page painted");
+
+    free(buf);
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
+/* Regression: <select> reused the button drawing path, so its label was
+ * every option's text concatenated ("MMMM...NNNN..."). That string is far
+ * wider than the field and spilled over the page margin. The field must
+ * draw only the chosen option plus the dropdown arrow. */
+static void test_select_not_drawn_as_button(void)
+{
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    __node_system_init();
+    AromaNode *root = make_root();
+
+    AromaNode *wv = aroma_webview_create(root, 10, 10, 200, 200);
+    CHECK(wv != NULL, "select node created");
+    if (!wv) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+    unsigned char *buf = (unsigned char *)malloc(WIN_W * WIN_H * 4);
+    CHECK(buf != NULL, "select pixel buffer allocated");
+    if (!buf) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+
+    const char *html =
+        "<html><head><title>Sel</title></head>"
+        "<body style=\"margin:0;padding:16px;background:#ffffff;\">"
+        "<select id=\"c\"><option>MMMMMMMMMMMM</option>"
+        "<option selected>NNNNNNNNNNNN</option>"
+        "<option>OOOOOOOOOOOO</option></select></body></html>";
+    CHECK(aroma_webview_load_html(wv, html, NULL), "select page loads");
+
+    pump_widget(wv, 64);
+    read_pixels(buf);
+
+    /* The field starts at x=26 (widget 10 + padding 16); any dark pixel in
+     * the page margin left of it means option text leaked out of the box. */
+    int leaked = 0;
+    for (int y = 26; y <= 52; y++)
+        for (int x = 12; x <= 24; x++) {
+            int r, g, b;
+            px_rgb(buf, x, y, &r, &g, &b);
+            if (r < 120 && g < 120 && b < 120)
+                leaked++;
+        }
+    CHECK(leaked == 0, "select stays inside its field");
+
+    /* Sanity: the chosen option label and the arrow are drawn inside. */
+    int drawn = 0;
+    for (int y = 26; y <= 52; y++)
+        for (int x = 27; x <= 200; x++) {
+            int r, g, b;
+            px_rgb(buf, x, y, &r, &g, &b);
+            if (r < 120 && g < 120 && b < 120)
+                drawn++;
+        }
+    CHECK(drawn > 0, "select label renders in the field");
+
+    free(buf);
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
+/* Regression: replacing textContent must swap the text node's render item,
+ * not append another one. Stale render items kept reserving inline width,
+ * so a button following the updated text drifted right on every tap. */
+static int find_button_left(const unsigned char *buf, int band_y0, int band_y1)
+{
+    int best = -1;
+    for (int x = 12; x < WIN_W - 12; x++) {
+        int cnt = 0;
+        for (int y = band_y0; y <= band_y1; y++) {
+            int r, g, b;
+            px_rgb(buf, x, y, &r, &g, &b);
+            if (r < 120 && g < 120 && b < 120)
+                cnt++;
+        }
+        if (cnt >= 12) {
+            best = x;
+            break;
+        }
+    }
+    return best;
+}
+
+static void test_text_content_no_drift(void)
+{
+    AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
+    __node_system_init();
+    AromaNode *root = make_root();
+
+    AromaNode *wv = aroma_webview_create(root, 10, 10, 200, 200);
+    CHECK(wv != NULL, "textContent node created");
+    if (!wv) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+    unsigned char *buf = (unsigned char *)malloc(WIN_W * WIN_H * 4);
+    CHECK(buf != NULL, "textContent pixel buffer allocated");
+    if (!buf) {
+        __destroy_node(root);
+        __node_system_destroy();
+        return;
+    }
+
+    const char *html =
+        "<html><head><title>Count</title></head>"
+        "<body style=\"margin:0;padding:0;background:#ffffff;\">"
+        "<p style=\"margin:0;padding:0;font-size:12px;\">Counter: <b id=\"count\">0</b> "
+        "<button id=\"tap\" type=\"button\" style=\"border:2px solid #000000;background:#ffffff;\">Tap me</button></p>"
+        "</body></html>";
+    CHECK(aroma_webview_load_html(wv, html, NULL), "textContent page loads");
+    pump_widget(wv, 64);
+    read_pixels(buf);
+    int left0 = find_button_left(buf, 12, 40);
+    CHECK(left0 > 0, "textContent button visible");
+
+    for (int i = 1; i <= 3 && left0 > 0; i++) {
+        char js[192];
+        snprintf(js, sizeof(js),
+                 "document.getElementById('count').textContent = '%d';"
+                 "document.getElementById('count').innerHTML", i);
+        const char *inner = aroma_webview_eval_js(wv, js);
+        char want[8];
+        snprintf(want, sizeof(want), "%d", i);
+        CHECK(inner && strcmp(inner, want) == 0, "textContent replaces text");
+        pump_widget(wv, 64);
+        read_pixels(buf);
+        int left = find_button_left(buf, 12, 40);
+        CHECK(left == left0, "textContent does not drift layout");
+    }
 
     free(buf);
     __destroy_node(root);
@@ -244,6 +430,9 @@ int main(void)
         gfx->setup_separate_window_resources(0);
 
     test_render_pixels();
+    test_second_page_lands();
+    test_select_not_drawn_as_button();
+    test_text_content_no_drift();
 
     egl_teardown();
     printf("WebView GL: %d passed, %d failed\n", s_passed, s_failed);

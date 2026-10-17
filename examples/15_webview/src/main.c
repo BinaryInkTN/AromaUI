@@ -80,7 +80,7 @@ static const char *kForms =
     "<p><select name=\"color\" id=\"color\">"
     "<option value=\"r\">Red</option><option value=\"g\" selected>Green</option>"
     "<option value=\"b\">Blue</option></select></p>"
-    "<p><textarea name=\"bio\" rows=\"3\" cols=\"24\">hello</textarea></p>"
+    "<p><textarea name=\"bio\" id=\"bio\" rows=\"3\" cols=\"24\">hello</textarea></p>"
     "<p><button id=\"preview\" type=\"button\">Preview</button> "
     "<input type=\"reset\" value=\"Reset\"></p>"
     "</form>"
@@ -147,6 +147,11 @@ static void toast_bridge(AromaNode *node, const char *name, const char *arg,
     (void)name;
     (void)user;
     printf("webview: %s\n", arg);
+#ifdef __ANDROID__
+    // Real system toast so the JS `nativeToast(...)` bridge is visible on
+    // device (printf only reaches the terminal on desktop).
+    aroma_android_toast(arg, false);
+#endif
     snprintf(out, outlen, "ok");
 }
 

@@ -493,6 +493,53 @@ def _do_build(build_platform: str, sdk_root: str, sdk_ver: str, bt_ver: str, ndk
         print(f"{Colors.OKGREEN}OK Build successful{Colors.ENDC}")
 
 
+def cmd_clean(args):
+    """Remove build outputs for one platform (or --all).
+
+    linux:   build/
+    web:     build_web/
+    android: android/app/build (APKs), android/app/.cxx (native CMake
+             cache — the usual culprit behind "didnt do anything"
+             stale Gradle builds), android/build
+    """
+    import shutil
+
+    cwd = os.getcwd()
+    if args.all:
+        targets = ["linux", "android", "web"]
+    elif args.platform:
+        targets = [args.platform]
+    else:
+        print(f"Specify a platform: aroma clean [linux|android|web] "
+              f"or aroma clean --all")
+        sys.exit(1)
+
+    _CLEAN_DIRS = {
+        "linux": ["build"],
+        "web": ["build_web"],
+        "android": [
+            os.path.join("android", "app", "build"),
+            os.path.join("android", "app", ".cxx"),
+            os.path.join("android", "build"),
+        ],
+    }
+
+    removed_any = False
+    for target in targets:
+        for rel in _CLEAN_DIRS[target]:
+            path = os.path.join(cwd, rel)
+            if os.path.isdir(path):
+                print(f"{Colors.OKBLUE}==>{Colors.ENDC} Removing {rel}/")
+                shutil.rmtree(path, ignore_errors=True)
+                removed_any = True
+            else:
+                print(f"  (not present) {rel}/")
+    if removed_any:
+        print(f"{Colors.OKGREEN}OK Clean done{Colors.ENDC}")
+    else:
+        print("Nothing to clean")
+
+
 def cmd_run(args):
     detector = Detector()
     cwd = os.getcwd()

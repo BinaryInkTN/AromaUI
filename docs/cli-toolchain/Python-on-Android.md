@@ -61,7 +61,7 @@ packaging
   PEP 668 systems (externally managed Python) use a virtualenv.
 * Android: every `aroma build android` renders the list into the
   Chaquopy `pip { install "..." }` block of
-  `android/app/build.gradle` (a managed section — do not hand-edit it;
+  `android/app/build.gradle` (a managed section: do not hand-edit it;
   a hand-written `pip` block is rejected with an error telling you to
   move entries here).
 

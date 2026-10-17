@@ -5,7 +5,7 @@ import sys
 
 from aroma_bindings import cmd_bindings
 from aroma_bundle import cmd_bundle
-from aroma_build import cmd_build, cmd_run
+from aroma_build import cmd_build, cmd_clean, cmd_run
 from aroma_constants import AROMA_INSTALL_DIR, AROMA_SDK_DIR
 from aroma_doctor import cmd_doctor
 from aroma_output import Colors, Logger
@@ -16,7 +16,7 @@ def main():
         prog="aroma",
         description="AromaUI CLI Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=f"Examples:\n  aroma doctor\n  aroma create myapp\n  aroma create myapp --python\n  aroma create myapp --rust\n  aroma bindings --check\n  aroma build android\n  aroma run android --emu\n  aroma bundle linux deb appimage\n  aroma bundle linux --format deb,rpm,flatpak,snap,tar.gz\n\nPaths:\n  Install: {AROMA_INSTALL_DIR}\n  SDK:     {AROMA_SDK_DIR}"
+        epilog=f"Examples:\n  aroma doctor\n  aroma create myapp\n  aroma create myapp --python\n  aroma create myapp --rust\n  aroma bindings --check\n  aroma build android\n  aroma clean android\n  aroma run android --emu\n  aroma bundle linux deb appimage\n  aroma bundle linux --format deb,rpm,flatpak,snap,tar.gz\n\nPaths:\n  Install: {AROMA_INSTALL_DIR}\n  SDK:     {AROMA_SDK_DIR}"
     )
     
     parser.add_argument("--config", help="Config file path")
@@ -72,6 +72,12 @@ def main():
     p = subparsers.add_parser("run", help="Run project")
     p.add_argument("platform", choices=["linux", "android", "web"], nargs="?", default="linux")
     p.add_argument("--emu", action="store_true", help="Start/use emulator for Android")
+
+    p = subparsers.add_parser("clean", help="Remove build outputs for a platform")
+    p.add_argument("platform", choices=["linux", "android", "web"], nargs="?",
+                   default=None, help="Platform build to remove")
+    p.add_argument("--all", action="store_true",
+                   help="Remove build outputs for all platforms")
 
     p = subparsers.add_parser(
         "bundle",
@@ -139,6 +145,8 @@ def main():
         cmd_build(args)
     elif args.command == "run":
         cmd_run(args)
+    elif args.command == "clean":
+        cmd_clean(args)
     elif args.command == "bundle":
         cmd_bundle(args)
     else:

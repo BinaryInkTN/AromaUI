@@ -69,6 +69,14 @@ static void show_status(void)
     }
     if (g_file_mode && g_video)
         g_position_s = aroma_video_get_position(g_video);
+    if (aroma_video_get_state(g_video) == AROMA_VIDEO_ERROR)
+    {
+        const char *err = aroma_video_get_error(g_video);
+        snprintf(buf, sizeof(buf), "error: %s",
+                 err && err[0] ? err : "unknown");
+        aroma_label_set_text(g_status, buf);
+        return;
+    }
     snprintf(buf, sizeof(buf), "%s  %.1fs  %dx%d", state, g_position_s,
              aroma_video_get_video_width(g_video),
              aroma_video_get_video_height(g_video));
@@ -138,6 +146,7 @@ int main(void)
         {
             g_file_mode = true;
             aroma_video_set_looping(g_video, true);
+            aroma_video_set_muted(g_video, false);
             aroma_video_play(g_video);
             if (g_source)
             {

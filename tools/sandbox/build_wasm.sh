@@ -26,6 +26,10 @@ OUT="$ROOT/docs/incense_sandbox.js"
 COPY_DIR="$ROOT/docs/widget-library/wasm/incense_sandbox"
 FT_BUILD="${FT_BUILD:-/tmp/opencode/ft-build}"
 OBJDIR="${OBJDIR:-$ROOT/tools/sandbox/build/obj}"
+# Real MPEG-1 clip preloaded for the curated `video` docs demo, decoded in
+# the browser by the widget's built-in pl_mpeg backend (Sintel excerpt,
+# CC-BY 3.0 — see examples/14_video/assets/ATTRIBUTION.md).
+VIDEO_ASSET="$ROOT/examples/14_video/assets/sample_sintel.mpg"
 
 if [ ! -f "$FT_BUILD/libfreetype.a" ]; then
   echo "error: $FT_BUILD/libfreetype.a missing; build freetype first (see header)" >&2
@@ -99,6 +103,7 @@ done
 emcc "${OBJS[@]}" \
   -O2 \
   "$FT_BUILD/libfreetype.a" \
+  --preload-file "$VIDEO_ASSET@/assets/sample_sintel.mpg" \
   -sUSE_WEBGL2=1 \
   -sFETCH=1 \
   -sASYNCIFY=1 \
@@ -110,4 +115,7 @@ emcc "${OBJS[@]}" \
 
 cp "$OUT" "$COPY_DIR/incense_sandbox.js"
 cp "${OUT%.js}.wasm" "$COPY_DIR/incense_sandbox.wasm"
+if [ -f "${OUT%.js}.data" ]; then
+  cp "${OUT%.js}.data" "$COPY_DIR/incense_sandbox.data"
+fi
 ls -la "$OUT" "${OUT%.js}.wasm"

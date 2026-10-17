@@ -9,6 +9,7 @@
 #include "aroma_timer.h"
 #include "aroma_font.h"
 #include "widgets/aroma_video_codec.h"
+#include "widgets/aroma_audio_out.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,7 @@
 #ifdef __ANDROID__
 #include "aroma_android.h"
 #endif
+#include "aroma_dp.h"
 
 #define AROMA_VIDEO_PATH_MAX 1024
 #define AROMA_VIDEO_TICK_MS 33
@@ -62,13 +64,27 @@ typedef struct AromaVideo {
     void *frame_ud;
     int active_pointer_id;
     bool events_registered;
+    bool dbg_placeholder_logged;
+    bool dbg_noframe_warned;
+    uint64_t dbg_noframe_since_ms;
 } AromaVideo;
 
 #ifdef __ANDROID__
+static inline float video_density(void) {
+    float d = aroma_android_get_density();
+    return (d > 0.1f) ? d : 1.0f;
+}
 static inline int video_dp(int dp) { return aroma_android_dp_to_px(dp); }
+static inline float video_dp_f(float dp) { return aroma_android_dp_to_px_f(dp); }
+static inline float video_px_to_dp_f(float px) { return aroma_android_px_to_dp_f(px); }
 #else
+static inline float video_density(void) { return 1.0f; }
 static inline int video_dp(int dp) { return dp; }
+static inline float video_dp_f(float dp) { return dp; }
+static inline float video_px_to_dp_f(float px) { return px; }
 #endif
+
+static float video_clamp_radius(AromaVideo *v, float radius);
 
 static void video_set_error(AromaVideo *v, const char *msg) {
     if (!v)
@@ -81,6 +97,15 @@ static void video_set_error(AromaVideo *v, const char *msg) {
     }
     v->state = AROMA_VIDEO_ERROR;
     v->playing = false;
+#ifdef __ANDROID__
+    aroma_android_set_keep_screen_on(false);
+#endif
+    // An error must never leave a bare tile: force the controls up so the
+    // user gets play/seek affordances (and sees time/status) immediately.
+    if (v->show_controls) {
+        v->controls_visible = true;
+        v->controls_ms = aroma_time_now_ms();
+    }
     LOG_ERROR("aroma_video: %s", v->error_msg[0] ? v->error_msg : "unknown error");
     if (v->node && v->on_error && v->error_msg[0])
         v->on_error(v->node, v->error_msg, v->error_ud);
@@ -92,21 +117,32 @@ static void video_upload_rgba(AromaVideo *v, const unsigned char *rgba, int w, i
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (!gfx)
         return;
+    // Prefer the streaming upload path (no per-frame mipmap rebuild);
+    // other backends fall back to the regular RGBA path.
+    bool use_dynamic = (gfx->load_dynamic_image && gfx->update_dynamic_image);
     if (v->texture_id == 0) {
-        if (gfx->load_image_from_rgba) {
+        if (use_dynamic) {
+            v->texture_id = gfx->load_dynamic_image((unsigned char *)rgba, w, h);
+            v->owns_texture = (v->texture_id != 0);
+        } else if (gfx->load_image_from_rgba) {
             v->texture_id = gfx->load_image_from_rgba((unsigned char *)rgba, w, h);
             v->owns_texture = (v->texture_id != 0);
         }
     } else {
         bool ok = false;
-        if (gfx->update_image_rgba)
+        if (use_dynamic)
+            ok = gfx->update_dynamic_image(v->texture_id, (unsigned char *)rgba, w, h);
+        else if (gfx->update_image_rgba)
             ok = gfx->update_image_rgba(v->texture_id, (unsigned char *)rgba, w, h);
         if (!ok) {
             if (v->owns_texture && gfx->unload_image)
                 gfx->unload_image(v->texture_id);
             v->texture_id = 0;
             v->owns_texture = false;
-            if (gfx->load_image_from_rgba) {
+            if (use_dynamic) {
+                v->texture_id = gfx->load_dynamic_image((unsigned char *)rgba, w, h);
+                v->owns_texture = (v->texture_id != 0);
+            } else if (gfx->load_image_from_rgba) {
                 v->texture_id = gfx->load_image_from_rgba((unsigned char *)rgba, w, h);
                 v->owns_texture = (v->texture_id != 0);
             }
@@ -137,6 +173,15 @@ static void video_on_finished(AromaVideo *v) {
     v->state = AROMA_VIDEO_FINISHED;
     if (v->duration > 0.0)
         v->position = v->duration;
+#ifdef __ANDROID__
+    aroma_android_set_keep_screen_on(false);
+#endif
+    // Paused/finished states keep the controls up (see draw gate): make
+    // sure an auto-hide during playback can't leave a dead tile.
+    if (v->show_controls) {
+        v->controls_visible = true;
+        v->controls_ms = aroma_time_now_ms();
+    }
     if (v->node)
         aroma_node_invalidate(v->node);
     if (!v->finished_notified && v->on_finished && v->node) {
@@ -192,6 +237,7 @@ static bool video_open_file(AromaVideo *v, const char *path) {
     const char *load_path = aroma_resolve_asset_path(path, resolved, sizeof(resolved));
     if (!load_path || !load_path[0])
         load_path = path;
+    LOG_INFO("aroma_video: open '%s' (resolved '%s')", path, load_path);
     char err[256] = { 0 };
     AromaVideoCodec *codec = aroma_video_codec_open_file(load_path, video_codec_frame_cb,
                                                          v, err, sizeof(err));
@@ -203,6 +249,7 @@ static bool video_open_file(AromaVideo *v, const char *path) {
         return false;
     }
     aroma_video_codec_set_loop(codec, v->looping);
+    aroma_video_codec_set_muted(codec, v->muted);
     v->codec = codec;
     v->push_mode = false;
     double d = aroma_video_codec_duration(codec);
@@ -227,6 +274,7 @@ static bool video_open_memory(AromaVideo *v, unsigned char *data, size_t len) {
         return false;
     }
     aroma_video_codec_set_loop(codec, v->looping);
+    aroma_video_codec_set_muted(codec, v->muted);
     v->codec = codec;
     v->push_mode = false;
     double d = aroma_video_codec_duration(codec);
@@ -416,17 +464,25 @@ static bool video_osd_geom(AromaVideo *v, VideoOsd *o) {
     if (!v || !o)
         return false;
     int rx = v->rect.x, ry = v->rect.y, rw = v->rect.width, rh = v->rect.height;
-    if (rw < 140 || rh < 100)
+    // Geometry is stored in physical px; thresholds are authored in dp.
+    if (rw < video_dp(140) || rh < video_dp(100))
         return false;
-    const int pad = 10, strip = 46;
+    const int pad = video_dp(10);
+    const int strip = video_dp(46);
+    const int gap8 = video_dp(8);
+    const int label_off = video_dp(7);
+    const int track_off = video_dp(2);
+    const int min_track = video_dp(40);
     int bar_y = ry + rh - strip;
     int cy = bar_y + strip / 2;
-    o->btn_r = 13;
+    o->btn_r = video_dp(13);
     o->btn_cx = rx + pad + o->btn_r;
     o->btn_cy = cy;
-    int x = o->btn_cx + o->btn_r + 8;
+    int x = o->btn_cx + o->btn_r + gap8;
     o->has_labels = (v->font != NULL);
-    o->label_y = cy - 7;
+    o->label_y = cy - label_off;
+    // Font glyph metrics are already physical px: Android fonts are created
+    // at sp_to_px(size) and rendered with scale 1.0 like every other widget.
     if (o->has_labels) {
         char cur[16], dur[16];
         video_fmt_time(cur, sizeof(cur), v->position);
@@ -438,18 +494,18 @@ static bool video_osd_geom(AromaVideo *v, VideoOsd *o) {
         if (dur_w < 0)
             dur_w = 0;
         o->cur_x = x;
-        x += cur_w + 8;
+        x += cur_w + gap8;
         o->dur_x = rx + rw - pad - dur_w;
         o->tx = x;
     } else {
         o->tx = x;
         o->dur_x = rx + rw - pad;
     }
-    int tx1 = o->has_labels ? o->dur_x - 8 : rx + rw - pad;
+    int tx1 = o->has_labels ? o->dur_x - gap8 : rx + rw - pad;
     o->tw = tx1 - o->tx;
-    if (o->tw < 40)
+    if (o->tw < min_track)
         return false;
-    o->ty = cy - 2;
+    o->ty = cy - track_off;
     return true;
 }
 
@@ -475,12 +531,15 @@ static bool video_osd_point(AromaVideo *v, int x, int y, int *region) {
     if (!video_osd_geom(v, &o))
         return false;
     int dx = x - o.btn_cx, dy = y - o.btn_cy;
-    int r = o.btn_r + 5;
+    int r = o.btn_r + video_dp(5);
     if (dx * dx + dy * dy <= r * r) {
         *region = 1;
         return true;
     }
-    if (x >= o.tx - 6 && x <= o.tx + o.tw + 6 && y >= o.ty - 11 && y <= o.ty + 16) {
+    int slop_x = video_dp(6);
+    int slop_top = video_dp(11);
+    int slop_bot = video_dp(16);
+    if (x >= o.tx - slop_x && x <= o.tx + o.tw + slop_x && y >= o.ty - slop_top && y <= o.ty + slop_bot) {
         *region = 2;
         return true;
     }
@@ -510,21 +569,27 @@ static void video_draw_osd(AromaNode *node, size_t window_id) {
     if (!gfx || !gfx->fill_rectangle)
         return;
     int rx = v->rect.x, ry = v->rect.y, rw = v->rect.width, rh = v->rect.height;
-    int bar_y = ry + rh - 46;
+    const int strip = video_dp(46);
+    const int half = strip / 2;
+    const int track_h = video_dp(5);
+    const float track_r = video_dp_f(2.0f);
+    int bar_y = ry + rh - strip;
 
     if (gfx->graphics_set_clip)
-        gfx->graphics_set_clip(rx, bar_y, rw, 46);
-    gfx->fill_rectangle(window_id, rx, bar_y, rw, 23, 0x44000000, false, 0.0f);
-    gfx->fill_rectangle(window_id, rx, bar_y + 23, rw, 23, 0x66000000, false, 0.0f);
+        gfx->graphics_set_clip(rx, bar_y, rw, strip);
+    gfx->fill_rectangle(window_id, rx, bar_y, rw, half, 0x44000000, false, 0.0f);
+    gfx->fill_rectangle(window_id, rx, bar_y + half, rw, strip - half, 0x66000000, false, 0.0f);
     if (gfx->graphics_clear_clip)
         gfx->graphics_clear_clip();
 
-    gfx->fill_rectangle(window_id, o.tx, o.ty, o.tw, 5, 0x66FFFFFF, true, 2.0f);
+    gfx->fill_rectangle(window_id, o.tx, o.ty, o.tw, track_h, 0x66FFFFFF, true, track_r);
     double frac = video_osd_frac(v);
     int fill_w = (int)(o.tw * frac);
     if (fill_w > 0)
-        gfx->fill_rectangle(window_id, o.tx, o.ty, fill_w, 5, 0xFFFFFFFF, true, 2.0f);
-    int kd = v->scrubbing ? 16 : 12;
+        gfx->fill_rectangle(window_id, o.tx, o.ty, fill_w, track_h, 0xFFFFFFFF, true, track_r);
+    int kd = v->scrubbing ? video_dp(16) : video_dp(12);
+    if (kd < 1)
+        kd = 1;
     int kx = o.tx + fill_w;
     gfx->fill_rectangle(window_id, kx - kd / 2, o.btn_cy - kd / 2, kd, kd,
                         0xFFFFFFFF, true, (float)kd / 2.0f);
@@ -535,16 +600,24 @@ static void video_draw_osd(AromaNode *node, size_t window_id) {
     if (gfx->draw_line) {
         uint32_t white = 0xFFFFFFFF;
         if (v->state == AROMA_VIDEO_PLAYING) {
-            int bw = 4, bh = 13, gap = 5;
+            int bw = video_dp(4), bh = video_dp(13), gap = video_dp(5);
+            if (bw < 1)
+                bw = 1;
+            if (bh < 1)
+                bh = 1;
             int x0 = o.btn_cx - (bw * 2 + gap) / 2;
             int y0 = o.btn_cy - bh / 2;
             gfx->fill_rectangle(window_id, x0, y0, bw, bh, white, false, 0.0f);
             gfx->fill_rectangle(window_id, x0 + bw + gap, y0, bw, bh, white, false, 0.0f);
         } else {
-            int x0 = o.btn_cx - 4, y0 = o.btn_cy - 7, y1 = o.btn_cy + 7, x1 = o.btn_cx + 7;
-            gfx->draw_line(window_id, x0, y0, x0, y1, white, 3.0f, true);
-            gfx->draw_line(window_id, x0, y1, x1, o.btn_cy, white, 3.0f, true);
-            gfx->draw_line(window_id, x1, o.btn_cy, x0, y0, white, 3.0f, true);
+            int ix0 = video_dp(4), iy = video_dp(7);
+            float lw = video_dp_f(3.0f);
+            if (lw < 1.0f)
+                lw = 1.0f;
+            int x0 = o.btn_cx - ix0, y0 = o.btn_cy - iy, y1 = o.btn_cy + iy, x1 = o.btn_cx + iy;
+            gfx->draw_line(window_id, x0, y0, x0, y1, white, lw, true);
+            gfx->draw_line(window_id, x0, y1, x1, o.btn_cy, white, lw, true);
+            gfx->draw_line(window_id, x1, o.btn_cy, x0, y0, white, lw, true);
         }
     }
 
@@ -552,6 +625,8 @@ static void video_draw_osd(AromaNode *node, size_t window_id) {
         char cur[16], dur[16];
         video_fmt_time(cur, sizeof(cur), v->position);
         video_fmt_time(dur, sizeof(dur), v->duration);
+        // scale 1.0: the font object already carries the density-scaled
+        // pixel size (sp_to_px on Android), so scaling again doubles it.
         gfx->render_text(window_id, v->font, cur, o.cur_x, o.label_y, 0xFFFFFFFF, 1.0f);
         gfx->render_text(window_id, v->font, dur, o.dur_x, o.label_y, 0xFFFFFFFF, 1.0f);
     }
@@ -603,6 +678,10 @@ void aroma_video_draw(AromaNode *video_node, size_t window_id) {
     if (aroma_node_is_hidden(video_node))
         return;
     AromaVideo *v = (AromaVideo *)video_node->node_widget_ptr;
+    // NOTE: rect stays as-authored physical px. It is deliberately NOT
+    // rescaled on density changes: float-ratio mutation proved fragile
+    // (silent geometry corruption), and every other widget keeps its
+    // physical rect too. OSD metrics re-derive from live density each draw.
     if (v->rect.width <= 0 || v->rect.height <= 0)
         return;
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
@@ -619,6 +698,30 @@ void aroma_video_draw(AromaNode *video_node, size_t window_id) {
                                            v->rect.width, v->rect.height,
                                            0xFF3A3A44, 1, false, 0.0f);
         }
+        if (!v->dbg_placeholder_logged) {
+            // Normal startup state: the tile shows before the first decoded
+            // frame lands. Kept at INFO so it is not mistaken for a failure.
+            v->dbg_placeholder_logged = true;
+            VideoOsd dbg_o;
+            bool dbg_geom = video_osd_geom(v, &dbg_o);
+            LOG_INFO("aroma_video: placeholder until first frame (rect=%d,%d,%dx%d state=%d show=%d visible=%d geom=%d font=%p dens=%.3f err='%s')",
+                     v->rect.x, v->rect.y, v->rect.width, v->rect.height,
+                     (int)v->state, (int)v->show_controls, (int)v->controls_visible,
+                     (int)dbg_geom, (void *)v->font, video_density(), v->error_msg);
+        } else if (!v->dbg_noframe_warned && v->state == AROMA_VIDEO_PLAYING &&
+                   v->dbg_noframe_since_ms > 0 &&
+                   aroma_time_now_ms() - v->dbg_noframe_since_ms >= 3000) {
+            // A playing video that still has no frame after three seconds is
+            // a real problem (decode stalled or file never opened).
+            v->dbg_noframe_warned = true;
+            LOG_WARNING("aroma_video: no frame decoded 3s after play started (rect=%d,%d,%dx%d dens=%.3f err='%s')",
+                        v->rect.x, v->rect.y, v->rect.width, v->rect.height,
+                        video_density(), v->error_msg);
+        }
+        // Still draw transport controls over the placeholder so the OSD
+        // is visible before the first frame arrives (and when a file
+        // fails to open on Android where only a dark tile would show).
+        video_draw_osd(video_node, window_id);
         return;
     }
 
@@ -679,6 +782,9 @@ void aroma_video_destroy_node(AromaNode *node) {
         aroma_timer_cancel(v->timer);
         v->timer = NULL;
     }
+#ifdef __ANDROID__
+    aroma_android_set_keep_screen_on(false);
+#endif
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (v->texture_id != 0 && v->owns_texture && gfx && gfx->unload_image)
         gfx->unload_image(v->texture_id);
@@ -694,12 +800,11 @@ static AromaNode *video_create_common(AromaNode *parent, int x, int y, int width
         LOG_ERROR("aroma_video: invalid parent or size");
         return NULL;
     }
-#ifdef __ANDROID__
-    x = aroma_android_dp_to_px(x);
-    y = aroma_android_dp_to_px(y);
-    width = aroma_android_dp_to_px(width);
-    height = aroma_android_dp_to_px(height);
-#endif
+    // Public geometry is authored in dp; store physical px on Android.
+    x = video_dp(x);
+    y = video_dp(y);
+    width = video_dp(width);
+    height = video_dp(height);
     AromaVideo *v = (AromaVideo *)aroma_widget_alloc(sizeof(AromaVideo));
     if (!v) {
         LOG_ERROR("aroma_video: out of memory");
@@ -712,7 +817,10 @@ static AromaNode *video_create_common(AromaNode *parent, int x, int y, int width
     v->rect.height = height;
     v->looping = false;
     v->muted = true;
-    v->click_to_toggle = true;
+    // Touch platforms expect a tap to only reveal the on-screen controls:
+    // toggling playback stays on the OSD play/pause button unless the app
+    // opts in with aroma_video_set_click_to_toggle(video, true).
+    v->click_to_toggle = false;
     v->playing = false;
     v->state = AROMA_VIDEO_STOPPED;
     v->scale_mode = AROMA_IMAGE_SCALE_FIT;
@@ -797,6 +905,9 @@ void aroma_video_set_source(AromaNode *video_node, const char *video_path) {
     v->playing = false;
     v->finished_notified = false;
     v->error_msg[0] = '\0';
+#ifdef __ANDROID__
+    aroma_android_set_keep_screen_on(false);
+#endif
     video_close_decoder(v);
     if (video_path && video_path[0]) {
         strncpy(v->path, video_path, sizeof(v->path) - 1);
@@ -860,6 +971,13 @@ void aroma_video_play(AromaNode *video_node) {
     v->playing = true;
     v->state = AROMA_VIDEO_PLAYING;
     v->last_tick_ms = aroma_time_now_ms();
+    v->dbg_noframe_since_ms = v->last_tick_ms;
+    v->dbg_noframe_warned = false;
+    aroma_audio_out_pause(false);
+#ifdef __ANDROID__
+    // Never let the screen sleep mid-playback (doze kills the GL surface).
+    aroma_android_set_keep_screen_on(true);
+#endif
     video_touch_controls(video_node);
 }
 
@@ -870,6 +988,10 @@ void aroma_video_pause(AromaNode *video_node) {
     v->playing = false;
     if (v->state == AROMA_VIDEO_PLAYING)
         v->state = AROMA_VIDEO_PAUSED;
+    aroma_audio_out_pause(true);
+#ifdef __ANDROID__
+    aroma_android_set_keep_screen_on(false);
+#endif
     aroma_node_invalidate(video_node);
 }
 
@@ -885,6 +1007,11 @@ void aroma_video_stop(AromaNode *video_node) {
     } else {
         v->position = 0.0;
     }
+    aroma_audio_out_flush();
+    aroma_audio_out_pause(true);
+#ifdef __ANDROID__
+    aroma_android_set_keep_screen_on(false);
+#endif
     if (v->state != AROMA_VIDEO_ERROR)
         v->state = AROMA_VIDEO_STOPPED;
     aroma_node_invalidate(video_node);
@@ -930,7 +1057,11 @@ bool aroma_video_get_looping(AromaNode *video_node) {
 void aroma_video_set_muted(AromaNode *video_node, bool muted) {
     if (!video_node || !video_node->node_widget_ptr)
         return;
-    ((AromaVideo *)video_node->node_widget_ptr)->muted = muted;
+    AromaVideo *v = (AromaVideo *)video_node->node_widget_ptr;
+    v->muted = muted;
+    aroma_audio_out_set_muted(muted);
+    if (v->codec)
+        aroma_video_codec_set_muted(v->codec, muted);
 }
 
 bool aroma_video_get_muted(AromaNode *video_node) {
@@ -1037,6 +1168,15 @@ const char *aroma_video_get_source(AromaNode *video_node) {
     return ((AromaVideo *)video_node->node_widget_ptr)->path;
 }
 
+const char *aroma_video_get_error(AromaNode *video_node) {
+    if (!video_node || !video_node->node_widget_ptr)
+        return NULL;
+    AromaVideo *v = (AromaVideo *)video_node->node_widget_ptr;
+    if (v->state != AROMA_VIDEO_ERROR || !v->error_msg[0])
+        return NULL;
+    return v->error_msg;
+}
+
 static float video_clamp_radius(AromaVideo *v, float radius) {
     if (!v)
         return 0.0f;
@@ -1053,14 +1193,16 @@ void aroma_video_set_corner_radius(AromaNode *video_node, float radius) {
     if (!video_node || !video_node->node_widget_ptr)
         return;
     AromaVideo *v = (AromaVideo *)video_node->node_widget_ptr;
-    v->corner_radius = video_clamp_radius(v, radius);
+    // Radius is authored in dp; renderer consumes physical px.
+    v->corner_radius = video_clamp_radius(v, video_dp_f(radius));
     aroma_node_invalidate(video_node);
 }
 
 float aroma_video_get_corner_radius(AromaNode *video_node) {
     if (!video_node || !video_node->node_widget_ptr)
         return 0.0f;
-    return ((AromaVideo *)video_node->node_widget_ptr)->corner_radius;
+    // Report back in dp so set/get round-trips on Android.
+    return video_px_to_dp_f(((AromaVideo *)video_node->node_widget_ptr)->corner_radius);
 }
 
 void aroma_video_set_scale_mode(AromaNode *video_node, AromaImageScaleMode mode) {
@@ -1082,8 +1224,9 @@ void aroma_video_set_size(AromaNode *video_node, int width, int height) {
     if (!video_node || !video_node->node_widget_ptr || width <= 0 || height <= 0)
         return;
     AromaVideo *v = (AromaVideo *)video_node->node_widget_ptr;
-    v->rect.width = width;
-    v->rect.height = height;
+    // dp in, px stored (matches create path).
+    v->rect.width = video_dp(width);
+    v->rect.height = video_dp(height);
     v->corner_radius = video_clamp_radius(v, v->corner_radius);
     aroma_node_invalidate(video_node);
 }
@@ -1092,8 +1235,8 @@ void aroma_video_set_position(AromaNode *video_node, int x, int y) {
     if (!video_node || !video_node->node_widget_ptr)
         return;
     AromaVideo *v = (AromaVideo *)video_node->node_widget_ptr;
-    v->rect.x = x;
-    v->rect.y = y;
+    v->rect.x = video_dp(x);
+    v->rect.y = video_dp(y);
     aroma_node_invalidate(video_node);
 }
 

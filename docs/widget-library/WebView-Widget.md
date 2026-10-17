@@ -1,6 +1,6 @@
 # WebView Widget
 
-Renders real HTML/CSS pages inside your UI — local strings, local files, or live websites — with links, history, scrolling, and text scaling. No system browser required: pages render with the **vendored litehtml engine** (`vendors/litehtml`) into a GPU texture.
+Renders real HTML/CSS pages inside your UI: local strings, local files, or live websites, with links, history, scrolling, and text scaling. No system browser required: pages render with the **vendored litehtml engine** (`vendors/litehtml`) into a GPU texture.
 
 ## Getting Started
 
@@ -29,7 +29,7 @@ AromaNode *web = aroma_ui_webview(root, "https://example.com", 20, 84, 320, 360)
 - **Text scaling**: accessibility-style zoom via `aroma_webview_set_text_scale`
 - **Offline pages**: `load_html` needs no network at all
 
-Known limitations (v1): no `fetch`/`XHR` in JS, no form POST, no `<video>`/`<audio>` tags, no border-radius clipping, radial/conic gradients fall back to solid fills, `removeEventListener` drops the most recent matching listener, `document.title` is read-only, `<select multiple>` submits all selected values. Pages fetch synchronously — large sites pause the UI briefly while loading.
+Known limitations (v1): no `fetch`/`XHR` in JS, no form POST, no `<video>`/`<audio>` tags, no border-radius clipping, radial/conic gradients fall back to solid fills, `removeEventListener` drops the most recent matching listener, `document.title` is read-only, `<select multiple>` submits all selected values. Pages fetch synchronously, so large sites pause the UI briefly while loading.
 
 ## API Reference
 
@@ -83,8 +83,8 @@ Supported properties: `url` (or `src`), `html` (inline page source), `text_scale
 
 ## How It Works
 
-The page renders in software to an RGBA buffer (FreeType text, bilinear images, CSS boxes), which streams into a single reused GPU texture — scrolling just re-renders the visible slice and updates the texture in place. Remote resources use the same HTTP cache as the image widget; `file://` pages load straight from disk.
+The page renders in software to an RGBA buffer (FreeType text, bilinear images, CSS boxes), which streams into a single reused GPU texture. Scrolling just re-renders the visible slice and updates the texture in place. Remote resources use the same HTTP cache as the image widget; `file://` pages load straight from disk.
 
 ## Example
 
-See `examples/15_webview` — two local pages with history buttons, reload, and text zoom controls.
+See `examples/15_webview`: offline pages (Docs, Styling, JS, Forms) with history and reload buttons.

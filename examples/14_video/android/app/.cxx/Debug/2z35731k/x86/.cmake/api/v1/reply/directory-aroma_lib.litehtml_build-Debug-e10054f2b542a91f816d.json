@@ -1,0 +1,164 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"/home/yassine/Projects/AromaUI/vendors/litehtml/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 217,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 224,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 225,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "libraries",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"aroma_lib/litehtml_build/liblitehtml.a"
+			],
+			"targetId" : "litehtml::@b965840f49d995f43e62",
+			"targetIndex" : 5,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include/litehtml",
+			"paths" : 
+			[
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/background.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/borders.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/codepoint.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_length.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_margins.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_offsets.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_position.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_selector.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_parser.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_tokenizer.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/document.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/document_container.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_anchor.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_base.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_before_after.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_body.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_break.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_cdata.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_comment.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_div.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_font.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_image.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_link.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_para.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_script.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_space.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_style.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_table.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_td.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_text.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_title.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/el_tr.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/element.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/encodings.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/html.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/html_tag.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/html_microsyntaxes.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/iterators.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/media_query.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/os_types.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/style.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/stylesheet.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/table.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/types.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/pixel_type.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/url.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/url_path.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/utf8_strings.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/web_color.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/num_cvt.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_properties.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/line_box.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_item.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_flex.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_image.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_inline.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_table.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_inline_context.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_block_context.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/render_block.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/master_css.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/string_id.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/formatting_context.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/flex_item.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/flex_line.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/gradient.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/font_description.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/scroll_view.h",
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/include/litehtml/css_values.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/litehtml",
+			"paths" : 
+			[
+				"/home/yassine/Projects/AromaUI/vendors/litehtml/cmake/litehtmlConfig.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/litehtml",
+			"exportName" : "litehtmlTargets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "litehtml::@b965840f49d995f43e62",
+					"index" : 5
+				}
+			],
+			"paths" : 
+			[
+				"aroma_lib/litehtml_build/CMakeFiles/Export/lib/cmake/litehtml/litehtmlTargets.cmake"
+			],
+			"type" : "export"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "aroma_lib/litehtml_build",
+		"source" : "/home/yassine/Projects/AromaUI/vendors/litehtml"
+	}
+}

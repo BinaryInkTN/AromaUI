@@ -72,7 +72,7 @@ extern "C"
         unsigned int (*load_image_from_rgba)(unsigned char *data, int width, int height);
         unsigned int (*load_image_from_memory)(
             unsigned char *data,
-            long unsigned int binary_length);
+            size_t binary_length);
 #else
     unsigned int (*load_image_from_rgba)(unsigned char *data, int width, int height);
         unsigned int (*load_image_from_memory)(
@@ -95,6 +95,19 @@ extern "C"
             int *width, int *height);
 
         bool (*update_image_rgba)(
+            unsigned int texture_id,
+            unsigned char *data,
+            int width, int height);
+
+        /* Streaming textures (video frames, webview pages): LINEAR
+         * filtering with no mipmaps, so per-frame uploads skip mipmap
+         * regeneration. May be NULL — callers must fall back to
+         * load/update_image_rgba. Size must match on update. */
+        unsigned int (*load_dynamic_image)(
+            unsigned char *data,
+            int width, int height);
+
+        bool (*update_dynamic_image)(
             unsigned int texture_id,
             unsigned char *data,
             int width, int height);

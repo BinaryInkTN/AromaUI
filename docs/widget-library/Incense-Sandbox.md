@@ -103,7 +103,7 @@ is a single-select pill switcher with `Segment { text }` children;
 
 ## Live Preview Design Rules
 
-Every `incense-demo` preview below follows one strict system so all 23
+Every `incense-demo` preview below follows one strict system so all 24
 screens feel like they ship in the same OS:
 
 - **Headers**: one `large` title at `(20, 16)` plus one `small` subtitle

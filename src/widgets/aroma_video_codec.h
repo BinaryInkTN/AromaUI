@@ -30,6 +30,7 @@ AromaVideoCodec *aroma_video_codec_open_memory(const unsigned char *data,
 void aroma_video_codec_close(AromaVideoCodec *c);
 
 void aroma_video_codec_set_loop(AromaVideoCodec *c, bool loop);
+void aroma_video_codec_set_muted(AromaVideoCodec *c, bool muted);
 
 bool aroma_video_codec_step(AromaVideoCodec *c, double dt_seconds);
 

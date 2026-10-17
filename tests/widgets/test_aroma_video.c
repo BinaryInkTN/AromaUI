@@ -235,6 +235,70 @@ static void test_video_controls(void)
     __node_system_destroy();
 }
 
+static void dispatch_mouse_tap(AromaNode *v, int x, int y)
+{
+    AromaEvent *dn = aroma_event_create(EVENT_TYPE_MOUSE_CLICK, v->node_id);
+    AromaEvent *up = aroma_event_create(EVENT_TYPE_MOUSE_RELEASE, v->node_id);
+    if (!dn || !up)
+    {
+        if (dn)
+            aroma_event_destroy(dn);
+        if (up)
+            aroma_event_destroy(up);
+        return;
+    }
+    dn->data.mouse.x = x;
+    dn->data.mouse.y = y;
+    up->data.mouse.x = x;
+    up->data.mouse.y = y;
+    aroma_event_dispatch(dn);
+    aroma_event_dispatch(up);
+    aroma_event_destroy(dn);
+    aroma_event_destroy(up);
+}
+
+static void test_video_tap_osd_only(void)
+{
+    __node_system_init();
+    aroma_event_system_init();
+    AromaNode *root = make_root();
+    aroma_event_set_root(root);
+
+    AromaNode *v = aroma_video_create(root, NULL, 0, 0, 320, 180);
+    CHECK(v != NULL, "tap test node created");
+    if (v)
+    {
+        aroma_video_set_controls_visible(v, false);
+
+        // Default: a plain tap only reveals the OSD, playback is untouched.
+        aroma_video_play(v);
+        dispatch_mouse_tap(v, 160, 90);
+        CHECK(aroma_video_is_playing(v), "plain tap does not pause");
+        CHECK(aroma_video_get_controls_visible(v), "plain tap shows the OSD");
+
+        aroma_video_pause(v);
+        aroma_video_set_controls_visible(v, false);
+        dispatch_mouse_tap(v, 160, 90);
+        CHECK(!aroma_video_is_playing(v), "plain tap does not resume");
+        CHECK(aroma_video_get_controls_visible(v), "plain tap shows OSD while paused");
+
+        // Opt-in: click_to_toggle restores tap-to-pause.
+        aroma_video_set_click_to_toggle(v, true);
+        aroma_video_play(v);
+        dispatch_mouse_tap(v, 160, 90);
+        CHECK(!aroma_video_is_playing(v), "click_to_toggle pauses on tap");
+        aroma_video_set_click_to_toggle(v, false);
+
+        // The OSD button toggles independently of tap behavior.
+        aroma_video_set_controls_visible(v, true);
+        dispatch_mouse_tap(v, 23, 157);
+        CHECK(aroma_video_is_playing(v), "osd button still plays");
+    }
+
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
 void run_video_tests(int *passed, int *failed)
 {
     s_passed = 0;
@@ -245,6 +309,7 @@ void run_video_tests(int *passed, int *failed)
     test_video_state_machine();
     test_video_callbacks();
     test_video_controls();
+    test_video_tap_osd_only();
     printf("Aroma Video: %d passed, %d failed\n", s_passed, s_failed);
     *passed = s_passed;
     *failed = s_failed;

@@ -29,6 +29,12 @@ android {
         debug {
             debuggable true
         }
+        release {
+            // Debug keys: installable optimized builds for on-device perf
+            // testing. Replace with a real keystore for store releases.
+            signingConfig signingConfigs.debug
+            debuggable false
+        }
     }
 
     externalNativeBuild {
