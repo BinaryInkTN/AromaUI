@@ -882,11 +882,9 @@ class DocGenerator:
             '<div class="kz-wrap"><div class="home-live-demo">'
             '<div class="home-live-demo-copy">'
             "<h2>A full smart home, running live</h2>"
-            "<p>This tablet dashboard is a real AromaUI app compiled to "
-            "WebAssembly and running right here in the page. Switch rooms, "
-            "pause the door camera, drag dimmers, scrub the thermostat, run "
-            "scenes, lock the front door. Every widget is the same C code "
-            "you ship on desktop and Android.</p>"
+            "<p>A real AromaUI app, compiled to WebAssembly and running "
+            "right here. Every widget is the same C code you ship on "
+            "desktop and Android.</p>"
             '<p class="home-live-demo-links">'
             '<a href="sandbox.html?theme=Material%20Blue%20dark&amp;example=smarthome_tablet" '
             'target="_blank" rel="noopener">Open in sandbox &rarr;</a></p>'
@@ -899,8 +897,8 @@ class DocGenerator:
         )
         return f'''
         <div class="welcome-page">
-            {kz_banner}
             {home_live_demo}
+            {kz_banner}
             <div class="kz-duo">
             {kz_test}
             {kf_sec}
