@@ -26,10 +26,11 @@ OUT="$ROOT/docs/incense_sandbox.js"
 COPY_DIR="$ROOT/docs/widget-library/wasm/incense_sandbox"
 FT_BUILD="${FT_BUILD:-/tmp/opencode/ft-build}"
 OBJDIR="${OBJDIR:-$ROOT/tools/sandbox/build/obj}"
-# Real MPEG-1 clip preloaded for the curated `video` docs demo, decoded in
-# the browser by the widget's built-in pl_mpeg backend (Sintel excerpt,
-# CC-BY 3.0 — see examples/14_video/assets/ATTRIBUTION.md).
+# Real MPEG-1 clips preloaded for the curated `video` + `smarthome_tablet`
+# docs demos, decoded in the browser by the widget's built-in pl_mpeg
+# backend (CC-BY 3.0 — see examples/14_video/assets/ATTRIBUTION.md).
 VIDEO_ASSET="$ROOT/examples/14_video/assets/sample_sintel.mpg"
+DOOR_CAM_ASSET="$ROOT/examples/14_video/assets/sample_door_cam.mpg"
 
 if [ ! -f "$FT_BUILD/libfreetype.a" ]; then
   echo "error: $FT_BUILD/libfreetype.a missing; build freetype first (see header)" >&2
@@ -104,12 +105,13 @@ emcc "${OBJS[@]}" \
   -O2 \
   "$FT_BUILD/libfreetype.a" \
   --preload-file "$VIDEO_ASSET@/assets/sample_sintel.mpg" \
+  --preload-file "$DOOR_CAM_ASSET@/assets/sample_door_cam.mpg" \
   -sUSE_WEBGL2=1 \
   -sFETCH=1 \
   -sASYNCIFY=1 \
   -sALLOW_MEMORY_GROWTH=1 \
   -sENVIRONMENT=web,worker,node \
-  -sEXPORTED_FUNCTIONS=_main,_aroma_sandbox_init,_aroma_sandbox_reload,_aroma_sandbox_has_error,_aroma_sandbox_get_last_error,_aroma_sandbox_set_theme,_aroma_sandbox_get_width,_aroma_sandbox_get_height \
+  -sEXPORTED_FUNCTIONS=_main,_aroma_sandbox_init,_aroma_sandbox_reload,_aroma_sandbox_has_error,_aroma_sandbox_get_last_error,_aroma_sandbox_set_theme,_aroma_sandbox_set_theme_preset,_aroma_sandbox_get_width,_aroma_sandbox_get_height \
   -sEXPORTED_RUNTIME_METHODS=ccall \
   -o "$OUT"
 

@@ -11,3 +11,17 @@
 
 Under CC-BY 3.0 you may share and adapt the material for any purpose,
 provided appropriate credit is given as above.
+
+`sample_door_cam.mpg` (MPEG-1 video, 9 s, 448x252) is a trimmed, 16:9
+re-framed and downscaled excerpt of a real **doorbell/porch camera
+recording** of a visitor approaching a front door. It stands in for a
+"live camera feed" in the curated smart-home docs demo.
+
+- Recording: *Front Porch Theft 2012 11 17 101117.ogv* (2012), by Trevor Fiatal —
+  https://commons.wikimedia.org/wiki/File:Front_Porch_Theft_2012_11_17_101117.ogv
+- License: Creative Commons Attribution 3.0 Unported (CC-BY 3.0) —
+  https://creativecommons.org/licenses/by/3.0/
+- Excerpt: seconds 1.5–10.5, centre-cropped to 16:9, downscaled, denoised.
+
+Under CC-BY 3.0 you may share and adapt the material for any purpose,
+provided appropriate credit is given as above.

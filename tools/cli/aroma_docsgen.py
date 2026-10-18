@@ -878,9 +878,29 @@ class DocGenerator:
         )
 
 
+        home_live_demo = (
+            '<div class="kz-wrap"><div class="home-live-demo">'
+            '<div class="home-live-demo-copy">'
+            "<h2>A full smart home, running live</h2>"
+            "<p>This tablet dashboard is a real AromaUI app compiled to "
+            "WebAssembly and running right here in the page. Switch rooms, "
+            "pause the door camera, drag dimmers, scrub the thermostat, run "
+            "scenes, lock the front door. Every widget is the same C code "
+            "you ship on desktop and Android.</p>"
+            '<p class="home-live-demo-links">'
+            '<a href="sandbox.html?theme=Material%20Blue%20dark&amp;example=smarthome_tablet" '
+            'target="_blank" rel="noopener">Open in sandbox &rarr;</a></p>'
+            "</div>"
+            '<div class="demo-tablet">'
+            '<iframe src="sandbox.html?embed=1&amp;bare=1&amp;theme=Material%20Blue%20dark&amp;example=smarthome_tablet" '
+            'title="Live smart home dashboard demo"></iframe>'
+            "</div>"
+            "</div></div>"
+        )
         return f'''
         <div class="welcome-page">
             {kz_banner}
+            {home_live_demo}
             <div class="kz-duo">
             {kz_test}
             {kf_sec}
@@ -2044,6 +2064,19 @@ body.has-announce .announce-bar{{display:flex}}
 .demo-head a{{font-size:13px;color:var(--ms-link);text-decoration:none;white-space:nowrap;font-weight:600;}}
 .demo-head a:hover{{text-decoration:underline}}
 .demo-frame iframe{{width:100%;height:660px;border:none;display:block;background:var(--ms-surface);}}
+.home-live-demo{{margin:0 0 8px;}}
+.home-live-demo-copy{{max-width:720px;margin:0 0 20px;}}
+.home-live-demo-copy h2{{font-size:28px;line-height:1.2;margin:0 0 10px;}}
+.home-live-demo-copy p{{font-size:15px;line-height:1.6;color:var(--ms-secondary);margin:0;}}
+.home-live-demo-links{{margin:14px 0 0 !important;font-size:14px !important;}}
+.home-live-demo-links a{{color:var(--ms-link);font-weight:600;text-decoration:none;}}
+.home-live-demo-links a:hover{{text-decoration:underline;}}
+.home-live-demo .demo-tablet{{margin:10px auto 0;max-width:1180px;}}
+.home-live-demo .demo-tablet iframe{{display:block;width:100%;aspect-ratio:1280/800;border:0;border-radius:22px;overflow:hidden;background:transparent;box-shadow:0 32px 64px -24px rgba(15,23,42,.34),0 12px 28px -14px rgba(15,23,42,.22),0 0 0 1px rgba(15,23,42,.06);}}
+[data-theme="dark"] .home-live-demo .demo-tablet iframe{{box-shadow:0 32px 70px -26px rgba(0,0,0,.82),0 10px 24px -12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);}}
+@media(min-width:1320px){{
+  .home-live-demo .demo-tablet{{max-width:none;margin-left:-60px;margin-right:-60px;}}
+}}
 @media(max-width:760px){{
   .hero-inner{{padding:56px 20px 48px;}}
   .home-title{{font-size:32px;}}
