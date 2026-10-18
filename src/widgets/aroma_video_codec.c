@@ -141,6 +141,10 @@ struct AromaVideoCodec {
     int a_rh;
     int a_arate;
     int a_ach;
+    // Output buffer checked out of MediaCodec but not yet emitted because
+    // its PTS is ahead of the video clock (A/V pacing; see android_drain_audio).
+    int a_hold_idx;
+    AMediaCodecBufferInfo a_hold_info;
 #endif
 };
 
@@ -1356,6 +1360,8 @@ static AromaVideoCodec *codec_open_android_file(const char *path,
     c->a_ach = a_ch;
     c->a_clock = 0.0;
     c->a_base = 0.0;
+    c->a_hold_idx = -1;
+    memset(&c->a_hold_info, 0, sizeof(c->a_hold_info));
     c->duration = dur_us > 0 ? (double)dur_us / 1000000.0 : 0.0;
     c->fps = (fps > 0 && fps < 240) ? (double)fps : 0.0;
     c->backend = "mediacodec";
@@ -1459,44 +1465,83 @@ static void android_drain_audio(AromaVideoCodec *c, double target)
 {
     if (!c->adec_mc || !c->aex_a)
         return;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         AMediaCodecBufferInfo info;
-        ssize_t out = AMediaCodec_dequeueOutputBuffer(c->adec_mc, &info, 0);
-        if (out == AMEDIACODEC_INFO_TRY_AGAIN_LATER)
-            return;
-        if (out == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED) {
-            AMediaFormat *f = AMediaCodec_getOutputFormat(c->adec_mc);
-            if (f) {
+        ssize_t out;
+        bool eos;
+        if (c->a_hold_idx >= 0) {
+            // A buffer was dequeued last step but its PTS was still ahead of
+            // the video clock. MediaCodec never re-returns a dequeued buffer,
+            // so it is parked here until the clock reaches it.
+            out = (ssize_t)c->a_hold_idx;
+            info = c->a_hold_info;
+            eos = (info.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) != 0;
+            if (!eos && (double)info.presentationTimeUs / 1e6 > target + 1e-3)
+                return;
+            c->a_hold_idx = -1;
+        } else {
+            out = AMediaCodec_dequeueOutputBuffer(c->adec_mc, &info, 0);
+            if (out == AMEDIACODEC_INFO_TRY_AGAIN_LATER)
+                return;
+            if (out == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED) {
+                AMediaFormat *f = AMediaCodec_getOutputFormat(c->adec_mc);
                 int32_t sr = 0, ch = 0;
-                AMediaFormat_getInt32(f, "sample-rate", &sr);
-                AMediaFormat_getInt32(f, "channel-count", &ch);
+                if (f) {
+                    AMediaFormat_getInt32(f, "sample-rate", &sr);
+                    AMediaFormat_getInt32(f, "channel-count", &ch);
+                    AMediaFormat_delete(f);
+                }
                 if (sr > 0)
                     c->a_arate = (int)sr;
                 if (ch == 1 || ch == 2)
                     c->a_ach = (int)ch;
-                AMediaFormat_delete(f);
+                // The sink may already be open at a different format than the
+                // decoder ultimately reports; reopen it so the stream plays at
+                // the right rate/channel count instead of the assumed one.
+                int rate = c->a_arate > 0 ? c->a_arate : 44100;
+                int och = (c->a_ach == 1 || c->a_ach == 2) ? c->a_ach : 2;
+                if (c->audio_opened)
+                    aroma_audio_out_close();
+                if (aroma_audio_out_open(rate, och)) {
+                    LOG_INFO("aroma_video: android audio %dHz ch%d", rate, och);
+                    c->audio_opened = true;
+                } else {
+                    c->audio_opened = false;
+                }
+                continue;
             }
-            continue;
+            if (out == AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED)
+                continue;
+            if (out < 0)
+                return;
+            eos = (info.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) != 0;
+            // Pace audio to the video clock: park any buffer whose PTS is
+            // still ahead of the picture. Without this the decoder eagerly
+            // fills the whole ring buffer (~2s) ahead of the video clock, so
+            // the sink audibly trails the picture and pause/seek leave the
+            // two out of step.
+            if (!eos && (double)info.presentationTimeUs / 1e6 > target + 1e-3) {
+                c->a_hold_idx = (int)out;
+                c->a_hold_info = info;
+                return;
+            }
         }
-        if (out == AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED)
-            continue;
-        if (out < 0)
-            return;
         size_t sz = 0;
         uint8_t *buf = AMediaCodec_getOutputBuffer(c->adec_mc, (size_t)out, &sz);
-        bool eos = (info.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) != 0;
         if (buf && info.size > 0) {
             int rate = c->a_arate > 0 ? c->a_arate : 44100;
             int ch = (c->a_ach == 1 || c->a_ach == 2) ? c->a_ach : 2;
             if (!c->audio_opened) {
-                LOG_INFO("aroma_video: android audio %dHz ch%d", rate, ch);
-                if (aroma_audio_out_open(rate, ch))
+                if (aroma_audio_out_open(rate, ch)) {
+                    LOG_INFO("aroma_video: android audio %dHz ch%d", rate, ch);
                     c->audio_opened = true;
+                }
             }
-            size_t frames = (size_t)info.size / ((size_t)ch * sizeof(int16_t));
-            if (frames > 0)
-                codec_audio_emit(c, (const int16_t *)(buf + info.offset), frames);
-            (void)target;
+            if (c->audio_opened) {
+                size_t frames = (size_t)info.size / ((size_t)ch * sizeof(int16_t));
+                if (frames > 0)
+                    codec_audio_emit(c, (const int16_t *)(buf + info.offset), frames);
+            }
         }
         AMediaCodec_releaseOutputBuffer(c->adec_mc, (size_t)out, false);
         if (eos) {
@@ -1586,11 +1631,26 @@ static bool codec_step_android(AromaVideoCodec *c, double dt)
                     AMediaCodec_flush(c->adec_mc);
                 }
                 aroma_audio_out_flush();
+                c->a_hold_idx = -1;
                 c->a_v_eos = false;
                 c->a_a_eos = false;
                 c->a_clock = 0.0;
                 target = dt;
                 continue;
+            }
+            // Video is done. A/V pacing keeps audio emission gated to the
+            // video clock, so flush whatever audio the decoder still holds
+            // (past the last frame, EOS buffers) into the sink with a far-
+            // future target; otherwise the tail of the track would be cut
+            // off when stepping stops at `ended`. The sink drains the ring
+            // in realtime after we return, so the tail plays out. Bounded:
+            // feed is a no-op once the extractor is spent and each drain
+            // call returns immediately once the output queue is empty.
+            if (c->aex_a && c->adec_mc) {
+                for (int k = 0; k < 128; k++) {
+                    android_feed_audio(c);
+                    android_drain_audio(c, 1e9);
+                }
             }
             c->ended = true;
             c->a_clock = target;
@@ -1617,6 +1677,7 @@ static bool codec_seek_android(AromaVideoCodec *c, double t)
         AMediaCodec_flush(c->adec_mc);
     }
     aroma_audio_out_flush();
+    c->a_hold_idx = -1;
     c->a_v_eos = false;
     c->a_a_eos = false;
     c->ended = false;
@@ -1643,6 +1704,7 @@ static void codec_rewind_android(AromaVideoCodec *c)
         AMediaCodec_flush(c->adec_mc);
     }
     aroma_audio_out_flush();
+    c->a_hold_idx = -1;
     c->a_v_eos = false;
     c->a_a_eos = false;
     c->ended = false;

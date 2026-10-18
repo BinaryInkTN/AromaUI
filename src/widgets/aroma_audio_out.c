@@ -403,24 +403,6 @@ void aroma_audio_out_write(const int16_t *pcm, size_t frames)
 {
     if (!pcm || frames == 0)
         return;
-    // TEMP DEBUG: report PCM energy so an all-silent feed is visible on device.
-    {
-        static int s_dbg_writes = 0;
-        if (s_dbg_writes < 3 || (s_dbg_writes % 200) == 0) {
-            int peak = 0;
-            size_t n = frames * (size_t)(g_core.ch > 0 ? g_core.ch : 2);
-            for (size_t i = 0; i < n; i++) {
-                int v = pcm[i];
-                if (v < 0)
-                    v = -v;
-                if (v > peak)
-                    peak = v;
-            }
-            LOG_INFO("aroma_video: pcm write#%d frames=%zu peak=%d", s_dbg_writes,
-                     frames, peak);
-        }
-        s_dbg_writes++;
-    }
     core_lock_init();
     pthread_mutex_lock(&g_core.lock);
     if (!g_core.open || g_core.paused || g_muted || !g_core.thread_on) {
