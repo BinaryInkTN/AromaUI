@@ -24,6 +24,9 @@ add_library(aroma
     core/aroma_incense_loader.c
     core/aroma_http.c
 
+    # Vendored pbPlots (MIT, C99): rasterises the Chart widget's series.
+    ../vendors/pbplots/C/pbPlots.c
+
     backends/graphics/aroma_graphics_gles3.c
     backends/graphics/utils/helpers_gles3.c
     backends/graphics/utils/aroma_gles3_text.c
@@ -66,6 +69,7 @@ add_library(aroma
     widgets/aroma_table.c
     widgets/aroma_map.c
     widgets/aroma_gauge.c
+    widgets/aroma_chart.c
     widgets/aroma_3d_viewer.c
     widgets/aroma_calendar.c
     widgets/aroma_datepicker.c
@@ -82,6 +86,7 @@ target_include_directories(aroma
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/glps/internal"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/sqlite3"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../vendors/pbplots/C"
     PRIVATE "$<TARGET_PROPERTY:freetype,INTERFACE_INCLUDE_DIRECTORIES>"
 )
 

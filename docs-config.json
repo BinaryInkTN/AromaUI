@@ -255,7 +255,7 @@
 
         {
             "title": "Display & Feedback",
-            "description": "Labels, images, cards, progress bars, snackbars, and dialogs.",
+            "description": "Labels, images, cards, charts, progress bars, snackbars, and dialogs.",
             "icon": "monitor",
             "color": "#7D5260",
             "category": "Widget Library",

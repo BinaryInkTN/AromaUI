@@ -26,6 +26,9 @@
 #include "widgets/aroma_menu.h"
 #include "aroma_node.h"
 #include "aroma_slab_alloc.h"
+#include "aroma_timer.h"
+#include "aroma_animation.h"
+#include "aroma_time.h"
 
 #include <stdio.h>
 
@@ -126,25 +129,60 @@ static void test_tooltip(void)
 static void test_snackbar(void)
 {
     __node_system_init();
+    aroma_timer_init();
     AromaNode *root = make_root();
 
     CHECK(aroma_snackbar_create(NULL, "msg", 3000) == NULL,
           "snackbar rejects NULL parent");
 
-    AromaNode *bar = aroma_snackbar_create(root, "Item deleted", 3000);
+    AromaNode *bar = aroma_snackbar_create(root, "Item deleted", 20);
     CHECK(bar != NULL, "snackbar created");
     if (bar)
     {
         aroma_snackbar_set_action(bar, "UNDO", on_dialog_action, NULL);
-        aroma_snackbar_show(bar);
         aroma_snackbar_set_font(bar, NULL);
+        aroma_snackbar_set_action(bar, NULL, NULL, NULL);
+        aroma_snackbar_set_action(bar, "UNDO", on_dialog_action, NULL);
+        aroma_snackbar_set_colors(bar, 0x11223344, 0);
+        aroma_snackbar_set_corner_radius(bar, 8.0f);
+        CHECK(aroma_snackbar_setup_events(bar, NULL, NULL),
+              "snackbar taps wired");
+        CHECK(aroma_snackbar_setup_events(bar, NULL, NULL),
+              "snackbar tap wiring is idempotent");
+
+        aroma_snackbar_show(bar);
+        CHECK(!aroma_node_is_hidden(bar), "snackbar visible after show");
+        CHECK(aroma_animation_is_running_on(bar), "show is animated");
+        aroma_animation_tick(aroma_time_now_ms() + 10000);
+        CHECK(!aroma_animation_is_running_on(bar), "show animation completes");
+        CHECK(!aroma_node_is_hidden(bar), "snackbar visible once shown");
+
+        aroma_timer_tick(0);
+        aroma_timer_tick(1000);
+        CHECK(!aroma_node_is_hidden(bar), "auto dismiss animates out");
+        CHECK(aroma_animation_is_running_on(bar), "hide is animated");
+        aroma_animation_tick(aroma_time_now_ms() + 10000);
+        CHECK(aroma_node_is_hidden(bar), "snackbar auto hides after duration");
+
+        aroma_snackbar_show(bar);
+        aroma_animation_tick(aroma_time_now_ms() + 10000);
+        CHECK(!aroma_node_is_hidden(bar), "snackbar can be shown again");
+        aroma_snackbar_dismiss(bar);
+        CHECK(!aroma_node_is_hidden(bar), "dismiss animates before hiding");
+        aroma_animation_tick(aroma_time_now_ms() + 10000);
+        CHECK(aroma_node_is_hidden(bar), "dismiss hides snackbar");
 
         aroma_snackbar_destroy(bar);
     }
     aroma_snackbar_set_action(NULL, "x", NULL, NULL);
+    aroma_snackbar_set_colors(NULL, 1, 1);
+    aroma_snackbar_set_corner_radius(NULL, 1.0f);
     aroma_snackbar_show(NULL);
+    aroma_snackbar_dismiss(NULL);
     aroma_snackbar_destroy(NULL);
 
+    aroma_animation_manager_shutdown();
+    aroma_timer_shutdown();
     __destroy_node(root);
     __node_system_destroy();
 }

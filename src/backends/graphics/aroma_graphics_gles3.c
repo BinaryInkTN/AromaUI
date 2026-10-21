@@ -54,6 +54,8 @@ typedef struct
     size_t window_id;
     int width;
     int height;
+    int backing_w;
+    int backing_h;
     mat4x4 projection;
     bool valid;
 } CachedFrameState;
@@ -97,6 +99,7 @@ typedef struct
     GLES3TextRenderer renderer;
     uint32_t last_used_frame;
     uint32_t font_id;
+    unsigned raster_generation;
 } CachedFontRenderer;
 
 typedef struct
@@ -148,6 +151,16 @@ typedef struct
 } AromaGLES3Context;
 
 static AromaGLES3Context ctx = {0};
+
+/* When set, the per-frame clear uses alpha 0 instead of 1 so the framebuffer
+ * stays transparent wherever the app draws nothing. Opt-in (frameless embeds);
+ * every other app clears opaque. */
+static bool s_transparent_background = false;
+
+void aroma_gles3_set_transparent_background(bool transparent)
+{
+    s_transparent_background = transparent;
+}
 
 static int find_font_in_cache(size_t window_id, AromaFont *font)
 {
@@ -223,7 +236,20 @@ static GLES3TextRenderer *get_or_load_font_renderer(size_t window_id, AromaFont 
     int idx = find_font_in_cache(window_id, font);
     if (idx != INVALID_FONT_INDEX)
     {
-        return &ctx.windows[window_id].font_cache[idx].renderer;
+        CachedFontRenderer *hit = &ctx.windows[window_id].font_cache[idx];
+        /* The face was re-rasterized since this renderer was built (the
+         * canvas changed size and the global raster density moved); the
+         * packed atlas is stale, so rebuild it at the new size. */
+        unsigned gen = aroma_font_raster_generation();
+        if (hit->raster_generation != gen)
+        {
+            FT_Face face = (FT_Face)aroma_font_get_face(font);
+            if (face)
+                gles3_text_renderer_load_font(&hit->renderer, face);
+            hit->renderer.pixel_scale = aroma_font_design_scale(font);
+            hit->raster_generation = gen;
+        }
+        return &hit->renderer;
     }
 
     WindowResources *win = &ctx.windows[window_id];
@@ -251,6 +277,8 @@ static GLES3TextRenderer *get_or_load_font_renderer(size_t window_id, AromaFont 
     }
 
     gles3_text_renderer_load_font(&cache->renderer, face);
+    cache->renderer.pixel_scale = aroma_font_design_scale(font);
+    cache->raster_generation = aroma_font_raster_generation();
 
     cache->font = font;
     cache->last_used_frame = ctx.current_frame;
@@ -462,17 +490,9 @@ int setup_separate_window_resources(size_t window_id)
 
 static bool ensure_frame_state(size_t window_id)
 {
-    if (ctx.frame_cache.valid && ctx.frame_cache.window_id == window_id)
-        return true;
-
     AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
     if (!platform)
         return false;
-
-    if (platform->make_context_current)
-    {
-        platform->make_context_current(window_id);
-    }
 
     int w = 0, h = 0;
     if (platform->get_window_size)
@@ -480,14 +500,41 @@ static bool ensure_frame_state(size_t window_id)
     if (w <= 0 || h <= 0)
         return false;
 
+    /* Backing store (device px). On desktop it equals the logical size;
+     * web backends render a fixed design space scaled to the displayed
+     * CSS box times devicePixelRatio. */
+    int bw = w, bh = h;
+    if (platform->get_backing_size)
+        platform->get_backing_size(window_id, &bw, &bh);
+    if (bw <= 0 || bh <= 0)
+    {
+        bw = w;
+        bh = h;
+    }
+
+    if (ctx.frame_cache.valid && ctx.frame_cache.window_id == window_id &&
+        ctx.frame_cache.width == w && ctx.frame_cache.height == h &&
+        ctx.frame_cache.backing_w == bw && ctx.frame_cache.backing_h == bh)
+        return true;
+
+    if (platform->make_context_current)
+    {
+        platform->make_context_current(window_id);
+    }
+
     ctx.frame_cache.window_id = window_id;
     ctx.frame_cache.width = w;
     ctx.frame_cache.height = h;
+    ctx.frame_cache.backing_w = bw;
+    ctx.frame_cache.backing_h = bh;
+    /* Projection maps the logical (design) space onto the viewport; the
+     * viewport covers the whole backing store so the GPU scales all
+     * vector geometry crisply. */
     mat4x4_ortho(ctx.frame_cache.projection,
                  0.0f, (float)w, (float)h, 0.0f, -1.0f, 1.0f);
     ctx.frame_cache.valid = true;
 
-    glViewport(0, 0, w, h);
+    glViewport(0, 0, bw, bh);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     return true;
@@ -653,11 +700,59 @@ static inline void fill_quad_vertices(Vertex *v, float x0, float y0, float x1, f
     }
 }
 
+/* Device pixels per design pixel for the window being drawn.  Desktop
+ * backends report no separate backing store, so the ratio is 1 and the
+ * helpers below leave geometry untouched; the WebAssembly backend fits the
+ * markup's design space into the displayed CSS box, so its ratio is < 1 and
+ * one design pixel covers less than one device pixel. */
+static void device_pixel_scale(size_t window_id, float *scale_x, float *scale_y)
+{
+    float sx = 1.0f, sy = 1.0f;
+
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform && platform->get_window_size)
+    {
+        int w = 0, h = 0;
+        platform->get_window_size(window_id, &w, &h);
+        if (w > 0 && h > 0)
+        {
+            int bw = w, bh = h;
+            if (platform->get_backing_size)
+                platform->get_backing_size(window_id, &bw, &bh);
+            if (bw > 0)
+                sx = (float)bw / (float)w;
+            if (bh > 0)
+                sy = (float)bh / (float)h;
+        }
+    }
+
+    if (scale_x) *scale_x = sx;
+    if (scale_y) *scale_y = sy;
+}
+
+/* Hairline preservation on downscaled canvases.
+ *
+ * With the design space scaled below 1:1, a one-design-pixel line is thinner
+ * than a device pixel and can fall entirely between the sample points the
+ * rasteriser tests: the whole line drops out of the canvas even though the
+ * same scene at 1:1 (native windows) draws it.  Grow sub-device-pixel
+ * extents to exactly one device pixel around their original centre so
+ * hairlines keep their weight and never vanish.  At scale >= 1 the extent is
+ * returned untouched, so native rendering is bit-identical. */
+static float widen_hairline(float extent, float scale)
+{
+    if (scale <= 0.0f || scale >= 1.0f)
+        return extent;
+
+    float min_extent = 1.0f / scale;
+    return (extent < min_extent) ? min_extent : extent;
+}
+
 static void batch_add_rect(size_t window_id,
-                           int x, int y, int w, int h,
+                           float x, float y, float w, float h,
                            uint32_t color)
 {
-    if (w <= 0 || h <= 0)
+    if (w <= 0.0f || h <= 0.0f)
         return;
 
     if (ctx.batch.count > 0 &&
@@ -675,8 +770,8 @@ static void batch_add_rect(size_t window_id,
     uint8_t alpha_byte = (uint8_t)((color >> 24) & 0xFFu);
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
-    float x0 = (float)x, y0 = (float)y;
-    float x1 = x0 + (float)w, y1 = y0 + (float)h;
+    float x0 = x, y0 = y;
+    float x1 = x0 + w, y1 = y0 + h;
 
     Vertex *v = &ctx.batch.vertices[ctx.batch.count];
     fill_quad_vertices(v, x0, y0, x1, y1, rgb[0], rgb[1], rgb[2], alpha);
@@ -741,9 +836,24 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height,
     if (width <= 0 || height <= 0 || window_id >= MAX_WINDOWS)
         return;
 
+    float fx = (float)x, fy = (float)y;
+    float fw = (float)width, fh = (float)height;
+
+    /* Only spans thinner than two design pixels can fall below one device
+     * pixel; skip the platform query for everything else. */
+    if (width < 2 || height < 2)
+    {
+        float sx = 1.0f, sy = 1.0f;
+        device_pixel_scale(window_id, &sx, &sy);
+        fw = widen_hairline(fw, sx);
+        fh = widen_hairline(fh, sy);
+        fx -= (fw - (float)width) * 0.5f;
+        fy -= (fh - (float)height) * 0.5f;
+    }
+
     if (!isRounded)
     {
-        batch_add_rect(window_id, x, y, width, height, color);
+        batch_add_rect(window_id, fx, fy, fw, fh, color);
         return;
     }
 
@@ -754,11 +864,11 @@ void fill_rectangle(size_t window_id, int x, int y, int width, int height,
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
     batch_try_append(window_id, BATCH_MODE_ROUNDED_RECT,
-                     (float)width, (float)height, cornerRadius, 1.0f,
+                     fw, fh, cornerRadius, 1.0f,
                      1, 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
 
-    float x0 = (float)x, y0 = (float)y;
-    float x1 = x0 + (float)width, y1 = y0 + (float)height;
+    float x0 = fx, y0 = fy;
+    float x1 = fx + fw, y1 = fy + fh;
 
     Vertex *v = &ctx.batch.vertices[ctx.batch.count];
     fill_quad_vertices(v, x0, y0, x1, y1, color_rgb[0], color_rgb[1], color_rgb[2], alpha);
@@ -818,7 +928,10 @@ static void clear(size_t window_id, uint32_t color)
 
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
-    glClearColor(color_rgb[0], color_rgb[1], color_rgb[2], 1.0f);
+    /* Frameless embeds clear to alpha 0 so the host page shows through;
+     * every other caller keeps a fully opaque clear. */
+    glClearColor(color_rgb[0], color_rgb[1], color_rgb[2],
+                 s_transparent_background ? 0.0f : 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     GLenum err = glGetError();
     if (err != GL_NO_ERROR)
@@ -879,6 +992,14 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     if (border_width <= 0 || width <= 0 || height <= 0 || window_id >= MAX_WINDOWS)
         return;
 
+    float border = (float)border_width;
+    if (border_width < 2)
+    {
+        float sx = 1.0f, sy = 1.0f;
+        device_pixel_scale(window_id, &sx, &sy);
+        border = widen_hairline(border, (sx < sy) ? sx : sy);
+    }
+
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
 
@@ -886,7 +1007,7 @@ static void draw_hollow_rectangle(size_t window_id, int x, int y, int width, int
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
     batch_try_append(window_id, BATCH_MODE_HOLLOW_RECT,
-                     (float)width, (float)height, cornerRadius, (float)border_width,
+                     (float)width, (float)height, cornerRadius, border,
                      isRounded ? 1 : 0, 1, 0, 0.0f, 0.0f, 1.0f, 1.0f);
 
     float x0 = (float)x, y0 = (float)y;
@@ -910,6 +1031,14 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
     if (length <= 0.0f)
         return;
 
+    float line_thickness = thickness;
+    if (thickness < 2.0f)
+    {
+        float sx = 1.0f, sy = 1.0f;
+        device_pixel_scale(window_id, &sx, &sy);
+        line_thickness = widen_hairline(thickness, (sx < sy) ? sx : sy);
+    }
+
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
 
@@ -917,8 +1046,8 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
 
-    float half_len = length * 0.5f + thickness * 0.5f;
-    float half_thick = thickness * 0.5f;
+    float half_len = length * 0.5f + line_thickness * 0.5f;
+    float half_thick = line_thickness * 0.5f;
 
     float mid_x = ((float)x0 + (float)x1) * 0.5f;
     float mid_y = ((float)y0 + (float)y1) * 0.5f;
@@ -927,7 +1056,7 @@ static void draw_line(size_t window_id, int x0, int y0, int x1, int y1,
     float sin_a = sinf(angle);
 
     batch_try_append(window_id, BATCH_MODE_LINE,
-                     length + thickness, thickness, 0.0f, 0.0f,
+                     length + line_thickness, line_thickness, 0.0f, 0.0f,
                      round_cap ? 1 : 0, 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
 
 
@@ -974,6 +1103,14 @@ static void draw_arc(size_t window_id, int cx, int cy, int radius,
     if (radius <= 0 || thickness <= 0 || window_id >= MAX_WINDOWS)
         return;
 
+    float arc_thickness = (float)thickness;
+    if (thickness < 2)
+    {
+        float sx = 1.0f, sy = 1.0f;
+        device_pixel_scale(window_id, &sx, &sy);
+        arc_thickness = widen_hairline(arc_thickness, (sx < sy) ? sx : sy);
+    }
+
     vec3 color_rgb;
     convert_hex_to_rgb(&color_rgb, color);
 
@@ -981,11 +1118,11 @@ static void draw_arc(size_t window_id, int cx, int cy, int radius,
     float alpha = (alpha_byte == 0u) ? 1.0f : (float)alpha_byte / 255.0f;
 
 
-    float outer_extent = (float)radius + (float)thickness * 0.5f;
+    float outer_extent = (float)radius + arc_thickness * 0.5f;
     float box_size = outer_extent * 2.0f;
 
     batch_try_append(window_id, BATCH_MODE_ARC,
-                     box_size, box_size, (float)radius, (float)thickness,
+                     box_size, box_size, (float)radius, arc_thickness,
                      0, 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
 
 
@@ -1506,6 +1643,20 @@ static void gles3_apply_scissor_top(void)
     int y = ctx.scissor_stack[ctx.scissor_depth - 1].y;
     int w = ctx.scissor_stack[ctx.scissor_depth - 1].w;
     int h = ctx.scissor_stack[ctx.scissor_depth - 1].h;
+
+    /* Scissor rects are kept in logical (design) units to match the
+     * projection; glScissor wants device px, so scale by the
+     * backing/logical ratio. On desktop both are equal (scale 1). */
+    float sx = 1.0f, sy = 1.0f;
+    if (ctx.frame_cache.width > 0 && ctx.frame_cache.backing_w > 0)
+        sx = (float)ctx.frame_cache.backing_w / (float)ctx.frame_cache.width;
+    if (ctx.frame_cache.height > 0 && ctx.frame_cache.backing_h > 0)
+        sy = (float)ctx.frame_cache.backing_h / (float)ctx.frame_cache.height;
+    x = (int)(x * sx + 0.5f);
+    y = (int)(y * sy + 0.5f);
+    w = (int)(w * sx + 0.5f);
+    h = (int)(h * sy + 0.5f);
+
     if (w <= 0 || h <= 0)
     {
 
@@ -1603,8 +1754,14 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     if (!win->resources_initialized || win->shape_vao == 0)
         return;
 
+    /* The backdrop snapshot copies device px from the framebuffer, so it
+     * is sized in backing px; the quad positions stay in logical units
+     * (the projection scales them). */
     int fb_w = ctx.frame_cache.width;
     int fb_h = ctx.frame_cache.height;
+    int snap_w = ctx.frame_cache.backing_w > 0 ? ctx.frame_cache.backing_w : fb_w;
+    int snap_h = ctx.frame_cache.backing_h > 0 ? ctx.frame_cache.backing_h : fb_h;
+    float dev_scale = (fb_w > 0) ? (float)snap_w / (float)fb_w : 1.0f;
 
     int cx = x < 0 ? 0 : x;
     int cy = y < 0 ? 0 : y;
@@ -1629,18 +1786,18 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        if (fb_w != ctx.snap_w || fb_h != ctx.snap_h)
+        if (snap_w != ctx.snap_w || snap_h != ctx.snap_h)
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_w, fb_h, 0,
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, snap_w, snap_h, 0,
                          GL_RGBA, GL_UNSIGNED_BYTE, NULL);
             if (glGetError() != GL_NO_ERROR)
                 return;
-            ctx.snap_w = fb_w;
-            ctx.snap_h = fb_h;
+            ctx.snap_w = snap_w;
+            ctx.snap_h = snap_h;
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, fb_w, fb_h);
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, snap_w, snap_h);
         if (glGetError() != GL_NO_ERROR)
         {
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -1705,9 +1862,11 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, ctx.snap_tex);
     glUniform1i(ctx.shape_uniforms.tex, 0);
-    glUniform1f(ctx.shape_uniforms.blurRadius, radius);
+    /* The radius is in logical px; the blur samples in snapshot texels
+     * (device px), so scale it to keep the look density-independent. */
+    glUniform1f(ctx.shape_uniforms.blurRadius, radius * dev_scale);
     glUniform2f(ctx.shape_uniforms.blurTexel,
-                1.0f / (float)fb_w, 1.0f / (float)fb_h);
+                1.0f / (float)snap_w, 1.0f / (float)snap_h);
     glUniform1f(ctx.shape_uniforms.blurLod, 1.0f);
     glUniform4f(ctx.shape_uniforms.uvRect, 0.0f, 0.0f, 1.0f, 1.0f);
     if (!blend_enabled)

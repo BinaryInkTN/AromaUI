@@ -904,6 +904,14 @@ void aroma_ui_set_use_surfaceless(bool use_surfaceless)
     }
 }
 
+/* Frameless embeds: clear the framebuffer to alpha 0 so the host page shows
+ * through wherever the app draws nothing. Off by default, so normal apps keep
+ * an opaque window background. */
+void aroma_ui_set_transparent_background(bool transparent)
+{
+    aroma_graphics_set_transparent_background(transparent);
+}
+
 void aroma_ui_read_pixels(AromaWindow *window, void *buffer, int width, int height)
 {
     if (!window || !buffer || width <= 0 || height <= 0)

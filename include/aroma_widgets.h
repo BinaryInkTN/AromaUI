@@ -32,6 +32,7 @@
 #include "widgets/aroma_debug_overlay.h"
 #include "widgets/aroma_image.h"
 #include "widgets/aroma_canvas.h"
+#include "widgets/aroma_chart.h"
 #include "widgets/aroma_map.h"
 #include "widgets/aroma_gif.h"
 #include "widgets/aroma_video.h"

@@ -880,18 +880,13 @@ class DocGenerator:
 
         home_live_demo = (
             '<div class="kz-wrap"><div class="home-live-demo">'
-            '<div class="home-live-demo-copy">'
-            "<h2>A full smart home, running live</h2>"
-            "<p>A real AromaUI app, compiled to WebAssembly and running "
-            "right here. Every widget is the same C code you ship on "
-            "desktop and Android.</p>"
-            '<p class="home-live-demo-links">'
-            '<a href="sandbox.html?theme=Material%20Blue%20dark&amp;example=smarthome_tablet" '
-            'target="_blank" rel="noopener">Open in sandbox &rarr;</a></p>'
-            "</div>"
             '<div class="demo-tablet">'
-            '<iframe src="sandbox.html?embed=1&amp;bare=1&amp;theme=Material%20Blue%20dark&amp;example=smarthome_tablet" '
-            'title="Live smart home dashboard demo"></iframe>'
+            '<div class="device-camera"></div>'
+            '<div class="device-screen">'
+            '<iframe src="sandbox.html?embed=1&amp;bare=1&amp;theme=Aroma%20Violet%20dark&amp;example=dashboard_tablet" '
+            'title="AromaUI live demo - an AromaUI app running in your browser"></iframe>'
+            "</div>"
+            '<div class="device-home"></div>'
             "</div>"
             "</div></div>"
         )
@@ -2063,15 +2058,40 @@ body.has-announce .announce-bar{{display:flex}}
 .demo-head a:hover{{text-decoration:underline}}
 .demo-frame iframe{{width:100%;height:660px;border:none;display:block;background:var(--ms-surface);}}
 .home-live-demo{{margin:0 0 8px;}}
-.home-live-demo-copy{{max-width:720px;margin:0 0 20px;}}
-.home-live-demo-copy h2{{font-size:28px;line-height:1.2;margin:0 0 10px;}}
-.home-live-demo-copy p{{font-size:15px;line-height:1.6;color:var(--ms-secondary);margin:0;}}
-.home-live-demo-links{{margin:14px 0 0 !important;font-size:14px !important;}}
-.home-live-demo-links a{{color:var(--ms-link);font-weight:600;text-decoration:none;}}
-.home-live-demo-links a:hover{{text-decoration:underline;}}
-.home-live-demo .demo-tablet{{margin:10px auto 0;max-width:1180px;}}
-.home-live-demo .demo-tablet iframe{{display:block;width:100%;aspect-ratio:1280/800;border:0;border-radius:22px;overflow:hidden;background:transparent;box-shadow:0 32px 64px -24px rgba(15,23,42,.34),0 12px 28px -14px rgba(15,23,42,.22),0 0 0 1px rgba(15,23,42,.06);}}
-[data-theme="dark"] .home-live-demo .demo-tablet iframe{{box-shadow:0 32px 70px -26px rgba(0,0,0,.82),0 10px 24px -12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);}}
+.home-live-demo .demo-tablet{{
+  margin:0 auto;max-width:1180px;position:relative;
+  /* Tablet body: an Apple-style unibody — soft dark bezel, deep radius,
+     and a diffuse shadow instead of a hard ring. */
+  background:#1C1C1E;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:44px;
+  padding:30px;
+  box-shadow:0 48px 100px -40px rgba(0,0,0,.75),0 18px 44px -24px rgba(0,0,0,.5);
+}}
+/* Front camera in the top bezel band. */
+.home-live-demo .device-camera{{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:9px;height:9px;border-radius:50%;
+  background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+}}
+.home-live-demo .device-camera::after{{
+  content:"";position:absolute;inset:2.5px;border-radius:50%;
+  background:#723CEA;box-shadow:0 0 6px rgba(114,60,234,.85);
+}}
+/* Home indicator in the bottom bezel band. */
+.home-live-demo .device-home{{
+  position:absolute;bottom:13px;left:50%;transform:translateX(-50%);
+  width:110px;height:5px;border-radius:999px;background:rgba(255,255,255,.22);
+}}
+.home-live-demo .device-screen{{
+  position:relative;overflow:hidden;border-radius:22px;
+  background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  aspect-ratio:1280/800;
+}}
+.home-live-demo .device-screen iframe{{
+  position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:transparent;
+}}
+[data-theme="dark"] .home-live-demo .device-screen iframe{{background:transparent;}}
 @media(min-width:1320px){{
   .home-live-demo .demo-tablet{{max-width:none;margin-left:-60px;margin-right:-60px;}}
 }}

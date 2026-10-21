@@ -125,7 +125,7 @@
 
   <script>
     window.Module = window.Module || {};
-    window.Module.locateFile = function(path) { return path + "?v=8"; };
+    window.Module.locateFile = function(path) { return path + "?v=57"; };
     Module.onRuntimeInitialized = function() {
       var c = Module.canvas;
       if (c) {
@@ -159,7 +159,7 @@
     }
     window.addEventListener('resize', resizeCanvas);
   </script>
-  <script src="incense_sandbox.js?v=8"></script>
+  <script src="incense_sandbox.js?v=58"></script>
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.min.js"></script>
   <script>
     window.setStatus = function(type, msg) {
@@ -269,8 +269,8 @@
         'Textbox': ['x','y','width','height','placeholder','on_change','on_submit','z_index'],
         'ProgressBar': ['x','y','width','height','value','type','z_index'],
         'Divider': ['x','y','length','orientation','z_index'],
-        'Card': ['x','y','width','height','type','z_index'],
-        'IconButton': ['x','y','width','height','icon','variant','on_click','z_index'],
+        'Card': ['x','y','width','height','type','color','border_color','blur_radius','corner_radius','interactive','hover_lift','press_lift','z_index'],
+        'IconButton': ['x','y','size','icon_size','icon','variant','color','icon_color','on_click','z_index'],
         'Icon': ['x','y','size','text','src','color','z_index'],
         'Image': ['x','y','width','height','src','z_index'],
         'Dropdown': ['x','y','width','height','on_change','z_index'],
@@ -282,7 +282,7 @@
         'Tooltip': ['x','y','text','position','z_index'],
         'GIF': ['x','y','width','height','src','autoplay','z_index'],
         'Loading': ['x','y','radius','thickness','color','z_index'],
-        'Gauge': ['x','y','width','height','value','min','max','track_color','fill_color','start_angle','end_angle','track_thickness','fill_thickness','needle','needle_color','needle_thickness','ticks','hub','z_index'],
+        'Gauge': ['x','y','width','height','value','min','max','track_color','fill_color','start_angle','end_angle','track_thickness','fill_thickness','ring_inset','needle','needle_color','needle_thickness','ticks','hub','z_index'],
         'Canvas': ['x','y','width','height','z_index'],
         'DebugOverlay': ['x','y','width','height','visible','z_index'],
         'Map': ['x','y','width','height','lat','lon','zoom','attribution','z_index'],

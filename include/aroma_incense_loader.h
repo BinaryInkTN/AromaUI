@@ -78,6 +78,17 @@ void IncenseClearCallbacks(void);
 
 void IncenseRegisterFont(const char *name, AromaFont *font);
 
+/* Real font per pixel size.
+   Scaling one face up or down (the Label `style` scales) blurs its glyphs, so
+   hosts should rasterize a face for every pixel size the UI uses and register
+   it here.  Markup then asks for that size explicitly with `size: <px>` on
+   Label/Button nodes (or `icon_size: <px>` for icons) and the loader swaps in
+   the matching face at scale 1.0.  When a size is registered, Label styles are
+   also mapped to it (small -> 16 px, medium -> 18 px), so existing markup gets
+   crisp text without any change. */
+void IncenseRegisterFontSize(int size_px, AromaFont *font);
+void IncenseRegisterIconFontSize(int size_px, AromaFont *font);
+
 void IncenseSetVerboseErrors(bool verbose);
 const IncenseError *IncenseGetErrors(int *count);
 int  IncenseGetErrorCount(void);

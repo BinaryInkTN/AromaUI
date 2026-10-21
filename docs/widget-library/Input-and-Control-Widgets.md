@@ -56,6 +56,25 @@ AromaNode *ib = aroma_ui_iconbutton(root, AROMA_ICON_SETTINGS, 300, 20, 48,
                                     ICON_BUTTON_STANDARD, on_icon_click, NULL, font);
 ```
 
+`aroma_iconbutton_set_colors(node, bg_color, icon_color)` overrides the
+variant's theme colours. In markup, pass `color` (background) and
+`icon_color` — handy for a toolbar whose buttons should melt into a
+custom-coloured bar instead of sitting on a `surface` chip:
+
+```aroma
+IconButton {
+    x: 1008
+    y: 76
+    size: 48
+    icon_size: 20
+    icon: "AROMA_ICON_NOTIFICATIONS"
+    variant: standard
+    color: #0B1220
+    icon_color: #94A3B8
+    on_click: "on_notifications"
+}
+```
+
 ## Checkbox
 
 ```c

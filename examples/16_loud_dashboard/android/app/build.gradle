@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.louddashboard'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.louddashboard"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        sourceSets {
+            main {
+                assets.srcDirs("../../ui", "../../assets", "src/main/assets")
+            }
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            // Debug keys: installable optimized builds for on-device perf
+            // testing. Replace with a real keystore for store releases.
+            signingConfig signingConfigs.debug
+            debuggable false
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+}
+

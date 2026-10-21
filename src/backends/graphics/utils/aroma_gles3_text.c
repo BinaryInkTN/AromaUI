@@ -88,6 +88,7 @@ int gles3_text_renderer_init(GLES3TextRenderer* renderer) {
     }
 
     memset(renderer, 0, sizeof(GLES3TextRenderer));
+    renderer->pixel_scale = 1.0f;
 
     int max_size = __get_max_texture_size();
     renderer->atlas_width = ATLAS_SIZE;
@@ -464,6 +465,12 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
         return;
     }
 
+    /* Glyphs are rasterized at design_px * pixel_scale; convert the raster
+     * space metrics to design units so callers keep working in design px. */
+    scale *= renderer->pixel_scale;
+    if (scale <= 0.0f)
+        return;
+
     if (renderer->vao == 0 || renderer->vbo == 0) {
         LOG_ERROR("gles3_text_render_text: Invalid VAO or VBO");
         return;
@@ -643,6 +650,9 @@ float gles3_text_measure_text(const GLES3TextRenderer* renderer, const char* tex
     }
 
     GLES3TextRenderer* mutable_renderer = (GLES3TextRenderer*)renderer;
+
+    /* Raster space -> design units, matching render_text. */
+    scale *= renderer->pixel_scale;
 
     float width = 0.0f;
     uint32_t prev_codepoint = 0;

@@ -116,6 +116,7 @@ void* aroma_font_get_face(AromaFont* font)
 #include FT_FREETYPE_H
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include <pthread.h>
 
 typedef struct {
@@ -131,7 +132,9 @@ typedef struct {
 #define GLYPH_CACHE_SIZE 128
 
 struct AromaFont {
-    int size_px;
+    int size_px;      /* nominal size requested by the caller (design px) */
+    int raster_px;    /* actual FreeType pixel size (size_px * raster scale) */
+    struct AromaFont *next; /* next in the global live-font registry */
     int line_height;
     int ascender;
     int descender;
@@ -143,8 +146,93 @@ struct AromaFont {
 
 static FT_Library ft_library = NULL;
 
+/* Global raster scale: device px per design px for every live font.
+ *
+ * The web sandbox lays the UI out in fixed design units (the markup
+ * Window size) but renders into a backing store sized to the actual
+ * displayed CSS box times devicePixelRatio. To keep glyphs crisp the
+ * faces are re-rasterized at round(design_px * scale); the metric
+ * getters below convert back to design units so layout math (which
+ * works in design px) is unchanged.
+ */
+static float s_raster_scale = 1.0f;
+static unsigned s_raster_generation = 1;
+static AromaFont *s_live_fonts = NULL;
 
 static pthread_mutex_t s_ft_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* Recompute design-unit vertical metrics from the face's current size. */
+static void font_refresh_metrics(AromaFont *font)
+{
+    float inv = (font->raster_px > 0)
+        ? (float)font->size_px / (float)font->raster_px : 1.0f;
+    FT_Size_Metrics m = font->face->size->metrics;
+    font->line_height = (int)lroundf((m.height / 64.0f) * inv);
+    font->ascender    = (int)lroundf((m.ascender / 64.0f) * inv);
+    font->descender   = (int)lroundf((m.descender / 64.0f) * inv);
+}
+
+/* Common tail of the create paths; caller holds no lock. */
+static void font_register(AromaFont *font, int size_px)
+{
+    int raster = (int)lroundf((float)size_px * s_raster_scale);
+    if (raster < 1) raster = 1;
+
+    aroma_font_lock();
+    FT_Set_Pixel_Sizes(font->face, 0, raster);
+    font->size_px = size_px;
+    font->raster_px = raster;
+    font_refresh_metrics(font);
+    font->next = s_live_fonts;
+    s_live_fonts = font;
+    aroma_font_unlock();
+    font->glyph_count = 0;
+}
+
+void aroma_font_set_raster_scale(float scale)
+{
+    if (scale <= 0.0f)
+        return;
+    if (fabsf(scale - s_raster_scale) < 0.0005f)
+        return; /* nothing to do (also avoids a generation bump) */
+    s_raster_scale = scale;
+
+    bool any_changed = false;
+    aroma_font_lock();
+    for (AromaFont *f = s_live_fonts; f; f = f->next) {
+        int raster = (int)lroundf((float)f->size_px * scale);
+        if (raster < 1) raster = 1;
+        if (raster == f->raster_px)
+            continue;
+        FT_Set_Pixel_Sizes(f->face, 0, raster);
+        f->raster_px = raster;
+        font_refresh_metrics(f);
+        f->glyph_count = 0; /* per-glyph metric cache is at the old size */
+        any_changed = true;
+    }
+    aroma_font_unlock();
+
+    /* Bump the generation so cached glyph atlases get rebuilt. */
+    if (any_changed)
+        s_raster_generation++;
+}
+
+unsigned aroma_font_raster_generation(void)
+{
+    return s_raster_generation;
+}
+
+float aroma_font_raster_scale(void)
+{
+    return s_raster_scale;
+}
+
+float aroma_font_design_scale(AromaFont *font)
+{
+    if (!font || font->raster_px <= 0)
+        return 1.0f;
+    return (float)font->size_px / (float)font->raster_px;
+}
 
 void aroma_font_lock(void)
 {
@@ -189,15 +277,7 @@ AromaFont* aroma_font_create(const char* font_path, int size_px) {
         return NULL;
     }
 
-    aroma_font_lock();
-    FT_Set_Pixel_Sizes(font->face, 0, size_px);
-
-    font->size_px = size_px;
-    font->line_height = font->face->size->metrics.height >> 6;
-    font->ascender = font->face->size->metrics.ascender >> 6;
-    font->descender = font->face->size->metrics.descender >> 6;
-    aroma_font_unlock();
-    font->glyph_count = 0;
+    font_register(font, size_px);
 
     return font;
 }
@@ -230,15 +310,7 @@ AromaFont* aroma_font_create_from_memory(
 
     LOG_INFO("FT_New_Memory_Face succeeded: face=%p", (void*)font->face);
 
-    aroma_font_lock();
-    FT_Set_Pixel_Sizes(font->face, 0, size_px);
-
-    font->size_px = size_px;
-    font->line_height = font->face->size->metrics.height >> 6;
-    font->ascender = font->face->size->metrics.ascender >> 6;
-    font->descender = font->face->size->metrics.descender >> 6;
-    aroma_font_unlock();
-    font->glyph_count = 0;
+    font_register(font, size_px);
 
     return font;
 }
@@ -252,6 +324,14 @@ int aroma_font_get_px_size(AromaFont* font) {
 void aroma_font_destroy(AromaFont* font) {
     if (!font) return;
     aroma_font_lock();
+    AromaFont **pp = &s_live_fonts;
+    while (*pp) {
+        if (*pp == font) {
+            *pp = font->next;
+            break;
+        }
+        pp = &(*pp)->next;
+    }
     if (font->face) FT_Done_Face(font->face);
     aroma_font_unlock();
     free(font);
@@ -301,7 +381,7 @@ int aroma_font_get_line_width(AromaFont* font, const char* text) {
     if (!font || !text || !font->face) return 0;
 
     aroma_font_lock();
-    int width = 0;
+    float width = 0;
     FT_GlyphSlot slot = font->face->glyph;
 
 
@@ -316,7 +396,11 @@ int aroma_font_get_line_width(AromaFont* font, const char* text) {
     }
     aroma_font_unlock();
 
-    return width;
+    /* Advances are in raster px; convert back to design units. */
+    if (font->raster_px > 0 && font->raster_px != font->size_px)
+        width *= (float)font->size_px / (float)font->raster_px;
+
+    return (int)lroundf(width);
 }
 
 int aroma_font_get_line_height(AromaFont* font) {

@@ -31,3 +31,6 @@
 	url = https://github.com/bellard/quickjs.git
 	branch = master
 	shallow = true
+[submodule "vendors/pbplots"]
+	path = vendors/pbplots
+	url = https://github.com/InductiveComputerScience/pbPlots.git

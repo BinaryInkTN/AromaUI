@@ -1619,7 +1619,7 @@ static bool textbox_keyboard_handler(AromaEvent *event, void *user_data)
     {
         uint32_t key = event->data.key.key_code;
 
-        if (key == 8 || key == 127 || key == 0xFF08 || key == 0x0008 || key == 0x007F)
+        if (key == 8 || key == 0xFF08 || key == 0x0008)
         {
             textbox_backspace(tb);
             aroma_node_invalidate(event->target_node);

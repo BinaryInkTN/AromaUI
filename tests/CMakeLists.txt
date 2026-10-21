@@ -34,6 +34,7 @@ add_executable(aroma_tests
     widgets/test_aroma_display.c
     widgets/test_aroma_forms.c
     widgets/test_aroma_canvas.c
+    widgets/test_aroma_chart.c
     widgets/test_aroma_video.c
     widgets/test_aroma_webview.c
     widgets/test_aroma_table.c

@@ -39,6 +39,8 @@ extern "C"
     void aroma_gauge_set_labels_numeric(AromaNode *node, bool enable, int start_val, int step, int count,
                                         AromaFont *major_font, uint32_t color, int radius_offset);
 
+    void aroma_gauge_set_ring_inset(AromaNode *node, int inset);
+
     void aroma_gauge_set_hub(AromaNode *node, bool enable, int radius, uint32_t color, int thickness);
 
     void aroma_gauge_set_inner_ring(AromaNode *node, bool enable, int radius_offset, uint32_t color, int thickness);

@@ -293,6 +293,7 @@ extern "C"
 
     extern void aroma_ui_set_offscreen_mode(bool offscreen);
     extern void aroma_ui_set_use_surfaceless(bool use_surfaceless);
+    extern void aroma_ui_set_transparent_background(bool transparent);
 
 
     extern void aroma_ui_read_pixels(AromaWindow *window, void* buffer, int width, int height);
@@ -344,6 +345,8 @@ extern "C"
     }
 
     void aroma_graphics_clear(size_t window_id, uint32_t color);
+
+    void aroma_graphics_set_transparent_background(bool transparent);
 
     void aroma_graphics_render_text(size_t window_id, AromaFont *font, const char *text,
                                     int x, int y, uint32_t color, float scale);

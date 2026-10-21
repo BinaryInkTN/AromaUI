@@ -51,6 +51,9 @@ typedef struct {
     int descender;
     int line_height;
     bool has_kerning;
+    /* design px per raster px (1.0 except on web, where faces are
+     * rasterized at design_px * density to match the backing store). */
+    float pixel_scale;
 } GLES3TextRenderer;
 
 int gles3_text_renderer_init(GLES3TextRenderer* renderer);

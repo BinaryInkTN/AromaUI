@@ -29,9 +29,17 @@ typedef struct   AromaCard
     bool use_theme_colors;
     void (*click_callback)(void *user_data);
     void *user_data;
+
+    /* Interactive state. Cards only track hover/press when a tint was set
+       via aroma_card_set_states(); otherwise they stay purely decorative. */
+    bool interactive;
+    float hover_lift;
+    float press_lift;
+    bool is_hovered;
+    bool is_pressed;
 } AromaCard;
 
-#define CARD_REGISTRY_MAX 128
+#define CARD_REGISTRY_MAX 512
 static struct
 {
     uint64_t id;
@@ -75,6 +83,54 @@ static void card_registry_remove(uint64_t node_id)
 #define AROMA_CARD_CORNER_RADIUS_DP 12.0f
 #define AROMA_CARD_SHADOW_OFFSET_X_DP 1
 #define AROMA_CARD_SHADOW_OFFSET_Y_DP 2
+
+/* Tracks hover/press for interactive cards and repaints on every change.
+   Purely decorative cards never register, so there is no cost for them. */
+static bool __card_handle_event(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    if (!event || !event->target_node)
+        return false;
+    AromaCard *card = card_registry_get(event->target_node->node_id);
+    if (!card || !card->interactive)
+        return false;
+
+    switch (event->event_type)
+    {
+    case EVENT_TYPE_MOUSE_ENTER:
+        card->is_hovered = true;
+        aroma_node_invalidate(event->target_node);
+        aroma_ui_request_redraw(NULL);
+        return true;
+
+    case EVENT_TYPE_MOUSE_EXIT:
+        card->is_hovered = false;
+        card->is_pressed = false;
+        aroma_node_invalidate(event->target_node);
+        aroma_ui_request_redraw(NULL);
+        return false;
+
+    case EVENT_TYPE_MOUSE_CLICK:
+    case EVENT_TYPE_TOUCH_DOWN:
+        card->is_pressed = true;
+        aroma_node_invalidate(event->target_node);
+        aroma_ui_request_redraw(NULL);
+        return true;
+
+    case EVENT_TYPE_MOUSE_RELEASE:
+    case EVENT_TYPE_TOUCH_UP:
+        card->is_pressed = false;
+        aroma_node_invalidate(event->target_node);
+        aroma_ui_request_redraw(NULL);
+        if (card->click_callback)
+            card->click_callback(card->user_data);
+        return true;
+
+    default:
+        break;
+    }
+    return false;
+}
 
 #ifdef __ANDROID__
 static inline int card_dp(int dp) { return aroma_android_dp_to_px(dp); }
@@ -144,10 +200,19 @@ void aroma_card_draw(AromaNode *card_node, size_t window_id)
                            card->blur_radius, card->border_radius);
     }
 
+    uint32_t fill = card->bg_color;
+    if (card->interactive)
+    {
+        if (card->is_pressed)
+            fill = aroma_color_adjust(fill, card->press_lift);
+        else if (card->is_hovered)
+            fill = aroma_color_adjust(fill, card->hover_lift);
+    }
+
     gfx->fill_rectangle(window_id,
                         card->rect.x, card->rect.y,
                         card->rect.width, card->rect.height,
-                        card->bg_color, true, card->border_radius);
+                        fill, true, card->border_radius);
 
     if (card->type == CARD_TYPE_OUTLINED || card->type == CARD_TYPE_GLASS)
     {
@@ -203,6 +268,11 @@ AromaNode *aroma_card_create(AromaNode *parent, int x, int y, int width, int hei
     card->use_theme_colors = true;
     card->click_callback = NULL;
     card->user_data = NULL;
+    card->interactive = false;
+    card->hover_lift = 0.06f;
+    card->press_lift = -0.10f;
+    card->is_hovered = false;
+    card->is_pressed = false;
 
     card_registry_add(node->node_id, card);
 
@@ -224,6 +294,17 @@ void aroma_card_set_colors(AromaNode *card_node, uint32_t bg_color, uint32_t bor
     aroma_node_invalidate(card_node);
 }
 
+void aroma_card_set_corner_radius(AromaNode *card_node, float radius_px)
+{
+    if (!card_node)
+        return;
+    AromaCard *card = card_registry_get(card_node->node_id);
+    if (!card)
+        return;
+    card->border_radius = radius_px < 0.0f ? 0.0f : radius_px;
+    aroma_node_invalidate(card_node);
+}
+
 void aroma_card_set_click_callback(AromaNode *card_node, void (*callback)(void *user_data), void *user_data)
 {
     if (!card_node)
@@ -233,6 +314,36 @@ void aroma_card_set_click_callback(AromaNode *card_node, void (*callback)(void *
         return;
     card->click_callback = callback;
     card->user_data = user_data;
+}
+
+void aroma_card_set_states(AromaNode *card_node, float hover_lift, float press_lift)
+{
+    if (!card_node)
+        return;
+    AromaCard *card = card_registry_get(card_node->node_id);
+    if (!card)
+        return;
+
+    card->hover_lift = hover_lift;
+    card->press_lift = press_lift;
+
+    if (card->interactive)
+        return;
+    card->interactive = true;
+
+    /* Subscribe once, the first time a card is made interactive. */
+    aroma_event_subscribe(card_node->node_id, EVENT_TYPE_MOUSE_ENTER,
+                          __card_handle_event, NULL, 35);
+    aroma_event_subscribe(card_node->node_id, EVENT_TYPE_MOUSE_EXIT,
+                          __card_handle_event, NULL, 35);
+    aroma_event_subscribe(card_node->node_id, EVENT_TYPE_MOUSE_CLICK,
+                          __card_handle_event, NULL, 70);
+    aroma_event_subscribe(card_node->node_id, EVENT_TYPE_MOUSE_RELEASE,
+                          __card_handle_event, NULL, 70);
+    aroma_event_subscribe(card_node->node_id, EVENT_TYPE_TOUCH_DOWN,
+                          __card_handle_event, NULL, 70);
+    aroma_event_subscribe(card_node->node_id, EVENT_TYPE_TOUCH_UP,
+                          __card_handle_event, NULL, 70);
 }
 
 void aroma_card_set_backdrop_blur(AromaNode *card_node, float radius_px)

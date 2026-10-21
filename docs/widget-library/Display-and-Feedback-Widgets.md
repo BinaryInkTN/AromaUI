@@ -1,5 +1,5 @@
 
-Visual and informational widgets: labels, images, cards, progress indicators, snackbars, and dialogs.
+Visual and informational widgets: labels, images, cards, charts, progress indicators, snackbars, and dialogs.
 
 ## Labels and Icons
 
@@ -197,6 +197,63 @@ a scrolling feed.
 - Backdrop blur needs graphics-backend support (GLES3 implements it; query
   with `aroma_graphics_supports_backdrop_blur()`). Unsupported backends
   skip the blur and still draw the tint, so glass degrades gracefully.
+
+### Corner Radius
+
+Cards accept an optional `corner_radius` to override the default corner
+rounding, which is useful for building device frames and large panels:
+
+```aroma
+Card {
+    x: 32
+    y: 24
+    width: 1216
+    height: 752
+    type: outlined
+    color: #0A0F1A
+    corner_radius: 40
+}
+```
+
+```c
+aroma_card_set_corner_radius(frame, 40.0f); /* dp; values below 0 clamp to 0 */
+```
+
+Omitting the prop leaves the theme's default card radius.
+
+### Hover and Press Feedback
+
+Cards are decorative by default. Opt in to interaction to make a card
+lighten while the pointer is over it and darken while it is held, which is
+what a tappable panel or a selectable row should do:
+
+```aroma
+Card {
+    x: 24
+    y: 96
+    width: 320
+    height: 180
+    type: filled
+    color: #1C1C1E
+    corner_radius: 22
+    interactive: true
+}
+```
+
+```c
+aroma_card_set_states(row, 0.06f, -0.10f); /* hover: +6%, press: -10% */
+```
+
+- `interactive: true` uses the default factors (+6% on hover, -10% on
+  press). Set `hover_lift` and `press_lift` to tune them; both are relative
+  adjustments applied per channel by `aroma_color_adjust`.
+- Cards without `interactive` never subscribe to pointer events, so
+  decorative panels cost nothing.
+- A card only receives hover while its own surface is the topmost hit.
+  Content drawn over a card (a chart, a label covering the whole face)
+  takes the pointer first, so expect the effect on the exposed parts.
+
+<div align="center"><img src="__ASSETS__/divider.svg" width="100%"></div>
 - The blur runs in draw order between background and foreground, and honors
   the card's rounded corners.
 - One backdrop snapshot is shared per frame: stacked glass surfaces all
@@ -204,6 +261,22 @@ a scrolling feed.
   adds tint without re-blurring and darkening the glass below. The snapshot
   is captured on first use each frame, so blur is correct from the very
   first frame, and is sampled mipmapped for a wide, smooth falloff.
+
+Cards also accept explicit colours, which is how dashboards mix tinted
+stat tiles and dark panels without changing the app theme. A lone `color`
+paints both fill and border; add `border_color` for an outlined panel:
+
+```aroma
+Card {
+    x: 20
+    y: 20
+    width: 220
+    height: 96
+    type: outlined
+    color: #0F1A2A
+    border_color: #1E2B40
+}
+```
 
 ## Progress Indicators
 
@@ -215,6 +288,86 @@ aroma_gauge_set_value(gauge, 0.6f);
 
 - ProgressBar: linear, 0.0 to 1.0 value
 - Gauge: circular arc with needle
+- Tint them per instance with `track_color` + `indicator_color`
+  (ProgressBar) or `track_color` + `fill_color` (Gauge); anything left
+  unset follows the theme.
+- Gauge angles (`start_angle`, `end_angle`) are in **radians**, matching
+  the Canvas arc: `-1.5708` is 12 o'clock and `4.71239` is 9 o'clock, so
+  `start_angle: -1.5708, end_angle: 4.71239` is a full ring.
+- `ring_inset` (default `50`) is the gap between the widget edge and the
+  arc. Set `ring_inset: 0` to push the ring out to the widget bounds —
+  which is what you want for donuts and multi-segment rings, where
+  several Gauges sharing one rect each draw a slice:
+
+```aroma
+Gauge {
+    x: 0
+    y: 0
+    width: 140
+    height: 140
+    value: 1
+    start_angle: -1.5708
+    end_angle: 4.71239
+    track_thickness: 14
+    fill_thickness: 0
+    ring_inset: 0
+    track_color: #1E293B
+}
+```
+
+## Charts
+
+A line chart over a series of readings, with the axes labelled by the
+widget itself:
+
+```c
+AromaNode *chart = aroma_ui_chart(root, 24, 24, 280, 120);
+aroma_chart_set_series_csv(chart, NULL, "0.6,0.9,1.4,1.2,0.8,0.7,1.1");
+aroma_chart_set_range(chart, true, 0, 1, false, 0, 3);
+aroma_chart_set_tick_labels(chart, "6a,9a,12p,3p", "0,1,2,3");
+aroma_chart_set_line_thickness(chart, 2.0f);
+```
+
+```aroma
+Chart {
+    x: 24
+    y: 24
+    width: 280
+    height: 120
+    size: 12
+    data: "0.6,0.9,1.4,1.2,0.8,0.7,1.1,1.0,0.9,1.3,1.9,2.4,2.8"
+    x_labels: "6a,9a,12p,3p,6p"
+    y_labels: "0,1,2,3"
+    y_min: 0
+    y_max: 3
+    pad_left: 22
+    pad_bottom: 20
+}
+```
+
+The series is rasterised by vendored [pbPlots](https://github.com/InductiveComputerScience/pbPlots)
+(MIT, C99, no dependencies) at device density, then keyed: pbPlots' white
+canvas and its black chrome are cut to transparent, so only the line is
+uploaded and whatever sits behind the chart shows through.
+
+- Axis furniture — gridlines, frame, tick labels — is drawn by AromaUI
+  itself, so it stays crisp at any density and follows the theme. Leave
+  `pad_left`, `pad_top`, `pad_right`, `pad_bottom` (defaults 34/8/10/22)
+  room for the labels you ask for.
+- Anything you do not set follows the theme, and is re-read on every
+  draw: `line_color` defaults to the theme primary, `grid_color` to a
+  blend of border and surface, `frame_color` to the border and
+  `text_color` to the secondary text colour. A theme switch repaints the
+  chart along with the rest of the UI.
+- Each axis fits the data with a little headroom unless you give an
+  explicit range (`aroma_chart_set_range`, or `x_min`/`x_max`/`y_min`/
+  `y_max`). Use one when labels must line up with values: ticks are
+  spread evenly across the axis, so `0,1,2,3` over `y_min: 0 y_max: 3`
+  lands exactly on the gridlines.
+- Tick labels are comma-separated free text (`"Mon,Tue"`, `"6a,9a"`),
+  unlike `data` and `x_data`/`y_data` which are numbers.
+- Use `aroma_chart_set_series` when the x values are not evenly spaced,
+  and `aroma_chart_set_furniture` to drop the grid or the frame.
 
 ## Snackbar
 

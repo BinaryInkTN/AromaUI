@@ -26,11 +26,16 @@ OUT="$ROOT/docs/incense_sandbox.js"
 COPY_DIR="$ROOT/docs/widget-library/wasm/incense_sandbox"
 FT_BUILD="${FT_BUILD:-/tmp/opencode/ft-build}"
 OBJDIR="${OBJDIR:-$ROOT/tools/sandbox/build/obj}"
-# Real MPEG-1 clips preloaded for the curated `video` + `smarthome_tablet`
-# docs demos, decoded in the browser by the widget's built-in pl_mpeg
-# backend (CC-BY 3.0 — see examples/14_video/assets/ATTRIBUTION.md).
+# Real MPEG-1 clip preloaded for the curated `video` docs demo, decoded in the
+# browser by the widget's built-in pl_mpeg backend (CC-BY 3.0 — see
+# examples/14_video/assets/ATTRIBUTION.md).
 VIDEO_ASSET="$ROOT/examples/14_video/assets/sample_sintel.mpg"
-DOOR_CAM_ASSET="$ROOT/examples/14_video/assets/sample_door_cam.mpg"
+# Generated assets for the curated dashboard demo (see the matching
+# tools/sandbox/assets/make_*.py scripts to regenerate).
+WELCOME_ASSET="$ROOT/tools/sandbox/assets/welcome.png"
+AVATAR_ASSET="$ROOT/tools/sandbox/assets/avatar.png"
+ANGELA_ASSET="$ROOT/tools/sandbox/assets/angela.png"
+LOUD_LOGO_ASSET="$ROOT/tools/sandbox/assets/loud_logo.png"
 
 if [ ! -f "$FT_BUILD/libfreetype.a" ]; then
   echo "error: $FT_BUILD/libfreetype.a missing; build freetype first (see header)" >&2
@@ -49,12 +54,15 @@ CFLAGS=(
   -I"$ROOT/src/backends/graphics/utils"
   -I"$ROOT/vendors/sqlite3"
   -I"$ROOT/tools/sandbox/stub"
+  -I"$ROOT/examples/16_loud_dashboard/src"
   -I"$FT_BUILD/include"
   -I"$ROOT/vendors/freetype/include"
+  -I"$ROOT/vendors/pbplots/C"
 )
 
 SRCS=(
   "$ROOT/tools/sandbox/incense_sandbox_main.c"
+  "$ROOT/examples/16_loud_dashboard/src/loud_dashboard.c"
   "$ROOT/tools/sandbox/stub_curl.c"
   "$ROOT/src/core/aroma_ui_impl.c"
   "$ROOT/src/core/aroma_logger.c"
@@ -86,6 +94,8 @@ SRCS=(
   "$ROOT/src/backends/aroma_abi.c"
   "$ROOT/src/backends/platforms/aroma_platform_emscripten.c"
   "$ROOT/vendors/sqlite3/sqlite3.c"
+  # Vendored pbPlots (MIT, C99): rasterises the Chart widget's series.
+  "$ROOT/vendors/pbplots/C/pbPlots.c"
 )
 for f in "$ROOT"/src/widgets/aroma_*.c; do
   SRCS+=("$f")
@@ -101,17 +111,24 @@ for src in "${SRCS[@]}"; do
   OBJS+=("$obj")
 done
 
+# Decoding the preloaded PNGs with stb_image needs far more than
+# emscripten's 64 KB default stack (the overflow surfaces as a bare
+# "memory access out of bounds" at a random point during load).
 emcc "${OBJS[@]}" \
   -O2 \
   "$FT_BUILD/libfreetype.a" \
   --preload-file "$VIDEO_ASSET@/assets/sample_sintel.mpg" \
-  --preload-file "$DOOR_CAM_ASSET@/assets/sample_door_cam.mpg" \
+  --preload-file "$WELCOME_ASSET@/assets/welcome.png" \
+  --preload-file "$AVATAR_ASSET@/assets/avatar.png" \
+  --preload-file "$ANGELA_ASSET@/assets/angela.png" \
+  --preload-file "$LOUD_LOGO_ASSET@/assets/loud_logo.png" \
   -sUSE_WEBGL2=1 \
   -sFETCH=1 \
   -sASYNCIFY=1 \
+  -sSTACK_SIZE=1048576 \
   -sALLOW_MEMORY_GROWTH=1 \
   -sENVIRONMENT=web,worker,node \
-  -sEXPORTED_FUNCTIONS=_main,_aroma_sandbox_init,_aroma_sandbox_reload,_aroma_sandbox_has_error,_aroma_sandbox_get_last_error,_aroma_sandbox_set_theme,_aroma_sandbox_set_theme_preset,_aroma_sandbox_get_width,_aroma_sandbox_get_height \
+  -sEXPORTED_FUNCTIONS=_main,_aroma_sandbox_init,_aroma_sandbox_reload,_aroma_sandbox_has_error,_aroma_sandbox_get_last_error,_aroma_sandbox_set_theme,_aroma_sandbox_set_theme_preset,_aroma_sandbox_get_width,_aroma_sandbox_get_height,_aroma_platform_canvas_resized \
   -sEXPORTED_RUNTIME_METHODS=ccall \
   -o "$OUT"
 

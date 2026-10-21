@@ -25,10 +25,13 @@
 #include "aroma_timer.h"
 #include "aroma_time.h"
 #include "widgets/aroma_container.h"
+#include "widgets/aroma_label.h"
 #include "aroma_node.h"
 #include "aroma_slab_alloc.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #ifndef _WIN32
 #include <unistd.h>
 #else
@@ -293,6 +296,157 @@ static void test_animation_settles_on_layout(void)
     aroma_timer_shutdown();
 }
 
+static bool write_text_file(const char *path, const char *text)
+{
+    FILE *fp = fopen(path, "wb");
+    if (!fp)
+        return false;
+    size_t len = strlen(text);
+    bool ok = len == 0 || fwrite(text, 1, len, fp) == len;
+    fclose(fp);
+    return ok;
+}
+
+static bool make_temp_dir(char *out, size_t cap)
+{
+#ifdef _WIN32
+    char tmp[MAX_PATH];
+    DWORD n = GetTempPathA(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+        return false;
+    snprintf(out, cap, "%saroma_embed_test_%lu", tmp,
+             (unsigned long)GetCurrentProcessId());
+    if (!CreateDirectoryA(out, NULL) &&
+        GetLastError() != ERROR_ALREADY_EXISTS)
+        return false;
+    return true;
+#else
+    snprintf(out, cap, "/tmp/aroma_embed_test_XXXXXX");
+    return mkdtemp(out) != NULL;
+#endif
+}
+
+static void test_embed_with_props(void)
+{
+    char dir[512];
+    if (!make_temp_dir(dir, sizeof(dir)))
+    {
+        CHECK(1, "embed props test (skipped: no temp dir)");
+        return;
+    }
+
+    /* Deliberately overloads an otherwise generic word ("cards") so the
+       substitution has to match whole prop names only. */
+    const char *cards =
+        "Container {\n"
+        "    x: 0\n"
+        "    y: 0\n"
+        "    width: 100\n"
+        "    height: 60\n"
+        "    Label {\n"
+        "        id: \"card_lbembed_idx\"\n"
+        "        text: \"embed_title\"\n"
+        "        x: 0\n"
+        "        y: 0\n"
+        "        size: 12\n"
+        "        color: #FFFFFF\n"
+        "    }\n"
+        "}\n";
+
+    const char *root =
+        "Window {\n"
+        "    width: 1024\n"
+        "    height: 600\n"
+        "    @embed \"cards.aroma\" { title: \"First card\", idx: \"1\" }\n"
+        "    @embed \"cards.aroma\" { title: \"Second card\", idx: \"2\" }\n"
+        "}\n";
+
+    char cards_path[600], root_path[600];
+    snprintf(cards_path, sizeof(cards_path), "%s/cards.aroma", dir);
+    snprintf(root_path, sizeof(root_path), "%s/root.aroma", dir);
+    bool wrote = write_text_file(cards_path, cards) &&
+                 write_text_file(root_path, root);
+    CHECK(wrote, "embed props test files written");
+
+    if (wrote)
+    {
+        __node_system_init();
+        AromaNode *parent = make_parent();
+        IncenseRegistry *reg = NULL;
+        bool ok = IncenseLoadFileIntoParent(root_path, parent, NULL, NULL, &reg);
+        CHECK(ok, "embed file loads");
+        AromaNode *lb1 = IncenseFindWidget(reg, "card_lb1");
+        AromaNode *lb2 = IncenseFindWidget(reg, "card_lb2");
+        CHECK(lb1 != NULL, "first embed label mounted");
+        CHECK(lb2 != NULL, "second embed label mounted");
+        if (lb1)
+            CHECK(strcmp(aroma_label_get_text(lb1), "First card") == 0,
+                  "first embed prop substituted");
+        if (lb2)
+            CHECK(strcmp(aroma_label_get_text(lb2), "Second card") == 0,
+                  "second embed prop overridden");
+        if (reg)
+            IncenseFreeRegistry(reg);
+        __destroy_node(parent->parent_node);
+        __node_system_destroy();
+    }
+
+    remove(cards_path);
+    remove(root_path);
+#ifndef _WIN32
+    rmdir(dir);
+#else
+    RemoveDirectoryA(dir);
+#endif
+}
+
+static void test_example_dashboard_embeds(void)
+{
+    /* The docs demo ships a flattened copy of this markup; loading the real
+       example from the repo root proves the @embed tree resolves too. */
+    const char *path = "examples/16_loud_dashboard/ui/app.aroma";
+    FILE *probe = fopen(path, "rb");
+    if (!probe)
+    {
+        CHECK(1, "loud dashboard embeds (skipped: example not present)");
+        return;
+    }
+    fclose(probe);
+
+    __node_system_init();
+    AromaNode *parent = make_parent();
+    IncenseRegistry *reg = NULL;
+    IncenseClearErrors();
+    bool ok = IncenseLoadFileIntoParent(path, parent, NULL, NULL, &reg);
+    (void)ok;
+
+    /* Headless hosts never register the dashboard's C callbacks, so the load
+       reports a semantic error for each one. Anything else (syntax errors,
+       broken embeds, ...) still fails the test. */
+    int err_count = 0;
+    const IncenseError *errs = IncenseGetErrors(&err_count);
+    int unexpected = 0;
+    for (int i = 0; i < err_count; i++)
+    {
+        if (errs[i].type != INCENSE_ERROR_SYNTAX &&
+            errs[i].type != INCENSE_ERROR_SEMANTIC)
+            continue;
+        if (strstr(errs[i].message, "not registered"))
+            continue;
+        unexpected++;
+    }
+    CHECK(unexpected == 0, "loud dashboard only reports unregistered-callback errors");
+    CHECK(IncenseFindWidget(reg, "page_analytics") != NULL,
+          "loud dashboard analytics page mounted");
+    CHECK(IncenseFindWidget(reg, "page_settings") != NULL,
+          "loud dashboard settings page mounted");
+    IncenseClearErrors();
+    if (reg)
+        IncenseFreeRegistry(reg);
+    __destroy_node(parent->parent_node);
+    __node_system_destroy();
+}
+
 void run_incense_tests(int *passed, int *failed)
 {
     s_passed = 0;
@@ -302,6 +456,8 @@ void run_incense_tests(int *passed, int *failed)
     test_minimal_document();
     test_grid_layout();
     test_animation_settles_on_layout();
+    test_embed_with_props();
+    test_example_dashboard_embeds();
     printf("Aroma Incense: %d passed, %d failed\n", s_passed, s_failed);
     *passed = s_passed;
     *failed = s_failed;

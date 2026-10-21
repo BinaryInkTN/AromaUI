@@ -10,10 +10,17 @@
 #include "backends/graphics/aroma_graphics_interface.h"
 #include "core/aroma_event.h"
 #include "core/aroma_node.h"
+#include "core/aroma_font.h"
 #include "aroma_ui.h"
 
 typedef struct {
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
+    /* Logical (design) size: the markup Window size. Layout, the ortho
+     * projection and input mapping all work in this space. */
+    int logical_width;
+    int logical_height;
+    /* Backing store in device px: the displayed CSS box times dpr. On
+     * desktop-style embeds this equals the logical size. */
     int canvas_width;
     int canvas_height;
     double device_pixel_ratio;
@@ -47,6 +54,32 @@ EM_JS(void, _aroma_resize_canvas_for_dpr, (const char *selector, int css_w, int 
     el.style.height = css_h + 'px';
 });
 
+/* Size the canvas backing store only (no style writes). The page CSS owns
+ * the displayed box; the backing store must be that box times dpr so the
+ * browser never resamples the WebGL output. */
+EM_JS(void, _aroma_set_canvas_backing, (const char *selector, int bw, int bh), {
+    var el = document.querySelector(UTF8ToString(selector));
+    if (!el) return;
+    if (el.width !== bw)   el.width  = bw;
+    if (el.height !== bh)  el.height = bh;
+});
+
+/* Watch the canvas's laid-out CSS box (and the window, for dpr moves)
+ * and refit the backing store + font raster density when it changes. */
+EM_JS(void, _aroma_install_resize_observer, (void), {
+    if (typeof window === 'undefined' || !window.ResizeObserver) return;
+    if (window.__aromaRO) return;
+    var el = document.getElementById('canvas');
+    if (!el) return;
+    var fire = function () {
+        if (Module['_aroma_platform_canvas_resized'])
+            Module['_aroma_platform_canvas_resized']();
+    };
+    window.__aromaRO = new ResizeObserver(fire);
+    window.__aromaRO.observe(el);
+    window.addEventListener('resize', fire);
+});
+
 EM_JS(void, _js_expose_mouse, (int type, int target, int x, int y, int btn), {
     if (typeof window !== 'undefined') {
         window.aromaLastMouseType   = type;
@@ -64,21 +97,19 @@ EMSCRIPTEN_KEEPALIVE unsigned long long aroma_test_get_last_mouse_event_target(v
 
 static inline void _css_to_canvas_scale(double *out_sx, double *out_sy)
 {
-
-
+    /* Map CSS px (the displayed box) to logical/design px. dpr cancels
+     * out: the backing store is css*dpr and the projection maps the
+     * logical space onto it, so events only need logical/css. */
     double css_w = 0.0, css_h = 0.0;
     emscripten_get_element_css_size("#canvas", &css_w, &css_h);
 
-    double span_w = (double)platform_ctx.canvas_width;
-    double span_h = (double)platform_ctx.canvas_height;
-
-    double dpr = platform_ctx.device_pixel_ratio;
-    if (dpr < 1.0) dpr = 1.0;
+    double span_w = (double)platform_ctx.logical_width;
+    double span_h = (double)platform_ctx.logical_height;
 
     if (out_sx)
-        *out_sx = (span_w > 0.0 && css_w > 0.0) ? (span_w / css_w) / dpr : 1.0;
+        *out_sx = (span_w > 0.0 && css_w > 0.0) ? (span_w / css_w) : 1.0;
     if (out_sy)
-        *out_sy = (span_h > 0.0 && css_h > 0.0) ? (span_h / css_h) / dpr : 1.0;
+        *out_sy = (span_h > 0.0 && css_h > 0.0) ? (span_h / css_h) : 1.0;
 }
 
 static inline void _client_to_canvas(double cx, double cy,
@@ -96,6 +127,64 @@ static inline void _client_to_canvas(double cx, double cy,
 static inline void _css_to_canvas(int x, int y, double *out_x, double *out_y)
 {
     _client_to_canvas((double)x, (double)y, out_x, out_y);
+}
+
+/* Refit the canvas backing store to the currently displayed CSS box.
+ *
+ * Design-fit scaling: the scene stays in design units (the markup
+ * Window size, platform_ctx.logical_*), while the backing store is the
+ * *actual* displayed CSS box times devicePixelRatio. The projection maps
+ * the design space onto the whole backing store, so the GPU scales all
+ * vector geometry crisply and the browser never resamples the bitmap.
+ * Fonts are re-rasterized at the new device density so text stays sharp.
+ */
+static void _sync_backing_store(void)
+{
+    if (platform_ctx.logical_width <= 0 || platform_ctx.logical_height <= 0)
+        return;
+
+    double dpr = _aroma_get_device_pixel_ratio();
+    if (dpr < 1.0) dpr = 1.0;
+    platform_ctx.device_pixel_ratio = dpr;
+
+    double css_w = 0.0, css_h = 0.0;
+    emscripten_get_element_css_size("#canvas", &css_w, &css_h);
+    if (css_w <= 0.0 || css_h <= 0.0)
+        return;
+
+    int bw = (int)(css_w * dpr + 0.5);
+    int bh = (int)(css_h * dpr + 0.5);
+    if (bw < 1) bw = 1;
+    if (bh < 1) bh = 1;
+
+    bool changed = (bw != platform_ctx.canvas_width ||
+                    bh != platform_ctx.canvas_height);
+    platform_ctx.canvas_width  = bw;
+    platform_ctx.canvas_height = bh;
+
+    _aroma_set_canvas_backing("#canvas", bw, bh);
+
+    /* Device px per design px: glyph atlases re-raster at this density
+     * and metric getters keep returning design units. */
+    aroma_font_set_raster_scale((float)bw / (float)platform_ctx.logical_width);
+
+    if (changed) {
+        LOG_INFO("_sync_backing_store: css=%.0fx%.0f dpr=%.2f -> backing=%dx%d "
+                 "(design %dx%d)",
+                 css_w, css_h, dpr, bw, bh,
+                 platform_ctx.logical_width, platform_ctx.logical_height);
+        /* Immediate mode re-renders every frame; ensure_frame_state picks
+         * up the new logical/backing sizes on the next draw. */
+    }
+}
+
+/* Called from JS (ResizeObserver / window resize) when the canvas's
+ * laid-out box or the device pixel ratio changes. */
+EMSCRIPTEN_KEEPALIVE void aroma_platform_canvas_resized(void)
+{
+    if (!platform_ctx.initialized)
+        return;
+    _sync_backing_store();
 }
 
 static bool _queue_mouse_event(AromaEventType type,
@@ -271,6 +360,11 @@ static EM_BOOL _cb_mouse_down(int et, const EmscriptenMouseEvent *e, void *ud)
     platform_ctx.mouse_button_down = true;
     platform_ctx.last_mouse_x = cx;
     platform_ctx.last_mouse_y = cy;
+    EM_ASM({
+        var c = (Module && Module.canvas) || document.getElementById('canvas');
+        if (c && c.focus)
+            c.focus();
+    });
 
     bool ok = _queue_mouse_event(EVENT_TYPE_MOUSE_CLICK, cx, cy,
                                  (uint8_t)e->button);
@@ -420,6 +514,11 @@ static int initialize(void)
         css_w = 640.0; css_h = 480.0;
     }
 
+    /* Before the first markup window exists, lay out 1:1 with the CSS box;
+     * create_window() replaces this with the markup's design size. */
+    platform_ctx.logical_width  = (int)css_w;
+    platform_ctx.logical_height = (int)css_h;
+
     _aroma_resize_canvas_for_dpr("#canvas", (int)css_w, (int)css_h,
                                  platform_ctx.device_pixel_ratio);
 
@@ -470,6 +569,20 @@ static int initialize(void)
     emscripten_set_keydown_callback  ("#canvas", NULL, EM_TRUE, _cb_key_down);
     emscripten_set_keyup_callback    ("#canvas", NULL, EM_TRUE, _cb_key_up);
 
+    /* A canvas is not keyboard-focusable by default, yet textboxes rely on
+     * canvas-targeted key events.  Give the drawing surface a tab stop and
+     * focus it once so typing works as soon as the app is ready. */
+    EM_ASM({
+        var c = (Module && Module.canvas) || document.getElementById('canvas');
+        if (c) {
+            if (!c.hasAttribute('tabindex'))
+                c.setAttribute('tabindex', '0');
+            c.style.outline = 'none';
+            if (c.focus)
+                c.focus();
+        }
+    });
+
     AromaGraphicsInterface *gfx = aroma_backend_abi.get_graphics_interface();
     if (gfx && gfx->setup_shared_window_resources)
         gfx->setup_shared_window_resources();
@@ -479,6 +592,10 @@ static int initialize(void)
     emscripten_set_main_loop_arg(_frame_trampoline, NULL, 0, 0);
 
     platform_ctx.initialized = true;
+
+    /* Track container resizes (and dpr moves) so the backing store always
+     * matches the displayed CSS box. */
+    _aroma_install_resize_observer();
     LOG_INFO("initialize: ok — canvas=%dx%d (css=%.0fx%.0f dpr=%.2f) WebGL%d",
              platform_ctx.canvas_width, platform_ctx.canvas_height,
              css_w, css_h, platform_ctx.device_pixel_ratio,
@@ -491,16 +608,27 @@ static size_t create_window(const char *title, int x, int y,
 {
     (void)title; (void)x; (void)y;
 
+    /* The markup Window size is the design space: layout, input mapping
+     * and the ortho projection all work in these units, regardless of
+     * how large or small the canvas is actually displayed. */
+    int design_w = (width  > 0) ? width  : (int)(platform_ctx.canvas_width  /
+                                                 platform_ctx.device_pixel_ratio);
+    int design_h = (height > 0) ? height : (int)(platform_ctx.canvas_height /
+                                                 platform_ctx.device_pixel_ratio);
+    if (design_w <= 0) design_w = 640;
+    if (design_h <= 0) design_h = 480;
+    platform_ctx.logical_width  = design_w;
+    platform_ctx.logical_height = design_h;
+
     double dpr = platform_ctx.device_pixel_ratio;
     if (dpr < 1.0) dpr = 1.0;
 
-    int css_w = (width  > 0) ? width  : (int)(platform_ctx.canvas_width  / dpr);
-    int css_h = (height > 0) ? height : (int)(platform_ctx.canvas_height / dpr);
+    /* Ask for a design-px CSS box. Page CSS may override it (the docs
+     * demo stretches the canvas to its container); whatever box the
+     * canvas ends up displayed at, the backing store follows it. */
+    _aroma_resize_canvas_for_dpr("#canvas", design_w, design_h, dpr);
 
-    _aroma_resize_canvas_for_dpr("#canvas", css_w, css_h, dpr);
-
-    platform_ctx.canvas_width  = (int)(css_w * dpr);
-    platform_ctx.canvas_height = (int)(css_h * dpr);
+    _sync_backing_store();
 
     if (platform_ctx.ctx)
         emscripten_webgl_make_context_current(platform_ctx.ctx);
@@ -509,8 +637,8 @@ static size_t create_window(const char *title, int x, int y,
     if (gfx && gfx->setup_separate_window_resources)
         gfx->setup_separate_window_resources(1);
 
-    LOG_INFO("create_window: css=%dx%d physical=%dx%d dpr=%.2f",
-             css_w, css_h,
+    LOG_INFO("create_window: design=%dx%d backing=%dx%d dpr=%.2f",
+             design_w, design_h,
              platform_ctx.canvas_width, platform_ctx.canvas_height, dpr);
     return 1;
 }
@@ -524,6 +652,15 @@ static void make_context_current(size_t window_id)
 
 static void get_window_size(size_t window_id, int *w, int *h)
 {
+    /* Logical (design) size: layout, projection and input all use it. */
+    (void)window_id;
+    if (w) *w = platform_ctx.logical_width;
+    if (h) *h = platform_ctx.logical_height;
+}
+
+static void get_backing_size(size_t window_id, int *w, int *h)
+{
+    /* Device px actually backing the canvas; the viewport uses this. */
     (void)window_id;
     if (w) *w = platform_ctx.canvas_width;
     if (h) *h = platform_ctx.canvas_height;
@@ -579,6 +716,7 @@ AromaPlatformInterface aroma_platform_emscripten = {
     .get_vulkan_instance_extensions = NULL,
     .get_native_window_ptr          = get_native_window_ptr,
     .get_native_display_ptr         = get_native_display_ptr,
+    .get_backing_size               = get_backing_size,
 };
 
 #endif

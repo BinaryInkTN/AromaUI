@@ -39,4 +39,5 @@ with `aroma build linux` and runs with `aroma run linux`.
 | `13_gestures` | Gesture engine: tap, double-tap, long-press, swipes, pan, pinch |
 | `14_video` | Video playback: MP4/WebM/MKV/AVI/MPEG files and live frame streams |
 | `15_webview` | WebView: local HTML pages, history, text scaling |
+| `16_loud_dashboard` | Full analytics dashboard: charts, tables, search, settings, CSV export |
 | `14_python_bindings` | Python ctypes bindings demo (headless, generated on demand) |

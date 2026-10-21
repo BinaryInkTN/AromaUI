@@ -47,6 +47,7 @@ typedef struct AromaGauge
     float end_angle;
     int track_thickness;
     int fill_thickness;
+    int ring_inset;
     bool has_needle;
     uint32_t needle_color;
     int needle_thickness;
@@ -116,7 +117,7 @@ static void aroma_gauge_draw(AromaNode *node, size_t window_id)
     int cy = gauge->rect.y + gauge->rect.height / 2;
     int radius = (gauge->rect.width < gauge->rect.height ? gauge->rect.width : gauge->rect.height) / 2;
 
-    int base_radius = radius - gauge_dp(AROMA_GAUGE_BASE_RADIUS_INSET_DP);
+    int base_radius = radius - gauge->ring_inset;
     int track_inner_edge = base_radius - (gauge->track_thickness / 2);
     int inner_ring_radius = gauge->has_inner_ring ? base_radius - gauge->inner_ring_offset : 0;
 
@@ -366,6 +367,7 @@ AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height
 
     gauge->track_thickness = gauge_dp(AROMA_GAUGE_TRACK_THICKNESS_DP);
     gauge->fill_thickness = gauge_dp(AROMA_GAUGE_FILL_THICKNESS_DP);
+    gauge->ring_inset = gauge_dp(AROMA_GAUGE_BASE_RADIUS_INSET_DP);
     gauge->has_needle = false;
     gauge->needle_color = 0xFFFFFFFF;
     gauge->needle_thickness = gauge_dp(AROMA_GAUGE_NEEDLE_THICKNESS_DP);
@@ -451,6 +453,15 @@ void aroma_gauge_set_thickness(AromaNode *node, int track_thickness, int fill_th
     AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
     gauge->track_thickness = gauge_dp(track_thickness);
     gauge->fill_thickness = gauge_dp(fill_thickness);
+    aroma_node_invalidate(node);
+}
+
+void aroma_gauge_set_ring_inset(AromaNode *node, int inset)
+{
+    if (!node || !node->node_widget_ptr)
+        return;
+    AromaGauge *gauge = (AromaGauge *)node->node_widget_ptr;
+    gauge->ring_inset = gauge_dp(inset);
     aroma_node_invalidate(node);
 }
 

@@ -15,6 +15,11 @@ void aroma_graphics_clear(size_t window_id, uint32_t color)
     }
 }
 
+void aroma_graphics_set_transparent_background(bool transparent)
+{
+    aroma_gles3_set_transparent_background(transparent);
+}
+
 void aroma_graphics_fill_rectangle(size_t window_id, int x, int y, int width, int height,
                                    uint32_t color, bool filled, float rotation)
 {

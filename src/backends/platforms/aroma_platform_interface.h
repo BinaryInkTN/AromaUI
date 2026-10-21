@@ -381,6 +381,13 @@ typedef struct AromaPlatformInterface {
     void (*set_offscreen_mode)(bool offscreen);
     void (*read_pixels)(size_t window_id, void* buffer, int width, int height);
 
+    /* Backing-store size in device px (optional; defaults to the logical
+     * size from get_window_size). Web backends lay out a fixed design
+     * space but render into a canvas sized to the displayed CSS box times
+     * devicePixelRatio, so the viewport must use this while the ortho
+     * projection and all layout math use the logical size. */
+    void (*get_backing_size)(size_t window_id, int* width, int* height);
+
 } AromaPlatformInterface;
 
 
