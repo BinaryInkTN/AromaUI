@@ -21,6 +21,8 @@ typedef struct  AromaIconButton AromaIconButton;
 
 AromaNode* aroma_iconbutton_create(AromaNode* parent, const char* icon_text, int x, int y, int size, AromaIconButtonVariant variant);
 
+void aroma_iconbutton_set_size(AromaNode* button_node, int width, int height);
+
 
 void aroma_iconbutton_set_callback(AromaNode* button_node, void (*callback)(void* user_data), void* user_data);
 

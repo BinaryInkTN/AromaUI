@@ -23,6 +23,7 @@ typedef struct  AromaSwitch
     int toggle_size;
     float toggle_radius;
     uint32_t border_color;
+    uint32_t toggle_color;
     int toggle_x;
 
     bool use_theme_colors;

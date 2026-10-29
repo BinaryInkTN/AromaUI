@@ -140,7 +140,7 @@ int main(void)
         aroma_video_set_font(g_video, g_font);
     if (g_video)
     {
-        /* Real codec demo first: Sintel excerpt (CC-BY, see assets/). */
+        
         aroma_video_set_source(g_video, "assets/sample_sintel.mp4");
         if (aroma_video_get_state(g_video) != AROMA_VIDEO_ERROR)
         {

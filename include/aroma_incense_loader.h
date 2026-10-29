@@ -89,6 +89,12 @@ void IncenseRegisterFont(const char *name, AromaFont *font);
 void IncenseRegisterFontSize(int size_px, AromaFont *font);
 void IncenseRegisterIconFontSize(int size_px, AromaFont *font);
 
+/* Register an icon face for an alternate glyph pack.  Markup opts into a pack
+   with `pack: "lucide"` on Icon, IconButton, or Button; `material` is the
+   default and needs no pack property.  Register the same pixel sizes the UI
+   asks for with `icon_size:`. */
+void IncenseRegisterIconPackFontSize(const char *pack, int size_px, AromaFont *font);
+
 void IncenseSetVerboseErrors(bool verbose);
 const IncenseError *IncenseGetErrors(int *count);
 int  IncenseGetErrorCount(void);

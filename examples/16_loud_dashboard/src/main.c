@@ -1,12 +1,4 @@
-/* Loud Analytics dashboard example host.
- *
- * The UI lives in ui/app.aroma (generate it with
- *   python3 tools/sandbox/gen_dashboard.py > examples/16_loud_dashboard/ui/app.aroma)
- * and every control is wired to the runtime in src/loud_dashboard.c.
- * This file mirrors the docs sandbox: it registers all font sizes the
- * markup asks for, hands them to the dashboard so it can measure text,
- * registers the callbacks, and mounts the window.
- */
+
 #include <aroma.h>
 #include <aroma_incense_loader.h>
 #include <stdio.h>

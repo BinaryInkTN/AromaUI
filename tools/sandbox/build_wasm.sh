@@ -36,6 +36,21 @@ WELCOME_ASSET="$ROOT/tools/sandbox/assets/welcome.png"
 AVATAR_ASSET="$ROOT/tools/sandbox/assets/avatar.png"
 ANGELA_ASSET="$ROOT/tools/sandbox/assets/angela.png"
 LOUD_LOGO_ASSET="$ROOT/tools/sandbox/assets/loud_logo.png"
+FITNESS_HERO_ASSET="$ROOT/tools/sandbox/assets/fitness_hero.jpg"
+FITNESS_LOGO_ASSET="$ROOT/tools/sandbox/assets/fitness_logo.png"
+FITNESS_AVATAR_ASSET="$ROOT/tools/sandbox/assets/fitness_avatar.png"
+FITNESS_SCRIM_ASSET="$ROOT/tools/sandbox/assets/fitness_scrim.png"
+TRAVEL_AVATAR_ASSET="$ROOT/tools/sandbox/assets/travel_avatar.png"
+TRAVEL_ALBUM_ASSET="$ROOT/tools/sandbox/assets/travel_album.jpg"
+TRAVEL_MIC_ASSET="$ROOT/tools/sandbox/assets/travel_mic.png"
+TRAVEL_CORNER_TL_ASSET="$ROOT/tools/sandbox/assets/travel_corner_tl.png"
+TRAVEL_CORNER_TR_ASSET="$ROOT/tools/sandbox/assets/travel_corner_tr.png"
+TRAVEL_CORNER_BL_ASSET="$ROOT/tools/sandbox/assets/travel_corner_bl.png"
+TRAVEL_CORNER_BR_ASSET="$ROOT/tools/sandbox/assets/travel_corner_br.png"
+
+# Alternate icon pack used by the Incense sandbox (see
+# tools/gen_lucide_pack.py).  Loaded by the sandbox at runtime.
+LUCIDE_FONT_ASSET="$ROOT/tools/sandbox/assets/lucide.ttf"
 
 if [ ! -f "$FT_BUILD/libfreetype.a" ]; then
   echo "error: $FT_BUILD/libfreetype.a missing; build freetype first (see header)" >&2
@@ -55,6 +70,8 @@ CFLAGS=(
   -I"$ROOT/vendors/sqlite3"
   -I"$ROOT/tools/sandbox/stub"
   -I"$ROOT/examples/16_loud_dashboard/src"
+  -I"$ROOT/examples/17_travel_dashboard/src"
+  -I"$ROOT/examples/18_fitness_dashboard/src"
   -I"$FT_BUILD/include"
   -I"$ROOT/vendors/freetype/include"
   -I"$ROOT/vendors/pbplots/C"
@@ -62,6 +79,9 @@ CFLAGS=(
 
 SRCS=(
   "$ROOT/tools/sandbox/incense_sandbox_main.c"
+  "$ROOT/examples/17_travel_dashboard/src/travel_demo.c"
+  "$ROOT/examples/18_fitness_dashboard/src/fitness_demo.c"
+
   "$ROOT/examples/16_loud_dashboard/src/loud_dashboard.c"
   "$ROOT/tools/sandbox/stub_curl.c"
   "$ROOT/src/core/aroma_ui_impl.c"
@@ -122,6 +142,18 @@ emcc "${OBJS[@]}" \
   --preload-file "$AVATAR_ASSET@/assets/avatar.png" \
   --preload-file "$ANGELA_ASSET@/assets/angela.png" \
   --preload-file "$LOUD_LOGO_ASSET@/assets/loud_logo.png" \
+  --preload-file "$FITNESS_HERO_ASSET@/assets/fitness_hero.jpg" \
+  --preload-file "$FITNESS_LOGO_ASSET@/assets/fitness_logo.png" \
+  --preload-file "$FITNESS_AVATAR_ASSET@/assets/fitness_avatar.png" \
+  --preload-file "$FITNESS_SCRIM_ASSET@/assets/fitness_scrim.png" \
+  --preload-file "$TRAVEL_AVATAR_ASSET@/assets/travel_avatar.png" \
+  --preload-file "$TRAVEL_ALBUM_ASSET@/assets/travel_album.jpg" \
+  --preload-file "$TRAVEL_MIC_ASSET@/assets/travel_mic.png" \
+  --preload-file "$TRAVEL_CORNER_TL_ASSET@/assets/travel_corner_tl.png" \
+  --preload-file "$TRAVEL_CORNER_TR_ASSET@/assets/travel_corner_tr.png" \
+  --preload-file "$TRAVEL_CORNER_BL_ASSET@/assets/travel_corner_bl.png" \
+  --preload-file "$TRAVEL_CORNER_BR_ASSET@/assets/travel_corner_br.png" \
+  --preload-file "$LUCIDE_FONT_ASSET@/assets/lucide.ttf" \
   -sUSE_WEBGL2=1 \
   -sFETCH=1 \
   -sASYNCIFY=1 \

@@ -2,22 +2,51 @@
     "name": "AromaSDK",
     "version": "0.0.2 (alpha)",
     "description": "Lightweight development toolkit for cross-platform applications on Linux, Android, Windows, and embedded systems.",
-
     "author": {
         "name": "Yassine Ahmed Ali",
         "role": "Maintainer"
     },
-
     "hero": {
         "title": "AromaSDK",
         "tagline": "Modern UI For Everywhere!",
         "caption": "Free and open source under the MIT license",
         "description": "Cross-platform application framework featuring a modern UI toolkit, rendering engine, backend abstraction layer, and tooling for Linux, Android, Windows, and Embedded devices.",
+        "showcase": {
+            "title": "Build production-level UIs that ship everywhere.",
+            "description": "Declarative UI, native performance. One codebase for Linux, Android, Web, and embedded.",
+            "theme": "Travel",
+            "demos": [
+                {
+                    "id": "travel_tablet",
+                    "title": "Travel Dashboard",
+                    "description": "A car infotainment dashboard with live navigation, media controls, and messaging.",
+                    "width": 1280,
+                    "height": 800,
+                    "theme": "Travel"
+                },
+
+                {
+                    "id": "dashboard_tablet",
+                    "title": "Analytics",
+                    "description": "A live analytics dashboard with charts, filters, transactions, and responsive navigation.",
+                    "width": 1280,
+                    "height": 800,
+                    "theme": "Aroma Violet dark"
+                },
+                {
+                    "id": "fitness_tablet",
+                    "title": "Fitness Dashboard",
+                    "description": "A dark fitness dashboard with a live recovery gauge, sleep, heart, and focus insights.",
+                    "width": 1280,
+                    "height": 800,
+                    "theme": "Fitness"
+                }
+            ]
+        },
         "announcement": "AromaSDK 0.0.2 alpha is here",
         "changelog_url": "https://github.com/BinaryInkTN/AromaUI/releases",
         "background": "#0066CC",
         "image": "images/hero.png",
-
         "actions": [
             {
                 "icon": "rocket",
@@ -32,7 +61,6 @@
                 "onclick": "window.open('https://github.com/BinaryInkTN/AromaUI', '_blank')"
             }
         ],
-
         "cards": [
             {
                 "icon": "layers",
@@ -78,7 +106,6 @@
                 "category": "Reference"
             }
         ],
-
         "stats": [
             {
                 "value": "5",
@@ -93,7 +120,6 @@
                 "label": "License"
             }
         ],
-
         "platformIcons": [
             {
                 "icon": "terminal",
@@ -117,7 +143,6 @@
             }
         ]
     },
-
     "categories": [
         {
             "name": "Overview",
@@ -150,7 +175,6 @@
             "description": "Fonts, testing, glossary, and advanced topics."
         }
     ],
-
     "sections": [
         {
             "title": "Getting Started",
@@ -174,7 +198,6 @@
             "status": "stable",
             "file": "docs/overview/Architecture-Overview.md"
         },
-
         {
             "title": "Scene Graph & Nodes",
             "description": "AromaNode lifecycle, hierarchy, memory management, and dirty-region tracking.",
@@ -252,7 +275,6 @@
             "status": "stable",
             "file": "docs/core-framework/Testing-Framework.md"
         },
-
         {
             "title": "Display & Feedback",
             "description": "Labels, images, cards, charts, progress bars, snackbars, and dialogs.",
@@ -263,6 +285,17 @@
             "updated": "2026-09-28",
             "status": "stable",
             "file": "docs/widget-library/Display-and-Feedback-Widgets.md"
+        },
+        {
+            "title": "Charts & Plots",
+            "description": "Line, scatter, line+points, and grouped bar charts rendered through pbPlots.",
+            "icon": "chart-line",
+            "color": "#7D5260",
+            "category": "Widget Library",
+            "version": "0.0.1",
+            "updated": "2026-10-22",
+            "status": "stable",
+            "file": "docs/widget-library/Charts-and-Plots.md"
         },
         {
             "title": "Input & Controls",
@@ -341,7 +374,6 @@
             "status": "stable",
             "file": "docs/widget-library/Incense-Sandbox.md"
         },
-
         {
             "title": "Project Creation",
             "description": "Scaffold new projects with `aroma create` and understand the generated structure.",
@@ -397,7 +429,6 @@
             "status": "stable",
             "file": "docs/downloads.html"
         },
-
         {
             "title": "Graphics Backends",
             "description": "GLES3, Vulkan, and TFT_eSPI rendering backends.",
@@ -659,7 +690,6 @@
             "status": "stable",
             "file": "docs/backend-abstraction-layer/android/Internals.md"
         },
-
         {
             "title": "Font System",
             "description": "Font loading, glyph caching, FreeType integration, and platform specifics.",

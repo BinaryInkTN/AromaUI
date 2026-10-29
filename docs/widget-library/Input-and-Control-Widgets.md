@@ -58,8 +58,8 @@ AromaNode *ib = aroma_ui_iconbutton(root, AROMA_ICON_SETTINGS, 300, 20, 48,
 
 `aroma_iconbutton_set_colors(node, bg_color, icon_color)` overrides the
 variant's theme colours. In markup, pass `color` (background) and
-`icon_color` — handy for a toolbar whose buttons should melt into a
-custom-coloured bar instead of sitting on a `surface` chip:
+`icon_color` to make a toolbar whose buttons melt into a custom-coloured
+bar instead of sitting on a `surface` chip:
 
 ```aroma
 IconButton {

@@ -536,7 +536,14 @@ static bool ensure_frame_state(size_t window_id)
 
     glViewport(0, 0, bw, bh);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    /* The canvas is composited with premultiplied alpha.  Blend RGB
+     * normally, but keep destination alpha at 1 wherever an opaque
+     * surface has already been drawn; otherwise every translucent
+     * overlay (area fills, scrims, glyph edges) would lower the
+     * framebuffer alpha and the browser would composite the page
+     * background over it a second time. */
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+                        GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     return true;
 }
 
@@ -559,9 +566,11 @@ static void flush_shape_batch(void)
     GLint prev_program;
     glGetIntegerv(GL_CURRENT_PROGRAM, &prev_program);
     GLboolean blend_enabled = glIsEnabled(GL_BLEND);
-    GLint blend_src, blend_dst;
-    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src);
-    glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst);
+    GLint blend_src_rgb, blend_dst_rgb, blend_src_a, blend_dst_a;
+    glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src_rgb);
+    glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst_rgb);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_a);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst_a);
 
     glBindBuffer(GL_ARRAY_BUFFER, ctx.shape_vbo);
     glBufferData(GL_ARRAY_BUFFER,
@@ -667,7 +676,8 @@ static void flush_shape_batch(void)
     glUseProgram(prev_program);
 
     if (!blend_enabled) glDisable(GL_BLEND);
-    glBlendFunc(blend_src, blend_dst);
+    glBlendFuncSeparate((GLenum)blend_src_rgb, (GLenum)blend_dst_rgb,
+                        (GLenum)blend_src_a, (GLenum)blend_dst_a);
 
     ctx.batch.count = 0;
     ctx.batch.mode = BATCH_MODE_NONE;
@@ -1814,15 +1824,18 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     GLint prev_active_tex = 0;
     GLint prev_tex2d = 0;
     GLboolean blend_enabled = GL_FALSE;
-    GLint blend_src = GL_SRC_ALPHA, blend_dst = GL_ONE_MINUS_SRC_ALPHA;
+    GLint blend_src_rgb = GL_SRC_ALPHA, blend_dst_rgb = GL_ONE_MINUS_SRC_ALPHA;
+    GLint blend_src_a = GL_ONE, blend_dst_a = GL_ONE_MINUS_SRC_ALPHA;
     glGetIntegerv(GL_CURRENT_PROGRAM, &prev_program);
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prev_vao);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prev_array_buffer);
     glGetIntegerv(GL_ACTIVE_TEXTURE, &prev_active_tex);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_tex2d);
     blend_enabled = glIsEnabled(GL_BLEND);
-    glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src);
-    glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst);
+    glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src_rgb);
+    glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst_rgb);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_a);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst_a);
 
 
     float fx0 = (float)cx, fy0 = (float)cy;
@@ -1871,7 +1884,8 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     glUniform4f(ctx.shape_uniforms.uvRect, 0.0f, 0.0f, 1.0f, 1.0f);
     if (!blend_enabled)
         glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+                        GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     glBindVertexArray(win->shape_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1885,7 +1899,8 @@ static void gles3_blur_backdrop(size_t window_id, int x, int y,
     glUseProgram((GLuint)prev_program);
     if (!blend_enabled)
         glDisable(GL_BLEND);
-    glBlendFunc((GLenum)blend_src, (GLenum)blend_dst);
+    glBlendFuncSeparate((GLenum)blend_src_rgb, (GLenum)blend_dst_rgb,
+                        (GLenum)blend_src_a, (GLenum)blend_dst_a);
 }
 
 static void gles3_flush(void)

@@ -151,6 +151,12 @@ void aroma_icon_set_color(AromaNode* icon_node, uint32_t color) {
     aroma_node_invalidate(icon_node);
 }
 
+AromaFont* aroma_icon_get_font(AromaNode* icon_node) {
+    if (!icon_node || !icon_node->node_widget_ptr) return NULL;
+    AromaIcon* icon = (AromaIcon*)icon_node->node_widget_ptr;
+    return icon->font;
+}
+
 void aroma_icon_draw(AromaNode* icon_node, size_t window_id) {
     if (!icon_node) return;
     AromaIcon* icon = (AromaIcon*)icon_node->node_widget_ptr;

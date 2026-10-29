@@ -4,6 +4,7 @@
 #include "aroma_ui.h"
 #include "aroma_animation.h"
 #include "aroma_material_icons.h"
+#include "aroma_lucide_icons.h"
 #include "core/aroma_logger.h"
 #include "widgets/aroma_canvas.h"
 #include "widgets/aroma_calendar.h"
@@ -33,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <math.h>
@@ -820,17 +822,46 @@ void IncenseRegisterFont(const char *name, AromaFont *font)
 }
 
 /* --- fonts rasterized per pixel size ------------------------------------- */
-#define MAX_SIZED_FONTS 24
+#define MAX_SIZED_FONTS 48
+#define MAX_ICON_PACKS 4
+#define ICON_PACK_NAME_MAX 24
 
 typedef struct
 {
     int size_px;
     AromaFont *text;
     AromaFont *icon;
+    AromaFont *pack_icon[MAX_ICON_PACKS];
 } SizedFontEntry;
 
 static SizedFontEntry s_sized_fonts[MAX_SIZED_FONTS];
 static int s_sized_font_count = 0;
+
+/* Hosts can register additional icon packs without teaching the loader about
+ * a specific font.  "material" stays the default; a markup node opts into
+ * another pack with `pack: "lucide"`. */
+static char s_icon_pack_names[MAX_ICON_PACKS][ICON_PACK_NAME_MAX];
+static int s_icon_pack_count = 0;
+
+static int icon_pack_slot(const char *name, bool create)
+{
+    if (!name || !name[0])
+        return -1;
+    for (int i = 0; i < s_icon_pack_count; ++i)
+        if (strcasecmp(s_icon_pack_names[i], name) == 0)
+            return i;
+    if (!create)
+        return -1;
+    if (s_icon_pack_count >= MAX_ICON_PACKS)
+    {
+        LOG_ERROR("Icon pack registry full, cannot register '%s'", name);
+        return -1;
+    }
+    int slot = s_icon_pack_count++;
+    strncpy(s_icon_pack_names[slot], name, ICON_PACK_NAME_MAX - 1);
+    s_icon_pack_names[slot][ICON_PACK_NAME_MAX - 1] = '\0';
+    return slot;
+}
 
 static SizedFontEntry *sized_font_slot(int size_px, bool create)
 {
@@ -848,6 +879,8 @@ static SizedFontEntry *sized_font_slot(int size_px, bool create)
     e->size_px = size_px;
     e->text = NULL;
     e->icon = NULL;
+    for (int i = 0; i < MAX_ICON_PACKS; ++i)
+        e->pack_icon[i] = NULL;
     return e;
 }
 
@@ -875,6 +908,21 @@ void IncenseRegisterIconFontSize(int size_px, AromaFont *font)
         e->icon = font;
 }
 
+void IncenseRegisterIconPackFontSize(const char *pack, int size_px, AromaFont *font)
+{
+    if (!pack || !pack[0] || size_px <= 0 || !font)
+    {
+        LOG_WARNING("IncenseRegisterIconPackFontSize called with invalid arguments");
+        return;
+    }
+    int slot = icon_pack_slot(pack, true);
+    if (slot < 0)
+        return;
+    SizedFontEntry *e = sized_font_slot(size_px, true);
+    if (e)
+        e->pack_icon[slot] = font;
+}
+
 static AromaFont *resolve_size_font(int size_px)
 {
     SizedFontEntry *e = sized_font_slot(size_px, false);
@@ -891,19 +939,37 @@ static AromaFont *resolve_icon_size_font(int size_px)
     return NULL;
 }
 
+static AromaFont *resolve_icon_size_font_for_pack(const char *pack, int size_px)
+{
+    if (!pack || !pack[0] || strcasecmp(pack, "material") == 0)
+        return resolve_icon_size_font(size_px);
+    int slot = icon_pack_slot(pack, false);
+    SizedFontEntry *e = sized_font_slot(size_px, false);
+    if (slot >= 0 && e && e->pack_icon[slot])
+        return e->pack_icon[slot];
+    return NULL;
+}
+
 /* Closest registered icon face to `size_px`, preferring the nearest face at or
  * above it. Widgets that size an icon relative to their own box (buttons) use
  * this so the glyph is rasterized near its display size; bitmap-scaling one
  * fixed face up is what makes icons fuzzy. */
-static AromaFont *resolve_icon_size_font_nearest(int size_px, int *chosen_px)
+static AromaFont *resolve_icon_size_font_nearest_for_pack(const char *pack,
+                                                          int size_px,
+                                                          int *chosen_px)
 {
+    bool material = !pack || !pack[0] || strcasecmp(pack, "material") == 0;
+    int slot = material ? -1 : icon_pack_slot(pack, false);
+    if (!material && slot < 0)
+        return NULL;
     AromaFont *ge_font = NULL;
     AromaFont *lt_font = NULL;
     int ge_px = 0;
     int lt_px = 0;
     for (int i = 0; i < s_sized_font_count; ++i)
     {
-        AromaFont *f = s_sized_fonts[i].icon;
+        AromaFont *f = material ? s_sized_fonts[i].icon
+                                : s_sized_fonts[i].pack_icon[slot];
         if (!f)
             continue;
         int sz = s_sized_fonts[i].size_px;
@@ -925,6 +991,11 @@ static AromaFont *resolve_icon_size_font_nearest(int size_px, int *chosen_px)
     if (chosen_px)
         *chosen_px = ge_font ? ge_px : lt_px;
     return best;
+}
+
+static AromaFont *resolve_icon_size_font_nearest(int size_px, int *chosen_px)
+{
+    return resolve_icon_size_font_nearest_for_pack("material", size_px, chosen_px);
 }
 
 /* The pixel size the label styles map to: the default face's size scaled by the
@@ -2040,6 +2111,8 @@ static const IconMapping ICON_MAP[] = {
 
 #define ICON_MAP_COUNT (sizeof(ICON_MAP) / sizeof(ICON_MAP[0]) - 1)
 
+#include "aroma_lucide_icon_map.h"
+
 typedef struct
 {
     int next;
@@ -2048,6 +2121,10 @@ typedef struct
 static IconBucket s_icon_entries[ICON_MAP_COUNT > 0 ? ICON_MAP_COUNT : 1];
 static int s_icon_chain[ICON_HASH_SIZE];
 static bool s_icon_init = false;
+
+static IconBucket s_lucide_entries[LUCIDE_ICON_MAP_COUNT > 0 ? LUCIDE_ICON_MAP_COUNT : 1];
+static int s_lucide_chain[ICON_HASH_SIZE];
+static bool s_lucide_init = false;
 
 static void icon_build_table(void)
 {
@@ -2064,22 +2141,44 @@ static void icon_build_table(void)
     s_icon_init = true;
 }
 
+static void lucide_build_table(void)
+{
+    memset(s_lucide_chain, -1, sizeof(s_lucide_chain));
+    for (int i = 0; i < (int)LUCIDE_ICON_MAP_COUNT; i++)
+    {
+        if (!LUCIDE_ICON_MAP[i].name)
+            continue;
+        uint32_t slot = fnv1a(LUCIDE_ICON_MAP[i].name) & (ICON_HASH_SIZE - 1);
+        s_lucide_entries[i].idx = i;
+        s_lucide_entries[i].next = s_lucide_chain[slot];
+        s_lucide_chain[slot] = i;
+    }
+    s_lucide_init = true;
+}
+
+static const char *clean_icon_name(const char *name, char *tmp, size_t tmp_size)
+{
+    if (!name)
+        return NULL;
+    size_t len = strlen(name);
+    if (len >= 2 && name[0] == '"' && name[len - 1] == '"' && (len - 2) < tmp_size)
+    {
+        memcpy(tmp, name + 1, len - 2);
+        tmp[len - 2] = '\0';
+        return tmp;
+    }
+    return name;
+}
+
 static const char *resolve_icon(const char *name)
 {
     if (!name)
         return NULL;
     if (!s_icon_init)
         icon_build_table();
-    size_t len = strlen(name);
     char tmp[128];
-    const char *clean = name;
-    if (len >= 2 && name[0] == '"' && name[len - 1] == '"' && (len - 2) < sizeof(tmp))
-    {
-        memcpy(tmp, name + 1, len - 2);
-        tmp[len - 2] = '\0';
-        clean = tmp;
-    }
-    if (!clean[0])
+    const char *clean = clean_icon_name(name, tmp, sizeof(tmp));
+    if (!clean || !clean[0])
         return name;
     uint32_t slot = fnv1a(clean) & (ICON_HASH_SIZE - 1);
     for (int i = s_icon_chain[slot]; i >= 0 && i < (int)ICON_MAP_COUNT; i = s_icon_entries[i].next)
@@ -2092,6 +2191,56 @@ static const char *resolve_icon(const char *name)
     }
     LOG_WARNING("Unknown icon name '%s', using literal text as fallback", clean);
     return name;
+}
+
+static const char *resolve_lucide_icon(const char *name)
+{
+    if (!name)
+        return NULL;
+    if (!s_lucide_init)
+        lucide_build_table();
+    char tmp[128];
+    const char *clean = clean_icon_name(name, tmp, sizeof(tmp));
+    if (!clean || !clean[0])
+        return name;
+    /* A C callback may hand us the glyph bytes directly instead of a name. */
+    if ((unsigned char)clean[0] >= 0x80)
+        return name;
+    uint32_t slot = fnv1a(clean) & (ICON_HASH_SIZE - 1);
+    for (int i = s_lucide_chain[slot]; i >= 0 && i < (int)LUCIDE_ICON_MAP_COUNT; i = s_lucide_entries[i].next)
+    {
+        int idx = s_lucide_entries[i].idx;
+        if (idx < 0 || idx >= (int)LUCIDE_ICON_MAP_COUNT)
+            break;
+        if (LUCIDE_ICON_MAP[idx].name && strcmp(LUCIDE_ICON_MAP[idx].name, clean) == 0)
+            return LUCIDE_ICON_MAP[idx].codepoint;
+    }
+    LOG_WARNING("Unknown Lucide icon name '%s', using literal text as fallback", clean);
+    return name;
+}
+
+static const char *resolve_icon_for_pack(const char *pack, const char *name)
+{
+    if (!pack || !pack[0] || strcasecmp(pack, "material") == 0)
+        return resolve_icon(name);
+    if (strcasecmp(pack, "lucide") == 0)
+        return resolve_lucide_icon(name);
+    LOG_WARNING("Unknown icon pack '%s', falling back to Material Icons", pack);
+    return resolve_icon(name);
+}
+
+static const char *clean_pack_name(const char *pack, char *buf, size_t buf_size)
+{
+    if (!pack || !pack[0])
+        return "material";
+    size_t len = strlen(pack);
+    if (len >= 2 && pack[0] == '"' && pack[len - 1] == '"' && (len - 2) < buf_size)
+    {
+        memcpy(buf, pack + 1, len - 2);
+        buf[len - 2] = '\0';
+        return buf;
+    }
+    return pack;
 }
 
 static bool eval_condition(const char *cond)
@@ -2583,26 +2732,27 @@ static void validate_properties(IncenseNode *node, const PropBag *bag)
 {
     if (!bag)
         return;
+  /* bsearch below relies on this staying in strcmp order. */
   static const char *const valid[] = {
     "action", "animation", "animation_duration", "animation_easing", "animation_end_val",
     "animation_loop", "animation_start_val", "attribution", "auto_rotate", "autoplay",
-    "blur_radius", "border_color", "cam_far", "cam_far_plane", "cam_fov", "cam_near", "cam_near_plane", "cam_phi",
+    "bar_gap", "blur_radius", "border_color", "cam_far", "cam_far_plane", "cam_fov", "cam_near", "cam_near_plane", "cam_phi",
     "cam_radius", "cam_target_x", "cam_target_y", "cam_target_z", "cam_theta", "checked",
-    "click_to_toggle", "color", "cols", "columns", "condition", "content_height", "content_width",
+    "click_to_toggle", "color", "colors", "cols", "columns", "condition", "content_height", "content_width",
     "controls", "corner_radius", "data", "day", "direction", "duration", "end_angle", "far",
     "far_plane", "fill_color", "fill_thickness", "font", "fov", "frame", "frame_color", "gap", "grid",
     "grid_color", "group", "header", "height", "hidden", "hour", "hover_lift", "hub", "hub_color", "hub_radius",
     "hub_thickness", "icon", "icon_color", "icon_size", "id", "indicator_color", "interactive", "label", "lat", "layout", "length",
-    "light_x", "light_y", "light_z", "line_color", "line_thickness", "lon", "loop", "major_length",
+    "light_x", "light_y", "light_z", "line", "line_color", "line_thickness", "lines", "lon", "loop", "major_length",
     "major_ticks", "max", "max_visible", "message", "min", "minor_length", "minor_ticks", "minute",
     "mode", "model", "month", "muted", "near", "near_plane", "needle", "needle_color",
     "needle_thickness", "on_change", "on_click", "on_select", "on_submit", "on_swipe_left",
-    "on_swipe_right", "orientation", "pad_bottom", "pad_left", "pad_right", "pad_top", "parent",
-    "phi", "placeholder", "popup", "position", "press_lift", "progress", "radius", "ring_inset", "rows", "scale", "secondary",
-    "selected", "show", "size", "src", "start_angle", "step", "style", "target_x", "target_y",
-    "target_z", "text", "text_color", "theta", "thickness", "tick_color", "tick_thickness",
-    "ticks", "title", "track_color", "track_thickness", "type", "value", "variant", "visible",
-    "width", "wrap", "x", "x_data", "x_labels", "x_max", "x_min", "y", "y_labels", "y_max",
+    "on_swipe_right", "orientation", "pack", "pad_bottom", "pad_left", "pad_right", "pad_top", "parent",
+    "phi", "placeholder", "point_type", "points", "popup", "position", "press_lift", "progress", "radius", "ring_inset", "route_width", "rows", "scale", "secondary",
+    "selected", "series", "series_colors", "series_lines", "series_points", "series_thickness", "show", "size", "src", "start_angle", "step", "style", "target_x", "target_y",
+    "target_z", "text", "text_color", "theta", "thickness", "thicknesses", "tick_color", "tick_thickness",
+    "ticks", "tint", "title", "track_color", "track_thickness", "type", "value", "variant", "visible",
+    "width", "wrap", "x", "x_data", "x_labels", "x_max", "x_min", "x_series", "y", "y_labels", "y_max",
     "y_min", "year", "z_index", "zoom", NULL};
 
 
@@ -3047,6 +3197,8 @@ static AromaNode *build_button(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_click = resolve_callback(node, &bag, "on_click");
+    char pack_buf[ICON_PACK_NAME_MAX];
+    const char *pack = clean_pack_name(props_get(&bag, "pack"), pack_buf, sizeof(pack_buf));
     char *text = props_str_dup(&bag, "text", "Button");
     static const char *const type_names[] = {"filled", "tonal", "outlined", "text", "elevated"};
     static const int type_values[] = {BUTTON_TYPE_FILLED, BUTTON_TYPE_TONAL, BUTTON_TYPE_OUTLINED, BUTTON_TYPE_TEXT, BUTTON_TYPE_ELEVATED};
@@ -3072,7 +3224,7 @@ static AromaNode *build_button(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
             const char *ir = props_get(&bag, "icon");
             if (ir && ir[0])
             {
-                const char *resolved = resolve_icon(ir);
+                const char *resolved = resolve_icon_for_pack(pack, ir);
                 AromaFont *icon_font = ctx->icon_font ? ctx->icon_font : _widget_font;
                 /* The button draws its icon at 0.6 * height. Bind a face
                    rasterized near that size so the glyph renders at ~1x; the
@@ -3086,12 +3238,12 @@ static AromaNode *build_button(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
                     want_icon_px = (int)((float)props_int(&bag, "height", 0) * 0.6f + 0.5f);
                 if (want_icon_px > 0)
                 {
-                    AromaFont *sized_icon = resolve_icon_size_font_nearest(want_icon_px, NULL);
+                    AromaFont *sized_icon = resolve_icon_size_font_nearest_for_pack(pack, want_icon_px, NULL);
                     if (sized_icon)
                         icon_font = sized_icon;
                     else if (icon_size_prop)
-                        LOG_WARNING("No icon font registered near size %d (Button '%s'); register it with IncenseRegisterIconFontSize",
-                                    want_icon_px, text);
+                        LOG_WARNING("No icon font registered near size %d for pack '%s' (Button '%s'); register it with IncenseRegisterIconPackFontSize",
+                                    want_icon_px, pack, text);
                 }
                 aroma_button_set_icon(built, resolved ? resolved : ir, icon_font);
             }
@@ -3422,8 +3574,10 @@ static AromaNode *build_iconbutton(IncenseNode *node, AromaNode *sp, BuildCtx *c
         return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
     CallbackEntry *on_click = resolve_callback(node, &bag, "on_click");
+    char pack_buf[ICON_PACK_NAME_MAX];
+    const char *pack = clean_pack_name(props_get(&bag, "pack"), pack_buf, sizeof(pack_buf));
     const char *ir = props_get(&bag, "icon");
-    const char *resolved = ir ? resolve_icon(ir) : "";
+    const char *resolved = ir ? resolve_icon_for_pack(pack, ir) : "";
     char *icon = strdup(resolved ? resolved : "");
     static const char *const variant_names[] = {"standard", "filled", "tonal", "outlined"};
     static const int variant_values[] = {ICON_BUTTON_STANDARD, ICON_BUTTON_FILLED, ICON_BUTTON_TONAL, ICON_BUTTON_OUTLINED};
@@ -3432,23 +3586,37 @@ static AromaNode *build_iconbutton(IncenseNode *node, AromaNode *sp, BuildCtx *c
     if (icon)
     {
         int btn_size = props_int(&bag, "size", 40);
+        int btn_w = props_int(&bag, "width", btn_size);
+        int btn_h = props_int(&bag, "height", btn_size);
+        if (btn_w < 1)
+            btn_w = 1;
+        if (btn_h < 1)
+            btn_h = 1;
         AromaFont *icon_font = ctx->icon_font ? ctx->icon_font : _widget_font;
         const char *icon_size_prop = props_get(&bag, "icon_size");
         if (icon_size_prop)
         {
-            AromaFont *sized_icon = resolve_icon_size_font(props_int(&bag, "icon_size", 0));
+            int want_icon_px = props_int(&bag, "icon_size", 0);
+            AromaFont *sized_icon = resolve_icon_size_font_for_pack(pack, want_icon_px);
+            if (!sized_icon && pack && strcasecmp(pack, "material") != 0)
+                sized_icon = resolve_icon_size_font_nearest_for_pack(pack, want_icon_px, NULL);
             if (sized_icon)
                 icon_font = sized_icon;
             else
-                LOG_WARNING("No icon font registered for size %d (IconButton '%s'); register it with IncenseRegisterIconFontSize",
-                            props_int(&bag, "icon_size", 0), icon);
+                LOG_WARNING("No icon font registered for size %d for pack '%s' (IconButton '%s'); register it with IncenseRegisterIconPackFontSize",
+                            want_icon_px, pack, icon);
         }
         built = aroma_ui_iconbutton(parent, icon, props_int(&bag, "x", 0), props_int(&bag, "y", 0),
                                     btn_size, variant, on_click ? bridge_void_ptr : NULL, on_click,
                                     icon_font);
-        if (built && (props_get(&bag, "color") || props_get(&bag, "icon_color")))
-            aroma_iconbutton_set_colors(built, props_color(&bag, "color", 0x00000000),
-                                              props_color(&bag, "icon_color", 0xFFFFFFFF));
+        if (built)
+        {
+            if (btn_w != btn_size || btn_h != btn_size)
+                aroma_iconbutton_set_size(built, btn_w, btn_h);
+            if (props_get(&bag, "color") || props_get(&bag, "icon_color"))
+                aroma_iconbutton_set_colors(built, props_color(&bag, "color", 0x00000000),
+                                                  props_color(&bag, "icon_color", 0xFFFFFFFF));
+        }
     }
     free(icon);
     WIDGET_POSTAMBLE(built, bag, node, ctx);
@@ -3459,6 +3627,8 @@ static AromaNode *build_icon(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     if (!ctx)
         return NULL;
     WIDGET_PREAMBLE(node, sp, ctx);
+    char pack_buf[ICON_PACK_NAME_MAX];
+    const char *pack = clean_pack_name(props_get(&bag, "pack"), pack_buf, sizeof(pack_buf));
     AromaNode *built = aroma_icon_create(parent, props_int(&bag, "x", 0), props_int(&bag, "y", 0), props_int(&bag, "size", 24));
     if (built)
     {
@@ -3469,13 +3639,15 @@ static AromaNode *build_icon(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         if (icon_size_prop)
             icon_size = props_int(&bag, "icon_size", icon_size);
         AromaFont *icon_font = ctx->icon_font ? ctx->icon_font : _widget_font;
-        AromaFont *sized_icon = resolve_icon_size_font(icon_size);
+        AromaFont *sized_icon = resolve_icon_size_font_for_pack(pack, icon_size);
+        if (!sized_icon && pack && strcasecmp(pack, "material") != 0)
+            sized_icon = resolve_icon_size_font_nearest_for_pack(pack, icon_size, NULL);
         if (sized_icon)
             icon_font = sized_icon;
         const char *tr = props_get(&bag, "text"), *sr = props_get(&bag, "src");
         if (tr)
         {
-            const char *resolved = resolve_icon(tr);
+            const char *resolved = resolve_icon_for_pack(pack, tr);
             char *td = strdup(resolved ? resolved : tr);
             if (td)
             {
@@ -4366,6 +4538,9 @@ static AromaNode *build_map(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     aroma_map_set_center(built, (double)props_float(&bag, "lat", 0.0f), (double)props_float(&bag, "lon", 0.0f));
     aroma_map_set_zoom(built, zoom);
     aroma_map_set_show_attribution(built, props_bool(&bag, "attribution", true));
+    if (props_get(&bag, "tint"))
+        aroma_map_set_tint(built, props_color(&bag, "tint", 0));
+    aroma_map_set_route_width(built, props_int(&bag, "route_width", 4));
     IncenseNode *items[MAX_ITEM_NODES];
     int n = collect_item_nodes(node, "Marker", items, MAX_ITEM_NODES);
     for (int i = 0; i < n; i++)
@@ -4379,12 +4554,26 @@ static AromaNode *build_map(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         {
             char *p = props_str_dup(&mb, "popup", "");
             if (p)
-                aroma_map_add_popup_marker(built, mlat, mlon, mc, p);
+            {
+                if (icon)
+                {
+                    const char *resolved = resolve_icon(icon);
+                    aroma_map_add_icon_popup_marker(
+                        built, mlat, mlon, mc,
+                        resolved ? resolved : icon,
+                        ctx->icon_font ? ctx->icon_font : _widget_font, p);
+                }
+                else
+                {
+                    aroma_map_add_popup_marker(built, mlat, mlon, mc, p);
+                }
+            }
             free(p);
         }
         else if (icon)
         {
-            char *ic = props_str_dup(&mb, "icon", "");
+            const char *resolved = resolve_icon(icon);
+            char *ic = strdup(resolved ? resolved : icon);
             if (ic)
                 aroma_map_add_icon_marker_with_font(built, mlat, mlon, mc, ic, ctx->icon_font ? ctx->icon_font : _widget_font);
             free(ic);
@@ -4921,6 +5110,91 @@ static AromaNode *build_chip(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
     WIDGET_POSTAMBLE(built, bag, node, ctx);
 }
 
+static void chart_split_list(const char *s, char delim, char **out, size_t cap, size_t *count)
+{
+    if (!out || cap == 0)
+        return;
+    *count = 0;
+    if (!s || !*s)
+        return;
+    char *buf = strdup(s);
+    if (!buf)
+        return;
+    char *p = buf;
+    while (*p && *count < cap)
+    {
+        while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
+            p++;
+        if (*p == '\0')
+            break;
+        char *start = p;
+        while (*p && *p != delim)
+            p++;
+        char *end = p;
+        if (*p)
+            *p++ = '\0';
+        while (end > start && (end[-1] == ' ' || end[-1] == '\t' || end[-1] == '\r' || end[-1] == '\n'))
+            *--end = '\0';
+        if (*start)
+        {
+            out[(*count)++] = strdup(start);
+        }
+    }
+    free(buf);
+}
+
+static bool chart_parse_hex_color(const char *v, uint32_t *out)
+{
+    if (!v || v[0] != '#' || !out)
+        return false;
+    errno = 0;
+    char *end = NULL;
+    unsigned long val = strtoul(v + 1, &end, 16);
+    if (end == v + 1 || *end != '\0' || errno == ERANGE)
+        return false;
+    size_t digits = (size_t)(end - (v + 1));
+    if (digits == 3)
+    {
+        unsigned r = (unsigned)((val >> 8) & 0xFu) * 0x11u;
+        unsigned g = (unsigned)((val >> 4) & 0xFu) * 0x11u;
+        unsigned b = (unsigned)(val & 0xFu) * 0x11u;
+        val = (r << 16) | (g << 8) | b;
+    }
+    else if (digits <= 6)
+        val <<= (6 - digits) * 4;
+    else if (digits > 8)
+        return false;
+    *out = (uint32_t)val;
+    return true;
+}
+
+static AromaChartLineStyle chart_parse_line_style(const char *v)
+{
+    if (!v) return AROMA_CHART_SOLID;
+    if (strcmp(v, "dashed") == 0) return AROMA_CHART_DASHED;
+    if (strcmp(v, "dotted") == 0) return AROMA_CHART_DOTTED;
+    if (strcmp(v, "dotdash") == 0) return AROMA_CHART_DOTDASH;
+    if (strcmp(v, "longdash") == 0) return AROMA_CHART_LONGDASH;
+    if (strcmp(v, "twodash") == 0) return AROMA_CHART_TWODASH;
+    return AROMA_CHART_SOLID;
+}
+
+static AromaChartPointType chart_parse_point_type(const char *v)
+{
+    if (!v) return AROMA_CHART_POINT_NONE;
+    if (strcmp(v, "none") == 0) return AROMA_CHART_POINT_NONE;
+    if (strcmp(v, "crosses") == 0) return AROMA_CHART_POINT_CROSSES;
+    if (strcmp(v, "circles") == 0) return AROMA_CHART_POINT_CIRCLES;
+    if (strcmp(v, "dots") == 0) return AROMA_CHART_POINT_DOTS;
+    if (strcmp(v, "triangles") == 0) return AROMA_CHART_POINT_TRIANGLES;
+    if (strcmp(v, "filled triangles") == 0 || strcmp(v, "filled_triangles") == 0)
+        return AROMA_CHART_POINT_FILLED_TRIANGLES;
+    if (strcmp(v, "pixels") == 0) return AROMA_CHART_POINT_PIXELS;
+    if (strcmp(v, "dotlinetoxaxis") == 0 || strcmp(v, "dot_line_to_axis") == 0)
+        return AROMA_CHART_POINT_DOT_LINE_TO_AXIS;
+    return AROMA_CHART_POINT_NONE;
+}
+
 static AromaNode *build_chart(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
 {
     if (!ctx)
@@ -4930,19 +5204,117 @@ static AromaNode *build_chart(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
                                       props_int(&bag, "width", 300), props_int(&bag, "height", 160));
     if (built)
     {
-        char *ys = props_str_dup(&bag, "data", "");
-        char *xs = props_str_dup(&bag, "x_data", "");
-        if (ys && *ys)
-            aroma_chart_set_series_csv(built, (xs && *xs) ? xs : NULL, ys);
-        free(ys);
-        free(xs);
+        static const char *const type_names[] = {"line", "scatter", "line_points", "bar"};
+        static const int type_values[] = {AROMA_CHART_LINE, AROMA_CHART_SCATTER, AROMA_CHART_LINE_POINTS, AROMA_CHART_BAR};
+        AromaChartType ptype = (AromaChartType)match_enum(node, &bag, "type", AROMA_CHART_LINE,
+                                                          type_names, type_values, 4, "chart type", "line, scatter, line_points, bar");
+        aroma_chart_set_type(built, ptype);
+
+        const char *series_prop = props_get(&bag, "series");
+        if (series_prop && *series_prop)
+        {
+            char *y_list[AROMA_CHART_MAX_SERIES];
+            char *x_list[AROMA_CHART_MAX_SERIES];
+            size_t y_count = 0, x_count = 0;
+            chart_split_list(series_prop, ';', y_list, AROMA_CHART_MAX_SERIES, &y_count);
+            chart_split_list(props_get(&bag, "x_series"), ';', x_list, AROMA_CHART_MAX_SERIES, &x_count);
+            for (size_t i = 0; i < y_count; i++)
+            {
+                const char *xs = (i < x_count) ? x_list[i] : NULL;
+                aroma_chart_add_series_csv(built, xs, y_list[i]);
+                free(y_list[i]);
+            }
+            for (size_t i = 0; i < x_count; i++)
+                free(x_list[i]);
+        }
+        else
+        {
+            char *ys = props_str_dup(&bag, "data", "");
+            char *xs = props_str_dup(&bag, "x_data", "");
+            if (ys && *ys)
+                aroma_chart_add_series_csv(built, (xs && *xs) ? xs : NULL, ys);
+            free(ys);
+            free(xs);
+        }
+
+        const char *colors_prop = props_get(&bag, "series_colors");
+        if (!colors_prop) colors_prop = props_get(&bag, "colors");
+        if (colors_prop)
+        {
+            char *list[AROMA_CHART_MAX_SERIES];
+            size_t count = 0;
+            chart_split_list(colors_prop, ',', list, AROMA_CHART_MAX_SERIES, &count);
+            for (size_t i = 0; i < count; i++)
+            {
+                uint32_t c = 0;
+                if (chart_parse_hex_color(list[i], &c))
+                    aroma_chart_set_series_color(built, i, c);
+                free(list[i]);
+            }
+        }
+        const char *lc = props_get(&bag, "line_color");
+        if (lc && !colors_prop)
+            aroma_chart_set_line_color(built, props_color(&bag, "line_color", 0x00000000));
+        else if (lc)
+        {
+            /* allow line_color to style series 0 */
+            size_t sc = aroma_chart_series_count(built);
+            if (sc == 0) aroma_chart_set_line_color(built, props_color(&bag, "line_color", 0x00000000));
+            else aroma_chart_set_series_color(built, 0, props_color(&bag, "line_color", 0x00000000));
+        }
+
+        const char *points_prop = props_get(&bag, "series_points");
+        if (!points_prop) points_prop = props_get(&bag, "points");
+        if (!points_prop) points_prop = props_get(&bag, "point_type");
+        if (points_prop)
+        {
+            char *list[AROMA_CHART_MAX_SERIES];
+            size_t count = 0;
+            chart_split_list(points_prop, ',', list, AROMA_CHART_MAX_SERIES, &count);
+            for (size_t i = 0; i < count; i++)
+            {
+                aroma_chart_set_series_point_type(built, i, chart_parse_point_type(list[i]));
+                free(list[i]);
+            }
+        }
+
+        const char *lines_prop = props_get(&bag, "series_lines");
+        if (!lines_prop) lines_prop = props_get(&bag, "lines");
+        if (!lines_prop) lines_prop = props_get(&bag, "line");
+        if (lines_prop)
+        {
+            char *list[AROMA_CHART_MAX_SERIES];
+            size_t count = 0;
+            chart_split_list(lines_prop, ',', list, AROMA_CHART_MAX_SERIES, &count);
+            for (size_t i = 0; i < count; i++)
+            {
+                aroma_chart_set_series_line_style(built, i, chart_parse_line_style(list[i]));
+                free(list[i]);
+            }
+        }
+
+        const char *thick_prop = props_get(&bag, "series_thickness");
+        if (!thick_prop) thick_prop = props_get(&bag, "thicknesses");
+        if (thick_prop)
+        {
+            char *list[AROMA_CHART_MAX_SERIES];
+            size_t count = 0;
+            chart_split_list(thick_prop, ',', list, AROMA_CHART_MAX_SERIES, &count);
+            for (size_t i = 0; i < count; i++)
+            {
+                errno = 0;
+                char *end = NULL;
+                double v = strtod(list[i], &end);
+                if (end != list[i] && errno != ERANGE)
+                    aroma_chart_set_series_thickness(built, i, (float)v);
+                free(list[i]);
+            }
+        }
 
         if (props_get(&bag, "x_labels") || props_get(&bag, "y_labels"))
             aroma_chart_set_tick_labels(built, props_get(&bag, "x_labels"),
                                         props_get(&bag, "y_labels"));
 
-        /* An axis goes explicit the moment either of its ends is given; tick
-           labels only line up with values when they are. */
         if (props_get(&bag, "x_min") || props_get(&bag, "x_max") ||
             props_get(&bag, "y_min") || props_get(&bag, "y_max"))
             aroma_chart_set_range(built,
@@ -4951,8 +5323,6 @@ static AromaNode *build_chart(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
                                   !props_get(&bag, "y_min") && !props_get(&bag, "y_max"),
                                   props_float(&bag, "y_min", 0.0f), props_float(&bag, "y_max", 1.0f));
 
-        if (props_get(&bag, "line_color"))
-            aroma_chart_set_line_color(built, props_color(&bag, "line_color", 0x00000000));
         if (props_get(&bag, "grid_color"))
             aroma_chart_set_grid_color(built, props_color(&bag, "grid_color", 0x00000000));
         if (props_get(&bag, "frame_color"))
@@ -4961,6 +5331,8 @@ static AromaNode *build_chart(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
             aroma_chart_set_text_color(built, props_color(&bag, "text_color", 0x00000000));
         if (props_get(&bag, "line_thickness"))
             aroma_chart_set_line_thickness(built, props_float(&bag, "line_thickness", 2.0f));
+        if (props_get(&bag, "bar_gap"))
+            aroma_chart_set_bar_gap(built, props_float(&bag, "bar_gap", -1.0f));
 
         if (props_get(&bag, "pad_left") || props_get(&bag, "pad_top") ||
             props_get(&bag, "pad_right") || props_get(&bag, "pad_bottom"))
@@ -4972,8 +5344,6 @@ static AromaNode *build_chart(IncenseNode *node, AromaNode *sp, BuildCtx *ctx)
         aroma_chart_set_furniture(built, props_bool(&bag, "grid", true),
                                   props_bool(&bag, "frame", true));
 
-        /* Axis text gets a face rasterised at its own pixel size, like Label's
-           `size:` — 12px by default, since ticks are small. */
         AromaFont *tick_font = resolve_size_font(props_int(&bag, "size", 12));
         if (!tick_font)
             tick_font = _widget_font;

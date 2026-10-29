@@ -259,6 +259,7 @@ static void test_chart_markup(void)
         "        y_min: 0\n"
         "        y_max: 10\n"
         "        line_thickness: 2\n"
+        "        bar_gap: 9.5\n"
         "        line_color: #FF8AB4F8\n"
         "        grid_color: #33FFFFFF\n"
         "        frame_color: #40FFFFFF\n"
@@ -270,6 +271,19 @@ static void test_chart_markup(void)
         "        grid: 1\n"
         "        frame: 1\n"
         "        size: 12\n"
+        "    }\n"
+        "    Chart { id: \"multi\" x: 12 y: 140 width: 300 height: 120\n"
+        "        type: \"line_points\"\n"
+        "        series: \"1,3,2,5,4; 2,4,3,6,5\"\n"
+        "        x_series: \"0,1,2,3,4; 0,1,2,3,4\"\n"
+        "        series_colors: \"#FF3366CC,#FF00AA66\"\n"
+        "        series_points: \"dots,triangles\"\n"
+        "        series_lines: \"solid,dashed\"\n"
+        "        series_thickness: \"2,1.5\"\n"
+        "        x_labels: \"Mon,Tue,Wed,Thu,Fri\"\n"
+        "        y_labels: \"0,5,10\"\n"
+        "        y_min: 0\n"
+        "        y_max: 10\n"
         "    }\n"
         "}\n";
 
@@ -335,6 +349,108 @@ static void test_chart_theme_colors(void)
               "the theme colour steps aside once a colour is set");
 
         aroma_theme_set_global(&saved);
+        __destroy_node(chart);
+    }
+
+    remove_stub();
+    __destroy_node(root);
+    __node_system_destroy();
+}
+
+/* The four shapes pbPlots can draw share one pipeline, so this checks that each
+ * one actually reaches the raster with its own colour and that multiple series
+ * stay independent. */
+static void test_chart_plot_types(void)
+{
+    __node_system_init();
+    AromaNode *root = make_root();
+    install_stub();
+
+    AromaNode *chart = aroma_ui_chart(root, 0, 0, 260, 140);
+    CHECK(chart != NULL, "plot-types chart created");
+    if (chart)
+    {
+        aroma_chart_set_font(chart, NULL); /* no tick text needed here */
+
+        /* Scatter: two series, two marker shapes, two colours. */
+        aroma_chart_set_type(chart, AROMA_CHART_SCATTER);
+        aroma_chart_add_series_csv(chart, NULL, "1,3,2,5,4");
+        aroma_chart_add_series_csv(chart, NULL, "2,4,3,6,5");
+        CHECK(aroma_chart_series_count(chart) == 2, "two series coexist");
+        aroma_chart_set_series_color(chart, 0, 0xFFFF0000);
+        aroma_chart_set_series_color(chart, 1, 0xFF00FF00);
+        aroma_chart_set_series_point_type(chart, 0, AROMA_CHART_POINT_DOTS);
+        aroma_chart_set_series_point_type(chart, 1, AROMA_CHART_POINT_TRIANGLES);
+        draw_now(chart);
+        CHECK(count_theme_color(0xFFFF0000) > 0, "series 0 scatter colour lands");
+        CHECK(count_theme_color(0xFF00FF00) > 0, "series 1 scatter colour lands");
+
+        /* Line + points must add marker pixels on top of the polyline. */
+        aroma_chart_clear_series(chart);
+        aroma_chart_set_type(chart, AROMA_CHART_LINE);
+        aroma_chart_add_series_csv(chart, NULL, "0,4,1,5,2");
+        aroma_chart_set_series_color(chart, 0, 0xFF3366CC);
+        draw_now(chart);
+        int line_pixels = count_theme_color(0xFF3366CC);
+        CHECK(line_pixels > 0, "line rasterises");
+        aroma_chart_set_type(chart, AROMA_CHART_LINE_POINTS);
+        draw_now(chart);
+        int points_pixels = count_theme_color(0xFF3366CC);
+        CHECK(points_pixels > line_pixels, "line+points adds markers to the line");
+
+        /* Per-series line style and thickness are baked into the raster, so a
+         * change has to show up as a different stroke footprint. */
+        aroma_chart_clear_series(chart);
+        aroma_chart_set_type(chart, AROMA_CHART_LINE);
+        aroma_chart_add_series_csv(chart, NULL, "0,4,1,5,2");
+        aroma_chart_set_series_color(chart, 0, 0xFF3366CC);
+        aroma_chart_set_series_thickness(chart, 0, 2.0f);
+        draw_now(chart);
+        int solid_pixels = count_theme_color(0xFF3366CC);
+        aroma_chart_set_series_line_style(chart, 0, AROMA_CHART_DASHED);
+        draw_now(chart);
+        int dashed_pixels = count_theme_color(0xFF3366CC);
+        CHECK(dashed_pixels < solid_pixels, "dashed series renders fewer stroke pixels");
+        aroma_chart_set_series_line_style(chart, 0, AROMA_CHART_SOLID);
+        aroma_chart_set_series_thickness(chart, 0, 5.0f);
+        draw_now(chart);
+        int thick_pixels = count_theme_color(0xFF3366CC);
+        CHECK(thick_pixels > solid_pixels, "per-series thickness widens the stroke");
+
+        /* Bar: unequal series lengths are trimmed to the shortest group axis
+         * instead of pbPlots refusing the whole plot. */
+        aroma_chart_clear_series(chart);
+        aroma_chart_set_type(chart, AROMA_CHART_BAR);
+        aroma_chart_add_series_csv(chart, NULL, "4,8,6");
+        aroma_chart_add_series_csv(chart, NULL, "2,5,9,7");
+        aroma_chart_set_series_color(chart, 0, 0xFFFF0000);
+        aroma_chart_set_series_color(chart, 1, 0xFF00FF00);
+        draw_now(chart);
+        CHECK(s_cap != NULL, "bar chart rasterised");
+        CHECK(count_theme_color(0xFFFF0000) > 0, "first bar series lands");
+        CHECK(count_theme_color(0xFF00FF00) > 0, "second bar series lands");
+
+        /* A custom group gap widens the space between bars, so the bars
+         * themselves cover fewer pixels. */
+        aroma_chart_clear_series(chart);
+        aroma_chart_add_series_csv(chart, NULL, "4,8,6,9,5,7,3,6");
+        aroma_chart_set_series_color(chart, 0, 0xFF3366CC);
+        draw_now(chart);
+        int auto_bar_pixels = count_theme_color(0xFF3366CC);
+        aroma_chart_set_bar_gap(chart, 24.0f);
+        draw_now(chart);
+        int gap_bar_pixels = count_theme_color(0xFF3366CC);
+        CHECK(auto_bar_pixels > 0, "auto-spaced bars rasterise");
+        CHECK(gap_bar_pixels < auto_bar_pixels, "bar_gap narrows the drawn bars");
+        aroma_chart_set_bar_gap(chart, -1.0f);
+
+        /* Out-of-range style setters are no-ops, not crashes. */
+        aroma_chart_set_series_color(chart, 99, 0xFFFFFFFF);
+        aroma_chart_set_series_point_type(chart, 99, AROMA_CHART_POINT_DOTS);
+        aroma_chart_set_series_line_style(chart, 99, AROMA_CHART_DASHED);
+        aroma_chart_set_series_thickness(chart, 99, 3.0f);
+        CHECK(1, "out-of-range series styles are ignored");
+
         __destroy_node(chart);
     }
 
@@ -445,6 +561,7 @@ void run_chart_tests(int *passed, int *failed)
     test_chart_create();
     test_chart_markup();
     test_chart_theme_colors();
+    test_chart_plot_types();
     test_chart_raster();
     printf("Aroma Chart: %d passed, %d failed\n", s_passed, s_failed);
     *passed = s_passed;

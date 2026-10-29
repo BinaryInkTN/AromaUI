@@ -61,6 +61,7 @@ AromaNode *aroma_switch_create(AromaNode *parent, int x, int y, int width, int h
     data->toggle_size = data->rect.height - sw_dp(AROMA_SWITCH_INSET_DP * 2);
     data->toggle_radius = (float)data->toggle_size / 2.0f;
     data->border_color = 0x333333;
+    data->toggle_color = 0xFFFFFFFF;
     data->toggle_x = data->state ? (data->rect.x + data->rect.width - data->toggle_size - sw_dp(AROMA_SWITCH_INSET_DP)) : (data->rect.x + sw_dp(AROMA_SWITCH_INSET_DP));
 
     data->use_theme_colors = true;
@@ -155,7 +156,7 @@ void aroma_switch_draw(AromaNode *node, size_t window_id)
                                data->border_color, sw_dp(AROMA_SWITCH_BORDER_WIDTH_DP), true, data->track_radius);
 
     int toggle_y = data->rect.y + sw_dp(AROMA_SWITCH_INSET_DP);
-    uint32_t toggle_color = 0xFFFFFF;
+    uint32_t toggle_color = data->toggle_color;
     gfx->fill_rectangle(window_id, data->toggle_x, toggle_y, data->toggle_size, data->toggle_size, toggle_color, true, data->toggle_radius);
 }
 

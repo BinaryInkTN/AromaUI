@@ -258,6 +258,19 @@ AromaNode *aroma_iconbutton_create(AromaNode *parent, const char *icon_text, int
     return node;
 }
 
+void aroma_iconbutton_set_size(AromaNode *button_node, int width, int height)
+{
+    if (!button_node || !button_node->node_widget_ptr)
+        return;
+    if (width <= 0 || height <= 0)
+        return;
+    AromaIconButton *btn = (AromaIconButton *)button_node->node_widget_ptr;
+    btn->rect.width = width;
+    btn->rect.height = height;
+    __iconbutton_update_layout(btn);
+    aroma_node_invalidate(button_node);
+}
+
 void aroma_iconbutton_set_callback(AromaNode *button_node, void (*callback)(void *user_data), void *user_data)
 {
     if (!button_node || !button_node->node_widget_ptr)

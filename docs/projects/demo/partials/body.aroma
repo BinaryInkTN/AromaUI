@@ -1,0 +1,43 @@
+Container {
+    id: "body"
+    z_index: 20
+    x: 540
+    y: 24
+    width: 716
+    height: 752
+    Image {
+        z_index: 21
+        src: "assets/travel_album.jpg"
+        x: 0
+        y: 0
+        width: 716
+        height: 320
+        corner_radius: 24
+        scale: cover
+    }
+    Label {
+        z_index: 22
+        text: "Weekend mix"
+        size: 28
+        color: #FFFFFF
+        x: 24
+        y: 360
+    }
+    Label {
+        z_index: 22
+        text: "Travel  ·  Jazz  ·  Open road"
+        size: 15
+        color: #8E8E93
+        x: 24
+        y: 400
+    }
+    Label {
+        z_index: 22
+        text: "Multi-file project: main.aroma includes partials/header.aroma and partials/body.aroma; assets are fetched and preloaded into the sandbox filesystem."
+        size: 12
+        color: #A3A3A3
+        x: 24
+        y: 436
+        width: 660
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "Demo (multi-file)",
+    "main": "main.aroma",
+    "files": [
+        {"path": "partials/header.aroma"},
+        {"path": "partials/body.aroma"},
+        {"path": "assets/travel_avatar.png", "type": "asset"},
+        {"path": "assets/travel_album.jpg", "type": "asset"},
+        {"path": "assets/travel_mic.png", "type": "asset"}
+    ]
+}

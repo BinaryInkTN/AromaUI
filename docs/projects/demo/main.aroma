@@ -1,0 +1,25 @@
+Window {
+    width: 1280
+    height: 800
+    title: "Multi-file Demo"
+    Container {
+        id: "root"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 0
+        Card {
+            z_index: 0
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            type: filled
+            color: #000000
+            corner_radius: 0
+        }
+        include "partials/header.aroma"
+        include "partials/body.aroma"
+    }
+}

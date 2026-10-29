@@ -24,20 +24,22 @@ with `aroma build linux` and runs with `aroma run linux`.
 
 | Directory | Feature showcased |
 | --- | --- |
-| `01_hello_world` | Window plus a button wired through Incense |
-| `02_buttons` | Button types, icon buttons, chips |
-| `03_form_inputs` | Textbox, checkbox, radio, switch, slider, dropdown, stepper |
-| `04_layout` | Flex container, scroll view, cards, divider |
-| `05_navigation` | Sidebar, tabs, segmented control |
-| `06_feedback` | Dialog, snackbar, menu, tooltip, loading, progress bar |
-| `07_lists_tables` | List view, data table, carousel |
-| `08_theming` | Live theme switching |
-| `09_animation` | Declarative entrance plus C-driven motion with easings |
-| `10_datetime` | Calendar, date picker, time picker |
-| `11_3d_viewer` | Built-in 3D model with orbit, zoom, auto-rotate |
-| `12_incense` | State bindings and conditional UI |
-| `13_gestures` | Gesture engine: tap, double-tap, long-press, swipes, pan, pinch |
-| `14_video` | Video playback: MP4/WebM/MKV/AVI/MPEG files and live frame streams |
-| `15_webview` | WebView: local HTML pages, history, text scaling |
-| `16_loud_dashboard` | Full analytics dashboard: charts, tables, search, settings, CSV export |
-| `14_python_bindings` | Python ctypes bindings demo (headless, generated on demand) |
+| `01_hello_world` | Build production level UIs |
+| `02_buttons` | Build production level UIs |
+| `03_form_inputs` | Build production level UIs |
+| `04_layout` | Build production level UIs |
+| `05_navigation` | Build production level UIs |
+| `06_feedback` | Build production level UIs |
+| `07_lists_tables` | Build production level UIs |
+| `08_theming` | Build production level UIs |
+| `09_animation` | Build production level UIs |
+| `10_datetime` | Build production level UIs |
+| `11_3d_viewer` | Build production level UIs |
+| `12_incense` | Build production level UIs |
+| `13_gestures` | Build production level UIs |
+| `14_video` | Build production level UIs |
+| `15_webview` | Build production level UIs |
+| `16_loud_dashboard` | Build production level UIs |
+| `17_travel_dashboard` | Build production level UIs |
+| `18_fitness_dashboard` | Build production level UIs |
+| `14_python_bindings` | Build production level UIs |

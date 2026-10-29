@@ -322,6 +322,30 @@ def chart(ident, x, y, w, h, data, color, thickness, z=4):
     add("        }")
 
 
+def bar_chart(ident, x, y, w, h, data, color, gap, z=3):
+    add("        Chart {")
+    prop("z_index", z)
+    prop("id", f'"{ident}"')
+    prop("x", x)
+    prop("y", y)
+    prop("width", w)
+    prop("height", h)
+    prop("size", 12)
+    prop("type", '"bar"')
+    prop("series", f'"{",".join(str(v) for v in data)}"')
+    prop("y_min", 0)
+    prop("y_max", 100)
+    prop("line_color", f"#{color}")
+    prop("bar_gap", gap)
+    prop("pad_left", 0)
+    prop("pad_top", 0)
+    prop("pad_right", 0)
+    prop("pad_bottom", 0)
+    prop("grid", 0)
+    prop("frame", 0)
+    add("        }")
+
+
 def pill(text, x, y, w, h, bg, fg, cb, ident=None, text_size=14, z=30,
          text_x=None):
     card(x, y, w, h, bg, radius=h // 2, z=z - 2, ident=ident)
@@ -560,17 +584,12 @@ with Fragment("pages/analytics/bars.aroma"):
 
     product_heights = [31, 28, 35, 32, 26, 24, 31, 34, 28, 37, 33, 27, 29,
                        31, 26, 28, 34, 30, 27, 32]
-    shades = ["6E41E6", "7446E9", "7B4BEA", "8252EC", "8A5AED",
-              "9365EF", "9C70F0", "A67CF2", "AF87F4", "B18CF5"]
-    for i, h in enumerate(product_heights):
-        x = 784 + round(i * 16.5)
-        card(x, 390 - h, 7, h, shades[i % len(shades)], radius=4, z=3,
-             ident=f"product_bar_{i}")
+    bar_chart("product_chart", 784, 290, 322, 100, product_heights,
+              "8A5AED", 9.5)
 
     other_heights = [29, 25, 32, 27, 24, 30, 26, 23]
-    for i, h in enumerate(other_heights):
-        card(1136 + i * 13, 390 - h, 7, h, "4E3195", radius=4, z=3,
-             ident=f"other_bar_{i}")
+    bar_chart("other_chart", 1136, 290, 100, 100, other_heights,
+              "4E3195", 6)
 
     label("January 26", 448, 402, 12, MUTED, z=4, ident="bars_date_start")
     label("February 26", 1184, 402, 12, MUTED, z=4, ident="bars_date_end")

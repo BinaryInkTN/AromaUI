@@ -34,7 +34,11 @@
 #include "aroma_ubuntu_font.h"
 #include "aroma_material_font.h"
 #include "aroma_incense_loader.h"
+#include "widgets/aroma_chart.h"
 #include "loud_dashboard.h"
+#include "fitness_demo.h"
+#include "travel_demo.h"
+
 
 #define SANDBOX_WIN_W 320
 #define SANDBOX_WIN_H 480
@@ -52,10 +56,11 @@ static char s_last_error[1024];
 /* Glyphs are rasterized per pixel size: scaling one face blurs it, so every
  * size the previews ask for with `size:` / `icon_size:` gets its own face.
  * Created once on boot and published to the Incense loader. */
-static const int s_text_sizes[] = {12, 14, 16, 18, 20, 23, 24, 26, 40, 52};
+static const int s_text_sizes[] = {7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 23, 24, 26, 28, 30, 32, 34, 38, 40, 44, 52};
 static AromaFont *s_text_fonts[sizeof(s_text_sizes) / sizeof(s_text_sizes[0])];
-static const int s_icon_sizes[] = {12, 14, 16, 18, 20, 24, 26, 32, 36, 40, 48, 64};
+static const int s_icon_sizes[] = {8, 11, 12, 13, 14, 16, 18, 20, 22, 24, 26, 32, 36, 40, 48, 64};
 static AromaFont *s_icon_fonts[sizeof(s_icon_sizes) / sizeof(s_icon_sizes[0])];
+static AromaFont *s_lucide_fonts[sizeof(s_icon_sizes) / sizeof(s_icon_sizes[0])];
 
 static void create_sized_fonts(void)
 {
@@ -70,6 +75,13 @@ static void create_sized_fonts(void)
             s_icon_fonts[i] = aroma_font_create_from_memory(
                 icon_ttf, icon_ttf_len, s_icon_sizes[i]);
         IncenseRegisterIconFontSize(s_icon_sizes[i], s_icon_fonts[i]);
+
+        /* Lucide is a second glyph pack for the line-style dashboard icons.
+           The TTF is preloaded at /assets/lucide.ttf by build_wasm.sh. */
+        if (!s_lucide_fonts[i])
+            s_lucide_fonts[i] = aroma_font_create("assets/lucide.ttf", s_icon_sizes[i]);
+        if (s_lucide_fonts[i])
+            IncenseRegisterIconPackFontSize("lucide", s_icon_sizes[i], s_lucide_fonts[i]);
     }
     loud_dashboard_bind_fonts(s_text_fonts, s_text_sizes,
                               (int)(sizeof(s_text_sizes) / sizeof(s_text_sizes[0])));
@@ -113,8 +125,50 @@ static AromaTheme theme_aroma_violet_dark(void)
     return t;
 }
 
+/* Dark training shell with an orange primary for the Fitness dashboard. */
+static AromaTheme theme_fitness(void)
+{
+    AromaTheme t = aroma_theme_create_material_black();
+    t.colors.primary        = 0xFFF97316u;
+    t.colors.primary_dark   = 0xFFEA580Cu;
+    t.colors.primary_light  = 0xFFFDBA74u;
+    t.colors.secondary      = 0xFF84CC16u;
+    t.colors.background     = 0xFF0A0A0Au;
+    t.colors.surface        = 0xFF1A1A1Au;
+    t.colors.text_primary   = 0xFFFFFFFFu;
+    t.colors.text_secondary = 0xFFA3A3A3u;
+    t.colors.border         = 0xFF2A2A2Au;
+    t.colors.error          = 0xFFEF4444u;
+    t.typography.font_color = t.colors.text_primary;
+    return t;
+}
+
+/* Car infotainment palette: black shell, graphite cards and iOS-style
+ * green/blue accents. */
+static AromaTheme theme_travel(void)
+{
+    AromaTheme t = aroma_theme_create_material_black();
+    t.colors.primary        = 0xFF34C759u;
+    t.colors.primary_dark   = 0xFF248A3Du;
+    t.colors.primary_light  = 0xFF30D158u;
+    t.colors.secondary      = 0xFF0A84FFu;
+    t.colors.background     = 0xFF000000u;
+    t.colors.surface        = 0xFF1C1C1Eu;
+    t.colors.text_primary   = 0xFFFFFFFFu;
+    t.colors.text_secondary = 0xFF8E8E93u;
+    t.colors.border         = 0xFF2C2C2Eu;
+    t.colors.error          = 0xFFFF3B30u;
+    t.typography.font_color = t.colors.text_primary;
+    return t;
+}
+
+
 static AromaTheme theme_named(const char *name)
 {
+    if (!strcmp(name, "Fitness"))
+        return theme_fitness();
+    if (!strcmp(name, "Travel"))
+        return theme_travel();
     if (!strcmp(name, "Aroma Violet dark"))
         return theme_aroma_violet_dark();
     if (!strcmp(name, "Material Blue dark"))
@@ -146,6 +200,91 @@ EMSCRIPTEN_KEEPALIVE void aroma_sandbox_set_theme_preset(const char *name)
 static void noop_cb(void *userdata)
 {
     (void)userdata;
+}
+
+/* The charts demo ships a Shuffle button so the docs page proves the plots
+ * are live, not screenshots: each press regenerates the series behind the
+ * same ids and the widget re-rasterises on the next frame. */
+static unsigned s_plot_seed = 0x51ED270Bu;
+
+static double plot_rand(int span)
+{
+    s_plot_seed = s_plot_seed * 1664525u + 1013904223u;
+    return (double)((s_plot_seed >> 16) % (unsigned)span);
+}
+
+static void plots_shuffle_cb(void *userdata)
+{
+    (void)userdata;
+    if (!s_registry)
+        return;
+
+    double a[7], b[7], ys[7];
+    AromaNode *line = IncenseFindWidgetQuiet(s_registry, "plot_line");
+    if (line)
+    {
+        for (int i = 0; i < 7; i++)
+        {
+            a[i] = 2.0 + plot_rand(9); /* 2..10, axis 0..12 */
+            b[i] = 2.0 + plot_rand(9);
+        }
+        aroma_chart_clear_series(line);
+        aroma_chart_add_series(line, NULL, a, 7);
+        aroma_chart_add_series(line, NULL, b, 7);
+        aroma_chart_set_series_color(line, 0, 0xFF8AB4F8u);
+        aroma_chart_set_series_color(line, 1, 0xFFF28B82u);
+        aroma_chart_set_series_thickness(line, 0, 2.0f);
+        aroma_chart_set_series_thickness(line, 1, 2.0f);
+    }
+
+    AromaNode *scatter = IncenseFindWidgetQuiet(s_registry, "plot_scatter");
+    if (scatter)
+    {
+        double sx[5], sy[5];
+        for (int i = 0; i < 5; i++)
+        {
+            sx[i] = plot_rand(10); /* 0..9, axis 0..10 */
+            sy[i] = plot_rand(10);
+        }
+        aroma_chart_clear_series(scatter);
+        aroma_chart_add_series(scatter, NULL, sx, 5);
+        aroma_chart_add_series(scatter, NULL, sy, 5);
+        aroma_chart_set_series_color(scatter, 0, 0xFF81C995u);
+        aroma_chart_set_series_color(scatter, 1, 0xFFFDD663u);
+        aroma_chart_set_series_point_type(scatter, 0, AROMA_CHART_POINT_DOTS);
+        aroma_chart_set_series_point_type(scatter, 1, AROMA_CHART_POINT_TRIANGLES);
+    }
+
+    AromaNode *points = IncenseFindWidgetQuiet(s_registry, "plot_line_points");
+    if (points)
+    {
+        for (int i = 0; i < 7; i++)
+            ys[i] = 2.0 + plot_rand(10); /* 2..11, axis 0..12 */
+        aroma_chart_clear_series(points);
+        aroma_chart_add_series(points, NULL, ys, 7);
+        aroma_chart_set_series_color(points, 0, 0xFFC58AF9u);
+        aroma_chart_set_series_point_type(points, 0, AROMA_CHART_POINT_CIRCLES);
+        aroma_chart_set_series_line_style(points, 0, AROMA_CHART_DASHED);
+        aroma_chart_set_series_thickness(points, 0, 2.0f);
+    }
+
+    AromaNode *bar = IncenseFindWidgetQuiet(s_registry, "plot_bar");
+    if (bar)
+    {
+        double qa[4], qb[4];
+        for (int i = 0; i < 4; i++)
+        {
+            qa[i] = 3.0 + plot_rand(15); /* 3..17, axis 0..18 */
+            qb[i] = 3.0 + plot_rand(15);
+        }
+        aroma_chart_clear_series(bar);
+        aroma_chart_add_series(bar, NULL, qa, 4);
+        aroma_chart_add_series(bar, NULL, qb, 4);
+        aroma_chart_set_series_color(bar, 0, 0xFF8AB4F8u);
+        aroma_chart_set_series_color(bar, 1, 0xFFF28B82u);
+    }
+
+    aroma_ui_request_redraw(NULL);
 }
 
 static void select_theme_cb(int index, const char *option, void *userdata)
@@ -202,7 +341,12 @@ static void register_preview_callbacks(void)
                                 (void *)noop_cb, NULL);
     IncenseRegisterCallback("select_theme", INCENSE_CALLBACK_INT_STRING_PTR,
                             (void *)select_theme_cb, NULL);
+    IncenseRegisterCallback("plots_shuffle", INCENSE_CALLBACK_VOID_PTR,
+                            (void *)plots_shuffle_cb, NULL);
     loud_dashboard_register_callbacks();
+    fitness_register_callbacks();
+    travel_register_callbacks();
+
 }
 
 static void mount_blank(void)
@@ -270,6 +414,9 @@ EMSCRIPTEN_KEEPALIVE void aroma_sandbox_reload(const char *source)
         return;
     }
     loud_dashboard_after_mount(s_registry);
+    fitness_after_mount(s_registry);
+    travel_after_mount(s_registry);
+
     aroma_ui_request_redraw(NULL);
 }
 

@@ -153,6 +153,7 @@ screens feel like they ship in the same OS:
 - **List children**: `ListItem { text: "..." secondary: "..." }` for ListView
 - **Navigation**: Use `visible: 0/1` to show/hide pages and `on_click: "back"` for back navigation
 - **Icons**: Material icon names: `AROMA_ICON_*` constants for `IconButton` and `Icon` widgets. Browse the full embedded set in the [Material Icons](#/page/material-icons) reference.
+- **Icon packs**: `Icon`, `IconButton`, and `Button` accept `pack: "lucide"` to use the bundled Lucide line icons. Names are lowercase and hyphenated, for example `text: "bed-double"` or `icon: "pause"`. Omit `pack` for Material Icons. The full Lucide name set is in `include/aroma_lucide_icons.h`.
 - **Virtual Keyboard**: Textbox widgets automatically show a responsive virtual keyboard when focused on Emscripten/WebAssembly builds. The keyboard anchors at the bottom of the canvas, keys scale to fit screen width, and labels abbreviate when space is limited. Enable it programmatically with `aroma_textbox_enable_virtual_keyboard(root, true)`.
 
 ## Capabilities and Limits

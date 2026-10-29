@@ -1,0 +1,639 @@
+Window {
+    width: 1280
+    height: 800
+    title: "Travel Dashboard"
+    Container {
+        id: "travel_root"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 0
+        Card {
+            z_index: 0
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            type: filled
+            color: #000000
+            corner_radius: 0
+        }
+    }
+    Container {
+        id: "travel_content"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 10
+        Card {
+            z_index: 10
+            x: 24
+            y: 24
+            width: 480
+            height: 328
+            type: filled
+            color: #1C1C1E
+            corner_radius: 24
+        }
+        Image {
+            z_index: 11
+            src: "assets/travel_avatar.png"
+            x: 48
+            y: 48
+            width: 96
+            height: 96
+            corner_radius: 48
+            scale: cover
+        }
+        Card {
+            z_index: 13
+            x: 120
+            y: 120
+            width: 32
+            height: 32
+            type: filled
+            color: #0A84FF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 14
+            x: 128
+            y: 128
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_CHAT"
+            color: #FFFFFF
+        }
+        Label {
+            z_index: 12
+            text: "Heather Travis"
+            size: 34
+            color: #FFFFFF
+            x: 168
+            y: 54
+        }
+        Label {
+            z_index: 12
+            id: "travel_msg_sub"
+            text: "New message"
+            size: 26
+            color: #8E8E93
+            x: 168
+            y: 102
+        }
+        IconButton {
+            z_index: 30
+            id: "travel_msg_play_icon"
+            x: 48
+            y: 228
+            size: 80
+            width: 208
+            height: 80
+            icon_size: 40
+            icon: "AROMA_ICON_PLAY_ARROW"
+            variant: filled
+            color: #2C2C2E
+            icon_color: #FFFFFF
+            on_click: "travel_msg_play"
+        }
+        IconButton {
+            z_index: 30
+            id: "travel_msg_reply_icon"
+            x: 272
+            y: 228
+            size: 80
+            width: 208
+            height: 80
+            icon_size: 40
+            icon: "AROMA_ICON_REPLY"
+            variant: filled
+            color: #2C2C2E
+            icon_color: #FFFFFF
+            on_click: "travel_msg_reply"
+        }
+        Card {
+            z_index: 10
+            x: 24
+            y: 372
+            width: 480
+            height: 300
+            type: filled
+            color: #1C1C1E
+            corner_radius: 24
+        }
+        Image {
+            z_index: 11
+            src: "assets/travel_album.jpg"
+            x: 48
+            y: 396
+            width: 96
+            height: 96
+            corner_radius: 12
+            scale: cover
+        }
+        IconButton {
+            z_index: 31
+            id: "travel_album_badge_icon"
+            x: 120
+            y: 468
+            size: 28
+            icon_size: 16
+            icon: "AROMA_ICON_PAUSE"
+            variant: filled
+            color: #FF3B30
+            icon_color: #FFFFFF
+            on_click: "travel_album_toggle"
+        }
+        Button {
+            z_index: 30
+            x: 44
+            y: 392
+            width: 108
+            height: 108
+            text: ""
+            type: text
+            on_click: "travel_album_toggle"
+        }
+        Label {
+            z_index: 12
+            id: "travel_music_title"
+            text: "All This Dust"
+            size: 30
+            color: #FFFFFF
+            x: 168
+            y: 402
+        }
+        Label {
+            z_index: 12
+            id: "travel_music_artist"
+            text: "Canasta"
+            size: 26
+            color: #8E8E93
+            x: 168
+            y: 444
+        }
+        ProgressBar {
+            z_index: 12
+            x: 48
+            y: 532
+            width: 432
+            height: 2
+            value: 0.65
+            track_color: #3A3A3C
+            indicator_color: #F2F2F7
+        }
+        IconButton {
+            z_index: 30
+            x: 72
+            y: 576
+            size: 48
+            icon_size: 32
+            icon: "AROMA_ICON_SKIP_PREVIOUS"
+            variant: standard
+            color: #1C1C1E
+            icon_color: #FFFFFF
+            on_click: "travel_music_prev"
+        }
+        IconButton {
+            z_index: 30
+            id: "travel_music_toggle_icon"
+            x: 184
+            y: 576
+            size: 48
+            icon_size: 32
+            icon: "AROMA_ICON_PAUSE"
+            variant: standard
+            color: #1C1C1E
+            icon_color: #FFFFFF
+            on_click: "travel_music_toggle"
+        }
+        IconButton {
+            z_index: 30
+            x: 296
+            y: 576
+            size: 48
+            icon_size: 32
+            icon: "AROMA_ICON_SKIP_NEXT"
+            variant: standard
+            color: #1C1C1E
+            icon_color: #FFFFFF
+            on_click: "travel_music_next"
+        }
+        IconButton {
+            z_index: 30
+            x: 400
+            y: 576
+            size: 48
+            icon_size: 32
+            icon: "AROMA_ICON_MORE_VERT"
+            variant: standard
+            color: #1C1C1E
+            icon_color: #FFFFFF
+            on_click: "travel_music_more"
+        }
+        Card {
+            z_index: 10
+            x: 524
+            y: 24
+            width: 732
+            height: 648
+            type: filled
+            color: #0A1020
+            corner_radius: 24
+        }
+        Map {
+            z_index: 21
+            id: "travel_map_widget"
+            x: 524
+            y: 24
+            width: 732
+            height: 648
+            lat: 34.0367
+            lon: -118.7798
+            zoom: 14
+            attribution: false
+            tint: "#D0101A2E"
+            route_width: 18
+            Marker {
+                lat: 34.0259
+                lon: -118.7798
+                color: "#1A73E8"
+                icon: "AROMA_ICON_NAVIGATION"
+            }
+        }
+        Image {
+            z_index: 23
+            src: "assets/travel_corner_tl.png"
+            x: 524
+            y: 24
+            width: 24
+            height: 24
+            corner_radius: 0
+            scale: cover
+        }
+        Image {
+            z_index: 23
+            src: "assets/travel_corner_tr.png"
+            x: 1232
+            y: 24
+            width: 24
+            height: 24
+            corner_radius: 0
+            scale: cover
+        }
+        Image {
+            z_index: 23
+            src: "assets/travel_corner_bl.png"
+            x: 524
+            y: 648
+            width: 24
+            height: 24
+            corner_radius: 0
+            scale: cover
+        }
+        Image {
+            z_index: 23
+            src: "assets/travel_corner_br.png"
+            x: 1232
+            y: 648
+            width: 24
+            height: 24
+            corner_radius: 0
+            scale: cover
+        }
+        Label {
+            z_index: 24
+            text: "© OpenStreetMap"
+            size: 8
+            color: #6E6E73
+            x: 544
+            y: 644
+        }
+        IconButton {
+            z_index: 32
+            x: 850
+            y: 460
+            size: 80
+            icon_size: 40
+            icon: "AROMA_ICON_NAVIGATION"
+            variant: filled
+            color: #1A73E8
+            icon_color: #FFFFFF
+            on_click: "travel_arrow"
+        }
+        Container {
+            id: "travel_banner"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            z_index: 26
+        Card {
+            z_index: 27
+            x: 544
+            y: 44
+            width: 692
+            height: 96
+            type: filled
+            color: #1E7B34
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 28
+            x: 568
+            y: 68
+            size: 48
+            icon_size: 48
+            text: "AROMA_ICON_SUBDIRECTORY_ARROW_LEFT"
+            color: #FFFFFF
+        }
+        Label {
+            z_index: 28
+            text: "2 mi"
+            size: 26
+            color: #E8F5E9
+            x: 636
+            y: 60
+        }
+        Label {
+            z_index: 28
+            text: "101 W Pacific Coast Hwy"
+            size: 32
+            color: #FFFFFF
+            x: 636
+            y: 92
+        }
+        Button {
+            z_index: 32
+            x: 544
+            y: 44
+            width: 692
+            height: 96
+            text: ""
+            type: text
+            on_click: "travel_banner"
+        }
+        }
+        Container {
+            id: "travel_eta"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            z_index: 27
+        Card {
+            z_index: 28
+            x: 710
+            y: 572
+            width: 360
+            height: 80
+            type: filled
+            color: #F21C1C1E
+            corner_radius: 12
+        }
+        IconButton {
+            z_index: 33
+            x: 722
+            y: 592
+            size: 40
+            icon_size: 24
+            icon: "AROMA_ICON_CLOSE"
+            variant: standard
+            color: #F21C1C1E
+            icon_color: #8E8E93
+            on_click: "travel_eta_close"
+        }
+        Label {
+            z_index: 29
+            text: "28 min"
+            size: 30
+            color: #34C759
+            x: 766
+            y: 590
+        }
+        Label {
+            z_index: 29
+            text: "· 19 mi"
+            size: 30
+            color: #F2F2F7
+            x: 884
+            y: 590
+        }
+        }
+        IconButton {
+            z_index: 30
+            x: 64
+            y: 696
+            size: 64
+            icon_size: 32
+            icon: "AROMA_ICON_APPS"
+            variant: standard
+            color: #000000
+            icon_color: #F2F2F7
+            on_click: "travel_apps"
+        }
+        IconButton {
+            z_index: 30
+            x: 184
+            y: 696
+            size: 64
+            icon_size: 32
+            icon: "AROMA_ICON_NOTIFICATIONS"
+            variant: standard
+            color: #000000
+            icon_color: #F2F2F7
+            on_click: "travel_bell"
+        }
+        Image {
+            z_index: 11
+            src: "assets/travel_mic.png"
+            x: 320
+            y: 712
+            width: 32
+            height: 32
+            corner_radius: 0
+            scale: cover
+        }
+        Button {
+            z_index: 30
+            x: 304
+            y: 696
+            width: 64
+            height: 64
+            text: ""
+            type: text
+            on_click: "travel_mic"
+        }
+        Icon {
+            z_index: 11
+            x: 1024
+            y: 700
+            size: 24
+            icon_size: 24
+            text: "AROMA_ICON_SIGNAL_CELLULAR_4_BAR"
+            color: #F2F2F7
+        }
+        Icon {
+            z_index: 11
+            x: 1068
+            y: 700
+            size: 24
+            icon_size: 24
+            text: "AROMA_ICON_WIFI"
+            color: #F2F2F7
+        }
+        Icon {
+            z_index: 11
+            x: 1112
+            y: 700
+            size: 24
+            icon_size: 24
+            text: "AROMA_ICON_BATTERY_FULL"
+            color: #F2F2F7
+        }
+        Label {
+            z_index: 11
+            text: "6:30"
+            size: 30
+            color: #F2F2F7
+            x: 1176
+            y: 728
+        }
+    }
+    Container {
+        id: "travel_snacks"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 0
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_msg_play"
+            message: "Message playback started"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_msg_pause"
+            message: "Message playback paused"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_reply"
+            message: "Reply sent to Heather"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_music_play"
+            message: "Music resumed"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_music_pause"
+            message: "Music paused"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_prev"
+            message: "Previous track"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_next"
+            message: "Next track"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_more"
+            message: "Queue: All This Dust · Canasta"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_apps"
+            message: "Apps"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_bell"
+            message: "No new notifications"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_mic"
+            message: "Listening…"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_banner"
+            message: "Trip summary shown"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_eta_hidden"
+            message: "Trip summary hidden"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "travel_snack_arrow"
+            message: "Centered on your location"
+            duration: 2200
+            color: #1C1C1E
+            text_color: #F2F2F7
+            show: 0
+        }
+    }
+}

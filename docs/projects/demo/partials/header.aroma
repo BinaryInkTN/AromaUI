@@ -1,0 +1,64 @@
+Container {
+    id: "header"
+    z_index: 10
+    x: 24
+    y: 24
+    width: 480
+    height: 328
+    Card {
+        z_index: 10
+        x: 0
+        y: 0
+        width: 480
+        height: 328
+        type: filled
+        color: #1C1C1E
+        corner_radius: 24
+    }
+    Image {
+        z_index: 11
+        src: "assets/travel_avatar.png"
+        x: 48
+        y: 48
+        width: 96
+        height: 96
+        corner_radius: 48
+        scale: cover
+    }
+    Card {
+        z_index: 13
+        x: 120
+        y: 120
+        width: 32
+        height: 32
+        type: filled
+        color: #0A84FF
+        corner_radius: 16
+    }
+    Icon {
+        z_index: 14
+        x: 128
+        y: 128
+        size: 16
+        icon_size: 16
+        text: "AROMA_ICON_CHAT"
+        color: #FFFFFF
+    }
+    Label {
+        z_index: 12
+        text: "Heather Travis"
+        size: 34
+        color: #FFFFFF
+        x: 168
+        y: 54
+    }
+    Label {
+        z_index: 12
+        id: "msg_sub"
+        text: "New message"
+        size: 26
+        color: #8E8E93
+        x: 168
+        y: 102
+    }
+}

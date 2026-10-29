@@ -295,7 +295,7 @@ aroma_gauge_set_value(gauge, 0.6f);
   the Canvas arc: `-1.5708` is 12 o'clock and `4.71239` is 9 o'clock, so
   `start_angle: -1.5708, end_angle: 4.71239` is a full ring.
 - `ring_inset` (default `50`) is the gap between the widget edge and the
-  arc. Set `ring_inset: 0` to push the ring out to the widget bounds —
+  arc. Set `ring_inset: 0` to push the ring out to the widget bounds,
   which is what you want for donuts and multi-segment rings, where
   several Gauges sharing one rect each draw a slice:
 
@@ -350,7 +350,7 @@ The series is rasterised by vendored [pbPlots](https://github.com/InductiveCompu
 canvas and its black chrome are cut to transparent, so only the line is
 uploaded and whatever sits behind the chart shows through.
 
-- Axis furniture — gridlines, frame, tick labels — is drawn by AromaUI
+- Axis furniture (gridlines, frame, tick labels) is drawn by AromaUI
   itself, so it stays crisp at any density and follows the theme. Leave
   `pad_left`, `pad_top`, `pad_right`, `pad_bottom` (defaults 34/8/10/22)
   room for the labels you ask for.
@@ -368,6 +368,9 @@ uploaded and whatever sits behind the chart shows through.
   unlike `data` and `x_data`/`y_data` which are numbers.
 - Use `aroma_chart_set_series` when the x values are not evenly spaced,
   and `aroma_chart_set_furniture` to drop the grid or the frame.
+
+For scatter plots, line-plus-point plots, grouped bars, and multi-series
+styling, see [Charts & Plots](Charts-and-Plots.md).
 
 ## Snackbar
 

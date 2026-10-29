@@ -196,6 +196,8 @@ extern "C"
     void aroma_map_pan_to(AromaNode *node, double lat, double lon);
     void aroma_map_set_center_instant(AromaNode *node, double lat, double lon);
     void aroma_map_set_show_attribution(AromaNode *node, bool show);
+    void aroma_map_set_tint(AromaNode *node, uint32_t color);
+    void aroma_map_set_route_width(AromaNode *node, int width);
     void aroma_map_set_mbtiles(AromaNode *node, const char *filepath);
     void aroma_map_add_marker(AromaNode *node, double lat, double lon, uint32_t color);
     void aroma_map_add_icon_marker_with_font(AromaNode *node, double lat, double lon, uint32_t color, const char *icon_code, AromaFont *icon_font);
@@ -204,6 +206,7 @@ extern "C"
     void aroma_map_add_popup_marker(AromaNode *node, double lat, double lon, uint32_t color, const char *popup_text);
     void aroma_map_clear_markers(AromaNode *node);
     void aroma_map_set_route(AromaNode *node, double start_lat, double start_lon, double end_lat, double end_lon, uint32_t route_color);
+    void aroma_map_set_route_points(AromaNode *node, const double *lats, const double *lons, int count, uint32_t route_color);
     void aroma_map_clear_route(AromaNode *node);
     void aroma_map_geocode_search(AromaNode *node, const char *query, void (*callback)(GeocodeResult *results, int count, void *user_data), void *user_data);
     void aroma_map_set_animations_enabled(AromaNode *node, bool enabled);

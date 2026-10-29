@@ -217,6 +217,8 @@ struct AromaMapExtra
     double *route_lons;
     int route_point_count;
     uint32_t route_color;
+    int route_width;
+    uint32_t tint_color;
     bool route_active;
     bool route_loading;
     pthread_mutex_t route_mutex;
@@ -3705,8 +3707,6 @@ static void __map_draw(AromaNode *node, size_t window_id)
     uint8_t g = (bg_color >> 8) & 0xFF;
     uint8_t b = bg_color & 0xFF;
     bool theme_is_dark = ((r * 299 + g * 587 + b * 114) / 1000) < 128;
-
-
     uint64_t theme_version = aroma_theme_get_version();
     if (extra->theme_version != theme_version)
     {
@@ -3888,6 +3888,11 @@ static void __map_draw(AromaNode *node, size_t window_id)
         }
     }
 
+    if (extra->tint_color != 0 && gfx && gfx->fill_rectangle)
+        gfx->fill_rectangle(window_id, map->rect.x, map->rect.y,
+                            map->rect.width, map->rect.height,
+                            extra->tint_color, false, 0.0f);
+
     draw_pois(node, window_id, extra, view_tl_x, view_tl_y);
 
     MAP_ROUTE_MUTEX_LOCK(extra);
@@ -3909,7 +3914,8 @@ static void __map_draw(AromaNode *node, size_t window_id)
                 draw_x2 >= map->rect.x - 50 && draw_x2 <= map->rect.x + map->rect.width + 50 &&
                 draw_y2 >= map->rect.y - 50 && draw_y2 <= map->rect.y + map->rect.height + 50)
             {
-                gfx->draw_line(window_id, draw_x1, draw_y1, draw_x2, draw_y2, extra->route_color, 4.0f, true);
+                gfx->draw_line(window_id, draw_x1, draw_y1, draw_x2, draw_y2,
+                               extra->route_color, (float)extra->route_width, true);
             }
         }
     }
@@ -4240,6 +4246,30 @@ bool aroma_map_get_animations_enabled(AromaNode *node)
     AromaMap *map = (AromaMap *)node->node_widget_ptr;
     struct AromaMapExtra *extra = (struct AromaMapExtra *)map->extra;
     return extra ? extra->animations_enabled : true;
+}
+
+void aroma_map_set_tint(AromaNode *node, uint32_t color)
+{
+    if (!node || !node->node_widget_ptr)
+        return;
+    AromaMap *map = (AromaMap *)node->node_widget_ptr;
+    struct AromaMapExtra *extra = (struct AromaMapExtra *)map->extra;
+    if (!extra)
+        return;
+    extra->tint_color = color;
+    aroma_node_invalidate(node);
+}
+
+void aroma_map_set_route_width(AromaNode *node, int width)
+{
+    if (!node || !node->node_widget_ptr)
+        return;
+    AromaMap *map = (AromaMap *)node->node_widget_ptr;
+    struct AromaMapExtra *extra = (struct AromaMapExtra *)map->extra;
+    if (!extra)
+        return;
+    extra->route_width = width < 1 ? 1 : width;
+    aroma_node_invalidate(node);
 }
 
 void aroma_map_set_show_attribution(AromaNode *node, bool show)
@@ -4699,6 +4729,48 @@ void aroma_map_get_next_turn(AromaNode *node, TurnInstruction *turn)
     }
 }
 
+void aroma_map_set_route_points(AromaNode *node, const double *lats, const double *lons,
+                                int count, uint32_t route_color)
+{
+    if (!node || node->node_type != NODE_TYPE_WIDGET || !lats || !lons || count < 2)
+        return;
+    AromaMap *map = (AromaMap *)node->node_widget_ptr;
+    struct AromaMapExtra *extra = (struct AromaMapExtra *)map->extra;
+    if (!extra)
+        return;
+
+    double *rlats = malloc((size_t)count * sizeof(double));
+    double *rlons = malloc((size_t)count * sizeof(double));
+    if (!rlats || !rlons)
+    {
+        free(rlats);
+        free(rlons);
+        return;
+    }
+    for (int i = 0; i < count; i++)
+    {
+        double lat_rad = lats[i] * M_PI / 180.0;
+        rlats[i] = (1.0 - log(tan(lat_rad) + 1.0 / cos(lat_rad)) / M_PI) / 2.0;
+        rlons[i] = (lons[i] + 180.0) / 360.0;
+    }
+
+    MAP_ROUTE_MUTEX_LOCK(extra);
+    if (extra->route_lats)
+        free(extra->route_lats);
+    if (extra->route_lons)
+        free(extra->route_lons);
+    extra->route_lats = rlats;
+    extra->route_lons = rlons;
+    extra->route_point_count = count;
+    extra->route_color = route_color;
+    extra->route_loading = false;
+    extra->route_active = true;
+    extra->route_progress.last_distance_to_turn = 0.0;
+    extra->route_progress.next_turn_index = 0;
+    MAP_ROUTE_MUTEX_UNLOCK(extra);
+    aroma_node_invalidate(node);
+}
+
 void aroma_map_set_route_offline(AromaNode *node, double start_lat, double start_lon,
                                  double end_lat, double end_lon, uint32_t route_color)
 {
@@ -4856,6 +4928,8 @@ AromaNode *aroma_map_create(AromaNode *parent, int x, int y, int width, int heig
     extra->route_lons = NULL;
     extra->route_point_count = 0;
     extra->route_color = 0;
+    extra->route_width = 4;
+    extra->tint_color = 0;
     extra->route_active = false;
     extra->route_loading = false;
     extra->geocode_loading = false;

@@ -25,6 +25,7 @@ void aroma_icon_set_texture(AromaNode* icon_node, unsigned int texture_id);
 
 
 void aroma_icon_set_color(AromaNode* icon_node, uint32_t color);
+AromaFont* aroma_icon_get_font(AromaNode* icon_node);
 
 
 void aroma_icon_destroy(AromaNode* icon_node);

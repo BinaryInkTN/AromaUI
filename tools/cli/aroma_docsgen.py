@@ -21,6 +21,8 @@ from markdown.preprocessors import Preprocessor
 from pygments.formatters import HtmlFormatter
 from weasyprint import HTML
 
+SANDBOX_CACHE = "113"
+
 _DOT_RESERVED = frozenset(
     {
         "node",
@@ -878,21 +880,229 @@ class DocGenerator:
         )
 
 
-        home_live_demo = (
-            '<div class="kz-wrap"><div class="home-live-demo">'
-            '<div class="demo-tablet">'
-            '<div class="device-camera"></div>'
-            '<div class="device-screen">'
-            '<iframe src="sandbox.html?embed=1&amp;bare=1&amp;theme=Aroma%20Violet%20dark&amp;example=dashboard_tablet" '
-            'title="AromaUI live demo - an AromaUI app running in your browser"></iframe>'
-            "</div>"
-            '<div class="device-home"></div>'
-            "</div>"
-            "</div></div>"
+        showcase_cfg = hero_cfg.get("showcase") if isinstance(hero_cfg, dict) else None
+        if not isinstance(showcase_cfg, dict):
+            showcase_cfg = {}
+
+        default_demos = [
+            {
+                "id": "travel_tablet",
+                "title": "Travel Dashboard",
+                "description": "A car infotainment dashboard with live navigation, media controls, and messaging.",
+                "width": 1280,
+                "height": 800,
+                "theme": "Travel",
+            },
+
+            {
+                "id": "dashboard_tablet",
+                "title": "Analytics",
+                "description": "A live analytics dashboard with charts, filters, transactions, and responsive navigation.",
+                "width": 1280,
+                "height": 800,
+                "theme": "Aroma Violet dark",
+            },
+            {
+                "id": "fitness_tablet",
+                "title": "Fitness Dashboard",
+                "description": "A dark fitness dashboard with a live recovery gauge, sleep, heart, and focus insights.",
+                "width": 1280,
+                "height": 800,
+                "theme": "Fitness",
+            },
+        ]
+
+        raw_demos = showcase_cfg.get("demos")
+        if not isinstance(raw_demos, list) or not raw_demos:
+            raw_demos = default_demos
+
+        demos = []
+        for item in raw_demos:
+            if not isinstance(item, dict):
+                continue
+            demo_id = str(item.get("id") or "").strip()
+            if not demo_id:
+                continue
+            try:
+                demo_w = int(item.get("width") or 1280)
+                demo_h = int(item.get("height") or 800)
+            except (TypeError, ValueError):
+                demo_w, demo_h = 1280, 800
+            if demo_w <= 0 or demo_h <= 0:
+                demo_w, demo_h = 1280, 800
+            demo_title = str(item.get("title") or demo_id.replace("_", " ").title())
+            demo_desc = str(item.get("description") or "")
+            demo_theme = str(item.get("theme") or showcase_cfg.get("theme") or "Aroma Violet dark")
+            demo_src = (
+                "sandbox.html?embed=1&bare=1"
+                f"&theme={urllib.parse.quote(demo_theme)}"
+                f"&example={urllib.parse.quote(demo_id)}"
+                f"&v={SANDBOX_CACHE}"
+            )
+            demo_open = (
+                f"sandbox.html?example={urllib.parse.quote(demo_id)}"
+                f"&theme={urllib.parse.quote(demo_theme)}"
+                f"&v={SANDBOX_CACHE}"
+            )
+            demos.append(
+                {
+                    "id": demo_id,
+                    "title": demo_title,
+                    "description": demo_desc,
+                    "width": demo_w,
+                    "height": demo_h,
+                    "src": demo_src,
+                    "open": demo_open,
+                }
+            )
+
+        if not demos:
+            demos = default_demos
+
+        showcase_title = str(
+            showcase_cfg.get("title") or "Build production-level UIs that ship everywhere."
+        )
+        showcase_desc = str(showcase_cfg.get("description") or "")
+
+        tabs_html = []
+        for demo_index, demo in enumerate(demos):
+            active = demo_index == 0
+            tabs_html.append(
+                f'<button class="home-demo-tab{" active" if active else ""}" type="button" '
+                f'role="tab" aria-selected="{"true" if active else "false"}" '
+                f'data-demo-index="{demo_index}" tabindex="{0 if active else -1}">'
+                f'{_htmlesc.escape(demo["title"], quote=False)}</button>'
+            )
+
+        first_demo = demos[0]
+        first_orientation = (
+            "is-landscape"
+            if first_demo["width"] / first_demo["height"] >= 1.2
+            else "is-portrait"
+        )
+        first_src = _htmlesc.escape(first_demo["src"], quote=True)
+        first_open = _htmlesc.escape(first_demo["open"], quote=True)
+        first_title = _htmlesc.escape(first_demo["title"], quote=True)
+        first_desc = _htmlesc.escape(first_demo["description"], quote=False)
+
+        home_live_demo = f'''        <div class="home-showcase" id="homeShowcase">
+            <div class="home-showcase-copy">
+                <h1 class="home-showcase-title">{_htmlesc.escape(showcase_title, quote=False)}</h1>
+                <p class="home-showcase-lead">{_htmlesc.escape(showcase_desc, quote=False)}</p>
+            </div>
+            <div class="home-demo-picker">
+                <div class="home-demo-tabs" id="homeDemoTabs" role="tablist" aria-label="Choose a live demo">
+                    {"".join(tabs_html)}
+                </div>
+            </div>
+            <div class="home-live-demo">
+                <div class="demo-tablet {first_orientation}" id="homeDemoFrame" style="--demo-aspect:{first_demo["width"]} / {first_demo["height"]}">
+                    <button class="home-demo-arrow prev" type="button" data-demo-prev aria-label="Previous demo">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    <div class="device-camera"></div>
+                    <div class="device-screen">
+                        <iframe id="homeDemoIframe" src="{first_src}" title="Live AromaUI demo: {first_title}"
+                                allow="autoplay; fullscreen"></iframe>
+                    </div>
+                    <div class="device-home"></div>
+                    <button class="home-demo-arrow next" type="button" data-demo-next aria-label="Next demo">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+                <div class="home-demo-meta">
+                    <div class="home-demo-caption" aria-live="polite">
+                        <strong id="homeDemoTitle">{_htmlesc.escape(first_demo["title"], quote=False)}</strong>
+                        <span id="homeDemoDesc">{first_desc}</span>
+                    </div>
+                    <a class="home-demo-open" id="homeDemoOpen" href="{first_open}" target="_blank" rel="noopener">
+                        Open full demo <i data-lucide="arrow-up-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+'''
+
+        demo_json = json.dumps(demos, ensure_ascii=False).replace("</", "<\\/")
+        showcase_js = (
+            "            <script>\n"
+            "window.HOME_DEMOS = " + demo_json + ";\n"
+            "(function () {\n"
+            "  var demos = window.HOME_DEMOS || [];\n"
+            "  var showcase = document.getElementById('homeShowcase');\n"
+            "  var frame = document.getElementById('homeDemoFrame');\n"
+            "  var iframe = document.getElementById('homeDemoIframe');\n"
+            "  var titleEl = document.getElementById('homeDemoTitle');\n"
+            "  var descEl = document.getElementById('homeDemoDesc');\n"
+            "  var openEl = document.getElementById('homeDemoOpen');\n"
+            "  var tabsEl = document.getElementById('homeDemoTabs');\n"
+            "  var tabs = [];\n"
+            "  if (!showcase || !tabsEl || !frame || !iframe || !demos.length) return;\n"
+            "  function buildTabs() {\n"
+            "    tabsEl.innerHTML = '';\n"
+            "    demos.forEach(function (demo, i) {\n"
+            "      var b = document.createElement('button');\n"
+            "      b.type = 'button';\n"
+            "      b.role = 'tab';\n"
+            "      b.className = 'home-demo-tab' + (i === 0 ? ' active' : '');\n"
+            "      b.setAttribute('aria-selected', i === 0 ? 'true' : 'false');\n"
+            "      b.tabIndex = i === 0 ? 0 : -1;\n"
+            "      b.dataset.demoIndex = i;\n"
+            "      b.textContent = demo.title;\n"
+            "      b.addEventListener('click', function () { show(i, true); });\n"
+            "      tabsEl.appendChild(b);\n"
+            "    });\n"
+            "    tabs = Array.prototype.slice.call(tabsEl.querySelectorAll('.home-demo-tab'));\n"
+            "  }\n"
+            "  var index = 0;\n"
+            "  function updateArrows() {\n"
+            "    if (!prev || !next) return;\n"
+            "    prev.disabled = index === 0;\n"
+            "    next.disabled = index === demos.length - 1;\n"
+            "    prev.classList.toggle('opacity-anim', index !== 0);\n"
+            "    next.classList.toggle('opacity-anim', index !== demos.length - 1);\n"
+            "  }\n"
+            "  function show(nextIndex, reload) {\n"
+            "    index = ((nextIndex % demos.length) + demos.length) % demos.length;\n"
+            "    var demo = demos[index];\n"
+            "    var portrait = demo.height > demo.width;\n"
+            "    frame.classList.toggle('is-portrait', portrait);\n"
+            "    frame.classList.toggle('is-landscape', !portrait);\n"
+            "    frame.style.setProperty('--demo-aspect', demo.width + ' / ' + demo.height);\n"
+            "    frame.classList.add('demo-fading');\n"
+            "    if (reload !== false) iframe.src = demo.src;\n"
+            "    iframe.title = 'Live AromaUI demo: ' + demo.title;\n"
+            "    titleEl.textContent = demo.title;\n"
+            "    descEl.textContent = demo.description;\n"
+            "    openEl.href = demo.open;\n"
+            "    tabs.forEach(function (tab, tabIndex) {\n"
+            "      var active = tabIndex === index;\n"
+            "      tab.classList.toggle('active', active);\n"
+            "      tab.setAttribute('aria-selected', active ? 'true' : 'false');\n"
+            "      tab.tabIndex = active ? 0 : -1;\n"
+            "    });\n"
+            "    var activeTab = tabs[index];\n"
+            "    if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });\n"
+            "    updateArrows();\n"
+            "    setTimeout(function () { frame.classList.remove('demo-fading'); }, 220);\n"
+            "  }\n"
+            "  buildTabs();\n"
+            "  var prev = showcase.querySelector('[data-demo-prev]');\n"
+            "  var next = showcase.querySelector('[data-demo-next]');\n"
+            "  if (prev) prev.addEventListener('click', function () { show(index - 1, true); });\n"
+            "  if (next) next.addEventListener('click', function () { show(index + 1, true); });\n"
+            "  showcase.addEventListener('keydown', function (event) {\n"
+            "    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;\n"
+            "    event.preventDefault();\n"
+            "    show(index + (event.key === 'ArrowRight' ? 1 : -1), true);\n"
+            "  });\n"
+            "  show(0, false);\n"
+            "})();\n"
+            "            </script>\n"
         )
         return f'''
         <div class="welcome-page">
-            {home_live_demo}
+{home_live_demo}{showcase_js}
             {kz_banner}
             <div class="kz-duo">
             {kz_test}
@@ -2057,17 +2267,84 @@ body.has-announce .announce-bar{{display:flex}}
 .demo-head a{{font-size:13px;color:var(--ms-link);text-decoration:none;white-space:nowrap;font-weight:600;}}
 .demo-head a:hover{{text-decoration:underline}}
 .demo-frame iframe{{width:100%;height:660px;border:none;display:block;background:var(--ms-surface);}}
-.home-live-demo{{margin:0 0 8px;}}
-.home-live-demo .demo-tablet{{
-  margin:0 auto;max-width:1180px;position:relative;
-  /* Tablet body: an Apple-style unibody — soft dark bezel, deep radius,
-     and a diffuse shadow instead of a hard ring. */
-  background:#1C1C1E;
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:44px;
-  padding:30px;
-  box-shadow:0 48px 100px -40px rgba(0,0,0,.75),0 18px 44px -24px rgba(0,0,0,.5);
+/* ===== Home showcase: headline, demo picker, device stage ===== */
+.home-showcase{{
+  max-width:1640px;margin:0 auto;padding:64px 24px 0;
 }}
+.home-showcase-copy{{
+  max-width:940px;margin:0 auto 32px;text-align:center;
+}}
+.home-showcase-title{{
+  margin:0 0 18px;font-family:var(--fd);
+  font-size:clamp(40px,5.6vw,72px);font-weight:800;
+  line-height:1.02;letter-spacing:-.045em;color:var(--ms-heading);
+  text-wrap:balance;
+}}
+.home-showcase-lead{{
+  max-width:760px;margin:0 auto;font-size:17px;line-height:1.65;
+  color:var(--ms-secondary);
+}}
+.home-demo-picker{{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:8px;
+  max-width:1180px;margin:0 auto 18px;padding:6px 8px 6px 8px;
+  background:var(--ms-surface-2);border:1px solid var(--ms-border);
+  border-radius:999px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.04);
+}}
+.home-demo-tabs{{
+  display:flex;align-items:center;gap:6px;min-width:0;
+  overflow-x:auto;scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none;
+  flex:1;padding:2px 24px 2px 8px;
+}}
+.home-demo-tabs::-webkit-scrollbar{{display:none;}}
+.home-demo-tab{{
+  flex:0 0 auto;border:0;background:var(--ms-surface);color:var(--ms-secondary);
+  appearance:none;cursor:pointer;font:inherit;font-size:13px;font-weight:600;
+  padding:9px 18px;border-radius:999px;border:1px solid var(--ms-border-dark);
+  white-space:nowrap;
+  transition:color .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease;
+  scroll-snap-align:center;
+}}
+.home-demo-tab:hover{{color:var(--ms-heading);border-color:var(--ms-text);background:var(--ms-surface-2);}}
+.home-demo-tab.active{{
+  color:#FFFFFF;background:var(--ms-blue);border-color:var(--ms-blue);
+  box-shadow:0 0 0 3px rgba(48,127,255,0.18);
+}}
+.home-demo-tab.active:hover{{background:var(--ms-blue-hover);border-color:var(--ms-blue-hover);}}
+.home-demo-tab:focus-visible,.home-demo-arrow:focus-visible{{outline:2px solid var(--ms-blue);outline-offset:2px;}}
+.home-live-demo{{margin:0 0 10px;position:relative;display:flex;align-items:center;justify-content:center;}}
+.home-live-demo .demo-tablet{{
+  margin:0 auto;width:100%;max-width:720px;position:relative;
+  background:#1C1C1E;border:1px solid rgba(255,255,255,.08);
+  border-radius:44px;padding:30px;box-sizing:border-box;
+  box-shadow:0 48px 100px -40px rgba(0,0,0,.75),0 18px 44px -24px rgba(0,0,0,.5);
+  transition:max-width .25s ease,padding .25s ease,border-radius .25s ease,opacity .22s ease;
+}}
+.home-live-demo .demo-tablet.is-landscape{{width:100%;max-width:none;}}
+.home-live-demo .demo-tablet.is-portrait{{max-width:390px;padding:14px;border-radius:40px;}}
+/* Arrows flanking the tablet screen edges. */
+.home-demo-arrow{{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--ms-border-dark);background:var(--ms-surface);color:var(--ms-heading);
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  z-index:6;pointer-events:auto;
+  transition:background .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,opacity .18s ease;
+  box-shadow:0 6px 14px rgba(0,0,0,0.16),0 0 0 0 rgba(48,127,255,0);
+}}
+.home-demo-arrow.prev{{left:-56px;}}
+.home-demo-arrow.next{{right:-56px;}}
+.home-demo-arrow:hover{{
+  background:var(--ms-blue);border-color:var(--ms-blue);color:#fff;
+  box-shadow:0 8px 20px rgba(48,127,255,0.35);
+}}
+.home-demo-arrow svg{{width:20px;height:20px;}}
+.home-demo-arrow:disabled{{opacity:0.28;cursor:default;pointer-events:none;}}
+.home-demo-arrow:disabled:hover{{background:var(--ms-surface);border-color:var(--ms-border-dark);color:var(--ms-heading);box-shadow:none;}}
+.home-demo-arrow.opacity-anim{{animation:arrowFade .22s ease both;}}
+@keyframes arrowFade{{from{{opacity:0;transform:translateY(-50%) translateX(-4px)}}to{{opacity:1;transform:translateY(-50%) translateX(0)}}}}
+.demo-fading{{opacity:0;transition:opacity .18s ease;}}
+.demo-fading .device-screen iframe{{opacity:0;}}
 /* Front camera in the top bezel band. */
 .home-live-demo .device-camera{{
   position:absolute;top:12px;left:50%;transform:translateX(-50%);
@@ -2078,22 +2355,58 @@ body.has-announce .announce-bar{{display:flex}}
   content:"";position:absolute;inset:2.5px;border-radius:50%;
   background:#723CEA;box-shadow:0 0 6px rgba(114,60,234,.85);
 }}
+.home-live-demo .demo-tablet.is-portrait .device-camera{{top:5px;width:7px;height:7px;}}
 /* Home indicator in the bottom bezel band. */
 .home-live-demo .device-home{{
   position:absolute;bottom:13px;left:50%;transform:translateX(-50%);
   width:110px;height:5px;border-radius:999px;background:rgba(255,255,255,.22);
 }}
+.home-live-demo .demo-tablet.is-portrait .device-home{{bottom:6px;width:72px;height:4px;}}
 .home-live-demo .device-screen{{
   position:relative;overflow:hidden;border-radius:22px;
   background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
-  aspect-ratio:1280/800;
+  aspect-ratio:var(--demo-aspect,1280 / 800);
 }}
+.home-live-demo .demo-tablet.is-portrait .device-screen{{border-radius:28px;}}
 .home-live-demo .device-screen iframe{{
   position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:transparent;
 }}
 [data-theme="dark"] .home-live-demo .device-screen iframe{{background:transparent;}}
-@media(min-width:1320px){{
-  .home-live-demo .demo-tablet{{max-width:none;margin-left:-60px;margin-right:-60px;}}
+.home-demo-meta{{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  max-width:1180px;margin:16px auto 0;
+}}
+.home-demo-caption{{display:flex;flex-direction:column;gap:4px;min-width:0;}}
+.home-demo-caption strong{{font-size:15px;font-weight:700;color:var(--ms-heading);}}
+.home-demo-caption span{{font-size:14px;line-height:1.5;color:var(--ms-secondary);}}
+.home-demo-open{{
+  display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+  font-size:13px;font-weight:600;color:var(--ms-link);text-decoration:none;
+  padding-top:2px;
+}}
+.home-demo-open:hover{{text-decoration:underline;color:var(--ms-link-hover);}}
+.home-demo-open svg{{width:15px;height:15px;}}
+[data-theme="dark"] .home-demo-picker{{background:#222226;border-color:#35353B;box-shadow:none;}}
+[data-theme="dark"] .home-demo-tab{{color:#B9B9C0;border-color:#4A4A52;background:#25252B;}}
+[data-theme="dark"] .home-demo-tab:hover{{color:#fff;border-color:#E8E8EA;background:#2A2A30;}}
+[data-theme="dark"] .home-demo-tab.active{{color:#FFFFFF;background:#7AA2FF;border-color:#7AA2FF;}}
+[data-theme="dark"] .home-demo-tab.active:hover{{background:#BDD3FF;border-color:#BDD3FF;color:#0F1F4B;}}
+[data-theme="dark"] .home-demo-arrow{{background:#222226;border-color:#35353B;color:#E8E8EA;}}
+[data-theme="dark"] .home-demo-arrow:hover{{background:#7AA2FF;border-color:#7AA2FF;color:#0F1F4B;}}
+[data-theme="dark"] .home-demo-arrow:disabled{{opacity:0.28;}}
+[data-theme="dark"] .home-demo-caption strong{{color:#fff;}}
+[data-theme="dark"] .home-demo-caption span{{color:#B9B9C0;}}
+[data-theme="dark"] .home-demo-open{{color:#7AA2FF;}}
+@media(max-width:760px){{
+  .home-showcase{{padding:44px 20px 0;}}
+  .home-showcase-title{{font-size:40px;letter-spacing:-.035em;}}
+  .home-demo-picker{{flex-wrap:wrap;border-radius:24px;padding:2px 4px;}}
+  .home-demo-tabs{{width:100%;overflow-x:auto;flex-wrap:nowrap;}}
+  .home-demo-arrows{{display:none;}}
+  .home-demo-meta{{flex-direction:column;gap:10px;}}
+  .home-live-demo .demo-tablet.is-landscape{{padding:14px;border-radius:28px;}}
+  .home-live-demo .demo-tablet.is-landscape .device-camera{{top:5px;}}
+  .home-live-demo .demo-tablet.is-landscape .device-home{{bottom:6px;}}
 }}
 @media(max-width:760px){{
   .hero-inner{{padding:56px 20px 48px;}}

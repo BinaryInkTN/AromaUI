@@ -1,0 +1,2843 @@
+Window {
+    width: 1280
+    height: 800
+    title: "Fitness Dashboard"
+    Container {
+        id: "fitness_root"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 0
+        Image {
+            z_index: 0
+            src: "assets/fitness_hero.jpg"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            corner_radius: 0
+            scale: cover
+        }
+        Image {
+            z_index: 1
+            src: "assets/fitness_scrim.png"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            corner_radius: 0
+            scale: cover
+        }
+    }
+    Container {
+        id: "fitness_cards"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 10
+        Card {
+            z_index: 10
+            x: 32
+            y: 352
+            width: 286
+            height: 184
+            type: glass
+            color: #8C1A1A1A
+            border_color: #26FFFFFF
+            blur_radius: 18
+            corner_radius: 18
+        }
+        Card {
+            z_index: 12
+            x: 48
+            y: 368
+            width: 28
+            height: 28
+            type: outlined
+            color: #33FFFFFF
+            corner_radius: 8
+        }
+        Icon {
+            z_index: 13
+            x: 54
+            y: 374
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_DIRECTIONS_RUN"
+            color: #FB923C
+        }
+        Label {
+            z_index: 13
+            text: "Activity"
+            size: 15
+            color: #FFFFFF
+            x: 84
+            y: 370
+        }
+        Label {
+            z_index: 13
+            text: "Last 7 days"
+            size: 10
+            color: #A3A3A3
+            x: 246
+            y: 372
+        }
+        Label {
+            z_index: 13
+            text: "Browsing"
+            size: 10
+            color: #A3A3A3
+            x: 48
+            y: 404
+        }
+        Label {
+            z_index: 13
+            text: "Conversation"
+            size: 10
+            color: #A3A3A3
+            x: 48
+            y: 424
+        }
+        Label {
+            z_index: 13
+            text: "Phone"
+            size: 10
+            color: #A3A3A3
+            x: 48
+            y: 444
+        }
+        Canvas {
+            z_index: 13
+            id: "fitness_activity_chart"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Label {
+            z_index: 13
+            text: "19,840"
+            size: 28
+            color: #FFFFFF
+            x: 48
+            y: 482
+        }
+        Icon {
+            z_index: 13
+            x: 48
+            y: 516
+            size: 12
+            icon_size: 12
+            text: "AROMA_ICON_DIRECTIONS_WALK"
+            color: #A3A3A3
+        }
+        Label {
+            z_index: 13
+            text: "Steps"
+            size: 10
+            color: #A3A3A3
+            x: 64
+            y: 516
+        }
+        Button {
+            z_index: 21
+            x: 32
+            y: 352
+            width: 286
+            height: 184
+            text: ""
+            type: text
+            on_click: "fitness_activity"
+        }
+        Card {
+            z_index: 10
+            x: 338
+            y: 352
+            width: 286
+            height: 184
+            type: glass
+            color: #8C1A1A1A
+            border_color: #26FFFFFF
+            blur_radius: 18
+            corner_radius: 18
+        }
+        Card {
+            z_index: 12
+            x: 354
+            y: 368
+            width: 28
+            height: 28
+            type: outlined
+            color: #33FFFFFF
+            corner_radius: 8
+        }
+        Icon {
+            z_index: 13
+            x: 360
+            y: 374
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_HOTEL"
+            color: #FACC15
+        }
+        Label {
+            z_index: 13
+            text: "Sleep"
+            size: 15
+            color: #FFFFFF
+            x: 390
+            y: 370
+        }
+        Label {
+            z_index: 13
+            text: "Last 7 days"
+            size: 10
+            color: #A3A3A3
+            x: 552
+            y: 372
+        }
+        Label {
+            z_index: 13
+            text: "4"
+            size: 8
+            color: #737373
+            x: 354
+            y: 398
+        }
+        Label {
+            z_index: 13
+            text: "2"
+            size: 8
+            color: #737373
+            x: 354
+            y: 420
+        }
+        Label {
+            z_index: 13
+            text: "0"
+            size: 8
+            color: #737373
+            x: 354
+            y: 442
+        }
+        Label {
+            z_index: 13
+            text: "08"
+            size: 8
+            color: #737373
+            x: 380
+            y: 460
+        }
+        Label {
+            z_index: 13
+            text: "12"
+            size: 8
+            color: #737373
+            x: 430
+            y: 460
+        }
+        Label {
+            z_index: 13
+            text: "18"
+            size: 8
+            color: #737373
+            x: 480
+            y: 460
+        }
+        Label {
+            z_index: 13
+            text: "22"
+            size: 8
+            color: #737373
+            x: 530
+            y: 460
+        }
+        Canvas {
+            z_index: 13
+            id: "fitness_sleep_chart"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Label {
+            z_index: 13
+            text: "7h 45m"
+            size: 26
+            color: #FFFFFF
+            x: 354
+            y: 478
+        }
+        Icon {
+            z_index: 13
+            x: 354
+            y: 512
+            size: 12
+            icon_size: 12
+            text: "AROMA_ICON_ARROW_UPWARD"
+            color: #84CC16
+        }
+        Label {
+            z_index: 13
+            text: "18m from last week"
+            size: 10
+            color: #A3A3A3
+            x: 368
+            y: 512
+        }
+        Button {
+            z_index: 21
+            x: 338
+            y: 352
+            width: 286
+            height: 184
+            text: ""
+            type: text
+            on_click: "fitness_sleep"
+        }
+        Card {
+            z_index: 10
+            x: 644
+            y: 352
+            width: 286
+            height: 184
+            type: glass
+            color: #8C1A1A1A
+            border_color: #26FFFFFF
+            blur_radius: 18
+            corner_radius: 18
+        }
+        Card {
+            z_index: 12
+            x: 660
+            y: 368
+            width: 28
+            height: 28
+            type: outlined
+            color: #33FFFFFF
+            corner_radius: 8
+        }
+        Icon {
+            z_index: 13
+            x: 666
+            y: 374
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_FAVORITE"
+            color: #FB7185
+        }
+        Label {
+            z_index: 13
+            text: "Heart"
+            size: 15
+            color: #FFFFFF
+            x: 696
+            y: 370
+        }
+        Label {
+            z_index: 13
+            text: "Last 7 days"
+            size: 10
+            color: #A3A3A3
+            x: 858
+            y: 372
+        }
+        Label {
+            z_index: 13
+            text: "M"
+            size: 8
+            color: #737373
+            x: 684
+            y: 456
+        }
+        Label {
+            z_index: 13
+            text: "T"
+            size: 8
+            color: #737373
+            x: 714
+            y: 456
+        }
+        Label {
+            z_index: 13
+            text: "W"
+            size: 8
+            color: #737373
+            x: 744
+            y: 456
+        }
+        Label {
+            z_index: 13
+            text: "T"
+            size: 8
+            color: #737373
+            x: 774
+            y: 456
+        }
+        Label {
+            z_index: 13
+            text: "F"
+            size: 8
+            color: #737373
+            x: 804
+            y: 456
+        }
+        Label {
+            z_index: 13
+            text: "S"
+            size: 8
+            color: #737373
+            x: 834
+            y: 456
+        }
+        Label {
+            z_index: 13
+            text: "S"
+            size: 8
+            color: #737373
+            x: 864
+            y: 456
+        }
+        Canvas {
+            z_index: 13
+            id: "fitness_heart_chart"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Label {
+            z_index: 13
+            text: "63 BPM"
+            size: 26
+            color: #FFFFFF
+            x: 660
+            y: 478
+        }
+        Icon {
+            z_index: 13
+            x: 660
+            y: 512
+            size: 12
+            icon_size: 12
+            text: "AROMA_ICON_FAVORITE"
+            color: #EF4444
+        }
+        Label {
+            z_index: 13
+            text: "Avg Resting Heart Rate"
+            size: 10
+            color: #A3A3A3
+            x: 676
+            y: 512
+        }
+        Button {
+            z_index: 21
+            x: 644
+            y: 352
+            width: 286
+            height: 184
+            text: ""
+            type: text
+            on_click: "fitness_heart"
+        }
+        Card {
+            z_index: 10
+            x: 32
+            y: 548
+            width: 439
+            height: 220
+            type: glass
+            color: #8C1A1A1A
+            border_color: #26FFFFFF
+            blur_radius: 18
+            corner_radius: 18
+        }
+        Label {
+            z_index: 13
+            text: "Wellness Score"
+            size: 15
+            color: #FFFFFF
+            x: 48
+            y: 564
+        }
+        Label {
+            z_index: 13
+            text: "87"
+            size: 34
+            color: #F97316
+            x: 236
+            y: 582
+        }
+        Label {
+            z_index: 13
+            text: "Good Condition"
+            size: 14
+            color: #FFFFFF
+            x: 196
+            y: 622
+        }
+        Label {
+            z_index: 13
+            text: "+5 vs weekly average York"
+            size: 10
+            color: #A3A3A3
+            x: 166
+            y: 644
+        }
+        Canvas {
+            z_index: 13
+            id: "fitness_wellness_chart"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Label {
+            z_index: 13
+            text: "Sleep Avg"
+            size: 10
+            color: #A3A3A3
+            x: 48
+            y: 724
+        }
+        Label {
+            z_index: 13
+            text: "7.2h"
+            size: 14
+            color: #FFFFFF
+            x: 48
+            y: 738
+        }
+        Card {
+            z_index: 14
+            x: 216
+            y: 724
+            width: 70
+            height: 28
+            type: outlined
+            color: #33FFFFFF
+            border_color: #26FFFFFF
+            corner_radius: 14
+        }
+        Icon {
+            z_index: 15
+            x: 226
+            y: 730
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_SHOW_CHART"
+            color: #FFFFFF
+        }
+        Label {
+            z_index: 15
+            text: "Insights"
+            size: 10
+            color: #FFFFFF
+            x: 244
+            y: 730
+        }
+        Button {
+            z_index: 22
+            x: 216
+            y: 724
+            width: 70
+            height: 28
+            text: ""
+            type: text
+            on_click: "fitness_wellness_insights"
+        }
+        Label {
+            z_index: 13
+            text: "Recovery"
+            size: 10
+            color: #A3A3A3
+            x: 374
+            y: 724
+        }
+        Label {
+            z_index: 13
+            text: "82%"
+            size: 14
+            color: #FFFFFF
+            x: 390
+            y: 738
+        }
+        Button {
+            z_index: 21
+            x: 32
+            y: 548
+            width: 439
+            height: 220
+            text: ""
+            type: text
+            on_click: "fitness_wellness"
+        }
+        Card {
+            z_index: 10
+            x: 491
+            y: 548
+            width: 439
+            height: 220
+            type: glass
+            color: #8C1A1A1A
+            border_color: #26FFFFFF
+            blur_radius: 18
+            corner_radius: 18
+        }
+        Label {
+            z_index: 13
+            text: "Focus Activity"
+            size: 15
+            color: #FFFFFF
+            x: 507
+            y: 564
+        }
+        Label {
+            z_index: 13
+            text: "73"
+            size: 34
+            color: #F97316
+            x: 695
+            y: 582
+        }
+        Label {
+            z_index: 13
+            text: "Focus Score"
+            size: 14
+            color: #FFFFFF
+            x: 670
+            y: 622
+        }
+        Label {
+            z_index: 13
+            text: "Deep Work 14.5h"
+            size: 10
+            color: #A3A3A3
+            x: 658
+            y: 644
+        }
+        Canvas {
+            z_index: 13
+            id: "fitness_focus_chart"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Label {
+            z_index: 13
+            text: "Avg Focus Session"
+            size: 10
+            color: #A3A3A3
+            x: 507
+            y: 724
+        }
+        Label {
+            z_index: 13
+            text: "42 min"
+            size: 14
+            color: #FFFFFF
+            x: 507
+            y: 738
+        }
+        Card {
+            z_index: 14
+            x: 675
+            y: 724
+            width: 70
+            height: 28
+            type: outlined
+            color: #33FFFFFF
+            border_color: #26FFFFFF
+            corner_radius: 14
+        }
+        Icon {
+            z_index: 15
+            x: 685
+            y: 730
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_SHOW_CHART"
+            color: #FFFFFF
+        }
+        Label {
+            z_index: 15
+            text: "Insights"
+            size: 10
+            color: #FFFFFF
+            x: 703
+            y: 730
+        }
+        Button {
+            z_index: 22
+            x: 675
+            y: 724
+            width: 70
+            height: 28
+            text: ""
+            type: text
+            on_click: "fitness_focus_insights"
+        }
+        Label {
+            z_index: 13
+            text: "Deep Work"
+            size: 10
+            color: #A3A3A3
+            x: 840
+            y: 724
+        }
+        Label {
+            z_index: 13
+            text: "14.5h"
+            size: 14
+            color: #FFFFFF
+            x: 862
+            y: 738
+        }
+        Button {
+            z_index: 21
+            x: 491
+            y: 548
+            width: 439
+            height: 220
+            text: ""
+            type: text
+            on_click: "fitness_focus"
+        }
+        Card {
+            z_index: 10
+            x: 950
+            y: 352
+            width: 298
+            height: 416
+            type: glass
+            color: #8C1A1A1A
+            border_color: #26FFFFFF
+            blur_radius: 18
+            corner_radius: 18
+        }
+        Card {
+            z_index: 12
+            id: "fitness_pill_bg0"
+            x: 966
+            y: 368
+            width: 32
+            height: 32
+            type: outlined
+            color: #FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 13
+            id: "fitness_pill_icon0"
+            x: 974
+            y: 376
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_HOME"
+            color: #111111
+        }
+        Button {
+            z_index: 22
+            x: 966
+            y: 368
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_pill0"
+        }
+        Card {
+            z_index: 12
+            id: "fitness_pill_bg1"
+            x: 1004
+            y: 368
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 13
+            id: "fitness_pill_icon1"
+            x: 1012
+            y: 376
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_TIMER"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 22
+            x: 1004
+            y: 368
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_pill1"
+        }
+        Card {
+            z_index: 12
+            id: "fitness_pill_bg2"
+            x: 1042
+            y: 368
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 13
+            id: "fitness_pill_icon2"
+            x: 1050
+            y: 376
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_DIRECTIONS_RUN"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 22
+            x: 1042
+            y: 368
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_pill2"
+        }
+        Card {
+            z_index: 12
+            id: "fitness_pill_bg3"
+            x: 1080
+            y: 368
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 13
+            id: "fitness_pill_icon3"
+            x: 1088
+            y: 376
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_FLASH_ON"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 22
+            x: 1080
+            y: 368
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_pill3"
+        }
+        Card {
+            z_index: 12
+            id: "fitness_pill_bg4"
+            x: 1118
+            y: 368
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 13
+            id: "fitness_pill_icon4"
+            x: 1126
+            y: 376
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_FITNESS_CENTER"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 22
+            x: 1118
+            y: 368
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_pill4"
+        }
+        Card {
+            z_index: 12
+            id: "fitness_pill_bg5"
+            x: 1156
+            y: 368
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 13
+            id: "fitness_pill_icon5"
+            x: 1164
+            y: 376
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_FAVORITE"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 22
+            x: 1156
+            y: 368
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_pill5"
+        }
+        Card {
+            z_index: 12
+            id: "fitness_pill_bg6"
+            x: 1194
+            y: 368
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 13
+            id: "fitness_pill_icon6"
+            x: 1202
+            y: 376
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_SPA"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 22
+            x: 1194
+            y: 368
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_pill6"
+        }
+        Card {
+            z_index: 12
+            x: 1007
+            y: 488
+            width: 184
+            height: 184
+            type: outlined
+            color: #33000000
+            corner_radius: 92
+        }
+        Canvas {
+            z_index: 13
+            id: "fitness_gauge"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Canvas {
+            z_index: 13
+            id: "fitness_waves"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Label {
+            z_index: 14
+            id: "fitness_gauge_label"
+            text: "Speed"
+            size: 11
+            color: #D4D4D4
+            x: 1084
+            y: 420
+        }
+        Label {
+            z_index: 14
+            id: "fitness_gauge_value"
+            text: "50%"
+            size: 38
+            color: #FFFFFF
+            x: 1061
+            y: 548
+        }
+        Label {
+            z_index: 14
+            id: "fitness_gauge_title"
+            text: "Balanced Energy & Recovery State"
+            size: 12
+            color: #FFFFFF
+            x: 1004
+            y: 704
+        }
+        Label {
+            z_index: 14
+            id: "fitness_gauge_sub"
+            text: "Overall Health Stability Index"
+            size: 10
+            color: #A3A3A3
+            x: 1024
+            y: 724
+        }
+        Button {
+            z_index: 21
+            x: 950
+            y: 352
+            width: 298
+            height: 416
+            text: ""
+            type: text
+            on_click: "fitness_energy"
+        }
+    }
+    Container {
+        id: "fitness_hero"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 20
+        Image {
+            z_index: 21
+            src: "assets/fitness_logo.png"
+            x: 32
+            y: 24
+            width: 48
+            height: 48
+            corner_radius: 14
+            scale: cover
+        }
+        Label {
+            z_index: 22
+            text: "Fitness"
+            size: 16
+            color: #FFFFFF
+            x: 92
+            y: 28
+        }
+        Label {
+            z_index: 22
+            text: "Dashboard"
+            size: 11
+            color: #A3A3A3
+            x: 92
+            y: 50
+        }
+        Button {
+            z_index: 25
+            x: 24
+            y: 20
+            width: 200
+            height: 56
+            text: ""
+            type: text
+            on_click: "fitness_home"
+        }
+        Card {
+            z_index: 21
+            id: "fitness_nav_bg0"
+            x: 32
+            y: 88
+            width: 44
+            height: 44
+            type: outlined
+            color: #FFFFFF
+            corner_radius: 22
+        }
+        Icon {
+            z_index: 22
+            id: "fitness_nav_icon0"
+            x: 44
+            y: 100
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_HOME"
+            color: #111111
+        }
+        Button {
+            z_index: 25
+            x: 32
+            y: 88
+            width: 44
+            height: 44
+            text: ""
+            type: text
+            on_click: "fitness_nav0"
+        }
+        Card {
+            z_index: 21
+            id: "fitness_nav_bg1"
+            x: 32
+            y: 136
+            width: 44
+            height: 44
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 22
+        }
+        Icon {
+            z_index: 22
+            id: "fitness_nav_icon1"
+            x: 44
+            y: 148
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_SEARCH"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 25
+            x: 32
+            y: 136
+            width: 44
+            height: 44
+            text: ""
+            type: text
+            on_click: "fitness_nav1"
+        }
+        Card {
+            z_index: 21
+            id: "fitness_nav_bg2"
+            x: 32
+            y: 184
+            width: 44
+            height: 44
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 22
+        }
+        Icon {
+            z_index: 22
+            id: "fitness_nav_icon2"
+            x: 44
+            y: 196
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_PEOPLE"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 25
+            x: 32
+            y: 184
+            width: 44
+            height: 44
+            text: ""
+            type: text
+            on_click: "fitness_nav2"
+        }
+        Card {
+            z_index: 21
+            id: "fitness_nav_bg3"
+            x: 32
+            y: 232
+            width: 44
+            height: 44
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 22
+        }
+        Icon {
+            z_index: 22
+            id: "fitness_nav_icon3"
+            x: 44
+            y: 244
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_EVENT"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 25
+            x: 32
+            y: 232
+            width: 44
+            height: 44
+            text: ""
+            type: text
+            on_click: "fitness_nav3"
+        }
+        Card {
+            z_index: 21
+            id: "fitness_nav_bg4"
+            x: 32
+            y: 280
+            width: 44
+            height: 44
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 22
+        }
+        Icon {
+            z_index: 22
+            id: "fitness_nav_icon4"
+            x: 44
+            y: 292
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_TUNE"
+            color: #D4D4D4
+        }
+        Button {
+            z_index: 25
+            x: 32
+            y: 280
+            width: 44
+            height: 44
+            text: ""
+            type: text
+            on_click: "fitness_nav4"
+        }
+        Label {
+            z_index: 22
+            text: "Hey, Need help?"
+            size: 18
+            color: #D4D4D4
+            x: 566
+            y: 72
+        }
+        Icon {
+            z_index: 22
+            x: 697
+            y: 72
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_HEADSET"
+            color: #D4D4D4
+        }
+        Card {
+            z_index: 22
+            x: 444
+            y: 108
+            width: 3
+            height: 38
+            type: outlined
+            color: #D4D4D4
+            corner_radius: 1
+        }
+        Label {
+            z_index: 22
+            text: "Just ask me anything"
+            size: 40
+            color: #A3A3A3
+            x: 458
+            y: 104
+        }
+        Button {
+            z_index: 25
+            x: 440
+            y: 96
+            width: 420
+            height: 64
+            text: ""
+            type: text
+            on_click: "fitness_ask_open"
+        }
+        Card {
+            z_index: 21
+            x: 1048
+            y: 24
+            width: 40
+            height: 40
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 20
+        }
+        Icon {
+            z_index: 22
+            x: 1059
+            y: 35
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_ADD"
+            color: #FFFFFF
+        }
+        Button {
+            z_index: 25
+            x: 1048
+            y: 24
+            width: 40
+            height: 40
+            text: ""
+            type: text
+            on_click: "fitness_quick_add"
+        }
+        Image {
+            z_index: 21
+            src: "assets/fitness_avatar.png"
+            x: 1100
+            y: 24
+            width: 40
+            height: 40
+            corner_radius: 20
+            scale: cover
+        }
+        Label {
+            z_index: 22
+            text: "Alvie Wahed"
+            size: 13
+            color: #FFFFFF
+            x: 1150
+            y: 26
+        }
+        Label {
+            z_index: 22
+            text: "Product Manager"
+            size: 10
+            color: #A3A3A3
+            x: 1150
+            y: 44
+        }
+        Button {
+            z_index: 25
+            x: 1100
+            y: 24
+            width: 148
+            height: 40
+            text: ""
+            type: text
+            on_click: "fitness_profile_open"
+        }
+        Card {
+            z_index: 21
+            x: 760
+            y: 300
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 22
+            x: 768
+            y: 308
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_SEARCH"
+            color: #E5E5E5
+        }
+        Button {
+            z_index: 25
+            x: 760
+            y: 300
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_search"
+        }
+        Card {
+            z_index: 21
+            x: 800
+            y: 300
+            width: 32
+            height: 32
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 16
+        }
+        Icon {
+            z_index: 22
+            x: 808
+            y: 308
+            size: 16
+            icon_size: 16
+            text: "AROMA_ICON_EDIT"
+            color: #E5E5E5
+        }
+        Button {
+            z_index: 25
+            x: 800
+            y: 300
+            width: 32
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_edit"
+        }
+        Card {
+            z_index: 21
+            x: 840
+            y: 300
+            width: 160
+            height: 34
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 17
+        }
+        Icon {
+            z_index: 22
+            x: 852
+            y: 310
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_EVENT"
+            color: #E5E5E5
+        }
+        Label {
+            z_index: 22
+            text: "15 - 28 July, 2026"
+            size: 10
+            color: #FFFFFF
+            x: 872
+            y: 309
+        }
+        Icon {
+            z_index: 22
+            x: 978
+            y: 310
+            size: 12
+            icon_size: 12
+            text: "AROMA_ICON_ARROW_DROP_DOWN"
+            color: #A3A3A3
+        }
+        Button {
+            z_index: 25
+            x: 840
+            y: 300
+            width: 160
+            height: 34
+            text: ""
+            type: text
+            on_click: "fitness_date"
+        }
+        Card {
+            z_index: 21
+            x: 1008
+            y: 300
+            width: 104
+            height: 34
+            type: outlined
+            color: #4D000000
+            border_color: #33FFFFFF
+            corner_radius: 17
+        }
+        Icon {
+            z_index: 22
+            x: 1020
+            y: 310
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_ADD"
+            color: #E5E5E5
+        }
+        Label {
+            z_index: 22
+            text: "Add Wallet"
+            size: 10
+            color: #FFFFFF
+            x: 1038
+            y: 309
+        }
+        Button {
+            z_index: 25
+            x: 1008
+            y: 300
+            width: 104
+            height: 34
+            text: ""
+            type: text
+            on_click: "fitness_add_wallet"
+        }
+        Card {
+            z_index: 21
+            x: 1120
+            y: 300
+            width: 128
+            height: 34
+            type: outlined
+            color: #CC1F1F1F
+            border_color: #4DFFFFFF
+            corner_radius: 17
+        }
+        Icon {
+            z_index: 22
+            x: 1128
+            y: 310
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_DESCRIPTION"
+            color: #FFFFFF
+        }
+        Label {
+            z_index: 22
+            text: "Create a Report"
+            size: 10
+            color: #FFFFFF
+            x: 1148
+            y: 309
+        }
+        Button {
+            z_index: 25
+            x: 1120
+            y: 300
+            width: 128
+            height: 34
+            text: ""
+            type: text
+            on_click: "fitness_create_report"
+        }
+    }
+    Container {
+        id: "fitness_page"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 40
+        visible: 0
+        Card {
+            z_index: 41
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            type: outlined
+            color: #0A0A0A
+            corner_radius: 0
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_title"
+            text: "People"
+            size: 32
+            color: #FFFFFF
+            x: 64
+            y: 48
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_crumb"
+            text: "Overview / People"
+            size: 11
+            color: #A3A3A3
+            x: 64
+            y: 90
+        }
+        Card {
+            z_index: 42
+            x: 1090
+            y: 48
+            width: 140
+            height: 36
+            type: outlined
+            color: #1A1A1A
+            border_color: #26FFFFFF
+            corner_radius: 18
+        }
+        Icon {
+            z_index: 60
+            x: 1104
+            y: 59
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_CHEVRON_LEFT"
+            color: #E5E5E5
+        }
+        Label {
+            z_index: 60
+            text: "Back to dashboard"
+            size: 10
+            color: #FFFFFF
+            x: 1126
+            y: 59
+        }
+        Button {
+            z_index: 60
+            x: 1090
+            y: 48
+            width: 140
+            height: 36
+            text: ""
+            type: text
+            on_click: "fitness_page_back"
+        }
+        Card {
+            z_index: 42
+            x: 64
+            y: 140
+            width: 1152
+            height: 600
+            type: outlined
+            color: #141414
+            border_color: #26FFFFFF
+            corner_radius: 20
+        }
+        Label {
+            z_index: 60
+            text: "Records"
+            size: 13
+            color: #A3A3A3
+            x: 88
+            y: 162
+        }
+        Label {
+            z_index: 60
+            text: "5 records"
+            size: 10
+            color: #737373
+            x: 1160
+            y: 164
+        }
+        Card {
+            z_index: 43
+            x: 88
+            y: 192
+            width: 1104
+            height: 1
+            type: outlined
+            color: #26FFFFFF
+            corner_radius: 0
+        }
+        Card {
+            z_index: 43
+            x: 88
+            y: 208
+            width: 1104
+            height: 84
+            type: outlined
+            color: #1A1A1A
+            border_color: #1FFFFFFF
+            corner_radius: 14
+        }
+        Card {
+            z_index: 44
+            x: 104
+            y: 228
+            width: 44
+            height: 44
+            type: outlined
+            color: #2A2A2A
+            corner_radius: 12
+        }
+        Icon {
+            z_index: 60
+            x: 117
+            y: 241
+            size: 22
+            icon_size: 22
+            text: "AROMA_ICON_FITNESS_CENTER"
+            color: #F97316
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row0_title"
+            text: "Row"
+            size: 15
+            color: #FFFFFF
+            x: 164
+            y: 226
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row0_meta"
+            text: "Meta"
+            size: 10
+            color: #A3A3A3
+            x: 164
+            y: 252
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row0_value"
+            text: "Value"
+            size: 11
+            color: #FFFFFF
+            x: 1080
+            y: 240
+        }
+        Icon {
+            z_index: 60
+            x: 1150
+            y: 242
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_CHEVRON_RIGHT"
+            color: #737373
+        }
+        Button {
+            z_index: 60
+            x: 88
+            y: 208
+            width: 1104
+            height: 84
+            text: ""
+            type: text
+            on_click: "fitness_page_row0"
+        }
+        Card {
+            z_index: 43
+            x: 88
+            y: 312
+            width: 1104
+            height: 84
+            type: outlined
+            color: #1A1A1A
+            border_color: #1FFFFFFF
+            corner_radius: 14
+        }
+        Card {
+            z_index: 44
+            x: 104
+            y: 332
+            width: 44
+            height: 44
+            type: outlined
+            color: #2A2A2A
+            corner_radius: 12
+        }
+        Icon {
+            z_index: 60
+            x: 117
+            y: 345
+            size: 22
+            icon_size: 22
+            text: "AROMA_ICON_FITNESS_CENTER"
+            color: #F97316
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row1_title"
+            text: "Row"
+            size: 15
+            color: #FFFFFF
+            x: 164
+            y: 330
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row1_meta"
+            text: "Meta"
+            size: 10
+            color: #A3A3A3
+            x: 164
+            y: 356
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row1_value"
+            text: "Value"
+            size: 11
+            color: #FFFFFF
+            x: 1080
+            y: 344
+        }
+        Icon {
+            z_index: 60
+            x: 1150
+            y: 346
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_CHEVRON_RIGHT"
+            color: #737373
+        }
+        Button {
+            z_index: 60
+            x: 88
+            y: 312
+            width: 1104
+            height: 84
+            text: ""
+            type: text
+            on_click: "fitness_page_row1"
+        }
+        Card {
+            z_index: 43
+            x: 88
+            y: 416
+            width: 1104
+            height: 84
+            type: outlined
+            color: #1A1A1A
+            border_color: #1FFFFFFF
+            corner_radius: 14
+        }
+        Card {
+            z_index: 44
+            x: 104
+            y: 436
+            width: 44
+            height: 44
+            type: outlined
+            color: #2A2A2A
+            corner_radius: 12
+        }
+        Icon {
+            z_index: 60
+            x: 117
+            y: 449
+            size: 22
+            icon_size: 22
+            text: "AROMA_ICON_FITNESS_CENTER"
+            color: #F97316
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row2_title"
+            text: "Row"
+            size: 15
+            color: #FFFFFF
+            x: 164
+            y: 434
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row2_meta"
+            text: "Meta"
+            size: 10
+            color: #A3A3A3
+            x: 164
+            y: 460
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row2_value"
+            text: "Value"
+            size: 11
+            color: #FFFFFF
+            x: 1080
+            y: 448
+        }
+        Icon {
+            z_index: 60
+            x: 1150
+            y: 450
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_CHEVRON_RIGHT"
+            color: #737373
+        }
+        Button {
+            z_index: 60
+            x: 88
+            y: 416
+            width: 1104
+            height: 84
+            text: ""
+            type: text
+            on_click: "fitness_page_row2"
+        }
+        Card {
+            z_index: 43
+            x: 88
+            y: 520
+            width: 1104
+            height: 84
+            type: outlined
+            color: #1A1A1A
+            border_color: #1FFFFFFF
+            corner_radius: 14
+        }
+        Card {
+            z_index: 44
+            x: 104
+            y: 540
+            width: 44
+            height: 44
+            type: outlined
+            color: #2A2A2A
+            corner_radius: 12
+        }
+        Icon {
+            z_index: 60
+            x: 117
+            y: 553
+            size: 22
+            icon_size: 22
+            text: "AROMA_ICON_FITNESS_CENTER"
+            color: #F97316
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row3_title"
+            text: "Row"
+            size: 15
+            color: #FFFFFF
+            x: 164
+            y: 538
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row3_meta"
+            text: "Meta"
+            size: 10
+            color: #A3A3A3
+            x: 164
+            y: 564
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row3_value"
+            text: "Value"
+            size: 11
+            color: #FFFFFF
+            x: 1080
+            y: 552
+        }
+        Icon {
+            z_index: 60
+            x: 1150
+            y: 554
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_CHEVRON_RIGHT"
+            color: #737373
+        }
+        Button {
+            z_index: 60
+            x: 88
+            y: 520
+            width: 1104
+            height: 84
+            text: ""
+            type: text
+            on_click: "fitness_page_row3"
+        }
+        Card {
+            z_index: 43
+            x: 88
+            y: 624
+            width: 1104
+            height: 84
+            type: outlined
+            color: #1A1A1A
+            border_color: #1FFFFFFF
+            corner_radius: 14
+        }
+        Card {
+            z_index: 44
+            x: 104
+            y: 644
+            width: 44
+            height: 44
+            type: outlined
+            color: #2A2A2A
+            corner_radius: 12
+        }
+        Icon {
+            z_index: 60
+            x: 117
+            y: 657
+            size: 22
+            icon_size: 22
+            text: "AROMA_ICON_FITNESS_CENTER"
+            color: #F97316
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row4_title"
+            text: "Row"
+            size: 15
+            color: #FFFFFF
+            x: 164
+            y: 642
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row4_meta"
+            text: "Meta"
+            size: 10
+            color: #A3A3A3
+            x: 164
+            y: 668
+        }
+        Label {
+            z_index: 60
+            id: "fitness_page_row4_value"
+            text: "Value"
+            size: 11
+            color: #FFFFFF
+            x: 1080
+            y: 656
+        }
+        Icon {
+            z_index: 60
+            x: 1150
+            y: 658
+            size: 14
+            icon_size: 14
+            text: "AROMA_ICON_CHEVRON_RIGHT"
+            color: #737373
+        }
+        Button {
+            z_index: 60
+            x: 88
+            y: 624
+            width: 1104
+            height: 84
+            text: ""
+            type: text
+            on_click: "fitness_page_row4"
+        }
+    }
+    Container {
+        id: "fitness_detail"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 50
+        visible: 0
+        Card {
+            z_index: 51
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            type: outlined
+            color: #B3000000
+            corner_radius: 0
+        }
+        Button {
+            z_index: 52
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            text: ""
+            type: text
+            on_click: "fitness_detail_close"
+        }
+        Card {
+            z_index: 53
+            x: 340
+            y: 150
+            width: 600
+            height: 500
+            type: outlined
+            color: #1A1A1A
+            border_color: #26FFFFFF
+            corner_radius: 24
+        }
+        Button {
+            z_index: 54
+            x: 340
+            y: 150
+            width: 600
+            height: 500
+            text: ""
+            type: text
+            on_click: "fitness_noop"
+        }
+        Label {
+            z_index: 60
+            id: "fitness_detail_kicker"
+            text: "INSIGHT"
+            size: 10
+            color: #F97316
+            x: 372
+            y: 178
+        }
+        Label {
+            z_index: 60
+            id: "fitness_detail_title"
+            text: "Activity"
+            size: 28
+            color: #FFFFFF
+            x: 372
+            y: 196
+        }
+        Label {
+            z_index: 60
+            id: "fitness_detail_value"
+            text: "19,840"
+            size: 34
+            color: #FFFFFF
+            x: 372
+            y: 238
+        }
+        Label {
+            z_index: 60
+            id: "fitness_detail_body1"
+            text: "Last 7 days"
+            size: 11
+            color: #A3A3A3
+            x: 372
+            y: 288
+        }
+        Label {
+            z_index: 60
+            id: "fitness_detail_body2"
+            text: "Compared with your weekly average"
+            size: 10
+            color: #737373
+            x: 372
+            y: 308
+        }
+        Card {
+            z_index: 54
+            x: 372
+            y: 340
+            width: 120
+            height: 28
+            type: outlined
+            color: #33FFFFFF
+            corner_radius: 14
+        }
+        Label {
+            z_index: 60
+            id: "fitness_detail_tag"
+            text: "All metrics"
+            size: 10
+            color: #FFFFFF
+            x: 390
+            y: 347
+        }
+        Canvas {
+            z_index: 55
+            id: "fitness_detail_chart"
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+        }
+        Label {
+            z_index: 60
+            text: "Sleep Avg"
+            size: 10
+            color: #A3A3A3
+            x: 372
+            y: 540
+        }
+        Label {
+            z_index: 60
+            text: "7.2h"
+            size: 14
+            color: #FFFFFF
+            x: 372
+            y: 556
+        }
+        Label {
+            z_index: 60
+            text: "Recovery"
+            size: 10
+            color: #A3A3A3
+            x: 620
+            y: 540
+        }
+        Label {
+            z_index: 60
+            text: "82%"
+            size: 14
+            color: #FFFFFF
+            x: 620
+            y: 556
+        }
+        Label {
+            z_index: 60
+            text: "Focus"
+            size: 10
+            color: #A3A3A3
+            x: 868
+            y: 540
+        }
+        Label {
+            z_index: 60
+            text: "73"
+            size: 14
+            color: #FFFFFF
+            x: 868
+            y: 556
+        }
+        Card {
+            z_index: 54
+            x: 872
+            y: 166
+            width: 36
+            height: 36
+            type: outlined
+            color: #33FFFFFF
+            corner_radius: 18
+        }
+        Icon {
+            z_index: 60
+            x: 881
+            y: 175
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_CLOSE"
+            color: #FFFFFF
+        }
+        Button {
+            z_index: 60
+            x: 860
+            y: 154
+            width: 56
+            height: 56
+            text: ""
+            type: text
+            on_click: "fitness_detail_close"
+        }
+    }
+    Container {
+        id: "fitness_ask"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 50
+        visible: 0
+        Card {
+            z_index: 51
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            type: outlined
+            color: #B3000000
+            corner_radius: 0
+        }
+        Button {
+            z_index: 52
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            text: ""
+            type: text
+            on_click: "fitness_ask_close"
+        }
+        Card {
+            z_index: 53
+            x: 320
+            y: 150
+            width: 640
+            height: 500
+            type: outlined
+            color: #1A1A1A
+            border_color: #26FFFFFF
+            corner_radius: 24
+        }
+        Button {
+            z_index: 54
+            x: 320
+            y: 150
+            width: 640
+            height: 500
+            text: ""
+            type: text
+            on_click: "fitness_noop"
+        }
+        Label {
+            z_index: 60
+            text: "Ask your coach"
+            size: 28
+            color: #FFFFFF
+            x: 352
+            y: 178
+        }
+        Label {
+            z_index: 60
+            text: "Training, recovery, or nutrition. Ask anything."
+            size: 11
+            color: #A3A3A3
+            x: 352
+            y: 218
+        }
+        Textbox {
+            z_index: 60
+            id: "fitness_ask_input"
+            x: 352
+            y: 252
+            width: 576
+            height: 48
+            placeholder: "Just ask me anything"
+            on_change: "fitness_ask_change"
+        }
+        Label {
+            z_index: 60
+            text: "SUGGESTED"
+            size: 9
+            color: #737373
+            x: 352
+            y: 324
+        }
+        Card {
+            z_index: 54
+            x: 352
+            y: 344
+            width: 276
+            height: 36
+            type: outlined
+            color: #232323
+            border_color: #1FFFFFFF
+            corner_radius: 10
+        }
+        Label {
+            z_index: 60
+            text: "How is my recovery?"
+            size: 10
+            color: #FFFFFF
+            x: 368
+            y: 354
+        }
+        Button {
+            z_index: 60
+            x: 352
+            y: 344
+            width: 276
+            height: 36
+            text: ""
+            type: text
+            on_click: "fitness_suggest0"
+        }
+        Card {
+            z_index: 54
+            x: 644
+            y: 344
+            width: 276
+            height: 36
+            type: outlined
+            color: #232323
+            border_color: #1FFFFFFF
+            corner_radius: 10
+        }
+        Label {
+            z_index: 60
+            text: "Plan a lighter session"
+            size: 10
+            color: #FFFFFF
+            x: 660
+            y: 354
+        }
+        Button {
+            z_index: 60
+            x: 644
+            y: 344
+            width: 276
+            height: 36
+            text: ""
+            type: text
+            on_click: "fitness_suggest1"
+        }
+        Card {
+            z_index: 54
+            x: 352
+            y: 392
+            width: 276
+            height: 36
+            type: outlined
+            color: #232323
+            border_color: #1FFFFFFF
+            corner_radius: 10
+        }
+        Label {
+            z_index: 60
+            text: "What should I eat today?"
+            size: 10
+            color: #FFFFFF
+            x: 368
+            y: 402
+        }
+        Button {
+            z_index: 60
+            x: 352
+            y: 392
+            width: 276
+            height: 36
+            text: ""
+            type: text
+            on_click: "fitness_suggest2"
+        }
+        Card {
+            z_index: 54
+            x: 644
+            y: 392
+            width: 276
+            height: 36
+            type: outlined
+            color: #232323
+            border_color: #1FFFFFFF
+            corner_radius: 10
+        }
+        Label {
+            z_index: 60
+            text: "Show my sleep trend"
+            size: 10
+            color: #FFFFFF
+            x: 660
+            y: 402
+        }
+        Button {
+            z_index: 60
+            x: 644
+            y: 392
+            width: 276
+            height: 36
+            text: ""
+            type: text
+            on_click: "fitness_suggest3"
+        }
+        Label {
+            z_index: 60
+            id: "fitness_ask_status"
+            text: "Try a suggestion or ask your own question."
+            size: 10
+            color: #737373
+            x: 352
+            y: 516
+        }
+        Card {
+            z_index: 54
+            x: 352
+            y: 560
+            width: 160
+            height: 40
+            type: outlined
+            color: #F97316
+            corner_radius: 20
+        }
+        Label {
+            z_index: 60
+            text: "Ask coach"
+            size: 11
+            color: #FFFFFF
+            x: 407
+            y: 571
+        }
+        Button {
+            z_index: 60
+            x: 352
+            y: 560
+            width: 160
+            height: 40
+            text: ""
+            type: text
+            on_click: "fitness_ask_send"
+        }
+        Label {
+            z_index: 60
+            text: "Cancel"
+            size: 11
+            color: #A3A3A3
+            x: 562
+            y: 571
+        }
+        Button {
+            z_index: 60
+            x: 520
+            y: 552
+            width: 120
+            height: 48
+            text: ""
+            type: text
+            on_click: "fitness_ask_close"
+        }
+        Icon {
+            z_index: 60
+            x: 912
+            y: 166
+            size: 18
+            icon_size: 18
+            text: "AROMA_ICON_CLOSE"
+            color: #A3A3A3
+        }
+        Button {
+            z_index: 60
+            x: 896
+            y: 150
+            width: 48
+            height: 48
+            text: ""
+            type: text
+            on_click: "fitness_ask_close"
+        }
+    }
+    Container {
+        id: "fitness_profile"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 50
+        visible: 0
+        Button {
+            z_index: 51
+            x: 0
+            y: 0
+            width: 1280
+            height: 800
+            text: ""
+            type: text
+            on_click: "fitness_profile_close"
+        }
+        Card {
+            z_index: 52
+            x: 1016
+            y: 80
+            width: 232
+            height: 220
+            type: outlined
+            color: #1A1A1A
+            border_color: #26FFFFFF
+            corner_radius: 18
+        }
+        Button {
+            z_index: 52
+            x: 1016
+            y: 80
+            width: 232
+            height: 220
+            text: ""
+            type: text
+            on_click: "fitness_noop"
+        }
+        Image {
+            z_index: 53
+            src: "assets/fitness_avatar.png"
+            x: 1036
+            y: 100
+            width: 44
+            height: 44
+            corner_radius: 22
+            scale: cover
+        }
+        Label {
+            z_index: 60
+            text: "Alvie Wahed"
+            size: 14
+            color: #FFFFFF
+            x: 1092
+            y: 102
+        }
+        Label {
+            z_index: 60
+            text: "Product Manager"
+            size: 10
+            color: #A3A3A3
+            x: 1092
+            y: 122
+        }
+        Card {
+            z_index: 53
+            x: 1036
+            y: 160
+            width: 192
+            height: 1
+            type: outlined
+            color: #33FFFFFF
+            corner_radius: 0
+        }
+        Label {
+            z_index: 60
+            text: "Account settings"
+            size: 11
+            color: #FFFFFF
+            x: 1036
+            y: 176
+        }
+        Button {
+            z_index: 60
+            x: 1028
+            y: 168
+            width: 208
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_account"
+        }
+        Label {
+            z_index: 60
+            text: "Notifications"
+            size: 11
+            color: #FFFFFF
+            x: 1036
+            y: 212
+        }
+        Button {
+            z_index: 60
+            x: 1028
+            y: 204
+            width: 208
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_notifications"
+        }
+        Label {
+            z_index: 60
+            text: "Sign out"
+            size: 11
+            color: #FCA5A5
+            x: 1036
+            y: 248
+        }
+        Button {
+            z_index: 60
+            x: 1028
+            y: 240
+            width: 208
+            height: 32
+            text: ""
+            type: text
+            on_click: "fitness_signout"
+        }
+    }
+    Container {
+        id: "fitness_snacks"
+        x: 0
+        y: 0
+        width: 1280
+        height: 800
+        z_index: 0
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_nav0"
+            message: "Dashboard restored"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_nav1"
+            message: "Search opened"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_nav2"
+            message: "People view"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_nav3"
+            message: "Calendar view"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_nav4"
+            message: "Settings view"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_quick"
+            message: "Quick add: log a workout"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_search"
+            message: "Search opened"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_edit"
+            message: "Dashboard edit mode"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_date"
+            message: "Date range: 15 - 28 July, 2026"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_wallet"
+            message: "Wallet added"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_report"
+            message: "Report created"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_pill"
+            message: "Metric selected"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_activity"
+            message: "Activity insight"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_sleep"
+            message: "Sleep insight"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_heart"
+            message: "Heart insight"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_wellness"
+            message: "Wellness insight"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_focus"
+            message: "Focus insight"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_energy"
+            message: "Energy insight"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_account"
+            message: "Account settings"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_notifications"
+            message: "Notifications opened"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_signout"
+            message: "Signed out of the preview"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_ask"
+            message: "Question sent to your coach"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_ask_empty"
+            message: "Type a question first"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_suggest"
+            message: "Suggestion loaded"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+        Snackbar {
+            z_index: 90
+            id: "fitness_snack_record"
+            message: "Record opened"
+            duration: 2200
+            color: #1F1F1F
+            text_color: #FFFFFF
+            show: 0
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "project": {
+    "name": "Fitness Dashboard",
+    "package": "com.example.fitnessdashboard",
+    "language": "c",
+    "version": "0.1.0",
+    "min_sdk": 24,
+    "target_sdk": 34,
+    "compile_sdk": 34
+  },
+  "bundle": {
+    "description": "Dark fitness tablet: activity, sleep, heart rate, wellness and focus gauges with canvas-drawn charts",
+    "maintainer": "Aroma Developer <dev@example.com>",
+    "license": "MIT",
+    "categories": "Utility;"
+  }
+}

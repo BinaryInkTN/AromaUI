@@ -148,8 +148,8 @@ static void toast_bridge(AromaNode *node, const char *name, const char *arg,
     (void)user;
     printf("webview: %s\n", arg);
 #ifdef __ANDROID__
-    // Real system toast so the JS `nativeToast(...)` bridge is visible on
-    // device (printf only reaches the terminal on desktop).
+    
+    
     aroma_android_toast(arg, false);
 #endif
     snprintf(out, outlen, "ok");

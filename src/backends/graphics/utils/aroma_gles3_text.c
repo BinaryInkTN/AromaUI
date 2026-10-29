@@ -499,9 +499,11 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
     }
 
     GLboolean blend_enabled = glIsEnabled(GL_BLEND);
-    GLint blend_src, blend_dst;
-    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src);
-    glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst);
+    GLint blend_src_rgb, blend_dst_rgb, blend_src_a, blend_dst_a;
+    glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src_rgb);
+    glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst_rgb);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_a);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst_a);
     GLint unpack_alignment;
     glGetIntegerv(GL_UNPACK_ALIGNMENT, &unpack_alignment);
     GLint active_texture;
@@ -527,7 +529,8 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
                 text_color[0], text_color[1], text_color[2]);
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+                        GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     glBindVertexArray(renderer->vao);
@@ -635,7 +638,8 @@ void gles3_text_render_text(GLES3TextRenderer* renderer, GLuint program,
     free(batch_vertices);
 
     if (!blend_enabled) glDisable(GL_BLEND);
-    glBlendFunc(blend_src, blend_dst);
+    glBlendFuncSeparate((GLenum)blend_src_rgb, (GLenum)blend_dst_rgb,
+                        (GLenum)blend_src_a, (GLenum)blend_dst_a);
     glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_alignment);
     glActiveTexture(active_texture);
     glBindTexture(GL_TEXTURE_2D, bound_texture);

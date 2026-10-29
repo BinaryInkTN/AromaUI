@@ -1,11 +1,4 @@
-/* Loud dashboard runtime for the docs landing-page demo.
- *
- * The Incense markup in docs/sandbox.html is intentionally only a view.
- * This file owns the application state behind it: navigation, period
- * selection, transactions, filters, notifications, settings, overlays and
- * the small amount of CSV export glue that turns the demo into something
- * that behaves like a real dashboard instead of a screenshot.
- */
+
 
 #include "loud_dashboard.h"
 
@@ -58,14 +51,14 @@ static void db_reset_heat_colors(void);
 static void db_set_initial_inputs(void);
 static void db_set_error(const char *id, const char *message);
 
-/* ------------------------------------------------------------------ state */
+
 
 typedef struct {
     char name[64];
     char category[24];
     long amount_cents;
     char date[24];
-    int status; /* 0 completed, 1 pending, 2 reviewed */
+    int status; 
     uint32_t dot;
 } LoudTxn;
 
@@ -172,7 +165,7 @@ static const LoudPeriod k_periods[LOUD_PERIOD_COUNT] = {
     },
 };
 
-/* --------------------------------------------------------------- plumbing */
+
 
 static void db_trace(const char *name)
 {
@@ -449,7 +442,7 @@ static uint32_t db_status_row_color(int status)
     }
 }
 
-/* ------------------------------------------------------------------ data */
+
 
 static void db_txn_set(int i, const char *name, const char *category,
                        long amount_cents, const char *date, int status,
@@ -545,7 +538,7 @@ static void db_reset_data(bool reset_view)
     }
 }
 
-/* ---------------------------------------------------------------- charts */
+
 
 static void db_chart_series(const char *id, const double *ys, int count)
 {
@@ -575,7 +568,7 @@ static void db_chart_labels(const char *prefix, int x0, int width,
     }
 }
 
-/* --------------------------------------------------------------- metrics */
+
 
 static void db_update_privacy_status(void)
 {
@@ -734,7 +727,7 @@ static void db_apply_period(void)
     aroma_ui_request_redraw(NULL);
 }
 
-/* ---------------------------------------------------------------- render */
+
 
 static void db_render_recent(void)
 {
@@ -919,7 +912,7 @@ static void db_render_dashboard(void)
     }
 }
 
-/* --------------------------------------------------------------- overlays */
+
 
 static const char *const k_overlays[] = {
     "overlay_search", "overlay_notifications", "overlay_profile",
@@ -1021,7 +1014,7 @@ static void db_nav_to(int index)
     db_apply_nav();
 }
 
-/* --------------------------------------------------------------- controls */
+
 
 static void db_nav_cb(void *userdata)
 {
@@ -1254,7 +1247,7 @@ static void db_sign_back_in_cb(void *userdata)
     db_toast("snack_welcome");
 }
 
-/* --------------------------------------------------------------- settings */
+
 
 static void db_switch_sync_guard(bool enable)
 {
@@ -1323,7 +1316,7 @@ static void db_settings_save_cb(void *userdata)
     db_toast("snack_saved");
 }
 
-/* ----------------------------------------------------------- transactions */
+
 
 static void db_txn_filter_cb(void *userdata)
 {
@@ -1403,7 +1396,7 @@ static void db_detail_review_cb(void *userdata)
     db_toast("snack_reviewed");
 }
 
-/* --------------------------------------------------------------- transfer */
+
 
 static bool db_parse_amount(const char *text, long *out_cents)
 {
@@ -1546,7 +1539,7 @@ static void db_request_submit_cb(void *userdata)
     aroma_ui_request_redraw(NULL);
 }
 
-/* ------------------------------------------------------------------ heat */
+
 
 static const int k_heat_levels[6][7] = {
     {0, 0, 0, 1, 0, 0, 0},
@@ -1613,7 +1606,7 @@ static void db_heat_cb(void *userdata)
     aroma_ui_request_redraw(NULL);
 }
 
-/* ---------------------------------------------------------------- export */
+
 
 #ifdef __EMSCRIPTEN__
 static void db_download_text(const char *filename, const char *content)
@@ -1843,7 +1836,7 @@ static void db_reset_period_cb(void *userdata)
     db_apply_period();
 }
 
-/* ---------------------------------------------------------------- wiring */
+
 
 void loud_dashboard_bind_fonts(AromaFont **fonts, const int *sizes, int count)
 {
