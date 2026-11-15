@@ -265,6 +265,24 @@ AromaNode *__remove_child_node(AromaNode *parent_node, uint64_t node_id)
     return NULL;
 }
 
+void aroma_node_remove_all_children(AromaNode *parent_node)
+{
+    if (!parent_node)
+        return;
+
+    while (parent_node->child_count > 0)
+    {
+        uint64_t child_index = parent_node->child_count - 1;
+        AromaNode *child = parent_node->child_nodes[child_index];
+        parent_node->child_nodes[child_index] = NULL;
+        parent_node->child_count--;
+        if (!child)
+            continue;
+        child->parent_node = NULL;
+        __destroy_node(child);
+    }
+}
+
 void __destroy_node(AromaNode *node)
 {
     if (!node)
@@ -381,6 +399,15 @@ void aroma_node_set_draw_cb(AromaNode *node, AromaNodeDrawFn cb)
         node->draw_cb = cb;
 }
 AromaNodeDrawFn aroma_node_get_draw_cb(AromaNode *node) { return node ? node->draw_cb : NULL; }
+
+void aroma_node_set_hit_test_cb(AromaNode *node, AromaNodeHitTestFn hit_test_cb,
+                                void *user_data)
+{
+    if (!node)
+        return;
+    node->hit_test_cb = hit_test_cb;
+    node->hit_test_user_data = user_data;
+}
 
 void aroma_node_set_hidden(AromaNode *node, bool hidden)
 {

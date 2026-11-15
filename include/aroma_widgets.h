@@ -11,6 +11,7 @@
 #include "widgets/aroma_slider.h"
 #include "widgets/aroma_switch.h"
 #include "widgets/aroma_textbox.h"
+#include "widgets/aroma_code_editor.h"
 #include "widgets/aroma_dropdown.h"
 #include "widgets/aroma_checkbox.h"
 #include "widgets/aroma_radiobutton.h"

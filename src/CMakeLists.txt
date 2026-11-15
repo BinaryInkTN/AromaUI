@@ -17,6 +17,7 @@ add_library(aroma
     core/aroma_drawlist.c
     core/aroma_test.c
     core/aroma_native_utils.c
+    core/aroma_file_dialog.c
     core/utils/mpc.c
     core/aroma_3d.c
     core/cJSON.c
@@ -39,6 +40,7 @@ add_library(aroma
     widgets/aroma_slider.c
     widgets/aroma_switch.c
     widgets/aroma_textbox.c
+    widgets/aroma_code_editor.c
     widgets/aroma_dropdown.c
     widgets/aroma_checkbox.c
     widgets/aroma_radiobutton.c

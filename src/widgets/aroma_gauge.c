@@ -329,7 +329,6 @@ static void aroma_gauge_destroy(AromaNode *node)
         aroma_widget_free(node->node_widget_ptr);
         node->node_widget_ptr = NULL;
     }
-    __destroy_node(node);
 }
 
 AromaNode *aroma_ui_gauge(AromaNode *parent, int x, int y, int width, int height)

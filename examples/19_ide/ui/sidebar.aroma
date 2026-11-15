@@ -1,0 +1,7 @@
+Canvas {
+    id: "sidebar_canvas"
+    x: 54
+    y: 36
+    width: 260
+    height: 832
+}

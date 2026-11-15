@@ -130,6 +130,16 @@ void aroma_event_set_root(AromaNode* root);
 AromaNode* aroma_event_get_root(void);
 
 
+typedef bool (*AromaGlobalKeyHandler)(AromaEvent *event, void *user_data);
+
+/* Optional application-level shortcut handler.  It runs on the UI thread
+ * before an event is dispatched to the focused node, so apps can implement
+ * global shortcuts such as F5/F7 or Ctrl+Shift+B regardless of focus.  Return
+ * true to consume the event. */
+void aroma_event_set_global_key_handler(AromaGlobalKeyHandler handler,
+                                        void *user_data);
+
+
 AromaEvent* aroma_event_create(AromaEventType event_type, uint64_t target_node_id);
 
 

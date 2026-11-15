@@ -288,6 +288,14 @@ void aroma_card_set_colors(AromaNode *card_node, uint32_t bg_color, uint32_t bor
     AromaCard *card = card_registry_get(card_node->node_id);
     if (!card)
         return;
+    if (card->type == CARD_TYPE_GLASS)
+    {
+        uint8_t r, g, b;
+        aroma_color_extract_rgb(bg_color, &r, &g, &b);
+        bg_color = aroma_color_rgba(r, g, b, 180);
+        aroma_color_extract_rgb(border_color, &r, &g, &b);
+        border_color = aroma_color_rgba(r, g, b, 72);
+    }
     card->bg_color = bg_color;
     card->border_color = border_color;
     card->use_theme_colors = false;

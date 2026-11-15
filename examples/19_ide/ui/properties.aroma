@@ -1,0 +1,7 @@
+Canvas {
+    id: "outline_canvas"
+    x: 1226
+    y: 36
+    width: 214
+    height: 832
+}

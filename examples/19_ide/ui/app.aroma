@@ -1,0 +1,241 @@
+Window {
+    width: 1440
+    height: 900
+    title: "AromaUI Studio"
+
+    Container {
+        id: "ide_root"
+        x: 0
+        y: 0
+        width: 1440
+        height: 900
+
+        Card {
+            x: 0
+            y: 0
+            width: 1440
+            height: 900
+            type: glass
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "title_bg"
+            x: 0
+            y: 0
+            width: 1440
+            height: 36
+            type: glass
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "rail_bg"
+            x: 0
+            y: 36
+            width: 54
+            height: 832
+            type: glass
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "sidebar_bg"
+            x: 54
+            y: 36
+            width: 260
+            height: 832
+            type: glass
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "tabs_bg"
+            x: 314
+            y: 36
+            width: 912
+            height: 36
+            type: glass
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "breadcrumb_bg"
+            x: 314
+            y: 72
+            width: 912
+            height: 28
+            type: glass
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "editor_bg"
+            x: 314
+            y: 100
+            width: 912
+            height: 520
+            type: glass
+            color: #18181A
+            corner_radius: 0
+        }
+
+        Card {
+            id: "outline_bg"
+            x: 1226
+            y: 36
+            width: 214
+            height: 832
+            type: glass
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "panel_bg"
+            x: 54
+            y: 620
+            width: 1172
+            height: 248
+            type: glass
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "status_bg"
+            x: 0
+            y: 868
+            width: 1440
+            height: 32
+            type: glass
+            color: #242426
+            corner_radius: 0
+        }
+
+        Card {
+            id: "div_title_bottom"
+            x: 0
+            y: 35
+            width: 1440
+            height: 1
+            type: glass
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            id: "div_rail_right"
+            x: 313
+            y: 36
+            width: 1
+            height: 832
+            type: glass
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            id: "div_outline_left"
+            x: 1225
+            y: 36
+            width: 1
+            height: 832
+            type: glass
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            id: "div_panel_top"
+            x: 54
+            y: 619
+            width: 1172
+            height: 1
+            type: glass
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            id: "div_status_top"
+            x: 0
+            y: 867
+            width: 1440
+            height: 1
+            type: glass
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Canvas {
+            id: "title_canvas"
+            x: 0
+            y: 0
+            width: 1440
+            height: 36
+        }
+
+        Canvas {
+            id: "rail_canvas"
+            x: 0
+            y: 36
+            width: 54
+            height: 832
+        }
+
+        Canvas {
+            id: "sidebar_canvas"
+            x: 54
+            y: 36
+            width: 260
+            height: 832
+        }
+
+        Canvas {
+            id: "tabs_canvas"
+            x: 314
+            y: 36
+            width: 912
+            height: 36
+        }
+
+        Canvas {
+            id: "breadcrumb_canvas"
+            x: 314
+            y: 72
+            width: 912
+            height: 28
+        }
+
+        Canvas {
+            id: "outline_canvas"
+            x: 1226
+            y: 36
+            width: 214
+            height: 832
+        }
+
+        Canvas {
+            id: "panel_canvas"
+            x: 54
+            y: 620
+            width: 1172
+            height: 248
+        }
+
+        Canvas {
+            id: "status_canvas"
+            x: 0
+            y: 868
+            width: 1440
+            height: 32
+        }
+    }
+}

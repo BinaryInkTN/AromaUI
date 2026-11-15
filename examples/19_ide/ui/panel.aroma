@@ -1,0 +1,7 @@
+Canvas {
+    id: "panel_canvas"
+    x: 54
+    y: 620
+    width: 1172
+    height: 248
+}

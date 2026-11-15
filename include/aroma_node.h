@@ -16,6 +16,9 @@ extern "C" {
 typedef struct  AromaNode AromaNode;
 
 typedef void (*AromaNodeDrawFn)(AromaNode* node, size_t window_id);
+/* Optional pointer-region test. Return false to let a hit fall through to
+   nodes underneath this one. */
+typedef bool (*AromaNodeHitTestFn)(AromaNode* node, int x, int y, void* user_data);
 
 typedef enum AromaNodeType {
     NODE_TYPE_ROOT,
@@ -112,6 +115,8 @@ struct  AromaNode
     void *node_widget_ptr;
     AromaNodeDrawFn draw_cb;
     void (*destroy_cb)(struct AromaNode* node);
+    AromaNodeHitTestFn hit_test_cb;
+    void *hit_test_user_data;
 
     uint64_t child_count;
     uint64_t child_capacity;
@@ -147,6 +152,8 @@ AromaNode* __create_node(AromaNodeType node_type, AromaNode* parent_node, void *
 AromaNode* __add_child_node(AromaNodeType node_type, AromaNode* parent_node, void *node_widget_ptr);
 
 AromaNode* __remove_child_node(AromaNode* parent_node, uint64_t node_id);
+
+void aroma_node_remove_all_children(AromaNode* parent_node);
 
 void __destroy_node(AromaNode* node);
 
@@ -206,6 +213,8 @@ bool aroma_node_is_dirty(AromaNode* node);
 void aroma_node_mark_clean(AromaNode* node);
 
 void aroma_node_set_draw_cb(AromaNode* node, AromaNodeDrawFn draw_cb);
+void aroma_node_set_hit_test_cb(AromaNode* node, AromaNodeHitTestFn hit_test_cb,
+                                void* user_data);
 
 AromaNodeDrawFn aroma_node_get_draw_cb(AromaNode* node);
 

@@ -4906,6 +4906,25 @@ static const char *impl_android_get_clipboard_text(void)
 
 }
 
+static void impl_platform_set_clipboard_text(const char *text)
+{
+    impl_android_set_clipboard_text(text);
+}
+
+static bool impl_platform_get_clipboard_text(char *buffer, size_t buffer_size)
+{
+    if (!buffer || buffer_size == 0)
+        return false;
+    const char *clip = impl_android_get_clipboard_text();
+    if (!clip || !clip[0])
+        return false;
+    size_t len = strlen(clip);
+    if (len >= buffer_size)
+        len = buffer_size - 1;
+    memcpy(buffer, clip, len);
+    buffer[len] = '\0';
+    return true;
+}
 
 static void impl_android_share_text(const char *text, const char *title)
 
@@ -7973,6 +7992,8 @@ AromaPlatformInterface aroma_platform_android = {
     .android_vibrate_effect = impl_android_vibrate_effect,
     .android_set_clipboard_text = impl_android_set_clipboard_text,
     .android_get_clipboard_text = impl_android_get_clipboard_text,
+    .set_clipboard_text = impl_platform_set_clipboard_text,
+    .get_clipboard_text = impl_platform_get_clipboard_text,
     .android_share_text = impl_android_share_text,
     .android_set_immersive = impl_android_set_immersive,
     .android_set_keep_screen_on = impl_android_set_keep_screen_on,

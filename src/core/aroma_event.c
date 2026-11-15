@@ -26,6 +26,7 @@
 #endif
 
 #define AROMA_MAX_LISTENERS_PER_NODE 16
+#define AROMA_MAX_EVENT_PATH 256
 #define AROMA_MAX_EVENT_QUEUE 256
 #define AROMA_MIN_MAP_CAPACITY 16
 #define AROMA_NODE_CACHE_SIZE 32
@@ -78,17 +79,36 @@ static struct
     AromaNode *last_hover_node;
 } g_mouse_state = {-1, -1, false, 0, NULL};
 
-static uint64_t g_touch_captures[AROMA_MAX_TOUCHES]     = {0};
-static uint64_t g_scroll_captures[AROMA_MAX_TOUCHES]    = {0};
-static bool     g_scroll_intercepting[AROMA_MAX_TOUCHES] = {false};
-static int      g_down_x[AROMA_MAX_TOUCHES]             = {0};
-static int      g_down_y[AROMA_MAX_TOUCHES]             = {0};
+static uint64_t g_touch_captures[AROMA_MAX_WINDOWS][AROMA_MAX_TOUCHES]     = {{0}};
+static uint64_t g_scroll_captures[AROMA_MAX_WINDOWS][AROMA_MAX_TOUCHES]    = {{0}};
+static bool     g_scroll_intercepting[AROMA_MAX_WINDOWS][AROMA_MAX_TOUCHES] = {{false}};
+static int      g_down_x[AROMA_MAX_WINDOWS][AROMA_MAX_TOUCHES]             = {{0}};
+static int      g_down_y[AROMA_MAX_WINDOWS][AROMA_MAX_TOUCHES]             = {{0}};
+
+static AromaGlobalKeyHandler g_global_key_handler = NULL;
+static void *g_global_key_handler_data = NULL;
 
 static AromaNode *find_scrollable_ancestor(AromaNode *start);
 static AromaNode *find_node_cached(uint64_t node_id);
 
 
-static bool swipe_should_take_over(int id, int x, int y, uint64_t scroll_id)
+/* Backends activate the window that produced an input event before calling
+ * the generic event helpers.  Resolve per-window state from that root instead
+ * of guessing from local window coordinates. */
+static int window_index_for_root(AromaNode *root)
+{
+    if (!root)
+        return -1;
+    for (int i = 0; i < g_window_count; ++i)
+    {
+        if (g_windows[i].is_active && g_windows[i].root_node == root)
+            return i;
+    }
+    return -1;
+}
+
+
+static bool swipe_should_take_over(int win_idx, int id, int x, int y, uint64_t scroll_id)
 {
     if (aroma_datepicker_any_popup_open() ||
         aroma_timepicker_any_popup_open() ||
@@ -97,8 +117,8 @@ static bool swipe_should_take_over(int id, int x, int y, uint64_t scroll_id)
     AromaNode *scroll_node = find_node_cached(scroll_id);
     if (!scroll_node || !aroma_container_is_scrollable(scroll_node))
         return false;
-    int dx = x - g_down_x[id];
-    int dy = y - g_down_y[id];
+    int dx = x - g_down_x[win_idx][id];
+    int dy = y - g_down_y[win_idx][id];
     int adx = dx < 0 ? -dx : dx;
     int ady = dy < 0 ? -dy : dy;
     int slop = aroma_container_touch_slop_px();
@@ -418,6 +438,8 @@ void aroma_event_system_shutdown(void)
     memset(&g_event_system, 0, sizeof(g_event_system));
     memset(&g_mouse_state,  0, sizeof(g_mouse_state));
     memset(g_event_pool,    0, sizeof(g_event_pool));
+    g_global_key_handler = NULL;
+    g_global_key_handler_data = NULL;
 }
 
 void aroma_event_set_root(AromaNode *root)
@@ -428,6 +450,13 @@ void aroma_event_set_root(AromaNode *root)
 AromaNode *aroma_event_get_root(void)
 {
     return g_event_system.root_node;
+}
+
+void aroma_event_set_global_key_handler(AromaGlobalKeyHandler handler,
+                                        void *user_data)
+{
+    g_global_key_handler = handler;
+    g_global_key_handler_data = user_data;
 }
 
 
@@ -458,17 +487,34 @@ static bool aroma_event_dispatch_internal(AromaEvent *event,
 
     if (!event_node_valid(event->target_node)) return false;
 
+    uint64_t path[AROMA_MAX_EVENT_PATH];
+    uint32_t path_count = 0;
     AromaNode *current = event->target_node;
+    while (event_node_valid(current) && path_count < AROMA_MAX_EVENT_PATH)
+    {
+        path[path_count++] = current->node_id;
+        current = current->parent_node;
+    }
     if (consuming_node_id) *consuming_node_id = 0;
 
-    while (event_node_valid(current) && !event->consumed)
+    for (uint32_t path_index = 0;
+         path_index < path_count && !event->consumed; path_index++)
     {
+        current = find_node_cached(path[path_index]);
+        if (!event_node_valid(current))
+            continue;
         AromaNodeEventListeners *ls = aroma_event_find_listeners(current->node_id);
         if (ls)
         {
-            for (uint32_t i = 0; i < ls->listener_count && !event->consumed; i++)
+            AromaEventListener listeners[AROMA_MAX_LISTENERS_PER_NODE];
+            uint32_t listener_count = ls->listener_count;
+            if (listener_count > AROMA_MAX_LISTENERS_PER_NODE)
+                listener_count = AROMA_MAX_LISTENERS_PER_NODE;
+            memcpy(listeners, ls->listeners,
+                   listener_count * sizeof(listeners[0]));
+            for (uint32_t i = 0; i < listener_count && !event->consumed; i++)
             {
-                AromaEventListener *listener = &ls->listeners[i];
+                AromaEventListener *listener = &listeners[i];
                 if (listener->event_type == event->event_type)
                 {
                     bool result = listener->handler(event, listener->user_data);
@@ -480,8 +526,6 @@ static bool aroma_event_dispatch_internal(AromaEvent *event,
                 }
             }
         }
-        AromaNode *next = current->parent_node;
-        current = next;
     }
 
     return event->consumed;
@@ -527,7 +571,11 @@ void aroma_event_process_queue(void)
 
         if (ev)
         {
-            aroma_event_dispatch(ev);
+            bool consumed = false;
+            if (ev->event_type == EVENT_TYPE_KEY_PRESS && g_global_key_handler)
+                consumed = g_global_key_handler(ev, g_global_key_handler_data);
+            if (!consumed)
+                aroma_event_dispatch(ev);
             aroma_event_destroy(ev);
         }
     }
@@ -537,11 +585,21 @@ void aroma_event_process_queue(void)
 
 void aroma_event_handle_touch(int id, int x, int y, int state)
 {
-    if (!g_event_system.root_node || g_event_system.shutting_down ||
+    AromaNode *root_node = g_event_system.root_node;
+    int win_idx = window_index_for_root(root_node);
+
+    if (win_idx < 0 && g_window_count > 0)
+    {
+        win_idx = find_window_index_at_point(x, y);
+        if (win_idx >= 0)
+            root_node = g_windows[win_idx].root_node;
+    }
+
+    if (!root_node || g_event_system.shutting_down ||
         id < 0 || id >= AROMA_MAX_TOUCHES)
     {
         LOG_INFO("EVT_REJECT: root=%p shut=%d id=%d state=%d",
-                 (void *)g_event_system.root_node, g_event_system.shutting_down, id, state);
+                 (void *)root_node, g_event_system.shutting_down, id, state);
         return;
     }
 
@@ -550,7 +608,7 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         aroma_dropdown_handle_outside_touch(x, y);
         for (int i = 0; i < AROMA_MAX_TOUCHES; i++)
         {
-            if (g_scroll_intercepting[i])
+            if (win_idx >= 0 && g_scroll_intercepting[win_idx][i])
             {
                 return;
             }
@@ -562,13 +620,15 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
 
     if (state == 1)
     {
-        target    = aroma_event_hit_test(g_event_system.root_node, x, y);
+        target    = aroma_event_hit_test(root_node, x, y);
         target_id = target ? target->node_id : 0;
-        g_touch_captures[id] = target_id;
-        g_down_x[id] = x;
-        g_down_y[id] = y;
+        if (win_idx >= 0)
+        {
+            g_touch_captures[win_idx][id] = target_id;
+            g_down_x[win_idx][id] = x;
+            g_down_y[win_idx][id] = y;
+        }
         AromaNode *scr = target ? find_scrollable_ancestor(target) : NULL;
-
 
         AromaNode *overlay_target = NULL;
         if (target && aroma_dropdown_overlay_hit_test(x, y, &overlay_target) &&
@@ -601,26 +661,26 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
             ((target->draw_cb == aroma_calendar_draw &&
               aroma_calendar_is_popup_open(target)) ||
              (target->draw_cb == aroma_datepicker_draw &&
-              aroma_datepicker_is_popup_open(target)) ||
+               aroma_datepicker_is_popup_open(target)) ||
              (target->draw_cb == aroma_timepicker_draw &&
-              aroma_timepicker_is_popup_open(target))))
+               aroma_timepicker_is_popup_open(target))))
             scr = NULL;
         if (!scr && target &&
             target->node_type == NODE_TYPE_CONTAINER &&
             aroma_container_is_scrollable(target))
             scr = target;
 
-        g_scroll_captures[id] = scr ? scr->node_id : 0;
+        if (win_idx >= 0)
+            g_scroll_captures[win_idx][id] = scr ? scr->node_id : 0;
     }
     else
     {
-        target_id = g_touch_captures[id];
+        target_id = (win_idx >= 0) ? g_touch_captures[win_idx][id] : 0;
 
-
-        if (state == 0 && target_id != 0 && !g_scroll_intercepting[id])
+        if (state == 0 && target_id != 0 && (win_idx < 0 || !g_scroll_intercepting[win_idx][id]))
         {
             AromaNode *release_target =
-                aroma_event_hit_test(g_event_system.root_node, x, y);
+                aroma_event_hit_test(root_node, x, y);
             AromaNode *captured_target = find_node_cached(target_id);
             if (release_target && captured_target &&
                 release_target != captured_target &&
@@ -631,7 +691,7 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         }
         if (target_id == 0)
         {
-            target    = aroma_event_hit_test(g_event_system.root_node, x, y);
+            target    = aroma_event_hit_test(root_node, x, y);
             target_id = target ? target->node_id : 0;
         }
     }
@@ -641,10 +701,10 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
     else if (state == 0) type = EVENT_TYPE_TOUCH_UP;
     else                 type = EVENT_TYPE_TOUCH_MOVE;
 
-    uint64_t scroll_id  = g_scroll_captures[id];
+    uint64_t scroll_id = (win_idx >= 0) ? g_scroll_captures[win_idx][id] : 0;
     bool     intercepted = false;
 
-    if (g_scroll_intercepting[id])
+    if (win_idx >= 0 && g_scroll_intercepting[win_idx][id])
     {
         AromaEvent *sev = aroma_event_create(type, scroll_id);
         if (sev)
@@ -663,12 +723,13 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         }
     }
 
-    if (!g_scroll_intercepting[id] && target_id != 0)
+    if ((win_idx < 0 || !g_scroll_intercepting[win_idx][id]) && target_id != 0)
     {
         if (type == EVENT_TYPE_TOUCH_MOVE && scroll_id != 0 && target_id != scroll_id &&
-            swipe_should_take_over(id, x, y, scroll_id))
+            swipe_should_take_over(win_idx, id, x, y, scroll_id))
         {
-            g_scroll_intercepting[id] = true;
+            if (win_idx >= 0)
+                g_scroll_intercepting[win_idx][id] = true;
             AromaEvent *cancel = aroma_event_create(EVENT_TYPE_TOUCH_UP, target_id);
             if (cancel)
             {
@@ -682,13 +743,13 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
             if (down)
             {
                 down->data.touch.id = id;
-                down->data.touch.x = g_down_x[id];
-                down->data.touch.y = g_down_y[id];
+                down->data.touch.x = g_down_x[win_idx >= 0 ? win_idx : 0][id];
+                down->data.touch.y = g_down_y[win_idx >= 0 ? win_idx : 0][id];
                 aroma_event_dispatch(down);
                 aroma_event_destroy(down);
             }
         }
-        if (g_scroll_intercepting[id])
+        if (win_idx >= 0 && g_scroll_intercepting[win_idx][id])
         {
             AromaEvent *sev = aroma_event_create(type, scroll_id);
             if (sev)
@@ -718,9 +779,10 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
         }
     }
 
-    if (intercepted && !g_scroll_intercepting[id])
+    if (intercepted && (win_idx < 0 || !g_scroll_intercepting[win_idx][id]))
     {
-        g_scroll_intercepting[id] = true;
+        if (win_idx >= 0)
+            g_scroll_intercepting[win_idx][id] = true;
         if (target_id != 0 && target_id != scroll_id)
         {
             AromaEvent *cancel = aroma_event_create(EVENT_TYPE_TOUCH_UP, target_id);
@@ -737,9 +799,12 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
 
     if (state == 0)
     {
-        g_touch_captures[id]     = 0;
-        g_scroll_captures[id]    = 0;
-        g_scroll_intercepting[id] = false;
+        if (win_idx >= 0)
+        {
+            g_touch_captures[win_idx][id]     = 0;
+            g_scroll_captures[win_idx][id]    = 0;
+            g_scroll_intercepting[win_idx][id] = false;
+        }
     }
 
     aroma_gesture_handle_touch(id, x, y, state);
@@ -747,14 +812,40 @@ void aroma_event_handle_touch(int id, int x, int y, int state)
 
 void aroma_event_handle_pointer_move(int x, int y, bool button_down)
 {
-    if (!g_event_system.root_node || g_event_system.shutting_down) return;
+    AromaNode *root_node = g_event_system.root_node;
+    int win_idx = window_index_for_root(root_node);
 
-    bool was_down = g_mouse_state.button_down;
-    g_mouse_state.button_down = button_down;
-    g_mouse_state.last_x      = x;
-    g_mouse_state.last_y      = y;
+    if (win_idx < 0 && g_window_count > 0)
+    {
+        win_idx = find_window_index_at_point(x, y);
+        if (win_idx >= 0)
+            root_node = g_windows[win_idx].root_node;
+    }
 
-    AromaNode *target    = aroma_event_hit_test(g_event_system.root_node, x, y);
+    if (!root_node || g_event_system.shutting_down) return;
+
+    /* Per-window mouse state */
+    static AromaNode *g_mouse_hover_node[AROMA_MAX_WINDOWS] = {NULL};
+    static bool g_mouse_button_down[AROMA_MAX_WINDOWS] = {false};
+    static int g_mouse_last_x[AROMA_MAX_WINDOWS] = {-1};
+    static int g_mouse_last_y[AROMA_MAX_WINDOWS] = {-1};
+    static uint64_t g_mouse_hovered_node_id[AROMA_MAX_WINDOWS] = {0};
+
+    bool was_down = (win_idx >= 0) ? g_mouse_button_down[win_idx] : g_mouse_state.button_down;
+    if (win_idx >= 0)
+    {
+        g_mouse_button_down[win_idx] = button_down;
+        g_mouse_last_x[win_idx] = x;
+        g_mouse_last_y[win_idx] = y;
+    }
+    else
+    {
+        g_mouse_state.button_down = button_down;
+        g_mouse_state.last_x = x;
+        g_mouse_state.last_y = y;
+    }
+
+    AromaNode *target    = aroma_event_hit_test(root_node, x, y);
     uint64_t  current_id = target ? target->node_id : 0;
 
 #ifdef __ANDROID__
@@ -763,7 +854,7 @@ void aroma_event_handle_pointer_move(int x, int y, bool button_down)
         bool scroll_active = false;
         for (int i = 0; i < AROMA_MAX_TOUCHES; i++)
         {
-            if (g_scroll_intercepting[i]) { scroll_active = true; break; }
+            if (win_idx >= 0 && g_scroll_intercepting[win_idx][i]) { scroll_active = true; break; }
         }
         if (!scroll_active)
         {
@@ -856,6 +947,9 @@ AromaNode *aroma_event_hit_test(AromaNode *root, int x, int y)
 {
     if (!event_node_valid(root)) return NULL;
     if (root->is_hidden || g_event_system.shutting_down) return NULL;
+    if (root->hit_test_cb &&
+        !root->hit_test_cb(root, x, y, root->hit_test_user_data))
+        return NULL;
     if (root->parent_node && !point_in_scrollable_ancestors(root, x, y))
         return NULL;
 

@@ -191,7 +191,17 @@ static bool _queue_mouse_event(AromaEventType type,
                                double mx, double my,
                                uint8_t button)
 {
-    AromaNode *root = aroma_event_get_root();
+    int win_idx = find_window_index_at_point((int)mx, (int)my);
+    AromaNode *root = NULL;
+    if (win_idx >= 0)
+    {
+        root = g_windows[win_idx].root_node;
+        aroma_ui_activate_window(g_windows[win_idx].window_id);
+    }
+    else
+    {
+        root = aroma_event_get_root();
+    }
     if (!root) return false;
 
     AromaNode *target    = aroma_event_hit_test(root, (int)mx, (int)my);
@@ -288,7 +298,12 @@ static bool _queue_key_event(AromaEventType type,
 static uint32_t _map_key(const EmscriptenKeyboardEvent *e)
 {
     if (e->key[0] != '\0' && e->key[1] == '\0')
-        return (uint32_t)(unsigned char)e->key[0];
+    {
+        char c = e->key[0];
+        if (c >= 'A' && c <= 'Z')
+            return (uint32_t)(c | 0x20);
+        return (uint32_t)(unsigned char)c;
+    }
 
     static const struct { const char *name; uint32_t val; } kmap[] = {
         { "Backspace",  8      },
@@ -296,6 +311,7 @@ static uint32_t _map_key(const EmscriptenKeyboardEvent *e)
         { "Enter",      10     },
         { "Escape",     27     },
         { "Delete",     127    },
+        { "Insert",     0xFFFF },
         { "ArrowLeft",  0xFF51 },
         { "ArrowUp",    0xFF52 },
         { "ArrowRight", 0xFF53 },
@@ -304,6 +320,10 @@ static uint32_t _map_key(const EmscriptenKeyboardEvent *e)
         { "End",        0xFF57 },
         { "PageUp",     0xFF55 },
         { "PageDown",   0xFF56 },
+        { "NumLock",    0xFF9F },
+        { "ScrollLock", 0xFF14 },
+        { "PrintScreen",0xFF61 },
+        { "Pause",      0xFF13 },
         { "F1",         0xFFBE },
         { "F2",         0xFFBF },
         { "F3",         0xFFC0 },
@@ -395,7 +415,17 @@ static EM_BOOL _cb_wheel(int et, const EmscriptenWheelEvent *e, void *ud)
     int mx = (int)platform_ctx.last_mouse_x;
     int my = (int)platform_ctx.last_mouse_y;
 
-    AromaNode *root = aroma_event_get_root();
+    int win_idx = find_window_index_at_point(mx, my);
+    AromaNode *root = NULL;
+    if (win_idx >= 0)
+    {
+        root = g_windows[win_idx].root_node;
+        aroma_ui_activate_window(g_windows[win_idx].window_id);
+    }
+    else
+    {
+        root = aroma_event_get_root();
+    }
     if (!root) return EM_TRUE;
 
     AromaNode *target = aroma_event_hit_test(root, mx, my);
@@ -462,6 +492,9 @@ static EM_BOOL _cb_key_down(int et, const EmscriptenKeyboardEvent *e, void *ud)
     (void)et; (void)ud;
     uint32_t kv = _map_key(e);
     if (kv == 0) return EM_TRUE;
+
+    if (e->ctrlKey && kv >= 'a' && kv <= 'z')
+        kv = (uint32_t)(kv - 'a' + 1);
 
     if (kv == 27)
     {
@@ -701,6 +734,19 @@ static void shutdown(void)
 static void *get_native_window_ptr(size_t window_id)  { (void)window_id; return NULL; }
 static void *get_native_display_ptr(void)              { return NULL; }
 
+static void ems_set_clipboard_text(const char *text)
+{
+    (void)text;
+    /* Clipboard access on the web requires a user gesture; skip for now. */
+}
+
+static bool ems_get_clipboard_text(char *buffer, size_t buffer_size)
+{
+    (void)buffer;
+    (void)buffer_size;
+    return false;
+}
+
 AromaPlatformInterface aroma_platform_emscripten = {
     .initialize                     = initialize,
     .create_window                  = create_window,
@@ -717,6 +763,8 @@ AromaPlatformInterface aroma_platform_emscripten = {
     .get_native_window_ptr          = get_native_window_ptr,
     .get_native_display_ptr         = get_native_display_ptr,
     .get_backing_size               = get_backing_size,
+    .set_clipboard_text             = ems_set_clipboard_text,
+    .get_clipboard_text             = ems_get_clipboard_text,
 };
 
 #endif

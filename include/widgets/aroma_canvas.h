@@ -53,10 +53,11 @@ extern "C"
     } AromaCanvasOp;
 
 
-#define AROMA_CANVAS_MAX_OPS 64
+#define AROMA_CANVAS_MAX_OPS 1024
 
     typedef struct
     {
+        AromaRect rect;
         AromaCanvasOp ops[AROMA_CANVAS_MAX_OPS];
         size_t op_count;
     } AromaCanvas;

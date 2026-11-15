@@ -195,9 +195,43 @@ AromaNode* aroma_gif_create_from_memory(AromaNode* parent, unsigned char* data, 
     return node;
 }
 
+static AromaNode* __gif_create_empty(AromaNode* parent, int x, int y, int width, int height) {
+#ifdef __ANDROID__
+    x = aroma_android_dp_to_px(x);
+    y = aroma_android_dp_to_px(y);
+    if (width > 0) width = aroma_android_dp_to_px(width);
+    if (height > 0) height = aroma_android_dp_to_px(height);
+#endif
+
+    AromaGif* gif = (AromaGif*)aroma_widget_alloc(sizeof(AromaGif));
+    if (!gif) return NULL;
+    memset(gif, 0, sizeof(AromaGif));
+
+    gif->rect.x = x;
+    gif->rect.y = y;
+    gif->rect.width = width > 0 ? width : 100;
+    gif->rect.height = height > 0 ? height : 100;
+    gif->num_frames = 0;
+    gif->is_playing = false;
+
+    AromaNode* node = __add_child_node(NODE_TYPE_WIDGET, parent, gif);
+    if (!node) {
+        aroma_widget_free(gif);
+        return NULL;
+    }
+
+    gif->node = node;
+    aroma_node_set_draw_cb(node, aroma_gif_draw);
+    return node;
+}
+
 AromaNode* aroma_gif_create(AromaNode* parent, const char* gif_path, int x, int y, int width, int height) {
     if (!parent || !gif_path) return NULL;
 
+    /* Empty media sources are valid placeholders while a designer or app is
+       being built.  Keep the widget node so layouts and hit boxes stay real. */
+    if (gif_path[0] == '\0')
+        return __gif_create_empty(parent, x, y, width, height);
 
     FILE* f = fopen(gif_path, "rb");
     if (!f) {

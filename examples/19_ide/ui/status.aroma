@@ -1,0 +1,7 @@
+Canvas {
+    id: "status_canvas"
+    x: 0
+    y: 868
+    width: 1440
+    height: 32
+}

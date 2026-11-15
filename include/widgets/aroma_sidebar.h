@@ -8,7 +8,7 @@
 #define AROMA_SIDEBAR_LABEL_MAX 64
 
 AromaNode *aroma_sidebar_create(AromaNode *parent, int x, int y, int width, int height,
-                                const char **labels, int count);
+                                const char *const *labels, int count);
 void aroma_sidebar_set_selected(AromaNode *sidebar_node, int index);
 int aroma_sidebar_get_selected(AromaNode *sidebar_node);
 void aroma_sidebar_set_on_select(AromaNode *sidebar_node,

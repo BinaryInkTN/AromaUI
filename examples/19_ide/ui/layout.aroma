@@ -1,0 +1,181 @@
+Window {
+    width: 1440
+    height: 900
+    title: "AromaUI Studio"
+
+    Container {
+        id: "ide_root"
+        x: 0
+        y: 0
+        width: 1440
+        height: 900
+
+        Card {
+            x: 0
+            y: 0
+            width: 1440
+            height: 900
+            type: filled
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "title_bg"
+            x: 0
+            y: 0
+            width: 1440
+            height: 36
+            type: filled
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "rail_bg"
+            x: 0
+            y: 36
+            width: 54
+            height: 832
+            type: filled
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "sidebar_bg"
+            x: 54
+            y: 36
+            width: 260
+            height: 832
+            type: filled
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "tabs_bg"
+            x: 314
+            y: 36
+            width: 912
+            height: 36
+            type: filled
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Card {
+            id: "breadcrumb_bg"
+            x: 314
+            y: 72
+            width: 912
+            height: 28
+            type: filled
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "editor_bg"
+            x: 314
+            y: 100
+            width: 912
+            height: 520
+            type: filled
+            color: #18181A
+            corner_radius: 0
+        }
+
+        Card {
+            id: "outline_bg"
+            x: 1226
+            y: 36
+            width: 214
+            height: 832
+            type: filled
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "panel_bg"
+            x: 54
+            y: 620
+            width: 1172
+            height: 248
+            type: filled
+            color: #202022
+            corner_radius: 0
+        }
+
+        Card {
+            id: "status_bg"
+            x: 0
+            y: 868
+            width: 1440
+            height: 32
+            type: filled
+            color: #242426
+            corner_radius: 0
+        }
+
+        Card {
+            x: 0
+            y: 35
+            width: 1440
+            height: 1
+            type: filled
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            x: 313
+            y: 36
+            width: 1
+            height: 832
+            type: filled
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            x: 1225
+            y: 36
+            width: 1
+            height: 832
+            type: filled
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            x: 54
+            y: 619
+            width: 1172
+            height: 1
+            type: filled
+            color: #38383A
+            corner_radius: 0
+        }
+
+        Card {
+            x: 0
+            y: 867
+            width: 1440
+            height: 1
+            type: filled
+            color: #38383A
+            corner_radius: 0
+        }
+
+        @embed "ui/title.aroma"
+        @embed "ui/rail.aroma"
+        @embed "ui/sidebar.aroma"
+        @embed "ui/tabs.aroma"
+        @embed "ui/breadcrumb.aroma"
+        @embed "ui/properties.aroma"
+        @embed "ui/panel.aroma"
+        @embed "ui/status.aroma"
+    }
+}

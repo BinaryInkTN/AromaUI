@@ -1,0 +1,7 @@
+Canvas {
+    id: "tabs_canvas"
+    x: 314
+    y: 36
+    width: 912
+    height: 36
+}

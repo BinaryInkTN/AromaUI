@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
+#include "vendors/nfd/include/nfd.h"
 #include "core/aroma_logger.h"
 #include "aroma_abi.h"
 #include "backends/graphics/aroma_graphics_interface.h"
@@ -29,6 +30,10 @@ typedef struct
     double last_mouse_x;
     double last_mouse_y;
     bool mouse_button_down;
+    bool window_dragging;
+    bool window_maximized;
+    double window_drag_offset_x;
+    double window_drag_offset_y;
     void (*frame_callback)(size_t, void *);
     void *frame_callback_data;
 
@@ -43,6 +48,7 @@ static AromaGLFContext platform_ctx = {
     .last_mouse_x = 0.0,
     .last_mouse_y = 0.0,
     .mouse_button_down = false,
+    .window_dragging = false,
     .frame_callback = NULL,
     .frame_callback_data = NULL,
     .egl_display = EGL_NO_DISPLAY,
@@ -236,7 +242,17 @@ static void shutdown_egl_surfaceless(void)
 
 static bool queue_mouse_event(AromaEventType type, double mouse_x, double mouse_y, uint8_t button)
 {
-    AromaNode *root = aroma_event_get_root();
+    int win_idx = find_window_index_at_point((int)mouse_x, (int)mouse_y);
+    AromaNode *root = NULL;
+    if (win_idx >= 0)
+    {
+        root = g_windows[win_idx].root_node;
+        aroma_ui_activate_window(g_windows[win_idx].window_id);
+    }
+    else
+    {
+        root = aroma_event_get_root();
+    }
     if (!root)
         return false;
 
@@ -272,7 +288,14 @@ static bool queue_key_event(AromaEventType type, uint32_t key_value, uint16_t mo
 
 static void glfw_cursor_pos_callback(GLFWwindow *window, double xpos, double ypos)
 {
-        LOG_INFO("Mouse button event: xpos=%f, ypos=%f", xpos, ypos);
+    if (platform_ctx.window_dragging)
+    {
+        int window_x, window_y;
+        glfwGetWindowPos(window, &window_x, &window_y);
+        glfwSetWindowPos(window,
+                         (int)(window_x + xpos - platform_ctx.window_drag_offset_x),
+                         (int)(window_y + ypos - platform_ctx.window_drag_offset_y));
+    }
 
     bool moved = (xpos != platform_ctx.last_mouse_x) || (ypos != platform_ctx.last_mouse_y);
     if (moved)
@@ -285,23 +308,197 @@ static void glfw_cursor_pos_callback(GLFWwindow *window, double xpos, double ypo
     platform_ctx.last_mouse_y = ypos;
 }
 
+static void glfw_set_window_decorated(size_t window_id, bool decorated)
+{
+    (void)window_id;
+    if (platform_ctx.primary_window)
+        glfwSetWindowAttrib(platform_ctx.primary_window, GLFW_DECORATED,
+                            decorated ? GLFW_TRUE : GLFW_FALSE);
+}
+
+static void glfw_begin_window_drag(size_t window_id)
+{
+    (void)window_id;
+    if (!platform_ctx.primary_window)
+        return;
+    double cursor_x, cursor_y;
+    glfwGetCursorPos(platform_ctx.primary_window, &cursor_x, &cursor_y);
+    platform_ctx.window_drag_offset_x = cursor_x;
+    platform_ctx.window_drag_offset_y = cursor_y;
+    platform_ctx.window_dragging = true;
+}
+
+static void glfw_set_window_minimized(size_t window_id, bool minimized)
+{
+    (void)window_id;
+    if (!platform_ctx.primary_window)
+        return;
+    if (minimized)
+        glfwIconifyWindow(platform_ctx.primary_window);
+    else
+        glfwRestoreWindow(platform_ctx.primary_window);
+}
+
+static void glfw_set_window_maximized(size_t window_id, bool maximized)
+{
+    (void)window_id;
+    if (!platform_ctx.primary_window)
+        return;
+    if (maximized)
+        glfwMaximizeWindow(platform_ctx.primary_window);
+    else
+        glfwRestoreWindow(platform_ctx.primary_window);
+}
+
+static void glfw_toggle_window_maximized(size_t window_id)
+{
+    platform_ctx.window_maximized = !platform_ctx.window_maximized;
+    glfw_set_window_maximized(window_id, platform_ctx.window_maximized);
+}
+
 static void glfw_mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
     LOG_INFO("Mouse button event: button=%d, action=%d, mods=%d", button, action, mods);
     bool state = (action == GLFW_PRESS);
     platform_ctx.mouse_button_down = state;
+    if (!state)
+        platform_ctx.window_dragging = false;
     AromaEventType type = state ? EVENT_TYPE_MOUSE_CLICK : EVENT_TYPE_MOUSE_RELEASE;
     queue_mouse_event(type, platform_ctx.last_mouse_x, platform_ctx.last_mouse_y, button);
 
     if (!state)
     {
         aroma_event_handle_pointer_move((int)platform_ctx.last_mouse_x, (int)platform_ctx.last_mouse_y, false);
+        .toggle_window_maximized = glfw_toggle_window_maximized,
+    };
+}
+
+static uint32_t glfw_key_to_value(int key, bool shift, bool ctrl)
+{
+    if (ctrl)
+    {
+        if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z)
+        {
+            return (uint32_t)(key - GLFW_KEY_A + 1);
+        }
+        if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9)
+        {
+            return (uint32_t)(key - GLFW_KEY_0 + 48);
+        }
+        switch (key)
+        {
+        case GLFW_KEY_SPACE: return 0;
+        case GLFW_KEY_MINUS: return 31;
+        case GLFW_KEY_PERIOD: return 26;
+        case GLFW_KEY_SLASH: return 29;
+        case GLFW_KEY_BACKSLASH: return 28;
+        case GLFW_KEY_SEMICOLON: return 27;
+        case GLFW_KEY_APOSTROPHE: return 25;
+        case GLFW_KEY_LEFT_BRACKET: return 27;
+        case GLFW_KEY_RIGHT_BRACKET: return 29;
+        case GLFW_KEY_COMMA: return 24;
+        case GLFW_KEY_GRAVE_ACCENT: return 26;
+        default: return 0;
+        }
+    }
+
+    switch (key)
+    {
+    case GLFW_KEY_ESCAPE: return 27;
+    case GLFW_KEY_ENTER:
+    case GLFW_KEY_KP_ENTER: return 10;
+    case GLFW_KEY_TAB: return 9;
+    case GLFW_KEY_BACKSPACE: return 8;
+    case GLFW_KEY_DELETE: return 127;
+    case GLFW_KEY_INSERT: return 0xFFFF;
+    case GLFW_KEY_LEFT: return 0xFF51;
+    case GLFW_KEY_UP: return 0xFF52;
+    case GLFW_KEY_RIGHT: return 0xFF53;
+    case GLFW_KEY_DOWN: return 0xFF54;
+    case GLFW_KEY_HOME: return 0xFF50;
+    case GLFW_KEY_END: return 0xFF57;
+    case GLFW_KEY_PAGE_UP: return 0xFF55;
+    case GLFW_KEY_PAGE_DOWN: return 0xFF56;
+    case GLFW_KEY_SPACE: return 32;
+    case GLFW_KEY_KP_0: return '0';
+    case GLFW_KEY_KP_1: return '1';
+    case GLFW_KEY_KP_2: return '2';
+    case GLFW_KEY_KP_3: return '3';
+    case GLFW_KEY_KP_4: return '4';
+    case GLFW_KEY_KP_5: return '5';
+    case GLFW_KEY_KP_6: return '6';
+    case GLFW_KEY_KP_7: return '7';
+    case GLFW_KEY_KP_8: return '8';
+    case GLFW_KEY_KP_9: return '9';
+    case GLFW_KEY_KP_DECIMAL: return '.';
+    case GLFW_KEY_KP_DIVIDE: return '/';
+    case GLFW_KEY_KP_MULTIPLY: return '*';
+    case GLFW_KEY_KP_SUBTRACT: return '-';
+    case GLFW_KEY_KP_ADD: return '+';
+    case GLFW_KEY_KP_EQUAL: return '=';
+    case GLFW_KEY_F1: return 0xFFBE;
+    case GLFW_KEY_F2: return 0xFFBF;
+    case GLFW_KEY_F3: return 0xFFC0;
+    case GLFW_KEY_F4: return 0xFFC1;
+    case GLFW_KEY_F5: return 0xFFC2;
+    case GLFW_KEY_F6: return 0xFFC3;
+    case GLFW_KEY_F7: return 0xFFC4;
+    case GLFW_KEY_F8: return 0xFFC5;
+    case GLFW_KEY_F9: return 0xFFC6;
+    case GLFW_KEY_F10: return 0xFFC7;
+    case GLFW_KEY_F11: return 0xFFC8;
+    case GLFW_KEY_F12: return 0xFFC9;
+    case GLFW_KEY_PAUSE: return 0xFF13;
+    case GLFW_KEY_SCROLL_LOCK: return 0xFF14;
+    case GLFW_KEY_NUM_LOCK: return 0xFF9F;
+    case GLFW_KEY_PRINT_SCREEN: return 0xFF61;
+    case GLFW_KEY_MENU: return 0xFF67;
+    case GLFW_KEY_LEFT_SHIFT:
+    case GLFW_KEY_RIGHT_SHIFT: return 0;
+    case GLFW_KEY_LEFT_CONTROL:
+    case GLFW_KEY_RIGHT_CONTROL: return 0;
+    case GLFW_KEY_LEFT_ALT:
+    case GLFW_KEY_RIGHT_ALT: return 0;
+    case GLFW_KEY_LEFT_SUPER:
+    case GLFW_KEY_RIGHT_SUPER: return 0;
+    case GLFW_KEY_CAPS_LOCK: return 0;
+    case GLFW_KEY_A: case GLFW_KEY_B: case GLFW_KEY_C: case GLFW_KEY_D:
+    case GLFW_KEY_E: case GLFW_KEY_F: case GLFW_KEY_G: case GLFW_KEY_H:
+    case GLFW_KEY_I: case GLFW_KEY_J: case GLFW_KEY_K: case GLFW_KEY_L:
+    case GLFW_KEY_M: case GLFW_KEY_N: case GLFW_KEY_O: case GLFW_KEY_P:
+    case GLFW_KEY_Q: case GLFW_KEY_R: case GLFW_KEY_S: case GLFW_KEY_T:
+    case GLFW_KEY_U: case GLFW_KEY_V: case GLFW_KEY_W: case GLFW_KEY_X:
+    case GLFW_KEY_Y: case GLFW_KEY_Z:
+        if (shift)
+            return (uint32_t)('A' + (key - GLFW_KEY_A));
+        return (uint32_t)('a' + (key - GLFW_KEY_A));
+    case GLFW_KEY_0: case GLFW_KEY_1: case GLFW_KEY_2: case GLFW_KEY_3:
+    case GLFW_KEY_4: case GLFW_KEY_5: case GLFW_KEY_6: case GLFW_KEY_7:
+    case GLFW_KEY_8: case GLFW_KEY_9:
+        return (uint32_t)('0' + (key - GLFW_KEY_0));
+    case GLFW_KEY_MINUS: return shift ? '_' : '-';
+    case GLFW_KEY_EQUAL: return shift ? '+' : '=';
+    case GLFW_KEY_LEFT_BRACKET: return shift ? '{' : '[';
+    case GLFW_KEY_RIGHT_BRACKET: return shift ? '}' : ']';
+    case GLFW_KEY_BACKSLASH: return shift ? '|' : '\\';
+    case GLFW_KEY_SEMICOLON: return shift ? ':' : ';';
+    case GLFW_KEY_APOSTROPHE: return shift ? '"' : '\'';
+    case GLFW_KEY_GRAVE_ACCENT: return shift ? '~' : '`';
+    case GLFW_KEY_COMMA: return shift ? '<' : ',';
+    case GLFW_KEY_PERIOD: return shift ? '>' : '.';
+    case GLFW_KEY_SLASH: return shift ? '?' : '/';
+    case GLFW_KEY_KP_EQUAL: return '=';
+    case GLFW_KEY_KP_DECIMAL: return '.';
+    case GLFW_KEY_WORLD_1:
+    case GLFW_KEY_WORLD_2:
+    default:
+        return 0;
     }
 }
 
 static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-
+    (void)scancode;
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
@@ -311,54 +508,27 @@ static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int act
 
     AromaEventType type = (action == GLFW_RELEASE) ? EVENT_TYPE_KEY_RELEASE : EVENT_TYPE_KEY_PRESS;
 
-    uint32_t key_value = 0;
-    bool is_printable = false;
+    bool shift = (mods & GLFW_MOD_SHIFT) != 0;
+    bool ctrl = (mods & GLFW_MOD_CONTROL) != 0;
 
-    switch (key)
+    uint32_t key_value = glfw_key_to_value(key, shift, ctrl);
+
+    if (key_value == 0 && action == GLFW_PRESS)
     {
-    case GLFW_KEY_BACKSPACE:
-        key_value = 8;
-        break;
-    case GLFW_KEY_ENTER:
-    case GLFW_KEY_KP_ENTER:
-        key_value = 10;
-        break;
-    case GLFW_KEY_LEFT:
-        key_value = 0xFF51;
-        break;
-    case GLFW_KEY_UP:
-        key_value = 0xFF52;
-        break;
-    case GLFW_KEY_RIGHT:
-        key_value = 0xFF53;
-        break;
-    case GLFW_KEY_DOWN:
-        key_value = 0xFF54;
-        break;
-    case GLFW_KEY_HOME:
-        key_value = 0xFF50;
-        break;
-    case GLFW_KEY_END:
-        key_value = 0xFF57;
-        break;
-    case GLFW_KEY_DELETE:
-        key_value = 127;
-        break;
-    default:
-        is_printable = true;
-        key_value = (uint32_t)key;
-        break;
+        return;
     }
 
     uint16_t modifiers = 0;
     if (mods & GLFW_MOD_CAPS_LOCK)
         modifiers |= AROMA_KEY_MOD_CAPSLOCK;
-    if (mods & GLFW_MOD_CONTROL)
+    if (ctrl)
         modifiers |= AROMA_KEY_MOD_CTRL;
+    if (shift)
+        modifiers |= AROMA_KEY_MOD_SHIFT;
 
-    if (is_printable && type == EVENT_TYPE_KEY_PRESS && !(modifiers & AROMA_KEY_MOD_CTRL))
+    if (action == GLFW_REPEAT)
     {
-        return;
+        type = EVENT_TYPE_KEY_PRESS;
     }
 
     queue_key_event(type, key_value, modifiers);
@@ -366,6 +536,10 @@ static void glfw_key_callback(GLFWwindow *window, int key, int scancode, int act
 
 static void glfw_char_callback(GLFWwindow *window, unsigned int codepoint)
 {
+    /* Char callback handles IME/dead-key input for non-ASCII codepoints.
+     * ASCII printable keys are already mapped by glfw_key_callback above. */
+    if (codepoint < 128)
+        return;
     queue_key_event(EVENT_TYPE_KEY_PRESS, codepoint, 0);
 }
 
@@ -377,7 +551,17 @@ static void glfw_scroll_callback(GLFWwindow *window, double xoffset, double yoff
     int mx = (int)platform_ctx.last_mouse_x;
     int my = (int)platform_ctx.last_mouse_y;
 
-    AromaNode *root = aroma_event_get_root();
+    int win_idx = find_window_index_at_point(mx, my);
+    AromaNode *root = NULL;
+    if (win_idx >= 0)
+    {
+        root = g_windows[win_idx].root_node;
+        aroma_ui_activate_window(g_windows[win_idx].window_id);
+    }
+    else
+    {
+        root = aroma_event_get_root();
+    }
     if (!root)
         return;
 
@@ -756,6 +940,90 @@ static void *glfw_get_display()
     return NULL;
 }
 
+static void glfw_set_clipboard_text(const char *text)
+{
+    if (platform_ctx.primary_window && platform_ctx.primary_window != (GLFWwindow *)0x1)
+        glfwSetClipboardString(platform_ctx.primary_window, text);
+}
+
+static bool glfw_get_clipboard_text(char *buffer, size_t buffer_size)
+{
+    if (!buffer || buffer_size == 0)
+        return false;
+    const char *clip = glfwGetClipboardString(platform_ctx.primary_window);
+    if (!clip || !clip[0])
+        return false;
+    size_t len = strlen(clip);
+    if (len >= buffer_size)
+        len = buffer_size - 1;
+    memcpy(buffer, clip, len);
+    buffer[len] = '\0';
+    return true;
+}
+
+static bool glfw_pick_folder(const char *default_path, char *out_path, size_t out_size)
+{
+    if (!out_path || out_size == 0)
+        return false;
+
+    nfdchar_t *out = NULL;
+    nfdresult_t result = NFD_PickFolder(default_path, &out);
+    if (result == NFD_OKAY && out) {
+        size_t len = strlen(out);
+        if (len >= out_size)
+            len = out_size - 1;
+        memcpy(out_path, out, len);
+        out_path[len] = '\0';
+        NFD_FreePath(out);
+        return true;
+    }
+    if (out)
+        NFD_FreePath(out);
+    return false;
+}
+
+static bool glfw_pick_open_file(const char *default_path, char *out_path, size_t out_size)
+{
+    if (!out_path || out_size == 0)
+        return false;
+
+    nfdchar_t *out = NULL;
+    nfdresult_t result = NFD_OpenDialog(NULL, default_path, &out);
+    if (result == NFD_OKAY && out) {
+        size_t len = strlen(out);
+        if (len >= out_size)
+            len = out_size - 1;
+        memcpy(out_path, out, len);
+        out_path[len] = '\0';
+        NFD_FreePath(out);
+        return true;
+    }
+    if (out)
+        NFD_FreePath(out);
+    return false;
+}
+
+static bool glfw_pick_save_file(const char *default_path, char *out_path, size_t out_size)
+{
+    if (!out_path || out_size == 0)
+        return false;
+
+    nfdchar_t *out = NULL;
+    nfdresult_t result = NFD_SaveDialog(NULL, default_path, &out);
+    if (result == NFD_OKAY && out) {
+        size_t len = strlen(out);
+        if (len >= out_size)
+            len = out_size - 1;
+        memcpy(out_path, out, len);
+        out_path[len] = '\0';
+        NFD_FreePath(out);
+        return true;
+    }
+    if (out)
+        NFD_FreePath(out);
+    return false;
+}
+
 AromaPlatformInterface aroma_platform_glfw = {
     .initialize = initialize,
     .create_window = create_window,
@@ -767,6 +1035,10 @@ AromaPlatformInterface aroma_platform_glfw = {
     .swap_buffers = swap_buffers,
     .shutdown = shutdown,
     .set_android_app = NULL,
+    .set_window_decorated = glfw_set_window_decorated,
+    .begin_window_drag = glfw_begin_window_drag,
+    .set_window_minimized = glfw_set_window_minimized,
+    .set_window_maximized = glfw_set_window_maximized,
 #ifdef AROMA_HAS_VULKAN
     .create_vulkan_surface = glfw_create_vulkan_surface,
     .get_vulkan_instance_extensions = glfw_get_vulkan_instance_extensions,
@@ -779,6 +1051,11 @@ AromaPlatformInterface aroma_platform_glfw = {
     .set_offscreen_mode = set_offscreen_mode,
     .set_use_surfaceless = set_use_surfaceless,
     .read_pixels = read_pixels,
+    .set_clipboard_text = glfw_set_clipboard_text,
+    .get_clipboard_text = glfw_get_clipboard_text,
+    .pick_folder = glfw_pick_folder,
+    .pick_open_file = glfw_pick_open_file,
+    .pick_save_file = glfw_pick_save_file,
 };
 
 #endif

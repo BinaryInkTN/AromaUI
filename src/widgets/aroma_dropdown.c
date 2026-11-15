@@ -92,6 +92,32 @@ static void __dropdown_unregister_overlay(AromaNode* node) {
     }
 }
 
+static void __dropdown_fling_stop(AromaDropdown *dd);
+static void __dropdown_ensure_visible(AromaDropdown* dd, int index);
+
+static void __dropdown_release_node(AromaNode *node)
+{
+    if (!node)
+        return;
+    AromaDropdown *dd = (AromaDropdown *)node->node_widget_ptr;
+    if (!dd)
+        return;
+
+    __dropdown_unregister_overlay(node);
+    __dropdown_fling_stop(dd);
+    if (dd->options)
+    {
+        for (int i = 0; i < dd->option_count; i++)
+        {
+            if (dd->options[i])
+                free(dd->options[i]);
+        }
+        free(dd->options);
+    }
+    aroma_widget_free(dd);
+    node->node_widget_ptr = NULL;
+}
+
 static bool __dropdown_screen_rect(AromaNode *node, AromaDropdown *dd,
                                    AromaRect *out)
 {
@@ -193,6 +219,7 @@ height = aroma_android_dp_to_px(height);
         return NULL;
     }
     aroma_node_set_draw_cb(node, aroma_dropdown_draw);
+    node->destroy_cb = __dropdown_release_node;
     #ifdef ESP32
     aroma_node_invalidate(node);
     #endif
@@ -210,6 +237,26 @@ void aroma_dropdown_add_option(AromaNode* dropdown_node, const char* option) {
     dd->options[dd->option_count][AROMA_DROPDOWN_OPTION_MAX - 1] = '\0';
     if (dd->option_count == 0) dd->selected_index = 0;
     dd->option_count++;
+}
+
+void aroma_dropdown_set_selected(AromaNode* dropdown_node, int index) {
+    if (!dropdown_node || !dropdown_node->node_widget_ptr) return;
+    AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
+    if (!dd) return;
+    if (index < 0) index = 0;
+    if (index >= dd->option_count) index = dd->option_count - 1;
+    if (index < 0) index = -1;
+    if (dd->selected_index == index) return;
+    dd->selected_index = index;
+    dd->scroll_offset = 0;
+    __dropdown_ensure_visible(dd, index);
+    aroma_node_invalidate(dropdown_node);
+}
+
+int aroma_dropdown_get_selected(AromaNode* dropdown_node) {
+    if (!dropdown_node || !dropdown_node->node_widget_ptr) return -1;
+    AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
+    return dd ? dd->selected_index : -1;
 }
 
 void aroma_dropdown_set_on_change(AromaNode* dropdown_node,
@@ -913,19 +960,6 @@ void aroma_dropdown_set_text_color(AromaNode* dropdown_node, uint32_t text_color
 
 void aroma_dropdown_destroy(AromaNode* dropdown_node) {
     if (!dropdown_node) return;
-    AromaDropdown* dd = (AromaDropdown*)dropdown_node->node_widget_ptr;
-    if (dd) {
-        __dropdown_unregister_overlay(dropdown_node);
-        __dropdown_fling_stop(dd);
-        if (dd->options) {
-            for (int i = 0; i < dd->option_count; i++) {
-                if (dd->options[i]) free(dd->options[i]);
-            }
-            free(dd->options);
-        }
-        aroma_widget_free(dd);
-
-        dropdown_node->node_widget_ptr = NULL;
-    }
+    __dropdown_release_node(dropdown_node);
     __destroy_node(dropdown_node);
 }

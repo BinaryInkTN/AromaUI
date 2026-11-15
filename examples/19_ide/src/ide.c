@@ -1,0 +1,7 @@
+#include "ide_prelude.c"
+#include "ide_command_palette.c"
+#include "ide_dialogs.c"
+#include "ide_rendering.c"
+#include "ide_events.c"
+#include "ide_home.c"
+#include "ide_layout.c"

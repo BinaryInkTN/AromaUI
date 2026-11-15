@@ -1,0 +1,7 @@
+Canvas {
+    id: "rail_canvas"
+    x: 0
+    y: 36
+    width: 54
+    height: 832
+}

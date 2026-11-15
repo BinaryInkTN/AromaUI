@@ -247,7 +247,7 @@ static bool __sidebar_handle_event(AromaEvent *event, void *user_data)
 }
 
 AromaNode *aroma_sidebar_create(AromaNode *parent, int x, int y, int width, int height,
-                                const char **labels, int count)
+                                const char *const *labels, int count)
 {
     if (!parent || !labels || count <= 0)
         return NULL;

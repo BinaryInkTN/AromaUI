@@ -1,0 +1,7 @@
+Canvas {
+    id: "breadcrumb_canvas"
+    x: 314
+    y: 72
+    width: 912
+    height: 28
+}

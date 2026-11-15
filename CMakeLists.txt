@@ -61,7 +61,18 @@ if(Vulkan_FOUND)
 endif()
 
 add_subdirectory(vendors/sqlite3)
+
+# ---- Vendored NFD: native file dialogs (desktop only) ----
+if(NOT EMSCRIPTEN AND NOT ANDROID AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vendors/nfd/CMakeLists.txt")
+    add_subdirectory(vendors/nfd)
+endif()
+
 add_subdirectory(src)
+
+if(TARGET nfd AND TARGET aroma)
+    target_link_libraries(aroma PUBLIC nfd)
+    target_compile_definitions(aroma PRIVATE AROMA_FILE_DIALOG_USE_NFD=1)
+endif()
 
 if(NOT EMSCRIPTEN AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests" AND IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests")
     enable_testing()

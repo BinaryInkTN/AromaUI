@@ -4075,7 +4075,6 @@ void aroma_map_destroy(AromaNode *node)
     }
     free(node->node_widget_ptr);
     node->node_widget_ptr = NULL;
-    __destroy_node(node);
 }
 
 static bool __map_event_handler_global(AromaEvent *event, void *user_data)

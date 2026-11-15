@@ -42,4 +42,5 @@ with `aroma build linux` and runs with `aroma run linux`.
 | `16_loud_dashboard` | Build production level UIs |
 | `17_travel_dashboard` | Build production level UIs |
 | `18_fitness_dashboard` | Build production level UIs |
+| `19_code_editor` | Build production level UIs |
 | `14_python_bindings` | Build production level UIs |

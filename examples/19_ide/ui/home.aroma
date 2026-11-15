@@ -1,0 +1,31 @@
+Window {
+    width: 1440
+    height: 900
+    title: "AromaUI Studio"
+
+    Container {
+        id: "home_root"
+        x: 0
+        y: 0
+        width: 1440
+        height: 900
+
+        Card {
+            x: 0
+            y: 0
+            width: 1440
+            height: 900
+            type: filled
+            color: #1C1C1E
+            corner_radius: 0
+        }
+
+        Canvas {
+            id: "home_canvas"
+            x: 0
+            y: 0
+            width: 1440
+            height: 900
+        }
+    }
+}

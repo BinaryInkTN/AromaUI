@@ -59,6 +59,9 @@ AromaNode* aroma_dropdown_create(AromaNode* parent, int x, int y, int width, int
 
 void aroma_dropdown_add_option(AromaNode* dropdown_node, const char* option);
 
+void aroma_dropdown_set_selected(AromaNode* dropdown_node, int index);
+int aroma_dropdown_get_selected(AromaNode* dropdown_node);
+
 void aroma_dropdown_set_on_change(AromaNode* dropdown_node,
     void (*on_change)(int index, const char* option, void* user_data),
     void* user_data);

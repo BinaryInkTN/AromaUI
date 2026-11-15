@@ -31,6 +31,14 @@ typedef struct AromaPlatformInterface {
     );
 
 
+    /* Destroy a single native window.  Backends that keep windows in an
+     * index-based array (GLPS) also renumber ids after this call; core uses
+     * window_ids_shift_on_destroy to keep its handle table in sync. */
+    void (*destroy_window)(size_t window_id);
+
+    bool window_ids_shift_on_destroy;
+
+
     void (*make_context_current)(size_t window_id);
 
 
@@ -80,6 +88,19 @@ typedef struct AromaPlatformInterface {
 
 
     void (*set_fullscreen)(size_t window_id, bool enabled);
+
+
+    /* Set whole-window opacity (0.0 = fully transparent, 1.0 = opaque).
+     * Optional; backends without compositor support leave this NULL. */
+    void (*set_window_opacity)(size_t window_id, float opacity);
+
+    /* Optional desktop window chrome controls.  Backends that do not support
+     * native decoration changes leave these callbacks NULL. */
+    void (*set_window_decorated)(size_t window_id, bool decorated);
+    void (*begin_window_drag)(size_t window_id);
+    void (*set_window_minimized)(size_t window_id, bool minimized);
+    void (*set_window_maximized)(size_t window_id, bool maximized);
+    void (*toggle_window_maximized)(size_t window_id);
 
 
     void (*open_url)(const char* url);
@@ -277,6 +298,16 @@ typedef struct AromaPlatformInterface {
     void (*android_notify_cancel_all)(void);
     bool (*android_notify_enabled)(void);
     void (*android_vibrate_effect)(int ms, int amplitude);
+
+    /* Cross-platform clipboard access */
+    void (*set_clipboard_text)(const char* text);
+    bool (*get_clipboard_text)(char* buffer, size_t buffer_size);
+
+    /* Native file dialogs */
+    bool (*pick_folder)(const char* default_path, char* out_path, size_t out_size);
+    bool (*pick_open_file)(const char* default_path, char* out_path, size_t out_size);
+    bool (*pick_save_file)(const char* default_path, char* out_path, size_t out_size);
+
     void (*android_set_clipboard_text)(const char* text);
     const char* (*android_get_clipboard_text)(void);
     void (*android_share_text)(const char* text, const char* title);

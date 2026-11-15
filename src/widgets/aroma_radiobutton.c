@@ -531,6 +531,4 @@ void aroma_radio_button_destroy(AromaNode* node)
         aroma_widget_free(node->node_widget_ptr);
         node->node_widget_ptr = NULL;
     }
-
-    __destroy_node(node);
 }

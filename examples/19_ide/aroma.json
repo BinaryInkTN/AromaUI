@@ -1,0 +1,17 @@
+{
+  "project": {
+    "name": "AromaUI Studio",
+    "package": "com.example.aromastudio",
+    "language": "c",
+    "version": "0.1.0",
+    "min_sdk": 24,
+    "target_sdk": 34,
+    "compile_sdk": 34
+  },
+  "bundle": {
+    "description": "A complete IDE shell with a reusable code editor, syntax highlighting, diagnostics, completion, hover and definition support",
+    "maintainer": "Aroma Developer <dev@example.com>",
+    "license": "MIT",
+    "categories": "Development;"
+  }
+}

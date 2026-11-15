@@ -178,6 +178,10 @@ AromaNode *aroma_canvas_create(AromaNode *parent, int x, int y, int width, int h
         LOG_ERROR("Failed to create canvas node");
         return NULL;
     }
+    canvas->rect.x = x;
+    canvas->rect.y = y;
+    canvas->rect.width = width;
+    canvas->rect.height = height;
     aroma_node_set_draw_cb(canvas_node, aroma_canvas_draw);
     return canvas_node;
 }

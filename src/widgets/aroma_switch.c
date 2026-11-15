@@ -204,7 +204,7 @@ static bool __switch_default_mouse_handler(AromaEvent *event, void *user_data)
                       adjusted_y >= sw->rect.y && adjusted_y <= sw->rect.y + sw->rect.height);
         if (sw->is_hovered != hover)
         {
-            sw->is_hovered = false;
+            sw->is_hovered = hover;
             if (user_data)
             {
                 void (*on_redraw)(void *) = (void (*)(void *))user_data;

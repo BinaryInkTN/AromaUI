@@ -69,6 +69,11 @@ extern "C"
 
         bool is_active;
 
+        int window_x;
+        int window_y;
+        int window_width;
+        int window_height;
+
         AromaFont *default_font;
         bool needs_redraw;
     } AromaWindowHandle;
@@ -82,7 +87,20 @@ extern "C"
     extern AromaNode *g_main_window;
 
     extern AromaNode *g_focused_node;
+    extern int find_window_index_at_point(int x, int y);
     extern void aroma_graphics_load_font_for_window(size_t window_id, AromaFont *font);
+
+    /* Multi-window helpers.  Native backends call aroma_ui_activate_window()
+     * before feeding input so hit-testing and keyboard focus are scoped to the
+     * window that produced the event. */
+    extern AromaNode *aroma_ui_window_root_for_id(size_t window_id);
+    extern void aroma_ui_activate_window(size_t window_id);
+    extern void aroma_ui_handle_native_window_close(size_t window_id);
+
+    typedef void (*AromaWindowCloseCallback)(struct AromaWindow *window,
+                                             void *user_data);
+    extern void aroma_ui_set_window_close_callback(
+        AromaWindowCloseCallback callback, void *user_data);
 
 
     static inline AromaNode *aroma_ui_get_focused_node(void)
@@ -185,6 +203,14 @@ extern "C"
         if (!g_ui_initialized)
             return false;
         return aroma_ui_is_running_impl();
+    }
+
+    extern void aroma_ui_request_exit_impl(void);
+
+    static inline void aroma_ui_request_exit(void)
+    {
+        if (g_ui_initialized)
+            aroma_ui_request_exit_impl();
     }
 
     extern void aroma_ui_process_events_impl(void);
@@ -320,6 +346,57 @@ extern "C"
         if (!window)
             return;
         LOG_INFO("Window visibility set to %s", visible ? "visible" : "hidden");
+    }
+
+
+    extern void aroma_ui_set_window_opacity_impl(AromaWindow *window, float opacity);
+    extern void aroma_ui_set_window_decorated_impl(AromaWindow *window,
+                                                    bool decorated);
+    extern void aroma_ui_begin_window_drag_impl(AromaWindow *window);
+    extern void aroma_ui_set_window_minimized_impl(AromaWindow *window,
+                                                   bool minimized);
+    extern void aroma_ui_set_window_maximized_impl(AromaWindow *window,
+                                                   bool maximized);
+    extern void aroma_ui_toggle_window_maximized_impl(AromaWindow *window);
+
+    static inline void aroma_ui_set_window_decorated(AromaWindow *window,
+                                                     bool decorated)
+    {
+        if (window)
+            aroma_ui_set_window_decorated_impl(window, decorated);
+    }
+
+    static inline void aroma_ui_begin_window_drag(AromaWindow *window)
+    {
+        if (window)
+            aroma_ui_begin_window_drag_impl(window);
+    }
+
+    static inline void aroma_ui_set_window_minimized(AromaWindow *window,
+                                                     bool minimized)
+    {
+        if (window)
+            aroma_ui_set_window_minimized_impl(window, minimized);
+    }
+
+    static inline void aroma_ui_set_window_maximized(AromaWindow *window,
+                                                     bool maximized)
+    {
+        if (window)
+            aroma_ui_set_window_maximized_impl(window, maximized);
+    }
+
+    static inline void aroma_ui_toggle_window_maximized(AromaWindow *window)
+    {
+        if (window)
+            aroma_ui_toggle_window_maximized_impl(window);
+    }
+
+    static inline void aroma_ui_set_window_opacity(AromaWindow *window, float opacity)
+    {
+        if (!window)
+            return;
+        aroma_ui_set_window_opacity_impl(window, opacity);
     }
 
 
