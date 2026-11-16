@@ -7,9 +7,12 @@ from typing import Dict, Optional
 
 from aroma_bundle_meta import _sanitize_file_name
 from aroma_bundle_stage import (
+    _install_icons,
+    copy_runtime_resources,
     copy_shared_libs,
     desktop_file_content,
     find_project_icon,
+    launcher_script,
     ldd_shared_libs,
     metainfo_xml_content,
     write_placeholder_icon,
@@ -21,8 +24,72 @@ def build_flatpak_bundle(cwd: str, binary: str, meta: Dict[str, str],
                          out_dir: str, arch: Dict[str, str]) -> Optional[str]:
     flat_dir = os.path.join(cwd, "packaging", "flatpak")
     os.makedirs(flat_dir, exist_ok=True)
-    app_id = meta["app_id"]
+    app_id = meta["desktop_id"]
+    desktop_id = app_id
     binary_name = _sanitize_file_name(meta["name"])
+    desktop_name = f"{desktop_id}.desktop"
+    metainfo_name = f"{desktop_id}.metainfo.xml"
+
+    # Stage everything flatpak-builder needs next to the manifest.  Sources
+    # with runtime resources are installed under /app/share/<package> and the
+    # launcher enters that directory before exec.
+    resources_dir = os.path.join(flat_dir, "resources")
+    if os.path.isdir(resources_dir):
+        shutil.rmtree(resources_dir)
+    os.makedirs(resources_dir, exist_ok=True)
+    resources = copy_runtime_resources(cwd, resources_dir, meta)
+
+    libs_dir = os.path.join(flat_dir, "lib")
+    if os.path.isdir(libs_dir):
+        shutil.rmtree(libs_dir)
+    copy_shared_libs(ldd_shared_libs(binary), libs_dir)
+    has_libs = os.path.isdir(libs_dir) and bool(os.listdir(libs_dir))
+
+    icons_dir = os.path.join(flat_dir, "icons")
+    if os.path.isdir(icons_dir):
+        shutil.rmtree(icons_dir)
+    os.makedirs(icons_dir, exist_ok=True)
+    icon_src = find_project_icon(cwd, meta.get("icon_hint", ""))
+    _install_icons(icon_src, icons_dir, desktop_id, meta)
+
+    binary_path = os.path.join(flat_dir, f"{binary_name}.bin")
+    shutil.copy2(binary, binary_path)
+    wrapper_path = os.path.join(flat_dir, binary_name)
+    with open(wrapper_path, "w") as f:
+        f.write(launcher_script(f"/app/share/{meta['package']}",
+                                f"/app/bin/{binary_name}.bin",
+                                "/app/lib"))
+    os.chmod(wrapper_path, 0o755)
+
+    with open(os.path.join(flat_dir, desktop_name), "w") as f:
+        f.write(desktop_file_content(meta, binary_name, desktop_id))
+    with open(os.path.join(flat_dir, metainfo_name), "w") as f:
+        f.write(metainfo_xml_content(meta, desktop_name, binary_name))
+
+    build_commands = [
+        f"install -Dm755 {binary_name}.bin /app/bin/{binary_name}.bin",
+        f"install -Dm755 {binary_name} /app/bin/{binary_name}",
+        f"install -Dm644 {desktop_name} /app/share/applications/{desktop_name}",
+        f"install -Dm644 {metainfo_name} /app/share/metainfo/{metainfo_name}",
+        "install -d /app/share/icons && "
+        "cp -a icons/usr/share/icons/. /app/share/icons/",
+    ]
+    sources = [
+        {"type": "file", "path": f"{binary_name}.bin"},
+        {"type": "file", "path": binary_name},
+        {"type": "file", "path": desktop_name},
+        {"type": "file", "path": metainfo_name},
+        {"type": "dir", "path": "icons"},
+    ]
+    if resources:
+        build_commands.append(
+            f"install -d /app/share/{meta['package']} && "
+            f"cp -a resources/. /app/share/{meta['package']}/")
+        sources.append({"type": "dir", "path": "resources"})
+    if has_libs:
+        build_commands.append("install -d /app/lib && cp -a lib/. /app/lib/")
+        sources.append({"type": "dir", "path": "lib"})
+
     manifest = {
         "app-id": app_id,
         "runtime": "org.freedesktop.Platform",
@@ -38,30 +105,11 @@ def build_flatpak_bundle(cwd: str, binary: str, meta: Dict[str, str],
             {
                 "name": meta["package"],
                 "buildsystem": "simple",
-                "build-commands": [
-                    f"install -Dm755 {binary_name}.bin /app/bin/{binary_name}",
-                    f"install -Dm644 {meta['package']}.desktop /app/share/applications/{app_id}.desktop",
-                    f"install -Dm644 {meta['package']}.metainfo.xml /app/share/metainfo/{app_id}.metainfo.xml",
-                ],
-                "sources": [
-                    {"type": "file", "path": f"{binary_name}.bin"},
-                    {"type": "file", "path": f"{meta['package']}.desktop"},
-                    {"type": "file", "path": f"{meta['package']}.metainfo.xml"},
-                ],
+                "build-commands": build_commands,
+                "sources": sources,
             }
         ],
     }
-    icon_src = find_project_icon(cwd, meta.get("icon_hint", ""))
-    if icon_src and icon_src.lower().endswith(".svg"):
-        manifest["modules"][0]["build-commands"].append(
-            f"install -Dm644 icon.svg /app/share/icons/hicolor/scalable/apps/{app_id}.svg")
-        manifest["modules"][0]["sources"].append({"type": "file", "path": "icon.svg"})
-        shutil.copy2(icon_src, os.path.join(flat_dir, "icon.svg"))
-    shutil.copy2(binary, os.path.join(flat_dir, f"{binary_name}.bin"))
-    with open(os.path.join(flat_dir, f"{meta['package']}.desktop"), "w") as f:
-        f.write(desktop_file_content(meta, binary_name, app_id))
-    with open(os.path.join(flat_dir, f"{meta['package']}.metainfo.xml"), "w") as f:
-        f.write(metainfo_xml_content(meta, f"{app_id}.desktop"))
     manifest_path = os.path.join(flat_dir, f"{app_id}.json")
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
@@ -108,14 +156,21 @@ def build_snap_bundle(cwd: str, binary: str, meta: Dict[str, str],
     shutil.copy2(binary, os.path.join(stage_src, "bin", f"{binary_name}.bin"))
     wrapper = os.path.join(stage_src, "bin", binary_name)
     with open(wrapper, "w") as f:
-        f.write(f'#!/bin/sh\nHERE="$SNAP/bin"\nexec "$HERE/{binary_name}.bin" "$@"\n')
+        f.write(f'#!/bin/sh\n'
+                f'HERE="$SNAP"\n'
+                f'APP_ROOT="$HERE/share/{meta["package"]}"\n'
+                f'export AROMA_APP_DIR="$APP_ROOT"\n'
+                f'export AROMA_RESOURCES_DIR="$APP_ROOT"\n'
+                f'if [ -d "$APP_ROOT/assets" ]; then '
+                f'export AROMA_ASSETS_DIR="$APP_ROOT/assets"; fi\n'
+                f'export LD_LIBRARY_PATH="$HERE/lib${{LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}}"\n'
+                f'cd "$APP_ROOT" 2>/dev/null || true\n'
+                f'exec "$HERE/bin/{binary_name}.bin" "$@"\n')
     os.chmod(wrapper, 0o755)
     libs = ldd_shared_libs(binary)
     if libs:
         copy_shared_libs(libs, os.path.join(stage_src, "lib"))
-    assets_src = os.path.join(cwd, "assets")
-    if os.path.isdir(assets_src):
-        shutil.copytree(assets_src, os.path.join(stage_src, "share", meta["package"], "assets"))
+    copy_runtime_resources(cwd, os.path.join(stage_src, "share", meta["package"]), meta)
     icon_src = find_project_icon(cwd, meta.get("icon_hint", ""))
     gui_dir = os.path.join(snap_dir, "gui")
     os.makedirs(gui_dir, exist_ok=True)

@@ -122,6 +122,12 @@ static void ide_sync_layout_nodes(void)
 
 void ide_tick(void)
 {
+    if (s_settings_close_requested)
+    {
+        s_settings_close_requested = false;
+        settings_window_close();
+    }
+
                                                                                            
     int cur_w = g_windows[0].window_width;
     int cur_h = g_windows[0].window_height;

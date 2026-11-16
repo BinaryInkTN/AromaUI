@@ -11,9 +11,11 @@ from typing import Dict, List, Optional
 from aroma_bundle_meta import _sanitize_file_name
 from aroma_bundle_stage import (
     _install_icons,
+    copy_runtime_resources,
     copy_shared_libs,
     desktop_file_content,
     find_project_icon,
+    launcher_script,
     ldd_shared_libs,
     metainfo_xml_content,
 )
@@ -44,18 +46,20 @@ def build_deb_bundle(cwd: str, binary: str, meta: Dict[str, str],
         bin_link = os.path.join(root, "usr", "bin", binary_name)
         os.makedirs(os.path.dirname(bin_link), exist_ok=True)
         with open(bin_link, "w") as f:
-            f.write(f'#!/bin/sh\nexport LD_LIBRARY_PATH="/usr/lib/{pkg}/lib:$LD_LIBRARY_PATH"\n'
-                    f'exec "/usr/lib/{pkg}/{binary_name}.bin" "$@"\n')
+            f.write(launcher_script(
+                f"/usr/share/{pkg}",
+                f"/usr/lib/{pkg}/{binary_name}.bin",
+                f"/usr/lib/{pkg}/lib"))
         os.chmod(bin_link, 0o755)
 
-        assets_src = os.path.join(cwd, "assets")
-        if os.path.isdir(assets_src):
-            dest = os.path.join(root, "usr", "share", pkg, "assets")
-            shutil.copytree(assets_src, dest)
+        # Installed apps use /usr/share/<package> as their resource root.
+        # This keeps "ui/app.aroma" and "assets/..." working after install.
+        copy_runtime_resources(cwd, os.path.join(root, "usr", "share", pkg), meta)
 
         apps_dir = os.path.join(root, "usr", "share", "applications")
         os.makedirs(apps_dir, exist_ok=True)
-        icon_base = _sanitize_file_name(meta["name"])
+        desktop_id = meta["desktop_id"]
+        icon_base = desktop_id
         tmp_icons = os.path.join(work, "icons")
         os.makedirs(tmp_icons, exist_ok=True)
         icon_src = find_project_icon(cwd, meta.get("icon_hint", ""))
@@ -67,25 +71,15 @@ def build_deb_bundle(cwd: str, binary: str, meta: Dict[str, str],
                 dst = os.path.join(root, "usr", rel)
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(src, dst)
-        for ext in (".svg", ".png", ".xpm"):
-            cand = os.path.join(tmp_icons, f"{icon_base}{ext}")
-            if os.path.isfile(cand):
-                for size in ("16x16", "32x32", "48x48", "64x64", "128x128",
-                             "256x256", "512x512"):
-                    d = os.path.join(root, "usr", "share", "icons",
-                                     "hicolor", size, "apps")
-                    if os.path.isfile(os.path.join(d, f"{icon_base}{ext}")):
-                        break
-                break
 
-        desktop_name = f"{pkg}.desktop"
+        desktop_name = f"{desktop_id}.desktop"
         with open(os.path.join(apps_dir, desktop_name), "w") as f:
             f.write(desktop_file_content(meta, f"/usr/bin/{binary_name}", icon_base))
 
         metainfo_dir = os.path.join(root, "usr", "share", "metainfo")
         os.makedirs(metainfo_dir, exist_ok=True)
-        with open(os.path.join(metainfo_dir, f"{pkg}.metainfo.xml"), "w") as f:
-            f.write(metainfo_xml_content(meta, desktop_name))
+        with open(os.path.join(metainfo_dir, f"{desktop_id}.metainfo.xml"), "w") as f:
+            f.write(metainfo_xml_content(meta, desktop_name, binary_name))
 
         doc_dir = os.path.join(root, "usr", "share", "doc", pkg)
         os.makedirs(doc_dir, exist_ok=True)
@@ -108,8 +102,8 @@ def build_deb_bundle(cwd: str, binary: str, meta: Dict[str, str],
             f.write(control)
 
         out = os.path.join(out_dir, f"{pkg}_{ver}_{arch['deb']}.deb")
-        result = run_command(["dpkg-deb", "--build", root, out],
-                             capture_output=True)
+        result = run_command(["dpkg-deb", "--build", "--root-owner-group",
+                              root, out], capture_output=True)
         if result is None or result.returncode != 0:
             detail = (result.stderr.strip() if result and result.stderr else "unknown error")
             Logger.error(f"dpkg-deb failed: {detail}")
@@ -141,15 +135,16 @@ def build_rpm_bundle(cwd: str, binary: str, meta: Dict[str, str],
         wrapper = os.path.join(payload, "usr", "bin", binary_name)
         os.makedirs(os.path.dirname(wrapper), exist_ok=True)
         with open(wrapper, "w") as f:
-            f.write(f'#!/bin/sh\nexport LD_LIBRARY_PATH="/usr/lib/{pkg}/lib:$LD_LIBRARY_PATH"\n'
-                    f'exec "/usr/lib/{pkg}/{binary_name}.bin" "$@"\n')
+            f.write(launcher_script(
+                f"/usr/share/{pkg}",
+                f"/usr/lib/{pkg}/{binary_name}.bin",
+                f"/usr/lib/{pkg}/lib"))
         os.chmod(wrapper, 0o755)
-        assets_src = os.path.join(cwd, "assets")
-        if os.path.isdir(assets_src):
-            shutil.copytree(assets_src, os.path.join(payload, "usr", "share", pkg, "assets"))
+        copy_runtime_resources(cwd, os.path.join(payload, "usr", "share", pkg), meta)
         apps_dir = os.path.join(payload, "usr", "share", "applications")
         os.makedirs(apps_dir, exist_ok=True)
-        icon_base = _sanitize_file_name(meta["name"])
+        desktop_id = meta["desktop_id"]
+        icon_base = desktop_id
         tmp_icons = os.path.join(work, "icons")
         os.makedirs(tmp_icons, exist_ok=True)
         _install_icons(find_project_icon(cwd, meta.get("icon_hint", "")),
@@ -161,13 +156,13 @@ def build_rpm_bundle(cwd: str, binary: str, meta: Dict[str, str],
                 dst = os.path.join(payload, "usr", rel)
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(src, dst)
-        desktop_name = f"{pkg}.desktop"
+        desktop_name = f"{desktop_id}.desktop"
         with open(os.path.join(apps_dir, desktop_name), "w") as f:
             f.write(desktop_file_content(meta, f"/usr/bin/{binary_name}", icon_base))
         metainfo_dir = os.path.join(payload, "usr", "share", "metainfo")
         os.makedirs(metainfo_dir, exist_ok=True)
-        with open(os.path.join(metainfo_dir, f"{pkg}.metainfo.xml"), "w") as f:
-            f.write(metainfo_xml_content(meta, desktop_name))
+        with open(os.path.join(metainfo_dir, f"{desktop_id}.metainfo.xml"), "w") as f:
+            f.write(metainfo_xml_content(meta, desktop_name, binary_name))
         payload_tar = os.path.join(topdir, "SOURCES", "payload.tar.gz")
         with tarfile.open(payload_tar, "w:gz", format=tarfile.PAX_FORMAT) as tar:
             for root, _, files in os.walk(payload):
@@ -184,7 +179,7 @@ def build_rpm_bundle(cwd: str, binary: str, meta: Dict[str, str],
                 f"%install\nmkdir -p %{{buildroot}}\ntar -xzf %{{SOURCE0}} -C %{{buildroot}}\n\n"
                 f"%files\n/usr/bin/{binary_name}\n\"/usr/lib/{pkg}/\"\n"
                 f"\"/usr/share/{pkg}/\"\n\"/usr/share/applications/{desktop_name}\"\n"
-                f"\"/usr/share/icons/\"\n\"/usr/share/metainfo/{pkg}.metainfo.xml\"\n\n"
+                f"\"/usr/share/icons/\"\n\"/usr/share/metainfo/{desktop_id}.metainfo.xml\"\n\n"
                 f"%changelog\n* Tue Jan 01 2026 {meta['maintainer']} - {ver}-1\n- AromaUI bundle\n")
         spec_path = os.path.join(topdir, "SPECS", f"{pkg}.spec")
         with open(spec_path, "w") as f:

@@ -917,59 +917,338 @@ static void draw_settings(void)
 #define SETTINGS_WIN_W 900
 #define SETTINGS_WIN_H 620
 #define SETTINGS_WIN_HEADER_H 64
-#define SETTINGS_WIN_SIDEBAR_W 200
-#define SETTINGS_WIN_PAD 20
-#define SETTINGS_WIN_ROW_H 44
-#define SETTINGS_WIN_FOOTER_H 42
+#define SETTINGS_WIN_SIDEBAR_X 20
+#define SETTINGS_WIN_SIDEBAR_Y 84
+#define SETTINGS_WIN_SIDEBAR_W 184
+#define SETTINGS_WIN_SIDEBAR_H (SETTINGS_WIN_H - SETTINGS_WIN_SIDEBAR_Y - 58)
+#define SETTINGS_WIN_CONTENT_X 224
+#define SETTINGS_WIN_CONTENT_W (SETTINGS_WIN_W - SETTINGS_WIN_CONTENT_X - 24)
+#define SETTINGS_WIN_ROWS_Y 150
+#define SETTINGS_WIN_ROW_H 52
+#define SETTINGS_WIN_FOOTER_H 58
 
 static const char *const k_setting_cat_desc[SETTING_CAT_COUNT] = {
     "Text editor behavior",
     "Appearance and color theme",
+    "Window transparency and in-development features",
     "Build and run output",
     "Saving and formatting",
     "Keyboard shortcuts",
     "About AromaUI Studio"};
 
-static int settings_win_content_x(void)
+enum
 {
-    return SETTINGS_WIN_SIDEBAR_W + SETTINGS_WIN_PAD;
+    SETTINGS_LABEL_TEXT = 0,
+    SETTINGS_LABEL_SOFT,
+    SETTINGS_LABEL_DIM,
+    SETTINGS_LABEL_FAINT,
+    SETTINGS_LABEL_ACCENT
+};
+
+typedef struct
+{
+    AromaNode *node;
+    int role;
+} SettingsLabelRef;
+
+#define SETTINGS_LABEL_MAX 160
+static SettingsLabelRef s_settings_labels[SETTINGS_LABEL_MAX];
+static int s_settings_label_count;
+
+typedef enum
+{
+    SETTINGS_DD_TAB_WIDTH = 0,
+    SETTINGS_DD_FONT_SIZE,
+    SETTINGS_DD_ACCENT,
+    SETTINGS_DD_FONT_FAMILY,
+    SETTINGS_DD_OPACITY
+} SettingsDropdownKind;
+
+typedef struct
+{
+    SettingsDropdownKind kind;
+} SettingsDropdownBinding;
+
+#define SETTINGS_DROPDOWN_MAX 8
+static SettingsDropdownBinding s_settings_dropdowns[SETTINGS_DROPDOWN_MAX];
+static int s_settings_dropdown_count;
+
+static AromaNode *s_settings_close_button;
+
+static uint32_t settings_label_color(int role)
+{
+    switch (role)
+    {
+    case SETTINGS_LABEL_SOFT:
+        return C_TEXT_SOFT;
+    case SETTINGS_LABEL_DIM:
+        return C_TEXT_DIM;
+    case SETTINGS_LABEL_FAINT:
+        return C_TEXT_FAINT;
+    case SETTINGS_LABEL_ACCENT:
+        return M3_PRIMARY;
+    case SETTINGS_LABEL_TEXT:
+    default:
+        return C_TEXT;
+    }
 }
 
-static int settings_win_content_w(void)
+static bool settings_no_hit(AromaNode *node, int x, int y, void *user_data)
 {
-    return SETTINGS_WIN_W - SETTINGS_WIN_SIDEBAR_W - SETTINGS_WIN_PAD * 2;
+    (void)node;
+    (void)x;
+    (void)y;
+    (void)user_data;
+    return false;
 }
 
-static int settings_win_rows_y(void)
+static AromaNode *settings_add_label(AromaNode *parent, const char *value,
+                                     int x, int y, AromaFont *font, int role)
 {
-    return SETTINGS_WIN_HEADER_H + SETTINGS_WIN_PAD + 54;
+    AromaNode *label = aroma_ui_label(parent, value, x, y,
+                                      LABEL_STYLE_LABEL_LARGE, font);
+    if (!label)
+        return NULL;
+    aroma_node_set_z_index(label, 2);
+    aroma_layout_note_placed(label);
+    aroma_label_set_color(label, settings_label_color(role));
+    if (s_settings_label_count < SETTINGS_LABEL_MAX)
+    {
+        s_settings_labels[s_settings_label_count].node = label;
+        s_settings_labels[s_settings_label_count].role = role;
+        s_settings_label_count++;
+    }
+    return label;
 }
 
-static int settings_win_visible_rows(void)
+static void settings_refresh_label_colors(void)
 {
-    int top = settings_win_rows_y();
-    int bottom = SETTINGS_WIN_H - SETTINGS_WIN_FOOTER_H - 8;
-    int visible = (bottom - top) / SETTINGS_WIN_ROW_H;
-    return visible < 1 ? 1 : visible;
+    for (int i = 0; i < s_settings_label_count; i++)
+    {
+        if (s_settings_labels[i].node)
+            aroma_label_set_color(s_settings_labels[i].node,
+                                  settings_label_color(s_settings_labels[i].role));
+    }
+    if (s_settings_close_button)
+        aroma_iconbutton_set_colors(s_settings_close_button, C_TITLE, C_TEXT_SOFT);
 }
 
-static bool settings_win_close_hit(int x, int y)
+static float settings_window_opacity(void)
 {
-    return x >= SETTINGS_WIN_W - 48 && x < SETTINGS_WIN_W - 12 &&
-           y >= 14 && y < 50;
+    int index = s_setting_opacity_index;
+    if (index < 0)
+        index = 0;
+    if (index > 4)
+        index = 4;
+    return s_setting_transparency ? k_setting_opacity_values[index] : 1.0f;
 }
 
-static int settings_win_cat_hit(int x, int y)
+static void settings_apply_windows(void)
 {
-    int cy = SETTINGS_WIN_HEADER_H + 72;
-    int cat_h = 44;
-    if (x < SETTINGS_WIN_PAD || x >= SETTINGS_WIN_SIDEBAR_W - SETTINGS_WIN_PAD ||
-        y < cy)
-        return -1;
-    int cat = (y - cy) / cat_h;
-    if (cat >= 0 && cat < SETTING_CAT_COUNT)
-        return cat;
-    return -1;
+    float opacity = settings_window_opacity();
+    AromaWindow *main_window = aroma_ui_get_window_at(0);
+    if (main_window)
+        aroma_ui_set_window_opacity(main_window, opacity);
+    if (s_settings_window)
+        aroma_ui_set_window_opacity(s_settings_window, opacity);
+}
+
+static void settings_apply_experimental(void)
+{
+    if (s_settings_experimental_badge)
+        aroma_node_set_hidden(s_settings_experimental_badge,
+                              !s_setting_experimental);
+    if (s_settings_sidebar)
+        aroma_sidebar_set_transition(s_settings_sidebar,
+                                     s_setting_experimental ? AROMA_ANIM_FADE
+                                                            : AROMA_ANIM_NONE,
+                                     s_setting_experimental ? 160u : 0u);
+}
+
+static int settings_tab_width_index(void)
+{
+    int index = s_setting_tab_width / 2 - 1;
+    if (index < 0)
+        index = 0;
+    if (index > 2)
+        index = 2;
+    return index;
+}
+
+static int settings_font_size_index(void)
+{
+    static const int sizes[] = {10, 11, 12, 14, 16};
+    for (int i = 0; i < 5; i++)
+    {
+        if (sizes[i] == s_setting_font_size)
+            return i;
+    }
+    return 2;
+}
+
+static bool settings_switch_changed(AromaNode *node, void *user_data)
+{
+    bool *value = (bool *)user_data;
+    if (value)
+        *value = aroma_switch_get_state(node);
+    settings_apply_all();
+    return true;
+}
+
+static void settings_dropdown_changed(int index, const char *option,
+                                      void *user_data)
+{
+    (void)option;
+    SettingsDropdownBinding *binding = (SettingsDropdownBinding *)user_data;
+    if (!binding)
+        return;
+
+    switch (binding->kind)
+    {
+    case SETTINGS_DD_TAB_WIDTH:
+        if (index < 0)
+            index = 0;
+        if (index > 2)
+            index = 2;
+        s_setting_tab_width = 2 + index * 2;
+        break;
+    case SETTINGS_DD_FONT_SIZE:
+    {
+        static const int sizes[] = {10, 11, 12, 14, 16};
+        if (index >= 0 && index < 5)
+            s_setting_font_size = sizes[index];
+        break;
+    }
+    case SETTINGS_DD_ACCENT:
+        if (index < 0)
+            index = 0;
+        if (index > 4)
+            index = 4;
+        s_setting_accent = index;
+        break;
+    case SETTINGS_DD_FONT_FAMILY:
+        if (index < 0)
+            index = 0;
+        if (index > 2)
+            index = 2;
+        s_setting_font_family = index;
+        break;
+    case SETTINGS_DD_OPACITY:
+        if (index < 0)
+            index = 0;
+        if (index > 4)
+            index = 4;
+        s_setting_opacity_index = index;
+        break;
+    default:
+        break;
+    }
+    settings_apply_all();
+}
+
+static bool settings_keybindings_clicked(AromaNode *node, void *user_data)
+{
+    (void)node;
+    (void)user_data;
+    toast("Ctrl+P open · Ctrl+S save · F7 build · F5 run · F12 definition");
+    return true;
+}
+
+static void settings_close_button_clicked(void *user_data)
+{
+    (void)user_data;
+    s_settings_close_requested = true;
+}
+
+static void settings_add_switch_row(AromaNode *parent, int row,
+                                    const char *title, const char *desc,
+                                    bool value, bool *binding)
+{
+    int x = SETTINGS_WIN_CONTENT_X;
+    int y = SETTINGS_WIN_ROWS_Y + row * SETTINGS_WIN_ROW_H;
+    settings_add_label(parent, title, x + 8, y + 8, font_ui(12),
+                       SETTINGS_LABEL_TEXT);
+    settings_add_label(parent, desc, x + 8, y + 27, font_ui(10),
+                       SETTINGS_LABEL_DIM);
+
+    AromaNode *sw = aroma_ui_switch(parent, x + SETTINGS_WIN_CONTENT_W - 62,
+                                    y + 12, 46, 24, value,
+                                    settings_switch_changed, binding);
+    if (sw)
+    {
+        aroma_node_set_z_index(sw, 4);
+        aroma_layout_note_placed(sw);
+    }
+}
+
+static void settings_add_dropdown_row(AromaNode *parent, int row,
+                                      const char *title, const char *desc,
+                                      char **options, int option_count,
+                                      int selected, SettingsDropdownKind kind)
+{
+    int x = SETTINGS_WIN_CONTENT_X;
+    int y = SETTINGS_WIN_ROWS_Y + row * SETTINGS_WIN_ROW_H;
+    settings_add_label(parent, title, x + 8, y + 8, font_ui(12),
+                       SETTINGS_LABEL_TEXT);
+    settings_add_label(parent, desc, x + 8, y + 27, font_ui(10),
+                       SETTINGS_LABEL_DIM);
+
+    SettingsDropdownBinding *binding = NULL;
+    if (s_settings_dropdown_count < SETTINGS_DROPDOWN_MAX)
+    {
+        binding = &s_settings_dropdowns[s_settings_dropdown_count++];
+        binding->kind = kind;
+    }
+
+    AromaNode *dd = aroma_ui_dropdown(
+        parent, x + SETTINGS_WIN_CONTENT_W - 182, y + 9, 170, 32,
+        options, option_count, settings_dropdown_changed, binding,
+        font_ui(11));
+    if (dd)
+    {
+        aroma_node_set_z_index(dd, 4);
+        aroma_layout_note_placed(dd);
+        aroma_dropdown_set_max_visible_rows(dd, 6);
+        aroma_dropdown_set_selected(dd, selected);
+    }
+}
+
+static void settings_sidebar_on_select(AromaNode *node, int index,
+                                       void *user_data)
+{
+    (void)node;
+    (void)user_data;
+    if (index < 0 || index >= SETTING_CAT_COUNT)
+        return;
+    s_setting_category = index;
+    s_setting_tab_scroll = 0;
+    s_setting_row_hover = -1;
+    if (s_settings_title_label)
+        aroma_label_set_text(s_settings_title_label, k_setting_cat_labels[index]);
+    if (s_settings_desc_label)
+        aroma_label_set_text(s_settings_desc_label, k_setting_cat_desc[index]);
+    settings_window_redraw();
+}
+
+static bool settings_window_header_drag(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    if (!s_settings_window || !event)
+        return false;
+    if (event->event_type != EVENT_TYPE_MOUSE_CLICK)
+        return false;
+    int button = event->data.mouse.button;
+    if (button == 2 || button == 3)
+        return false;
+    int x = event->data.mouse.x;
+    int y = event->data.mouse.y;
+    if (x >= 0 && x < SETTINGS_WIN_W - 58 &&
+        y >= 0 && y < SETTINGS_WIN_HEADER_H)
+    {
+        aroma_ui_begin_window_drag(s_settings_window);
+        return true;
+    }
+    return false;
 }
 
 static void draw_settings_window(void)
@@ -978,91 +1257,37 @@ static void draw_settings_window(void)
         return;
 
     aroma_canvas_reset(s_settings_window_canvas);
-
     AromaNode *c = s_settings_window_canvas;
-    AromaFont *ui16 = font_ui(16);
-    AromaFont *ui12 = font_ui(12);
-    AromaFont *ui10 = font_ui(10);
 
-    fill(c, 0, 0, SETTINGS_WIN_W, SETTINGS_WIN_H, 0, C_BG);
+    fill(c, 0, 0, SETTINGS_WIN_W, SETTINGS_WIN_H, 12, C_BG);
+    fill(c, 0, 12, SETTINGS_WIN_W, SETTINGS_WIN_H - 12, 0, C_BG);
 
-    fill(c, 0, 0, SETTINGS_WIN_W, SETTINGS_WIN_HEADER_H, 0, C_TITLE);
+    fill(c, 0, 0, SETTINGS_WIN_W, SETTINGS_WIN_HEADER_H, 12, C_TITLE);
+    fill(c, 0, 12, SETTINGS_WIN_W, SETTINGS_WIN_HEADER_H - 12, 0, C_TITLE);
     line(c, 0, SETTINGS_WIN_HEADER_H - 1, SETTINGS_WIN_W,
          SETTINGS_WIN_HEADER_H - 1, C_BORDER, 1);
-    icon_center(c, AROMA_ICON_SETTINGS, 26, 24, 20, C_PRIMARY);
-    text(c, "Settings", 48, 13, C_TEXT, ui16);
-    text(c, "IDE preferences", 48, 35, C_TEXT_DIM, ui10);
 
-    bool close_hover = s_settings_win_close_hover;
-    if (close_hover)
-        fill(c, SETTINGS_WIN_W - 46, 16, 28, 28, 8, C_HOVER);
-    icon_center(c, AROMA_ICON_CLOSE, SETTINGS_WIN_W - 32, 30, 16,
-                close_hover ? C_TEXT : C_TEXT_SOFT);
-
-    fill(c, 0, SETTINGS_WIN_HEADER_H, SETTINGS_WIN_SIDEBAR_W,
-         SETTINGS_WIN_H - SETTINGS_WIN_HEADER_H, 0, C_SIDEBAR);
-    line(c, SETTINGS_WIN_SIDEBAR_W - 1, SETTINGS_WIN_HEADER_H,
-         SETTINGS_WIN_SIDEBAR_W - 1,
-         SETTINGS_WIN_H - SETTINGS_WIN_FOOTER_H, C_BORDER, 1);
-
-    int cy = SETTINGS_WIN_HEADER_H + 72;
-    int cat_h = 44;
-    for (int i = 0; i < SETTING_CAT_COUNT; i++)
-    {
-        int yy = cy + i * cat_h;
-        bool active = i == s_setting_category;
-        bool hovered = i == s_setting_cat_hover;
-        if (active)
-            fill(c, 2, yy, SETTINGS_WIN_SIDEBAR_W - 4, cat_h, 3, C_SELECT);
-        else if (hovered)
-            fill(c, 2, yy, SETTINGS_WIN_SIDEBAR_W - 4, cat_h, 3,
-                 C_HOVER_SOFT);
-        icon_center(c, k_setting_cat_icons[i], 30, yy + cat_h / 2, 18,
-                    active ? M3_PRIMARY : C_TEXT_DIM);
-        text_fit(c, k_setting_cat_labels[i], 56, yy + 8,
-                 SETTINGS_WIN_SIDEBAR_W - 80,
-                 active ? C_TEXT : C_TEXT_SOFT, ui12);
-    }
+    fill(c, 0, SETTINGS_WIN_HEADER_H, SETTINGS_WIN_SIDEBAR_W + 12,
+         SETTINGS_WIN_H - SETTINGS_WIN_HEADER_H - SETTINGS_WIN_FOOTER_H,
+         0, C_SIDEBAR);
+    line(c, SETTINGS_WIN_SIDEBAR_W + 12, SETTINGS_WIN_HEADER_H,
+         SETTINGS_WIN_SIDEBAR_W + 12,
+         SETTINGS_WIN_H - SETTINGS_WIN_FOOTER_H, C_BORDER_SOFT, 1);
 
     int cat = s_setting_category;
     if (cat < 0 || cat >= SETTING_CAT_COUNT)
         cat = 0;
-    int cx = settings_win_content_x();
-    int cw = settings_win_content_w();
-    int hy = SETTINGS_WIN_HEADER_H + SETTINGS_WIN_PAD;
-    text(c, k_setting_cat_labels[cat], cx, hy, C_TEXT, ui16);
-    text(c, k_setting_cat_desc[cat], cx, hy + 23, C_TEXT_DIM, ui10);
-
     int rows = k_setting_cat_rows[cat];
-    int visible = settings_win_visible_rows();
-    int max_scroll = rows - visible;
-    if (max_scroll < 0)
-        max_scroll = 0;
-    if (s_setting_tab_scroll > max_scroll)
-        s_setting_tab_scroll = max_scroll;
-    if (s_setting_tab_scroll < 0)
-        s_setting_tab_scroll = 0;
-
-    int start = s_setting_tab_scroll;
-    int top = settings_win_rows_y();
-    int item_x = cx;
-    int item_w = cw;
-    int entry_idx = 0;
-    for (int i = start; i < rows; i++)
+    for (int i = 0; i < rows; i++)
     {
-        int ry = top + (i - start) * SETTINGS_WIN_ROW_H;
-        if (ry + SETTINGS_WIN_ROW_H > SETTINGS_WIN_H - SETTINGS_WIN_FOOTER_H)
-            break;
-        draw_setting_entry(c, ry, cat, i, entry_idx++, item_x, item_w, true);
+        int ry = SETTINGS_WIN_ROWS_Y + i * SETTINGS_WIN_ROW_H;
+        line(c, SETTINGS_WIN_CONTENT_X, ry + SETTINGS_WIN_ROW_H - 1,
+             SETTINGS_WIN_CONTENT_X + SETTINGS_WIN_CONTENT_W,
+             ry + SETTINGS_WIN_ROW_H - 1, C_BORDER_SOFT, 1);
     }
 
     line(c, 0, SETTINGS_WIN_H - SETTINGS_WIN_FOOTER_H, SETTINGS_WIN_W,
          SETTINGS_WIN_H - SETTINGS_WIN_FOOTER_H, C_BORDER, 1);
-    text(c, "Changes apply immediately.", cx,
-         SETTINGS_WIN_H - 28, C_TEXT_FAINT, ui10);
-    if (rows > visible)
-        text(c, "Scroll to see more", cx + cw - 120,
-             SETTINGS_WIN_H - 28, C_TEXT_FAINT, ui10);
 }
 
 static void settings_window_redraw(void)
@@ -1074,138 +1299,32 @@ static void settings_window_redraw(void)
         aroma_ui_request_redraw(s_settings_window);
 }
 
-static bool settings_window_on_move(AromaEvent *event, void *user_data)
-{
-    (void)user_data;
-    int x = event->data.mouse.x;
-    int y = event->data.mouse.y;
-    bool close_hover = settings_win_close_hit(x, y);
-    int cat = settings_win_cat_hit(x, y);
-    int cat_hover = cat >= 0 ? cat : -1;
-
-    int row_hover = -1;
-    if (cat_hover < 0 || cat_hover != s_setting_category)
-    {
-        int cx = settings_win_content_x();
-        int cw = settings_win_content_w();
-        int iy = settings_win_rows_y();
-        int item_h = SETTINGS_WIN_ROW_H;
-        int start = s_setting_tab_scroll;
-        int visible = settings_win_visible_rows();
-        int rows = k_setting_cat_rows[s_setting_category];
-        for (int i = 0; i < visible && start + i < rows; i++)
-        {
-            int row = start + i;
-            int ry = iy + i * item_h;
-            if (y >= ry - 2 && y < ry + item_h && x >= cx &&
-                x < cx + cw)
-            {
-                row_hover = i;
-                break;
-            }
-        }
-    }
-
-    bool changed = close_hover != s_settings_win_close_hover ||
-                   cat_hover != s_setting_cat_hover ||
-                   row_hover != s_setting_row_hover;
-    if (changed)
-    {
-        s_settings_win_close_hover = close_hover;
-        s_setting_cat_hover = cat_hover;
-        s_setting_row_hover = row_hover;
-        settings_window_redraw();
-    }
-    return true;
-}
-
-static bool settings_window_on_exit(AromaEvent *event, void *user_data)
-{
-    (void)event;
-    (void)user_data;
-    if (s_settings_win_close_hover || s_setting_cat_hover >= 0 ||
-        s_setting_row_hover >= 0)
-    {
-        s_settings_win_close_hover = false;
-        s_setting_cat_hover = -1;
-        s_setting_row_hover = -1;
-        settings_window_redraw();
-    }
-    return true;
-}
-
-static bool settings_window_on_click(AromaEvent *event, void *user_data)
-{
-    (void)user_data;
-    int x = event->data.mouse.x;
-    int y = event->data.mouse.y;
-    if (settings_win_close_hit(x, y))
-    {
-        settings_window_close();
-        return true;
-    }
-    int cat = settings_win_cat_hit(x, y);
-    if (cat >= 0 && cat != s_setting_category)
-    {
-        s_setting_category = cat;
-        s_setting_tab_scroll = 0;
-        s_setting_row_hover = -1;
-        settings_window_redraw();
-        return true;
-    }
-    int cx = settings_win_content_x();
-    int cw = settings_win_content_w();
-    int iy = settings_win_rows_y();
-    int item_h = SETTINGS_WIN_ROW_H;
-    int start = s_setting_tab_scroll;
-    int item_x = cx;
-    int visible = settings_win_visible_rows();
-    for (int i = 0; i < visible && start + i < k_setting_cat_rows[s_setting_category];
-         i++)
-    {
-        int row = start + i;
-        int ry = iy + i * item_h;
-        if (y >= ry - 2 && y < ry + item_h && x >= item_x &&
-            x < cx + cw)
-        {
-            int c = s_setting_category;
-            bool is_select = false;
-            if (c == 0 && (row == 2 || row == 3))
-                is_select = true;
-            if (c == 1 && (row == 1 || row == 2))
-                is_select = true;
-            if (is_select)
-                settings_row_cycle(c, row);
-            else
-                settings_row_toggle(c, row);
-            settings_window_redraw();
-            return true;
-        }
-    }
-    return true;
-}
-
 static void settings_window_close(void)
 {
     if (!s_settings_visible && !s_settings_window)
         return;
 
     s_settings_visible = false;
+    s_settings_close_requested = false;
     s_setting_row_hover = -1;
     s_settings_win_close_hover = false;
     s_setting_tab_scroll = 0;
 
-    if (s_settings_window_canvas)
-    {
-        __destroy_node(s_settings_window_canvas);
-        s_settings_window_canvas = NULL;
-    }
-    s_settings_window_root = NULL;
     if (s_settings_window)
     {
         aroma_ui_destroy_window(s_settings_window);
         s_settings_window = NULL;
     }
+
+    s_settings_window_canvas = NULL;
+    s_settings_window_root = NULL;
+    s_settings_sidebar = NULL;
+    s_settings_title_label = NULL;
+    s_settings_desc_label = NULL;
+    s_settings_experimental_badge = NULL;
+    s_settings_close_button = NULL;
+    s_settings_label_count = 0;
+    s_settings_dropdown_count = 0;
 
     draw_rail();
     draw_title();
@@ -1229,7 +1348,7 @@ static void settings_window_open(void)
     }
 
     aroma_ui_set_window_decorated(s_settings_window, false);
-    aroma_ui_set_window_opacity(s_settings_window, IDE_WINDOW_OPACITY);
+    aroma_ui_set_window_opacity(s_settings_window, settings_window_opacity());
 
     s_settings_window_root = NULL;
     for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
@@ -1248,6 +1367,9 @@ static void settings_window_open(void)
         return;
     }
 
+    s_settings_label_count = 0;
+    s_settings_dropdown_count = 0;
+
     s_settings_window_canvas = aroma_canvas_create(
         s_settings_window_root, 0, 0, SETTINGS_WIN_W, SETTINGS_WIN_H);
     if (!s_settings_window_canvas)
@@ -1258,25 +1380,238 @@ static void settings_window_open(void)
         toast("Could not open Settings window");
         return;
     }
-
-    aroma_node_set_z_index(s_settings_window_canvas, 1);
+    aroma_node_set_z_index(s_settings_window_canvas, 0);
+    aroma_layout_note_placed(s_settings_window_canvas);
     aroma_node_set_layout_fill(s_settings_window_canvas);
-    subscribe_node(s_settings_window_canvas, EVENT_TYPE_MOUSE_MOVE,
-                   settings_window_on_move);
     subscribe_node(s_settings_window_canvas, EVENT_TYPE_MOUSE_CLICK,
-                   settings_window_on_click);
-    subscribe_node(s_settings_window_canvas, EVENT_TYPE_MOUSE_EXIT,
-                   settings_window_on_exit);
+                   settings_window_header_drag);
+
+    AromaNode *header_title = settings_add_label(
+        s_settings_window_root, "Settings", 48, 12, font_ui(16),
+        SETTINGS_LABEL_TEXT);
+    AromaNode *header_subtitle = settings_add_label(
+        s_settings_window_root, "IDE preferences", 48, 35, font_ui(10),
+        SETTINGS_LABEL_DIM);
+    if (header_title)
+        aroma_node_set_hit_test_cb(header_title, settings_no_hit, NULL);
+    if (header_subtitle)
+        aroma_node_set_hit_test_cb(header_subtitle, settings_no_hit, NULL);
+
+    s_settings_close_button = aroma_ui_iconbutton(
+        s_settings_window_root, AROMA_ICON_CLOSE, SETTINGS_WIN_W - 48, 17,
+        30, ICON_BUTTON_STANDARD, settings_close_button_clicked, NULL,
+        font_icon(16));
+    if (s_settings_close_button)
+    {
+        aroma_node_set_z_index(s_settings_close_button, 5);
+        aroma_layout_note_placed(s_settings_close_button);
+        aroma_iconbutton_set_colors(s_settings_close_button, C_TITLE,
+                                    C_TEXT_SOFT);
+    }
+
+    s_settings_sidebar = aroma_ui_sidebar_with_icons(
+        s_settings_window_root, SETTINGS_WIN_SIDEBAR_X,
+        SETTINGS_WIN_SIDEBAR_Y, SETTINGS_WIN_SIDEBAR_W,
+        SETTINGS_WIN_SIDEBAR_H, (const char **)k_setting_cat_labels,
+        (const char **)k_setting_cat_icons, SETTING_CAT_COUNT,
+        settings_sidebar_on_select, NULL, font_ui(12), font_icon(18));
+    if (!s_settings_sidebar)
+    {
+        settings_window_close();
+        toast("Could not build Settings sidebar");
+        return;
+    }
+    aroma_node_set_z_index(s_settings_sidebar, 3);
+    aroma_layout_note_placed(s_settings_sidebar);
+    aroma_sidebar_set_style(s_settings_sidebar, true, 14, 4, 10);
+    int selected = s_setting_category;
+    if (selected < 0 || selected >= SETTING_CAT_COUNT)
+        selected = 0;
+    aroma_sidebar_set_selected(s_settings_sidebar, selected);
+
+    s_settings_title_label = settings_add_label(
+        s_settings_window_root, k_setting_cat_labels[selected],
+        SETTINGS_WIN_CONTENT_X, 84, font_ui(16), SETTINGS_LABEL_TEXT);
+    s_settings_desc_label = settings_add_label(
+        s_settings_window_root, k_setting_cat_desc[selected],
+        SETTINGS_WIN_CONTENT_X, 109, font_ui(10), SETTINGS_LABEL_DIM);
+
+    for (int i = 0; i < SETTING_CAT_COUNT; i++)
+    {
+        int height = k_setting_cat_rows[i] * SETTINGS_WIN_ROW_H;
+        AromaNode *content = aroma_container_create(
+            s_settings_window_root, SETTINGS_WIN_CONTENT_X,
+            SETTINGS_WIN_ROWS_Y, SETTINGS_WIN_CONTENT_W, height);
+        if (!content)
+            continue;
+        aroma_node_set_z_index(content, 1);
+        aroma_layout_note_placed(content);
+
+        if (i == SETTING_CAT_EDITOR)
+        {
+            settings_add_switch_row(content, 0, "Line numbers",
+                                    "Show line numbers in the editor",
+                                    s_setting_line_numbers,
+                                    &s_setting_line_numbers);
+            settings_add_switch_row(content, 1, "Minimap", "Show code minimap",
+                                    s_setting_minimap, &s_setting_minimap);
+            char *tab_options[] = {"2 spaces", "4 spaces", "8 spaces"};
+            settings_add_dropdown_row(content, 2, "Tab width",
+                                      "Spaces per indentation level",
+                                      tab_options, 3,
+                                      settings_tab_width_index(),
+                                      SETTINGS_DD_TAB_WIDTH);
+            char *size_options[] = {"10", "11", "12", "14", "16"};
+            settings_add_dropdown_row(content, 3, "Font size",
+                                      "Editor font size in px", size_options, 5,
+                                      settings_font_size_index(),
+                                      SETTINGS_DD_FONT_SIZE);
+            settings_add_switch_row(content, 4, "Word wrap", "Wrap long lines",
+                                    s_setting_word_wrap, &s_setting_word_wrap);
+            settings_add_switch_row(content, 5, "Auto indent",
+                                    "Automatic indentation",
+                                    s_setting_auto_indent,
+                                    &s_setting_auto_indent);
+            settings_add_switch_row(content, 6, "Bracket matching",
+                                    "Highlight matching brackets",
+                                    s_setting_bracket_match,
+                                    &s_setting_bracket_match);
+        }
+        else if (i == SETTING_CAT_THEME)
+        {
+            settings_add_switch_row(content, 0, "Dark theme",
+                                    "Use dark color theme",
+                                    s_setting_theme_dark,
+                                    &s_setting_theme_dark);
+            char *accent_options[] = {"Blue", "Purple", "Green", "Orange",
+                                      "Red"};
+            int accent = s_setting_accent;
+            if (accent < 0)
+                accent = 0;
+            if (accent > 4)
+                accent = 4;
+            settings_add_dropdown_row(content, 1, "Accent color",
+                                      "UI accent color", accent_options, 5,
+                                      accent, SETTINGS_DD_ACCENT);
+            char *font_options[] = {"Monospace", "Sans", "Serif"};
+            int family = s_setting_font_family;
+            if (family < 0)
+                family = 0;
+            if (family > 2)
+                family = 2;
+            settings_add_dropdown_row(content, 2, "Font family",
+                                      "UI font family", font_options, 3, family,
+                                      SETTINGS_DD_FONT_FAMILY);
+        }
+        else if (i == SETTING_CAT_WINDOW)
+        {
+            settings_add_switch_row(content, 0, "Transparency",
+                                    "Make application windows translucent",
+                                    s_setting_transparency,
+                                    &s_setting_transparency);
+            char *opacity_options[] = {"80%", "86%", "90%", "94%", "100%"};
+            int opacity = s_setting_opacity_index;
+            if (opacity < 0)
+                opacity = 0;
+            if (opacity > 4)
+                opacity = 4;
+            settings_add_dropdown_row(content, 1, "Window opacity",
+                                      "Translucency used when transparency is on",
+                                      opacity_options, 5, opacity,
+                                      SETTINGS_DD_OPACITY);
+            settings_add_switch_row(content, 2, "Experimental features",
+                                    "Enable animated settings and in-development UI effects",
+                                    s_setting_experimental,
+                                    &s_setting_experimental);
+        }
+        else if (i == SETTING_CAT_OUTPUT)
+        {
+            settings_add_switch_row(content, 0, "Show build output",
+                                    "Display build output in panel",
+                                    s_setting_show_build_output,
+                                    &s_setting_show_build_output);
+            settings_add_switch_row(content, 1, "Show run output",
+                                    "Display run output in panel",
+                                    s_setting_show_run_output,
+                                    &s_setting_show_run_output);
+            settings_add_switch_row(content, 2, "Auto-scroll output",
+                                    "Scroll output to bottom automatically",
+                                    s_setting_auto_scroll_output,
+                                    &s_setting_auto_scroll_output);
+        }
+        else if (i == SETTING_CAT_FILE)
+        {
+            settings_add_switch_row(content, 0, "Auto save",
+                                    "Save files automatically",
+                                    s_setting_auto_save, &s_setting_auto_save);
+            settings_add_switch_row(content, 1, "Save on focus change",
+                                    "Save when editor loses focus",
+                                    s_setting_save_on_focus,
+                                    &s_setting_save_on_focus);
+            settings_add_switch_row(content, 2, "Trim trailing whitespace",
+                                    "Remove trailing whitespace on save",
+                                    s_setting_trim_trailing,
+                                    &s_setting_trim_trailing);
+            settings_add_switch_row(content, 3, "Final newline",
+                                    "Ensure file ends with newline",
+                                    s_setting_final_newline,
+                                    &s_setting_final_newline);
+        }
+        else if (i == SETTING_CAT_KEYBOARD)
+        {
+            settings_add_label(content, "Keyboard shortcuts", 232, 158,
+                               font_ui(12), SETTINGS_LABEL_TEXT);
+            settings_add_label(content,
+                               "Show the complete keyboard shortcuts reference",
+                               232, 177, font_ui(10), SETTINGS_LABEL_DIM);
+            AromaNode *button = aroma_ui_button_with_type(
+                content, "View keybindings",
+                SETTINGS_WIN_CONTENT_X + SETTINGS_WIN_CONTENT_W - 182, 160,
+                170, 32, BUTTON_TYPE_TONAL, settings_keybindings_clicked,
+                NULL, font_ui(11));
+            if (button)
+            {
+                aroma_node_set_z_index(button, 4);
+                aroma_layout_note_placed(button);
+            }
+        }
+        else if (i == SETTING_CAT_ABOUT)
+        {
+            settings_add_label(content, "AromaUI Studio", 232, 158,
+                               font_ui(13), SETTINGS_LABEL_TEXT);
+            settings_add_label(content, "Alpha 0.0.1", 232, 180, font_ui(10),
+                               SETTINGS_LABEL_DIM);
+            settings_add_label(content, "Built with AromaUI", 232, 210,
+                               font_ui(10), SETTINGS_LABEL_SOFT);
+            settings_add_label(content, "Modern native interfaces, live in C",
+                               232, 226, font_ui(10), SETTINGS_LABEL_FAINT);
+        }
+
+        AromaNode *content_nodes[1] = {content};
+        aroma_sidebar_set_content(s_settings_sidebar, i, content_nodes, 1);
+    }
+
+    settings_add_label(s_settings_window_root, "Changes apply immediately.",
+                       SETTINGS_WIN_CONTENT_X, SETTINGS_WIN_H - 32,
+                       font_ui(10), SETTINGS_LABEL_FAINT);
+    s_settings_experimental_badge = settings_add_label(
+        s_settings_window_root, "EXPERIMENTAL",
+        SETTINGS_WIN_W - 148, SETTINGS_WIN_H - 32, font_ui(9),
+        SETTINGS_LABEL_ACCENT);
+    if (s_settings_experimental_badge)
+        aroma_node_set_hidden(s_settings_experimental_badge,
+                              !s_setting_experimental);
 
     s_setting_row_hover = -1;
     s_settings_win_close_hover = false;
     s_setting_tab_scroll = 0;
-
     s_settings_visible = true;
+    s_settings_close_requested = false;
 
+    settings_apply_windows();
+    settings_apply_experimental();
     settings_window_redraw();
 }
-
 
 static void settings_apply_ui_fonts(void)
 {
@@ -1311,6 +1646,7 @@ static void settings_apply_theme(void)
     theme.colors.border = M3_OUTLINE_VAR;
     theme.colors.error = M3_ERROR;
     aroma_ui_set_theme(&theme);
+    settings_refresh_label_colors();
     settings_apply_ui_fonts();
     apply_editor_palette();
     if (s_markdown_visible)
@@ -1333,6 +1669,8 @@ static void settings_apply_editor(void)
 static void settings_apply_all(void)
 {
     settings_apply_theme();
+    settings_apply_windows();
+    settings_apply_experimental();
     settings_apply_editor();
     draw_all();
     if (s_settings_visible)
@@ -1341,7 +1679,7 @@ static void settings_apply_all(void)
 
 static void settings_row_toggle(int category, int row)
 {
-    if (category == 0)             
+    if (category == SETTING_CAT_EDITOR)
     {
         if (row == 0)
             s_setting_line_numbers = !s_setting_line_numbers;
@@ -1354,12 +1692,19 @@ static void settings_row_toggle(int category, int row)
         else if (row == 6)
             s_setting_bracket_match = !s_setting_bracket_match;
     }
-    else if (category == 1)            
+    else if (category == SETTING_CAT_THEME)
     {
         if (row == 0)
             s_setting_theme_dark = !s_setting_theme_dark;
     }
-    else if (category == 2)             
+    else if (category == SETTING_CAT_WINDOW)
+    {
+        if (row == 0)
+            s_setting_transparency = !s_setting_transparency;
+        else if (row == 2)
+            s_setting_experimental = !s_setting_experimental;
+    }
+    else if (category == SETTING_CAT_OUTPUT)
     {
         if (row == 0)
             s_setting_show_build_output = !s_setting_show_build_output;
@@ -1368,7 +1713,7 @@ static void settings_row_toggle(int category, int row)
         else if (row == 2)
             s_setting_auto_scroll_output = !s_setting_auto_scroll_output;
     }
-    else if (category == 3)           
+    else if (category == SETTING_CAT_FILE)
     {
         if (row == 0)
             s_setting_auto_save = !s_setting_auto_save;
@@ -1384,7 +1729,7 @@ static void settings_row_toggle(int category, int row)
 
 static void settings_row_cycle(int category, int row)
 {
-    if (category == 0)             
+    if (category == SETTING_CAT_EDITOR)
     {
         if (row == 2)
         {
@@ -1407,7 +1752,7 @@ static void settings_row_cycle(int category, int row)
             s_setting_font_size = sizes[(index + 1) % 5];
         }
     }
-    else if (category == 1)            
+    else if (category == SETTING_CAT_THEME)
     {
         if (row == 1)
         {
@@ -1420,6 +1765,15 @@ static void settings_row_cycle(int category, int row)
             s_setting_font_family++;
             if (s_setting_font_family > 2)
                 s_setting_font_family = 0;
+        }
+    }
+    else if (category == SETTING_CAT_WINDOW)
+    {
+        if (row == 1)
+        {
+            s_setting_opacity_index++;
+            if (s_setting_opacity_index > 4)
+                s_setting_opacity_index = 0;
         }
     }
     settings_apply_all();
@@ -1512,17 +1866,18 @@ static bool settings_on_click(int x, int y)
                 x < sx + s_sidebar_w - 40)
             {
                 s_setting_row_hover = i;
-                if (c == 5 && r == 0)                            
+                if (c == SETTING_CAT_KEYBOARD && r == 0)
                 {
                     draw_sidebar();
                     return true;
                 }
-                if (c != 5)
+                if (c != SETTING_CAT_KEYBOARD)
                 {
                     bool is_select = false;
-                    if (c == 0 && (r == 2 || r == 3))
+                    if (c == SETTING_CAT_EDITOR && (r == 2 || r == 3))
                         is_select = true;
-                    if (c == 1 && (r == 1 || r == 2))
+                    if (c == SETTING_CAT_THEME && (r == 1 || r == 2))
+                    if (c == SETTING_CAT_WINDOW && r == 1)
                         is_select = true;
                     if (is_select)
                         settings_row_cycle(c, r);
@@ -2687,6 +3042,24 @@ static void ide_window_closed(AromaWindow *window, void *user_data)
         s_home_dirty = true;
         ide_home_draw();
         aroma_node_invalidate(s_home_canvas);
+    }
+    if (window == s_settings_window)
+    {
+        s_settings_window = NULL;
+        s_settings_visible = false;
+        s_settings_close_requested = false;
+        s_settings_window_canvas = NULL;
+        s_settings_window_root = NULL;
+        s_settings_sidebar = NULL;
+        s_settings_title_label = NULL;
+        s_settings_desc_label = NULL;
+        s_settings_experimental_badge = NULL;
+        s_settings_close_button = NULL;
+        s_settings_label_count = 0;
+        s_settings_dropdown_count = 0;
+        draw_rail();
+        draw_title();
+        draw_all();
     }
     if (window == s_panel_detached_window)
     {
@@ -4813,9 +5186,7 @@ static void draw_android_device_manager(void)
         text(s_dialog_canvas, "No devices found", center_x -
              text_width(ui12, "No devices found") / 2, center_y + 42,
              C_TEXT, ui12);
-        text_fit(s_dialog_canvas, "Connect a phone with USB debugging enabled, "
-                                  "or start an emulator, then press Refresh.",
-                 content_x, center_y + 64, content_w, C_TEXT_DIM, ui10);
+    
     }
     else
     {

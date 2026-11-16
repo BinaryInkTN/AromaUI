@@ -29,6 +29,34 @@ BUNDLE_ALIASES = {
 BUNDLE_DEFAULT_DEPENDS_DEB = "libc6, libgl1, libegl1, libgles2, libcurl4t | libcurl4"
 BUNDLE_DEFAULT_REQUIRES_RPM = "glibc, mesa-libGL, mesa-libEGL, libcurl"
 
+# Runtime files and directories that Aroma apps commonly load relative to
+# the project root.  Bundled apps are launched with their resource root as
+# the working directory, so "ui/app.aroma" and "assets/..." keep working.
+BUNDLE_DEFAULT_RESOURCES = (
+    "ui",
+    "assets",
+    "resources",
+    "data",
+    "fonts",
+    "shaders",
+    "themes",
+    "locales",
+)
+
+
+def _normalize_resource_list(value: Any) -> List[str]:
+    raw: List[str] = []
+    if isinstance(value, str):
+        raw = value.split(",")
+    elif isinstance(value, (list, tuple)):
+        raw = [str(v) for v in value]
+    out: List[str] = []
+    for item in raw:
+        item = item.strip()
+        if item and item not in out:
+            out.append(item)
+    return out
+
 
 def normalize_bundle_formats(positional: Optional[List[str]],
                               opt_formats: Optional[List[str]]) -> List[str]:
@@ -119,7 +147,7 @@ def _sanitize_file_name(name: str) -> str:
     return s or "aroma-app"
 
 
-def resolve_bundle_meta(cwd: str, config: Dict[str, Any], args: Any) -> Dict[str, str]:
+def resolve_bundle_meta(cwd: str, config: Dict[str, Any], args: Any) -> Dict[str, Any]:
     project = config.get("project", {}) if isinstance(config.get("project"), dict) else {}
     bundle_cfg = config.get("bundle", {}) if isinstance(config.get("bundle"), dict) else {}
     base = os.path.basename(os.path.abspath(cwd))
@@ -154,7 +182,8 @@ def resolve_bundle_meta(cwd: str, config: Dict[str, Any], args: Any) -> Dict[str
                    bundle_cfg.get("package"), bundle_cfg.get("package_name"), "")
     pkg = _sanitize_deb_name(pkg_raw) if pkg_raw else _sanitize_deb_name(name)
     app_id = pick(getattr(args, "app_id", None), bundle_cfg.get("id"),
-                  bundle_cfg.get("app_id"), "")
+                  bundle_cfg.get("app_id"), project.get("app_id"),
+                  project.get("package"), "")
     if not app_id:
         if re.match(r'^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$', pkg):
             app_id = pkg
@@ -166,6 +195,13 @@ def resolve_bundle_meta(cwd: str, config: Dict[str, Any], args: Any) -> Dict[str
                    bundle_cfg.get("depends"), BUNDLE_DEFAULT_DEPENDS_DEB)
     requires = pick(getattr(args, "bundle_requires", None),
                     bundle_cfg.get("requires"), BUNDLE_DEFAULT_REQUIRES_RPM)
+    resource_override = getattr(args, "bundle_resources", None)
+    if resource_override:
+        resources = _normalize_resource_list(resource_override)
+    elif bundle_cfg.get("resources") is not None:
+        resources = _normalize_resource_list(bundle_cfg.get("resources"))
+    else:
+        resources = list(BUNDLE_DEFAULT_RESOURCES)
     return {
         "name": name,
         "file_name": _sanitize_file_name(name),
@@ -182,6 +218,8 @@ def resolve_bundle_meta(cwd: str, config: Dict[str, Any], args: Any) -> Dict[str
         "icon_hint": icon_hint,
         "categories": categories,
         "app_id": app_id,
+        "desktop_id": _sanitize_file_name(app_id),
         "depends": depends,
         "requires": requires,
+        "resources": resources,
     }

@@ -589,6 +589,12 @@ static void home_hide_changelog(void)
 bool ide_home_on_click(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    if (getenv("IDE_DEBUG_CLICKS") && event)
+        fprintf(stderr, "[home-click] mouse=(%d,%d) button=%u target=%llu\n",
+                event->data.mouse.x, event->data.mouse.y,
+                (unsigned)event->data.mouse.button,
+                (unsigned long long)(event->target_node
+                                         ? event->target_node->node_id : 0));
     if (!s_home_mode)
         return false;
     if (home_titlebar_click(event))

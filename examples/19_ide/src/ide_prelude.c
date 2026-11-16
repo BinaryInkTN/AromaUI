@@ -3,6 +3,7 @@
 #include "ide_internal.h"
 
 #include <aroma.h>
+#include <aroma_animation.h>
 #include <aroma_event.h>
 #include <aroma_incense_loader.h>
 #include <aroma_material_icons.h>

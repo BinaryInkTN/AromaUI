@@ -114,6 +114,9 @@ def main():
                    help="Extra Debian Depends (default covers GL/EGL/GLES/curl/libc)")
     p.add_argument("--requires", dest="bundle_requires",
                    help="RPM Requires (default covers GL/EGL/curl/glibc)")
+    p.add_argument("--resources", dest="bundle_resources",
+                   help="Comma-separated runtime files/dirs to bundle "
+                        "(default: ui, assets, resources, data, ...)")
     p.add_argument("--arch", default="auto",
                    help="Target arch (auto, x86_64/amd64, aarch64/arm64, armv7l, i686)")
     p.add_argument("--debug", action="store_true",

@@ -96,6 +96,12 @@ Linux. It builds a Release binary if needed, stages an AppDir (binary +
 `ldd` shared libs excluding host libc + `.desktop` + icons + metainfo), then
 produces the requested artifacts under `dist/`.
 
+Packaged launchers also include your runtime resources (`ui/`, `assets/`,
+`resources/`, `data/`, fonts, shaders, themes, and locales by default) and run
+with the resource root as their working directory. Aroma apps can therefore
+keep loading `ui/app.aroma` and `assets/...` with relative paths after
+installation.
+
 ```bash
 # Most common: Debian package + portable AppImage + tarball
 python3 bin/aroma bundle linux deb appimage tar.gz
@@ -105,6 +111,9 @@ python3 bin/aroma bundle linux --format all --out dist
 
 # Reuse the existing build/ binary without rebuilding
 python3 bin/aroma bundle linux deb --skip-build
+
+# Override which runtime files/directories are bundled
+python3 bin/aroma bundle linux dir --resources "ui,assets,locales"
 ```
 
 | Format | Output | Tool required |
@@ -121,7 +130,9 @@ python3 bin/aroma bundle linux deb --skip-build
 | `dir` | `Name-Version-arch/` unpacked folder | none |
 
 Metadata comes from `aroma.json` (`project.*` plus a `bundle.*` section
-created by `aroma create`) with CLI overrides:
+created by `aroma create`) with CLI overrides. The app ID defaults to
+`project.package`; use `--app-id` to override it. Runtime resources can be
+listed as `bundle.resources` (a string or array) or with `--resources`.
 
 ```bash
 aroma bundle linux deb \
@@ -129,6 +140,10 @@ aroma bundle linux deb \
   --description "My app" --maintainer "Me <me@example.com>" \
   --homepage https://example.com --icon packaging/icon.svg
 ```
+
+Python projects are not bundleable yet; `aroma bundle` reports a clear error
+instead of trying to configure a CMake build. Use `aroma build linux` for
+development or bundle a C/Rust project.
 
 `aroma doctor` lists which bundling tools are installed. Formats whose
 tools are missing either auto-download (`appimagetool`) or scaffold their
