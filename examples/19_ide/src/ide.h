@@ -10,7 +10,7 @@
 #define IDE_MONO_FONT_COUNT 7
 
                                                                          
-#define IDE_WINDOW_OPACITY 0.94f
+#define IDE_WINDOW_OPACITY 1.0f
 
 typedef struct IdeAssets
 {

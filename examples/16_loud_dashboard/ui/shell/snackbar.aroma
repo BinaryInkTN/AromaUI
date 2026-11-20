@@ -1,8 +1,7 @@
-
-        Snackbar {
-            z_index: 90
-            id: "snack_embed_id"
-            message: "embed_text"
-            duration: 2600
-            show: 0
-        }
+Snackbar {
+    z_index: 90
+    id: "snack_embed_id"
+    message: "embed_text"
+    duration: 2600
+    show: 0
+}

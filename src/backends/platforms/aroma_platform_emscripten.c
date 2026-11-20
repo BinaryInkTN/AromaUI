@@ -747,6 +747,70 @@ static bool ems_get_clipboard_text(char *buffer, size_t buffer_size)
     return false;
 }
 
+static void ems_set_cursor(size_t window_id, int shape)
+{
+    (void)window_id;
+    const char *css = "default";
+    switch (shape)
+    {
+    case AROMA_CURSOR_IBEAM:
+        css = "text";
+        break;
+    case AROMA_CURSOR_HAND:
+        css = "pointer";
+        break;
+    case AROMA_CURSOR_CROSSHAIR:
+        css = "crosshair";
+        break;
+    case AROMA_CURSOR_MOVE:
+        css = "move";
+        break;
+    case AROMA_CURSOR_RESIZE_HORIZONTAL:
+        css = "ew-resize";
+        break;
+    case AROMA_CURSOR_RESIZE_VERTICAL:
+        css = "ns-resize";
+        break;
+    case AROMA_CURSOR_RESIZE_DIAGONAL_NWSE:
+        css = "nwse-resize";
+        break;
+    case AROMA_CURSOR_RESIZE_DIAGONAL_NESW:
+        css = "nesw-resize";
+        break;
+    case AROMA_CURSOR_NOT_ALLOWED:
+        css = "not-allowed";
+        break;
+    default:
+        css = "default";
+        break;
+    }
+    EM_ASM({
+        var c = (Module && Module.canvas) || document.getElementById('canvas');
+        if (c)
+            c.style.cursor = UTF8ToString($0);
+    }, css);
+}
+
+static void ems_set_fullscreen(size_t window_id, bool enabled)
+{
+    (void)window_id;
+    if (enabled)
+    {
+        EM_ASM({
+            var el = document.documentElement;
+            if (el && el.requestFullscreen)
+                el.requestFullscreen();
+        });
+    }
+    else
+    {
+        EM_ASM({
+            if (document.fullscreenElement && document.exitFullscreen)
+                document.exitFullscreen();
+        });
+    }
+}
+
 AromaPlatformInterface aroma_platform_emscripten = {
     .initialize                     = initialize,
     .create_window                  = create_window,
@@ -765,6 +829,8 @@ AromaPlatformInterface aroma_platform_emscripten = {
     .get_backing_size               = get_backing_size,
     .set_clipboard_text             = ems_set_clipboard_text,
     .get_clipboard_text             = ems_get_clipboard_text,
+    .set_fullscreen                 = ems_set_fullscreen,
+    .set_cursor                     = ems_set_cursor,
 };
 
 #endif

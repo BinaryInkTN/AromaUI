@@ -1,9 +1,3 @@
-                                                                        
-                                                                        
-                                                                        
-
-                                                                            
-                                            
 static int cmd_match_score(const char *text, const char *filter)
 {
     if (!filter[0])
@@ -263,8 +257,6 @@ static void cmd_palette_execute_selected(void)
             set_panel_visible(true);
         draw_panel();
     }
-    else if (strcmp(label, "Preview Window") == 0)
-        preview_toggle();
     else if (strcmp(label, "Go to File...") == 0)
         open_dialog(IDE_DIALOG_OPEN_FILE, "");
     else if (strcmp(label, "Go to Definition") == 0)
@@ -363,11 +355,6 @@ static void draw_toast(void);
 static void draw_properties_content(AromaNode *canvas, int offset_x,
                                     int offset_y, int canvas_w,
                                     int canvas_h);
-static void preview_window_create(void);
-static void preview_window_destroy(void);
-static void preview_toggle(void);
-static void preview_new_note(void *user_data);
-static bool preview_on_click(AromaEvent *event, void *user_data);
 static void markdown_preview_destroy(void);
 static void ide_claim_node(AromaNode *node);
 static int s_md_x = -1, s_md_y = -1, s_md_w = -1, s_md_h = -1;

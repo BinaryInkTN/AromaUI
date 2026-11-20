@@ -131,6 +131,31 @@ static const WidgetInfo *info_find(const char *tag)
 }
 
                                                                                  
+static void design_frag_set_size(IdeDesignDocument *doc, int width, int height)
+{
+    if (width <= 0)
+        width = 390;
+    if (height <= 0)
+        height = 844;
+    doc->frag_width = width;
+    doc->frag_height = height;
+    snprintf(doc->frag_width_text, sizeof(doc->frag_width_text), "%d", width);
+    snprintf(doc->frag_height_text, sizeof(doc->frag_height_text), "%d", height);
+}
+
+bool ide_design_is_fragment(const IdeDesignDocument *doc)
+{
+    return doc && doc->root >= 0 && doc->root < doc->node_count &&
+           strcmp(doc->nodes[doc->root].tag, IDE_DESIGN_FRAGMENT_TAG) == 0;
+}
+
+bool ide_design_root_is_page(const IdeDesignDocument *doc)
+{
+    return doc && doc->root >= 0 && doc->root < doc->node_count &&
+           (strcmp(doc->nodes[doc->root].tag, "Window") == 0 ||
+            ide_design_is_fragment(doc));
+}
+
 static bool node_is_data(const IdeDesignDocument *doc, int index)
 {
     const IdeDesignNode *node = &doc->nodes[index];
@@ -350,8 +375,54 @@ static int dp_int(const char *value, int fallback)
          
                                                                             
 
+/* Flex flow.  Children of a flex container (Row, Column, or any container
+ * with `layout: flex`) are placed one after another instead of at an
+ * absolute x/y.  Only children that carry no explicit x/y take part, so
+ * positions the designer wrote itself (drag/drop) stay where they are.
+ * Without this every such child was stored at the container's top-left
+ * corner, so clicks on the child the preview drew elsewhere hit the
+ * container instead. */
+typedef struct FlexFlow
+{
+    bool active;
+    bool row;
+    int gap;
+    int cursor_x;
+    int cursor_y;
+} FlexFlow;
+
+static void flex_begin(const IdeDesignDocument *doc, int index, FlexFlow *flow)
+{
+    memset(flow, 0, sizeof(*flow));
+    if (node_is_virtual(doc, index))
+        return;
+    const char *tag = doc->nodes[index].tag;
+    const char *layout = ide_design_attr(doc, index, "layout");
+    bool is_row = strcmp(tag, "Row") == 0;
+    bool is_col = strcmp(tag, "Column") == 0;
+    bool flex = is_row || is_col || (layout && strcmp(layout, "flex") == 0);
+    if (layout && strcmp(layout, "flex") != 0)
+        flex = false;
+    if (!flex)
+        return;
+    const char *dir = ide_design_attr(doc, index, "direction");
+    flow->row = dir ? strcmp(dir, "row") == 0 : is_row;
+    const char *gap = ide_design_attr(doc, index, "gap");
+    if (!gap)
+        gap = ide_design_attr(doc, index, "spacing");
+    flow->gap = dp_int(gap, 0);
+    int pad = dp_int(ide_design_attr(doc, index, "padding"), 0);
+    if (flow->gap < 0)
+        flow->gap = 0;
+    if (pad < 0)
+        pad = 0;
+    flow->cursor_x = pad;
+    flow->cursor_y = pad;
+    flow->active = true;
+}
+
 static void layout_node(IdeDesignDocument *doc, int index, int parent_abs_x,
-                        int parent_abs_y)
+                        int parent_abs_y, const FlexFlow *place)
 {
     if (index < 0 || index >= doc->node_count)
         return;
@@ -380,6 +451,15 @@ static void layout_node(IdeDesignDocument *doc, int index, int parent_abs_x,
         node->abs_width = parent_w;
         node->abs_height = parent_h;
     }
+    else if (index == doc->root && ide_design_is_fragment(doc))
+    {
+        node->x = node->y = 0;
+        node->width = doc->frag_width > 0 ? doc->frag_width : 390;
+        node->height = doc->frag_height > 0 ? doc->frag_height : 844;
+        node->abs_x = node->abs_y = 0;
+        node->abs_width = node->width;
+        node->abs_height = node->height;
+    }
     else
     {
         int default_w = 0, default_h = 0;
@@ -391,6 +471,12 @@ static void layout_node(IdeDesignDocument *doc, int index, int parent_abs_x,
         }
         node->x = dp_int(ide_design_attr(doc, index, "x"), 0);
         node->y = dp_int(ide_design_attr(doc, index, "y"), 0);
+        if (place && place->active && !ide_design_attr(doc, index, "x") &&
+            !ide_design_attr(doc, index, "y"))
+        {
+            node->x = place->cursor_x;
+            node->y = place->cursor_y;
+        }
         node->width = dp_int(ide_design_attr(doc, index, "width"), default_w);
         node->height = dp_int(ide_design_attr(doc, index, "height"), default_h);
         if (node->width <= 0)
@@ -403,10 +489,22 @@ static void layout_node(IdeDesignDocument *doc, int index, int parent_abs_x,
         node->abs_height = node->height;
     }
 
+    FlexFlow flow;
+    flex_begin(doc, index, &flow);
     for (int i = 0; i < doc->node_count; i++)
     {
-        if (doc->nodes[i].parent == index && i != index)
-            layout_node(doc, i, node->abs_x, node->abs_y);
+        if (doc->nodes[i].parent != index || i == index)
+            continue;
+        layout_node(doc, i, node->abs_x, node->abs_y, &flow);
+        const IdeDesignNode *kid = &doc->nodes[i];
+        if (flow.active && !node_is_virtual(doc, i) &&
+            !ide_design_attr(doc, i, "x") && !ide_design_attr(doc, i, "y"))
+        {
+            if (flow.row)
+                flow.cursor_x += kid->width + flow.gap;
+            else
+                flow.cursor_y += kid->height + flow.gap;
+        }
     }
 }
 
@@ -415,7 +513,42 @@ void ide_design_layout(IdeDesignDocument *doc)
     if (!doc || !doc->valid || doc->node_count <= 0 || doc->root < 0 ||
         doc->root >= doc->node_count)
         return;
-    layout_node(doc, doc->root, 0, 0);
+    if (ide_design_is_fragment(doc) && (!doc->frag_w_user || !doc->frag_h_user))
+    {
+        /* No Window and no size given: size the page to fit the content.
+         * Start from the default size every time so the result is stable
+         * (fill-width children would otherwise grow on each layout). */
+        design_frag_set_size(doc, doc->frag_w_user ? doc->frag_width : 0,
+                             doc->frag_h_user ? doc->frag_height : 0);
+        layout_node(doc, doc->root, 0, 0, NULL);
+        int right = 0, bottom = 0, count = 0;
+        for (int i = 0; i < doc->node_count; i++)
+        {
+            if (i == doc->root || node_is_virtual(doc, i))
+                continue;
+            const IdeDesignNode *n = &doc->nodes[i];
+            if (n->abs_x + n->abs_width > right)
+                right = n->abs_x + n->abs_width;
+            if (n->abs_y + n->abs_height > bottom)
+                bottom = n->abs_y + n->abs_height;
+            count++;
+        }
+        if (count > 0)
+        {
+            int w = doc->frag_w_user ? doc->frag_width : right + 16;
+            int h = doc->frag_h_user ? doc->frag_height : bottom + 16;
+            if (!doc->frag_w_user && w < 200)
+                w = 200;
+            if (!doc->frag_h_user && h < 120)
+                h = 120;
+            if (w > 4096)
+                w = 4096;
+            if (h > 4096)
+                h = 4096;
+            design_frag_set_size(doc, w, h);
+        }
+    }
+    layout_node(doc, doc->root, 0, 0, NULL);
     doc->page_width = doc->nodes[doc->root].abs_width;
     doc->page_height = doc->nodes[doc->root].abs_height;
     if (doc->page_width <= 0)
@@ -434,6 +567,7 @@ void ide_design_init(IdeDesignDocument *doc)
     doc->page_width = 800;
     doc->page_height = 600;
     snprintf(doc->page_title, sizeof(doc->page_title), "Window");
+    design_frag_set_size(doc, 390, 844);
 }
 
                                                                          
@@ -445,6 +579,15 @@ const char *ide_design_attr(const IdeDesignDocument *doc, int index,
 {
     if (!doc || index < 0 || index >= doc->node_count || !key)
         return NULL;
+    if (index == doc->root && ide_design_is_fragment(doc))
+    {
+        if (strcmp(key, "width") == 0)
+            return doc->frag_width_text;
+        if (strcmp(key, "height") == 0)
+            return doc->frag_height_text;
+        if (strcmp(key, "x") == 0 || strcmp(key, "y") == 0)
+            return NULL;
+    }
     const IdeDesignNode *node = &doc->nodes[index];
     for (int i = 0; i < node->attr_count; i++)
     {
@@ -475,6 +618,7 @@ static bool design_put_attr(IdeDesignNode *node, const char *key,
             return false;
         found = node->attr_count++;
         snprintf(node->attrs[found].key, sizeof(node->attrs[found].key), "%s", key);
+        node->attrs[found].order = -1;
     }
     snprintf(node->attrs[found].value, sizeof(node->attrs[found].value), "%s",
              value ? value : "");
@@ -495,6 +639,26 @@ bool ide_design_set_attr(IdeDesignDocument *doc, int index, const char *key,
     if (!doc || !doc->valid || index < 0 || index >= doc->node_count || !key ||
         !key[0])
         return false;
+    if (index == doc->root && ide_design_is_fragment(doc) &&
+        (strcmp(key, "x") == 0 || strcmp(key, "y") == 0 ||
+         strcmp(key, "width") == 0 || strcmp(key, "height") == 0))
+    {
+        /* A fragment has no size of its own in the file; the page size is
+         * only an editing aid, so it is kept out of the written markup. */
+        bool set = value && dp_int(value, 0) > 0;
+        if (strcmp(key, "width") == 0)
+        {
+            doc->frag_w_user = set; /* empty value = back to fit-to-content */
+            design_frag_set_size(doc, dp_int(value, 0), doc->frag_height);
+        }
+        else if (strcmp(key, "height") == 0)
+        {
+            doc->frag_h_user = set;
+            design_frag_set_size(doc, doc->frag_width, dp_int(value, 0));
+        }
+        ide_design_layout(doc);
+        return true;
+    }
                                                                            
                                             
     if ((!value || !value[0]) && !quoted && strcmp(key, "@embed") != 0)
@@ -527,6 +691,184 @@ bool ide_design_set_attr(IdeDesignDocument *doc, int index, const char *key,
         
                                                                             
 
+static int design_child_count(const IdeDesignDocument *doc, int index)
+{
+    int count = 0;
+    for (int i = 0; i < doc->node_count; i++)
+        if (doc->nodes[i].parent == index && i != index)
+            count++;
+    return count;
+}
+
+/* `@embed "path"` optionally followed by `{ key: value, ... }`.  The braces
+ * are kept as raw text (the loader reads them itself) and are attached to the
+ * directive as an "@embed_props" attribute.  `p->pos` is just after '@'. */
+static bool parser_embed(DesignParser *p, IdeDesignDocument *doc, int index)
+{
+    IdeDesignNode *node = &doc->nodes[index];
+    char word[IDE_DESIGN_KEY_MAX];
+    if (!dp_ident(p, word, sizeof(word)) || strcmp(word, "embed") != 0)
+    {
+        dp_set_error(p, "unknown directive (only @embed is supported)");
+        return false;
+    }
+    if (node->attr_count + 2 > IDE_DESIGN_MAX_ATTRS)
+    {
+        dp_set_error(p, "too many properties on one element");
+        return false;
+    }
+    IdeDesignAttr *attr = &node->attrs[node->attr_count];
+    memset(attr, 0, sizeof(*attr));
+    snprintf(attr->key, sizeof(attr->key), "@embed");
+    bool quoted = false;
+    if (!dp_string(p, attr->value, sizeof(attr->value), &quoted))
+        return false;
+    attr->quoted = true;
+    attr->order = design_child_count(doc, index);
+    node->attr_count++;
+
+    size_t save_pos = p->pos;
+    int save_line = p->line;
+    dp_ws(p);
+    if (p->source[p->pos] != '{')
+    {
+        p->pos = save_pos;
+        p->line = save_line;
+        return true;
+    }
+
+    const char *src = p->source;
+    size_t i = p->pos + 1;
+    char raw[IDE_DESIGN_VALUE_MAX];
+    size_t used = 0;
+    bool pending_space = false;
+    while (src[i] && src[i] != '}')
+    {
+        char c = src[i];
+        if (c == '"')
+        {
+            if (pending_space && used > 0 && used + 1 < sizeof(raw))
+                raw[used++] = ' ';
+            pending_space = false;
+            if (used + 1 < sizeof(raw))
+                raw[used++] = '"';
+            i++;
+            while (src[i] && src[i] != '"')
+            {
+                char q = src[i];
+                if (q == '\\' && src[i + 1])
+                {
+                    if (used + 1 < sizeof(raw))
+                        raw[used++] = q;
+                    i++;
+                    q = src[i];
+                }
+                if (q == '\n')
+                {
+                    p->line++;
+                    q = ' ';
+                }
+                if (used + 1 < sizeof(raw))
+                    raw[used++] = q;
+                i++;
+            }
+            if (src[i] != '"')
+            {
+                dp_set_error(p, "unterminated string in @embed properties");
+                return false;
+            }
+            if (used + 1 < sizeof(raw))
+                raw[used++] = '"';
+            i++;
+            continue;
+        }
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
+        {
+            if (c == '\n')
+                p->line++;
+            pending_space = true;
+            i++;
+            continue;
+        }
+        if (pending_space && used > 0 && used + 1 < sizeof(raw))
+            raw[used++] = ' ';
+        pending_space = false;
+        if (used + 1 < sizeof(raw))
+            raw[used++] = c;
+        i++;
+    }
+    if (src[i] != '}')
+    {
+        dp_set_error(p, "unterminated @embed properties");
+        return false;
+    }
+    raw[used] = '\0';
+    p->pos = i + 1;
+    if (used + 1 >= sizeof(raw))
+    {
+        dp_set_error(p, "@embed properties are too long");
+        return false;
+    }
+    if (used > 0)
+    {
+        IdeDesignAttr *props = &node->attrs[node->attr_count++];
+        memset(props, 0, sizeof(*props));
+        snprintf(props->key, sizeof(props->key), "@embed_props");
+        snprintf(props->value, sizeof(props->value), "%s", raw);
+        props->order = -1;
+    }
+    return true;
+}
+
+/* A top-level `const name = "value"` line (used by `embed_name` references).
+ * Kept verbatim so it survives a round trip through the designer. */
+static bool parser_is_const_decl(const DesignParser *p)
+{
+    const char *s = p->source + p->pos;
+    if (strncmp(s, "const", 5) != 0 || (s[5] != ' ' && s[5] != '\t'))
+        return false;
+    s += 5;
+    while (*s == ' ' || *s == '\t')
+        s++;
+    return isalpha((unsigned char)*s) || *s == '_';
+}
+
+static bool parser_const_decl(DesignParser *p, IdeDesignNode *node)
+{
+    if (node->attr_count >= IDE_DESIGN_MAX_ATTRS)
+    {
+        dp_set_error(p, "too many top-level declarations");
+        return false;
+    }
+    size_t start = p->pos;
+    size_t end = start;
+    while (p->source[end] && p->source[end] != '\n')
+        end++;
+    p->pos = end;
+    while (end > start && (p->source[end - 1] == ' ' || p->source[end - 1] == '\t' ||
+                           p->source[end - 1] == '\r'))
+        end--;
+    IdeDesignAttr *attr = &node->attrs[node->attr_count];
+    memset(attr, 0, sizeof(*attr));
+    snprintf(attr->key, sizeof(attr->key), "@pre");
+    size_t length = end - start;
+    if (length >= sizeof(attr->value))
+    {
+        dp_set_error(p, "declaration is too long");
+        return false;
+    }
+    memcpy(attr->value, p->source + start, length);
+    attr->value[length] = '\0';
+    attr->order = -1;
+    node->attr_count++;
+    return true;
+}
+
+/* Parses properties, directives and child elements until the closing '}'
+ * (or end of input when `top` is set, i.e. a file's top level). */
+static bool parser_body(DesignParser *p, IdeDesignDocument *doc, int index,
+                        bool top);
+
 static bool parser_node(DesignParser *p, IdeDesignDocument *doc, int parent,
                         const char *tag)
 {
@@ -544,18 +886,31 @@ static bool parser_node(DesignParser *p, IdeDesignDocument *doc, int parent,
 
     if (!dp_expect(p, '{'))
         return false;
+    return parser_body(p, doc, index, false);
+}
 
+static bool parser_body(DesignParser *p, IdeDesignDocument *doc, int index,
+                        bool top)
+{
+    IdeDesignNode *node = &doc->nodes[index];
     while (1)
     {
         dp_skip(p);
         char c = p->source[p->pos];
         if (c == '}')
         {
+            if (top)
+            {
+                dp_set_error(p, "unexpected '}'");
+                return false;
+            }
             p->pos++;
             return true;
         }
         if (!c)
         {
+            if (top)
+                return true;
             dp_set_error(p, "unterminated element");
             return false;
         }
@@ -566,26 +921,15 @@ static bool parser_node(DesignParser *p, IdeDesignDocument *doc, int parent,
         }
         if (c == '@')
         {
-                                                                     
             p->pos++;
-            char word[IDE_DESIGN_KEY_MAX];
-            if (!dp_ident(p, word, sizeof(word)) || strcmp(word, "embed") != 0)
-            {
-                dp_set_error(p, "unknown directive (only @embed is supported)");
+            if (!parser_embed(p, doc, index))
                 return false;
-            }
-            if (node->attr_count >= IDE_DESIGN_MAX_ATTRS)
-            {
-                dp_set_error(p, "too many properties on one element");
+            continue;
+        }
+        if (top && parser_is_const_decl(p))
+        {
+            if (!parser_const_decl(p, node))
                 return false;
-            }
-            IdeDesignAttr *attr = &node->attrs[node->attr_count];
-            snprintf(attr->key, sizeof(attr->key), "@embed");
-            bool quoted = false;
-            if (!dp_string(p, attr->value, sizeof(attr->value), &quoted))
-                return false;
-            attr->quoted = true;
-            node->attr_count++;
             continue;
         }
 
@@ -603,7 +947,9 @@ static bool parser_node(DesignParser *p, IdeDesignDocument *doc, int parent,
                 return false;
             }
             IdeDesignAttr *attr = &node->attrs[node->attr_count];
+            memset(attr, 0, sizeof(*attr));
             snprintf(attr->key, sizeof(attr->key), "%s", name);
+            attr->order = -1;
             if (!dp_string(p, attr->value, sizeof(attr->value), &attr->quoted))
                 return false;
             node->attr_count++;
@@ -612,6 +958,8 @@ static bool parser_node(DesignParser *p, IdeDesignDocument *doc, int parent,
         {
             if (!parser_node(p, doc, index, name))
                 return false;
+            /* parser_node may not move the array, but keep the pointer fresh */
+            node = &doc->nodes[index];
         }
         else
         {
@@ -621,12 +969,60 @@ static bool parser_node(DesignParser *p, IdeDesignDocument *doc, int parent,
     }
 }
 
+/* Removes the synthetic root of a file that is just one `Window { ... }`, so
+ * ordinary screens keep their Window as the document root. */
+static bool design_collapse_window(IdeDesignDocument *doc)
+{
+    IdeDesignNode *frag = &doc->nodes[0];
+    int child = -1;
+    for (int i = 1; i < doc->node_count; i++)
+    {
+        if (doc->nodes[i].parent == 0)
+        {
+            if (child >= 0)
+                return true;
+            child = i;
+        }
+    }
+    if (child != 1 || strcmp(doc->nodes[1].tag, "Window") != 0)
+        return true;
+    int pre_count = 0;
+    IdeDesignAttr pre[IDE_DESIGN_MAX_ATTRS];
+    for (int i = 0; i < frag->attr_count; i++)
+    {
+        if (strcmp(frag->attrs[i].key, "@pre") != 0)
+            return true; /* top-level props or embeds next to the Window */
+        pre[pre_count++] = frag->attrs[i];
+    }
+
+    memmove(&doc->nodes[0], &doc->nodes[1],
+            sizeof(IdeDesignNode) * (size_t)(doc->node_count - 1));
+    doc->node_count--;
+    for (int i = 0; i < doc->node_count; i++)
+    {
+        int parent = doc->nodes[i].parent;
+        doc->nodes[i].parent = parent <= 0 ? -1 : parent - 1;
+        doc->nodes[i].depth--;
+    }
+    IdeDesignNode *root = &doc->nodes[0];
+    if (pre_count > 0)
+    {
+        if (root->attr_count + pre_count > IDE_DESIGN_MAX_ATTRS)
+            return false;
+        memmove(&root->attrs[pre_count], &root->attrs[0],
+                sizeof(IdeDesignAttr) * (size_t)root->attr_count);
+        memcpy(&root->attrs[0], pre, sizeof(IdeDesignAttr) * (size_t)pre_count);
+        root->attr_count += pre_count;
+    }
+    return true;
+}
+
 bool ide_design_parse(IdeDesignDocument *doc, const char *source)
 {
     if (!doc)
         return false;
     ide_design_init(doc);
-    if (!source || !source[0])
+    if (!source)
     {
         snprintf(doc->error, sizeof(doc->error), "The file is empty");
         return false;
@@ -637,11 +1033,24 @@ bool ide_design_parse(IdeDesignDocument *doc, const char *source)
     parser.source = source;
     parser.line = 1;
 
-    char root_tag[IDE_DESIGN_TAG_MAX];
-    if (!dp_ident(&parser, root_tag, sizeof(root_tag)) ||
-        !parser_node(&parser, doc, -1, root_tag))
+    /* Index 0 is always the synthetic fragment root while parsing: a file may
+     * hold one Window, or any number of nodes / @embed directives. */
+    IdeDesignNode *frag = &doc->nodes[0];
+    memset(frag, 0, sizeof(*frag));
+    snprintf(frag->tag, sizeof(frag->tag), "%s", IDE_DESIGN_FRAGMENT_TAG);
+    frag->parent = -1;
+    doc->node_count = 1;
+
+    if (!parser_body(&parser, doc, 0, true))
     {
         snprintf(doc->error, sizeof(doc->error), "%s", parser.error);
+        doc->node_count = 0;
+        return false;
+    }
+
+    if (!design_collapse_window(doc))
+    {
+        snprintf(doc->error, sizeof(doc->error), "too many top-level declarations");
         doc->node_count = 0;
         return false;
     }
@@ -652,7 +1061,9 @@ bool ide_design_parse(IdeDesignDocument *doc, const char *source)
     ide_design_layout(doc);
     const char *title = ide_design_attr(doc, doc->root, "title");
     snprintf(doc->page_title, sizeof(doc->page_title), "%s",
-             title && title[0] ? title : root_tag);
+             title && title[0] ? title
+             : ide_design_is_fragment(doc) ? "Embedded file"
+                                           : doc->nodes[doc->root].tag);
     return true;
 }
 
@@ -686,8 +1097,7 @@ int ide_design_hit_test(const IdeDesignDocument *doc, int page_x, int page_y)
                                                                          
                                                                         
                                                     
-    bool root_is_page = doc->root >= 0 &&
-        strcmp(doc->nodes[doc->root].tag, "Window") == 0;
+    bool root_is_page = ide_design_root_is_page(doc);
     int best = -1;
     for (int i = 0; i < doc->node_count; i++)
     {
@@ -930,6 +1340,26 @@ static void design_clamp_local(const IdeDesignDocument *doc, int index, int pare
         *ly = 0;
 }
 
+/* An @embed remembers how many child nodes preceded it.  When a child leaves
+ * or joins `parent`, directives located after it move by one slot. */
+static void design_embed_shift(IdeDesignDocument *doc, int parent, int child,
+                               int delta)
+{
+    if (parent < 0 || parent >= doc->node_count)
+        return;
+    int pos = 0;
+    for (int i = 0; i < child && i < doc->node_count; i++)
+        if (doc->nodes[i].parent == parent && i != parent)
+            pos++;
+    IdeDesignNode *node = &doc->nodes[parent];
+    for (int i = 0; i < node->attr_count; i++)
+    {
+        if (strcmp(node->attrs[i].key, "@embed") == 0 &&
+            node->attrs[i].order > pos)
+            node->attrs[i].order += delta;
+    }
+}
+
 static bool design_move(IdeDesignDocument *doc, int index, int page_x, int page_y,
                         bool allow_reparent, bool full_layout)
 {
@@ -950,7 +1380,9 @@ static bool design_move(IdeDesignDocument *doc, int index, int page_x, int page_
         if (target >= 0 && target != parent && target != index &&
             !is_descendant_or_self(doc, target, index))
         {
+            design_embed_shift(doc, parent, index, -1);
             node->parent = parent = target;
+            design_embed_shift(doc, target, index, +1);
             design_set_depth(doc, index);
         }
     }
@@ -1069,6 +1501,7 @@ bool ide_design_remove(IdeDesignDocument *doc, int index)
     bool removed[IDE_DESIGN_MAX_NODES];
     int map[IDE_DESIGN_MAX_NODES];
     memset(removed, 0, sizeof(removed));
+    design_embed_shift(doc, doc->nodes[index].parent, index, -1);
     design_mark_removed(doc, index, removed);
 
     int new_count = 0;
@@ -1205,20 +1638,54 @@ static bool design_scale_attr(const char *key, const char *value, int scale256,
     return true;
 }
 
+static void dw_pre(const IdeDesignDocument *doc, DesignWriter *writer)
+{
+    if (doc->root < 0 || doc->root >= doc->node_count)
+        return;
+    const IdeDesignNode *root = &doc->nodes[doc->root];
+    for (int i = 0; i < root->attr_count; i++)
+    {
+        if (strcmp(root->attrs[i].key, "@pre") == 0)
+            dw_printf(writer, "%s\n", root->attrs[i].value);
+    }
+}
+
+static void dw_embed(DesignWriter *writer, int indent, const IdeDesignNode *node,
+                     int at)
+{
+    dw_printf(writer, "%*s@embed ", indent, "");
+    dw_quoted(writer, node->attrs[at].value);
+    if (at + 1 < node->attr_count &&
+        strcmp(node->attrs[at + 1].key, "@embed_props") == 0 &&
+        node->attrs[at + 1].value[0])
+        dw_printf(writer, " { %s }", node->attrs[at + 1].value);
+    dw_printf(writer, "\n");
+}
+
 static void design_write_node(const IdeDesignDocument *doc, int index, int depth,
+                              int scale256, DesignWriter *writer);
+
+/* Writes the properties, @embed directives and children of a node at `depth`
+ * (without the `Tag {` / `}` lines), so it also serves a fragment's top level. */
+static void design_write_body(const IdeDesignDocument *doc, int index, int depth,
                               int scale256, DesignWriter *writer)
 {
     const IdeDesignNode *node = &doc->nodes[index];
     int indent = depth * 4;
-    dw_printf(writer, "%*s%s {\n", indent, "", node->tag);
+    bool emitted[IDE_DESIGN_MAX_ATTRS];
+    memset(emitted, 0, sizeof(emitted));
+
     for (int i = 0; i < node->attr_count; i++)
     {
         const IdeDesignAttr *attr = &node->attrs[i];
-        if (strcmp(attr->key, "@embed") == 0)
+        if (attr->key[0] == '@')
         {
-            dw_printf(writer, "%*s@embed ", indent + 4, "");
-            dw_quoted(writer, attr->value);
-            dw_printf(writer, "\n");
+            /* directives before the first child stay among the properties */
+            if (strcmp(attr->key, "@embed") == 0 && attr->order == 0)
+            {
+                dw_embed(writer, indent, node, i);
+                emitted[i] = true;
+            }
             continue;
         }
         char scaled_value[IDE_DESIGN_VALUE_MAX];
@@ -1228,7 +1695,7 @@ static void design_write_node(const IdeDesignDocument *doc, int index, int depth
                               sizeof(scaled_value)))
             attr_value = scaled_value;
 
-        dw_printf(writer, "%*s%s: ", indent + 4, "", attr->key);
+        dw_printf(writer, "%*s%s: ", indent, "", attr->key);
         bool safe = !attr->quoted && attr_value[0] != '\0';
         for (const char *c = attr_value; *c && safe; c++)
         {
@@ -1242,12 +1709,41 @@ static void design_write_node(const IdeDesignDocument *doc, int index, int depth
             dw_quoted(writer, attr_value);
         dw_printf(writer, "\n");
     }
+
+    int kid = 0;
     for (int i = 0; i < doc->node_count; i++)
     {
-        if (doc->nodes[i].parent == index && i != index)
-            design_write_node(doc, i, depth + 1, scale256, writer);
+        if (doc->nodes[i].parent != index || i == index)
+            continue;
+        for (int a = 0; a < node->attr_count; a++)
+        {
+            if (!emitted[a] && strcmp(node->attrs[a].key, "@embed") == 0 &&
+                node->attrs[a].order >= 0 && node->attrs[a].order <= kid)
+            {
+                dw_embed(writer, indent, node, a);
+                emitted[a] = true;
+            }
+        }
+        design_write_node(doc, i, depth, scale256, writer);
+        kid++;
     }
-    dw_printf(writer, "%*s}\n", indent, "");
+    for (int a = 0; a < node->attr_count; a++)
+    {
+        if (!emitted[a] && strcmp(node->attrs[a].key, "@embed") == 0)
+        {
+            dw_embed(writer, indent, node, a);
+            emitted[a] = true;
+        }
+    }
+}
+
+static void design_write_node(const IdeDesignDocument *doc, int index, int depth,
+                              int scale256, DesignWriter *writer)
+{
+    const IdeDesignNode *node = &doc->nodes[index];
+    dw_printf(writer, "%*s%s {\n", depth * 4, "", node->tag);
+    design_write_body(doc, index, depth + 1, scale256, writer);
+    dw_printf(writer, "%*s}\n", depth * 4, "");
 }
 
 static bool design_serialize_from(const IdeDesignDocument *doc, int index,
@@ -1255,7 +1751,12 @@ static bool design_serialize_from(const IdeDesignDocument *doc, int index,
 {
     out[0] = '\0';
     DesignWriter writer = {out, cap, 0, false};
-    design_write_node(doc, index, 0, scale256, &writer);
+    if (index == doc->root)
+        dw_pre(doc, &writer);
+    if (index == doc->root && ide_design_is_fragment(doc))
+        design_write_body(doc, index, 0, scale256, &writer);
+    else
+        design_write_node(doc, index, 0, scale256, &writer);
     if (writer.failed)
     {
         out[0] = '\0';
@@ -1280,6 +1781,8 @@ bool ide_design_serialize_node(const IdeDesignDocument *doc, int index, char *ou
     return design_serialize_from(doc, index, 256, out, cap);
 }
 
+/* Markup for the live preview.  The preview loader needs a `Window` root, so a
+ * fragment is wrapped in one (the wrapper is never written to the file). */
 bool ide_design_serialize_scaled(const IdeDesignDocument *doc, int scale256,
                                  char *out, size_t cap)
 {
@@ -1289,6 +1792,7 @@ bool ide_design_serialize_scaled(const IdeDesignDocument *doc, int scale256,
 
     out[0] = '\0';
     DesignWriter writer = {out, cap, 0, false};
+    dw_pre(doc, &writer);
     if (strcmp(doc->nodes[doc->root].tag, "Window") == 0)
     {
         design_write_node(doc, doc->root, 0, scale256, &writer);
@@ -1305,7 +1809,10 @@ bool ide_design_serialize_scaled(const IdeDesignDocument *doc, int scale256,
             page_h = 1;
         dw_printf(&writer, "Window {\n    width: %d\n    height: %d\n", page_w,
                   page_h);
-        design_write_node(doc, doc->root, 1, scale256, &writer);
+        if (ide_design_is_fragment(doc))
+            design_write_body(doc, doc->root, 1, scale256, &writer);
+        else
+            design_write_node(doc, doc->root, 1, scale256, &writer);
         dw_printf(&writer, "}\n");
     }
     if (writer.failed)
@@ -1316,9 +1823,7 @@ bool ide_design_serialize_scaled(const IdeDesignDocument *doc, int scale256,
     return true;
 }
 
-                                                                         
-        
-                                                                            
+/* ---------------------------------------------------------------- paste */
 
 static int design_import_subtree(IdeDesignDocument *doc, const IdeDesignDocument *src,
                                  int index, int new_parent)
@@ -1327,6 +1832,15 @@ static int design_import_subtree(IdeDesignDocument *doc, const IdeDesignDocument
     doc->nodes[dst] = src->nodes[index];
     doc->nodes[dst].parent = new_parent;
     doc->nodes[dst].depth = doc->nodes[new_parent].depth + 1;
+    /* top-level declarations belong to the source file, not to a pasted node */
+    IdeDesignNode *node = &doc->nodes[dst];
+    int kept = 0;
+    for (int i = 0; i < node->attr_count; i++)
+    {
+        if (strcmp(node->attrs[i].key, "@pre") != 0)
+            node->attrs[kept++] = node->attrs[i];
+    }
+    node->attr_count = kept;
     for (int i = 0; i < src->node_count; i++)
     {
         if (src->nodes[i].parent == index && i != index)
@@ -1344,12 +1858,12 @@ int ide_design_paste(IdeDesignDocument *doc, const char *source)
     if (!temp)
         return -1;
     int result = -1;
+    /* Copied markup parses as a fragment holding the copied element(s); a
+     * whole Window is not something that can be pasted into a page. */
     if (ide_design_parse(temp, source) && temp->root >= 0 &&
-        doc->node_count + temp->node_count <= IDE_DESIGN_MAX_NODES &&
-        strcmp(temp->nodes[temp->root].tag, "Window") != 0 &&
-        !node_is_data(temp, temp->root))
+        ide_design_is_fragment(temp) &&
+        doc->node_count + temp->node_count - 1 <= IDE_DESIGN_MAX_NODES)
     {
-                                                                               
         int parent = doc->selected;
         if (parent < 0 || parent >= doc->node_count)
             parent = doc->root;
@@ -1358,16 +1872,23 @@ int ide_design_paste(IdeDesignDocument *doc, const char *source)
         if (parent < 0)
             parent = doc->root;
 
-        int index = design_import_subtree(doc, temp, temp->root, parent);
-        int lx = temp->nodes[temp->root].x + 20;
-        int ly = temp->nodes[temp->root].y + 20;
-        ide_design_layout(doc);
-        design_clamp_local(doc, index, parent, &lx, &ly);
-        design_put_int(&doc->nodes[index], "x", lx);
-        design_put_int(&doc->nodes[index], "y", ly);
-        doc->selected = index;
-        ide_design_layout(doc);
-        result = index;
+        for (int i = 0; i < temp->node_count; i++)
+        {
+            if (temp->nodes[i].parent != temp->root || i == temp->root ||
+                strcmp(temp->nodes[i].tag, "Window") == 0 ||
+                node_is_data(temp, i))
+                continue;
+            int index = design_import_subtree(doc, temp, i, parent);
+            int lx = temp->nodes[i].x + 20;
+            int ly = temp->nodes[i].y + 20;
+            ide_design_layout(doc);
+            design_clamp_local(doc, index, parent, &lx, &ly);
+            design_put_int(&doc->nodes[index], "x", lx);
+            design_put_int(&doc->nodes[index], "y", ly);
+            ide_design_layout(doc);
+            doc->selected = index;
+            result = index;
+        }
     }
     free(temp);
     return result;

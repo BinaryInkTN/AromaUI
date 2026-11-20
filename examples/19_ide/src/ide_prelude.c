@@ -39,6 +39,7 @@
 #include <aroma_file_dialog.h>
 typedef enum IdeDialogMode IdeDialogMode;
 static void draw_all(void);
+static void ide_update_cursor(int x, int y);
 static void markdown_preview_create(void);
 static void open_dialog(IdeDialogMode mode, const char *initial);
 static void draw_dialog(void);
@@ -73,6 +74,10 @@ static void draw_panel(void);
 static void draw_status(void);
 static void draw_menu(void);
 static void draw_toast(void);
+static void menu_animate_show(void);
+static void menu_animate_hide(void);
+static void toast_animate_show(void);
+static void toast_animate_hide(void);
 static void draw_properties_content(AromaNode *canvas, int offset_x,
                                     int offset_y, int canvas_w,
                                     int canvas_h);
@@ -86,11 +91,8 @@ static void settings_apply_theme(void);
 static void settings_apply_editor(void);
 static void settings_apply_all(void);
 static void apply_editor_palette(void);
-static void preview_window_create(void);
-static void preview_toggle(void);
-static void preview_theme_draw_dropdown(void);
-static bool preview_theme_on_click(int x, int y);
 static void preview_new_note(void *user_data);
+
 static int title_ctrl_center(int index);
 static int title_ctrl_hit(int x, int y);
 static void ide_window_closed(AromaWindow *window, void *user_data);
@@ -152,20 +154,28 @@ typedef struct ProjectState
     int target;                         
     char android_serial[PROJECT_ANDROID_SERIAL_MAX];
     bool has_build_output;
-    char build_output[4096];
-    bool is_building;
+    char build_output[65536];
+    volatile bool is_building;
     bool has_run_output;
-    char run_output[4096];
-    bool is_running;
-    bool is_cleaning;
+    char run_output[65536];
+    volatile bool is_running;
+    volatile bool is_cleaning;
     bool has_clean_output;
-    char clean_output[4096];
+    char clean_output[65536];
     int output_mode;                              
     pthread_t build_thread;
     pthread_t run_thread;
 } ProjectState;
 
 static ProjectState s_project;
+
+/* Guards the project output buffers and the pending UI message queue that
+ * worker threads (build/run/clean) use to talk to the UI thread. */
+static pthread_mutex_t s_ui_lock = PTHREAD_MUTEX_INITIALIZER;
+static char s_pending_toast[256];
+static bool s_pending_toast_set;
+static char s_pending_log[200];
+static bool s_pending_log_set;
 static char s_android_devices[PROJECT_ANDROID_MAX_DEVICES]
                              [PROJECT_ANDROID_SERIAL_MAX];
 static char s_android_device_details[PROJECT_ANDROID_MAX_DEVICES][256];
@@ -251,6 +261,7 @@ static int s_panel_draw_right_x;
 static int s_panel_draw_w;
 static int s_panel_draw_h;
 static AromaNode *s_panel_draw_canvas;
+static AromaNode *s_panel_scrollable_log;
 
 static bool s_sidebar_detached;
 static AromaWindow *s_sidebar_detached_window;
@@ -258,12 +269,13 @@ static AromaNode *s_sidebar_detached_canvas;
 static AromaNode *s_sidebar_canvas_saved;
 static bool s_sidebar_detach_hover;
 
-#define OUTLINE_W 214
+static int s_outline_w = 214;
+static bool s_resizing_outline = false;
 #define TITLE_MENU_X 14
 #define TITLE_MENU_GAP 16
 #define TITLE_SEARCH_W 220
 #define TITLE_CTRL_W 30
-#define TITLE_CTRL_COUNT 5
+#define TITLE_CTRL_COUNT 6
 #define TITLE_ACTION_GAP 8
 #define TITLE_BUILD_W 66
 #define TITLE_RUN_W 58
@@ -335,9 +347,9 @@ static const uint32_t s_accent_light[5] = {
 #define M3_ON_SECONDARY_CONTAINER IDE_THEME(0xFFE5E5EAu, 0xFF1C1C1Eu)
 #define M3_ERROR IDE_THEME(0xFFFF453Au, 0xFFFF3B30u)
 #define M3_SURFACE IDE_THEME(0xFF1C1C1Eu, 0xFFF2F2F7u)
-#define M3_SURFACE_LOWEST IDE_THEME(0xFF18181Au, 0xFFFFFFFFu)
+#define M3_SURFACE_LOWEST IDE_THEME(0xFF18181Au, 0xFFF5F5F7u)
 #define M3_SURFACE_LOW IDE_THEME(0xFF202022u, 0xFFFFFFFFu)
-#define M3_SURFACE_CONTAINER IDE_THEME(0xFF242426u, 0xFFF2F2F7u)
+#define M3_SURFACE_CONTAINER IDE_THEME(0xFF242426u, 0xFFE9E9EEu)
 #define M3_SURFACE_CONTAINER_HIGH IDE_THEME(0xFF2C2C2Eu, 0xFFE5E5EAu)
 #define M3_SURFACE_HIGH IDE_THEME(0xFF2C2C2Eu, 0xFFE5E5EAu)
 #define M3_SURFACE_HIGHEST IDE_THEME(0xFF3A3A3Cu, 0xFFD1D1D6u)
@@ -360,7 +372,7 @@ static const uint32_t s_accent_light[5] = {
 #define M3_PINK IDE_THEME(0xFFFF375Fu, 0xFFFF2D55u)
 
 #define C_BG M3_SURFACE
-#define C_TITLE 0xFF202A3Du
+#define C_TITLE IDE_THEME(0xFF202A3Du, 0xFFE5E5EAu)
 #define C_RAIL M3_SURFACE
 #define C_SIDEBAR M3_SURFACE_LOW
 #define C_TAB_BG M3_SURFACE
@@ -502,7 +514,6 @@ static const CommandItem k_commands[] = {
     {"Detach Sidebar", "Move the sidebar into its own window", "", AROMA_ICON_OPEN_IN_NEW},
     {"Problems", "Show problems and diagnostics", "", AROMA_ICON_ERROR_OUTLINE},
     {"Output", "Show build/output logs", "", AROMA_ICON_DASHBOARD},
-    {"Preview Window", "Open the live preview window", "", AROMA_ICON_PAGEVIEW},
             
     {"Go to File...", "Quickly open any file", "Ctrl+P", AROMA_ICON_DESCRIPTION},
     {"Go to Definition", "Jump to symbol definition", "F12", AROMA_ICON_LINK},
@@ -574,13 +585,13 @@ typedef enum IdeMenuAction
     IDE_ACTION_SHOW_PROBLEMS,
     IDE_ACTION_SHOW_OUTPUT,
     IDE_ACTION_SHOW_TRACE,
-    IDE_ACTION_TOGGLE_PREVIEW,
     IDE_ACTION_SEARCH_WORKSPACE,
     IDE_ACTION_NEXT_PROBLEM,
     IDE_ACTION_LANGUAGE_SERVER,
     IDE_ACTION_ABOUT,
     IDE_ACTION_SHORTCUTS,
-    IDE_ACTION_OPEN_README
+    IDE_ACTION_OPEN_README,
+    IDE_ACTION_TOGGLE_COMMENT
 } IdeMenuAction;
 
 typedef struct MenuItem
@@ -628,7 +639,6 @@ static const MenuItem k_view_menu[] = {
     {"Problems",        "",       IDE_ACTION_SHOW_PROBLEMS},
     {"Output",          "",       IDE_ACTION_SHOW_OUTPUT},
     {"LSP Trace",       "",       IDE_ACTION_SHOW_TRACE},
-    {"Preview Window",  "",       IDE_ACTION_TOGGLE_PREVIEW},
 };
 
 static const MenuItem k_go_menu[] = {
@@ -658,18 +668,15 @@ static const MenuItem k_help_menu[] = {
     {"Open README",          "", IDE_ACTION_OPEN_README},
 };
 
-static const MenuItem *const k_menu_items[7] = {
+static const MenuItem *const k_menu_items[6] = {
     k_file_menu, k_edit_menu, k_selection_menu, k_view_menu,
     k_go_menu, k_run_menu, k_help_menu};
 
-static const int k_menu_item_counts[7] = {10, 7, 4, 8, 5, 9, 3};
-
-static const char *const k_menus[7] = {
-    "File", "Edit", "Selection", "View", "Go", "Run", "Help"};
-static const int k_menu_w[8] = {34, 32, 54, 32, 18, 24, 52, 34};
-
+static const int k_menu_item_counts[6] = {10, 7, 4, 7, 5, 9};
+static const char *const k_menus[6] = { "File", "Edit", "Selection", "View", "Go", "Run"};
+static const int k_menu_w[6] = {34, 32, 54, 32, 18, 24};   
 static const char *const k_panel_tabs[3] = {"PROBLEMS", "OUTPUT", "LSP TRACE"};
-
+#define TITLE_MENU_COUNT ((int)(sizeof(k_menus) / sizeof(k_menus[0])))
 static const char *const k_output_lines[] = {
     "AromaUI Studio 0.1.0  ·  Aroma project workspace",
     "[init] aroma-language-server ready in 24 ms",
@@ -711,8 +718,10 @@ static int s_title_ctrl_hover = -1;
 static int s_title_search_hover;
 static uint64_t s_title_last_click_ms;
 static bool s_title_maximized;
+static bool s_title_fullscreen;
 static uint64_t s_home_last_click_ms;
 static bool s_home_maximized;
+static bool s_home_fullscreen;
 static bool s_custom_window_maximized;
 static AromaNode *s_home_window_menu_canvas;
 static int s_home_window_menu_x;
@@ -738,13 +747,7 @@ static AromaNode *s_menu_canvas;
 static AromaNode *s_dialog_canvas;
 static AromaNode *s_toast_canvas;
 static AromaNode *s_editor;
-static AromaWindow *s_preview_window;
-static IncenseRegistry *s_preview_registry;
-static bool s_preview_visible;
-static int s_preview_note_count;
-static int s_preview_theme_index;
-static bool s_preview_theme_dropdown_open;
-static int s_preview_theme_hover = -1;
+static AromaTheme s_ide_theme;
 
 static AromaNode *s_markdown_webview;
 static bool s_markdown_visible;
@@ -813,8 +816,11 @@ static int s_designer_drag_page_y;
 static bool s_designer_drag_page_valid;
 static bool s_designer_drag_moved;
 static int s_designer_resize_node;
+static int s_designer_resize_corner;
 static int s_designer_resize_start_x;
 static int s_designer_resize_start_y;
+static int s_designer_resize_orig_x;
+static int s_designer_resize_orig_y;
 static int s_designer_resize_start_w;
 static int s_designer_resize_start_h;
 static bool s_designer_resizing;
@@ -1534,7 +1540,7 @@ static void ide_layout_recalc(void)
                                                                           
                                                                           
                                     
-    int outline_w = OUTLINE_W;
+    int outline_w = s_outline_w;
     int avail_w = win_w - EDITOR_X;
     if (avail_w - outline_w < 300)
         outline_w = avail_w - 300;
@@ -1666,6 +1672,8 @@ static bool s_lsp_connected = true;
 static char s_toast[256];
 static uint64_t s_toast_until;
 static bool s_toast_visible;
+static bool s_toast_hiding;
+static float s_toast_reveal = 0.0f;
 static volatile bool s_project_ui_dirty;
 static uint64_t s_project_ui_last;
 
@@ -1723,7 +1731,7 @@ static bool s_setting_bracket_match = true;
 static bool s_setting_theme_dark = true;
 static int s_setting_font_family = 1;
 
-static bool s_setting_transparency = true;
+static bool s_setting_transparency = false;
 static int s_setting_opacity_index = 3;
 static const float k_setting_opacity_values[5] = {
     0.80f, 0.86f, 0.90f, 0.94f, 1.0f};
@@ -1745,6 +1753,9 @@ static bool s_settings_close_requested = false;
 static AromaWindow *s_settings_window = NULL;
 static AromaNode *s_settings_window_canvas = NULL;
 static AromaNode *s_settings_window_root = NULL;
+static bool s_settings_window_opening = false;
+static bool s_settings_window_closing = false;
+static float s_settings_window_anim_opacity = 1.0f;
 static AromaNode *s_settings_sidebar = NULL;
 static AromaNode *s_settings_title_label = NULL;
 static AromaNode *s_settings_desc_label = NULL;
@@ -1767,6 +1778,9 @@ static int s_panel_problem_hover = -1;
 static int s_status_hover;
 static bool s_menu_open;
 static bool s_window_menu_open;
+static bool s_menu_hiding;
+static bool s_menu_last_window_menu;
+static float s_menu_reveal = 0.0f;
 static int s_window_menu_x;
 static int s_menu_index;
 static int s_menu_hover = -1;

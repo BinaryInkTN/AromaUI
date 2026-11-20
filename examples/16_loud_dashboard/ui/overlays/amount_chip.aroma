@@ -1,29 +1,28 @@
-
-        Card {
-            z_index: 60
-            x: embed_x
-            y: 382
-            width: 70
-            height: 34
-            type: filled
-            color: #232325
-            corner_radius: 17
-        }
-        Label {
-            z_index: 62
-            text: "embed_text"
-            size: 12
-            color: #D9D9DE
-            x: embed_tx
-            y: 391
-        }
-        Button {
-            z_index: 64
-            x: embed_x
-            y: 382
-            width: 70
-            height: 34
-            text: ""
-            type: text
-            on_click: "embed_cb"
-        }
+Card {
+    z_index: 60
+    x: embed_x
+    y: 382
+    width: 70
+    height: 34
+    type: filled
+    color: #232325
+    corner_radius: 17
+}
+Label {
+    z_index: 62
+    text: "embed_text"
+    size: 12
+    color: #D9D9DE
+    x: embed_tx
+    y: 391
+}
+Button {
+    z_index: 64
+    x: embed_x
+    y: 382
+    width: 70
+    height: 34
+    text: ""
+    type: text
+    on_click: "embed_cb"
+}

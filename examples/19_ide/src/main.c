@@ -187,6 +187,7 @@ int main(int argc, char **argv)
     }
 
     aroma_ui_set_window_decorated(window, false);
+   
     ide_home_init(g_registry, &g_assets);
 
     bool entered_ide = false;
@@ -272,6 +273,6 @@ int main(int argc, char **argv)
 void android_main(struct android_app *state)
 {
     aroma_android_set_app(state);
-    main();
+    main(0, NULL);
 }
 #endif

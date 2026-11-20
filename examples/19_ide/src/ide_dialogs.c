@@ -1,5 +1,3 @@
-                             
-
 static const char *md_getline(const char *p, const char *end, size_t *len)
 {
     const char *e = p;
@@ -1264,19 +1262,18 @@ static void toast(const char *format, ...)
     snprintf(s_toast, sizeof(s_toast), "%s", message);
     s_toast_until = now_ms() + 3400u;
     s_toast_visible = true;
+    s_toast_hiding = false;
     if (s_toast_canvas)
         aroma_node_set_hidden(s_toast_canvas, false);
-    draw_toast();
+    toast_animate_show();
 }
 
 static void hide_toast(void)
 {
-    if (!s_toast_visible)
+    if (!s_toast_visible && !s_toast_hiding)
         return;
-    s_toast_visible = false;
     s_toast_until = 0;
-    if (s_toast_canvas)
-        aroma_node_set_hidden(s_toast_canvas, true);
+    toast_animate_hide();
 }
 
 static int tree_row_capacity(void)
@@ -1494,7 +1491,9 @@ static void workspace_search(const char *query)
 {
     s_search_hit_count = 0;
     s_search_scroll = 0;
-    snprintf(s_search_query, sizeof(s_search_query), "%s", query ? query : "");
+    /* callers sometimes pass s_search_query itself; overlapping snprintf is UB */
+    if (query != s_search_query)
+        snprintf(s_search_query, sizeof(s_search_query), "%s", query ? query : "");
 
     if (!s_search_query[0])
     {
@@ -1793,15 +1792,19 @@ typedef struct DesignPaletteItem
 static const DesignPaletteItem k_design_palette[] = {
                       
     {"Container",        "Container",    AROMA_ICON_WIDGETS},
+    {"Column",           "Column",       AROMA_ICON_VIEW_COLUMN},
+    {"Row",              "Row",          AROMA_ICON_VIEW_STREAM},
     {"ScrollView",       "Scroll View",  AROMA_ICON_UNFOLD_MORE},
     {"Card",             "Card",         AROMA_ICON_CROP_SQUARE},
-                            
+    {"Carousel",         "Carousel",     AROMA_ICON_VIEW_CAROUSEL},
+                             
     {"Label",            "Label",        AROMA_ICON_TEXT_FIELDS},
     {"Icon",             "Icon",         AROMA_ICON_INSERT_EMOTICON},
     {"Image",            "Image",        AROMA_ICON_IMAGE},
     {"GIF",              "GIF",          AROMA_ICON_GIF},
     {"Video",            "Video",        AROMA_ICON_VIDEO_LIBRARY},
-                     
+    {"WebView",          "Web View",     AROMA_ICON_WEB},
+                      
     {"Button",           "Button",       AROMA_ICON_ADD},
     {"IconButton",       "Icon Button",  AROMA_ICON_TOUCH_APP},
     {"Textbox",          "Text Field",   AROMA_ICON_EDIT},
@@ -1809,8 +1812,12 @@ static const DesignPaletteItem k_design_palette[] = {
     {"Checkbox",         "Checkbox",     AROMA_ICON_CHECK_BOX},
     {"RadioButton",      "Radio Button", AROMA_ICON_RADIO_BUTTON_CHECKED},
     {"Slider",           "Slider",       AROMA_ICON_TUNE},
+    {"Stepper",          "Stepper",      AROMA_ICON_SWAP_VERT},
     {"Dropdown",         "Dropdown",     AROMA_ICON_ARROW_DROP_DOWN_CIRCLE},
     {"Chip",             "Chip",         AROMA_ICON_LOCAL_OFFER},
+    {"DatePicker",       "Date Picker",  AROMA_ICON_DATE_RANGE},
+    {"TimePicker",       "Time Picker",  AROMA_ICON_ACCESS_TIME},
+    {"Calendar",         "Calendar",     AROMA_ICON_TODAY},
                        
     {"ProgressBar",      "Progress Bar", AROMA_ICON_LINEAR_SCALE},
     {"Gauge",            "Gauge",        AROMA_ICON_SHOW_CHART},
@@ -1818,7 +1825,8 @@ static const DesignPaletteItem k_design_palette[] = {
     {"Divider",          "Divider",      AROMA_ICON_REMOVE},
     {"Chart",            "Chart",        AROMA_ICON_SHOW_CHART},
     {"Tooltip",          "Tooltip",      AROMA_ICON_INFO_OUTLINE},
-                          
+    {"DebugOverlay",     "Debug Overlay", AROMA_ICON_BUG_REPORT},
+                           
     {"Tabs",             "Tabs",         AROMA_ICON_TAB},
     {"SegmentedControl", "Segmented",    AROMA_ICON_FORMAT_ALIGN_CENTER},
     {"Sidebar",          "Sidebar",      AROMA_ICON_MENU},
@@ -1951,6 +1959,65 @@ static bool designer_view_point(const DesignerView *view, int mouse_x,
     if (page_y)
         *page_y = y;
     return true;
+}
+
+/* Resize grip hit radius in screen pixels.  Generous enough to grab without
+ * pixel-perfect aiming, especially when the page is zoomed out. */
+#define DESIGNER_HANDLE_HIT 10
+
+static int designer_selected_rect(int *x0, int *y0, int *x1, int *y1)
+{
+    if (!s_designer_visible || s_design_doc.selected <= 0 ||
+        s_design_doc.selected >= s_design_doc.node_count)
+        return -1;
+    const IdeDesignNode *node = &s_design_doc.nodes[s_design_doc.selected];
+    DesignerView view;
+    designer_canvas_view(&view);
+    if (x0)
+        *x0 = view.origin_x + designer_scaled(node->abs_x, view.scale);
+    if (y0)
+        *y0 = view.origin_y + designer_scaled(node->abs_y, view.scale);
+    if (x1)
+        *x1 = view.origin_x +
+              designer_scaled(node->abs_x + node->abs_width, view.scale);
+    if (y1)
+        *y1 = view.origin_y +
+              designer_scaled(node->abs_y + node->abs_height, view.scale);
+    return s_design_doc.selected;
+}
+
+/* 0 = top-left, 1 = top-right, 2 = bottom-left, 3 = bottom-right. */
+static int designer_resize_corner_at(int mouse_x, int mouse_y)
+{
+    int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    if (designer_selected_rect(&x0, &y0, &x1, &y1) < 0)
+        return -1;
+    bool left = mouse_x >= x0 - DESIGNER_HANDLE_HIT &&
+                mouse_x <= x0 + DESIGNER_HANDLE_HIT;
+    bool right = mouse_x >= x1 - DESIGNER_HANDLE_HIT &&
+                 mouse_x <= x1 + DESIGNER_HANDLE_HIT;
+    bool top = mouse_y >= y0 - DESIGNER_HANDLE_HIT &&
+               mouse_y <= y0 + DESIGNER_HANDLE_HIT;
+    bool bottom = mouse_y >= y1 - DESIGNER_HANDLE_HIT &&
+                  mouse_y <= y1 + DESIGNER_HANDLE_HIT;
+    if (left && top)
+        return 0;
+    if (right && top)
+        return 1;
+    if (left && bottom)
+        return 2;
+    if (right && bottom)
+        return 3;
+    return -1;
+}
+
+static bool designer_selected_body_at(int mouse_x, int mouse_y)
+{
+    int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+    if (designer_selected_rect(&x0, &y0, &x1, &y1) < 0)
+        return false;
+    return mouse_x >= x0 && mouse_x <= x1 && mouse_y >= y0 &&
+           mouse_y <= y1;
 }
 
 static void designer_draw_node(AromaNode *canvas, const DesignerView *view,
@@ -2105,8 +2172,7 @@ static void designer_draw_model(AromaNode *canvas, const DesignerView *view,
                                                                          
                                                                              
                                   
-    if (s_design_doc.root >= 0 &&
-        strcmp(s_design_doc.nodes[s_design_doc.root].tag, "Window") != 0)
+    if (s_design_doc.root >= 0 && !ide_design_root_is_page(&s_design_doc))
         designer_draw_node(canvas, view, s_design_doc.root, preview);
     for (int i = s_design_doc.root + 1; i < s_design_doc.node_count; i++)
         designer_draw_node(canvas, view, i, preview);
@@ -2137,13 +2203,9 @@ static void designer_draw_toolbar(void)
          0, M3_SURFACE_CONTAINER);
     fill(s_designer_toolbar, EDITOR_X, EDITOR_Y + DESIGN_TOOLBAR_H - 1,
          editor_w, 1, 0, C_BORDER);
-    icon_center(s_designer_toolbar, AROMA_ICON_WIDGETS, EDITOR_X + 22,
-                EDITOR_Y + 20, 16, C_PRIMARY);
-    text(s_designer_toolbar, "UI DESIGNER", EDITOR_X + 36, EDITOR_Y + 11,
-         C_TEXT, font_ui(12));
-    if (s_active_file >= 0)
+    if (s_active_file >= 0 && s_active_file < ide_file_count)
         text_fit(s_designer_toolbar, ide_files[s_active_file].path,
-                 EDITOR_X + 132, EDITOR_Y + 12, ds_code_x - EDITOR_X - 150,
+                 EDITOR_X + 20, EDITOR_Y + 12, ds_code_x - EDITOR_X - 150,
                  C_TEXT_FAINT, font_mono(10));
                       
     designer_toolbar_button(s_designer_toolbar, ds_code_x, DS_TOOL_W,
@@ -2292,6 +2354,74 @@ static void designer_preview_offset_z(AromaNode *node)
     }
 }
 
+/* Declared by aroma_incense_loader.h; repeated so this file does not depend
+ * on the header exposing it. */
+bool IncenseLoadFileIntoParent(const char *path, AromaNode *parent,
+                               AromaFont *font, AromaFont *icon_font,
+                               IncenseRegistry **out_registry);
+
+/* Loads the designer's generated markup into the preview node.
+ *
+ * `@embed "x.aroma"` paths are resolved by the loader relative to the file
+ * that contains the directive.  A plain string load has no such file, so
+ * embedded components would be looked up in the process working directory and
+ * silently go missing.  The markup is therefore written to a hidden scratch
+ * file beside the file being edited, loaded, and removed again; the string
+ * loader remains the fallback (read-only folder, unsaved scratch file, ...). */
+static bool designer_preview_load(const char *source, IncenseRegistry **registry)
+{
+    AromaFont *font = s_assets ? s_assets->editor : NULL;
+    AromaFont *icon_font = s_assets ? s_assets->icons[0] : NULL;
+    bool wrote = false;
+    bool ok = false;
+
+    if (s_active_file >= 0 && s_active_file < ide_file_count &&
+        ide_files[s_active_file].path[0] && strstr(source, "@embed"))
+    {
+        const char *path = ide_files[s_active_file].path;
+        const char *slash = strrchr(path, '/');
+        const char *backslash = strrchr(path, '\\');
+        if (!slash || (backslash && backslash > slash))
+            slash = backslash;
+        size_t dir = slash ? (size_t)(slash - path) + 1 : 0;
+        char scratch[IDE_PATH_MAX + 40];
+        if (dir + 40 < sizeof(scratch))
+        {
+            memcpy(scratch, path, dir);
+            snprintf(scratch + dir, sizeof(scratch) - dir,
+                     ".designer-preview.tmp.aroma");
+            FILE *fp = fopen(scratch, "wb");
+            if (fp)
+            {
+                size_t length = strlen(source);
+                wrote = fwrite(source, 1, length, fp) == length;
+                if (fclose(fp) != 0)
+                    wrote = false;
+                if (wrote)
+                    ok = IncenseLoadFileIntoParent(scratch, s_designer_preview,
+                                                   font, icon_font, registry);
+                remove(scratch);
+            }
+        }
+    }
+
+    if (wrote && s_designer_preview->child_count > 0)
+        return ok;
+
+    if (wrote)
+    {
+        /* the scratch load produced nothing; start over with the string loader */
+        if (registry && *registry)
+        {
+            IncenseFreeRegistry(*registry);
+            *registry = NULL;
+        }
+        aroma_node_remove_all_children(s_designer_preview);
+    }
+    return IncenseLoadStringIntoParent(source, s_designer_preview, font,
+                                       icon_font, registry);
+}
+
 static void designer_preview_refresh(void)
 {
     if (!s_designer_preview)
@@ -2355,9 +2485,7 @@ static void designer_preview_refresh(void)
     }
 
     IncenseRegistry *registry = NULL;
-    bool ok = IncenseLoadStringIntoParent(
-        source, s_designer_preview, s_assets ? s_assets->editor : NULL,
-        s_assets ? s_assets->icons[0] : NULL, &registry);
+    bool ok = designer_preview_load(source, &registry);
     free(source);
     (void)ok;
 
@@ -2437,14 +2565,13 @@ static void designer_draw_overlay(void)
     snprintf(zoom, sizeof(zoom), "%d%%", (view.scale * 100) / 256);
     text(s_designer_overlay, zoom, DESIGN_CANVAS_X + design_canvas_w - 44,
          design_body_y + 14, C_TEXT_FAINT, font_ui(10));
-    text(s_designer_overlay, s_designer_preview_ok ? "LIVE" : "NO PREVIEW",
+    text(s_designer_overlay, s_designer_preview_ok ? "" : "NO PREVIEW",
          DESIGN_CANVAS_X + design_canvas_w - 92, design_body_y + 14,
          s_designer_preview_ok ? C_PRIMARY : C_TEXT_FAINT, font_ui(9));
 
     int selected = s_design_doc.selected;
     if (selected >= 0 && selected < s_design_doc.node_count &&
-        (selected > 0 ||
-         strcmp(s_design_doc.nodes[s_design_doc.root].tag, "Window") != 0))
+        (selected > 0 || !ide_design_root_is_page(&s_design_doc)))
     {
         const IdeDesignNode *node = &s_design_doc.nodes[selected];
         int x = view.origin_x + designer_scaled(node->abs_x, view.scale);
@@ -2459,10 +2586,10 @@ static void designer_draw_overlay(void)
         line(s_designer_overlay, x, y + h, x + w, y + h, C_PRIMARY, 2);
         line(s_designer_overlay, x, y, x, y + h, C_PRIMARY, 2);
         line(s_designer_overlay, x + w, y, x + w, y + h, C_PRIMARY, 2);
-        fill(s_designer_overlay, x - 4, y - 4, 8, 8, 4, C_PRIMARY);
-        fill(s_designer_overlay, x + w - 4, y - 4, 8, 8, 4, C_PRIMARY);
-        fill(s_designer_overlay, x - 4, y + h - 4, 8, 8, 4, C_PRIMARY);
-        fill(s_designer_overlay, x + w - 4, y + h - 4, 8, 8, 4, C_PRIMARY);
+        fill(s_designer_overlay, x - 5, y - 5, 10, 10, 5, C_PRIMARY);
+        fill(s_designer_overlay, x + w - 5, y - 5, 10, 10, 5, C_PRIMARY);
+        fill(s_designer_overlay, x - 5, y + h - 5, 10, 10, 5, C_PRIMARY);
+        fill(s_designer_overlay, x + w - 5, y + h - 5, 10, 10, 5, C_PRIMARY);
         char badge[64];
         snprintf(badge, sizeof(badge), "%s", node->tag);
         int badge_w = text_width(font_ui(9), badge) + 10;
@@ -2693,8 +2820,15 @@ static void designer_apply_to_file(void)
     IdeFile *file = &ide_files[s_active_file];
     if (!file->text || strcmp(file->text, serialized) != 0)
     {
+        char *copy = strdup(serialized);
+        if (!copy)
+        {
+            free(serialized);
+            toast("Out of memory");
+            return;
+        }
         free(file->text);
-        file->text = strdup(serialized);
+        file->text = copy;
         file->dirty = true;
         ide_lsp_refresh_diagnostics(s_active_file);
         aroma_code_editor_set_diagnostics(s_editor, file->diagnostics,
@@ -2904,8 +3038,6 @@ static bool designer_toolbar_on_click(AromaEvent *event, void *user_data)
     {
         designer_apply_to_file();
         save_file(s_active_file);
-        if (s_preview_visible)
-            preview_window_create();
         return true;
     }
                          
@@ -3142,26 +3274,24 @@ static bool designer_canvas_on_click(AromaEvent *event, void *user_data)
 
                                                                         
     int selected = s_design_doc.selected;
-    if (selected > 0 && selected < s_design_doc.node_count)
+    int corner = designer_resize_corner_at(mouse_x, mouse_y);
+    if (selected > 0 && selected < s_design_doc.node_count && corner >= 0)
     {
         const IdeDesignNode *node = &s_design_doc.nodes[selected];
-        DesignerView view;
-        designer_canvas_view(&view);
-        int rx = view.origin_x + designer_scaled(node->abs_x + node->abs_width, view.scale);
-        int ry = view.origin_y + designer_scaled(node->abs_y + node->abs_height, view.scale);
-        if (mouse_x >= rx - 6 && mouse_x <= rx + 4 && mouse_y >= ry - 6 && mouse_y <= ry + 4)
-        {
-            s_designer_resizing = true;
-            s_designer_dragging = true;
-            s_designer_resize_node = selected;
-            s_designer_resize_start_x = page_x;
-            s_designer_resize_start_y = page_y;
-            s_designer_resize_start_w = node->abs_width;
-            s_designer_resize_start_h = node->abs_height;
-            s_designer_drag_node = -1;
-            designer_draw_canvas();
-            return true;
-        }
+        s_designer_resizing = true;
+        s_designer_dragging = true;
+        s_designer_resize_node = selected;
+        s_designer_resize_corner = corner;
+        s_designer_resize_start_x = page_x;
+        s_designer_resize_start_y = page_y;
+        s_designer_resize_orig_x = node->x;
+        s_designer_resize_orig_y = node->y;
+        s_designer_resize_start_w = node->abs_width;
+        s_designer_resize_start_h = node->abs_height;
+        s_designer_drag_node = -1;
+        ide_update_cursor(mouse_x, mouse_y);
+        designer_draw_canvas();
+        return true;
     }
 
     if (hit < 0)
@@ -3192,6 +3322,10 @@ static bool designer_canvas_on_move(AromaEvent *event, void *user_data)
     (void)user_data;
     if (!s_designer_visible)
         return false;
+    /* The designer overlay captures mouse moves over the canvas, so the
+     * IDE-level handlers never see them.  Update the cursor here so hovering
+     * (or dragging) a resize grip shows the resize cursor. */
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     DesignerView view;
     designer_canvas_view(&view);
     int page_x = 0;
@@ -3206,28 +3340,104 @@ static bool designer_canvas_on_move(AromaEvent *event, void *user_data)
     {
         IdeDesignNode *node = &s_design_doc.nodes[s_designer_resize_node];
         int parent = node->parent;
-        int max_w = (parent >= 0 ? s_design_doc.nodes[parent].abs_width
-                                 : s_design_doc.page_width) - node->x;
-        int max_h = (parent >= 0 ? s_design_doc.nodes[parent].abs_height
-                                 : s_design_doc.page_height) - node->y;
-        int new_w = s_designer_resize_start_w + (page_x - s_designer_resize_start_x);
-        int new_h = s_designer_resize_start_h + (page_y - s_designer_resize_start_y);
-        new_w = (new_w / 8) * 8;
-        new_h = (new_h / 8) * 8;
-        int min_w = max_w < 40 ? (max_w > 8 ? max_w : 8) : 40;
-        int min_h = max_h < 30 ? (max_h > 8 ? max_h : 8) : 30;
-        if (new_w < min_w)
-            new_w = min_w;
-        if (new_h < min_h)
-            new_h = min_h;
-        if (max_w > 0 && new_w > max_w)
-            new_w = max_w;
-        if (max_h > 0 && new_h > max_h)
-            new_h = max_h;
+        int parent_w = parent >= 0 ? s_design_doc.nodes[parent].abs_width
+                                   : s_design_doc.page_width;
+        int parent_h = parent >= 0 ? s_design_doc.nodes[parent].abs_height
+                                   : s_design_doc.page_height;
+        if (parent_w <= 0)
+            parent_w = s_design_doc.page_width;
+        if (parent_h <= 0)
+            parent_h = s_design_doc.page_height;
+
+        int dx = page_x - s_designer_resize_start_x;
+        int dy = page_y - s_designer_resize_start_y;
+        int left = s_designer_resize_orig_x;
+        int top = s_designer_resize_orig_y;
+        int right = left + s_designer_resize_start_w;
+        int bottom = top + s_designer_resize_start_h;
+        int min_w = parent_w < 40 ? (parent_w > 8 ? parent_w : 8) : 40;
+        int min_h = parent_h < 30 ? (parent_h > 8 ? parent_h : 8) : 30;
+        int corner = s_designer_resize_corner;
+
+        if (corner == 0 || corner == 2)
+        {
+            int new_left = (left + dx) / 8 * 8;
+            int max_left = right - min_w;
+            if (max_left < 0)
+                max_left = 0;
+            if (new_left < 0)
+                new_left = 0;
+            if (new_left > max_left)
+                new_left = max_left;
+            left = new_left;
+        }
+        else
+        {
+            int new_right = (right + dx) / 8 * 8;
+            int min_right = left + min_w;
+            if (new_right < min_right)
+                new_right = min_right;
+            if (new_right > parent_w)
+                new_right = parent_w;
+            right = new_right;
+        }
+
+        if (corner == 0 || corner == 1)
+        {
+            int new_top = (top + dy) / 8 * 8;
+            int max_top = bottom - min_h;
+            if (max_top < 0)
+                max_top = 0;
+            if (new_top < 0)
+                new_top = 0;
+            if (new_top > max_top)
+                new_top = max_top;
+            top = new_top;
+        }
+        else
+        {
+            int new_bottom = (bottom + dy) / 8 * 8;
+            int min_bottom = top + min_h;
+            if (new_bottom < min_bottom)
+                new_bottom = min_bottom;
+            if (new_bottom > parent_h)
+                new_bottom = parent_h;
+            bottom = new_bottom;
+        }
+
+        if (right > parent_w)
+            right = parent_w;
+        if (bottom > parent_h)
+            bottom = parent_h;
+        if (left > right - min_w)
+            left = right - min_w;
+        if (top > bottom - min_h)
+            top = bottom - min_h;
+        if (left < 0)
+            left = 0;
+        if (top < 0)
+            top = 0;
+        if (right <= left)
+            right = left + 8;
+        if (bottom <= top)
+            bottom = top + 8;
+
         char value[32];
-        snprintf(value, sizeof(value), "%d", new_w);
+        if (corner == 0 || corner == 2)
+        {
+            snprintf(value, sizeof(value), "%d", left);
+            ide_design_set_attr(&s_design_doc, s_designer_resize_node, "x",
+                                value, false);
+        }
+        if (corner == 0 || corner == 1)
+        {
+            snprintf(value, sizeof(value), "%d", top);
+            ide_design_set_attr(&s_design_doc, s_designer_resize_node, "y",
+                                value, false);
+        }
+        snprintf(value, sizeof(value), "%d", right - left);
         ide_design_set_attr(&s_design_doc, s_designer_resize_node, "width", value, false);
-        snprintf(value, sizeof(value), "%d", new_h);
+        snprintf(value, sizeof(value), "%d", bottom - top);
         ide_design_set_attr(&s_design_doc, s_designer_resize_node, "height", value, false);
         ide_design_layout(&s_design_doc);
         s_designer_drag_moved = true;
@@ -3301,10 +3511,12 @@ static bool designer_canvas_on_release(AromaEvent *event, void *user_data)
         s_designer_resizing = false;
         s_designer_dragging = false;
         s_designer_resize_node = -1;
+        s_designer_resize_corner = -1;
         s_designer_drag_moved = false;
         ide_design_layout(&s_design_doc);
         s_designer_preview_dirty = true;
         designer_draw_all();
+        ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
         return true;
     }
     if (s_designer_drag_node > 0 &&
@@ -3333,6 +3545,8 @@ static bool designer_canvas_on_exit(AromaEvent *event, void *user_data)
 {
     (void)event;
     (void)user_data;
+    /* Pointer left the canvas: make sure a resize/move cursor doesn't stick. */
+    aroma_ui_set_cursor(AROMA_CURSOR_ARROW);
     if (s_designer_resizing && s_designer_resize_node > 0)
     {
         if (s_designer_drag_moved)
@@ -3346,6 +3560,7 @@ static bool designer_canvas_on_exit(AromaEvent *event, void *user_data)
         s_designer_resizing = false;
         s_designer_dragging = false;
         s_designer_resize_node = -1;
+        s_designer_resize_corner = -1;
         s_designer_drag_moved = false;
         ide_design_layout(&s_design_doc);
     }

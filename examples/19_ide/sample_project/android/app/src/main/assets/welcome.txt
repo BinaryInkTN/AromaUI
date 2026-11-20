@@ -1,2 +1,0 @@
-AromaUI on Android.
-This file ships inside the APK.

@@ -17,6 +17,8 @@
 #include "aroma_ui.h"
 #ifdef GLPS_USE_X11
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/cursorfont.h>
 #endif
 
 typedef struct
@@ -39,15 +41,22 @@ typedef struct
 
     bool window_closed;
     bool window_dragging;
+    size_t drag_window_id;
     int drag_start_root_x;
     int drag_start_root_y;
     int drag_window_x;
     int drag_window_y;
     bool window_maximized;
+    bool window_fullscreen;
     int restore_x;
     int restore_y;
     int restore_width;
     int restore_height;
+    int cursor_shape[AROMA_MAX_WINDOWS];
+    int mapped_cursor[AROMA_MAX_WINDOWS];
+#ifdef GLPS_USE_X11
+    Cursor x11_cursors[AROMA_CURSOR_COUNT];
+#endif
 } AromaGLPSContext;
 
 static AromaGLPSContext platform_ctx = (AromaGLPSContext){
@@ -61,7 +70,8 @@ static AromaGLPSContext platform_ctx = (AromaGLPSContext){
     .glps_initialized = false,
     .frame_update_callback = NULL,
     .frame_update_data = NULL,
-    .window_closed = false};
+    .window_closed = false,
+    .drag_window_id = (size_t)-1};
 
 static void shift_window_input_state(size_t removed_id);
 static void glps_set_window_maximized(size_t window_id, bool maximized);
@@ -114,10 +124,14 @@ static void shift_window_input_state(size_t removed_id)
         platform_ctx.last_mouse_y[i] = platform_ctx.last_mouse_y[i + 1];
         platform_ctx.mouse_button_down[i] =
             platform_ctx.mouse_button_down[i + 1];
+        platform_ctx.cursor_shape[i] = platform_ctx.cursor_shape[i + 1];
+        platform_ctx.mapped_cursor[i] = platform_ctx.mapped_cursor[i + 1];
     }
     platform_ctx.last_mouse_x[AROMA_MAX_WINDOWS - 1] = 0.0;
     platform_ctx.last_mouse_y[AROMA_MAX_WINDOWS - 1] = 0.0;
     platform_ctx.mouse_button_down[AROMA_MAX_WINDOWS - 1] = false;
+    platform_ctx.cursor_shape[AROMA_MAX_WINDOWS - 1] = -1;
+    platform_ctx.mapped_cursor[AROMA_MAX_WINDOWS - 1] = -1;
 }
 
 static bool queue_mouse_event(size_t window_id, AromaEventType type,
@@ -176,7 +190,8 @@ static void glps_mouse_move_callback(size_t window_id, double mouse_x, double mo
     (void)data;
     glps_activate_window(window_id);
 #ifdef GLPS_USE_X11
-    if (platform_ctx.window_dragging && window_id == platform_ctx.primary_window_id)
+    if (platform_ctx.window_dragging &&
+        window_id == platform_ctx.drag_window_id)
     {
         Display *display = (Display *)glps_wm_get_display(platform_ctx.wm);
         Window native_window = (Window)glps_wm_window_get_native_ptr(
@@ -283,6 +298,7 @@ static void glps_mouse_click_callback(size_t window_id, bool state, void *data)
     if (!state)
     {
         platform_ctx.window_dragging = false;
+        platform_ctx.drag_window_id = (size_t)-1;
         aroma_event_handle_pointer_move((int)window_mouse_x(window_id),
                                         (int)window_mouse_y(window_id), false);
     }
@@ -646,6 +662,11 @@ static bool ensure_glps_initialized(void)
 int initialize()
 {
     platform_ctx.frame_rendered = false;
+    for (int i = 0; i < AROMA_MAX_WINDOWS; ++i)
+    {
+        platform_ctx.cursor_shape[i] = -1;
+        platform_ctx.mapped_cursor[i] = -1;
+    }
     return 1;
 }
 
@@ -789,6 +810,24 @@ void shutdown()
         return;
     }
 
+#ifdef GLPS_USE_X11
+    if (platform_ctx.wm)
+    {
+        Display *display = (Display *)glps_wm_get_display(platform_ctx.wm);
+        if (display)
+        {
+            for (int i = 0; i < AROMA_CURSOR_COUNT; ++i)
+            {
+                if (platform_ctx.x11_cursors[i])
+                {
+                    XFreeCursor(display, platform_ctx.x11_cursors[i]);
+                    platform_ctx.x11_cursors[i] = 0;
+                }
+            }
+        }
+    }
+#endif
+
     glps_wm_destroy(platform_ctx.wm);
     platform_ctx.wm = NULL;
     platform_ctx.primary_window_id = 0;
@@ -889,6 +928,7 @@ static void glps_begin_window_drag(size_t window_id)
     if (!platform_ctx.wm)
         return;
     platform_ctx.window_dragging = true;
+    platform_ctx.drag_window_id = window_id;
 #ifdef GLPS_USE_X11
     Display *display = (Display *)glps_wm_get_display(platform_ctx.wm);
     Window native_window = (Window)glps_wm_window_get_native_ptr(
@@ -962,6 +1002,159 @@ static void glps_toggle_window_maximized(size_t window_id)
     glps_set_window_maximized(window_id, !platform_ctx.window_maximized);
 }
 
+static void glps_set_window_minimized(size_t window_id, bool minimized)
+{
+#ifdef GLPS_USE_X11
+    if (!platform_ctx.wm)
+        return;
+    Display *display = (Display *)glps_wm_get_display(platform_ctx.wm);
+    Window native_window = (Window)glps_wm_window_get_native_ptr(
+        platform_ctx.wm, window_id);
+    if (!display || !native_window)
+        return;
+    if (minimized)
+        XIconifyWindow(display, native_window, DefaultScreen(display));
+    else
+        XMapRaised(display, native_window);
+    XFlush(display);
+#else
+    (void)window_id;
+    (void)minimized;
+#endif
+}
+
+static void glps_set_window_fullscreen(size_t window_id, bool fullscreen)
+{
+#ifdef GLPS_USE_X11
+    if (!platform_ctx.wm)
+        return;
+    Display *display = (Display *)glps_wm_get_display(platform_ctx.wm);
+    Window native_window = (Window)glps_wm_window_get_native_ptr(
+        platform_ctx.wm, window_id);
+    if (!display || !native_window)
+        return;
+
+    Atom wm_state = XInternAtom(display, "_NET_WM_STATE", False);
+    Atom fullscreen_atom =
+        XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", False);
+    Window root = DefaultRootWindow(display);
+    XEvent event;
+    memset(&event, 0, sizeof(event));
+    event.xclient.type = ClientMessage;
+    event.xclient.message_type = wm_state;
+    event.xclient.display = display;
+    event.xclient.window = native_window;
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = fullscreen ? 1 : 0;
+    event.xclient.data.l[1] = (long)fullscreen_atom;
+    event.xclient.data.l[2] = 0;
+    event.xclient.data.l[3] = 1;
+    XSendEvent(display, root, False,
+               SubstructureRedirectMask | SubstructureNotifyMask, &event);
+    platform_ctx.window_fullscreen = fullscreen;
+    XFlush(display);
+#else
+    (void)window_id;
+    (void)fullscreen;
+#endif
+}
+
+static int glps_cursor_mapped_shape(int shape)
+{
+    switch (shape)
+    {
+    case AROMA_CURSOR_IBEAM:
+        return GLPS_CURSOR_IBEAM;
+    case AROMA_CURSOR_HAND:
+        return GLPS_CURSOR_HAND;
+    case AROMA_CURSOR_CROSSHAIR:
+        return GLPS_CURSOR_CROSSHAIR;
+    case AROMA_CURSOR_MOVE:
+        return GLPS_CURSOR_HAND;
+    case AROMA_CURSOR_RESIZE_HORIZONTAL:
+        return GLPS_CURSOR_HRESIZE;
+    case AROMA_CURSOR_RESIZE_VERTICAL:
+        return GLPS_CURSOR_VRESIZE;
+    case AROMA_CURSOR_RESIZE_DIAGONAL_NWSE:
+    case AROMA_CURSOR_RESIZE_DIAGONAL_NESW:
+        return GLPS_CURSOR_HRESIZE;
+    case AROMA_CURSOR_NOT_ALLOWED:
+        return GLPS_CURSOR_NOT_ALLOWED;
+    default:
+        return GLPS_CURSOR_ARROW;
+    }
+}
+
+static void glps_set_cursor(size_t window_id, int shape)
+{
+    if (!platform_ctx.wm)
+        return;
+    if (shape < 0 || shape >= AROMA_CURSOR_COUNT)
+        shape = AROMA_CURSOR_ARROW;
+
+    int mapped = glps_cursor_mapped_shape(shape);
+    if (window_id < AROMA_MAX_WINDOWS &&
+        platform_ctx.mapped_cursor[window_id] != mapped)
+    {
+        platform_ctx.mapped_cursor[window_id] = mapped;
+        glps_wm_cursor_change(platform_ctx.wm, (GLPS_CURSOR_TYPE)mapped);
+    }
+    if (window_id < AROMA_MAX_WINDOWS)
+        platform_ctx.cursor_shape[window_id] = shape;
+
+#ifdef GLPS_USE_X11
+    Display *display = (Display *)glps_wm_get_display(platform_ctx.wm);
+    Window native_window = (Window)glps_wm_window_get_native_ptr(
+        platform_ctx.wm, window_id);
+    if (!display || !native_window)
+        return;
+
+    if (!platform_ctx.x11_cursors[shape])
+    {
+        unsigned int glyph;
+        switch (shape)
+        {
+        case AROMA_CURSOR_IBEAM:
+            glyph = XC_xterm;
+            break;
+        case AROMA_CURSOR_HAND:
+            glyph = XC_hand2;
+            break;
+        case AROMA_CURSOR_CROSSHAIR:
+            glyph = XC_crosshair;
+            break;
+        case AROMA_CURSOR_MOVE:
+            glyph = XC_fleur;
+            break;
+        case AROMA_CURSOR_RESIZE_HORIZONTAL:
+            glyph = XC_sb_h_double_arrow;
+            break;
+        case AROMA_CURSOR_RESIZE_VERTICAL:
+            glyph = XC_sb_v_double_arrow;
+            break;
+        case AROMA_CURSOR_RESIZE_DIAGONAL_NWSE:
+            glyph = XC_top_left_corner;
+            break;
+        case AROMA_CURSOR_RESIZE_DIAGONAL_NESW:
+            glyph = XC_top_right_corner;
+            break;
+        case AROMA_CURSOR_NOT_ALLOWED:
+            glyph = XC_pirate;
+            break;
+        default:
+            glyph = XC_left_ptr;
+            break;
+        }
+        platform_ctx.x11_cursors[shape] = XCreateFontCursor(display, glyph);
+    }
+    if (platform_ctx.x11_cursors[shape])
+        XDefineCursor(display, native_window, platform_ctx.x11_cursors[shape]);
+    else
+        XUndefineCursor(display, native_window);
+    XFlush(display);
+#endif
+}
+
 AromaPlatformInterface aroma_platform_glps = {
     .initialize = initialize,
     .create_window = create_window,
@@ -990,8 +1183,11 @@ AromaPlatformInterface aroma_platform_glps = {
     .set_window_opacity = glps_set_window_opacity,
     .set_window_decorated = glps_set_window_decorated,
     .begin_window_drag = glps_begin_window_drag,
+    .set_window_minimized = glps_set_window_minimized,
     .set_window_maximized = glps_set_window_maximized,
     .toggle_window_maximized = glps_toggle_window_maximized,
+    .set_fullscreen = glps_set_window_fullscreen,
+    .set_cursor = glps_set_cursor,
 };
 
 #endif

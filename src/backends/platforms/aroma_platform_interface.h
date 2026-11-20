@@ -90,6 +90,11 @@ typedef struct AromaPlatformInterface {
     void (*set_fullscreen)(size_t window_id, bool enabled);
 
 
+    /* Change the native mouse cursor.  shape is an AromaCursorShape value;
+     * backends without a pointer (Android) leave this NULL. */
+    void (*set_cursor)(size_t window_id, int shape);
+
+
     /* Set whole-window opacity (0.0 = fully transparent, 1.0 = opaque).
      * Optional; backends without compositor support leave this NULL. */
     void (*set_window_opacity)(size_t window_id, float opacity);

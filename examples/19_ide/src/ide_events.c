@@ -1,9 +1,62 @@
-                                                                             
-
 static void subscribe_node(AromaNode *node, AromaEventType type, AromaEventHandler handler)
 {
     if (node)
         aroma_event_subscribe(node->node_id, type, handler, NULL, 20);
+}
+
+static void toggle_window_fullscreen(bool *state)
+{
+    if (!state)
+        return;
+    AromaWindow *window = aroma_ui_get_window_at(0);
+    if (!window)
+        return;
+    *state = !*state;
+    aroma_ui_set_window_fullscreen(window, *state);
+}
+
+static void ide_update_cursor(int x, int y)
+{
+    AromaCursorShape shape = AROMA_CURSOR_ARROW;
+
+    if (s_designer_visible)
+    {
+        int corner = designer_resize_corner_at(x, y);
+        if (s_designer_resizing)
+            corner = s_designer_resize_corner;
+        if (corner >= 0)
+            shape = (corner == 0 || corner == 3)
+                        ? AROMA_CURSOR_RESIZE_DIAGONAL_NWSE
+                        : AROMA_CURSOR_RESIZE_DIAGONAL_NESW;
+        else if (designer_selected_body_at(x, y))
+            shape = AROMA_CURSOR_MOVE;
+    }
+
+    if (shape == AROMA_CURSOR_ARROW && y >= TITLE_H && y < win_h - STATUS_H)
+    {
+        const int hit = 6;
+        if (s_resizing_outline ||
+            (x >= right_x - hit && x <= right_x + hit))
+        {
+            shape = AROMA_CURSOR_RESIZE_HORIZONTAL;
+        }
+        else if (!s_sidebar_detached &&
+                 (s_resizing_sidebar ||
+                  (x >= SIDEBAR_X + s_sidebar_w - hit &&
+                   x <= SIDEBAR_X + s_sidebar_w + hit)))
+        {
+            shape = AROMA_CURSOR_RESIZE_HORIZONTAL;
+        }
+        else if (!s_panel_detached && s_panel_visible &&
+                 x >= SIDEBAR_X && x <= right_x &&
+                 (s_resizing_panel ||
+                  (y >= panel_y - hit && y <= panel_y + hit)))
+        {
+            shape = AROMA_CURSOR_RESIZE_VERTICAL;
+        }
+    }
+
+    aroma_ui_set_cursor(shape);
 }
 
 static void close_menu(void);
@@ -12,7 +65,7 @@ static int title_menu_hit(int x, int y)
 {
     if (y < 0 || y >= TITLE_H)
         return -1;
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < TITLE_MENU_COUNT; i++)
     {
         int mx = title_menu_x(i);
         int mw = title_menu_text_width(i);
@@ -55,6 +108,7 @@ static int title_ctrl_hit(int x, int y)
 static bool title_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     int x = event->data.mouse.x;
     int y = event->data.mouse.y;
     int menu_hover = title_menu_hit(x, y);
@@ -109,13 +163,9 @@ static bool title_on_click(AromaEvent *event, void *user_data)
         s_window_menu_open = true;
         s_window_menu_x = x < win_w - 170 ? x : win_w - 170;
         s_menu_open = false;
-        aroma_node_set_hidden(s_menu_canvas, false);
-        draw_menu();
+        menu_animate_show();
         return true;
     }
-    if (preview_theme_on_click(x, y))
-        return true;
-
     if (y >= 4 && y < TITLE_H && title_ctrl_hit(x, y) < 0 &&
         title_menu_hit(x, y) < 0 && !title_search_hit(x, y) &&
         title_button_hit(x, y) < 0)
@@ -141,10 +191,9 @@ static bool title_on_click(AromaEvent *event, void *user_data)
         }
         s_menu_index = menu_index;
         s_menu_open = true;
+        s_window_menu_open = false;
         s_menu_hover = -1;
-        if (s_menu_canvas)
-            aroma_node_set_hidden(s_menu_canvas, false);
-        draw_menu();
+        menu_animate_show();
         draw_title();
         return true;
     }
@@ -171,24 +220,27 @@ static bool title_on_click(AromaEvent *event, void *user_data)
     switch (ctrl)
     {
     case 0:
-        preview_toggle();
-        draw_title();
-        break;
-    case 1:
         if (s_settings_visible)
             settings_window_close();
         else
             settings_window_open();
         draw_title();
         break;
-    case 2:
+    case 1:
         set_panel_visible(!s_panel_visible);
         draw_title();
         break;
-    case 3:
+    case 2:
         open_android_device_manager();
         break;
+    case 3:
+        aroma_ui_set_window_minimized(aroma_ui_get_window_at(0), true);
+        break;
     case 4:
+        toggle_window_fullscreen(&s_title_fullscreen);
+        draw_title();
+        break;
+    case 5:
         aroma_ui_request_exit();
         break;
     default:
@@ -200,6 +252,7 @@ static bool title_on_click(AromaEvent *event, void *user_data)
 static bool rail_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     int hover = rail_hit(event->data.mouse.x, event->data.mouse.y);
     if (hover != s_rail_hover)
     {
@@ -258,6 +311,7 @@ static void clear_sidebar_hovers(void)
 static bool sidebar_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     int x = event->data.mouse.x;
     int y = event->data.mouse.y;
     int sx = s_sidebar_detached ? 0 : SIDEBAR_X;
@@ -959,49 +1013,96 @@ static void project_clean_command(char *out, size_t out_size)
     snprintf(out, out_size, "rm -rf build");
 }
 
+/* Append to a fixed-size output buffer; when full, drop the oldest text so
+ * the newest output (errors, final status) is always kept.  Thread-safe. */
+static void project_buf_append(char *buf, size_t size, bool *has_flag,
+                               const char *text)
+{
+    pthread_mutex_lock(&s_ui_lock);
+    size_t cap = size - 1;
+    size_t len = strlen(buf);
+    size_t add = strlen(text);
+    if (add > cap)
+    {
+        text += add - cap;
+        add = cap;
+    }
+    if (len + add > cap)
+    {
+        size_t drop = len + add - cap;
+        memmove(buf, buf + drop, len - drop + 1);
+        len -= drop;
+    }
+    memcpy(buf + len, text, add);
+    buf[len + add] = '\0';
+    *has_flag = true;
+    s_project_ui_dirty = true;
+    pthread_mutex_unlock(&s_ui_lock);
+}
+
 static void project_append_build_output(const char *text)
 {
-    size_t len = strlen(s_project.build_output);
-    size_t add = strlen(text);
-    if (len + add >= sizeof(s_project.build_output) - 1)
-        add = sizeof(s_project.build_output) - 1 - len;
-    if (add > 0)
-    {
-        memcpy(s_project.build_output + len, text, add);
-        s_project.build_output[len + add] = '\0';
-    }
-    s_project.has_build_output = true;
-    s_project_ui_dirty = true;
+    project_buf_append(s_project.build_output, sizeof(s_project.build_output),
+                       &s_project.has_build_output, text);
 }
 
 static void project_append_run_output(const char *text)
 {
-    size_t len = strlen(s_project.run_output);
-    size_t add = strlen(text);
-    if (len + add >= sizeof(s_project.run_output) - 1)
-        add = sizeof(s_project.run_output) - 1 - len;
-    if (add > 0)
-    {
-        memcpy(s_project.run_output + len, text, add);
-        s_project.run_output[len + add] = '\0';
-    }
-    s_project.has_run_output = true;
-    s_project_ui_dirty = true;
+    project_buf_append(s_project.run_output, sizeof(s_project.run_output),
+                       &s_project.has_run_output, text);
 }
 
 static void project_append_clean_output(const char *text)
 {
-    size_t len = strlen(s_project.clean_output);
-    size_t add = strlen(text);
-    if (len + add >= sizeof(s_project.clean_output) - 1)
-        add = sizeof(s_project.clean_output) - 1 - len;
-    if (add > 0)
-    {
-        memcpy(s_project.clean_output + len, text, add);
-        s_project.clean_output[len + add] = '\0';
-    }
-    s_project.has_clean_output = true;
-    s_project_ui_dirty = true;
+    project_buf_append(s_project.clean_output, sizeof(s_project.clean_output),
+                       &s_project.has_clean_output, text);
+}
+
+/* Worker threads must never touch UI code (toast animations, canvases, the
+ * log array).  They post messages here; ide_tick() drains them on the UI
+ * thread. */
+static void post_toast(const char *fmt, ...)
+{
+    char buf[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    pthread_mutex_lock(&s_ui_lock);
+    snprintf(s_pending_toast, sizeof(s_pending_toast), "%s", buf);
+    s_pending_toast_set = true;
+    pthread_mutex_unlock(&s_ui_lock);
+}
+
+static void post_log(const char *fmt, ...)
+{
+    char buf[200];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    pthread_mutex_lock(&s_ui_lock);
+    snprintf(s_pending_log, sizeof(s_pending_log), "%s", buf);
+    s_pending_log_set = true;
+    pthread_mutex_unlock(&s_ui_lock);
+}
+
+static void ide_drain_ui_messages(void)
+{
+    char t[256], l[200];
+    bool has_t, has_l;
+    pthread_mutex_lock(&s_ui_lock);
+    has_t = s_pending_toast_set;
+    has_l = s_pending_log_set;
+    memcpy(t, s_pending_toast, sizeof(t));
+    memcpy(l, s_pending_log, sizeof(l));
+    s_pending_toast_set = false;
+    s_pending_log_set = false;
+    pthread_mutex_unlock(&s_ui_lock);
+    if (has_l)
+        log_add("workspace/executeCommand", "%s", l);
+    if (has_t)
+        toast("%s", t);
 }
 
 static void reset_workspace_ui(void)
@@ -1284,7 +1385,7 @@ static void *build_thread_fn(void *arg)
     char build_cmd[PROJECT_CMD_MAX];
     project_build_command(build_cmd, sizeof(build_cmd));
     char cmd[PROJECT_CMD_MAX * 2];
-    snprintf(cmd, sizeof(cmd), "cd \"%s\" && %s 2>&1", s_project.root,
+    snprintf(cmd, sizeof(cmd), "cd \"%s\" && %s 2>&1 < /dev/null", s_project.root,
              build_cmd);
 
     FILE *fp = popen(cmd, "r");
@@ -1292,7 +1393,7 @@ static void *build_thread_fn(void *arg)
     {
         project_append_build_output("Failed to start build process\n");
         s_project.is_building = false;
-        toast("Build failed to start");
+        post_toast("Build failed to start");
         return NULL;
     }
 
@@ -1304,8 +1405,8 @@ static void *build_thread_fn(void *arg)
     if (rc == 0)
     {
         project_append_build_output("Build succeeded\n");
-        toast("Build succeeded");
-        log_add("workspace/executeCommand", "Build succeeded");
+        post_toast("Build succeeded");
+        post_log("Build succeeded");
     }
     else
     {
@@ -1313,8 +1414,8 @@ static void *build_thread_fn(void *arg)
         snprintf(rc_msg, sizeof(rc_msg), "Build failed (exit %d)\n",
                  WEXITSTATUS(rc));
         project_append_build_output(rc_msg);
-        toast("Build failed");
-        log_add("workspace/executeCommand", "Build failed (exit %d)",
+        post_toast("Build failed");
+        post_log("Build failed (exit %d)",
                 WEXITSTATUS(rc));
     }
 
@@ -1349,6 +1450,7 @@ static void project_build(void)
     {
         s_project.is_building = false;
         toast("Build failed to start");
+        return;
     }
     pthread_detach(s_project.build_thread);
 }
@@ -1359,7 +1461,7 @@ static void *clean_thread_fn(void *arg)
     char clean_cmd[PROJECT_CMD_MAX];
     project_clean_command(clean_cmd, sizeof(clean_cmd));
     char cmd[PROJECT_CMD_MAX * 2];
-    snprintf(cmd, sizeof(cmd), "cd \"%s\" && %s 2>&1", s_project.root,
+    snprintf(cmd, sizeof(cmd), "cd \"%s\" && %s 2>&1 < /dev/null", s_project.root,
              clean_cmd);
 
     FILE *fp = popen(cmd, "r");
@@ -1367,7 +1469,7 @@ static void *clean_thread_fn(void *arg)
     {
         project_append_clean_output("Failed to start clean process\n");
         s_project.is_cleaning = false;
-        toast("Clean failed to start");
+        post_toast("Clean failed to start");
         return NULL;
     }
 
@@ -1379,14 +1481,14 @@ static void *clean_thread_fn(void *arg)
     if (rc == 0)
     {
         project_append_clean_output("Build directory removed\n");
-        toast("Clean completed");
-        log_add("workspace/executeCommand", "Clean completed");
+        post_toast("Clean completed");
+        post_log("Clean completed");
     }
     else
     {
         project_append_clean_output("Clean failed\n");
-        toast("Clean failed");
-        log_add("workspace/executeCommand", "Clean failed");
+        post_toast("Clean failed");
+        post_log("Clean failed");
     }
 
     s_project.is_cleaning = false;
@@ -1420,6 +1522,7 @@ static void project_clean(void)
     {
         s_project.is_cleaning = false;
         toast("Clean failed to start");
+        return;
     }
     pthread_detach(s_project.build_thread);
 }
@@ -1430,7 +1533,7 @@ static void *run_thread_fn(void *arg)
     char run_cmd[PROJECT_CMD_MAX];
     project_run_command(run_cmd, sizeof(run_cmd));
     char cmd[PROJECT_CMD_MAX * 2];
-    snprintf(cmd, sizeof(cmd), "cd \"%s\" && %s 2>&1", s_project.root,
+    snprintf(cmd, sizeof(cmd), "cd \"%s\" && %s 2>&1 < /dev/null", s_project.root,
              run_cmd);
 
     FILE *fp = popen(cmd, "r");
@@ -1438,7 +1541,7 @@ static void *run_thread_fn(void *arg)
     {
         project_append_run_output("Failed to start program\n");
         s_project.is_running = false;
-        toast("Run failed to start");
+        post_toast("Run failed to start");
         return NULL;
     }
 
@@ -1450,8 +1553,8 @@ static void *run_thread_fn(void *arg)
     if (rc == 0)
     {
         project_append_run_output("Program exited normally\n");
-        toast("Program finished");
-        log_add("workspace/executeCommand", "Program exited normally");
+        post_toast("Program finished");
+        post_log("Program exited normally");
     }
     else
     {
@@ -1459,8 +1562,8 @@ static void *run_thread_fn(void *arg)
         snprintf(rc_msg, sizeof(rc_msg), "Program exited (code %d)\n",
                  WEXITSTATUS(rc));
         project_append_run_output(rc_msg);
-        toast("Program exited");
-        log_add("workspace/executeCommand", "Program exited (code %d)",
+        post_toast("Program exited");
+        post_log("Program exited (code %d)",
                 WEXITSTATUS(rc));
     }
 
@@ -1510,6 +1613,7 @@ static void project_run(void)
     {
         s_project.is_running = false;
         toast("Run failed to start");
+        return;
     }
     pthread_detach(s_project.run_thread);
 }
@@ -1535,14 +1639,14 @@ static void project_draw_output_panel(void)
     line(canvas, px + 8, y, px + 308, y, C_BORDER, 1);
     y += 16;
 
-    text(canvas, "Project: ", px + 8, y, C_TEXT_DIM, ui10);
-    text(canvas, s_project.name, px + 68, y, C_TEXT, ui10);
-    y += 18;
+    //text(canvas, "Project: ", px + 8, y, C_TEXT_DIM, ui10);
+    //text(canvas, s_project.name, px + 68, y, C_TEXT, ui10);
+    //y += 18;
 
-    text(canvas, "Root:   ", px + 8, y, C_TEXT_DIM, ui10);
-    text_fit(canvas, s_project.root, px + 58, y,
-             s_panel_draw_right_x - px - 58, C_TEXT, ui10);
-    y += 18;
+    //text(canvas, "Root:   ", px + 8, y, C_TEXT_DIM, ui10);
+    //text_fit(canvas, s_project.root, px + 58, y,
+      //       s_panel_draw_right_x - px - 58, C_TEXT, ui10);
+    //y += 18;
 
     text(canvas, "Target: ", px + 8, y, C_TEXT_DIM, ui10);
     text(canvas, s_project.target == 1 ? "Android" : "Linux", px + 68, y,
@@ -1558,40 +1662,46 @@ static void project_draw_output_panel(void)
                  s_panel_draw_right_x - px - 68 - target_w - 28,
                  s_project.android_serial[0] ? C_TEXT : C_TEXT_FAINT, ui10);
     }
-    y += 26;
-
-    if (s_project.is_building)
-    {
-        fill(canvas, px + 8, y, 8, 8, 4, C_PRIMARY);
-        text(canvas, "Building...", px + 22, y + 2, C_PRIMARY, ui10);
-    }
-    else if (s_project.is_cleaning)
-    {
-        fill(canvas, px + 8, y, 8, 8, 4, C_PRIMARY);
-        text(canvas, "Cleaning...", px + 22, y + 2, C_PRIMARY, ui10);
-    }
-    else if (s_project.is_running)
-    {
-        fill(canvas, px + 8, y, 8, 8, 4, C_GREEN);
-        text(canvas, "Running...", px + 22, y + 2, C_GREEN, ui10);
-    }
     y += 20;
 
-    const char *output = s_project.build_output;
+    // //if (s_project.is_building)
+    // //{
+    //     fill(canvas, px + 8, y, 8, 8, 4, C_PRIMARY);
+    //     text(canvas, "Building...", px + 22, y + 2, C_PRIMARY, ui10);
+    // }
+    // else if (s_project.is_cleaning)
+    // {
+    //     fill(canvas, px + 8, y, 8, 8, 4, C_PRIMARY);
+    //     text(canvas, "Cleaning...", px + 22, y + 2, C_PRIMARY, ui10);
+    // }
+    // else if (s_project.is_running)
+    // {
+    //     fill(canvas, px + 8, y, 8, 8, 4, C_GREEN);
+    //     text(canvas, "Running...", px + 22, y + 2, C_GREEN, ui10);
+    // }
+
+    const char *src_output = s_project.build_output;
     bool has_output = s_project.has_build_output;
     const char *empty_hint = "No build output yet. Press F7 or choose Build.";
     if (s_project.output_mode == 1)
     {
-        output = s_project.run_output;
+        src_output = s_project.run_output;
         has_output = s_project.has_run_output;
         empty_hint = "No run output yet. Press F5 or choose Run.";
     }
     else if (s_project.output_mode == 2)
     {
-        output = s_project.clean_output;
+        src_output = s_project.clean_output;
         has_output = s_project.has_clean_output;
         empty_hint = "No clean output yet. Choose Clean Build.";
     }
+
+    /* Snapshot the buffer so a worker thread can't change it mid-draw. */
+    static char output_copy[sizeof(s_project.build_output)];
+    pthread_mutex_lock(&s_ui_lock);
+    snprintf(output_copy, sizeof(output_copy), "%s", src_output);
+    pthread_mutex_unlock(&s_ui_lock);
+    const char *output = output_copy;
 
     bool output_enabled = true;
     if (s_project.output_mode == 0 && !s_setting_show_build_output)
@@ -2321,6 +2431,7 @@ static bool sidebar_on_click(AromaEvent *event, void *user_data)
 static bool tabs_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     int x = event->data.mouse.x;
     int y = event->data.mouse.y;
     int hover = -1;
@@ -2372,9 +2483,7 @@ static bool tabs_on_click(AromaEvent *event, void *user_data)
         return true;
     if (x >= right_x - TAB_ACTION_W)
     {
-        if (x >= right_x - 70 && x < right_x - 40)
-            preview_toggle();
-        else if (x >= right_x - 40 && x < right_x - 23)
+        if (x >= right_x - 40 && x < right_x - 23)
             set_panel_visible(!s_panel_visible);
         return true;
     }
@@ -2395,9 +2504,9 @@ static bool tabs_on_click(AromaEvent *event, void *user_data)
     {
         s_menu_index = 3;
         s_menu_open = true;
+        s_window_menu_open = false;
         s_menu_hover = -1;
-        aroma_node_set_hidden(s_menu_canvas, false);
-        draw_menu();
+        menu_animate_show();
         draw_title();
         return true;
     }
@@ -2409,13 +2518,14 @@ static bool breadcrumb_on_click(AromaEvent *event, void *user_data)
     (void)user_data;
     int x = event->data.mouse.x;
     if (s_designer_available && s_active_file >= 0 &&
+        s_active_file < ide_file_count &&
         designer_is_markup_path(ide_files[s_active_file].path) &&
         x >= right_x - 104)
     {
         designer_set_visible(!s_designer_visible);
         return true;
     }
-    if (s_active_file >= 0)
+    if (s_active_file >= 0 && s_active_file < ide_file_count)
         toast("Breadcrumb: %s", ide_files[s_active_file].path);
     return true;
 }
@@ -2435,6 +2545,7 @@ static int outline_row_at(int x, int y)
 static bool outline_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     if (event->event_type == EVENT_TYPE_MOUSE_SCROLL)
     {
         float steps = event->data.mouse.scroll_y;
@@ -2515,6 +2626,7 @@ static int panel_tab_at(int x, int y, int py, int px)
 static bool panel_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     int x = event->data.mouse.x;
     int y = event->data.mouse.y;
     int py = s_panel_detached ? 0 : panel_y;
@@ -2648,18 +2760,16 @@ static bool panel_on_click(AromaEvent *event, void *user_data)
     return true;
 }
 
-static bool sidebar_resize_on_move(AromaEvent *event, void *user_data)
+/* Shared by the outline / sidebar / bottom-panel splitters.  Redrawing the
+ * whole IDE on every raw mouse event made dragging freeze, so redraws are
+ * throttled to ~60 fps; the final position is always applied on release. */
+static void splitter_apply(bool force)
 {
-    (void)user_data;
-    if (!s_resizing_sidebar || s_sidebar_detached)
-        return true;
-    int x = event->data.mouse.x;
-    int new_w = x - SIDEBAR_X;
-    if (new_w < 160)
-        new_w = 160;
-    if (new_w > 400)
-        new_w = 400;
-    s_sidebar_w = new_w;
+    static uint64_t s_last_apply = 0;
+    uint64_t now = now_ms();
+    if (!force && now - s_last_apply < 16)
+        return;
+    s_last_apply = now;
     ide_layout_recalc();
     ide_sync_layout_nodes();
     if (s_editor)
@@ -2673,6 +2783,70 @@ static bool sidebar_resize_on_move(AromaEvent *event, void *user_data)
     aroma_node_invalidate(s_panel_bg);
     aroma_node_invalidate(s_panel_canvas);
     draw_all();
+}
+
+static int s_splitter_start_x = 0;
+static int s_splitter_start_y = 0;
+
+static void splitter_note_start(AromaEvent *event)
+{
+    s_splitter_start_x = event->data.mouse.x;
+    s_splitter_start_y = event->data.mouse.y;
+}
+
+static bool splitter_active(void)
+{
+    return s_resizing_outline || s_resizing_sidebar || s_resizing_panel;
+}
+
+static bool outline_resize_on_move(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
+    if (!s_resizing_outline)
+        return true;
+    int x = event->data.mouse.x;
+    int new_w = win_w - x;
+    if (new_w < 120)
+        new_w = 120;
+    if (new_w > win_w - EDITOR_X - 300)
+        new_w = win_w - EDITOR_X - 300;
+    if (new_w < 0)
+        new_w = 0;
+    s_outline_w = new_w;
+    splitter_apply(false);
+    return true;
+}
+
+static bool outline_resize_on_click(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    int x = event->data.mouse.x;
+    int y = event->data.mouse.y;
+    /* Hit the left edge of the outline panel (right_x ± 4) */
+    if (x >= right_x - 4 && x < right_x + 4 && y >= TITLE_H && y < win_h - STATUS_H)
+    {
+        s_resizing_outline = !s_resizing_outline;
+        splitter_note_start(event);
+        return true;
+    }
+    return false;
+}
+
+static bool sidebar_resize_on_move(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
+    if (!s_resizing_sidebar || s_sidebar_detached)
+        return true;
+    int x = event->data.mouse.x;
+    int new_w = x - SIDEBAR_X;
+    if (new_w < 160)
+        new_w = 160;
+    if (new_w > 400)
+        new_w = 400;
+    s_sidebar_w = new_w;
+    splitter_apply(false);
     return true;
 }
 
@@ -2690,6 +2864,7 @@ static bool sidebar_resize_on_click(AromaEvent *event, void *user_data)
         if (y >= panel_y && y < panel_y + PANEL_HEADER_H && x >= SIDEBAR_X)
             return true;
         s_resizing_sidebar = !s_resizing_sidebar;
+        splitter_note_start(event);
     }
     return true;
 }
@@ -2697,6 +2872,7 @@ static bool sidebar_resize_on_click(AromaEvent *event, void *user_data)
 static bool panel_resize_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
     if (!s_resizing_panel || s_panel_detached)
         return true;
     int y = event->data.mouse.y;
@@ -2706,19 +2882,7 @@ static bool panel_resize_on_move(AromaEvent *event, void *user_data)
     if (new_h > win_h - EDITOR_Y - STATUS_H - 100)
         new_h = win_h - EDITOR_Y - STATUS_H - 100;
     s_panel_h_resizable = new_h;
-    ide_layout_recalc();
-    ide_sync_layout_nodes();
-    if (s_editor)
-    {
-        int ed_w = editor_w;
-        aroma_code_editor_set_bounds(s_editor, EDITOR_X, EDITOR_Y,
-                                     ed_w, editor_h);
-    }
-    markdown_preview_fit();
-    aroma_node_invalidate(s_editor_bg);
-    aroma_node_invalidate(s_panel_bg);
-    aroma_node_invalidate(s_panel_canvas);
-    draw_all();
+    splitter_apply(false);
     return true;
 }
 
@@ -2733,9 +2897,56 @@ static bool panel_resize_on_click(AromaEvent *event, void *user_data)
         x < right_x)
     {
         s_resizing_panel = !s_resizing_panel;
+        splitter_note_start(event);
         return true;
     }
     return false;
+}
+
+static bool splitter_on_release(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    if (!splitter_active())
+        return false;
+    /* A release with (almost) no movement is just the tail of a click: keep
+     * the splitter grabbed so click-to-grab / click-to-drop still works.  A
+     * release after a real drag ends it. */
+    int dx = event->data.mouse.x - s_splitter_start_x;
+    int dy = event->data.mouse.y - s_splitter_start_y;
+    if (dx < 0)
+        dx = -dx;
+    if (dy < 0)
+        dy = -dy;
+    if (dx + dy <= 3)
+        return false;
+    s_resizing_outline = false;
+    s_resizing_sidebar = false;
+    s_resizing_panel = false;
+    s_designer_preview_dirty = true;
+    splitter_apply(true);
+    ide_update_cursor(event->data.mouse.x, event->data.mouse.y);
+    return true;
+}
+
+/* The designer overlay sits on top of the editor area and swallows mouse
+ * events, which left a splitter drag stuck when the pointer crossed it.
+ * Route events to the splitter handlers while a drag is active. */
+static bool designer_overlay_move(AromaEvent *event, void *user_data)
+{
+    if (s_resizing_outline)
+        return outline_resize_on_move(event, user_data);
+    if (s_resizing_sidebar)
+        return sidebar_resize_on_move(event, user_data);
+    if (s_resizing_panel)
+        return panel_resize_on_move(event, user_data);
+    return designer_canvas_on_move(event, user_data);
+}
+
+static bool designer_overlay_release(AromaEvent *event, void *user_data)
+{
+    if (splitter_active())
+        return splitter_on_release(event, user_data);
+    return designer_canvas_on_release(event, user_data);
 }
 
 static bool settings_editor_bg_on_click(AromaEvent *event, void *user_data)
@@ -2804,7 +3015,7 @@ static bool status_on_click(AromaEvent *event, void *user_data)
     }
     if (x >= win_w - 380 && x < win_w - 275)
     {
-        toast("Language: %s", s_active_file >= 0
+        toast("Language: %s", (s_active_file >= 0 && s_active_file < ide_file_count)
                                   ? language_label(ide_files[s_active_file].language)
                                   : "AromaUI");
         return true;
@@ -2851,13 +3062,17 @@ static bool menu_on_move(AromaEvent *event, void *user_data)
 
 static void close_menu(void)
 {
-    if (!s_menu_open)
+    if (!s_menu_open && !s_window_menu_open && !s_menu_hiding)
         return;
+
+    if (s_window_menu_open)
+        s_menu_last_window_menu = true;
+    else if (s_menu_open)
+        s_menu_last_window_menu = false;
     s_menu_open = false;
+    s_window_menu_open = false;
     s_menu_hover = -1;
-    if (s_menu_canvas)
-        aroma_node_set_hidden(s_menu_canvas, true);
-    draw_menu();
+    menu_animate_hide();
     draw_title();
 }
 
@@ -3081,9 +3296,6 @@ static void menu_execute_action(IdeMenuAction action)
     case IDE_ACTION_SHOW_TRACE:
         menu_show_panel(2);
         break;
-    case IDE_ACTION_TOGGLE_PREVIEW:
-        preview_toggle();
-        break;
     case IDE_ACTION_SEARCH_WORKSPACE:
         open_dialog(IDE_DIALOG_SEARCH, s_search_query);
         break;
@@ -3145,21 +3357,17 @@ static bool menu_on_click(AromaEvent *event, void *user_data)
         if (x < s_window_menu_x || x >= s_window_menu_x + 170 ||
             y < TITLE_H || y >= TITLE_H + MENU_ITEM_H * 3)
         {
-            s_window_menu_open = false;
-            aroma_node_set_hidden(s_menu_canvas, true);
-            draw_menu();
+            close_menu();
             return true;
         }
         int item = (y - TITLE_H) / MENU_ITEM_H;
-        s_window_menu_open = false;
-        aroma_node_set_hidden(s_menu_canvas, true);
+        close_menu();
         if (item == 0)
             aroma_ui_set_window_minimized(aroma_ui_get_window_at(0), true);
         else if (item == 1)
             aroma_ui_toggle_window_maximized(aroma_ui_get_window_at(0));
         else if (item == 2)
             aroma_ui_request_exit();
-        draw_menu();
         return true;
     }
 
@@ -3169,11 +3377,16 @@ static bool menu_on_click(AromaEvent *event, void *user_data)
     if (title_menu >= 0 && title_menu != s_menu_index)
     {
         s_menu_index = title_menu;
+        s_menu_open = true;
+        s_window_menu_open = false;
         s_menu_hover = -1;
-        draw_menu();
+        menu_animate_show();
         draw_title();
         return true;
     }
+
+    if (!s_menu_open)
+        return true;
 
     int item = -1;
     if (x >= s_menu_panel_x && x < s_menu_panel_x + MENU_panel_w)
@@ -3290,12 +3503,9 @@ static bool editor_on_save(AromaNode *node, const char *text_value, void *user_d
     (void)node;
     (void)text_value;
     (void)user_data;
-    if (s_active_file < 0)
+    if (s_active_file < 0 || s_active_file >= ide_file_count)
         return false;
     save_file(s_active_file);
-    if (s_preview_visible && s_active_file >= 0 &&
-        strstr(ide_files[s_active_file].name, ".aroma") != NULL)
-        preview_window_create();
     return true;
 }
 
@@ -3374,6 +3584,249 @@ static void editor_on_definition(AromaNode *node, int line, int column,
                 ide_files[s_active_file].name, line, column);
         toast("No definition found for this symbol");
     }
+}
+
+/* Toggle // comments on the selected lines (or cursor line if no selection).
+   Works for C, C++, JS, TS, Rust, Go, Shell (#), Python (#), AROMA (#).
+   For languages where # is the comment character (Python, Shell, AROMA, YAML, TOML,
+   Dockerfile) uses "#". For all others uses "//". */
+static void editor_toggle_line_comment(void)
+{
+    if (!s_editor)
+        return;
+
+    const char *text = aroma_code_editor_get_text(s_editor);
+    if (!text)
+        return;
+
+    size_t text_len = strlen(text);
+
+    /* Pick comment prefix based on language */
+    AromaCodeLanguage lang = aroma_code_editor_get_language(s_editor);
+    const char *prefix;
+    int prefix_len;
+    if (lang == AROMA_CODE_LANGUAGE_PYTHON ||
+        lang == AROMA_CODE_LANGUAGE_SHELL   ||
+        lang == AROMA_CODE_LANGUAGE_AROMA   ||
+        lang == AROMA_CODE_LANGUAGE_YAML    ||
+        lang == AROMA_CODE_LANGUAGE_TOML    ||
+        lang == AROMA_CODE_LANGUAGE_DOCKERFILE)
+    {
+        prefix = "# ";
+        prefix_len = 2;
+    }
+    else
+    {
+        prefix = "// ";
+        prefix_len = 3;
+    }
+
+    /* Determine affected line range */
+    size_t sel_start = 0, sel_end = 0;
+    bool has_sel = aroma_code_editor_get_selection(s_editor, &sel_start, &sel_end);
+    if (!has_sel || sel_start == sel_end)
+    {
+        /* No selection — work on the cursor line only */
+        size_t cur = aroma_code_editor_get_cursor(s_editor);
+        /* find start of line */
+        size_t ls = cur;
+        while (ls > 0 && text[ls - 1] != '\n')
+            ls--;
+        /* find end of line */
+        size_t le = cur;
+        while (le < text_len && text[le] != '\n')
+            le++;
+        sel_start = ls;
+        sel_end = le;
+    }
+    else
+    {
+        /* Extend sel_start to beginning of its line */
+        while (sel_start > 0 && text[sel_start - 1] != '\n')
+            sel_start--;
+        /* If sel_end points past a newline or at beginning of next line,
+           retract it so we don't include an empty last line */
+        if (sel_end > sel_start && text[sel_end - 1] == '\n')
+            sel_end--;
+        while (sel_end > sel_start && text[sel_end - 1] != '\n')
+            sel_end--;
+        if (sel_end > sel_start)
+            sel_end--; /* back to end of previous line */
+        /* now extend to end of sel_end's line */
+        while (sel_end < text_len && text[sel_end] != '\n')
+            sel_end++;
+    }
+
+    /* Collect lines in the selection range */
+    /* First pass: check if ALL non-empty lines are already commented */
+    bool all_commented = true;
+    {
+        size_t i = sel_start;
+        bool found_nonempty = false;
+        while (i <= sel_end && i < text_len)
+        {
+            /* skip leading whitespace */
+            size_t ls = i;
+            while (i < text_len && text[i] != '\n' && (text[i] == ' ' || text[i] == '\t'))
+                i++;
+            if (i < text_len && text[i] != '\n' && i <= sel_end)
+            {
+                found_nonempty = true;
+                if (strncmp(text + i, prefix, (size_t)prefix_len) != 0)
+                    all_commented = false;
+            }
+            /* advance to next line */
+            while (i < text_len && text[i] != '\n')
+                i++;
+            if (i < text_len)
+                i++; /* skip \n */
+        }
+        if (!found_nonempty)
+            return;
+    }
+
+    /* Second pass: build new text */
+    size_t buf_cap = text_len + 4096;
+    char *buf = (char *)malloc(buf_cap);
+    if (!buf)
+        return;
+    size_t out = 0;
+
+    /* Copy everything before selection */
+    if (sel_start > 0)
+    {
+        memcpy(buf, text, sel_start);
+        out = sel_start;
+    }
+
+    /* Process selected lines */
+    {
+        size_t i = sel_start;
+        while (i <= sel_end && i < text_len)
+        {
+            size_t line_start = i;
+            /* find end of this line */
+            size_t line_end = i;
+            while (line_end < text_len && text[line_end] != '\n')
+                line_end++;
+            /* leading whitespace */
+            size_t ws_end = line_start;
+            while (ws_end < line_end && (text[ws_end] == ' ' || text[ws_end] == '\t'))
+                ws_end++;
+
+            size_t line_len = line_end - line_start;
+
+            if (ws_end == line_end)
+            {
+                /* empty / whitespace-only line: copy as-is */
+                if (out + line_len + 1 >= buf_cap)
+                {
+                    buf_cap = buf_cap * 2 + line_len + prefix_len + 2;
+                    char *tmp = (char *)realloc(buf, buf_cap);
+                    if (!tmp) { free(buf); return; }
+                    buf = tmp;
+                }
+                memcpy(buf + out, text + line_start, line_len);
+                out += line_len;
+            }
+            else if (all_commented)
+            {
+                /* Remove comment prefix: copy indent, skip prefix, copy rest */
+                size_t indent_len = ws_end - line_start;
+                size_t rest_start = ws_end + (size_t)prefix_len;
+                size_t rest_len = (line_end > rest_start) ? line_end - rest_start : 0;
+                size_t new_len = indent_len + rest_len;
+                if (out + new_len + 2 >= buf_cap)
+                {
+                    buf_cap = buf_cap * 2 + new_len + 2;
+                    char *tmp = (char *)realloc(buf, buf_cap);
+                    if (!tmp) { free(buf); return; }
+                    buf = tmp;
+                }
+                memcpy(buf + out, text + line_start, indent_len);
+                out += indent_len;
+                if (rest_len > 0)
+                {
+                    memcpy(buf + out, text + rest_start, rest_len);
+                    out += rest_len;
+                }
+            }
+            else
+            {
+                /* Add comment prefix after indent */
+                size_t indent_len = ws_end - line_start;
+                size_t rest_len   = line_end - ws_end;
+                size_t new_len = indent_len + (size_t)prefix_len + rest_len;
+                if (out + new_len + 2 >= buf_cap)
+                {
+                    buf_cap = buf_cap * 2 + new_len + 2;
+                    char *tmp = (char *)realloc(buf, buf_cap);
+                    if (!tmp) { free(buf); return; }
+                    buf = tmp;
+                }
+                memcpy(buf + out, text + line_start, indent_len);
+                out += indent_len;
+                memcpy(buf + out, prefix, (size_t)prefix_len);
+                out += (size_t)prefix_len;
+                memcpy(buf + out, text + ws_end, rest_len);
+                out += rest_len;
+            }
+
+            /* newline */
+            if (line_end < text_len)
+            {
+                if (out + 2 >= buf_cap)
+                {
+                    buf_cap = buf_cap * 2 + 2;
+                    char *tmp = (char *)realloc(buf, buf_cap);
+                    if (!tmp) { free(buf); return; }
+                    buf = tmp;
+                }
+                buf[out++] = '\n';
+                i = line_end + 1;
+            }
+            else
+            {
+                i = line_end + 1;
+            }
+        }
+    }
+
+    /* Copy rest of text after selection */
+    size_t after_start = sel_end + 1 < text_len ? sel_end + 1 : text_len;
+    /* Actually sel_end points to the last char of the last selected line,
+       so after is sel_end's newline character onward */
+    /* Recompute: after_start = line_end of sel_end's line + 1 */
+    /* We already advanced i past the last selected line in the loop above;
+       but let's just copy from sel_end's end: find the newline at/after sel_end */
+    {
+        size_t ae = sel_end;
+        while (ae < text_len && text[ae] != '\n')
+            ae++;
+        after_start = ae; /* the \n itself, or end */
+    }
+    size_t after_len = text_len - after_start;
+    if (after_len > 0)
+    {
+        if (out + after_len + 1 >= buf_cap)
+        {
+            buf_cap = out + after_len + 1;
+            char *tmp = (char *)realloc(buf, buf_cap);
+            if (!tmp) { free(buf); return; }
+            buf = tmp;
+        }
+        memcpy(buf + out, text + after_start, after_len);
+        out += after_len;
+    }
+    buf[out] = '\0';
+
+    /* Apply */
+    size_t cursor_before = aroma_code_editor_get_cursor(s_editor);
+    aroma_code_editor_set_text(s_editor, buf);
+    free(buf);
+
+    /* Restore approximate cursor position */
+    aroma_code_editor_set_cursor(s_editor, cursor_before < out ? cursor_before : out);
 }
 
 static bool ide_global_key(AromaEvent *event, void *user_data)
@@ -3831,6 +4284,12 @@ static bool ide_global_key(AromaEvent *event, void *user_data)
         return true;
     }
 
+    if (!shift && key == '/')  /* Ctrl+/ */
+    {
+        editor_toggle_line_comment();
+        return true;
+    }
+
     switch (key)
     {
     case 14:             
@@ -3911,11 +4370,11 @@ static void setup_events(void)
     subscribe_node(s_designer_palette, EVENT_TYPE_MOUSE_EXIT,
                    designer_palette_on_exit);
     subscribe_node(s_designer_overlay, EVENT_TYPE_MOUSE_MOVE,
-                   designer_canvas_on_move);
+                   designer_overlay_move);
     subscribe_node(s_designer_overlay, EVENT_TYPE_MOUSE_CLICK,
                    designer_canvas_on_click);
     subscribe_node(s_designer_overlay, EVENT_TYPE_MOUSE_RELEASE,
-                   designer_canvas_on_release);
+                   designer_overlay_release);
     subscribe_node(s_designer_overlay, EVENT_TYPE_MOUSE_EXIT,
                    designer_canvas_on_exit);
 
@@ -3928,17 +4387,31 @@ static void setup_events(void)
     subscribe_node(s_sidebar_canvas, EVENT_TYPE_MOUSE_CLICK, sidebar_resize_on_click);
 
     subscribe_node(s_outline_canvas, EVENT_TYPE_MOUSE_MOVE, outline_on_move);
+    subscribe_node(s_outline_canvas, EVENT_TYPE_MOUSE_MOVE, outline_resize_on_move);
     subscribe_node(s_outline_canvas, EVENT_TYPE_MOUSE_CLICK, outline_on_click);
+    subscribe_node(s_outline_canvas, EVENT_TYPE_MOUSE_CLICK, outline_resize_on_click);
     subscribe_node(s_outline_canvas, EVENT_TYPE_MOUSE_EXIT, outline_on_exit);
 
     subscribe_node(s_editor_bg, EVENT_TYPE_MOUSE_MOVE, panel_resize_on_move);
     subscribe_node(s_editor_bg, EVENT_TYPE_MOUSE_CLICK, panel_resize_on_click);
     subscribe_node(s_editor_bg, EVENT_TYPE_MOUSE_CLICK, settings_editor_bg_on_click);
+    subscribe_node(s_editor_bg, EVENT_TYPE_MOUSE_MOVE, outline_resize_on_move);
+    subscribe_node(s_editor_bg, EVENT_TYPE_MOUSE_CLICK, outline_resize_on_click);
 
     subscribe_node(s_settings_canvas, EVENT_TYPE_MOUSE_MOVE, panel_resize_on_move);
     subscribe_node(s_settings_canvas, EVENT_TYPE_MOUSE_CLICK, panel_resize_on_click);
     subscribe_node(s_settings_canvas, EVENT_TYPE_MOUSE_CLICK,
                    settings_editor_bg_on_click);
+
+    subscribe_node(s_sidebar_canvas, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_outline_canvas, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_editor_bg, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_settings_canvas, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_panel_canvas, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_tabs_canvas, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_status_canvas, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_designer_palette, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
+    subscribe_node(s_designer_toolbar, EVENT_TYPE_MOUSE_RELEASE, splitter_on_release);
 
     subscribe_node(s_status_canvas, EVENT_TYPE_MOUSE_MOVE, status_on_move);
     subscribe_node(s_status_canvas, EVENT_TYPE_MOUSE_CLICK, status_on_click);

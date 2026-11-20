@@ -69,6 +69,11 @@ typedef struct _AromaAnimation {
 
     bool parent_relative;
 
+
+    /* Whether ticks should invalidate the target and request a redraw.  Set
+     * this to false for animations that only drive compositor/window state. */
+    bool visual;
+
     struct _AromaAnimation* next;
 } AromaAnimation;
 
@@ -86,6 +91,7 @@ AromaAnimation* aroma_animation_start(AromaNode* target, AromaAnimationType type
 void aroma_animation_stop(AromaNode* target);
 AromaAnimation* aroma_animation_start_custom(AromaNode* target, float start_val, float end_val, uint32_t duration_ms, AromaAnimationCallback cb, void* user_data);
 void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing);
+void aroma_animation_set_visual(AromaAnimation* anim, bool visual);
 
 void aroma_animation_set_on_complete(AromaAnimation* anim, AromaAnimationCompleteCallback cb);
 

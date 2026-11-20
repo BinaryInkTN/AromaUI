@@ -1,5 +1,3 @@
-                                                                       
-                                                                               
 static int s_synced_win_w = 1440;
 static int s_synced_right_x = 1226;
 
@@ -109,7 +107,10 @@ static void ide_sync_layout_nodes(void)
                       design_canvas_w, design_body_h);
     ide_set_node_rect(s_designer_overlay, DESIGN_CANVAS_X, design_body_y,
                       design_canvas_w, design_body_h);
-    if (s_synced_win_w != win_w || s_synced_right_x != right_x)
+    /* While a panel splitter is being dragged, skip the (expensive) preview
+     * rebuild; it is flagged dirty once when the drag ends. */
+    if ((s_synced_win_w != win_w || s_synced_right_x != right_x) &&
+        !s_resizing_outline && !s_resizing_sidebar && !s_resizing_panel)
         s_designer_preview_dirty = true;
 
                                                                
@@ -122,6 +123,8 @@ static void ide_sync_layout_nodes(void)
 
 void ide_tick(void)
 {
+    ide_drain_ui_messages();
+
     if (s_settings_close_requested)
     {
         s_settings_close_requested = false;
@@ -244,14 +247,6 @@ void ide_tick(void)
     editor_flush_pending(false);
     if (s_editor)
         aroma_code_editor_tick(s_editor);
-    if (s_preview_visible && s_preview_window)
-    {
-        AromaTheme ide_theme = aroma_ui_get_theme();
-        AromaTheme preview_theme = preview_theme_value(s_preview_theme_index);
-        aroma_ui_set_theme(&preview_theme);
-        aroma_ui_render(s_preview_window);
-        aroma_ui_set_theme(&ide_theme);
-    }
 }
 
 void ide_shutdown(void)
@@ -260,7 +255,7 @@ void ide_shutdown(void)
     aroma_event_set_global_key_handler(NULL, NULL);
     hide_toast();
     close_menu();
-    preview_window_destroy();
+    markdown_preview_destroy();
     if (s_panel_detached_window)
     {
         aroma_ui_destroy_window(s_panel_detached_window);
@@ -325,9 +320,6 @@ void ide_shutdown(void)
     s_designer_preview_ok = false;
     s_designer_preview_dirty = true;
     s_wizard_stepper = NULL;
-    s_preview_window = NULL;
-    s_preview_registry = NULL;
-    s_preview_visible = false;
     s_assets = NULL;
     s_active_file = -1;
     s_tab_count = 0;
@@ -335,7 +327,15 @@ void ide_shutdown(void)
     s_outline_count = 0;
     s_problem_total = 0;
     s_pending_definition = false;
+    s_settings_window_opening = false;
+    s_settings_window_closing = false;
+    s_settings_window_anim_opacity = 1.0f;
     s_toast_visible = false;
+    s_toast_hiding = false;
     s_toast_until = 0;
+    s_toast_reveal = 0.0f;
     s_menu_open = false;
+    s_window_menu_open = false;
+    s_menu_hiding = false;
+    s_menu_reveal = 0.0f;
 }

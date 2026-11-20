@@ -57,12 +57,20 @@ static void update_animations(void* arg)
 
 void aroma_animation_tick(uint64_t now)
 {
-
-
     if (s_paused)
         return;
 
-    if (!animation_list) return;
+    if (!animation_list)
+    {
+        /* Keep the timer quiet while no animation is active.  The next
+         * animation start lazily creates it again. */
+        if (anim_timer)
+        {
+            aroma_timer_cancel(anim_timer);
+            anim_timer = NULL;
+        }
+        return;
+    }
 
     s_tick_depth++;
     bool needs_redraw  = false;
@@ -82,9 +90,16 @@ void aroma_animation_tick(uint64_t now)
             continue;
         }
 
+        uint64_t elapsed = (now >= curr->start_time)
+                               ? (now - curr->start_time)
+                               : 0;
         float raw_progress = (curr->duration_ms > 0)
-            ? (float)((int64_t)now - (int64_t)curr->start_time) / (float)curr->duration_ms
+            ? (float)elapsed / (float)curr->duration_ms
             : 1.0f;
+        if (!isfinite(raw_progress) || raw_progress < 0.0f)
+            raw_progress = 0.0f;
+        if (raw_progress > 1.0f)
+            raw_progress = 1.0f;
 
         bool finished = (raw_progress >= 1.0f);
         float progress = finished ? 1.0f : raw_progress;
@@ -96,13 +111,18 @@ void aroma_animation_tick(uint64_t now)
             if (progress > allowed)
                 progress = allowed;
         }
-
+        if (!isfinite(progress) || progress < 0.0f)
+            progress = 0.0f;
+        if (progress > 1.0f)
+            progress = 1.0f;
 
         curr->last_progress = progress;
 
         float ease        = apply_easing(curr->easing, progress);
         curr->current_val = curr->start_val
                           + (curr->end_val - curr->start_val) * ease;
+        if (!isfinite(curr->current_val))
+            curr->current_val = (progress >= 1.0f) ? curr->end_val : curr->start_val;
 
         AromaRect* rect = aroma_node_get_rect(curr->target);
         if (rect) {
@@ -129,7 +149,10 @@ void aroma_animation_tick(uint64_t now)
         }
 
         if (curr->type == AROMA_ANIM_FADE && curr->target) {
-            curr->target->opacity = curr->current_val;
+            float opacity = curr->current_val;
+            if (opacity < 0.0f) opacity = 0.0f;
+            if (opacity > 1.0f) opacity = 1.0f;
+            curr->target->opacity = opacity;
         }
 
         if (curr->type == AROMA_ANIM_CUSTOM && curr->custom_cb) {
@@ -143,8 +166,10 @@ void aroma_animation_tick(uint64_t now)
             }
         }
 
-        aroma_node_invalidate(curr->target);
-        needs_redraw = true;
+        if (curr->visual) {
+            aroma_node_invalidate(curr->target);
+            needs_redraw = true;
+        }
 
         if (finished) {
             if (curr->loop_mode == AROMA_LOOP_RESTART && curr->duration_ms > 0) {
@@ -196,13 +221,18 @@ void aroma_animation_tick(uint64_t now)
             c = c->next;
         }
     }
+
+    if (!animation_list && anim_timer) {
+        aroma_timer_cancel(anim_timer);
+        anim_timer = NULL;
+        still_running = false;
+    }
+
     s_tick_depth--;
 
     if (needs_redraw) {
         aroma_ui_request_redraw(NULL);
         if (still_running) {
-
-
             aroma_ui_request_frame();
         }
     }
@@ -278,6 +308,8 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
                                        uint32_t           duration_ms)
 {
     if (!target) return NULL;
+    if (type < AROMA_ANIM_NONE || type > AROMA_ANIM_CUSTOM) return NULL;
+    if (!isfinite(start_val) || !isfinite(end_val)) return NULL;
 
     aroma_animation_stop(target);
 
@@ -292,16 +324,30 @@ AromaAnimation* aroma_animation_start(AromaNode*         target,
     anim->duration_ms = duration_ms;
     anim->start_time  = aroma_time_now_ms();
     anim->is_running  = true;
+    anim->visual      = true;
     anim->easing      = AROMA_EASE_OUT_CUBIC;
     anim->on_complete = NULL;
 
     anim->next     = animation_list;
     animation_list = anim;
 
+    /* Apply the initial fade value immediately.  Otherwise the first frame
+     * after starting a fade still shows the target at its previous opacity,
+     * which looks like a flash before the entrance transition begins. */
+    if (type == AROMA_ANIM_FADE && target)
+    {
+        float initial = start_val;
+        if (initial < 0.0f) initial = 0.0f;
+        if (initial > 1.0f) initial = 1.0f;
+        target->opacity = initial;
+        aroma_node_invalidate(target);
+    }
+
     if (!anim_timer) aroma_animation_manager_init();
 
-
-    aroma_ui_request_frame();
+    /* The first tick (or the animation callback itself) will request the
+     * redraw.  Starting an animation should not force an expensive frame
+     * before the clock actually advances. */
     return anim;
 }
 
@@ -360,11 +406,28 @@ void aroma_animation_cleanup_node(AromaNode* target) {
 
 void aroma_animation_stop(AromaNode* target)
 {
+    if (!target)
+        return;
+
+    bool opacity_changed = false;
     AromaAnimation* curr = animation_list;
     while (curr) {
-        if (curr->target == target) curr->is_running = false;
+        if (curr->target == target && curr->is_running) {
+            /* Interrupted fades should settle at their destination instead of
+             * leaving a widget half-transparent forever. */
+            if (curr->type == AROMA_ANIM_FADE) {
+                float end = curr->end_val;
+                if (end < 0.0f) end = 0.0f;
+                if (end > 1.0f) end = 1.0f;
+                target->opacity = end;
+                opacity_changed = true;
+            }
+            curr->is_running = false;
+        }
         curr = curr->next;
     }
+    if (opacity_changed)
+        aroma_node_invalidate(target);
 }
 
 AromaAnimation* aroma_animation_start_custom(AromaNode*              target,
@@ -386,6 +449,11 @@ AromaAnimation* aroma_animation_start_custom(AromaNode*              target,
 void aroma_animation_set_easing(AromaAnimation* anim, AromaEasingType easing)
 {
     if (anim) anim->easing = easing;
+}
+
+void aroma_animation_set_visual(AromaAnimation* anim, bool visual)
+{
+    if (anim) anim->visual = visual;
 }
 
 void aroma_animation_set_on_complete(AromaAnimation* anim, AromaAnimationCompleteCallback cb)

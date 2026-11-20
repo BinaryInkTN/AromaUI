@@ -183,6 +183,16 @@ if(AROMA_ENABLE_WEBVIEW AND (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID) AND 
         set(LITEHTML_ENABLE_LINT OFF CACHE BOOL "" FORCE)
         set(LITEHTML_BUILD_TESTING OFF CACHE BOOL "" FORCE)
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../vendors/litehtml" litehtml_build)
+        if(TARGET litehtml)
+    get_target_property(_litehtml_options litehtml COMPILE_OPTIONS)
+
+    if(_litehtml_options)
+        list(REMOVE_ITEM _litehtml_options "-Wredundant-move")
+        set_target_properties(litehtml PROPERTIES
+            COMPILE_OPTIONS "${_litehtml_options}"
+        )
+    endif()
+endif()
         target_sources(aroma PRIVATE widgets/aroma_webview_render.cpp)
         set_source_files_properties(widgets/aroma_webview_render.cpp PROPERTIES
             COMPILE_OPTIONS "-fexceptions;-Wno-c99-designator")

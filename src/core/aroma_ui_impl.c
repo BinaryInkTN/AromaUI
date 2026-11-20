@@ -1246,6 +1246,33 @@ void aroma_ui_toggle_window_maximized_impl(AromaWindow *window)
             platform->toggle_window_maximized(g_windows[i].window_id);
 }
 
+void aroma_ui_set_window_fullscreen_impl(AromaWindow *window, bool fullscreen)
+{
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (platform)
+        window_chrome_call(window, platform->set_fullscreen, fullscreen);
+}
+
+void aroma_ui_set_cursor_impl(AromaCursorShape shape)
+{
+    AromaPlatformInterface *platform = aroma_backend_abi.get_platform_interface();
+    if (!platform || !platform->set_cursor || g_window_count <= 0)
+        return;
+    if (shape < 0 || shape >= AROMA_CURSOR_COUNT)
+        shape = AROMA_CURSOR_ARROW;
+
+    int index = 0;
+    for (int i = 0; i < g_window_count; ++i)
+    {
+        if (g_windows[i].is_active)
+        {
+            index = i;
+            break;
+        }
+    }
+    platform->set_cursor(g_windows[index].window_id, (int)shape);
+}
+
 void aroma_ui_read_pixels(AromaWindow *window, void *buffer, int width, int height)
 {
     if (!window || !buffer || width <= 0 || height <= 0)

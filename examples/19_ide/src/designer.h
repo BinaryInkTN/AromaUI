@@ -5,16 +5,20 @@
 #include <stddef.h>
 
 #define IDE_DESIGN_MAX_NODES 160
-#define IDE_DESIGN_MAX_ATTRS 20
+#define IDE_DESIGN_MAX_ATTRS 32
 #define IDE_DESIGN_KEY_MAX 32
 #define IDE_DESIGN_VALUE_MAX 192
 #define IDE_DESIGN_TAG_MAX 32
+
+#define IDE_DESIGN_FRAGMENT_TAG "(embedded file)"
 
 typedef struct IdeDesignAttr
 {
     char key[IDE_DESIGN_KEY_MAX];
     char value[IDE_DESIGN_VALUE_MAX];
     bool quoted;
+
+    int order;
 } IdeDesignAttr;
 
 typedef struct IdeDesignNode
@@ -44,18 +48,27 @@ typedef struct IdeDesignDocument
     int page_width;
     int page_height;
     char page_title[128];
+
+    int frag_width;
+    int frag_height;
+    bool frag_w_user;
+    bool frag_h_user;
+    char frag_width_text[16];
+    char frag_height_text[16];
     IdeDesignNode nodes[IDE_DESIGN_MAX_NODES];
 } IdeDesignDocument;
 
 void ide_design_init(IdeDesignDocument *doc);
 bool ide_design_parse(IdeDesignDocument *doc, const char *source);
 bool ide_design_serialize(const IdeDesignDocument *doc, char *out, size_t cap);
-                                                                     
-                                                                          
-                                                               
+
 bool ide_design_serialize_scaled(const IdeDesignDocument *doc, int scale256,
                                  char *out, size_t cap);
 void ide_design_layout(IdeDesignDocument *doc);
+
+bool ide_design_is_fragment(const IdeDesignDocument *doc);
+
+bool ide_design_root_is_page(const IdeDesignDocument *doc);
 
 const char *ide_design_attr(const IdeDesignDocument *doc, int index,
                             const char *key);

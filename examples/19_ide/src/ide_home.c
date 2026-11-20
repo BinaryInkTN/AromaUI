@@ -1,13 +1,3 @@
-                                                                               
-                                                                        
-                                                                            
-                                                                             
-                                                                            
-                                                                     
-  
-                                                                        
-                                                                         
-                                          
 static void ide_claim_node(AromaNode *node)
 {
     if (node)
@@ -53,34 +43,50 @@ static void ide_claim_layout_nodes(void)
     ide_claim_node(s_designer_overlay);
 }
 
-#define HOME_BTN_W 380
-#define HOME_BTN_H 64
-#define HOME_BTN_GAP 14
-#define HOME_BTN_COUNT 4
+/* IntelliJ-style welcome screen: centred logo, product name and version,
+ * then a short left-aligned list of actions, Everything is derived from the window
+ * size, so it works in a small window. */
+#define HOME_BG 0xFF4A494Du
+#define HOME_ROW_H 36
+#define HOME_LIST_W 280
+#define HOME_LOGO 76
 
-                                                                          
-                                                      
+#define HOME_ITEM_COUNT() (s_home_has_recent_project ? 4 : 3)
+
+/* In-window changelog (no separate native window / web view needed). */
+static int s_changelog_scroll;
+static int s_changelog_max_scroll;
+
+static void home_changelog_panel(int *px, int *py, int *pw, int *ph)
+{
+    *px = 20;
+    *py = TITLE_H + 12;
+    *pw = win_w - 40;
+    *ph = win_h - TITLE_H - 24;
+}
+
 static void home_metrics(int *col_x, int *top, int *btn_y0)
 {
-    int total = 150 + HOME_BTN_COUNT * HOME_BTN_H + (HOME_BTN_COUNT - 1) * HOME_BTN_GAP;
-    int t = (win_h - total) / 2;
-    if (t < TITLE_H + 12)
-        t = TITLE_H + 12;
+    int items = HOME_ITEM_COUNT();
+    int total = HOME_LOGO + 20 + 34 + 8 + 20 + 34 + items * HOME_ROW_H;
+    int t = TITLE_H + (win_h - TITLE_H - total) / 2;
+    if (t < TITLE_H + 8)
+        t = TITLE_H + 8;
     *top = t;
-    *col_x = (win_w - HOME_BTN_W) / 2;
-    *btn_y0 = t + 150;
+    *col_x = (win_w - HOME_LIST_W) / 2;
+    *btn_y0 = t + HOME_LOGO + 20 + 34 + 8 + 20 + 34;
 }
 
 static int home_button_at(int x, int y)
 {
     int col_x, top, y0;
     home_metrics(&col_x, &top, &y0);
-    if (x < col_x || x >= col_x + HOME_BTN_W)
+    if (x < col_x || x >= col_x + HOME_LIST_W)
         return -1;
-    for (int i = 0; i < HOME_BTN_COUNT; i++)
+    for (int i = 0; i < HOME_ITEM_COUNT(); i++)
     {
-        int by = y0 + i * (HOME_BTN_H + HOME_BTN_GAP);
-        if (y >= by && y < by + HOME_BTN_H)
+        int by = y0 + i * HOME_ROW_H;
+        if (y >= by && y < by + HOME_ROW_H)
             return i;
     }
     return -1;
@@ -131,6 +137,15 @@ static bool home_on_move(AromaEvent *event, void *user_data)
     (void)user_data;
     if (!s_home_mode || s_dialog_open)
         return false;
+    if (s_changelog_visible)
+    {
+        if (s_home_hover != -1)
+        {
+            s_home_hover = -1;
+            s_home_dirty = true;
+        }
+        return false;
+    }
     int hover = home_button_at(event->data.mouse.x, event->data.mouse.y);
     if (hover != s_home_hover)
     {
@@ -156,9 +171,18 @@ static bool home_titlebar_click(AromaEvent *event)
 {
     if (!event || event->data.mouse.y < 0 || event->data.mouse.y >= TITLE_H)
         return false;
-    if (event->data.mouse.x >= win_w - 52)
+    if (event->data.mouse.x >= win_w - 96)
     {
-        aroma_ui_request_exit();
+        int x = event->data.mouse.x;
+        if (x >= win_w - 40)
+            aroma_ui_request_exit();
+        else if (x >= win_w - 66)
+        {
+            toggle_window_fullscreen(&s_home_fullscreen);
+            s_home_dirty = true;
+        }
+        else
+            aroma_ui_set_window_minimized(aroma_ui_get_window_at(0), true);
         return true;
     }
     if (event->data.mouse.button == 2)
@@ -214,6 +238,8 @@ static bool home_window_menu_on_click(AromaEvent *event, void *user_data)
     return true;
 }
 
+static bool home_on_scroll(AromaEvent *event, void *user_data);
+
 void ide_home_init(IncenseRegistry *registry, IdeAssets *assets)
 {
     s_assets = assets;
@@ -225,6 +251,7 @@ void ide_home_init(IncenseRegistry *registry, IdeAssets *assets)
     s_home_hover = -1;
     s_home_drawn_w = s_home_drawn_h = 0;
     s_home_pending_dialog = 0;
+    s_home_fullscreen = false;
 
     char recent_file[PATH_MAX];
     home_recent_file(recent_file, sizeof(recent_file));
@@ -250,6 +277,7 @@ void ide_home_init(IncenseRegistry *registry, IdeAssets *assets)
         subscribe_node(s_home_canvas, EVENT_TYPE_KEY_PRESS, home_on_key);
         subscribe_node(s_home_canvas, EVENT_TYPE_MOUSE_MOVE, home_on_move);
         subscribe_node(s_home_canvas, EVENT_TYPE_MOUSE_EXIT, home_on_exit);
+        subscribe_node(s_home_canvas, EVENT_TYPE_MOUSE_SCROLL, home_on_scroll);
     }
 
                                                                           
@@ -306,23 +334,213 @@ void ide_home_fail(const char *message)
              message && message[0] ? message : "Could not open the project");
 }
 
-static void home_button(int index, int col_x, int by, const char *glyph,
-                        uint32_t glyph_color, const char *title,
-                        const char *subtitle)
+static void home_action(int index, int col_x, int by, const char *glyph,
+                        const char *label)
 {
-    AromaFont *ui14 = font_ui(14);
-    AromaFont *ui12 = font_ui(12);
     bool hot = s_home_hover == index;
+    AromaFont *ui14 = font_ui(14);
+    if (hot)
+        fill(s_home_canvas, col_x - 10, by + 2, HOME_LIST_W + 20,
+             HOME_ROW_H - 4, 6, 0xFF55545AU);
+    icon_center(s_home_canvas, glyph, col_x + 10, by + HOME_ROW_H / 2, 18,
+                hot ? 0xFFFFFFFFu : 0xFFD0D0D4u);
+    text_fit(s_home_canvas, label, col_x + 30, by + 9, HOME_LIST_W - 30,
+             hot ? 0xFFFFFFFFu : 0xFFD0D0D4u, ui14);
+}
 
-    fill(s_home_canvas, col_x, by, HOME_BTN_W, HOME_BTN_H, 14, C_BORDER_SOFT);
-    fill(s_home_canvas, col_x + 1, by + 1, HOME_BTN_W - 2, HOME_BTN_H - 2, 13,
-         hot ? M3_SURFACE_HIGHEST : M3_SURFACE_HIGH);
-    icon_center(s_home_canvas, glyph, col_x + 34, by + HOME_BTN_H / 2, 22,
-                glyph_color);
-    int tx = col_x + 68;
-    int tw = HOME_BTN_W - 68 - 16;
-    text_fit(s_home_canvas, title, tx, by + 12, tw, C_TEXT, ui14);
-    text_fit(s_home_canvas, subtitle, tx, by + 36, tw, C_TEXT_SOFT, ui12);
+/* AromaStudio logo, minimalist: a flat rounded tile with an "A" reduced to
+ * a chevron, its crossbar replaced by a single dot (the incense ember). */
+static void home_logo(int x, int y, int size)
+{
+    int cx = x + size / 2;
+    int stroke = size / 11 > 3 ? size / 11 : 3;
+
+    fill(s_home_canvas, x, y, size, size, size / 4, 0xFF0A84FFu);
+
+    int apex_y = y + size * 22 / 100;
+    int foot_y = y + size * 74 / 100;
+    int half = size * 24 / 100;
+    line(s_home_canvas, cx, apex_y, cx - half, foot_y, 0xFFFFFFFFu, stroke);
+    line(s_home_canvas, cx, apex_y, cx + half, foot_y, 0xFFFFFFFFu, stroke);
+
+    int dot = size * 10 / 100 > 4 ? size * 10 / 100 : 4;
+    int dot_y = y + size * 56 / 100;
+    fill(s_home_canvas, cx - dot / 2, dot_y - dot / 2, dot, dot, dot / 2,
+         0xFFFFFFFFu);
+}
+
+typedef struct ChangelogCtx
+{
+    bool draw;
+    int x;
+    int y;      /* running content y (relative to content top) */
+    int width;
+    int view_top;
+    int view_h;
+    int scroll;
+} ChangelogCtx;
+
+static void changelog_emit(ChangelogCtx *c, const char *str, int indent,
+                           AromaFont *font, uint32_t color, int line_h)
+{
+    int sy = c->view_top + c->y - c->scroll;
+    if (c->draw && sy >= c->view_top - 2 && sy + line_h <= c->view_top + c->view_h + 2)
+        text(s_home_canvas, str, c->x + indent, sy, color, font);
+    c->y += line_h;
+}
+
+/* Word-wraps `src` (backticks removed) to the panel width. */
+static void changelog_wrap(ChangelogCtx *c, const char *src, int indent,
+                           AromaFont *font, uint32_t color, int line_h)
+{
+    char clean[256];
+    size_t n = 0;
+    for (const char *p = src; *p && n + 1 < sizeof(clean); p++)
+        if (*p != '`')
+            clean[n++] = *p;
+    clean[n] = '\0';
+
+    char cur[256];
+    cur[0] = '\0';
+    int max_w = c->width - indent;
+    const char *p = clean;
+    while (*p)
+    {
+        while (*p == ' ')
+            p++;
+        if (!*p)
+            break;
+        const char *end = p;
+        while (*end && *end != ' ')
+            end++;
+        char word[128];
+        size_t wl = (size_t)(end - p);
+        if (wl >= sizeof(word))
+            wl = sizeof(word) - 1;
+        memcpy(word, p, wl);
+        word[wl] = '\0';
+        p = end;
+
+        char trial[512];
+        snprintf(trial, sizeof(trial), "%s%s%s", cur, cur[0] ? " " : "", word);
+        if (cur[0] && text_width(font, trial) > max_w)
+        {
+            changelog_emit(c, cur, indent, font, color, line_h);
+            snprintf(cur, sizeof(cur), "%s", word);
+        }
+        else
+        {
+            snprintf(cur, sizeof(cur), "%s", trial);
+        }
+    }
+    if (cur[0])
+        changelog_emit(c, cur, indent, font, color, line_h);
+}
+
+/* Walks k_changelog_md; returns total content height.  With draw=false it
+ * only measures (used to clamp scrolling). */
+static int changelog_layout(bool draw, int x, int view_top, int view_h,
+                            int width, int scroll)
+{
+    ChangelogCtx c = {draw, x, 0, width, view_top, view_h, scroll};
+    AromaFont *ui13 = font_ui(13);
+    AromaFont *ui16 = font_ui(16);
+    const char *p = k_changelog_md;
+    while (*p)
+    {
+        const char *eol = strchr(p, '\n');
+        size_t len = eol ? (size_t)(eol - p) : strlen(p);
+        char line_buf[256];
+        if (len >= sizeof(line_buf))
+            len = sizeof(line_buf) - 1;
+        memcpy(line_buf, p, len);
+        line_buf[len] = '\0';
+        p = eol ? eol + 1 : p + len;
+
+        if (line_buf[0] == '\0' || strncmp(line_buf, "# ", 2) == 0)
+            continue; /* blank lines and the h1 (the panel header says it) */
+        if (strncmp(line_buf, "## ", 3) == 0)
+        {
+            if (c.y > 0)
+                c.y += 12;
+            changelog_wrap(&c, line_buf + 3, 0, ui16, 0xFFFFFFFFu, 26);
+            c.y += 2;
+        }
+        else if (strncmp(line_buf, "### ", 4) == 0)
+        {
+            c.y += 8;
+            changelog_wrap(&c, line_buf + 4, 0, ui13, 0xFF64D2FFu, 22);
+        }
+        else if (strncmp(line_buf, "- ", 2) == 0)
+        {
+            int sy = c.view_top + c.y - c.scroll;
+            if (draw && sy >= view_top - 2 && sy + 20 <= view_top + view_h + 2)
+                fill(s_home_canvas, x + 4, sy + 8, 4, 4, 2, 0xFF8E8E93u);
+            changelog_wrap(&c, line_buf + 2, 16, ui13, 0xFFD0D0D4u, 20);
+        }
+        else
+        {
+            changelog_wrap(&c, line_buf, 0, ui13, 0xFFD0D0D4u, 20);
+        }
+    }
+    return c.y;
+}
+
+static void home_draw_changelog(void)
+{
+    int px, py, pw, ph;
+    home_changelog_panel(&px, &py, &pw, &ph);
+
+    fill(s_home_canvas, 0, TITLE_H, win_w, win_h - TITLE_H, 0, 0x99000000u);
+    fill(s_home_canvas, px, py, pw, ph, 14, 0xFF2B2B2Eu);
+    text(s_home_canvas, "Changelog", px + 18, py + 11, 0xFFF2F2F7u, font_ui(16));
+    icon_center(s_home_canvas, AROMA_ICON_CLOSE, px + pw - 24, py + 20, 16,
+                0xFFC7C7CCu);
+    fill(s_home_canvas, px + 12, py + 40, pw - 24, 1, 0, 0xFF444448u);
+
+    int view_top = py + 50;
+    int view_h = ph - 62;
+    int text_x = px + 20;
+    int text_w = pw - 52;
+
+    int total = changelog_layout(false, text_x, view_top, view_h, text_w, 0);
+    s_changelog_max_scroll = total > view_h ? total - view_h : 0;
+    if (s_changelog_scroll > s_changelog_max_scroll)
+        s_changelog_scroll = s_changelog_max_scroll;
+    if (s_changelog_scroll < 0)
+        s_changelog_scroll = 0;
+
+    changelog_layout(true, text_x, view_top, view_h, text_w, s_changelog_scroll);
+
+    if (s_changelog_max_scroll > 0)
+    {
+        int track_x = px + pw - 12;
+        int bar_h = view_h * view_h / total;
+        if (bar_h < 24)
+            bar_h = 24;
+        int bar_y = view_top + (view_h - bar_h) * s_changelog_scroll /
+                                   s_changelog_max_scroll;
+        fill(s_home_canvas, track_x, bar_y, 4, bar_h, 2, 0xFF6A6A70u);
+    }
+}
+
+static bool home_on_scroll(AromaEvent *event, void *user_data)
+{
+    (void)user_data;
+    if (!s_home_mode || !s_changelog_visible || !event ||
+        event->event_type != EVENT_TYPE_MOUSE_SCROLL)
+        return false;
+    float steps = event->data.mouse.scroll_y;
+    if (steps > -1.0f && steps < 1.0f)
+        steps = steps < 0.0f ? -1.0f : (steps > 0.0f ? 1.0f : 0.0f);
+    s_changelog_scroll -= (int)steps * 40;
+    if (s_changelog_scroll > s_changelog_max_scroll)
+        s_changelog_scroll = s_changelog_max_scroll;
+    if (s_changelog_scroll < 0)
+        s_changelog_scroll = 0;
+    s_home_dirty = true;
+    ide_home_draw();
+    return true;
 }
 
 void ide_home_draw(void)
@@ -336,57 +554,68 @@ void ide_home_draw(void)
     s_home_drawn_h = win_h;
 
     aroma_canvas_reset(s_home_canvas);
-    AromaFont *ui20 = font_ui(20);
+    AromaFont *ui28 = font_ui(28);
+    AromaFont *ui15 = font_ui(15);
     AromaFont *ui12 = font_ui(12);
 
     int col_x, top, y0;
     home_metrics(&col_x, &top, &y0);
 
-    fill(s_home_canvas, 0, 0, win_w, TITLE_H, 12, 0xFF252A3Au);
-    fill(s_home_canvas, 0, 12, win_w, TITLE_H - 12, 0, 0xFF252A3Au);
-    line(s_home_canvas, 12, TITLE_H - 1, win_w - 12, TITLE_H - 1,
-         C_BORDER, 1);
-    text(s_home_canvas, "AromaUI Studio", 18, 11, C_TEXT, ui12);
+    fill(s_home_canvas, 0, 0, win_w, win_h, 0, HOME_BG);
+
+    /* title bar (custom: the window is undecorated) */
+    fill(s_home_canvas, 0, 0, win_w, TITLE_H, 0, 0xFF252A3Au);
+    text(s_home_canvas, "Welcome to AromaStudio", 14, 11, C_TEXT, ui12);
+    icon_center(s_home_canvas, AROMA_ICON_REMOVE, win_w - 80, 18, 15,
+                C_TEXT_SOFT);
+    icon_center(s_home_canvas,
+                s_home_fullscreen ? AROMA_ICON_FULLSCREEN_EXIT
+                                  : AROMA_ICON_FULLSCREEN,
+                win_w - 54, 18, 14, C_TEXT_SOFT);
     icon_center(s_home_canvas, AROMA_ICON_CLOSE, win_w - 28, 18, 13,
                 C_TEXT_SOFT);
 
-    text_center(s_home_canvas, "AromaUI Studio", col_x, top, HOME_BTN_W, 32,
-                C_TEXT, ui20);
-    text_center(s_home_canvas, "Drag-and-drop designer for AromaUI", col_x,
-                top + 38, HOME_BTN_W, 20, C_TEXT_SOFT, ui12);
+    /* logo, name, version */
+    home_logo((win_w - HOME_LOGO) / 2, top, HOME_LOGO);
+    int ty = top + HOME_LOGO + 24;
+    {
+        int aw = text_width(ui28, "Aroma");
+        int sw = text_width(ui28, "Studio");
+        int wx = (win_w - (aw + sw)) / 2;
+        text(s_home_canvas, "Aroma", wx, ty, 0xFFC9C9CDu, ui28);
+        text(s_home_canvas, "Studio", wx + aw, ty, 0xFF64D2FFu, ui28);
+    }
+    text_center(s_home_canvas, "Version alpha 0.0.1", 0, ty + 34 + 8, win_w,
+                20, 0xFF8E8E93u, ui15);
 
-    text(s_home_canvas, "Quick actions", col_x + 4, top + 100, C_TEXT_FAINT, ui12);
-    fill(s_home_canvas, col_x, top + 124, HOME_BTN_W, 1, 0, C_BORDER_SOFT);
-
-    int step = HOME_BTN_H + HOME_BTN_GAP;
-    int btn_idx = 0;
+    /* action list */
+    int idx = 0;
     if (s_home_has_recent_project)
     {
         char recent_label[160];
-        snprintf(recent_label, sizeof(recent_label), "Recent: %s",
+        snprintf(recent_label, sizeof(recent_label), "Reopen %s",
                  s_home_recent_project_name);
-        home_button(btn_idx, col_x, y0 + btn_idx * step, AROMA_ICON_HISTORY,
-                    C_PRIMARY, recent_label,
-                    "Reopen the most recently opened project");
-        btn_idx++;
+        home_action(idx, col_x, y0 + idx * HOME_ROW_H, AROMA_ICON_HISTORY,
+                    recent_label);
+        idx++;
     }
-    home_button(btn_idx, col_x, y0 + btn_idx * step, AROMA_ICON_FOLDER_OPEN,
-                C_TEXT, "Open project",
-                "Browse and open an existing Aroma project");
-    btn_idx++;
-    home_button(btn_idx, col_x, y0 + btn_idx * step, AROMA_ICON_ADD,
-                C_PRIMARY, "New project",
-                "Create a new AromaUI project from a template");
-    btn_idx++;
-    home_button(btn_idx, col_x, y0 + btn_idx * step, AROMA_ICON_DESCRIPTION,
-                C_TEXT, "Changelog", "Show the IDE changelog (alpha 0.0.1)");
+    home_action(idx, col_x, y0 + idx * HOME_ROW_H, AROMA_ICON_ADD,
+                "Create New Project");
+    idx++;
+    home_action(idx, col_x, y0 + idx * HOME_ROW_H, AROMA_ICON_FOLDER_OPEN,
+                "Open");
+    idx++;
+    home_action(idx, col_x, y0 + idx * HOME_ROW_H, AROMA_ICON_DESCRIPTION,
+                "Changelog");
+    idx++;
 
     if (s_home_error[0])
-        text_fit(s_home_canvas, s_home_error, col_x,
-                 y0 + HOME_BTN_COUNT * step + 6, HOME_BTN_W, M3_ERROR,
-                 font_ui(12));
+        text_fit(s_home_canvas, s_home_error, col_x, y0 + idx * HOME_ROW_H + 6,
+                 HOME_LIST_W + 40, M3_ERROR, ui12);
 
-                                                                      
+    if (s_changelog_visible)
+        home_draw_changelog();
+
     if (s_dialog_open)
         draw_dialog();
 
@@ -531,44 +760,8 @@ void ide_home_set_recent_project(const char *path)
 
 static void home_show_changelog(void)
 {
-    if (s_changelog_window)
-        return;
-
-    s_changelog_window = aroma_ui_create_window(
-        "AromaUI Studio Changelog", 800, 600);
-    if (!s_changelog_window)
-    {
-        snprintf(s_home_error, sizeof(s_home_error),
-                 "Failed to create changelog window");
-        return;
-    }
-
-                                                                                 
-    AromaNode *webview = aroma_webview_create((AromaNode *)s_changelog_window,
-                                              0, 0, 800, 600);
-    if (!webview)
-    {
-        aroma_ui_destroy_window(s_changelog_window);
-        s_changelog_window = NULL;
-        snprintf(s_home_error, sizeof(s_home_error),
-                 "Failed to create changelog view");
-        return;
-    }
-    aroma_node_set_layout_fill(webview);
-
-    char *html = markdown_to_html(k_changelog_md);
-    if (!html)
-    {
-        aroma_ui_destroy_window(s_changelog_window);
-        s_changelog_window = NULL;
-        snprintf(s_home_error, sizeof(s_home_error),
-                 "Failed to render changelog");
-        return;
-    }
-    aroma_webview_load_html(webview, html, NULL);
-    free(html);
-
     s_changelog_visible = true;
+    s_changelog_scroll = 0;
     s_home_dirty = true;
     ide_home_draw();
     aroma_node_invalidate(s_home_canvas);
@@ -576,10 +769,6 @@ static void home_show_changelog(void)
 
 static void home_hide_changelog(void)
 {
-    if (!s_changelog_window)
-        return;
-    aroma_ui_destroy_window(s_changelog_window);
-    s_changelog_window = NULL;
     s_changelog_visible = false;
     s_home_dirty = true;
     ide_home_draw();
@@ -601,7 +790,15 @@ bool ide_home_on_click(AromaEvent *event, void *user_data)
         return true;
     if (s_changelog_visible)
     {
-        home_hide_changelog();
+        int px, py, pw, ph;
+        home_changelog_panel(&px, &py, &pw, &ph);
+        int mx = event->data.mouse.x;
+        int my = event->data.mouse.y;
+        bool inside = mx >= px && mx < px + pw && my >= py && my < py + ph;
+        bool on_close = mx >= px + pw - 44 && mx < px + pw &&
+                        my >= py && my < py + 40;
+        if (!inside || on_close)
+            home_hide_changelog();
         return true;
     }
     if (s_dialog_open)
@@ -646,9 +843,9 @@ bool ide_home_on_click(AromaEvent *event, void *user_data)
         }
     }
     if (button == idx++)
-        home_pick_project(NULL);
-    else if (button == idx++)
         open_dialog(IDE_DIALOG_NEW_PROJECT, "");
+    else if (button == idx++)
+        home_pick_project(NULL);
     else if (button == idx)
         home_show_changelog();
     return true;

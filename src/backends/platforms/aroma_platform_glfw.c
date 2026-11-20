@@ -32,6 +32,12 @@ typedef struct
     bool mouse_button_down;
     bool window_dragging;
     bool window_maximized;
+    bool window_fullscreen;
+    int restore_x;
+    int restore_y;
+    int restore_width;
+    int restore_height;
+    GLFWcursor *cursors[AROMA_CURSOR_COUNT];
     double window_drag_offset_x;
     double window_drag_offset_y;
     void (*frame_callback)(size_t, void *);
@@ -354,6 +360,92 @@ static void glfw_toggle_window_maximized(size_t window_id)
 {
     platform_ctx.window_maximized = !platform_ctx.window_maximized;
     glfw_set_window_maximized(window_id, platform_ctx.window_maximized);
+}
+
+static void glfw_set_window_fullscreen(size_t window_id, bool fullscreen)
+{
+    (void)window_id;
+    GLFWwindow *window = platform_ctx.primary_window;
+    if (!window || platform_ctx.window_fullscreen == fullscreen)
+        return;
+
+    if (fullscreen)
+    {
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *mode = monitor ? glfwGetVideoMode(monitor) : NULL;
+        if (!monitor || !mode)
+            return;
+        glfwGetWindowPos(window, &platform_ctx.restore_x,
+                         &platform_ctx.restore_y);
+        glfwGetWindowSize(window, &platform_ctx.restore_width,
+                          &platform_ctx.restore_height);
+        glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height,
+                             mode->refreshRate);
+    }
+    else
+    {
+        glfwSetWindowMonitor(window, NULL, platform_ctx.restore_x,
+                             platform_ctx.restore_y,
+                             platform_ctx.restore_width,
+                             platform_ctx.restore_height, 0);
+    }
+    platform_ctx.window_fullscreen = fullscreen;
+}
+
+static void glfw_set_cursor(size_t window_id, int shape)
+{
+    (void)window_id;
+    GLFWwindow *window = platform_ctx.primary_window;
+    if (!window)
+        return;
+    if (shape < 0 || shape >= AROMA_CURSOR_COUNT)
+        shape = AROMA_CURSOR_ARROW;
+    if (!platform_ctx.cursors[shape])
+    {
+        int standard = GLFW_ARROW_CURSOR;
+        switch (shape)
+        {
+        case AROMA_CURSOR_IBEAM:
+            standard = GLFW_IBEAM_CURSOR;
+            break;
+        case AROMA_CURSOR_HAND:
+            standard = GLFW_HAND_CURSOR;
+            break;
+        case AROMA_CURSOR_CROSSHAIR:
+            standard = GLFW_CROSSHAIR_CURSOR;
+            break;
+        case AROMA_CURSOR_MOVE:
+#ifdef GLFW_RESIZE_ALL_CURSOR
+            standard = GLFW_RESIZE_ALL_CURSOR;
+#endif
+            break;
+        case AROMA_CURSOR_RESIZE_HORIZONTAL:
+            standard = GLFW_HRESIZE_CURSOR;
+            break;
+        case AROMA_CURSOR_RESIZE_VERTICAL:
+            standard = GLFW_VRESIZE_CURSOR;
+            break;
+        case AROMA_CURSOR_RESIZE_DIAGONAL_NWSE:
+#ifdef GLFW_RESIZE_NWSE_CURSOR
+            standard = GLFW_RESIZE_NWSE_CURSOR;
+#elif defined(GLFW_RESIZE_ALL_CURSOR)
+            standard = GLFW_RESIZE_ALL_CURSOR;
+#endif
+            break;
+        case AROMA_CURSOR_RESIZE_DIAGONAL_NESW:
+#ifdef GLFW_RESIZE_NESW_CURSOR
+            standard = GLFW_RESIZE_NESW_CURSOR;
+#elif defined(GLFW_RESIZE_ALL_CURSOR)
+            standard = GLFW_RESIZE_ALL_CURSOR;
+#endif
+            break;
+        default:
+            standard = GLFW_ARROW_CURSOR;
+            break;
+        }
+        platform_ctx.cursors[shape] = glfwCreateStandardCursor(standard);
+    }
+    glfwSetCursor(window, platform_ctx.cursors[shape]);
 }
 
 static void glfw_mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
@@ -1039,6 +1131,8 @@ AromaPlatformInterface aroma_platform_glfw = {
     .begin_window_drag = glfw_begin_window_drag,
     .set_window_minimized = glfw_set_window_minimized,
     .set_window_maximized = glfw_set_window_maximized,
+    .set_fullscreen = glfw_set_window_fullscreen,
+    .set_cursor = glfw_set_cursor,
 #ifdef AROMA_HAS_VULKAN
     .create_vulkan_surface = glfw_create_vulkan_surface,
     .get_vulkan_instance_extensions = glfw_get_vulkan_instance_extensions,

@@ -330,97 +330,51 @@ Window {
             width: 1280
             height: 800
             z_index: 26
-        Card {
-            z_index: 27
-            x: 544
-            y: 44
-            width: 692
-            height: 96
-            type: filled
-            color: #1E7B34
-            corner_radius: 16
-        }
-        Icon {
-            z_index: 28
-            x: 568
-            y: 68
-            size: 48
-            icon_size: 48
-            text: "AROMA_ICON_SUBDIRECTORY_ARROW_LEFT"
-            color: #FFFFFF
-        }
-        Label {
-            z_index: 28
-            text: "2 mi"
-            size: 26
-            color: #E8F5E9
-            x: 636
-            y: 60
-        }
-        Label {
-            z_index: 28
-            text: "101 W Pacific Coast Hwy"
-            size: 32
-            color: #FFFFFF
-            x: 636
-            y: 92
-        }
-        Button {
-            z_index: 32
-            x: 544
-            y: 44
-            width: 692
-            height: 96
-            text: ""
-            type: text
-            on_click: "travel_banner"
-        }
-        }
-        Container {
-            id: "travel_eta"
-            x: 0
-            y: 0
-            width: 1280
-            height: 800
-            z_index: 27
-        Card {
-            z_index: 28
-            x: 710
-            y: 572
-            width: 360
-            height: 80
-            type: filled
-            color: #F21C1C1E
-            corner_radius: 12
-        }
-        IconButton {
-            z_index: 33
-            x: 722
-            y: 592
-            size: 40
-            icon_size: 24
-            icon: "AROMA_ICON_CLOSE"
-            variant: standard
-            color: #F21C1C1E
-            icon_color: #8E8E93
-            on_click: "travel_eta_close"
-        }
-        Label {
-            z_index: 29
-            text: "28 min"
-            size: 30
-            color: #34C759
-            x: 766
-            y: 590
-        }
-        Label {
-            z_index: 29
-            text: "· 19 mi"
-            size: 30
-            color: #F2F2F7
-            x: 884
-            y: 590
-        }
+            Card {
+                z_index: 27
+                x: 544
+                y: 44
+                width: 692
+                height: 96
+                type: filled
+                color: #1E7B34
+                corner_radius: 16
+            }
+            Icon {
+                z_index: 28
+                x: 568
+                y: 68
+                size: 48
+                icon_size: 48
+                text: "AROMA_ICON_SUBDIRECTORY_ARROW_LEFT"
+                color: #FFFFFF
+            }
+            Label {
+                z_index: 28
+                text: "2 mi"
+                size: 26
+                color: #E8F5E9
+                x: 636
+                y: 60
+            }
+            Label {
+                z_index: 28
+                text: "101 W Pacific Coast Hwy"
+                size: 32
+                color: #FFFFFF
+                x: 636
+                y: 92
+            }
+            Button {
+                z_index: 32
+                x: 544
+                y: 44
+                width: 692
+                height: 96
+                text: ""
+                type: text
+                on_click: "travel_banner"
+            }
         }
         IconButton {
             z_index: 30

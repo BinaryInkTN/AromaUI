@@ -392,10 +392,8 @@ static void lsp_scan_file(int file_index)
                            braces > 0 ? "Unclosed Aroma block: add a closing brace."
                                       : "Unexpected closing brace in Aroma markup.",
                            "aroma-incense", "brace-balance");
-        if (!strstr(file->text, "Window"))
-            add_diagnostic(file, 1, 1, 2, AROMA_CODE_DIAGNOSTIC_ERROR,
-                           "Aroma markup needs a Window root widget.",
-                           "aroma-incense", "missing-window");
+        /* A Window root is optional: files without one are components /
+         * fragments and the designer sizes its canvas to fit the content. */
 
         char seen_ids[24][64];
         int seen_count = 0;
@@ -3129,7 +3127,7 @@ static const HoverEntry k_hover_entries[] = {
     {"depends_on", "depends_on:\n  - service\n\nControls service startup order."},
     {"environment", "environment:\n  KEY: value\n\nEnvironment variables passed to the container."},
     {"volume", "volumes:\n  - ./src:/app/src\n\nBind mounts or named volumes attached to the service."},
-    {"Window", "Window { width height title }\n\nIncense root node. Every markup document has exactly one Window."},
+    {"Window", "Window { width height title }\n\nIncense root node. Optional: a file without a Window is treated as a component and the designer canvas fits its content."},
     {"Container", "Container { x y width height }\n\nPositioned layout container. Add layout: flex for automatic child placement."},
     {"Card", "Card { type color border_color corner_radius }\n\nSurface primitive used for panels, cards and dividers."},
     {"Canvas", "Canvas { x y width height }\n\nCustom drawing surface backed by an AromaCanvas op list."},

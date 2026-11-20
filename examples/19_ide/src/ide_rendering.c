@@ -1,15 +1,16 @@
-                                                                               
-
 static int android_dev_visible_rows(void);
 static void android_dev_clamp_scroll(void);
 
 static int title_menu_text_width(int index)
 {
+    if (index < 0 || index >= TITLE_MENU_COUNT)
+        return 0;
     static AromaFont *ui11;
     if (!ui11)
         ui11 = font_ui(11);
     return text_width(ui11, k_menus[index]);
 }
+
 
 static int title_menu_x(int index)
 {
@@ -19,11 +20,12 @@ static int title_menu_x(int index)
     return x;
 }
 
+
 static int title_menu_end(void)
 {
-    return title_menu_x(7) + title_menu_text_width(7);
+    return title_menu_x(TITLE_MENU_COUNT - 1) +
+           title_menu_text_width(TITLE_MENU_COUNT - 1);
 }
-
 static int title_search_x(void)
 {
     return win_w - TITLE_CTRL_W * TITLE_CTRL_COUNT - 12 - TITLE_SEARCH_W;
@@ -60,7 +62,7 @@ static int title_ctrl_center(int index)
                                                                     
 #define RAIL_TOP 52
 #define RAIL_ITEM_H 44
-#define RAIL_ITEM_COUNT 3
+#define RAIL_ITEM_COUNT 2
 #define RAIL_SETTINGS_INDEX RAIL_ITEM_COUNT
 #define RAIL_SETTINGS_H 36
 
@@ -140,15 +142,15 @@ static void draw_title(void)
     if (!s_title_canvas)
         return;
     aroma_canvas_reset(s_title_canvas);
-    fill(s_title_canvas, 0, 0, win_w, TITLE_H, 12, C_TITLE);
-    fill(s_title_canvas, 0, 12, win_w, TITLE_H - 12, 0, C_TITLE);
+    fill(s_title_canvas, 0, 0, win_w, TITLE_H, 12, M3_SURFACE);
+    fill(s_title_canvas, 0, 12, win_w, TITLE_H - 12, 0, M3_SURFACE);
     line(s_title_canvas, 12, TITLE_H - 1, win_w - 12, TITLE_H - 1,
-         C_BORDER, 1);
+         C_PRIMARY, 1);
     AromaFont *ui10 = font_ui(10);
     AromaFont *ui11 = font_ui(11);
 
                                                                            
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < TITLE_MENU_COUNT; i++)
     {
         int mx = title_menu_x(i);
         int mw = title_menu_text_width(i);
@@ -162,7 +164,7 @@ static void draw_title(void)
     {
         int mx = title_menu_x(s_menu_index);
         int mw = title_menu_text_width(s_menu_index);
-        fill(s_title_canvas, mx, 31, mw, 3, 1, C_PRIMARY);
+        fill(s_title_canvas, mx, 31, mw, 3, 1, M3_SURFACE);
     }
 
                                                                              
@@ -172,25 +174,7 @@ static void draw_title(void)
                          : (title_search_visible()
                                 ? title_search_x() - 16
                                 : win_w - TITLE_CTRL_W * TITLE_CTRL_COUNT - 16);
-    if (s_active_file >= 0 && path_right - path_left > 80)
-    {
-        const char *file_path = ide_files[s_active_file].path;
-        int avail = path_right - path_left;
-        const char *display = file_path;
-        int path_width = text_width(ui11, file_path);
-        if (path_width > avail)
-        {
-            const char *base = strrchr(file_path, '/');
-            display = base ? base + 1 : file_path;
-            path_width = text_width(ui11, display);
-        }
-        if (path_width > avail)
-            path_width = avail;
-        int title_x = path_left + (avail - path_width) / 2;
-        text_fit(s_title_canvas, display, title_x, 12, avail, C_TEXT_SOFT, ui11);
-    }
-
-                             
+          
     if (title_actions_visible())
     {
         int by = 6;
@@ -243,20 +227,20 @@ static void draw_title(void)
         if (s_title_ctrl_hover == i)
             fill(s_title_canvas, cx - 12, 4, 24, 28, 4, C_HOVER);
     }
-    icon_center(s_title_canvas,
-                s_preview_visible ? AROMA_ICON_VISIBILITY_OFF
-                                  : AROMA_ICON_VISIBILITY,
-                title_ctrl_center(0), 18, 14,
-                s_preview_visible ? C_TEXT : C_TEXT_DIM);
-    icon_center(s_title_canvas, AROMA_ICON_SETTINGS, title_ctrl_center(1), 18,
+    icon_center(s_title_canvas, AROMA_ICON_SETTINGS, title_ctrl_center(0), 18,
                 14, s_settings_visible ? M3_PRIMARY : C_TEXT_DIM);
-    icon_center(s_title_canvas, AROMA_ICON_FILTER_LIST, title_ctrl_center(2),
+    icon_center(s_title_canvas, AROMA_ICON_FILTER_LIST, title_ctrl_center(1),
                 18, 14, s_panel_visible ? C_TEXT : C_TEXT_DIM);
-    icon_center(s_title_canvas, AROMA_ICON_PHONE_ANDROID, title_ctrl_center(3), 18, 14,
+    icon_center(s_title_canvas, AROMA_ICON_PHONE_ANDROID, title_ctrl_center(2), 18, 14,
                 s_project.target == 1 ? C_GREEN : C_TEXT_DIM);
-    icon_center(s_title_canvas, AROMA_ICON_CLOSE, title_ctrl_center(4), 18, 12,
+    icon_center(s_title_canvas, AROMA_ICON_REMOVE, title_ctrl_center(3), 18, 15,
                 C_TEXT_SOFT);
-    preview_theme_draw_dropdown();
+    icon_center(s_title_canvas,
+                s_title_fullscreen ? AROMA_ICON_FULLSCREEN_EXIT
+                                   : AROMA_ICON_FULLSCREEN,
+                title_ctrl_center(4), 18, 14, C_TEXT_SOFT);
+    icon_center(s_title_canvas, AROMA_ICON_CLOSE, title_ctrl_center(5), 18, 12,
+                C_TEXT_SOFT);
 }
 
 static void draw_rail(void)
@@ -269,7 +253,6 @@ static void draw_rail(void)
     static const char *const icons[RAIL_ITEM_COUNT] = {
         AROMA_ICON_FOLDER_OPEN,
         AROMA_ICON_SEARCH,
-        AROMA_ICON_BUG_REPORT,
     };
 
     for (int i = 0; i < RAIL_ITEM_COUNT; i++)
@@ -292,8 +275,8 @@ static void draw_rail(void)
 
 static void draw_sidebar_header(void)
 {
-    static const char *const titles[3] = {
-        "EXPLORER", "SEARCH", "RUN AND DEBUG"};
+    static const char *const titles[2] = {
+        "EXPLORER", "SEARCH"};
     AromaFont *ui11 = font_ui(11);
     AromaFont *ui10 = font_ui(10);
 
@@ -434,7 +417,7 @@ static void draw_explorer(void)
 
     static const char *const scripts[4] = {"Build project", "Run project",
                                            "Clean build", "Language server"};
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 4; i++)
     {
         s_script_y[i] = tasks_y;
         if (s_script_hover == i)
@@ -570,7 +553,7 @@ static void draw_setting_toggle(AromaNode *canvas, int y, int item_x,
     int sw = 40, sh = 18;
     int toggle_x = item_x + item_w - sw - 20;
     fill(canvas, toggle_x, yy + 4, sw, sh, 6,
-         *value ? C_PRIMARY : 0xFF3A3A3Cu);
+         *value ? C_PRIMARY : M3_SURFACE_HIGHEST);
     fill(canvas, toggle_x + (*value ? sh - 6 : 4), yy + 8, 6, 6, 3,
          0xFFFFFFFFu);
 }
@@ -719,7 +702,7 @@ static void draw_setting_entry(AromaNode *canvas, int y, int cat, int row,
             draw_setting_toggle(canvas, y, item_x, item_w,
                                 &s_setting_experimental,
                                 "Experimental features",
-                                "Enable in-development settings and UI effects",
+                                "Enable in-development UI effects and badges",
                                 draw_controls);
     }
     else if (cat == SETTING_CAT_OUTPUT)
@@ -917,7 +900,7 @@ static void draw_settings(void)
 #define SETTINGS_WIN_W 900
 #define SETTINGS_WIN_H 620
 #define SETTINGS_WIN_HEADER_H 64
-#define SETTINGS_WIN_SIDEBAR_X 20
+#define SETTINGS_WIN_SIDEBAR_X 5
 #define SETTINGS_WIN_SIDEBAR_Y 84
 #define SETTINGS_WIN_SIDEBAR_W 184
 #define SETTINGS_WIN_SIDEBAR_H (SETTINGS_WIN_H - SETTINGS_WIN_SIDEBAR_Y - 58)
@@ -1040,8 +1023,57 @@ static float settings_window_opacity(void)
         index = 0;
     if (index > 4)
         index = 4;
-    return s_setting_transparency ? k_setting_opacity_values[index] : 1.0f;
+    float opacity = s_setting_transparency ? k_setting_opacity_values[index]
+                                           : 1.0f;
+    if (opacity < 0.0f)
+        opacity = 0.0f;
+    if (opacity > 1.0f)
+        opacity = 1.0f;
+    return opacity;
 }
+
+static void settings_window_apply_opacity(float opacity)
+{
+    if (opacity < 0.0f)
+        opacity = 0.0f;
+    if (opacity > 1.0f)
+        opacity = 1.0f;
+    s_settings_window_anim_opacity = opacity;
+    if (s_settings_window)
+        aroma_ui_set_window_opacity(s_settings_window, opacity);
+}
+
+static void settings_window_fade_step(AromaNode *target, float value,
+                                      void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (!s_settings_window || s_settings_window_closing == false)
+        return;
+    settings_window_apply_opacity(value);
+}
+
+static void settings_window_open_fade_step(AromaNode *target, float value,
+                                           void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (!s_settings_window || !s_settings_window_opening)
+        return;
+    settings_window_apply_opacity(settings_window_opacity() * value);
+}
+
+static void settings_window_open_finished(AromaNode *target, void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (!s_settings_window || !s_settings_window_opening)
+        return;
+    s_settings_window_opening = false;
+    settings_window_apply_opacity(settings_window_opacity());
+}
+
+static void settings_window_close_finished(AromaNode *target, void *user_data);
 
 static void settings_apply_windows(void)
 {
@@ -1049,8 +1081,19 @@ static void settings_apply_windows(void)
     AromaWindow *main_window = aroma_ui_get_window_at(0);
     if (main_window)
         aroma_ui_set_window_opacity(main_window, opacity);
-    if (s_settings_window)
-        aroma_ui_set_window_opacity(s_settings_window, opacity);
+    if (!s_settings_window)
+        return;
+
+    /* A setting change or an explicit opacity request should win over an
+     * in-flight entrance animation instead of fighting it every frame. */
+    if (s_settings_window_opening)
+    {
+        if (s_settings_window_root)
+            aroma_animation_stop(s_settings_window_root);
+        s_settings_window_opening = false;
+    }
+    if (!s_settings_window_closing)
+        settings_window_apply_opacity(opacity);
 }
 
 static void settings_apply_experimental(void)
@@ -1059,10 +1102,7 @@ static void settings_apply_experimental(void)
         aroma_node_set_hidden(s_settings_experimental_badge,
                               !s_setting_experimental);
     if (s_settings_sidebar)
-        aroma_sidebar_set_transition(s_settings_sidebar,
-                                     s_setting_experimental ? AROMA_ANIM_FADE
-                                                            : AROMA_ANIM_NONE,
-                                     s_setting_experimental ? 160u : 0u);
+        aroma_sidebar_set_transition(s_settings_sidebar, AROMA_ANIM_FADE, 160u);
 }
 
 static int settings_tab_width_index(void)
@@ -1233,7 +1273,7 @@ static void settings_sidebar_on_select(AromaNode *node, int index,
 static bool settings_window_header_drag(AromaEvent *event, void *user_data)
 {
     (void)user_data;
-    if (!s_settings_window || !event)
+    if (!s_settings_window || !event || s_settings_window_closing)
         return false;
     if (event->event_type != EVENT_TYPE_MOUSE_CLICK)
         return false;
@@ -1299,11 +1339,11 @@ static void settings_window_redraw(void)
         aroma_ui_request_redraw(s_settings_window);
 }
 
-static void settings_window_close(void)
+static void settings_window_finish_close(void)
 {
-    if (!s_settings_visible && !s_settings_window)
-        return;
-
+    s_settings_window_opening = false;
+    s_settings_window_closing = false;
+    s_settings_window_anim_opacity = 0.0f;
     s_settings_visible = false;
     s_settings_close_requested = false;
     s_setting_row_hover = -1;
@@ -1331,9 +1371,93 @@ static void settings_window_close(void)
     draw_all();
 }
 
+static void settings_window_close_finished(AromaNode *target, void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (!s_settings_window_closing)
+        return;
+    settings_window_finish_close();
+}
+
+static void settings_window_close(void)
+{
+    if (s_settings_window_closing)
+        return;
+    if (!s_settings_visible && !s_settings_window)
+        return;
+
+    s_settings_visible = false;
+    s_settings_close_requested = false;
+    s_setting_row_hover = -1;
+    s_settings_win_close_hover = false;
+    s_setting_tab_scroll = 0;
+
+    if (!s_settings_window || !s_settings_window_root)
+    {
+        settings_window_finish_close();
+        return;
+    }
+
+    /* A close during the entrance fade should start from the opacity that is
+     * actually on screen, not from the configured target value. */
+    if (s_settings_window_opening)
+    {
+        aroma_animation_stop(s_settings_window_root);
+        s_settings_window_opening = false;
+    }
+
+    s_settings_window_closing = true;
+    float start = s_settings_window_anim_opacity;
+    if (start <= 0.001f)
+    {
+        settings_window_finish_close();
+        return;
+    }
+
+    AromaAnimation *anim = aroma_animation_start_custom(
+        s_settings_window_root, start, 0.0f, 150u,
+        settings_window_fade_step, NULL);
+    if (!anim)
+    {
+        settings_window_finish_close();
+        return;
+    }
+    aroma_animation_set_visual(anim, false);
+    aroma_animation_set_easing(anim, AROMA_EASE_IN_QUAD);
+    aroma_animation_set_on_complete(anim, settings_window_close_finished);
+}
+
+static void settings_window_begin_open_fade(AromaNode *target, void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (!s_settings_window || !s_settings_window_root ||
+        !s_settings_window_opening)
+        return;
+
+    AromaAnimation *anim = aroma_animation_start_custom(
+        s_settings_window_root, 0.0f, 1.0f, 220u,
+        settings_window_open_fade_step, NULL);
+    if (!anim)
+    {
+        s_settings_window_opening = false;
+        s_settings_window_anim_opacity = 1.0f;
+        settings_window_apply_opacity(settings_window_opacity());
+        return;
+    }
+    aroma_animation_set_visual(anim, false);
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+    aroma_animation_set_on_complete(anim, settings_window_open_finished);
+}
+
 static void settings_window_open(void)
 {
-    if (s_settings_visible)
+    if (s_settings_window_closing)
+        settings_window_finish_close();
+    if (s_settings_window && !s_settings_visible)
+        settings_window_finish_close();
+    if (s_settings_visible && s_settings_window)
     {
         settings_window_redraw();
         return;
@@ -1347,8 +1471,11 @@ static void settings_window_open(void)
         return;
     }
 
+    s_settings_window_opening = false;
+    s_settings_window_closing = false;
+    s_settings_window_anim_opacity = 0.0f;
+    aroma_ui_set_window_opacity(s_settings_window, 0.0f);
     aroma_ui_set_window_decorated(s_settings_window, false);
-    aroma_ui_set_window_opacity(s_settings_window, settings_window_opacity());
 
     s_settings_window_root = NULL;
     for (int i = 0; i < AROMA_MAX_WINDOWS; i++)
@@ -1520,7 +1647,7 @@ static void settings_window_open(void)
                                       opacity_options, 5, opacity,
                                       SETTINGS_DD_OPACITY);
             settings_add_switch_row(content, 2, "Experimental features",
-                                    "Enable animated settings and in-development UI effects",
+                                    "Enable in-development UI effects and badges",
                                     s_setting_experimental,
                                     &s_setting_experimental);
         }
@@ -1608,9 +1735,30 @@ static void settings_window_open(void)
     s_settings_visible = true;
     s_settings_close_requested = false;
 
-    settings_apply_windows();
+    /* The settings window fades in through the Aroma animation system while
+     * the main window stays at its configured opacity. */
+    AromaWindow *main_window = aroma_ui_get_window_at(0);
+    if (main_window)
+        aroma_ui_set_window_opacity(main_window, settings_window_opacity());
     settings_apply_experimental();
     settings_window_redraw();
+
+    s_settings_window_opening = true;
+    settings_window_apply_opacity(0.0f);
+
+    /* Hold the window at zero opacity through its first content render.  The
+     * one-shot animation completes on the next tick, after the layout and
+     * first paint have had time to finish, so the entrance fade starts with a
+     * real frame instead of losing most of its duration to setup cost. */
+    AromaAnimation *hold = aroma_animation_start_custom(
+        s_settings_window_root, 0.0f, 0.0f, 1u, NULL, NULL);
+    if (!hold)
+    {
+        settings_window_begin_open_fade(NULL, NULL);
+        return;
+    }
+    aroma_animation_set_visual(hold, false);
+    aroma_animation_set_on_complete(hold, settings_window_begin_open_fade);
 }
 
 static void settings_apply_ui_fonts(void)
@@ -1646,6 +1794,7 @@ static void settings_apply_theme(void)
     theme.colors.border = M3_OUTLINE_VAR;
     theme.colors.error = M3_ERROR;
     aroma_ui_set_theme(&theme);
+    s_ide_theme = theme;
     settings_refresh_label_colors();
     settings_apply_ui_fonts();
     apply_editor_palette();
@@ -1915,9 +2064,6 @@ static void draw_sidebar(void)
     case 1:
         draw_search();
         break;
-    case 2:
-        draw_run();
-        break;
     default:
         break;
     }
@@ -1984,11 +2130,6 @@ static void draw_tabs(void)
     line(s_tabs_canvas, EDITOR_X, TITLE_H + TAB_H - 1, right_x,
          TITLE_H + TAB_H - 1, C_BORDER, 1);
 
-    icon_center(s_tabs_canvas,
-                s_preview_visible ? AROMA_ICON_VISIBILITY_OFF
-                                  : AROMA_ICON_VISIBILITY,
-                right_x - 58, TITLE_H + 18, 14,
-                s_preview_visible ? C_TEXT : C_TEXT_DIM);
     icon_center(s_tabs_canvas, AROMA_ICON_FULLSCREEN, right_x - 31,
                 TITLE_H + 18, 14, C_TEXT_DIM);
     icon_center(s_tabs_canvas, AROMA_ICON_MORE_HORIZ, right_x - 14,
@@ -2118,6 +2259,10 @@ static void draw_outline(void)
 
     fill(s_outline_canvas, right_x, TITLE_H, w, status_y - TITLE_H, 0,
          C_SIDEBAR);
+
+    /* Resize handle strip on the left edge */
+    uint32_t handle_col = s_resizing_outline ? C_PRIMARY : C_BORDER;
+    fill(s_outline_canvas, right_x, TITLE_H, 3, status_y - TITLE_H, 0, handle_col);
 
                 
     icon_center(s_outline_canvas, AROMA_ICON_LIST, right_x + 16,
@@ -2854,151 +2999,10 @@ static void sidebar_toggle_detach(void)
         sidebar_detach();
 }
 
+/* Kept only so markup that references the "new_note" callback still loads. */
 static void preview_new_note(void *user_data)
 {
     (void)user_data;
-    s_preview_note_count++;
-    if (s_preview_registry)
-    {
-        AromaNode *status = IncenseFindWidgetQuiet(s_preview_registry, "status");
-        if (status)
-        {
-            char status_text[64];
-            snprintf(status_text, sizeof(status_text), "Ready - %d notes",
-                     s_preview_note_count);
-            aroma_label_set_text(status, status_text);
-        }
-    }
-    toast("New note added to preview (%d notes)", s_preview_note_count);
-}
-
-static const char *const k_preview_theme_names[] = {
-    "Dark", "Light", "Material Blue", "High Contrast"};
-
-static AromaTheme preview_theme_value(int index)
-{
-    switch (index)
-    {
-    case 1:
-        return aroma_theme_create_default();
-    case 2:
-        return aroma_theme_create_material_blue();
-    case 3:
-        return aroma_theme_create_high_contrast();
-    default:
-        return aroma_theme_create_material_black();
-    }
-}
-
-static void preview_theme_draw_dropdown(void)
-{
-    if (!s_preview_visible || !s_title_canvas)
-        return;
-    int x = title_ctrl_center(0) - 112;
-    int y = 5;
-    int w = 96;
-    fill(s_title_canvas, x, y, w, 26, 5, M3_SURFACE_LOW);
-    text_fit(s_title_canvas, k_preview_theme_names[s_preview_theme_index],
-             x + 8, y + 7, w - 28, C_TEXT_SOFT, font_ui(10));
-    icon_center(s_title_canvas, AROMA_ICON_ARROW_DROP_DOWN, x + w - 12,
-                y + 13, 14, C_TEXT_DIM);
-    if (!s_preview_theme_dropdown_open)
-        return;
-    int h = (int)(sizeof(k_preview_theme_names) /
-                  sizeof(k_preview_theme_names[0])) * 26;
-    fill(s_title_canvas, x, y + 27, w, h, 5, M3_SURFACE_HIGH);
-    for (int i = 0; i < 4; i++)
-    {
-        if (i == s_preview_theme_hover)
-            fill(s_title_canvas, x + 2, y + 27 + i * 26, w - 4, 24, 3,
-                 C_HOVER);
-        text(s_title_canvas, k_preview_theme_names[i], x + 8,
-             y + 34 + i * 26, C_TEXT_SOFT, font_ui(10));
-    }
-}
-
-static bool preview_theme_on_click(int x, int y)
-{
-    if (!s_preview_visible)
-        return false;
-    int bx = title_ctrl_center(0) - 112;
-    int by = 5;
-    int bw = 96;
-    if (!s_preview_theme_dropdown_open)
-    {
-        if (x >= bx && x < bx + bw && y >= by && y < by + 26)
-        {
-            s_preview_theme_dropdown_open = true;
-            draw_title();
-            return true;
-        }
-        return false;
-    }
-    if (x >= bx && x < bx + bw && y >= by + 27 && y < by + 27 + 4 * 26)
-    {
-        int selected = (y - by - 27) / 26;
-        s_preview_theme_index = selected;
-        s_preview_theme_dropdown_open = false;
-        preview_window_create();
-        draw_title();
-        return true;
-    }
-    s_preview_theme_dropdown_open = false;
-    draw_title();
-    return false;
-}
-
-static void preview_window_create(void)
-{
-    if (s_preview_window)
-    {
-        aroma_ui_destroy_window(s_preview_window);
-        s_preview_window = NULL;
-    }
-    if (s_preview_registry)
-    {
-        IncenseFreeRegistry(s_preview_registry);
-        s_preview_registry = NULL;
-    }
-
-    if (s_active_file < 0 || s_active_file >= ide_file_count)
-        return;
-
-    IdeFile *file = &ide_files[s_active_file];
-    if (!file->text || !file->text[0])
-        return;
-
-    bool is_aroma = strstr(file->name, ".aroma") != NULL;
-    if (!is_aroma)
-        return;
-
-    s_preview_note_count = 3;
-    AromaTheme ide_theme = aroma_ui_get_theme();
-    AromaTheme preview_theme = preview_theme_value(s_preview_theme_index);
-    aroma_ui_set_theme(&preview_theme);
-    s_preview_window = IncenseLoadStringEx(file->text, s_assets->editor,
-                                           s_assets->icons[0],
-                                           &s_preview_registry);
-    aroma_ui_set_theme(&ide_theme);
-    if (s_preview_window)
-        toast("Preview window opened");
-    else
-        toast("Failed to open preview window");
-}
-
-static void preview_window_destroy(void)
-{
-    if (s_preview_window)
-    {
-        aroma_ui_destroy_window(s_preview_window);
-        s_preview_window = NULL;
-    }
-    if (s_preview_registry)
-    {
-        IncenseFreeRegistry(s_preview_registry);
-        s_preview_registry = NULL;
-    }
-    markdown_preview_destroy();
 }
 
 static void markdown_preview_destroy(void)
@@ -3022,19 +3026,6 @@ static void ide_window_closed(AromaWindow *window, void *user_data)
 {
     (void)user_data;
 
-    if (window == s_preview_window)
-    {
-        s_preview_window = NULL;
-        s_preview_visible = false;
-        if (s_preview_registry)
-        {
-            IncenseFreeRegistry(s_preview_registry);
-            s_preview_registry = NULL;
-        }
-        draw_tabs();
-        draw_breadcrumb();
-        toast("Preview window closed");
-    }
     if (window == s_changelog_window)
     {
         s_changelog_window = NULL;
@@ -3048,6 +3039,9 @@ static void ide_window_closed(AromaWindow *window, void *user_data)
         s_settings_window = NULL;
         s_settings_visible = false;
         s_settings_close_requested = false;
+        s_settings_window_opening = false;
+        s_settings_window_closing = false;
+        s_settings_window_anim_opacity = 0.0f;
         s_settings_window_canvas = NULL;
         s_settings_window_root = NULL;
         s_settings_sidebar = NULL;
@@ -3071,26 +3065,6 @@ static void ide_window_closed(AromaWindow *window, void *user_data)
     }
 }
 
-static void preview_toggle(void)
-{
-    s_preview_visible = !s_preview_visible;
-    if (s_preview_visible)
-        preview_window_create();
-    else
-        preview_window_destroy();
-
-    draw_tabs();
-    draw_breadcrumb();
-}
-
-static bool preview_on_click(AromaEvent *event, void *user_data)
-{
-    (void)event;
-    (void)user_data;
-    preview_toggle();
-    return true;
-}
-
 static void draw_status(void)
 {
     if (!s_status_canvas)
@@ -3102,9 +3076,7 @@ static void draw_status(void)
     int center_y = status_y + STATUS_H / 2;
     int text_y = status_y + 9;
 
-    icon_center(s_status_canvas, AROMA_ICON_CALL_SPLIT, 14, center_y, 13, C_STATUS_TEXT);
-    text(s_status_canvas, "main*", 26, text_y, C_STATUS_TEXT, ui11);
-    icon_center(s_status_canvas, AROMA_ICON_SYNC, 72, center_y, 12, C_STATUS_SOFT);
+
     text(s_status_canvas, "0", 84, text_y, C_STATUS_SOFT, mono);
     icon_center(s_status_canvas, AROMA_ICON_KEYBOARD_ARROW_UP, 96, center_y, 11,
                 C_STATUS_SOFT);
@@ -3126,28 +3098,6 @@ static void draw_status(void)
                 C_STATUS_TEXT);
     text(s_status_canvas, s_lsp_connected ? "LSP: Connected" : "LSP: Starting",
          226, text_y, C_STATUS_TEXT, ui11);
-
-    char status_center[256];
-    if (s_project.target == 1)
-        snprintf(status_center, sizeof(status_center),
-                 "AromaUI Studio  ·  %s  ·  Android: %s  ·  %d files",
-                 ide_workspace_project_name(),
-                 s_project.android_serial[0] ? s_project.android_serial
-                                             : "no device",
-                 ide_file_count);
-    else
-        snprintf(status_center, sizeof(status_center),
-                 "AromaUI Studio  ·  %s  ·  Linux  ·  %d files",
-                 ide_workspace_project_name(), ide_file_count);
-    text_fit(s_status_canvas, status_center, 340, text_y, right_x - 340 - 16,
-             C_STATUS_SOFT, ui11);
-
-    const char *language = s_active_file >= 0
-                               ? language_label(ide_files[s_active_file].language)
-                               : "AromaUI";
-    int language_width = text_width(ui11, language);
-    text(s_status_canvas, language, win_w - 180 - language_width, text_y,
-         C_STATUS_SOFT, ui11);
 
     char cursor_text[48];
     snprintf(cursor_text, sizeof(cursor_text), "Ln %d, Col %d", s_line, s_column);
@@ -3186,6 +3136,44 @@ static void draw_status(void)
     right -= width;
     text(s_status_canvas, cursor_text, right, text_y, C_STATUS_TEXT, mono);
 
+    /* Anchor the language label to the left edge of the trailing cluster so a
+     * long file-type name can never run into the tab/encoding fields. */
+    const char *language = s_active_file >= 0
+                               ? language_label(ide_files[s_active_file].language)
+                               : "AromaUI";
+    int language_width = text_width(ui11, language);
+    int language_x = right - 16 - language_width;
+    int center_right = right_x;
+    if (language_x >= 340 + 40)
+    {
+        text(s_status_canvas, language, language_x, text_y, C_STATUS_SOFT, ui11);
+        if (language_x - 12 < center_right)
+            center_right = language_x - 12;
+    }
+    else
+    {
+        /* Too tight for the label; drop it instead of drawing over the
+         * cursor position or the centered project summary. */
+        center_right = right - 12;
+    }
+    if (center_right < 340)
+        center_right = 340;
+
+    char status_center[256];
+    if (s_project.target == 1)
+        snprintf(status_center, sizeof(status_center),
+                 "AromaUI Studio  ·  %s  ·  Android: %s  ·  %d files",
+                 ide_workspace_project_name(),
+                 s_project.android_serial[0] ? s_project.android_serial
+                                             : "no device",
+                 ide_file_count);
+    else
+        snprintf(status_center, sizeof(status_center),
+                 "AromaUI Studio  ·  %s  ·  Linux  ·  %d files",
+                 ide_workspace_project_name(), ide_file_count);
+    if (center_right > 340)
+        text_fit(s_status_canvas, status_center, 340, text_y,
+                 center_right - 340, C_STATUS_SOFT, ui11);
     if (s_status_hover == 1)
         fill(s_status_canvas, win_w - 63, status_y + 5, 26, 22, 4,
              M3_PRIMARY_CONTAINER);
@@ -3985,7 +3973,7 @@ static void draw_properties_dialog(void)
                  PROPS_ROW_H - 2, 8, C_SELECT);
         if (editing)
             fill(s_dialog_canvas, s_dialog_x + PROPS_VALUE_X - 6, ry + 1,
-                 value_w + 12, PROPS_ROW_H - 4, 3, 0xFF1C1C1Eu);
+                 value_w + 12, PROPS_ROW_H - 4, 3, M3_SURFACE);
 
         text(s_dialog_canvas, schema->label ? schema->label : schema->key,
              s_dialog_x + 32, ry + 5, selected ? C_TEXT : C_TEXT_SOFT, ui10);
@@ -4905,9 +4893,9 @@ static void wizard_create_project(void)
 
 static void draw_cmd_palette(void)
 {
-    AromaFont *ui12 = font_ui(12);
-    AromaFont *ui11 = font_ui(11);
-    AromaFont *ui10 = font_ui(10);
+    AromaFont *ui12 = font_ui(9);
+    AromaFont *ui11 = font_ui(10);
+    AromaFont *ui10 = font_ui(8);
     AromaFont *mono13 = font_mono(13);
 
                                                                           
@@ -4968,7 +4956,7 @@ static void draw_cmd_palette(void)
         fill(s_dialog_canvas, icx - 6, icsy - 2, 4, 4, 2, C_TEXT_DIM);
         icon_center(s_dialog_canvas, cmd->icon, icx + 6, icsy, 14,
                     sel ? C_TEXT : C_TEXT_SOFT);
-        text(s_dialog_canvas, cmd->label, icx + 30, item_y + 9,
+        text(s_dialog_canvas, cmd->label, icx + 30, item_y + 5,
              sel ? C_TEXT : C_TEXT_SOFT, ui11);
         int scw = text_width(ui10, cmd->shortcut);
         if (scw > 0)
@@ -4977,7 +4965,7 @@ static void draw_cmd_palette(void)
         int dcx = icx + 30;
         int dw = list_x + list_w - 44 - scw - dcx;
         if (dw > 0)
-            text_fit(s_dialog_canvas, cmd->desc, dcx, item_y + 24, dw,
+            text_fit(s_dialog_canvas, cmd->desc, dcx, item_y + 20, dw,
                      C_TEXT_DIM, ui10);
         yy += CMD_ITEM_H;
     }
@@ -5397,19 +5385,7 @@ static void draw_dialog(void)
     text(s_dialog_canvas, "Ctrl+S saves the active file", s_dialog_x + 312,
          s_dialog_y + s_dialog_h - 24, C_TEXT_FAINT, ui10);
 
-                               
-    int btn_w2 = 100, btn_h2 = 28, btn_x2 = s_dialog_x + s_dialog_w - 136,
-        btn_y2 = s_dialog_y + s_dialog_h - 36;
-                       
-    fill(s_dialog_canvas, btn_x2 + btn_w2 + 8, btn_y2, btn_w2, btn_h2, 6,
-         0x44000000u);
-    text_fit(s_dialog_canvas, "Cancel", btn_x2 + btn_w2 + 20, btn_y2 + 7,
-             btn_w2 - 40, C_TEXT_SOFT, ui10);
-                     
-    fill(s_dialog_canvas, btn_x2, btn_y2, btn_w2, btn_h2, 6, C_PRIMARY);
-    fill(s_dialog_canvas, btn_x2, btn_y2, btn_w2, 1, 0, C_BORDER_SOFT);
-    text_fit(s_dialog_canvas, "Open", btn_x2 + btn_w2 / 2 - 14, btn_y2 + 7,
-             28, C_TEXT, ui10);
+              
 }
 
 static bool cmd_palette_on_key(uint32_t key)
@@ -5700,21 +5676,39 @@ static void draw_menu(void)
     if (!s_menu_canvas)
         return;
     aroma_canvas_reset(s_menu_canvas);
-    if (!s_menu_open && !s_window_menu_open)
+
+    bool hiding = s_menu_hiding;
+    if (!s_menu_open && !s_window_menu_open && !hiding)
         return;
-    if (s_window_menu_open)
+
+    float reveal = s_menu_reveal;
+    if (reveal < 0.0f)
+        reveal = 0.0f;
+    if (reveal > 1.0f)
+        reveal = 1.0f;
+
+    bool window_mode = s_window_menu_open ||
+                       (hiding && s_menu_last_window_menu);
+    if (window_mode)
     {
         int x = s_window_menu_x;
         int y = TITLE_H;
         int w = 170;
-        int h = 4 * MENU_ITEM_H + 12;
+        int full_h = 4 * MENU_ITEM_H + 12;
+        int h = (int)((float)full_h * reveal + 0.5f);
+        if (h <= 0)
+            return;
         fill(s_menu_canvas, x, y, w, h, 6, M3_SURFACE_HIGH);
-        text(s_menu_canvas, "Minimize", x + 12, y + 6, C_TEXT_SOFT,
-             font_ui(11));
-        text(s_menu_canvas, "Maximize / Restore", x + 12, y + 6 + MENU_ITEM_H,
-             C_TEXT_SOFT, font_ui(11));
-        text(s_menu_canvas, "Close", x + 12, y + 6 + MENU_ITEM_H * 2,
-             C_TEXT_SOFT, font_ui(11));
+        for (int i = 0; i < 3; i++)
+        {
+            int item_y = y + 6 + i * MENU_ITEM_H;
+            if (item_y + MENU_ITEM_H > y + h)
+                break;
+            text(s_menu_canvas,
+                 i == 0 ? "Minimize"
+                        : (i == 1 ? "Maximize / Restore" : "Close"),
+                 x + 12, item_y, C_TEXT_SOFT, font_ui(11));
+        }
         return;
     }
 
@@ -5723,19 +5717,26 @@ static void draw_menu(void)
     const MenuItem *items = k_menu_items[s_menu_index];
     int count = k_menu_item_counts[s_menu_index];
     int panel_x = menu_panel_x();
-    int panel_height = menu_item_y(count - 1) + MENU_ITEM_H + 14;
+    int full_height = menu_item_y(count - 1) + MENU_ITEM_H + 14;
+    int panel_height = (int)((float)full_height * reveal + 0.5f);
     s_menu_panel_x = panel_x;
+    if (panel_height <= 0)
+        return;
 
     fill(s_menu_canvas, panel_x + 4, MENU_panel_y + 6, MENU_panel_w,
          panel_height, 7, 0x66000000u);
     fill(s_menu_canvas, panel_x, MENU_panel_y, MENU_panel_w, panel_height, 6,
          C_BORDER_SOFT);
-    fill(s_menu_canvas, panel_x + 1, MENU_panel_y + 1, MENU_panel_w - 2,
-         panel_height - 2, 5, M3_SURFACE_HIGH);
+    if (panel_height > 2)
+        fill(s_menu_canvas, panel_x + 1, MENU_panel_y + 1, MENU_panel_w - 2,
+             panel_height - 2, 5, M3_SURFACE_HIGH);
 
+    int panel_bottom = MENU_panel_y + panel_height;
     for (int i = 0; i < count; i++)
     {
         int y = menu_item_y(i);
+        if (y + MENU_ITEM_H > panel_bottom)
+            break;
         if (s_menu_hover == i)
             fill(s_menu_canvas, panel_x + 5, y, MENU_panel_w - 10, MENU_ITEM_H,
                  4, C_SELECT);
@@ -5749,9 +5750,136 @@ static void draw_menu(void)
     if (count > 4)
     {
         int sep_y = menu_item_y(4) - 4;
-        line(s_menu_canvas, panel_x + 10, sep_y, panel_x + MENU_panel_w - 10,
-             sep_y, C_BORDER, 1);
+        if (sep_y < panel_bottom)
+            line(s_menu_canvas, panel_x + 10, sep_y,
+                 panel_x + MENU_panel_w - 10, sep_y, C_BORDER, 1);
     }
+}
+
+static void menu_finish_hide(void)
+{
+    if (s_menu_open || s_window_menu_open)
+        return;
+    s_menu_hiding = false;
+    s_menu_reveal = 0.0f;
+    if (s_menu_canvas)
+    {
+        aroma_node_set_hidden(s_menu_canvas, true);
+        aroma_canvas_reset(s_menu_canvas);
+        aroma_node_invalidate(s_menu_canvas);
+    }
+    draw_title();
+}
+
+static void menu_animation_step(AromaNode *target, float value,
+                                void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    s_menu_reveal = value;
+    if (s_menu_reveal < 0.0f)
+        s_menu_reveal = 0.0f;
+    if (s_menu_reveal > 1.0f)
+        s_menu_reveal = 1.0f;
+    draw_menu();
+    aroma_ui_request_redraw(aroma_ui_get_window_at(0));
+}
+
+static void menu_animation_complete(AromaNode *target, void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (s_menu_hiding)
+    {
+        menu_finish_hide();
+        return;
+    }
+    s_menu_reveal = 1.0f;
+    draw_menu();
+}
+
+static void menu_animate_show(void)
+{
+    if (!s_menu_canvas)
+        return;
+    s_menu_hiding = false;
+    s_menu_last_window_menu = s_window_menu_open;
+    aroma_node_set_hidden(s_menu_canvas, false);
+    if (s_menu_reveal >= 0.999f)
+    {
+        aroma_animation_stop(s_menu_canvas);
+        s_menu_reveal = 1.0f;
+        draw_menu();
+        return;
+    }
+
+    AromaAnimation *anim = aroma_animation_start_custom(
+        s_menu_canvas, s_menu_reveal, 1.0f, 130u,
+        menu_animation_step, NULL);
+    if (!anim)
+    {
+        s_menu_reveal = 1.0f;
+        draw_menu();
+        return;
+    }
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+    aroma_animation_set_on_complete(anim, menu_animation_complete);
+}
+
+static void menu_animate_hide(void)
+{
+    if (!s_menu_canvas)
+    {
+        menu_finish_hide();
+        return;
+    }
+    if (s_menu_hiding)
+        return;
+    s_menu_hiding = true;
+    if (s_menu_reveal <= 0.001f)
+    {
+        menu_finish_hide();
+        return;
+    }
+
+    AromaAnimation *anim = aroma_animation_start_custom(
+        s_menu_canvas, s_menu_reveal, 0.0f, 90u,
+        menu_animation_step, NULL);
+    if (!anim)
+    {
+        menu_finish_hide();
+        return;
+    }
+    aroma_animation_set_easing(anim, AROMA_EASE_IN_QUAD);
+    aroma_animation_set_on_complete(anim, menu_animation_complete);
+}
+
+static uint32_t ide_scale_alpha(uint32_t color, float alpha)
+{
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
+    uint32_t base = (color >> 24) & 0xFFu;
+    uint32_t scaled = (uint32_t)((float)base * alpha + 0.5f);
+    if (scaled == 0)
+        scaled = 1; /* the renderer treats alpha 0 as opaque */
+    return (color & 0x00FFFFFFu) | (scaled << 24);
+}
+
+static uint32_t ide_mix_rgb(uint32_t from, uint32_t to, float t)
+{
+    if (t <= 0.0f)
+        return from | 0xFF000000u;
+    if (t >= 1.0f)
+        return to | 0xFF000000u;
+    uint8_t r1, g1, b1, r2, g2, b2;
+    aroma_color_extract_rgb(from, &r1, &g1, &b1);
+    aroma_color_extract_rgb(to, &r2, &g2, &b2);
+    uint8_t r = (uint8_t)((float)r1 + ((float)r2 - (float)r1) * t);
+    uint8_t g = (uint8_t)((float)g1 + ((float)g2 - (float)g1) * t);
+    uint8_t b = (uint8_t)((float)b1 + ((float)b2 - (float)b1) * t);
+    return aroma_color_rgba(r, g, b, 0xFF);
 }
 
 static void draw_toast(void)
@@ -5761,13 +5889,124 @@ static void draw_toast(void)
     aroma_canvas_reset(s_toast_canvas);
     if (!s_toast_visible)
         return;
+
+    float reveal = s_toast_reveal;
+    if (reveal < 0.0f)
+        reveal = 0.0f;
+    if (reveal > 1.0f)
+        reveal = 1.0f;
+
+    int yoff = (int)((1.0f - reveal) * 12.0f + 0.5f);
+    int x = s_toast_x;
+    int y = s_toast_y + yoff;
+    uint32_t surface = ide_scale_alpha(M3_INVERSE_SURFACE, reveal);
+    uint32_t foreground = ide_mix_rgb(M3_INVERSE_ON_SURFACE,
+                                      M3_INVERSE_SURFACE, 1.0f - reveal);
+    foreground = ide_scale_alpha(foreground, reveal);
+    uint32_t shadow = ide_scale_alpha(0x44000000u, reveal);
+
     AromaFont *ui12 = font_ui(12);
-    fill(s_toast_canvas, s_toast_x, s_toast_y + 3, s_toast_w, s_toast_h, 8,
-         0x44000000u);
-    fill(s_toast_canvas, s_toast_x, s_toast_y, s_toast_w, s_toast_h, 8,
-         M3_INVERSE_SURFACE);
-    icon_center(s_toast_canvas, AROMA_ICON_CHECK_CIRCLE, s_toast_x + 26,
-                s_toast_y + s_toast_h / 2, 18, M3_INVERSE_ON_SURFACE);
-    text_fit(s_toast_canvas, s_toast, s_toast_x + 44, s_toast_y + 22,
-             s_toast_w - 60, M3_INVERSE_ON_SURFACE, ui12);
+    fill(s_toast_canvas, x, y + 3, s_toast_w, s_toast_h, 8, shadow);
+    fill(s_toast_canvas, x, y, s_toast_w, s_toast_h, 8, surface);
+    icon_center(s_toast_canvas, AROMA_ICON_CHECK_CIRCLE, x + 26,
+                y + s_toast_h / 2, 18, foreground);
+    text_fit(s_toast_canvas, s_toast, x + 44, y + 22,
+             s_toast_w - 60, foreground, ui12);
+}
+
+static void toast_finish_hide(void)
+{
+    s_toast_hiding = false;
+    s_toast_visible = false;
+    s_toast_until = 0;
+    s_toast_reveal = 0.0f;
+    if (s_toast_canvas)
+    {
+        aroma_node_set_hidden(s_toast_canvas, true);
+        aroma_node_invalidate(s_toast_canvas);
+    }
+}
+
+static void toast_animation_step(AromaNode *target, float value,
+                                 void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (!s_toast_canvas)
+        return;
+    s_toast_reveal = value;
+    if (s_toast_reveal < 0.0f)
+        s_toast_reveal = 0.0f;
+    if (s_toast_reveal > 1.0f)
+        s_toast_reveal = 1.0f;
+    draw_toast();
+    aroma_ui_request_redraw(aroma_ui_get_window_at(0));
+}
+
+static void toast_animation_complete(AromaNode *target, void *user_data)
+{
+    (void)target;
+    (void)user_data;
+    if (s_toast_hiding)
+    {
+        toast_finish_hide();
+        return;
+    }
+    s_toast_reveal = 1.0f;
+    draw_toast();
+}
+
+static void toast_animate_show(void)
+{
+    if (!s_toast_canvas)
+        return;
+    s_toast_hiding = false;
+    aroma_node_set_hidden(s_toast_canvas, false);
+    if (s_toast_reveal >= 0.999f)
+    {
+        aroma_animation_stop(s_toast_canvas);
+        s_toast_reveal = 1.0f;
+        draw_toast();
+        return;
+    }
+
+    AromaAnimation *anim = aroma_animation_start_custom(
+        s_toast_canvas, s_toast_reveal, 1.0f, 180u,
+        toast_animation_step, NULL);
+    if (!anim)
+    {
+        s_toast_reveal = 1.0f;
+        draw_toast();
+        return;
+    }
+    aroma_animation_set_easing(anim, AROMA_EASE_OUT_CUBIC);
+    aroma_animation_set_on_complete(anim, toast_animation_complete);
+}
+
+static void toast_animate_hide(void)
+{
+    if (!s_toast_canvas)
+    {
+        toast_finish_hide();
+        return;
+    }
+    if (s_toast_hiding)
+        return;
+    s_toast_hiding = true;
+    if (s_toast_reveal <= 0.001f)
+    {
+        toast_finish_hide();
+        return;
+    }
+
+    AromaAnimation *anim = aroma_animation_start_custom(
+        s_toast_canvas, s_toast_reveal, 0.0f, 150u,
+        toast_animation_step, NULL);
+    if (!anim)
+    {
+        toast_finish_hide();
+        return;
+    }
+    aroma_animation_set_easing(anim, AROMA_EASE_IN_QUAD);
+    aroma_animation_set_on_complete(anim, toast_animation_complete);
 }

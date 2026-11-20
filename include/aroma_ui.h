@@ -57,6 +57,21 @@ extern "C"
     typedef struct  AromaDebugOverlay AromaDebugOverlay;
     typedef struct  AromaIcon AromaIcon;
 
+    typedef enum
+    {
+        AROMA_CURSOR_ARROW = 0,
+        AROMA_CURSOR_IBEAM,
+        AROMA_CURSOR_HAND,
+        AROMA_CURSOR_CROSSHAIR,
+        AROMA_CURSOR_MOVE,
+        AROMA_CURSOR_RESIZE_HORIZONTAL,
+        AROMA_CURSOR_RESIZE_VERTICAL,
+        AROMA_CURSOR_RESIZE_DIAGONAL_NWSE,
+        AROMA_CURSOR_RESIZE_DIAGONAL_NESW,
+        AROMA_CURSOR_NOT_ALLOWED,
+        AROMA_CURSOR_COUNT
+    } AromaCursorShape;
+
 
     typedef struct
     {
@@ -358,6 +373,9 @@ extern "C"
     extern void aroma_ui_set_window_maximized_impl(AromaWindow *window,
                                                    bool maximized);
     extern void aroma_ui_toggle_window_maximized_impl(AromaWindow *window);
+    extern void aroma_ui_set_window_fullscreen_impl(AromaWindow *window,
+                                                    bool fullscreen);
+    extern void aroma_ui_set_cursor_impl(AromaCursorShape shape);
 
     static inline void aroma_ui_set_window_decorated(AromaWindow *window,
                                                      bool decorated)
@@ -390,6 +408,18 @@ extern "C"
     {
         if (window)
             aroma_ui_toggle_window_maximized_impl(window);
+    }
+
+    static inline void aroma_ui_set_window_fullscreen(AromaWindow *window,
+                                                      bool fullscreen)
+    {
+        if (window)
+            aroma_ui_set_window_fullscreen_impl(window, fullscreen);
+    }
+
+    static inline void aroma_ui_set_cursor(AromaCursorShape shape)
+    {
+        aroma_ui_set_cursor_impl(shape);
     }
 
     static inline void aroma_ui_set_window_opacity(AromaWindow *window, float opacity)

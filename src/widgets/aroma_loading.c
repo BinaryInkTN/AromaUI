@@ -72,32 +72,29 @@ static void loading_draw(AromaNode* node, size_t window_id) {
         gfx->fill_rectangle(window_id, dx, dy, dot_size, dot_size, c, true, dot_size / 2.0f);
     }
 }
-
 static void loading_timer_cb(void* user_data) {
     AromaLoading* loading = (AromaLoading*)user_data;
-    if (!loading) return;
+    if (!loading || !loading->node) return;
 
-    if (loading->node) {
-        AromaNode* curr = loading->node;
-        bool is_visible = true;
-        while(curr) {
-            if (curr->is_hidden) {
-                is_visible = false;
-                break;
-            }
-            curr = curr->parent_node;
-        }
-        if (!is_visible) return;
+    for (AromaNode* curr = loading->node; curr; curr = curr->parent_node) {
+        if (curr->is_hidden) return;
     }
 
     loading->start_angle += 10.0f;
-    if (loading->start_angle >= 360.0f) {
+    if (loading->start_angle >= 360.0f)
         loading->start_angle -= 360.0f;
-    }
 
-    if (loading->node) {
-        aroma_node_invalidate(loading->node);
+    aroma_node_invalidate(loading->node);
+}
+static void loading_destroy(AromaNode* node)
+{
+    if (!node || !node->node_widget_ptr) return;
+    AromaLoading* loading = (AromaLoading*)node->node_widget_ptr;
+    if (loading->timer) {
+        aroma_timer_cancel(loading->timer);  
+        loading->timer = NULL;
     }
+    loading->node = NULL;
 }
 
 AromaNode* aroma_loading_create(AromaNode* parent, int x, int y, int radius, int thickness, uint32_t color) {
@@ -130,6 +127,7 @@ thickness = aroma_android_dp_to_px(thickness);
 
     loading->node = node;
     aroma_node_set_draw_cb(node, loading_draw);
+    node->destroy_cb = loading_destroy;
     loading->timer = aroma_timer_create(30, true, loading_timer_cb, loading);
 
     return node;
