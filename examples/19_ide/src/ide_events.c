@@ -1193,8 +1193,8 @@ static bool project_create_extended(const char *name, const char *path,
 {
     if (!name || !name[0] || !path || !path[0])
         return false;
-    if (template_id < 0 || template_id > 2)
-        template_id = 1;
+    if (template_id < 0 || template_id >= WIZ_TEMPLATE_COUNT)
+        template_id = 0;
 
     char root[PROJECT_PATH_MAX];
     size_t path_len = strlen(path);
@@ -1253,7 +1253,7 @@ static bool project_create_extended(const char *name, const char *path,
                  "endif()\n"
                  "\n"
                  "if(NOT TARGET aroma)\n"
-                 "    add_subdirectory(${AROMA_DIR} aroma_sdk)\n"
+                 "    add_subdirectory(\"${AROMA_DIR}\" aroma_sdk)\n"
                  "endif()\n"
                  "\n"
                  "add_executable(%s src/main.c)\n"
@@ -1307,6 +1307,315 @@ static bool project_create_extended(const char *name, const char *path,
         return false;
 
     log_add("workspace/createProject", "Created %s at %s", name, root);
+    return true;
+}
+
+static bool wizard_copy_file(const char *source, const char *destination)
+{
+    FILE *input = fopen(source, "rb");
+    if (!input)
+        return false;
+    FILE *output = fopen(destination, "wb");
+    if (!output)
+    {
+        fclose(input);
+        return false;
+    }
+    char buffer[65536];
+    bool ok = true;
+    size_t read_count;
+    while ((read_count = fread(buffer, 1, sizeof(buffer), input)) > 0)
+    {
+        if (fwrite(buffer, 1, read_count, output) != read_count)
+        {
+            ok = false;
+            break;
+        }
+    }
+    if (ferror(input))
+        ok = false;
+    if (fclose(output) != 0)
+        ok = false;
+    fclose(input);
+    return ok;
+}
+
+static bool wizard_skip_example_entry(const char *name)
+{
+    if (!name || !name[0] || name[0] == '.')
+        return true;
+    static const char *const skipped[] = {
+        "build", "build_web", "android", "CMakeFiles", "dist", "tools",
+        "screenshot.png", "website.html"};
+    for (size_t i = 0; i < sizeof(skipped) / sizeof(skipped[0]); i++)
+    {
+        if (strcmp(name, skipped[i]) == 0)
+            return true;
+    }
+    return false;
+}
+
+static bool wizard_copy_tree(const char *source, const char *destination)
+{
+    DIR *directory = opendir(source);
+    if (!directory)
+        return false;
+    if (!wizard_mkdir_p(destination))
+    {
+        closedir(directory);
+        return false;
+    }
+
+    bool ok = true;
+    struct dirent *entry;
+    while ((entry = readdir(directory)) != NULL)
+    {
+        if (strcmp(entry->d_name, ".") == 0 ||
+            strcmp(entry->d_name, "..") == 0)
+            continue;
+        if (wizard_skip_example_entry(entry->d_name))
+            continue;
+
+        char source_path[PROJECT_PATH_MAX];
+        char destination_path[PROJECT_PATH_MAX];
+        if (snprintf(source_path, sizeof(source_path), "%s/%s", source,
+                     entry->d_name) >= (int)sizeof(source_path) ||
+            snprintf(destination_path, sizeof(destination_path), "%s/%s",
+                     destination, entry->d_name) >=
+                (int)sizeof(destination_path))
+        {
+            ok = false;
+            continue;
+        }
+
+        struct stat info;
+        if (lstat(source_path, &info) != 0)
+            continue;
+        if (S_ISDIR(info.st_mode))
+        {
+            if (!wizard_copy_tree(source_path, destination_path))
+                ok = false;
+        }
+        else if (S_ISREG(info.st_mode))
+        {
+            if (!wizard_copy_file(source_path, destination_path))
+                ok = false;
+        }
+    }
+    closedir(directory);
+    return ok;
+}
+
+static char *wizard_read_whole_file(const char *path, size_t *out_length)
+{
+    FILE *file = fopen(path, "rb");
+    if (!file)
+        return NULL;
+    if (fseek(file, 0, SEEK_END) != 0)
+    {
+        fclose(file);
+        return NULL;
+    }
+    long length = ftell(file);
+    if (length < 0 || length > 4 * 1024 * 1024)
+    {
+        fclose(file);
+        return NULL;
+    }
+    rewind(file);
+    char *data = malloc((size_t)length + 1);
+    if (!data)
+    {
+        fclose(file);
+        return NULL;
+    }
+    size_t read_count = fread(data, 1, (size_t)length, file);
+    fclose(file);
+    if (read_count != (size_t)length)
+    {
+        free(data);
+        return NULL;
+    }
+    data[length] = '\0';
+    if (out_length)
+        *out_length = (size_t)length;
+    return data;
+}
+
+static bool wizard_replace_all(char **data, const char *needle,
+                               const char *replacement)
+{
+    if (!data || !*data || !needle || !needle[0] || !replacement)
+        return false;
+    size_t needle_length = strlen(needle);
+    size_t replacement_length = strlen(replacement);
+    size_t count = 0;
+    const char *cursor = *data;
+    while ((cursor = strstr(cursor, needle)) != NULL)
+    {
+        count++;
+        cursor += needle_length;
+    }
+    if (count == 0)
+        return true;
+
+    size_t old_length = strlen(*data);
+    size_t capacity = old_length + 1;
+    if (replacement_length > needle_length)
+        capacity += count * (replacement_length - needle_length);
+    char *result = malloc(capacity);
+    if (!result)
+        return false;
+
+    cursor = *data;
+    char *output = result;
+    const char *match;
+    while ((match = strstr(cursor, needle)) != NULL)
+    {
+        size_t chunk = (size_t)(match - cursor);
+        memcpy(output, cursor, chunk);
+        output += chunk;
+        memcpy(output, replacement, replacement_length);
+        output += replacement_length;
+        cursor = match + needle_length;
+    }
+    strcpy(output, cursor);
+    free(*data);
+    *data = result;
+    return true;
+}
+
+static bool wizard_patch_example_cmake(const char *path, const char *old_name,
+                                       const char *new_name)
+{
+    size_t length = 0;
+    char *data = wizard_read_whole_file(path, &length);
+    if (!data)
+        return false;
+    (void)length;
+
+    char sdk_path[PROJECT_PATH_MAX];
+    snprintf(sdk_path, sizeof(sdk_path), "%s", AROMA_IDE_SDK_ROOT);
+    char set_line[PROJECT_PATH_MAX + 32];
+    snprintf(set_line, sizeof(set_line), "set(AROMA_DIR \"%s\")", sdk_path);
+    wizard_replace_all(&data,
+                       "set(AROMA_DIR \"${CMAKE_CURRENT_SOURCE_DIR}/../..\")",
+                       set_line);
+    wizard_replace_all(&data, "add_subdirectory(${AROMA_DIR} aroma_sdk)",
+                       "add_subdirectory(\"${AROMA_DIR}\" aroma_sdk)");
+    if (old_name && old_name[0] && new_name && new_name[0])
+        wizard_replace_all(&data, old_name, new_name);
+
+    FILE *file = fopen(path, "wb");
+    if (!file)
+    {
+        free(data);
+        return false;
+    }
+    size_t data_length = strlen(data);
+    bool ok = fwrite(data, 1, data_length, file) == data_length;
+    if (fclose(file) != 0)
+        ok = false;
+    free(data);
+    return ok;
+}
+
+static bool project_create_from_example(const char *name, const char *path,
+                                        const char *example_dir,
+                                        const char *example_title,
+                                        bool with_readme)
+{
+    if (!name || !name[0] || !path || !path[0] || !example_dir ||
+        !example_dir[0])
+        return false;
+
+    char root[PROJECT_PATH_MAX];
+    size_t path_length = strlen(path);
+    if (path_length > 0 && path[path_length - 1] == '/')
+        snprintf(root, sizeof(root), "%s%s", path, name);
+    else
+        snprintf(root, sizeof(root), "%s/%s", path, name);
+    if (access(root, F_OK) == 0)
+        return false;
+
+    char source[PROJECT_PATH_MAX];
+    if (snprintf(source, sizeof(source), "%s/examples/%s",
+                 AROMA_IDE_SDK_ROOT, example_dir) >= (int)sizeof(source))
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "The example path is too long");
+        return false;
+    }
+    if (access(source, R_OK) != 0)
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "Example folder not found: %s", source);
+        return false;
+    }
+    if (!wizard_mkdir_p(root))
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "Could not create %s", root);
+        return false;
+    }
+    if (!wizard_copy_tree(source, root))
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "Could not copy the example files");
+        return false;
+    }
+
+    char cmake_name[PROJECT_NAME_MAX];
+    wizard_cmake_identifier(name, cmake_name, sizeof(cmake_name));
+    char cmake_path[PROJECT_PATH_MAX];
+    snprintf(cmake_path, sizeof(cmake_path), "%s/CMakeLists.txt", root);
+    if (!wizard_patch_example_cmake(cmake_path, example_dir, cmake_name))
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "Could not update the example CMakeLists.txt");
+        return false;
+    }
+
+    char json_path[PROJECT_PATH_MAX];
+    snprintf(json_path, sizeof(json_path), "%s/aroma.json", root);
+    if (access(json_path, F_OK) != 0)
+    {
+        char json[2048];
+        snprintf(json, sizeof(json),
+                 "{\n  \"title\": \"%s\",\n  \"width\": 1280,\n"
+                 "  \"height\": 800,\n  \"template\": \"%s\"\n}\n",
+                 name, example_title ? example_title : example_dir);
+        if (!wizard_write_file(root, "aroma.json", json))
+            return false;
+    }
+
+    char readme_path[PROJECT_PATH_MAX];
+    snprintf(readme_path, sizeof(readme_path), "%s/README.md", root);
+    if (!with_readme)
+        unlink(readme_path);
+    else if (access(readme_path, F_OK) != 0)
+    {
+        char readme[4096];
+        snprintf(readme, sizeof(readme),
+                 "# %s\n\n"
+                 "Created with AromaUI Studio from the **%s** example.\n\n"
+                 "## Build\n\n"
+                 "```bash\n"
+                 "cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug\n"
+                 "cmake --build build -j\n"
+                 "./build/%s\n"
+                 "```\n",
+                 name, example_title ? example_title : example_dir, cmake_name);
+        if (!wizard_write_file(root, "README.md", readme))
+            return false;
+    }
+
+    if (!wizard_write_file(root, ".gitignore",
+                           "build/\nbuild_web/\n*.o\n"))
+        return false;
+
+    log_add("workspace/createProject", "Created %s from %s at %s", name,
+            example_dir, root);
     return true;
 }
 

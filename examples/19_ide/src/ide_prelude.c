@@ -24,6 +24,7 @@
 #include <widgets/aroma_window.h>
 
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -101,7 +102,10 @@ static bool project_create(const char *name, const char *path);
 static bool project_create_extended(const char *name, const char *path,
                                     int template_id, bool with_cmake,
                                     bool with_readme);
-static bool project_create_wizard(const char *name, const char *project_root, int type, bool with_cmake, bool with_readme);
+static bool project_create_from_example(const char *name, const char *path,
+                                        const char *example_dir,
+                                        const char *example_title,
+                                        bool with_readme);
 static bool project_open(const char *path);
 static void project_build(void);
 static void project_append_build_output(const char *text);
@@ -328,6 +332,18 @@ static int s_wiz_h;
 #define WIZ_STEPPER_Y (s_wiz_y + 72)
 #define WIZ_CONTENT_Y (s_wiz_y + 152)
 #define WIZ_FOOTER_Y (s_wiz_y + s_wiz_h - 58)
+#define WIZ_TEMPLATE_COUNT 4
+#define WIZ_MAX_EXAMPLES 32
+#define WIZ_EXAMPLE_DIR_MAX 64
+#define WIZ_EXAMPLE_TITLE_MAX 64
+#define WIZ_EXAMPLE_DESC_MAX 160
+
+typedef struct WizardExample
+{
+    char dir[WIZ_EXAMPLE_DIR_MAX];
+    char title[WIZ_EXAMPLE_TITLE_MAX];
+    char description[WIZ_EXAMPLE_DESC_MAX];
+} WizardExample;
 
                                                                             
 static bool s_theme_is_dark = true;
@@ -662,15 +678,11 @@ static const MenuItem k_run_menu[] = {
     {"Language Server",        "",   IDE_ACTION_LANGUAGE_SERVER},
 };
 
-static const MenuItem k_help_menu[] = {
-    {"About AromaUI Studio", "", IDE_ACTION_ABOUT},
-    {"Keyboard Shortcuts",   "", IDE_ACTION_SHORTCUTS},
-    {"Open README",          "", IDE_ACTION_OPEN_README},
-};
+
 
 static const MenuItem *const k_menu_items[6] = {
     k_file_menu, k_edit_menu, k_selection_menu, k_view_menu,
-    k_go_menu, k_run_menu, k_help_menu};
+    k_go_menu, k_run_menu};
 
 static const int k_menu_item_counts[6] = {10, 7, 4, 7, 5, 9};
 static const char *const k_menus[6] = { "File", "Edit", "Selection", "View", "Go", "Run"};
@@ -1624,8 +1636,8 @@ static void ide_layout_recalc(void)
     s_dialog_x = (win_w - s_dialog_w) / 2;
     s_dialog_y = (win_h - s_dialog_h) / 2;
 
-    s_wiz_w = 752;
-    s_wiz_h = 676;
+    s_wiz_w = 1000;
+    s_wiz_h = 720;
     s_wiz_x = (win_w - s_wiz_w) / 2;
     s_wiz_y = (win_h - s_wiz_h) / 2;
 }
@@ -1633,6 +1645,9 @@ static void ide_layout_recalc(void)
 static int s_wizard_step;
 static int s_wizard_focus;
 static int s_wizard_template;
+static int s_wizard_example;
+static int s_wizard_tab;
+static int s_wizard_scroll;
 static int s_wizard_hover;
 static bool s_wizard_with_cmake;
 static bool s_wizard_with_readme;
@@ -1640,6 +1655,8 @@ static bool s_wizard_open_after;
 static char s_wizard_name[PROJECT_NAME_MAX];
 static char s_wizard_path[PROJECT_PATH_MAX];
 static char s_wizard_error[192];
+static WizardExample s_wizard_examples[WIZ_MAX_EXAMPLES];
+static int s_wizard_example_count;
 static AromaNode *s_wizard_stepper;
 
 static bool s_dialog_open;
@@ -1710,7 +1727,6 @@ enum
     SETTING_CAT_WINDOW,
     SETTING_CAT_OUTPUT,
     SETTING_CAT_FILE,
-    SETTING_CAT_KEYBOARD,
     SETTING_CAT_ABOUT,
     SETTING_CAT_COUNT
 };

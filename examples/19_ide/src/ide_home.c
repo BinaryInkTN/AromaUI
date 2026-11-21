@@ -6,15 +6,14 @@ static void ide_claim_node(AromaNode *node)
 
 static void ide_claim_layout_nodes(void)
 {
-                                                                            
-                                                                     
+
     if (s_root)
         aroma_node_set_layout_fill(s_root);
 
     ide_claim_node(s_editor);
-    ide_claim_node(s_editor_bg);                                    
+    ide_claim_node(s_editor_bg);
     ide_claim_node(s_settings_canvas);
-    ide_claim_node(s_panel_bg);                                    
+    ide_claim_node(s_panel_bg);
     ide_claim_node(s_panel_canvas);
     ide_claim_node(s_card_outline_bg);
     ide_claim_node(s_outline_canvas);
@@ -43,9 +42,6 @@ static void ide_claim_layout_nodes(void)
     ide_claim_node(s_designer_overlay);
 }
 
-/* IntelliJ-style welcome screen: centred logo, product name and version,
- * then a short left-aligned list of actions, Everything is derived from the window
- * size, so it works in a small window. */
 #define HOME_BG 0xFF4A494Du
 #define HOME_ROW_H 36
 #define HOME_LIST_W 280
@@ -53,7 +49,6 @@ static void ide_claim_layout_nodes(void)
 
 #define HOME_ITEM_COUNT() (s_home_has_recent_project ? 4 : 3)
 
-/* In-window changelog (no separate native window / web view needed). */
 static int s_changelog_scroll;
 static int s_changelog_max_scroll;
 
@@ -99,7 +94,7 @@ static bool home_on_key(AromaEvent *event, void *user_data)
         return false;
     if (s_changelog_visible)
     {
-        if (event->data.key.key_code == 0xFF1B || event->data.key.key_code == 27)             
+        if (event->data.key.key_code == 0xFF1B || event->data.key.key_code == 27)
         {
             home_hide_changelog();
             return true;
@@ -120,7 +115,7 @@ static bool ide_home_global_key(AromaEvent *event, void *user_data)
         return false;
     if (s_changelog_visible)
     {
-        if (event->data.key.key_code == 0xFF1B || event->data.key.key_code == 27)             
+        if (event->data.key.key_code == 0xFF1B || event->data.key.key_code == 27)
         {
             home_hide_changelog();
             return true;
@@ -280,15 +275,10 @@ void ide_home_init(IncenseRegistry *registry, IdeAssets *assets)
         subscribe_node(s_home_canvas, EVENT_TYPE_MOUSE_SCROLL, home_on_scroll);
     }
 
-                                                                          
-                                                                              
-                                                                           
     s_dialog_open = false;
     s_wizard_stepper = NULL;
     s_dialog_canvas = NULL;
-                                                                             
-                                                                         
-                                                               
+
     s_home_host = find_widget(registry, "home_root");
     if (!s_home_host)
         s_home_host = g_windows[0].root_node;
@@ -318,13 +308,9 @@ void ide_home_init(IncenseRegistry *registry, IdeAssets *assets)
         }
     }
 
-                                                                             
-                                  
     aroma_event_set_global_key_handler(ide_home_global_key, NULL);
 }
 
-                                                                            
-                                                                    
 void ide_home_fail(const char *message)
 {
     s_home_mode = true;
@@ -348,8 +334,6 @@ static void home_action(int index, int col_x, int by, const char *glyph,
              hot ? 0xFFFFFFFFu : 0xFFD0D0D4u, ui14);
 }
 
-/* AromaStudio logo, minimalist: a flat rounded tile with an "A" reduced to
- * a chevron, its crossbar replaced by a single dot (the incense ember). */
 static void home_logo(int x, int y, int size)
 {
     int cx = x + size / 2;
@@ -373,7 +357,7 @@ typedef struct ChangelogCtx
 {
     bool draw;
     int x;
-    int y;      /* running content y (relative to content top) */
+    int y;
     int width;
     int view_top;
     int view_h;
@@ -389,7 +373,6 @@ static void changelog_emit(ChangelogCtx *c, const char *str, int indent,
     c->y += line_h;
 }
 
-/* Word-wraps `src` (backticks removed) to the panel width. */
 static void changelog_wrap(ChangelogCtx *c, const char *src, int indent,
                            AromaFont *font, uint32_t color, int line_h)
 {
@@ -437,8 +420,6 @@ static void changelog_wrap(ChangelogCtx *c, const char *src, int indent,
         changelog_emit(c, cur, indent, font, color, line_h);
 }
 
-/* Walks k_changelog_md; returns total content height.  With draw=false it
- * only measures (used to clamp scrolling). */
 static int changelog_layout(bool draw, int x, int view_top, int view_h,
                             int width, int scroll)
 {
@@ -458,7 +439,7 @@ static int changelog_layout(bool draw, int x, int view_top, int view_h,
         p = eol ? eol + 1 : p + len;
 
         if (line_buf[0] == '\0' || strncmp(line_buf, "# ", 2) == 0)
-            continue; /* blank lines and the h1 (the panel header says it) */
+            continue;
         if (strncmp(line_buf, "## ", 3) == 0)
         {
             if (c.y > 0)
@@ -563,7 +544,6 @@ void ide_home_draw(void)
 
     fill(s_home_canvas, 0, 0, win_w, win_h, 0, HOME_BG);
 
-    /* title bar (custom: the window is undecorated) */
     fill(s_home_canvas, 0, 0, win_w, TITLE_H, 0, 0xFF252A3Au);
     text(s_home_canvas, "Welcome to AromaStudio", 14, 11, C_TEXT, ui12);
     icon_center(s_home_canvas, AROMA_ICON_REMOVE, win_w - 80, 18, 15,
@@ -575,7 +555,6 @@ void ide_home_draw(void)
     icon_center(s_home_canvas, AROMA_ICON_CLOSE, win_w - 28, 18, 13,
                 C_TEXT_SOFT);
 
-    /* logo, name, version */
     home_logo((win_w - HOME_LOGO) / 2, top, HOME_LOGO);
     int ty = top + HOME_LOGO + 24;
     {
@@ -588,7 +567,6 @@ void ide_home_draw(void)
     text_center(s_home_canvas, "Version alpha 0.0.1", 0, ty + 34 + 8, win_w,
                 20, 0xFF8E8E93u, ui15);
 
-    /* action list */
     int idx = 0;
     if (s_home_has_recent_project)
     {
@@ -622,8 +600,6 @@ void ide_home_draw(void)
     aroma_node_invalidate(s_home_canvas);
 }
 
-                                                                           
-                                                                             
 static void home_dialog_start_dir(const char *preferred, char *out,
                                   size_t out_size)
 {
@@ -631,8 +607,7 @@ static void home_dialog_start_dir(const char *preferred, char *out,
     if (preferred && preferred[0] && stat(preferred, &st) == 0 &&
         S_ISDIR(st.st_mode))
     {
-                                                                           
-                                                     
+
         char cwd[PATH_MAX];
         if (preferred[0] != '/' && getcwd(cwd, sizeof(cwd)))
         {
@@ -658,10 +633,6 @@ static void home_dialog_start_dir(const char *preferred, char *out,
     snprintf(out, out_size, "%s", ".");
 }
 
-                                                                              
-                                                                               
-                                                                           
-                                  
 static void home_pick_project(const char *preferred_dir)
 {
     char start[PATH_MAX];
@@ -701,7 +672,6 @@ static void home_pick_project(const char *preferred_dir)
                  selected);
         s_home_mode = false;
 
-                                                                            
         snprintf(s_home_recent_project_path, sizeof(s_home_recent_project_path),
                  "%s", selected);
         snprintf(s_home_recent_project_name, sizeof(s_home_recent_project_name),
@@ -783,7 +753,8 @@ bool ide_home_on_click(AromaEvent *event, void *user_data)
                 event->data.mouse.x, event->data.mouse.y,
                 (unsigned)event->data.mouse.button,
                 (unsigned long long)(event->target_node
-                                         ? event->target_node->node_id : 0));
+                                         ? event->target_node->node_id
+                                         : 0));
     if (!s_home_mode)
         return false;
     if (home_titlebar_click(event))
@@ -816,7 +787,7 @@ bool ide_home_on_click(AromaEvent *event, void *user_data)
     {
         if (button == idx++)
         {
-                                                         
+
             if (access(s_home_recent_project_path, R_OK) == 0)
             {
                 char json_path[PATH_MAX + 16];
@@ -886,7 +857,7 @@ void ide_home_open_pending_dialog(void)
 void ide_after_mount(IncenseRegistry *registry, IdeAssets *assets)
 {
     s_assets = assets;
-                                                                          
+
     s_home_canvas = NULL;
     s_home_host = NULL;
     s_wizard_stepper = NULL;

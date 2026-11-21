@@ -533,12 +533,12 @@ static void draw_run(void)
                                                                             
 
 static const char *const k_setting_cat_labels[SETTING_CAT_COUNT] = {
-    "Editor", "Theme", "Window", "Output", "File", "Keyboard", "About"};
+    "Editor", "Theme", "Window", "Output", "File", "About"};
 static const char *const k_setting_cat_icons[SETTING_CAT_COUNT] = {
     AROMA_ICON_EDIT, AROMA_ICON_PALETTE, AROMA_ICON_OPACITY,
-    AROMA_ICON_DASHBOARD, AROMA_ICON_DESCRIPTION, AROMA_ICON_KEYBOARD,
+    AROMA_ICON_DASHBOARD, AROMA_ICON_DESCRIPTION,
     AROMA_ICON_INFO};
-static const int k_setting_cat_rows[SETTING_CAT_COUNT] = {7, 3, 3, 3, 4, 1, 2};
+static const int k_setting_cat_rows[SETTING_CAT_COUNT] = {7, 3, 3, 3, 4, 1};
 
 static void draw_setting_toggle(AromaNode *canvas, int y, int item_x,
                                 int item_w, bool *value, const char *label,
@@ -745,13 +745,6 @@ static void draw_setting_entry(AromaNode *canvas, int y, int cat, int row,
                                 &s_setting_final_newline, "Final newline",
                                 "Ensure file ends with newline", draw_controls);
     }
-    else if (cat == SETTING_CAT_KEYBOARD)
-    {
-        if (row == 0)
-            draw_setting_button(canvas, y, item_x, item_w,
-                                "View keybindings",
-                                "Show keyboard shortcuts reference");
-    }
     else if (cat == SETTING_CAT_ABOUT)
     {
         if (row == 0)
@@ -916,7 +909,6 @@ static const char *const k_setting_cat_desc[SETTING_CAT_COUNT] = {
     "Window transparency and in-development features",
     "Build and run output",
     "Saving and formatting",
-    "Keyboard shortcuts",
     "About AromaUI Studio"};
 
 enum
@@ -1684,24 +1676,7 @@ static void settings_window_open(void)
                                     s_setting_final_newline,
                                     &s_setting_final_newline);
         }
-        else if (i == SETTING_CAT_KEYBOARD)
-        {
-            settings_add_label(content, "Keyboard shortcuts", 232, 158,
-                               font_ui(12), SETTINGS_LABEL_TEXT);
-            settings_add_label(content,
-                               "Show the complete keyboard shortcuts reference",
-                               232, 177, font_ui(10), SETTINGS_LABEL_DIM);
-            AromaNode *button = aroma_ui_button_with_type(
-                content, "View keybindings",
-                SETTINGS_WIN_CONTENT_X + SETTINGS_WIN_CONTENT_W - 182, 160,
-                170, 32, BUTTON_TYPE_TONAL, settings_keybindings_clicked,
-                NULL, font_ui(11));
-            if (button)
-            {
-                aroma_node_set_z_index(button, 4);
-                aroma_layout_note_placed(button);
-            }
-        }
+      
         else if (i == SETTING_CAT_ABOUT)
         {
             settings_add_label(content, "AromaUI Studio", 232, 158,
@@ -2015,24 +1990,7 @@ static bool settings_on_click(int x, int y)
                 x < sx + s_sidebar_w - 40)
             {
                 s_setting_row_hover = i;
-                if (c == SETTING_CAT_KEYBOARD && r == 0)
-                {
-                    draw_sidebar();
-                    return true;
-                }
-                if (c != SETTING_CAT_KEYBOARD)
-                {
-                    bool is_select = false;
-                    if (c == SETTING_CAT_EDITOR && (r == 2 || r == 3))
-                        is_select = true;
-                    if (c == SETTING_CAT_THEME && (r == 1 || r == 2))
-                    if (c == SETTING_CAT_WINDOW && r == 1)
-                        is_select = true;
-                    if (is_select)
-                        settings_row_cycle(c, r);
-                    else
-                        settings_row_toggle(c, r);
-                }
+                
                 return true;
             }
             item_y += item_h;
@@ -3527,11 +3485,18 @@ static bool props_on_click(int x, int y)
     return true;
 }
 
+static void wizard_on_scroll(AromaEvent *event);
+
 static bool props_on_scroll(AromaEvent *event, void *user_data)
 {
     (void)user_data;
     if (!s_dialog_open || !event || event->event_type != EVENT_TYPE_MOUSE_SCROLL)
         return false;
+    if (s_dialog_mode == IDE_DIALOG_NEW_PROJECT)
+    {
+        wizard_on_scroll(event);
+        return true;
+    }
     if (s_dialog_mode == IDE_DIALOG_PROPERTIES)
         props_update_geometry();
     int x = event->data.mouse.x;
@@ -4205,15 +4170,92 @@ static void wizard_default_markup(int template_id, const char *title,
                  title, title);
         return;
     }
+    if (template_id == 3)
+    {
+        snprintf(out, out_size,
+                 "Window {\n"
+                 "    width: 960\n"
+                 "    height: 640\n"
+                 "    title: \"%s\"\n"
+                 "\n"
+                 "    Card {\n"
+                 "        x: 0\n"
+                 "        y: 0\n"
+                 "        width: 240\n"
+                 "        height: 640\n"
+                 "        type: filled\n"
+                 "        color: \"#171A21\"\n"
+                 "        corner_radius: 0\n"
+                 "\n"
+                 "        Label { text: \"%s\" x: 24 y: 28 style: \"large\" }\n"
+                 "        Label { text: \"PREFERENCES\" x: 24 y: 62 style: \"small\" }\n"
+                 "        Label { text: \"General\" x: 24 y: 104 style: \"medium\" }\n"
+                 "        Label { text: \"Appearance\" x: 24 y: 136 style: \"small\" }\n"
+                 "        Label { text: \"Notifications\" x: 24 y: 168 style: \"small\" }\n"
+                 "        Label { text: \"Privacy\" x: 24 y: 200 style: \"small\" }\n"
+                 "    }\n"
+                 "    Label { text: \"General\" x: 280 y: 32 style: \"large\" }\n"
+                 "    Label { text: \"Manage how Aroma behaves on this device.\" x: 280 y: 66 style: \"small\" }\n"
+                 "    Card {\n"
+                 "        x: 280\n"
+                 "        y: 104\n"
+                 "        width: 640\n"
+                 "        height: 72\n"
+                 "        type: elevated\n"
+                 "        corner_radius: 12\n"
+                 "\n"
+                 "        Label { text: \"Launch at login\" x: 20 y: 16 style: \"medium\" }\n"
+                 "        Label { text: \"Start Aroma when you sign in.\" x: 20 y: 42 style: \"small\" }\n"
+                 "        Button { text: \"On\" x: 548 y: 18 width: 72 height: 36 type: filled }\n"
+                 "    }\n"
+                 "    Card {\n"
+                 "        x: 280\n"
+                 "        y: 192\n"
+                 "        width: 640\n"
+                 "        height: 72\n"
+                 "        type: outlined\n"
+                 "        corner_radius: 12\n"
+                 "\n"
+                 "        Label { text: \"Automatic updates\" x: 20 y: 16 style: \"medium\" }\n"
+                 "        Label { text: \"Install updates in the background.\" x: 20 y: 42 style: \"small\" }\n"
+                 "        Button { text: \"Off\" x: 548 y: 18 width: 72 height: 36 type: outlined }\n"
+                 "    }\n"
+                 "    Card {\n"
+                 "        x: 280\n"
+                 "        y: 280\n"
+                 "        width: 640\n"
+                 "        height: 72\n"
+                 "        type: outlined\n"
+                 "        corner_radius: 12\n"
+                 "\n"
+                 "        Label { text: \"Language\" x: 20 y: 16 style: \"medium\" }\n"
+                 "        Label { text: \"English (United States)\" x: 20 y: 42 style: \"small\" }\n"
+                 "        Button { text: \"Change\" x: 520 y: 18 width: 100 height: 36 type: outlined }\n"
+                 "    }\n"
+                 "    Label { id: \"status\" text: \"Settings are saved automatically\" x: 280 y: 382 style: \"small\" }\n"
+                 "}\n",
+                 title, title);
+        return;
+    }
+    /* template 0: "Empty canvas" - a blank window with a headline and one
+     * button. Also the fallback for any unknown template id. */
     snprintf(out, out_size,
              "Window {\n"
              "    width: 800\n"
              "    height: 600\n"
              "    title: \"%s\"\n"
              "\n"
-             "    Label { text: \"%s\" x: 32 y: 28 style: \"large\" }\n"
-             "    Label { text: \"A blank AromaUI screen, ready for the designer.\" x: 32 y: 64 style: \"small\" }\n"
-             "    Button { text: \"Get started\" x: 32 y: 104 width: 160 height: 44 type: filled }\n"
+             "    Label { text: \"%s\" x: 40 y: 40 style: \"large\" }\n"
+             "    Label { text: \"Drag widgets from the palette, or edit the markup in Code view.\" x: 40 y: 84 style: \"small\" }\n"
+             "    Button {\n"
+             "        text: \"Get started\"\n"
+             "        x: 40\n"
+             "        y: 128\n"
+             "        width: 160\n"
+             "        height: 44\n"
+             "        type: filled\n"
+             "    }\n"
+             "    Label { id: \"status\" text: \"Ready\" x: 40 y: 196 style: \"small\" }\n"
              "}\n",
              title, title);
 }
@@ -4221,6 +4263,7 @@ static void wizard_default_markup(int template_id, const char *title,
 static void wizard_default_main(char *out, size_t out_size)
 {
     snprintf(out, out_size,
+             "#define _DEFAULT_SOURCE\n"
              "#include <aroma.h>\n"
              "#include <aroma_incense_loader.h>\n"
              "#include <unistd.h>\n"
@@ -4242,12 +4285,7 @@ static void wizard_default_main(char *out, size_t out_size)
              "{\n"
              "    aroma_ui_init();\n"
              "    AromaTheme theme = aroma_theme_create_material_black();\n"
-             "    theme.colors.primary = M3_PRIMARY;\n"
-             "    theme.colors.background = M3_SURFACE;\n"
-             "    theme.colors.surface = M3_SURFACE_LOW;\n"
-             "    theme.colors.text_primary = M3_ON_SURFACE;\n"
-             "    theme.colors.text_secondary = M3_TEXT_DIM;\n"
-             "    theme.colors.border = M3_SURFACE_HIGH;\n"
+             "    theme.colors.primary = 0xFF64D2FFu;\n"
              "    aroma_ui_set_theme(&theme);\n"
              "\n"
              "    g_font = aroma_font_create_from_memory(aroma_ubuntu_ttf, aroma_ubuntu_ttf_len, 16);\n"
@@ -4282,42 +4320,354 @@ static void wizard_default_main(char *out, size_t out_size)
              "}\n");
 }
 
-static const char *const k_wizard_template_titles[3] = {
-    "Empty canvas", "Notes app", "Dashboard"};
-static const char *const k_wizard_template_descriptions[3] = {
+static const char *const k_wizard_template_titles[WIZ_TEMPLATE_COUNT] = {
+    "Empty canvas", "Notes app", "Dashboard", "Settings"};
+static const char *const k_wizard_template_descriptions[WIZ_TEMPLATE_COUNT] = {
     "A blank AromaUI window with a headline and one button.",
     "Sidebar, note cards and a working new-note callback.",
-    "Metric cards, a chart canvas and a top app bar."};
-static const char *k_wizard_step_labels[4] = {
-    "Details", "Template", "Options", "Review"};
-
-static void wizard_redraw(void *user_data)
+    "Metric cards, a chart canvas and a top app bar.",
+    "Preference rows with a navigation sidebar."};
+typedef struct WizardExampleMeta
 {
-    (void)user_data;
-    draw_dialog();
+    const char *dir;
+    const char *title;
+    const char *description;
+} WizardExampleMeta;
+
+static const WizardExampleMeta k_wizard_example_meta[] = {
+    {"01_hello_world", "Hello World",
+     "A minimal window with a label, a button and a live counter."},
+    {"02_buttons", "Buttons",
+     "Filled, outlined, text and icon button variants."},
+    {"03_form_inputs", "Form Inputs",
+     "Text fields, checkboxes, dropdowns and sliders."},
+    {"04_layout", "Layout",
+     "Flex layouts, spacing and responsive containers."},
+    {"05_navigation", "Navigation",
+     "Sidebar, tabs and drawer navigation patterns."},
+    {"06_feedback", "Feedback",
+     "Dialogs, snackbars, progress and loading states."},
+    {"07_lists_tables", "Lists & Tables",
+     "Scrollable lists, tables and structured content."},
+    {"08_theming", "Theming",
+     "Light and dark themes with live color tokens."},
+    {"09_animation", "Animation",
+     "Animated transitions, easing curves and timers."},
+    {"10_datetime", "Date & Time",
+     "Calendars, date pickers and time pickers."},
+    {"11_3d_viewer", "3D Viewer",
+     "A 3D model viewer with orbit-style controls."},
+    {"12_incense", "Incense",
+     "Declarative markup with callbacks and state."},
+    {"13_gestures", "Gestures",
+     "Tap, drag, swipe and pinch gesture handling."},
+    {"14_video", "Video",
+     "Video playback with a custom transport bar."},
+    {"15_webview", "WebView",
+     "Embedded HTML and CSS rendered by the WebView."},
+    {"16_loud_dashboard", "Loud Dashboard",
+     "A full analytics dashboard with charts and tables."},
+    {"17_travel_dashboard", "Travel Dashboard",
+     "A travel dashboard with maps, media and cards."},
+    {"18_fitness_dashboard", "Fitness Dashboard",
+     "A fitness dashboard with gauges and daily stats."},
+};
+
+static const WizardExampleMeta *wizard_example_meta_for(const char *dir)
+{
+    if (!dir)
+        return NULL;
+    for (size_t i = 0; i < sizeof(k_wizard_example_meta) /
+                               sizeof(k_wizard_example_meta[0]); i++)
+    {
+        if (strcmp(k_wizard_example_meta[i].dir, dir) == 0)
+            return &k_wizard_example_meta[i];
+    }
+    return NULL;
 }
 
-static void wizard_create_stepper(void)
+static void wizard_example_derive_title(const char *dir, char *out,
+                                        size_t out_size)
 {
-    AromaNode *host = s_root ? s_root : s_home_host;
-    if (!host)
+    if (!out || out_size == 0)
         return;
-    if (!s_wizard_stepper)
+    out[0] = '\0';
+    if (!dir)
+        return;
+    const char *p = dir;
+    while (isdigit((unsigned char)*p))
+        p++;
+    if (*p == '_')
+        p++;
+    bool capitalize = true;
+    size_t used = 0;
+    while (*p && used + 1 < out_size)
     {
-        s_wizard_stepper = aroma_stepper_create_steps(
-            host, s_wiz_x + 32, WIZ_STEPPER_Y, s_wiz_w - 64, 56,
-            k_wizard_step_labels, 4);
-        if (!s_wizard_stepper)
-            return;
-        aroma_node_set_z_index(s_wizard_stepper, 186);
-        aroma_stepper_set_font(s_wizard_stepper, font_ui(11));
-        aroma_stepper_setup_events(s_wizard_stepper, wizard_redraw, NULL);
-        aroma_stepper_set_on_change(s_wizard_stepper, wizard_stepper_changed,
-                                    NULL);
+        if (*p == '_')
+        {
+            if (used > 0 && out[used - 1] != ' ')
+                out[used++] = ' ';
+            capitalize = true;
+        }
+        else
+        {
+            char c = *p;
+            if (capitalize)
+                c = (char)toupper((unsigned char)c);
+            out[used++] = c;
+            capitalize = false;
+        }
+        p++;
     }
-    aroma_node_set_hidden(s_wizard_stepper, false);
-    aroma_stepper_set_step_index(s_wizard_stepper, s_wizard_step);
-    aroma_node_invalidate(s_wizard_stepper);
+    out[used] = '\0';
+    if (out[0] == '3' && out[1] == 'd')
+        out[1] = 'D';
+}
+
+static void wizard_scan_examples(void)
+{
+    s_wizard_example_count = 0;
+    char root[PROJECT_PATH_MAX];
+    if (snprintf(root, sizeof(root), "%s/examples", AROMA_IDE_SDK_ROOT) >=
+        (int)sizeof(root))
+        return;
+    DIR *directory = opendir(root);
+    if (!directory)
+        return;
+
+    struct dirent *entry;
+    while ((entry = readdir(directory)) != NULL &&
+           s_wizard_example_count < WIZ_MAX_EXAMPLES)
+    {
+        if (!isdigit((unsigned char)entry->d_name[0]))
+            continue;
+        if (strncmp(entry->d_name, "19_ide", 6) == 0)
+            continue;
+        char main_path[PROJECT_PATH_MAX];
+        if (snprintf(main_path, sizeof(main_path), "%s/%s/src/main.c", root,
+                     entry->d_name) >= (int)sizeof(main_path))
+            continue;
+        if (access(main_path, R_OK) != 0)
+            continue;
+        char cmake_path[PROJECT_PATH_MAX];
+        if (snprintf(cmake_path, sizeof(cmake_path), "%s/%s/CMakeLists.txt",
+                     root, entry->d_name) >= (int)sizeof(cmake_path))
+            continue;
+        if (access(cmake_path, R_OK) != 0)
+            continue;
+
+        WizardExample *example = &s_wizard_examples[s_wizard_example_count++];
+        snprintf(example->dir, sizeof(example->dir), "%s", entry->d_name);
+        const WizardExampleMeta *meta = wizard_example_meta_for(entry->d_name);
+        if (meta)
+        {
+            snprintf(example->title, sizeof(example->title), "%s", meta->title);
+            snprintf(example->description, sizeof(example->description), "%s",
+                     meta->description);
+        }
+        else
+        {
+            wizard_example_derive_title(entry->d_name, example->title,
+                                        sizeof(example->title));
+            snprintf(example->description, sizeof(example->description),
+                     "A complete AromaUI example project.");
+        }
+    }
+    closedir(directory);
+
+    for (int i = 1; i < s_wizard_example_count; i++)
+    {
+        WizardExample value = s_wizard_examples[i];
+        int j = i - 1;
+        while (j >= 0 &&
+               strcmp(s_wizard_examples[j].dir, value.dir) > 0)
+        {
+            s_wizard_examples[j + 1] = s_wizard_examples[j];
+            j--;
+        }
+        s_wizard_examples[j + 1] = value;
+    }
+}
+
+static void wizard_geometry(void)
+{
+    int w = win_w - 72;
+    int h = win_h - 72;
+    if (w > 940)
+        w = 940;
+    if (h > 620)
+        h = 620;
+    if (w < 720)
+        w = win_w - 24;
+    if (h < 540)
+        h = win_h - 24;
+    if (w < 480)
+        w = win_w;
+    if (h < 420)
+        h = win_h;
+    s_wiz_w = w;
+    s_wiz_h = h;
+    s_wiz_x = (win_w - w) / 2;
+    s_wiz_y = (win_h - h) / 2;
+}
+
+typedef struct WizardLayout
+{
+    int x, y, w, h;
+    int pad;
+    int header_h;
+    int footer_y;
+    int gallery_x, gallery_y, gallery_w, gallery_h;
+    int tabs_y, tabs_h;
+    int cards_y, view_h;
+    int columns, card_w, card_h, gap;
+    int details_x, details_y, details_w;
+    int name_label_y, name_y, name_h;
+    int path_label_y, path_y, path_h, browse_x, browse_w;
+    int options_y, option_h;
+    int summary_y, summary_h;
+    int create_x, create_y, create_w, create_h;
+    int cancel_x, cancel_y, cancel_w, cancel_h;
+    int close_x, close_y, close_w, close_h;
+} WizardLayout;
+
+static void wizard_layout(WizardLayout *layout)
+{
+    if (!layout)
+        return;
+    memset(layout, 0, sizeof(*layout));
+    wizard_geometry();
+    layout->x = s_wiz_x;
+    layout->y = s_wiz_y;
+    layout->w = s_wiz_w;
+    layout->h = s_wiz_h;
+    layout->pad = 32;
+    layout->header_h = 68;
+    layout->footer_y = layout->y + layout->h - 68;
+
+    /* 20px of air under the header divider and above the footer divider. */
+    int body_y = layout->y + layout->header_h + 20;
+    int body_h = layout->footer_y - body_y - 20;
+    if (body_h < 260)
+        body_h = 260;
+    bool compact = body_h < 380;
+
+    int gap = 32;
+    int details_w = 320;
+    if (layout->w < 900)
+        details_w = 300;
+    if (layout->w < 820)
+        details_w = 280;
+    int gallery_w = layout->w - layout->pad * 2 - gap - details_w;
+    if (gallery_w < 360)
+    {
+        details_w = layout->w / 3;
+        gallery_w = layout->w - layout->pad * 2 - gap - details_w;
+    }
+    if (gallery_w < 260)
+        gallery_w = 260;
+
+    layout->gallery_x = layout->x + layout->pad;
+    layout->gallery_y = body_y;
+    layout->gallery_w = gallery_w;
+    layout->gallery_h = body_h;
+    layout->tabs_y = body_y;
+    layout->tabs_h = 36;
+    layout->cards_y = body_y + layout->tabs_h + 16;
+    layout->view_h = body_y + body_h - layout->cards_y;
+    if (layout->view_h < 96)
+        layout->view_h = 96;
+    layout->gap = 10;
+    /* One wide row per entry reads far better than two ~210px-wide text
+     * columns; only switch to two columns when there is genuinely room. */
+    layout->columns = gallery_w >= 720 ? 2 : 1;
+    layout->card_w = (gallery_w - layout->gap * (layout->columns - 1)) /
+                     layout->columns;
+    layout->card_h = layout->columns == 2 ? 84 : 68;
+
+    layout->details_x = layout->gallery_x + layout->gallery_w + gap;
+    layout->details_y = body_y;
+    layout->details_w = details_w;
+
+    int label_gap = compact ? 20 : 22; /* label top -> input top */
+    int field_gap = compact ? 16 : 22; /* input bottom -> next label */
+    layout->name_label_y = body_y;
+    layout->name_y = layout->name_label_y + label_gap;
+    layout->name_h = compact ? 38 : 40;
+    layout->path_label_y = layout->name_y + layout->name_h + field_gap;
+    layout->path_y = layout->path_label_y + label_gap;
+    layout->path_h = layout->name_h;
+    layout->browse_w = 76;
+    layout->browse_x = layout->details_x + layout->details_w - layout->browse_w;
+
+    /* option_h is the row pitch; each drawn row is option_h - 6 tall. */
+    layout->options_y = layout->path_y + layout->path_h + (compact ? 20 : 28);
+    layout->option_h = compact ? 36 : 40;
+    layout->summary_y = layout->options_y + layout->option_h * 3 +
+                        (compact ? 8 : 12);
+    layout->summary_h = compact ? 52 : 60;
+    int body_bottom = body_y + body_h;
+    if (layout->summary_y + layout->summary_h > body_bottom)
+        layout->summary_h = body_bottom - layout->summary_y;
+    if (layout->summary_h < 0)
+        layout->summary_h = 0;
+
+    layout->create_w = 140;
+    layout->create_h = 38;
+    layout->create_x = layout->x + layout->w - layout->pad - layout->create_w;
+    layout->create_y = layout->footer_y + 15;
+    layout->cancel_w = 92;
+    layout->cancel_x = layout->create_x - 12 - layout->cancel_w;
+    layout->cancel_y = layout->create_y;
+    layout->cancel_h = layout->create_h;
+
+    layout->close_w = 32;
+    layout->close_h = 32;
+    layout->close_x = layout->x + layout->w - layout->pad - layout->close_w + 8;
+    layout->close_y = layout->y + 18;
+}
+
+static void wizard_text_wrapped(AromaNode *canvas, const char *value, int x,
+                                int y, int max_w, int line_h, int max_lines,
+                                uint32_t color, AromaFont *font)
+{
+    if (!canvas || !value || !value[0] || max_lines <= 0)
+        return;
+    char line[256];
+    line[0] = '\0';
+    int line_no = 0;
+    const char *p = value;
+    while (*p && line_no < max_lines)
+    {
+        while (*p == ' ' || *p == '\t')
+            p++;
+        if (!*p)
+            break;
+        const char *word = p;
+        while (*p && *p != ' ' && *p != '\t')
+            p++;
+        size_t word_len = (size_t)(p - word);
+        if (word_len > sizeof(line) - 1)
+            word_len = sizeof(line) - 1;
+        char candidate[256];
+        if (line[0])
+            snprintf(candidate, sizeof(candidate), "%s %.*s", line,
+                     (int)word_len, word);
+        else
+            snprintf(candidate, sizeof(candidate), "%.*s", (int)word_len, word);
+        if (!line[0] || text_width(font, candidate) <= max_w)
+        {
+            snprintf(line, sizeof(line), "%s", candidate);
+        }
+        else
+        {
+            text_fit(canvas, line, x, y + line_no * line_h, max_w, color, font);
+            line_no++;
+            snprintf(line, sizeof(line), "%.*s", (int)word_len, word);
+        }
+    }
+    if (line[0] && line_no < max_lines)
+        text_fit(canvas, line, x, y + line_no * line_h, max_w, color, font);
 }
 
 static void wizard_close_widgets(void)
@@ -4345,121 +4695,98 @@ static void wizard_trim(char *value)
 static bool wizard_validate_current(void)
 {
     s_wizard_error[0] = '\0';
-    if (s_wizard_step == 0)
+    wizard_trim(s_wizard_name);
+    wizard_trim(s_wizard_path);
+    if (!s_wizard_name[0])
     {
-        wizard_trim(s_wizard_name);
-        wizard_trim(s_wizard_path);
-        if (!s_wizard_name[0])
-        {
-            snprintf(s_wizard_error, sizeof(s_wizard_error),
-                     "Enter a project name");
-            return false;
-        }
-        if (strchr(s_wizard_name, '/') || strchr(s_wizard_name, '\\') ||
-            strcmp(s_wizard_name, ".") == 0 ||
-            strcmp(s_wizard_name, "..") == 0)
-        {
-            snprintf(s_wizard_error, sizeof(s_wizard_error),
-                     "The project name cannot contain path separators");
-            return false;
-        }
-        if (!s_wizard_path[0])
-        {
-            snprintf(s_wizard_path, sizeof(s_wizard_path), "%s",
-                     ide_workspace_root);
-        }
-        if (access(s_wizard_path, W_OK) != 0)
-        {
-            snprintf(s_wizard_error, sizeof(s_wizard_error),
-                     "The parent folder is not writable");
-            return false;
-        }
-        char target[PROJECT_PATH_MAX];
-        if (snprintf(target, sizeof(target), "%s/%s", s_wizard_path,
-                     s_wizard_name) >= (int)sizeof(target))
-        {
-            snprintf(s_wizard_error, sizeof(s_wizard_error),
-                     "The project path is too long");
-            return false;
-        }
-        if (access(target, F_OK) == 0)
-        {
-            snprintf(s_wizard_error, sizeof(s_wizard_error),
-                     "That folder already exists: %s", target);
-            return false;
-        }
-        return true;
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "Enter a project name");
+        return false;
     }
-    if (s_wizard_step == 1)
-        return s_wizard_template >= 0 && s_wizard_template < 3;
-    return true;
-}
-
-static void wizard_set_step(int step)
-{
-    if (step < 0)
-        step = 0;
-    if (step > 3)
-        step = 3;
-    s_wizard_step = step;
-    if (s_wizard_stepper)
-        aroma_stepper_set_step_index(s_wizard_stepper, step);
-    draw_dialog();
-}
-
-static void wizard_next(void)
-{
-    if (!wizard_validate_current())
+    if (strchr(s_wizard_name, '/') || strchr(s_wizard_name, '\\') ||
+        strcmp(s_wizard_name, ".") == 0 ||
+        strcmp(s_wizard_name, "..") == 0)
     {
-        draw_dialog();
-        return;
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "The project name cannot contain path separators");
+        return false;
     }
-    if (s_wizard_step < 3)
-        wizard_set_step(s_wizard_step + 1);
+    if (!s_wizard_path[0])
+    {
+        const char *fallback = ide_workspace_root[0] ? ide_workspace_root
+                                                     : getenv("HOME");
+        snprintf(s_wizard_path, sizeof(s_wizard_path), "%s",
+                 fallback && fallback[0] ? fallback : ".");
+    }
+    if (access(s_wizard_path, W_OK) != 0)
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "The parent folder is not writable");
+        return false;
+    }
+    char target[PROJECT_PATH_MAX];
+    if (snprintf(target, sizeof(target), "%s/%s", s_wizard_path,
+                 s_wizard_name) >= (int)sizeof(target))
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "The project path is too long");
+        return false;
+    }
+    if (access(target, F_OK) == 0)
+    {
+        snprintf(s_wizard_error, sizeof(s_wizard_error),
+                 "That folder already exists: %s", target);
+        return false;
+    }
+    if (s_wizard_tab == 0)
+    {
+        if (s_wizard_template < 0 || s_wizard_template >= WIZ_TEMPLATE_COUNT)
+        {
+            snprintf(s_wizard_error, sizeof(s_wizard_error),
+                     "Choose a template first");
+            return false;
+        }
+    }
     else
-        wizard_create_project();
-}
-
-static void wizard_back(void)
-{
-    if (s_wizard_step > 0)
-        wizard_set_step(s_wizard_step - 1);
-}
-
-static void wizard_stepper_changed(AromaNode *node, int value, void *user_data)
-{
-    (void)node;
-    (void)user_data;
-    if (!s_dialog_open || s_dialog_mode != IDE_DIALOG_NEW_PROJECT)
-        return;
-    if (value == s_wizard_step)
-        return;
-    if (value > s_wizard_step && !wizard_validate_current())
     {
-        if (s_wizard_stepper)
-            aroma_stepper_set_step_index(s_wizard_stepper, s_wizard_step);
-        draw_dialog();
-        return;
+        if (s_wizard_example_count <= 0)
+        {
+            snprintf(s_wizard_error, sizeof(s_wizard_error),
+                     "No example projects were found in the SDK");
+            return false;
+        }
+        if (s_wizard_example < 0 ||
+            s_wizard_example >= s_wizard_example_count)
+        {
+            snprintf(s_wizard_error, sizeof(s_wizard_error),
+                     "Choose an example first");
+            return false;
+        }
     }
-    s_wizard_step = value;
-    if (s_wizard_stepper)
-        aroma_stepper_set_step_index(s_wizard_stepper, value);
-    draw_dialog();
+    return true;
 }
 
 static void wizard_open(void)
 {
+    wizard_scan_examples();
+    wizard_geometry();
     s_wizard_step = 0;
     s_wizard_focus = 0;
-    s_wizard_template = 1;
+    s_wizard_template = 0;
+    s_wizard_example = 0;
+    s_wizard_tab = 0;
+    s_wizard_scroll = 0;
     s_wizard_hover = -1;
     s_wizard_with_cmake = true;
     s_wizard_with_readme = true;
     s_wizard_open_after = true;
     s_wizard_name[0] = '\0';
     s_wizard_error[0] = '\0';
-    snprintf(s_wizard_path, sizeof(s_wizard_path), "%s", ide_workspace_root);
-    wizard_create_stepper();
+    const char *start = ide_workspace_root[0] ? ide_workspace_root
+                                              : getenv("HOME");
+    snprintf(s_wizard_path, sizeof(s_wizard_path), "%s",
+             start && start[0] ? start : ".");
+    wizard_close_widgets();
 }
 
 static void wizard_browse_folder(void)
@@ -4495,27 +4822,130 @@ static void wizard_append_char(char *buffer, size_t size, char c)
     buffer[length + 1] = '\0';
 }
 
+static int wizard_source_count(void)
+{
+    return s_wizard_tab == 0 ? WIZ_TEMPLATE_COUNT : s_wizard_example_count;
+}
+
+static int *wizard_selection_slot(void)
+{
+    return s_wizard_tab == 0 ? &s_wizard_template : &s_wizard_example;
+}
+
+static void wizard_clamp_scroll(void)
+{
+    WizardLayout layout;
+    wizard_layout(&layout);
+    int count = wizard_source_count();
+    int rows = (count + layout.columns - 1) / layout.columns;
+    int visible = layout.view_h / (layout.card_h + layout.gap);
+    if (visible < 1)
+        visible = 1;
+    int max_scroll = rows - visible;
+    if (max_scroll < 0)
+        max_scroll = 0;
+    if (s_wizard_scroll > max_scroll)
+        s_wizard_scroll = max_scroll;
+    if (s_wizard_scroll < 0)
+        s_wizard_scroll = 0;
+}
+
+static void wizard_ensure_visible(void)
+{
+    WizardLayout layout;
+    wizard_layout(&layout);
+    int count = wizard_source_count();
+    if (count <= 0)
+        return;
+    int selection = *wizard_selection_slot();
+    int row = selection / layout.columns;
+    int visible = layout.view_h / (layout.card_h + layout.gap);
+    if (visible < 1)
+        visible = 1;
+    if (row < s_wizard_scroll)
+        s_wizard_scroll = row;
+    if (row >= s_wizard_scroll + visible)
+        s_wizard_scroll = row - visible + 1;
+    wizard_clamp_scroll();
+}
+
+static void wizard_set_tab(int tab)
+{
+    if (tab < 0)
+        tab = 0;
+    if (tab > 1)
+        tab = 1;
+    if (tab == s_wizard_tab)
+        return;
+    s_wizard_tab = tab;
+    s_wizard_scroll = 0;
+    wizard_clamp_scroll();
+}
+
+static void wizard_move_selection(int delta)
+{
+    int count = wizard_source_count();
+    if (count <= 0 || delta == 0)
+        return;
+    int *selection = wizard_selection_slot();
+    *selection = (*selection + delta) % count;
+    if (*selection < 0)
+        *selection += count;
+    s_wizard_focus = 2;
+    wizard_ensure_visible();
+}
+
 static bool wizard_on_key(AromaEvent *event)
 {
     if (!event || event->event_type != EVENT_TYPE_KEY_PRESS)
         return false;
     uint32_t key = event->data.key.key_code;
+    uint16_t modifiers = event->data.key.modifiers;
+    bool shift = (modifiers & AROMA_KEY_MOD_SHIFT) != 0;
+    bool ctrl = (modifiers & AROMA_KEY_MOD_CTRL) != 0;
+
     if (key == 27 || key == 0xFF1B)
     {
         close_dialog();
         return true;
     }
+    if (ctrl && (key == '1' || key == '2'))
+    {
+        wizard_set_tab(key == '1' ? 0 : 1);
+        draw_dialog();
+        return true;
+    }
     if (key == 9)
     {
-        s_wizard_focus = (s_wizard_focus + 1) % 2;
+        s_wizard_focus = (s_wizard_focus + (shift ? 2 : 1)) % 3;
+        draw_dialog();
+        return true;
+    }
+    if (key == 0xFF52 || key == 0xFF54 || key == 0xFF51 || key == 0xFF53)
+    {
+        WizardLayout layout;
+        wizard_layout(&layout);
+        int delta = 0;
+        if (key == 0xFF52)
+            delta = -layout.columns;
+        else if (key == 0xFF54)
+            delta = layout.columns;
+        else if (key == 0xFF51)
+            delta = -1;
+        else
+            delta = 1;
+        wizard_move_selection(delta);
         draw_dialog();
         return true;
     }
     if (key == 13 || key == 10 || key == 0xFF0D)
     {
-        wizard_next();
+        wizard_create_project();
         return true;
     }
+    if (s_wizard_focus != 0 && s_wizard_focus != 1)
+        return true;
+
     char *field = s_wizard_focus == 0 ? s_wizard_name : s_wizard_path;
     size_t field_size = s_wizard_focus == 0 ? sizeof(s_wizard_name)
                                             : sizeof(s_wizard_path);
@@ -4538,17 +4968,15 @@ static bool wizard_on_key(AromaEvent *event)
 }
 
 static void wizard_draw_button(AromaNode *canvas, int x, int y, int w, int h,
-                               const char *label, bool primary, int hover_id)
+                               const char *label, bool primary, int hover_id,
+                               bool enabled)
 {
-    uint32_t bg = primary ? C_PRIMARY : M3_SURFACE_HIGH;
-    uint32_t border = primary ? C_PRIMARY : C_BORDER_SOFT;
-    uint32_t fg = primary ? M3_ON_PRIMARY : C_TEXT_SOFT;
-    if (s_wizard_hover == hover_id)
-    {
+    uint32_t bg = primary ? (enabled ? C_PRIMARY : M3_SURFACE_CONTAINER)
+                          : M3_SURFACE_HIGH;
+    uint32_t fg = primary ? (enabled ? M3_ON_PRIMARY : C_TEXT_FAINT)
+                          : (enabled ? C_TEXT_SOFT : C_TEXT_FAINT);
+    if (enabled && s_wizard_hover == hover_id)
         bg = primary ? M3_PRIMARY : M3_SURFACE_HIGHEST;
-        border = primary ? M3_PRIMARY : M3_OUTLINE_VAR;
-    }
-    (void)border;
     fill(canvas, x, y, w, h, h / 2, bg);
     AromaFont *font = font_ui(11);
     int tw = text_width(font, label);
@@ -4556,24 +4984,72 @@ static void wizard_draw_button(AromaNode *canvas, int x, int y, int w, int h,
 }
 
 static void wizard_draw_checkbox(AromaNode *canvas, int x, int y, bool checked,
-                                 const char *label)
+                                 bool enabled)
 {
-    fill(canvas, x, y, 18, 18, 4, checked ? C_PRIMARY : M3_SURFACE_CONTAINER);
+    uint32_t bg = checked ? (enabled ? C_PRIMARY : M3_OUTLINE)
+                          : M3_SURFACE_CONTAINER;
+    fill(canvas, x, y, 18, 18, 4, bg);
     if (checked)
         icon_center(canvas, AROMA_ICON_CHECK, x + 9, y + 9, 12, M3_ON_PRIMARY);
-    else
-        fill(canvas, x, y, 18, 1, 0, C_BORDER_SOFT);
-    text(canvas, label, x + 28, y + 1, C_TEXT_SOFT, font_ui(11));
+}
+
+/* Opaque blend of accent over base (pct = 0..100). Used instead of stacking a
+ * translucent fill over an opaque accent border, which washes out to a solid
+ * accent slab and hides the icon. */
+static uint32_t wizard_mix(uint32_t base, uint32_t accent, int pct)
+{
+    uint32_t out = 0xFF000000u;
+    for (int shift = 0; shift <= 16; shift += 8)
+    {
+        uint32_t b = (base >> shift) & 0xFFu;
+        uint32_t a = (accent >> shift) & 0xFFu;
+        out |= ((b * (uint32_t)(100 - pct) + a * (uint32_t)pct) / 100u)
+               << shift;
+    }
+    return out;
+}
+
+static void wizard_draw_option(AromaNode *canvas, int x, int y, int w, int h,
+                               bool checked, bool disabled, const char *title,
+                               const char *hint, int hover_id)
+{
+    int row_h = h - 6;
+    bool hovered = !disabled && s_wizard_hover == hover_id;
+    if (hovered)
+        fill(canvas, x, y, w, row_h, 8, M3_SURFACE_HIGHEST);
+    wizard_draw_checkbox(canvas, x + 12, y + (row_h - 18) / 2, checked,
+                         !disabled);
+    int right_reserved = 12;
+    if (hint && hint[0])
+    {
+        AromaFont *hint_font = font_ui(10);
+        int hint_w = text_width(hint_font, hint);
+        text(canvas, hint, x + w - 12 - hint_w, y + (row_h - 13) / 2,
+             C_TEXT_FAINT, hint_font);
+        right_reserved += hint_w + 8;
+    }
+    text_fit(canvas, title, x + 42, y + (row_h - 14) / 2,
+             w - 42 - right_reserved, disabled ? C_TEXT_FAINT : C_TEXT,
+             font_ui(11));
 }
 
 static void wizard_draw_input(AromaNode *canvas, int x, int y, int w, int h,
                               const char *value, const char *placeholder,
                               bool focused)
 {
-    fill(canvas, x, y, w, h, 6, M3_SURFACE_CONTAINER);
-    fill(canvas, x, y, w, 1, 0, focused ? C_PRIMARY : C_BORDER_SOFT);
+    fill(canvas, x, y, w, h, 8, M3_SURFACE_CONTAINER);
     if (focused)
-        fill(canvas, x, y, 2, h, 0, C_PRIMARY);
+    {
+        fill(canvas, x, y, w, 1, 0, C_PRIMARY);
+        fill(canvas, x, y + h - 1, w, 1, 0, C_PRIMARY);
+        fill(canvas, x, y, 1, h, 0, C_PRIMARY);
+        fill(canvas, x + w - 1, y, 1, h, 0, C_PRIMARY);
+    }
+    else
+    {
+        fill(canvas, x, y, w, 1, 0, C_BORDER_SOFT);
+        fill(canvas, x, y + h - 1, w, 1, 0, C_BORDER_SOFT);
+    }
     AromaFont *body = font_ui(12);
     const char *shown = value && value[0] ? value : placeholder;
     text_fit(canvas, shown, x + 14, y + (h - 16) / 2, w - 28,
@@ -4583,7 +5059,7 @@ static void wizard_draw_input(AromaNode *canvas, int x, int y, int w, int h,
         int caret = x + 14 + (value ? text_width(body, value) : 0);
         if (caret > x + w - 16)
             caret = x + w - 16;
-        fill(canvas, caret, y + 12, 1, h - 24, 0, C_PRIMARY);
+        fill(canvas, caret, y + 11, 1, h - 22, 0, C_PRIMARY);
     }
 }
 
@@ -4591,267 +5067,360 @@ static void wizard_draw(void)
 {
     if (!s_dialog_canvas)
         return;
+    WizardLayout layout;
+    wizard_layout(&layout);
+    wizard_clamp_scroll();
+
     AromaFont *ui10 = font_ui(10);
     AromaFont *ui11 = font_ui(11);
     AromaFont *ui12 = font_ui(12);
-    AromaFont *ui14 = font_ui(14);
-    AromaFont *mono = font_mono(12);
+    AromaFont *ui16 = font_ui(16);
+    AromaFont *mono = font_mono(11);
 
     fill(s_dialog_canvas, 0, 0, win_w, win_h, 0, 0x66000000u);
-    fill(s_dialog_canvas, s_wiz_x, s_wiz_y + 6, s_wiz_w, s_wiz_h, 28,
+    fill(s_dialog_canvas, layout.x, layout.y + 8, layout.w, layout.h, 22,
          0x44000000u);
-    fill(s_dialog_canvas, s_wiz_x, s_wiz_y, s_wiz_w, s_wiz_h, 28, M3_SURFACE_HIGH);
+    fill(s_dialog_canvas, layout.x, layout.y, layout.w, layout.h, 22,
+         M3_SURFACE_HIGH);
+    fill(s_dialog_canvas, layout.x + 24, layout.y, layout.w - 48, 2, 0,
+         C_PRIMARY);
 
-    text(s_dialog_canvas, "NEW AROMA PROJECT", s_wiz_x + 32, s_wiz_y + 22,
-         C_TEXT, ui14);
-    text(s_dialog_canvas, "Create a real project on disk. Every step is editable.",
-         s_wiz_x + 32, s_wiz_y + 46, C_TEXT_DIM, ui10);
-    fill(s_dialog_canvas, s_wiz_x + 32, s_wiz_y + 138, s_wiz_w - 64, 1, 0,
+    /* Header: a single title; the tabs and fields explain the rest. */
+    text(s_dialog_canvas, "New project", layout.x + layout.pad, layout.y + 25,
+         C_TEXT, ui16);
+    fill(s_dialog_canvas, layout.close_x, layout.close_y, layout.close_w,
+         layout.close_h, 8,
+         s_wizard_hover == 9 ? M3_SURFACE_HIGHEST : M3_SURFACE_CONTAINER);
+    icon_center(s_dialog_canvas, AROMA_ICON_CLOSE,
+                layout.close_x + layout.close_w / 2,
+                layout.close_y + layout.close_h / 2, 14, C_TEXT_SOFT);
+    fill(s_dialog_canvas, layout.x + layout.pad,
+         layout.y + layout.header_h - 1, layout.w - layout.pad * 2, 1, 0,
          C_BORDER);
 
-    if (s_wizard_step == 0)
+    /* Gallery tabs */
+    fill(s_dialog_canvas, layout.gallery_x, layout.tabs_y, layout.gallery_w,
+         layout.tabs_h, 18, M3_SURFACE_CONTAINER);
+    int tab_w = (layout.gallery_w - 8) / 2;
+    for (int tab = 0; tab < 2; tab++)
     {
-        text(s_dialog_canvas, "Project name", s_wiz_x + 32, WIZ_CONTENT_Y + 4,
-             C_TEXT_SOFT, ui11);
-        wizard_draw_input(s_dialog_canvas, s_wiz_x + 32, WIZ_CONTENT_Y + 26, 410,
-                          44, s_wizard_name, "my_aroma_app",
-                          s_wizard_focus == 0);
-        text(s_dialog_canvas, "Parent folder", s_wiz_x + 32, WIZ_CONTENT_Y + 86,
-             C_TEXT_SOFT, ui11);
-        wizard_draw_input(s_dialog_canvas, s_wiz_x + 32, WIZ_CONTENT_Y + 108,
-                          540, 44, s_wizard_path, ide_workspace_root,
-                          s_wizard_focus == 1);
-        wizard_draw_button(s_dialog_canvas, s_wiz_x + 584, WIZ_CONTENT_Y + 108,
-                           136, 44, "Browse...", false, 4);
-
-        fill(s_dialog_canvas, s_wiz_x + 32, WIZ_CONTENT_Y + 176, s_wiz_w - 64, 64,
-             8, 0xFF2C2C2E);
-        icon_center(s_dialog_canvas, AROMA_ICON_FOLDER, s_wiz_x + 52,
-                    WIZ_CONTENT_Y + 208, 18, C_PRIMARY);
-        char preview[PROJECT_PATH_MAX];
-        snprintf(preview, sizeof(preview), "%s/%s",
-                 s_wizard_path[0] ? s_wizard_path : ide_workspace_root,
-                 s_wizard_name[0] ? s_wizard_name : "my_aroma_app");
-        text(s_dialog_canvas, "The project will be created at", s_wiz_x + 72,
-             WIZ_CONTENT_Y + 188, C_TEXT_FAINT, ui10);
-        text_fit(s_dialog_canvas, preview, s_wiz_x + 72, WIZ_CONTENT_Y + 206,
-                 s_wiz_w - 128, C_TEXT, mono);
+        int tx = layout.gallery_x + 4 + tab * tab_w;
+        bool active = s_wizard_tab == tab;
+        bool hovered = s_wizard_hover == (tab == 0 ? 4 : 5);
+        if (active)
+            fill(s_dialog_canvas, tx, layout.tabs_y + 4, tab_w,
+                 layout.tabs_h - 8, 14, C_PRIMARY);
+        else if (hovered)
+            fill(s_dialog_canvas, tx, layout.tabs_y + 4, tab_w,
+                 layout.tabs_h - 8, 14, M3_SURFACE_HIGHEST);
+        const char *label = tab == 0 ? "Templates" : "Examples";
+        int tw = text_width(ui11, label);
+        text(s_dialog_canvas, label, tx + (tab_w - tw) / 2,
+             layout.tabs_y + 11, active ? M3_ON_PRIMARY : C_TEXT_SOFT, ui11);
     }
-    else if (s_wizard_step == 1)
+
+    int count = wizard_source_count();
+    int rows = (count + layout.columns - 1) / layout.columns;
+    int visible_rows = layout.view_h / (layout.card_h + layout.gap);
+    if (visible_rows < 1)
+        visible_rows = 1;
+
+    for (int row = s_wizard_scroll;
+         row < rows && row < s_wizard_scroll + visible_rows; row++)
     {
-        text(s_dialog_canvas, "Choose a starting template", s_wiz_x + 32,
-             WIZ_CONTENT_Y + 4, C_TEXT_SOFT, ui11);
-        text(s_dialog_canvas, "The markup is written to ui/app.aroma and opens in the designer.",
-             s_wiz_x + 32, WIZ_CONTENT_Y + 24, C_TEXT_FAINT, ui10);
-        for (int i = 0; i < 3; i++)
+        for (int col = 0; col < layout.columns; col++)
         {
-            int card_x = s_wiz_x + 32 + i * 226;
-            int card_y = WIZ_CONTENT_Y + 58;
-            bool selected = s_wizard_template == i;
-            bool hovered = s_wizard_hover == 10 + i;
-            fill(s_dialog_canvas, card_x, card_y, 214, 196, 10,
-                 selected ? M3_SURFACE_HIGH : hovered ? 0xFF3A3A3C : 0xFF2C2C2E);
-            fill(s_dialog_canvas, card_x, card_y, 214, 2, 0,
-                 selected ? C_PRIMARY : C_BORDER);
-            if (selected)
-                fill(s_dialog_canvas, card_x, card_y, 3, 196, 1, C_PRIMARY);
-            const char *icon = i == 0 ? AROMA_ICON_CROP_SQUARE
-                                      : i == 1 ? AROMA_ICON_DESCRIPTION
-                                               : AROMA_ICON_DASHBOARD;
-            icon_center(s_dialog_canvas, icon, card_x + 34, card_y + 42, 24,
-                        selected ? C_PRIMARY : C_TEXT_DIM);
-            text(s_dialog_canvas, k_wizard_template_titles[i], card_x + 18,
-                 card_y + 74, C_TEXT, ui12);
-            text_fit(s_dialog_canvas, k_wizard_template_descriptions[i],
-                     card_x + 18, card_y + 102, 178, C_TEXT_DIM, ui10);
+            int index = row * layout.columns + col;
+            if (index >= count)
+                break;
+            int card_x = layout.gallery_x + col * (layout.card_w + layout.gap);
+            int card_y = layout.cards_y +
+                         (row - s_wizard_scroll) * (layout.card_h + layout.gap);
+            if (card_y < layout.cards_y ||
+                card_y + layout.card_h > layout.cards_y + layout.view_h)
+                continue;
+            bool selected = *wizard_selection_slot() == index;
+            bool hovered = s_wizard_hover == 100 + index;
+
+            /* Selection is a 2px accent ring around an opaque tinted body. */
+            int inset = selected ? 2 : 1;
+            uint32_t border = selected ? C_PRIMARY
+                                       : hovered ? M3_OUTLINE : C_BORDER;
+            uint32_t body = selected ? wizard_mix(M3_SURFACE_LOW, C_PRIMARY, 14)
+                                     : hovered ? M3_SURFACE_HIGHEST
+                                               : M3_SURFACE_LOW;
+            fill(s_dialog_canvas, card_x, card_y, layout.card_w,
+                 layout.card_h, 12, border);
+            fill(s_dialog_canvas, card_x + inset, card_y + inset,
+                 layout.card_w - inset * 2, layout.card_h - inset * 2,
+                 12 - inset, body);
+
+            int tile = 40;
+            int tile_x = card_x + 16;
+            int tile_y = card_y + (layout.card_h - tile) / 2;
+            fill(s_dialog_canvas, tile_x, tile_y, tile, tile, 10,
+                 selected ? wizard_mix(body, C_PRIMARY, 30)
+                          : M3_SURFACE_CONTAINER);
+            if (s_wizard_tab == 0)
+            {
+                const char *icon = index == 0 ? AROMA_ICON_CROP_SQUARE
+                                  : index == 1 ? AROMA_ICON_DESCRIPTION
+                                  : index == 2 ? AROMA_ICON_DASHBOARD
+                                               : AROMA_ICON_SETTINGS;
+                icon_center(s_dialog_canvas, icon, tile_x + tile / 2,
+                            tile_y + tile / 2, 20,
+                            selected ? C_PRIMARY : C_TEXT_DIM);
+            }
+            else
+            {
+                char number[16];
+                snprintf(number, sizeof(number), "%02d", index + 1);
+                int number_w = text_width(ui11, number);
+                text(s_dialog_canvas, number, tile_x + (tile - number_w) / 2,
+                     tile_y + (tile - 14) / 2,
+                     selected ? C_PRIMARY : C_TEXT_DIM, ui11);
+            }
+
+            const char *title = s_wizard_tab == 0
+                                    ? k_wizard_template_titles[index]
+                                    : s_wizard_examples[index].title;
+            const char *description = s_wizard_tab == 0
+                                          ? k_wizard_template_descriptions[index]
+                                          : s_wizard_examples[index].description;
+            int text_x = card_x + 72;
+            int text_w = layout.card_w - 72 - 44; /* room for the check badge */
+            /* Vertically centre the title + description block in the card. */
+            bool two_lines = text_width(ui10, description) > text_w;
+            int block_h = two_lines ? 46 : 33;
+            int title_y = card_y + (layout.card_h - block_h) / 2;
+            text_fit(s_dialog_canvas, title, text_x, title_y, text_w, C_TEXT,
+                     ui12);
+            wizard_text_wrapped(s_dialog_canvas, description, text_x,
+                                title_y + 20, text_w, 14, 2, C_TEXT_DIM,
+                                ui10);
             if (selected)
                 icon_center(s_dialog_canvas, AROMA_ICON_CHECK_CIRCLE,
-                            card_x + 190, card_y + 20, 15, C_PRIMARY);
+                            card_x + layout.card_w - 26,
+                            card_y + layout.card_h / 2, 18, C_PRIMARY);
         }
     }
-    else if (s_wizard_step == 2)
+
+    if (count == 0)
     {
-        text(s_dialog_canvas, "Project options", s_wiz_x + 32,
-             WIZ_CONTENT_Y + 4, C_TEXT_SOFT, ui11);
-        text(s_dialog_canvas, "These choices change the files written to disk.",
-             s_wiz_x + 32, WIZ_CONTENT_Y + 24, C_TEXT_FAINT, ui10);
-        int row_y = WIZ_CONTENT_Y + 66;
-        fill(s_dialog_canvas, s_wiz_x + 32, row_y - 12, s_wiz_w - 64, 58, 8,
-             0xFF2C2C2E);
-        wizard_draw_checkbox(s_dialog_canvas, s_wiz_x + 52, row_y,
-                             s_wizard_with_cmake, "CMakeLists.txt");
-        text(s_dialog_canvas, "Build the app with CMake and the Aroma SDK",
-             s_wiz_x + 80, row_y + 20, C_TEXT_FAINT, ui10);
-        row_y += 82;
-        fill(s_dialog_canvas, s_wiz_x + 32, row_y - 12, s_wiz_w - 64, 58, 8,
-             0xFF2C2C2E);
-        wizard_draw_checkbox(s_dialog_canvas, s_wiz_x + 52, row_y,
-                             s_wizard_with_readme, "README.md");
-        text(s_dialog_canvas, "Document the project and its build commands",
-             s_wiz_x + 80, row_y + 20, C_TEXT_FAINT, ui10);
-        row_y += 82;
-        fill(s_dialog_canvas, s_wiz_x + 32, row_y - 12, s_wiz_w - 64, 58, 8,
-             0xFF2C2C2E);
-        wizard_draw_checkbox(s_dialog_canvas, s_wiz_x + 52, row_y,
-                             s_wizard_open_after, "Open the project after creation");
-        text(s_dialog_canvas, "Switch the workspace to the new project",
-             s_wiz_x + 80, row_y + 20, C_TEXT_FAINT, ui10);
-    }
-    else
-    {
-        text(s_dialog_canvas, "Review and create", s_wiz_x + 32,
-             WIZ_CONTENT_Y + 4, C_TEXT_SOFT, ui11);
-        int y = WIZ_CONTENT_Y + 40;
-        const char *labels[5] = {"Name", "Location", "Template", "Build files",
-                                 "README"};
-        char values[5][PROJECT_PATH_MAX];
-        snprintf(values[0], sizeof(values[0]), "%s",
-                 s_wizard_name[0] ? s_wizard_name : "(missing)");
-        snprintf(values[1], sizeof(values[1]), "%s/%s",
-                 s_wizard_path[0] ? s_wizard_path : ide_workspace_root,
-                 s_wizard_name[0] ? s_wizard_name : "");
-        snprintf(values[2], sizeof(values[2]), "%s",
-                 k_wizard_template_titles[s_wizard_template]);
-        snprintf(values[3], sizeof(values[3]), "%s",
-                 s_wizard_with_cmake ? "CMakeLists.txt" : "Not included");
-        snprintf(values[4], sizeof(values[4]), "%s",
-                 s_wizard_with_readme ? "README.md" : "Not included");
-        for (int i = 0; i < 5; i++)
-        {
-            text(s_dialog_canvas, labels[i], s_wiz_x + 48, y + 6, C_TEXT_DIM,
-                 ui10);
-            text_fit(s_dialog_canvas, values[i], s_wiz_x + 156, y + 2,
-                     s_wiz_w - 208, C_TEXT_SOFT, mono);
-            fill(s_dialog_canvas, s_wiz_x + 32, y + 32, s_wiz_w - 64, 1, 0,
-                 C_BORDER);
-            y += 48;
-        }
-        fill(s_dialog_canvas, s_wiz_x + 32, y + 8, s_wiz_w - 64, 72, 8,
-             M3_SURFACE_LOW);
-        icon_center(s_dialog_canvas, AROMA_ICON_CHECK_CIRCLE, s_wiz_x + 54,
-                    y + 44, 20, C_GREEN);
-        text(s_dialog_canvas, "Ready to write the project", s_wiz_x + 76,
-             y + 24, C_TEXT, ui12);
-        text(s_dialog_canvas, "Press Create project to build the folder tree.",
-             s_wiz_x + 76, y + 46, C_TEXT_DIM, ui10);
+        text_center(s_dialog_canvas,
+                    "No examples were found next to this build of Studio.",
+                    layout.gallery_x, layout.cards_y + 20, layout.gallery_w, 20,
+                    C_TEXT_DIM, ui11);
+        text_center(s_dialog_canvas,
+                    "Set AROMA_SDK_PATH or build the IDE from the SDK folder.",
+                    layout.gallery_x, layout.cards_y + 44, layout.gallery_w, 20,
+                    C_TEXT_FAINT, ui10);
     }
 
-    if (s_wizard_error[0])
-        text_fit(s_dialog_canvas, s_wizard_error, s_wiz_x + 32,
-                 WIZ_FOOTER_Y - 38, s_wiz_w - 64, C_RED, ui10);
-    else
-        text(s_dialog_canvas, "Step %d of 4", s_wiz_x + 32,
-             WIZ_FOOTER_Y - 38, C_TEXT_FAINT, ui10);
+    if (rows > visible_rows)
+    {
+        /* Sits in the gutter between the list and the form, clear of cards. */
+        int track_x = layout.gallery_x + layout.gallery_w + 12;
+        int track_y = layout.cards_y;
+        int track_h = layout.view_h;
+        fill(s_dialog_canvas, track_x, track_y, 3, track_h, 2,
+             C_BORDER_SOFT);
+        int thumb_h = track_h * visible_rows / rows;
+        if (thumb_h < 24)
+            thumb_h = 24;
+        int max_scroll = rows - visible_rows;
+        int thumb_y = track_y;
+        if (max_scroll > 0)
+            thumb_y += (track_h - thumb_h) * s_wizard_scroll / max_scroll;
+        fill(s_dialog_canvas, track_x, thumb_y, 3, thumb_h, 2, C_TEXT_DIM);
+    }
 
-    fill(s_dialog_canvas, s_wiz_x + 1, WIZ_FOOTER_Y - 16, s_wiz_w - 2, 1, 0,
+    /* Details form */
+    text(s_dialog_canvas, "Name", layout.details_x, layout.name_label_y,
+         C_TEXT_SOFT, ui11);
+    wizard_draw_input(s_dialog_canvas, layout.details_x, layout.name_y,
+                      layout.details_w, layout.name_h, s_wizard_name,
+                      "my_aroma_app", s_wizard_focus == 0);
+
+    text(s_dialog_canvas, "Parent folder", layout.details_x,
+         layout.path_label_y, C_TEXT_SOFT, ui11);
+    int path_input_w = layout.details_w - layout.browse_w - 8;
+    wizard_draw_input(s_dialog_canvas, layout.details_x, layout.path_y,
+                      path_input_w, layout.path_h, s_wizard_path,
+                      "/home/you/projects", s_wizard_focus == 1);
+    wizard_draw_button(s_dialog_canvas, layout.browse_x, layout.path_y,
+                       layout.browse_w, layout.path_h, "Browse", false, 3,
+                       true);
+
+    int option_y = layout.options_y;
+    bool example = s_wizard_tab == 1;
+    wizard_draw_option(s_dialog_canvas, layout.details_x, option_y,
+                       layout.details_w, layout.option_h,
+                       example ? true : s_wizard_with_cmake, example,
+                       "CMakeLists.txt", example ? "Always included" : "", 6);
+    option_y += layout.option_h;
+    wizard_draw_option(s_dialog_canvas, layout.details_x, option_y,
+                       layout.details_w, layout.option_h,
+                       s_wizard_with_readme, false, "README.md", "", 7);
+    option_y += layout.option_h;
+    wizard_draw_option(s_dialog_canvas, layout.details_x, option_y,
+                       layout.details_w, layout.option_h, s_wizard_open_after,
+                       false, "Open after creation", "", 8);
+
+    if (layout.summary_h >= 48)
+    {
+        fill(s_dialog_canvas, layout.details_x, layout.summary_y,
+             layout.details_w, layout.summary_h, 10, M3_SURFACE_LOW);
+        text(s_dialog_canvas, "WILL CREATE", layout.details_x + 16,
+             layout.summary_y + 12, C_TEXT_DIM, ui10);
+        char preview[PROJECT_PATH_MAX];
+        snprintf(preview, sizeof(preview), "%s/%s",
+                 s_wizard_path[0] ? s_wizard_path : ".",
+                 s_wizard_name[0] ? s_wizard_name : "my_aroma_app");
+        text_fit(s_dialog_canvas, preview, layout.details_x + 16,
+                 layout.summary_y + 31, layout.details_w - 32, C_TEXT, mono);
+    }
+
+    /* Footer */
+    fill(s_dialog_canvas, layout.x + 1, layout.footer_y, layout.w - 2, 1, 0,
          C_BORDER);
-    wizard_draw_button(s_dialog_canvas, s_wiz_x + s_wiz_w - 124, WIZ_FOOTER_Y,
-                       96, 36, s_wizard_step == 3 ? "Create" : "Next", true,
-                       2);
-    wizard_draw_button(s_dialog_canvas, s_wiz_x + s_wiz_w - 232, WIZ_FOOTER_Y,
-                       96, 36, "Cancel", false, 3);
-    if (s_wizard_step > 0)
-        wizard_draw_button(s_dialog_canvas, s_wiz_x + s_wiz_w - 328, WIZ_FOOTER_Y,
-                           88, 36, "Back", false, 1);
+    if (s_wizard_error[0])
+        text_fit(s_dialog_canvas, s_wizard_error, layout.x + layout.pad,
+                 layout.footer_y + 27,
+                 layout.cancel_x - layout.x - layout.pad - 16, C_RED, ui10);
+    else
+        text(s_dialog_canvas, "Enter to create  \xE2\x80\xA2  Tab to switch fields",
+             layout.x + layout.pad, layout.footer_y + 27, C_TEXT_FAINT, ui10);
+    wizard_draw_button(s_dialog_canvas, layout.cancel_x, layout.cancel_y,
+                       layout.cancel_w, layout.cancel_h, "Cancel", false, 2,
+                       true);
+    wizard_draw_button(s_dialog_canvas, layout.create_x, layout.create_y,
+                       layout.create_w, layout.create_h, "Create project", true,
+                       1, true);
 }
 
 static bool wizard_on_click(int x, int y)
 {
-    if (x < s_wiz_x || x >= s_wiz_x + s_wiz_w || y < s_wiz_y || y >= s_wiz_y + s_wiz_h)
+    WizardLayout layout;
+    wizard_layout(&layout);
+    if (x < layout.x || x >= layout.x + layout.w || y < layout.y ||
+        y >= layout.y + layout.h)
         return false;
 
-    int footer_button_y = WIZ_FOOTER_Y;
-    if (y >= footer_button_y && y < footer_button_y + 36)
+    if (x >= layout.close_x && x < layout.close_x + layout.close_w &&
+        y >= layout.close_y && y < layout.close_y + layout.close_h)
     {
-        if (x >= s_wiz_x + s_wiz_w - 124 && x < s_wiz_x + s_wiz_w - 28)
+        close_dialog();
+        return true;
+    }
+    if (x >= layout.create_x && x < layout.create_x + layout.create_w &&
+        y >= layout.create_y && y < layout.create_y + layout.create_h)
+    {
+        wizard_create_project();
+        return true;
+    }
+    if (x >= layout.cancel_x && x < layout.cancel_x + layout.cancel_w &&
+        y >= layout.cancel_y && y < layout.cancel_y + layout.cancel_h)
+    {
+        close_dialog();
+        return true;
+    }
+
+    if (y >= layout.tabs_y && y < layout.tabs_y + layout.tabs_h)
+    {
+        int tab_w = (layout.gallery_w - 8) / 2;
+        if (x >= layout.gallery_x + 4 &&
+            x < layout.gallery_x + 4 + tab_w)
         {
-            wizard_next();
+            wizard_set_tab(0);
+            draw_dialog();
             return true;
         }
-        if (x >= s_wiz_x + s_wiz_w - 232 && x < s_wiz_x + s_wiz_w - 136)
+        if (x >= layout.gallery_x + 4 + tab_w &&
+            x < layout.gallery_x + layout.gallery_w - 4)
         {
-            close_dialog();
-            return true;
-        }
-        if (s_wizard_step > 0 && x >= s_wiz_x + s_wiz_w - 328 &&
-            x < s_wiz_x + s_wiz_w - 240)
-        {
-            wizard_back();
+            wizard_set_tab(1);
+            draw_dialog();
             return true;
         }
     }
 
-    if (s_wizard_step == 0)
+    int count = wizard_source_count();
+    int rows = (count + layout.columns - 1) / layout.columns;
+    int visible_rows = layout.view_h / (layout.card_h + layout.gap);
+    if (visible_rows < 1)
+        visible_rows = 1;
+    for (int row = s_wizard_scroll;
+         row < rows && row < s_wizard_scroll + visible_rows; row++)
     {
-        if (x >= s_wiz_x + 32 && x < s_wiz_x + 442 && y >= WIZ_CONTENT_Y + 26 &&
-            y < WIZ_CONTENT_Y + 70)
+        for (int col = 0; col < layout.columns; col++)
         {
-            s_wizard_focus = 0;
-            draw_dialog();
-            return true;
-        }
-        if (x >= s_wiz_x + 32 && x < s_wiz_x + 572 && y >= WIZ_CONTENT_Y + 108 &&
-            y < WIZ_CONTENT_Y + 152)
-        {
-            s_wizard_focus = 1;
-            draw_dialog();
-            return true;
-        }
-        if (x >= s_wiz_x + 584 && x < s_wiz_x + 720 &&
-            y >= WIZ_CONTENT_Y + 108 && y < WIZ_CONTENT_Y + 152)
-        {
-            wizard_browse_folder();
-            return true;
-        }
-    }
-    else if (s_wizard_step == 1)
-    {
-        for (int i = 0; i < 3; i++)
-        {
-            int card_x = s_wiz_x + 32 + i * 226;
-            int card_y = WIZ_CONTENT_Y + 58;
-            if (x >= card_x && x < card_x + 214 && y >= card_y &&
-                y < card_y + 196)
+            int index = row * layout.columns + col;
+            if (index >= count)
+                break;
+            int card_x = layout.gallery_x + col * (layout.card_w + layout.gap);
+            int card_y = layout.cards_y +
+                         (row - s_wizard_scroll) * (layout.card_h + layout.gap);
+            if (card_y < layout.cards_y ||
+                card_y + layout.card_h > layout.cards_y + layout.view_h)
+                continue;
+            if (x >= card_x && x < card_x + layout.card_w && y >= card_y &&
+                y < card_y + layout.card_h)
             {
-                s_wizard_template = i;
+                *wizard_selection_slot() = index;
+                s_wizard_focus = 2;
+                s_wizard_error[0] = '\0';
                 draw_dialog();
                 return true;
             }
         }
     }
-    else if (s_wizard_step == 2)
+
+    if (x >= layout.details_x && x < layout.details_x + layout.details_w &&
+        y >= layout.name_y && y < layout.name_y + layout.name_h)
     {
-        int row_y = WIZ_CONTENT_Y + 66;
-        if (x >= s_wiz_x + 32 && x < s_wiz_x + s_wiz_w - 32 && y >= row_y - 12 &&
-            y < row_y + 46)
+        s_wizard_focus = 0;
+        draw_dialog();
+        return true;
+    }
+    int path_input_w = layout.details_w - layout.browse_w - 8;
+    if (x >= layout.details_x && x < layout.details_x + path_input_w &&
+        y >= layout.path_y && y < layout.path_y + layout.path_h)
+    {
+        s_wizard_focus = 1;
+        draw_dialog();
+        return true;
+    }
+    if (x >= layout.browse_x && x < layout.browse_x + layout.browse_w &&
+        y >= layout.path_y && y < layout.path_y + layout.path_h)
+    {
+        wizard_browse_folder();
+        return true;
+    }
+
+    if (x >= layout.details_x && x < layout.details_x + layout.details_w)
+    {
+        int row_h = layout.option_h - 6;
+        for (int i = 0; i < 3; i++)
         {
-            s_wizard_with_cmake = !s_wizard_with_cmake;
-            draw_dialog();
-            return true;
-        }
-        row_y += 82;
-        if (x >= s_wiz_x + 32 && x < s_wiz_x + s_wiz_w - 32 && y >= row_y - 12 &&
-            y < row_y + 46)
-        {
-            s_wizard_with_readme = !s_wizard_with_readme;
-            draw_dialog();
-            return true;
-        }
-        row_y += 82;
-        if (x >= s_wiz_x + 32 && x < s_wiz_x + s_wiz_w - 32 && y >= row_y - 12 &&
-            y < row_y + 46)
-        {
-            s_wizard_open_after = !s_wizard_open_after;
+            int option_y = layout.options_y + i * layout.option_h;
+            if (y < option_y || y >= option_y + row_h)
+                continue;
+            if (i == 0)
+            {
+                if (s_wizard_tab == 0)
+                    s_wizard_with_cmake = !s_wizard_with_cmake;
+            }
+            else if (i == 1)
+                s_wizard_with_readme = !s_wizard_with_readme;
+            else
+                s_wizard_open_after = !s_wizard_open_after;
             draw_dialog();
             return true;
         }
     }
     return true;
 }
-
-static bool project_create_extended(const char *name, const char *path,
-                                     int template_id, bool with_cmake,
-                                     bool with_readme);
 
 static void wizard_create_project(void)
 {
@@ -4860,9 +5429,21 @@ static void wizard_create_project(void)
         draw_dialog();
         return;
     }
-    if (!project_create_extended(s_wizard_name, s_wizard_path,
-                                 s_wizard_template, s_wizard_with_cmake,
-                                 s_wizard_with_readme))
+    bool ok = false;
+    if (s_wizard_tab == 0)
+    {
+        ok = project_create_extended(s_wizard_name, s_wizard_path,
+                                     s_wizard_template, s_wizard_with_cmake,
+                                     s_wizard_with_readme);
+    }
+    else
+    {
+        const WizardExample *example = &s_wizard_examples[s_wizard_example];
+        ok = project_create_from_example(s_wizard_name, s_wizard_path,
+                                         example->dir, example->title,
+                                         s_wizard_with_readme);
+    }
+    if (!ok)
     {
         if (!s_wizard_error[0])
             snprintf(s_wizard_error, sizeof(s_wizard_error),
@@ -4871,13 +5452,13 @@ static void wizard_create_project(void)
         return;
     }
     char root[PROJECT_PATH_MAX];
-    if (s_wizard_path[strlen(s_wizard_path) - 1] == '/')
+    size_t path_len = strlen(s_wizard_path);
+    if (path_len > 0 && s_wizard_path[path_len - 1] == '/')
         snprintf(root, sizeof(root), "%s%s", s_wizard_path, s_wizard_name);
     else
         snprintf(root, sizeof(root), "%s/%s", s_wizard_path, s_wizard_name);
     if (s_home_mode)
     {
-                                                                                
         snprintf(s_home_project_path, sizeof(s_home_project_path), "%s", root);
         s_home_mode = false;
         close_dialog();
@@ -4889,6 +5470,123 @@ static void wizard_create_project(void)
     else
         toast("Created %s", root);
     log_add("workspace/createProject", "Created %s at %s", s_wizard_name, root);
+}
+
+
+static void wizard_on_move(int x, int y)
+{
+    WizardLayout layout;
+    wizard_layout(&layout);
+    int hover = -1;
+    if (x >= layout.x && x < layout.x + layout.w && y >= layout.y &&
+        y < layout.y + layout.h)
+    {
+        if (x >= layout.close_x && x < layout.close_x + layout.close_w &&
+            y >= layout.close_y && y < layout.close_y + layout.close_h)
+            hover = 9;
+        else if (x >= layout.create_x &&
+                 x < layout.create_x + layout.create_w &&
+                 y >= layout.create_y &&
+                 y < layout.create_y + layout.create_h)
+            hover = 1;
+        else if (x >= layout.cancel_x &&
+                 x < layout.cancel_x + layout.cancel_w &&
+                 y >= layout.cancel_y &&
+                 y < layout.cancel_y + layout.cancel_h)
+            hover = 2;
+        else if (x >= layout.browse_x &&
+                 x < layout.browse_x + layout.browse_w &&
+                 y >= layout.path_y && y < layout.path_y + layout.path_h)
+            hover = 3;
+        else if (y >= layout.tabs_y && y < layout.tabs_y + layout.tabs_h)
+        {
+            int tab_w = (layout.gallery_w - 8) / 2;
+            if (x >= layout.gallery_x + 4 &&
+                x < layout.gallery_x + 4 + tab_w)
+                hover = 4;
+            else if (x >= layout.gallery_x + 4 + tab_w &&
+                     x < layout.gallery_x + layout.gallery_w - 4)
+                hover = 5;
+        }
+        else
+        {
+            int count = wizard_source_count();
+            int rows = (count + layout.columns - 1) / layout.columns;
+            int visible_rows = layout.view_h / (layout.card_h + layout.gap);
+            if (visible_rows < 1)
+                visible_rows = 1;
+            for (int row = s_wizard_scroll;
+                 row < rows && row < s_wizard_scroll + visible_rows; row++)
+            {
+                for (int col = 0; col < layout.columns; col++)
+                {
+                    int index = row * layout.columns + col;
+                    if (index >= count)
+                        break;
+                    int card_x = layout.gallery_x +
+                                 col * (layout.card_w + layout.gap);
+                    int card_y = layout.cards_y +
+                                 (row - s_wizard_scroll) *
+                                     (layout.card_h + layout.gap);
+                    if (card_y < layout.cards_y ||
+                        card_y + layout.card_h >
+                            layout.cards_y + layout.view_h)
+                        continue;
+                    if (x >= card_x && x < card_x + layout.card_w &&
+                        y >= card_y && y < card_y + layout.card_h)
+                    {
+                        hover = 100 + index;
+                        break;
+                    }
+                }
+                if (hover >= 100)
+                    break;
+            }
+            if (hover < 0)
+            {
+                int option_y = layout.options_y;
+                if (x >= layout.details_x &&
+                    x < layout.details_x + layout.details_w)
+                {
+                    if (y >= option_y &&
+                        y < option_y + layout.option_h - 6)
+                        hover = 6;
+                    else if (y >= option_y + layout.option_h &&
+                             y < option_y + layout.option_h * 2 - 6)
+                        hover = 7;
+                    else if (y >= option_y + layout.option_h * 2 &&
+                             y < option_y + layout.option_h * 3 - 6)
+                        hover = 8;
+                }
+            }
+        }
+    }
+    if (hover != s_wizard_hover)
+    {
+        s_wizard_hover = hover;
+        draw_dialog();
+    }
+}
+
+static void wizard_on_scroll(AromaEvent *event)
+{
+    if (!event || event->event_type != EVENT_TYPE_MOUSE_SCROLL)
+        return;
+    WizardLayout layout;
+    wizard_layout(&layout);
+    int x = event->data.mouse.x;
+    int y = event->data.mouse.y;
+    if (x < layout.gallery_x || x >= layout.gallery_x + layout.gallery_w ||
+        y < layout.cards_y || y >= layout.cards_y + layout.view_h)
+        return;
+    float steps = event->data.mouse.scroll_y;
+    if (steps > -1.0f && steps < 1.0f)
+        steps = steps < 0.0f ? -1.0f : (steps > 0.0f ? 1.0f : 0.0f);
+    int previous = s_wizard_scroll;
+    s_wizard_scroll -= (int)steps;
+    wizard_clamp_scroll();
+    if (previous != s_wizard_scroll)
+        draw_dialog();
 }
 
 static void draw_cmd_palette(void)
@@ -5486,11 +6184,17 @@ static bool cmd_palette_on_key(uint32_t key)
 static bool dialog_on_move(AromaEvent *event, void *user_data)
 {
     (void)user_data;
-    if (!s_dialog_open || s_dialog_mode != IDE_DIALOG_ANDROID_DEVICES ||
-        !event || event->event_type != EVENT_TYPE_MOUSE_MOVE)
+    if (!s_dialog_open || !event || event->event_type != EVENT_TYPE_MOUSE_MOVE)
         return true;
     int x = event->data.mouse.x;
     int y = event->data.mouse.y;
+    if (s_dialog_mode == IDE_DIALOG_NEW_PROJECT)
+    {
+        wizard_on_move(x, y);
+        return true;
+    }
+    if (s_dialog_mode != IDE_DIALOG_ANDROID_DEVICES)
+        return true;
     int hover = android_dev_row_at(x, y);
     if (android_dev_close_hit(x, y))
         hover = -2;
@@ -5506,7 +6210,15 @@ static bool dialog_on_exit(AromaEvent *event, void *user_data)
 {
     (void)event;
     (void)user_data;
-    if (s_dialog_open && s_dialog_mode == IDE_DIALOG_ANDROID_DEVICES &&
+    if (!s_dialog_open)
+        return true;
+    if (s_dialog_mode == IDE_DIALOG_NEW_PROJECT && s_wizard_hover != -1)
+    {
+        s_wizard_hover = -1;
+        draw_dialog();
+        return true;
+    }
+    if (s_dialog_mode == IDE_DIALOG_ANDROID_DEVICES &&
         s_android_device_hover != -1)
     {
         s_android_device_hover = -1;
@@ -5608,6 +6320,7 @@ static bool dialog_on_click(AromaEvent *event, void *user_data)
     int y = event->data.mouse.y;
     if (s_dialog_mode == IDE_DIALOG_NEW_PROJECT)
     {
+        wizard_geometry();
         if (x < s_wiz_x || x >= s_wiz_x + s_wiz_w || y < s_wiz_y ||
             y >= s_wiz_y + s_wiz_h)
             close_dialog();
